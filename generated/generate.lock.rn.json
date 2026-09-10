@@ -204,19 +204,18 @@
     }
   },
   "Carousel.rn": {
-    "hash": "5810f50a726effb6",
-    "lastAttemptHash": "5810f50a726effb6",
-    "generatedAt": "2026-09-10T17:01:04+00:00",
+    "hash": "5d0febfcc65af645",
+    "lastAttemptHash": "5d0febfcc65af645",
+    "generatedAt": "2026-09-10T23:40:42+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.5223,
+    "rounds": 2,
+    "costUsd": 0.5164,
     "files": [
-      "packages/rn/src/Carousel.stories.tsx",
       "packages/rn/src/Carousel.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 17,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -963,20 +962,21 @@
     }
   },
   "Table.rn": {
-    "hash": "24751731e2358050",
-    "lastAttemptHash": "24751731e2358050",
-    "generatedAt": "2026-09-10T17:15:57+00:00",
+    "hash": "64e7e2c4cbb685a7",
+    "lastAttemptHash": "64e7e2c4cbb685a7",
+    "generatedAt": "2026-09-10T23:42:51+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.2545,
+    "costUsd": 0.7937,
     "files": [
+      "generated/gaps/Table.rn.md",
       "packages/rn/src/Table.stories.tsx",
       "packages/rn/src/Table.test.tsx",
       "packages/rn/src/Table.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 12,
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1053,19 +1053,18 @@
     }
   },
   "Toolbar.rn": {
-    "hash": "107b53d385bc2e53",
-    "lastAttemptHash": "107b53d385bc2e53",
-    "generatedAt": "2026-09-10T16:47:04+00:00",
+    "hash": "fa1f15d734725e69",
+    "lastAttemptHash": "fa1f15d734725e69",
+    "generatedAt": "2026-09-10T23:38:57+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.9037,
+    "costUsd": 0.2385,
     "files": [
       "packages/rn/src/Toolbar.stories.tsx",
-      "packages/rn/src/Toolbar.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Toolbar.tsx"
     ],
-    "gaps": 6,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

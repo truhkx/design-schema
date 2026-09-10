@@ -12,7 +12,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - `selectable: 'single'` toggles the row off when its own checkbox is pressed again (radio-like exclusivity otherwise) — the spec doesn't say whether re-clicking a selected single-select row should deselect it.
 - `transition` is resolved but not animated (no Animated.timing wired to it) — mirrors Card's documented rationale that there is no continuous hover on touch to animate between; sort-icon/hover changes are instant.
 - `scrollFade` is applied as horizontal edge padding on the `responsive: scroll` region rather than a gradient mask — there's no CSS mask-image equivalent, and adding an SVG gradient (as Toolbar's internal fade does) was judged not worth the complexity for a non-tested visual affordance.
-- The `footer` anatomy part has no corresponding prop anywhere in the schema (no footer content is described) and is not rendered.
-- The caption's `Heading` level is not specified by the schema (Table has no `headingLevel`-style prop); defaulted to level `2`.
+- `footer` content is rendered verbatim inside a padded `View` (the same pattern as `Card`'s `footer`), not re-typeset in "the table's font": React Native has no cascade, and the prop's shape is opaque `ReactNode` (buttons, pagination, a count), so there is nothing generic to apply `fontFamily`/`fontSize` to without restyling the caller's own children.
 - `column.abbr` is accepted for shape parity with the web/Lit shape but has no native effect — RN has no equivalent to the web `abbr` attribute; the full `header` text is always both the visible label and the accessible name.
 - When no column has `isRowHeader: true`, `selectRow` falls back to the row's `id` for its accessible name, and `onRowPress` (if set) has no dedicated header cell to become a Button — this case isn't described in the schema.
+
+## 2026-09-10 19:42 — round 1
+
+- footer content is rendered verbatim inside a padded View (same pattern as Card's footer), not re-typeset in "the table's font": RN has no cascade and footer is opaque ReactNode, so there's nothing generic to apply fontFamily/fontSize to without restyling the caller's own children.

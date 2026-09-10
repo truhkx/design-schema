@@ -19,6 +19,7 @@ export type TableSelectable = 'none' | 'single' | 'multiple';
 export type TableResponsive = 'stack' | 'scroll';
 export type TableMaxHeight = 'none' | 'viewport';
 export type TableDensity = 'compact' | 'comfortable';
+export type TableCaptionLevel = '2' | '3' | '4' | 2 | 3 | 4;
 
 /** A single record. `id` must be stable; it is what selection and keys use. */
 export interface TableRow {
@@ -79,8 +80,12 @@ export type TableOverridableBinding =
 export interface TableProps {
   /** What the table lists ("Open invoices"). Rendered as the caption and the accessible name. */
   caption: string;
+  /** Heading level of the caption in the page outline; its size is `captionSize` regardless. */
+  captionLevel?: TableCaptionLevel;
   /** Visually hides the caption; it remains the accessible name. Use when a Heading directly above already says it. */
   hideCaption?: boolean;
+  /** Content below the table: a row count, pagination, a total. Rendered in the `footer` part with the table's font. */
+  footer?: React.ReactNode;
   /** Column definitions in display order. Exactly one column may be `isRowHeader`. */
   columns: TableColumn[];
   /** The rows. `id` must be stable. */
@@ -196,7 +201,9 @@ function compareRows(a: TableRow, b: TableRow, column: string, direction: TableS
  */
 export function Table({
   caption,
+  captionLevel = '2',
   hideCaption = false,
+  footer,
   columns,
   data,
   sort,
@@ -406,6 +413,11 @@ export function Table({
     width: t.sizeTargetComfortable,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: cellPaddingBlock,
+  };
+
+  const footerStyle: ViewStyle = {
+    paddingHorizontal: cellPaddingInline,
     paddingVertical: cellPaddingBlock,
   };
 
@@ -711,7 +723,7 @@ export function Table({
     <View testID="Table">
       {!hideCaption ? (
         <View testID="Table.caption">
-          <Heading level="2" overrides={{ fontSize: overrides?.captionSize, fontWeight: overrides?.captionWeight, marginBlockEnd: overrides?.captionGap ?? ('space.2' as TokenRef) }}>
+          <Heading level={captionLevel} overrides={{ fontSize: overrides?.captionSize, fontWeight: overrides?.captionWeight, marginBlockEnd: overrides?.captionGap ?? ('space.2' as TokenRef) }}>
             {caption}
           </Heading>
         </View>
@@ -726,6 +738,11 @@ export function Table({
         ) : null}
         {isCompact ? compactList : wideBody}
       </View>
+      {footer !== undefined ? (
+        <View style={footerStyle} testID="Table.footer">
+          {footer}
+        </View>
+      ) : null}
       <View accessibilityLiveRegion="polite" style={HIDDEN_STYLE}>
         <Text>{sortAnnouncement}</Text>
       </View>

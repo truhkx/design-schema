@@ -29,6 +29,22 @@ describe('Table', () => {
     expect(t.toJSON()).not.toBeNull();
   });
 
+  /* derived: props.captionLevel */
+  it('renders-captionLevel-2', () => {
+    const t = setup({ captionLevel: '2' });
+    expect(t.toJSON()).not.toBeNull();
+  });
+
+  it('renders-captionLevel-3', () => {
+    const t = setup({ captionLevel: '3' });
+    expect(t.toJSON()).not.toBeNull();
+  });
+
+  it('renders-captionLevel-4', () => {
+    const t = setup({ captionLevel: '4' });
+    expect(t.toJSON()).not.toBeNull();
+  });
+
   /* derived: props.selectable */
   it('renders-selectable-none', () => {
     const t = setup({ selectable: 'none' });

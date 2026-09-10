@@ -2,6 +2,7 @@ import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { Button } from './Button';
 import { Table } from './Table';
+import { Text } from './Text';
 import type { TableColumn, TableRow } from './Table';
 import { withTheme } from './decorators';
 
@@ -44,6 +45,11 @@ type Story = StoryObj<typeof Table>;
 
 export const Default: Story = {};
 
+// captionLevel
+export const CaptionLevel2: Story = { args: { captionLevel: '2' } };
+export const CaptionLevel3: Story = { args: { captionLevel: '3' } };
+export const CaptionLevel4: Story = { args: { captionLevel: '4' } };
+
 // selectable
 export const SelectableNone: Story = { args: { selectable: 'none' } };
 export const SelectableSingle: Story = { args: { selectable: 'single' } };
@@ -79,6 +85,12 @@ export const WithRowActions: Story = {
 export const WithRowPress: Story = {
   args: {
     onRowPress: () => undefined,
+  },
+};
+
+export const WithFooter: Story = {
+  args: {
+    footer: <Text size="sm" tone="muted">4 rows</Text>,
   },
 };
 

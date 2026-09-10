@@ -161,11 +161,14 @@ export function Carousel({
 
   React.useEffect(() => {
     // literal-ok: a dev-only validation threshold from the spec ("below 5000 is
-    // refused in development"), not a style token.
+    // raised to 5000"), not a style token.
     if (__DEV__ && interval < 5000) {
-      console.warn('Carousel: interval below the 5-second minimum does not give people enough time to read a slide before it advances.');
+      console.warn('Carousel: interval below the 5-second minimum does not give people enough time to read a slide before it advances; raised to the minimum.');
     }
   }, [interval]);
+
+  // literal-ok: the spec's 5000ms floor, not a style token.
+  const effectiveInterval = Math.max(interval, 5000);
 
   const perViewClamped = Math.max(1, Math.round(perView));
   const isControlled = activeIndex !== undefined;
@@ -254,9 +257,9 @@ export function Carousel({
     }
     const id = setInterval(() => {
       latest.current.goTo(latest.current.currentIndex + 1, 'autoplay');
-    }, interval);
+    }, effectiveInterval);
     return () => clearInterval(id);
-  }, [playing, interval]);
+  }, [playing, effectiveInterval]);
 
   const pauseAutoplay = (): void => setPlaying(false);
 

@@ -192,6 +192,7 @@ export type { CarouselChangeReason, CarouselOverridableBinding, CarouselPicker, 
 
 export { Table } from './Table';
 export type {
+  TableCaptionLevel,
   TableColumn,
   TableColumnAlign,
   TableColumnWidth,

@@ -117,8 +117,8 @@ const COPY = {
  * and virtualization math; the schema's own example (160) is the fallback. */
 const DEFAULT_COLUMN_WIDTH = 160;
 const MIN_COLUMN_WIDTH = 40;
-/** Keyboard step for the resize separator; the schema names no step size. */
-const RESIZE_STEP_PX = 16;
+/** Fallback keyboard resize step before the `resizeStep` token (space.4) is measured. */
+const DEFAULT_RESIZE_STEP_PX = 16;
 /** Announcements revert to the persistent summary after this long. */
 const ANNOUNCEMENT_TIMEOUT_MS = 5000;
 
@@ -141,6 +141,7 @@ export type DataGridOverridableBinding =
   | 'pinnedShadow'
   | 'resizeHandle'
   | 'resizeHandleWidth'
+  | 'resizeStep'
   | 'statusBarSize'
   | 'statusBarPadding'
   | 'captionSize'
@@ -173,6 +174,7 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<DataGridOverridableBinding, string>> = 
   pinnedShadow: '--ds-data-grid-pinned-shadow',
   resizeHandle: '--ds-data-grid-resize-handle',
   resizeHandleWidth: '--ds-data-grid-resize-handle-width',
+  resizeStep: '--ds-data-grid-resize-step',
   statusBarSize: '--ds-data-grid-status-bar-size',
   statusBarPadding: '--ds-data-grid-status-bar-padding',
   captionGap: '--ds-data-grid-caption-gap',
@@ -360,6 +362,7 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
   useImperativeHandle(ref, () => rootRef.current as HTMLDivElement, []);
   const scrollRegionRef = useRef<HTMLDivElement | null>(null);
   const sizerRef = useRef<HTMLDivElement | null>(null);
+  const resizeStepSizerRef = useRef<HTMLDivElement | null>(null);
   const cellRefs = useRef(new Map<string, HTMLDivElement>());
 
   const rowHeaderColumn = useMemo(() => columns.find((column) => column.isRowHeader), [columns]);
@@ -590,6 +593,17 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
     observer.observe(sizer);
     return () => observer.disconnect();
   }, [density]);
+
+  /* ---------- resize step measurement (resizeStep is a token/overridable binding, not a JS
+     constant; measured the same way as row height so `overrides.resizeStep` takes effect) ---------- */
+  const [resizeStepPx, setResizeStepPx] = useState(DEFAULT_RESIZE_STEP_PX);
+  useLayoutEffect(() => {
+    const sizer = resizeStepSizerRef.current;
+    if (!sizer || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(([entry]) => setResizeStepPx(entry.contentRect.width || DEFAULT_RESIZE_STEP_PX));
+    observer.observe(sizer);
+    return () => observer.disconnect();
+  }, [overrides]);
 
   /* ---------- virtualization ---------- */
   const virtualize = height !== 'content';
@@ -1049,10 +1063,10 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
       onKeyDown={(event) => {
         if (event.key === 'ArrowLeft') {
           event.preventDefault();
-          resizeByKeyboard(column, -RESIZE_STEP_PX);
+          resizeByKeyboard(column, -resizeStepPx);
         } else if (event.key === 'ArrowRight') {
           event.preventDefault();
-          resizeByKeyboard(column, RESIZE_STEP_PX);
+          resizeByKeyboard(column, resizeStepPx);
         } else if (event.key === 'Escape') {
           focusGrid();
         }
@@ -1276,6 +1290,7 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
         onScroll={handleScroll}
       >
         <div ref={sizerRef} aria-hidden="true" className="ds-data-grid__row-sizer" />
+        <div ref={resizeStepSizerRef} aria-hidden="true" className="ds-data-grid__resize-step-sizer" />
         <div
           role="rowgroup"
           data-part="header"

@@ -18,6 +18,7 @@
   --ds-data-grid-pinned-shadow: var(--shadow-raised);
   --ds-data-grid-resize-handle: var(--color-border-strong);
   --ds-data-grid-resize-handle-width: var(--space-1);
+  --ds-data-grid-resize-step: var(--space-4);
   --ds-data-grid-status-bar-size: var(--font-size-xs);
   --ds-data-grid-status-bar-padding: var(--space-2);
   --ds-data-grid-caption-gap: var(--space-2);
@@ -96,6 +97,15 @@
 
 .ds-data-grid--density-comfortable .ds-data-grid__row-sizer {
   block-size: var(--ds-data-grid-row-height-comfortable);
+}
+
+.ds-data-grid__resize-step-sizer {
+  position: absolute;
+  inset-inline-start: -9999px; /* literal-ok: off-screen measurement sizer, never rendered visibly */
+  inline-size: var(--ds-data-grid-resize-step);
+  block-size: 1px;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .ds-data-grid__header {

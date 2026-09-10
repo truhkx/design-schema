@@ -12,3 +12,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Ctrl+End when `hasMore` only dispatches `load-more` and does not move focus ('first triggers a load so the end is real'); the doc doesn't specify whether the user must press Ctrl+End again once loading finishes and `hasMore` becomes false, or whether Feed should auto-escape once that happens — implemented as 'press again after it loads'.
 - Ctrl+Home/Ctrl+End escaping outside the feed walks `document.body` for focusable elements (shadow-piercing, same technique as FocusScope.ts's private helpers, reimplemented locally since they aren't exported) — this assumes a single top-level document and won't follow focus into iframes.
 - The empty state (`items.length === 0`) shows the loading indicator instead of `copy.empty` while `loading` is true, on the assumption that mid-initial-fetch shouldn't claim 'Nothing here yet.'; not specified in the doc.
+
+## 2026-09-10 19:15 — round 1
+
+- Feed: FeedItem's `content`/`actions` are typed `unknown` per lit notes ("any lit-html renderable") rather than a stricter TemplateResult union — the doc gives no exact type, so `unknown` was kept as the existing stand-in for ReactNode.
+- Feed: `endMessage` prop's default fallback text (copy.end) is applied at render time (`this.endMessage ?? COPY_END`) rather than as the property's default value, since `undefined` must be distinguishable from an explicit empty string; not stated either way in the spec.
+- Feed: on Ctrl+End with `hasMore`, the doc says 'press again once it has loaded and hasMore is false' to escape the feed — implemented by simply re-checking live `hasMore` on each Ctrl+End press (no explicit retry/debounce state), since the spec doesn't describe what happens if the caller never flips `hasMore` to false.

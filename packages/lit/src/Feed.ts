@@ -37,6 +37,7 @@ export type FeedOverridableBinding =
   | 'timestampSize'
   | 'newItemsOffset'
   | 'loadingInset'
+  | 'endMessageInset'
   | 'endMessageSize'
   | 'fontFamily';
 
@@ -47,6 +48,7 @@ const HOOKS: Record<FeedOverridableBinding, string> = {
   timestampSize: '--ds-feed-timestamp-size',
   newItemsOffset: '--ds-feed-new-items-offset',
   loadingInset: '--ds-feed-loading-inset',
+  endMessageInset: '--ds-feed-end-message-inset',
   endMessageSize: '--ds-feed-end-message-size',
   fontFamily: '--ds-feed-font-family',
 };
@@ -63,27 +65,34 @@ const COPY_UNREAD = 'unread';
 const COPY_POSITION = (index: number, total: number): string => `${index} of ${total}`;
 /** copy.empty */
 const COPY_EMPTY = 'Nothing here yet.';
+/** copy.justNow */
+const COPY_JUST_NOW = 'just now';
+/** copy.minutesAgo */
+const COPY_MINUTES_AGO = (n: number): string => `${n} min ago`;
+/** copy.hoursAgo */
+const COPY_HOURS_AGO = (n: number): string => `${n} hr ago`;
+/** copy.daysAgo */
+const COPY_DAYS_AGO = (n: number): string => `${n} d ago`;
 
-const RELATIVE_TIME = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-const RELATIVE_DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
-  { amount: 60, unit: 'seconds' },
-  { amount: 60, unit: 'minutes' },
-  { amount: 24, unit: 'hours' },
-  { amount: 7, unit: 'days' },
-  { amount: 4.34524, unit: 'weeks' },
-  { amount: 12, unit: 'months' },
-  { amount: Number.POSITIVE_INFINITY, unit: 'years' },
-];
-
+/** justNow under a minute, minutesAgo/hoursAgo/daysAgo up to a week, else the absolute date. */
 function formatRelativeTime(iso: string): string {
-  let duration = (new Date(iso).getTime() - Date.now()) / 1000;
-  for (const division of RELATIVE_DIVISIONS) {
-    if (Math.abs(duration) < division.amount) {
-      return RELATIVE_TIME.format(Math.round(duration), division.unit);
-    }
-    duration /= division.amount;
+  const diffMs = Math.max(0, Date.now() - new Date(iso).getTime());
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 1) {
+    return COPY_JUST_NOW;
   }
-  return RELATIVE_TIME.format(Math.round(duration), 'years');
+  if (minutes < 60) {
+    return COPY_MINUTES_AGO(minutes);
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return COPY_HOURS_AGO(hours);
+  }
+  const days = Math.floor(hours / 24);
+  if (days < 7) {
+    return COPY_DAYS_AGO(days);
+  }
+  return new Intl.DateTimeFormat().format(new Date(iso));
 }
 
 function formatAbsoluteTime(iso: string): string {
@@ -202,6 +211,7 @@ export class DsFeed extends LitElement {
       --ds-feed-timestamp-size: var(--font-size-xs);
       --ds-feed-new-items-offset: var(--space-3);
       --ds-feed-loading-inset: var(--layout-inset-md);
+      --ds-feed-end-message-inset: var(--layout-inset-md);
       --ds-feed-end-message-size: var(--font-size-sm);
       --ds-feed-font-family: var(--font-family-body);
     }
@@ -275,8 +285,10 @@ export class DsFeed extends LitElement {
       padding-inline: var(--ds-feed-loading-inset);
     }
 
-    /* endMessageColor: color.foreground.muted, locked; endMessageSize overridable */
+    /* endMessageInset: layout.inset.md; endMessageColor: color.foreground.muted, locked; endMessageSize overridable */
     .end-message {
+      padding-block: var(--ds-feed-end-message-inset);
+      padding-inline: var(--ds-feed-end-message-inset);
       color: var(--color-foreground-muted);
       font-size: var(--ds-feed-end-message-size);
     }
@@ -312,6 +324,7 @@ export class DsFeed extends LitElement {
   private visibilityObserver?: IntersectionObserver;
   private readonly visibilityTimers = new Map<string, number>();
   private pendingShowNewFocus = false;
+  private checkedInitialLoadMore = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -371,6 +384,13 @@ export class DsFeed extends LitElement {
     if (changed.has('items') || changed.has('hasMore') || changed.has('loading')) {
       this.syncObservers();
     }
+    if (!this.checkedInitialLoadMore) {
+      this.checkedInitialLoadMore = true;
+      // An empty feed has no last article to observe, so it fetches its first page itself.
+      if (this.items.length === 0 && this.hasMore && !this.loading) {
+        this.dispatchEvent(new CustomEvent<void>('load-more', { bubbles: true, composed: true }));
+      }
+    }
     if (this.pendingShowNewFocus && changed.has('items')) {
       this.pendingShowNewFocus = false;
       this.getArticles()[0]?.focus();
@@ -387,7 +407,7 @@ export class DsFeed extends LitElement {
         ?data-unread=${item.unread}
         heading=${item.heading}
         heading-level=${this.headingLevel}
-        tabindex="-1"
+        focusable
         aria-describedby=${timestampId}
         aria-posinset=${index + 1}
         aria-setsize=${setsize}

@@ -1,6 +1,6 @@
-# Gap digest — phase Grids
+# Gap digest — phase final
 
-Generated 2026-09-10T14:34 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T16:45 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -772,6 +772,21 @@ Doc: `site/src/content/docs/components/divider.md`
 - **DOC** `spacing` schema says overrides 'change values, never presence' — treated `spacing: "none"` (the default) as the 'off' state, so `overrides.spacing` is a no-op unless a non-none spacing value is also selected, matching how Box treats radius: none. → `site/src/content/docs/components/divider.md`
 - **DOC** labelSize/fontFamily overrides are passed straight through as TokenRefs to the composed `Text`'s own `overrides` prop (which resolves them itself) rather than resolving them a second time in Divider — avoids double token resolution but relies on Text's override keys (`fontSize`, `fontFamily`) matching Divider's binding names one-for-one. → `site/src/content/docs/components/divider.md`
 
+## Feed
+
+Doc: `site/src/content/docs/components/feed.md`
+
+### 2026-09-10 16:45 — lit round 1
+
+- **DOC** FeedItem.content/actions are typed `ReactNode` in the schema; Lit has no equivalent, so they're typed `unknown` (any lit-html-renderable value: string, TemplateResult, Node), matching the precedent of DataGrid's `render?: (row) => unknown`. → `site/src/content/docs/components/feed.md`
+- **DOC** aria-labelledby for each article is not set directly by Feed: the article is a <ds-card>, and Card already labels itself via ElementInternals.ariaLabelledByElements pointing at its own internally-rendered heading (cross-shadow-root, Chromium-only best effort, documented in Card.ts). A plain aria-labelledby attribute on <ds-card> couldn't reference that heading's id anyway, since it lives in Card's own shadow root, a different tree scope. → `site/src/content/docs/components/feed.md`
+- **DOC** The anatomy lists a distinct `articleHeader` part, but composing Card means the heading row is entirely Card's own internal `header` part (heading text only, no room for the timestamp) — Feed exposes `articleBody` (timestamp + content) and `articleActions` (footer) parts but no `articleHeader` part of its own. → `site/src/content/docs/components/feed.md`
+- **DOC** copy.position ('{index} of {total}') is rendered as a visually-hidden span reinforcing aria-posinset/aria-setsize, but only when `hasMore` is false (i.e. `total`/setsize is actually known); when `hasMore` is true, aria-setsize is -1 (unknown per the web platform notes) and the position text is omitted rather than showing '{index} of -1'. Not specified in the doc either way. → `site/src/content/docs/components/feed.md`
+- **DOC** newItemsOffset ('space above the new-items button when it appears') is implemented as padding-block-start on the button's own sticky wrapper rather than a margin, since there is no prior sibling to space against (the button is always first) and the styling rules forbid inter-sibling margins. → `site/src/content/docs/components/feed.md`
+- **DOC** Ctrl+End when `hasMore` only dispatches `load-more` and does not move focus ('first triggers a load so the end is real'); the doc doesn't specify whether the user must press Ctrl+End again once loading finishes and `hasMore` becomes false, or whether Feed should auto-escape once that happens — implemented as 'press again after it loads'. → `site/src/content/docs/components/feed.md`
+- **DOC** Ctrl+Home/Ctrl+End escaping outside the feed walks `document.body` for focusable elements (shadow-piercing, same technique as FocusScope.ts's private helpers, reimplemented locally since they aren't exported) — this assumes a single top-level document and won't follow focus into iframes. → `site/src/content/docs/components/feed.md`
+- **DOC** The empty state (`items.length === 0`) shows the loading indicator instead of `copy.empty` while `loading` is true, on the assumption that mid-initial-fetch shouldn't claim 'Nothing here yet.'; not specified in the doc. → `site/src/content/docs/components/feed.md`
+
 ## Fieldset
 
 Doc: `site/src/content/docs/components/fieldset.md`
@@ -1424,6 +1439,42 @@ Doc: `site/src/content/docs/components/slider.md`
 - **DOC** Slider: pointer-drag value math (`positionToValue`) is LTR-only (`clientX - rect.left`), matching the pattern of other components in this package that don't special-case `:dir(rtl)` for pointer math (only Switch handles RTL, purely via a CSS transform on a discrete thumb, not continuous drag). → `site/src/content/docs/components/slider.md`
 - **DOC** Slider: the package-wide testability rule requires a `Keyboard` story with 'at least three focusable children' — Slider's `range` mode tops out at two thumbs (its whole APG model), so the `Keyboard` story renders the range+marks configuration with two thumbs; a third focusable child isn't structurally possible for this component. → `site/src/content/docs/components/slider.md`
 
+## Splitter
+
+Doc: `site/src/content/docs/components/splitter.md`
+
+### 2026-09-10 16:38 — rn round 1
+
+- **DOC** minSize's description references a `collapseThreshold` that isn't a declared prop anywhere in the schema; I treated `minSize` itself as the collapse trigger (drag/step below minSize collapses when `collapsible`). → `site/src/content/docs/components/splitter.md`
+- **DOC** persistKey: the spec calls for 'AsyncStorage when available, else memory', but AsyncStorage is a third-party native module and the package conventions permit only react-native-svg as a runtime dependency, so I implemented persistence as a module-scoped in-memory Map only — it survives a remount but not an app restart, unlike the spec's intent. → `site/src/content/docs/components/splitter.md`
+- **DOC** The separator must be a plain View carrying a PanResponder directly (the same constraint documented on Slider's thumb: spreading panHandlers onto Pressable fights its own gesture responder), and a bare View has no onFocus/onBlur in this RN version's types, so the separator itself cannot show a keyboard focus-visible ring — acknowledged platform limit, same as SliderThumb. The composed collapse Button still gets full focus-visible treatment. → `site/src/content/docs/components/splitter.md`
+- **DOC** Keyboard model rows for Home/End and the separator's own Enter-to-collapse have no hardware-key equivalent reachable from a bare View; I exposed them as custom accessibilityActions (setMinimum/setMaximum/activate) rather than physical key handlers. F6 pane-cycling has no native/accessibility-action equivalent at all and is not implemented. → `site/src/content/docs/components/splitter.md`
+- **DOC** The RN platform notes only describe stacking 'below the prose max' (i.e. the stackBelow default); I generalized this to honor all three stackBelow enum values (prose/content/never) per the schema's prop table, mapping content to layout.maxWidth.content and never to no stacking, which the RN notes don't explicitly confirm. → `site/src/content/docs/components/splitter.md`
+- **DOC** handleSize (overridable) and minTarget (locked) both describe the separator's touch footprint without stating how they compose; I implemented the effective hit area as max(handleSize, minTarget) so the locked floor can never be overridden away. → `site/src/content/docs/components/splitter.md`
+- **DOC** collapseButtonOffset's anchor/direction isn't specified; I anchored the button to one edge along the drag axis and centered it on the cross axis using a translate of half of Button's known minimum target size (its actual rendered size isn't known ahead of layout). → `site/src/content/docs/components/splitter.md`
+- **DOC** separatorHover (locked) has no meaning on a touch-only platform (no pointer hover); left unused — only separatorActive (colorControlSelectedBackground) is applied while dragging. → `site/src/content/docs/components/splitter.md`
+
+### 2026-09-10 16:37 — lit round 1
+
+- **DOC** Splitter: minSize's description references a `collapseThreshold` that is not declared anywhere as a prop — I treated `minSize` itself as the collapse threshold (dragging or arrowing below `minSize` collapses when `collapsible`; otherwise clamps at `minSize`). → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the doc doesn't say whether `size-change-end` also fires after a keyboard-driven change (only 'Fired once when a drag ends' is specified). I chose to fire it only on pointer drag end, not after arrow/Home/End/Enter key presses, since each keypress is already a discrete, non-continuous commit. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: `collapsed` has no `default` in the schema (unlike `size`, which is paired with `defaultSize` for the controlled/uncontrolled split). Since the platform notes require it to be a reflected attribute, I implemented it as a plain two-way boolean property (default `false`, mutated directly, like `<details open>`) rather than a Slider-style controlled/uncontrolled pair — there is no `defaultCollapsed`. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: `collapseButtonOffset`'s reference point ('offset') isn't specified precisely. I positioned the collapse button centered on the separator's cross axis, offset from the separator's start edge along the main axis by that token. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: `paneMinTarget` ('a pane never shrinks below this on the drag axis before collapsing') is implemented as a CSS `min-inline-size`/`min-block-size` floor on both panes (lifted only on the primary pane once actually collapsed), rather than a JS pixel-clamp during drag — this is a presentational floor, not a computed collapse trigger (that's `minSize`, per the gap above). → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: F6 pane-cycling focus target when a pane has no focusable content — I fall back to focusing the pane wrapper `<div>` itself (given `tabindex="-1"` for this purpose), since the doc doesn't specify a fallback. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the grip mark's exact geometry (a 'short centered grip mark') isn't dimensioned beyond `gripLength`; I rendered it as a rounded bar matching the separator's thickness for the cross-axis dimension. → `site/src/content/docs/components/splitter.md`
+
+### 2026-09-10 16:37 — web round 1
+
+- **DOC** Splitter: `minSize`'s description references a `collapseThreshold` distinct from `minSize` ("Below collapseThreshold the pane collapses instead"), but no such prop exists in the schema. I treated `minSize` itself as the collapse threshold: with `collapsible`, dragging past `minSize` collapses instead of clamping at it; without `collapsible`, `minSize` is the hard clamp floor as usual. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the F6 keyboard rule says 'from the separator to the secondary; from a pane to the next' but doesn't fully specify the cycle for all three regions. I implemented a 3-way cycle primaryPane → separator → secondaryPane → primaryPane (wrapping), focusing the first focusable descendant of the target region (or the region itself as a tabIndex=-1 fallback). → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: `stackBelow` and the a11y note about 'a phone has no room for two panes side by side' only mention stacking for a horizontal splitter. I made stacking apply only when `orientation === 'horizontal'`; a vertical splitter never stacks regardless of `stackBelow`/container width — not stated explicitly either way. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: no behavior is specified for a pointer drag that starts, or continues, while the pane is already collapsed. I made the separator ignore pointermove entirely while collapsed (only Enter or the collapse button restores it) rather than treating a drag as an implicit restore. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: Home/End/Arrow keys are not specified to have any effect while collapsed. I made them no-ops while collapsed (only Enter toggles), rather than implicitly restoring the pane first. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: `paneMinTarget` ('a pane never shrinks below this on the drag axis before collapsing') is enforced via a CSS `minmax()` floor on the grid track, layered underneath the JS percent clamp (`minSize`/`maxSize`) — so a very narrow container can force the pane visually wider than the requested percent. The collapsed state explicitly drops this floor (grid track literal `0`) so collapse still reaches true zero width, per the web notes' 'inline-size 0'. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: 'the separator becomes inert' when stacked was implemented as `display: none` (plus `role="presentation"`, no `tabIndex`) rather than merely non-interactive-but-visible; the doc doesn't say whether the thin line should stay visible when stacked. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: used a real per-element container query (ResizeObserver on the splitter's own inline size, breakpoint read at runtime from the `layout.maxWidth.*` token) rather than a viewport `matchMedia`, since the doc calls it a 'container query' and nesting is explicitly supported (Splitter-in-a-pane). Guarded for environments without `ResizeObserver` (jsdom), matching the existing Toolbar.tsx pattern. → `site/src/content/docs/components/splitter.md`
+
 ## Stack
 
 Doc: `site/src/content/docs/components/stack.md`
@@ -1804,7 +1855,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 926 · CODE: 39 · TOOLING: 2 · NOISE: 14
+DOC: 957 · CODE: 39 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-schema.dev/schema/extension.schema.json",
+  "title": "Extension frontmatter",
+  "description": "The `extension:` block of site/src/content/docs/extensions/<Component>.<name>.md. Adds props, events, unlocked style bindings, copy, keyboard rules, behavior scenarios and hand-written modules to a system component; tools/parse.py merges it into the component's schema. Prop/event/style/keyboard/behavior shapes are the component schema's own ($ref across files; tools/parse.py resolves them with a registry). Mirrors schema/extension.ts.",
+  "type": "object",
+  "required": ["extension"],
+  "properties": {
+    "extension": { "$ref": "#/$defs/extensionDef" }
+  },
+  "$defs": {
+    "moduleDef": {
+      "type": "object",
+      "required": ["path", "signature", "wire"],
+      "additionalProperties": false,
+      "description": "A hand-written module the generated component must import and call. Lives at packages/<platform>/src/<path>; the parser writes a .d.ts stub from `signature` and the `modules` gate typechecks the real file against it.",
+      "properties": {
+        "path": { "type": "string", "pattern": "^custom/[A-Za-z0-9_./-]+\\.(ts|tsx)$", "description": "Relative to packages/<platform>/src/, always under custom/." },
+        "signature": { "type": "string", "description": "TypeScript function type, e.g. '(name: string, label: string) => void'." },
+        "wire": { "type": "string", "description": "Exactly where the component calls it, in one sentence." },
+        "platforms": { "type": "array", "minItems": 1, "items": { "$ref": "component.schema.json#/$defs/platformId" }, "description": "Omit = every platform the component supports." }
+      }
+    },
+    "extensionDef": {
+      "type": "object",
+      "required": ["extends", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "extends": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$", "description": "The component this extends, by schema name." },
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "The concern, kebab-case; the file is <Component>.<name>.md." },
+        "description": { "type": "string" },
+        "props": { "type": "object", "additionalProperties": { "$ref": "component.schema.json#/$defs/propDef" } },
+        "events": { "type": "object", "additionalProperties": { "$ref": "component.schema.json#/$defs/eventDef" } },
+        "styles": { "type": "object", "additionalProperties": { "$ref": "component.schema.json#/$defs/styleBinding" }, "description": "Unlocked bindings only; the parser rejects `locked: true` and any token a contrast pair locks." },
+        "copy": { "type": "object", "additionalProperties": { "type": "string" } },
+        "keyboard": { "type": "array", "items": { "$ref": "component.schema.json#/$defs/keyboardRule" } },
+        "behavior": { "type": "array", "items": { "$ref": "component.schema.json#/$defs/behaviorScenario" } },
+        "modules": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+          "additionalProperties": { "$ref": "#/$defs/moduleDef" },
+          "description": "Export name → module contract."
+        }
+      }
+    }
+  }
+}

@@ -5,6 +5,7 @@ node_modules/
 site/dist/
 site/.astro/
 packages/*/dist/
+packages/*/.modules-check/
 site/src/content/docs/foundations/spec-sheet.md
 generated/components.json
 generated/themes.json

@@ -330,6 +330,35 @@ def parse_report(text: str) -> dict:
     return {"files": [], "gaps": ["(model did not return the JSON report block)"]}
 
 
+def custom_dir(platform: str) -> Path:
+    return ROOT / "packages" / PKG[platform] / "src" / "custom"
+
+
+def custom_snapshot(platform: str) -> dict[str, bytes]:
+    """Every file under packages/<pkg>/src/custom/ with its content. The folder is hand-written (extension modules);
+    the model may import from it but never write there, and allowedTools cannot express a deny, so the run is
+    checked against this snapshot afterwards."""
+    d = custom_dir(platform)
+    if not d.exists():
+        return {}
+    return {f.relative_to(d).as_posix(): f.read_bytes() for f in sorted(d.rglob("*")) if f.is_file()}
+
+
+def restore_custom(platform: str, snapshot: dict[str, bytes]) -> list[str]:
+    """Put custom/ back exactly as snapshotted; returns the files that had been changed, added or removed."""
+    d = custom_dir(platform)
+    now = custom_snapshot(platform)
+    changed = sorted(set(k for k in set(snapshot) | set(now) if snapshot.get(k) != now.get(k)))
+    for rel in changed:
+        f = d / rel
+        if rel in snapshot:
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_bytes(snapshot[rel])
+        elif f.exists():
+            f.unlink()
+    return changed
+
+
 def record_gaps(name: str, platform: str, gaps: list[str], round_no: int) -> None:
     if not gaps:
         return
@@ -376,7 +405,9 @@ def generate_one(name: str, platform: str, args, lock: dict) -> bool:
     prompt = task_prompt(name, platform)
     for round_no in range(1, args.max_rounds + 1):
         print(f"  round {round_no}: model …", flush=True)
+        custom_before = custom_snapshot(platform)
         text, session, c = runner.run(prompt, session if args.runner == "cli" else None)
+        custom_changed = restore_custom(platform, custom_before)
         cost += c
         rep = parse_report(text)
         files = sorted(set(files) | set(rep["files"]))  # union across rounds: fix rounds often touch other files
@@ -384,6 +415,12 @@ def generate_one(name: str, platform: str, args, lock: dict) -> bool:
         record_gaps(name, platform, rep["gaps"], round_no)
         print(f"  round {round_no}: {len(rep['files'])} file(s), {len(rep['gaps'])} gap(s), ${c:.3f}")
         results = checks.run_all(platform, skip, extra=set(args.extra))
+        if custom_changed:
+            results.append(checks.GateResult("custom", False,
+                "packages/" + PKG[platform] + "/src/custom/ is hand-written and never the generator's to change; these files were "
+                "restored: " + ", ".join(custom_changed) + ". Import the modules the Extensions section names and call them where "
+                "`wire` says; do not create, edit or copy anything under custom/."))
+            print("  ✖ custom     restored " + ", ".join(custom_changed))
         bad = [r for r in results if not r.ok]
         if not bad:
             break

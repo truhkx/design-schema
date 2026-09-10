@@ -37,6 +37,9 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "site" / "src" / "content" / "docs" / "components"
 THEME_DOCS = ROOT / "site" / "src" / "content" / "docs" / "themes"
 SCHEMA = ROOT / "schema" / "component.schema.json"
+EXT_DOCS = ROOT / "site" / "src" / "content" / "docs" / "extensions"
+EXT_SCHEMA = ROOT / "schema" / "extension.schema.json"
+PKG = {"web": "react", "lit": "lit", "rn": "rn"}
 TEMPLATES = ROOT / "prompts" / "templates"
 OUT = ROOT / "generated"
 
@@ -372,9 +375,176 @@ def behavior_for(component: dict, derived: list[dict], platform: str) -> list[di
     return result
 
 
-def render_prompt(c: dict, sections: dict[str, str], platform: str, fm_yaml: str) -> str:
+# ---------------------------------------------------------------- extensions
+# An extension doc (site/src/content/docs/extensions/<Component>.<name>.md) adds to a component's schema at parse
+# time — add-only, no collisions, no locked bindings — and declares hand-written modules the generated code must
+# call. See site/src/content/docs/process/extending-components.md for the contract.
+
+EXT_SECTIONS = ("props", "events", "styles", "copy")
+
+
+def extension_validator() -> Validator:
+    """The extension schema $refs the component schema across files; resolve both through one registry."""
+    from referencing import Registry, Resource
+
+    comp = json.loads(SCHEMA.read_text(encoding="utf-8"))
+    ext = json.loads(EXT_SCHEMA.read_text(encoding="utf-8"))
+    registry = Registry().with_resources([(comp["$id"], Resource.from_contents(comp)), (ext["$id"], Resource.from_contents(ext))])
+    return Validator(ext, registry=registry)
+
+
+def load_extensions(validator: Validator | None = None) -> tuple[dict[str, list[dict]], list[str]]:
+    """{component name: [extension records]} in file order, plus the errors of docs that did not validate.
+    A record: file (repo-relative), name, extends, extension (the frontmatter block), body (prose), title."""
+    by_component: dict[str, list[dict]] = {}
+    errors: list[str] = []
+    if not EXT_DOCS.exists():
+        return by_component, errors
+    validator = validator or extension_validator()
+    for path in sorted(EXT_DOCS.glob("*.md")):
+        rel = f"extensions/{path.name}"
+        try:
+            fm, body = split_frontmatter(path.read_text(encoding="utf-8"), path)
+            if "extension" not in fm:
+                raise DocError(f"{rel}: no `extension:` block in frontmatter")
+            problems = sorted(validator.iter_errors(fm), key=lambda e: list(e.path))
+            if problems:
+                lines = [f"{rel}: frontmatter failed schema validation:"]
+                lines += [f"  - {'.'.join(str(x) for x in e.path) or '(root)'}: {e.message}" for e in problems]
+                raise DocError("\n".join(lines))
+            x = fm["extension"]
+            expected = f"{x['extends']}.{x['name']}.md"
+            if path.name != expected:
+                raise DocError(f"{rel}: file should be named {expected} (extends + name)")
+            by_component.setdefault(x["extends"], []).append(
+                {"file": rel, "name": x["name"], "extends": x["extends"], "extension": x, "body": body.strip(), "title": fm.get("title", path.stem)})
+        except DocError as e:
+            errors.append(str(e))
+    return by_component, errors
+
+
+def merge_extensions(c: dict, exts: list[dict]) -> list[tuple[dict, str]]:
+    """Merge every extension into the component in place. Add-only: a name that upstream or an earlier extension
+    already declares is an error naming the extension file. Returns the merged dict items with the file that added
+    them, for stamping `source` after schema validation (the item schemas forbid unknown keys)."""
+    added: list[tuple[dict, str]] = []
+    owner: dict[tuple[str, str], str] = {}  # (section, key) -> who declared it
+    for section in EXT_SECTIONS:
+        for key in c.get(section) or {}:
+            owner[(section, key)] = f"{c['name']}'s own schema"
+    for sc in c.get("behavior") or []:
+        owner[("behavior", sc["name"])] = f"{c['name']}'s own schema"
+    module_owner: dict[str, str] = {}
+    for ext in exts:
+        x, file = ext["extension"], ext["file"]
+        for section in EXT_SECTIONS:
+            for key, value in (x.get(section) or {}).items():
+                if (section, key) in owner:
+                    raise DocError(f"{file}: {section}.{key} collides with {owner[(section, key)]}")
+                if section == "styles" and value.get("locked"):
+                    raise DocError(f"{file}: styles.{key} is locked — an extension may add only overridable bindings")
+                owner[(section, key)] = file
+                c.setdefault(section, {})[key] = value
+                if isinstance(value, dict):
+                    added.append((value, file))
+        for rule in x.get("keyboard") or []:
+            c.setdefault("keyboard", []).append(rule)
+            added.append((rule, file))
+        for sc in x.get("behavior") or []:
+            if ("behavior", sc["name"]) in owner:
+                raise DocError(f"{file}: behavior scenario '{sc['name']}' collides with {owner[('behavior', sc['name'])]}")
+            owner[("behavior", sc["name"])] = file
+            c.setdefault("behavior", []).append(sc)
+            added.append((sc, file))
+        for mod in x.get("modules") or {}:
+            if mod in module_owner:
+                raise DocError(f"{file}: module '{mod}' collides with {module_owner[mod]}")
+            module_owner[mod] = file
+    return added
+
+
+def check_extension_locks(c: dict, added: list[tuple[dict, str]]) -> None:
+    """After validate() computed `locked`: an extension binding that ended up locked (its token sits in a contrast
+    pair, or it is a focus ring / target) is a claim the extension may not make."""
+    for name, binding in (c.get("styles") or {}).items():
+        for item, file in added:
+            if item is binding and binding.get("locked"):
+                raise DocError(f"{file}: styles.{name} binds '{binding['token']}', which is locked (contrast pair, focus ring or target) — an extension may add only overridable bindings")
+
+
+def stamp_sources(added: list[tuple[dict, str]]) -> None:
+    for item, file in added:
+        item["source"] = file
+
+
+def extension_summary(c: dict, exts: list[dict]) -> list[dict]:
+    """What goes into generated/components.json next to the component: per extension, what it added and its modules
+    (with `platforms` filled in from the component when omitted)."""
+    supported = [pl for pl, n in c["platforms"].items() if n.get("supported", True)]
+    out = []
+    for ext in exts:
+        x = ext["extension"]
+        modules = {name: {**m, "platforms": list(m.get("platforms") or supported)} for name, m in (x.get("modules") or {}).items()}
+        out.append({"name": ext["name"], "file": ext["file"], "title": ext["title"], "description": x.get("description", ""),
+                    "adds": {sec: sorted(x[sec]) for sec in EXT_SECTIONS if x.get(sec)},
+                    "keyboard": len(x.get("keyboard") or []), "behavior": [sc["name"] for sc in x.get("behavior") or []],
+                    "modules": modules})
+    return out
+
+
+def module_import(path: str, platform: str) -> str:
+    """packages/<pkg>/src/custom/analytics.ts → './custom/analytics' (Lit imports carry the .js extension)."""
+    stem = re.sub(r"\.(ts|tsx)$", "", path)
+    return f"./{stem}.js" if platform == "lit" else f"./{stem}"
+
+
+def extensions_prose(exts: list[dict], platform: str, supported: list[str]) -> str:
+    """The `## Extensions` section of a prompt: each extension's prose plus its module contracts as import + call
+    instructions. Empty when no extension targets this platform."""
+    parts = []
+    for ext in exts:
+        x = ext["extension"]
+        modules = {n: m for n, m in (x.get("modules") or {}).items() if platform in (m.get("platforms") or supported)}
+        block = [f"### {ext['name']} — `{ext['file']}`", "", ext["body"] or "(no prose)"]
+        if modules:
+            block += ["", "**Hand-written modules** — import and call them exactly as stated; never create, edit or copy anything under `src/custom/`:", ""]
+            for name, m in modules.items():
+                block.append(f"- `import {{ {name} }} from '{module_import(m['path'], platform)}';` — signature `{m['signature']}`. {m['wire']}")
+        parts.append("\n".join(block))
+    if not parts:
+        return ""
+    return "## Extensions\n\nThe schema above already includes what these extensions add (items marked `source: extensions/...`). Implement them like any other prop, event, binding, copy string, keyboard rule or scenario.\n\n" + "\n\n".join(parts)
+
+
+def write_module_stubs(components: list[dict]) -> int:
+    """generated/modules/<platform>/<path>.d.ts per declared module, from its signature. The `modules` gate
+    (tools/check_modules.py) typechecks the real file against it. Stale stubs are removed."""
+    stubs: dict[Path, list[str]] = {}
+    for e in components:
+        for ext in e.get("extensions") or []:
+            for name, m in (ext.get("modules") or {}).items():
+                for platform in m["platforms"]:
+                    if platform not in PKG:
+                        continue
+                    f = OUT / "modules" / platform / re.sub(r"\.(ts|tsx)$", ".d.ts", m["path"])
+                    stubs.setdefault(f, []).append(f"/** {e['component']['name']}.{ext['name']}: {m['wire']} */\nexport declare const {name}: {m['signature']};")
+    for f, lines in stubs.items():
+        write_if_changed(f, "// Generated by tools/parse.py from the extension docs' `modules` signatures. Do not edit.\n" + "\n".join(lines) + "\n")
+    if (OUT / "modules").exists():
+        for old in (OUT / "modules").rglob("*.d.ts"):
+            if old not in stubs:
+                old.unlink()
+    return len(stubs)
+
+
+def render_prompt(c: dict, sections: dict[str, str], platform: str, fm_yaml: str, extensions: list[dict] | None = None) -> str:
     template = (TEMPLATES / f"{platform}.md").read_text()
     guidance = "\n\n".join(f"## {h}\n\n{sections[h]}" for h in ALLOWED_HEADINGS if h in sections)
+    if extensions:
+        supported = [pl for pl, n in c["platforms"].items() if n.get("supported", True)]
+        prose = extensions_prose(extensions, platform, supported)
+        if prose:
+            guidance = guidance + "\n\n" + prose
     scenarios = behavior_for(c, derive_behavior(c), platform)
     behavior_yaml = yaml.safe_dump(scenarios, sort_keys=False, allow_unicode=True).strip() if scenarios else "[]"
     return (
@@ -429,16 +599,22 @@ def main() -> int:
     validator = Validator(json.loads(SCHEMA.read_text()))
     (OUT / "prompts").mkdir(parents=True, exist_ok=True)
     components = []
-    errors: list[str] = []
+    by_component, errors = load_extensions()
+    seen_components: set[str] = set()
     for path in sorted(DOCS.glob("*.md")):
         try:
             text = path.read_text(encoding="utf-8")
             fm, body = split_frontmatter(text, path)
             if "component" not in fm:
                 raise DocError(f"{path.name}: no `component:` block in frontmatter")
-            validate(fm, validator, path)
-            sections = split_sections(body, path)
             c = fm["component"]
+            seen_components.add(c.get("name", ""))
+            exts = by_component.get(c.get("name", ""), [])
+            added = merge_extensions(c, exts)
+            validate(fm, validator, path)
+            check_extension_locks(c, added)
+            stamp_sources(added)
+            sections = split_sections(body, path)
             entry = {
                 "id": path.stem,
                 "title": fm.get("title", c["name"]),
@@ -447,6 +623,7 @@ def main() -> int:
                 "component": c,
                 "behaviorDerived": derive_behavior(c),
                 "sections": sections,
+                "extensions": extension_summary(c, exts),
                 "source": str(path.relative_to(ROOT)),
             }
             components.append(entry)
@@ -454,10 +631,14 @@ def main() -> int:
             for platform, notes in c["platforms"].items():
                 if not notes.get("supported", True) or not (TEMPLATES / f"{platform}.md").exists():
                     continue
-                write_if_changed(OUT / "prompts" / f"{c['name']}.{platform}.md", render_prompt(c, sections, platform, fm_yaml))
+                write_if_changed(OUT / "prompts" / f"{c['name']}.{platform}.md", render_prompt(c, sections, platform, fm_yaml, exts))
         except DocError as e:
             errors.append(str(e))
+    for name, exts in by_component.items():
+        if name not in seen_components:
+            errors += [f"{ext['file']}: extends '{name}', which has no component doc" for ext in exts]
     write_if_changed(OUT / "components.json", json.dumps(components, indent=2, ensure_ascii=False) + "\n")
+    write_module_stubs(components)
     themes, theme_errors = parse_themes()
     errors += theme_errors
     for e in errors:

@@ -91,7 +91,7 @@ component:
     lit:
       tag: ds-alert-dialog
       reflect: [open, tone]
-      notes: 'Same shadow <dialog> approach as ds-dialog with role="alertdialog". Dispatches composed `confirm` and `cancel` (detail { reason }). No slots: title, description and labels are properties, so the element is fully described by attributes.'
+      notes: 'Same shadow <dialog> approach as ds-dialog with role="alertdialog". Dispatches composed `confirm` and `cancel` (detail { reason }). No slots: title, description and labels are properties, so the element is fully described by attributes. The shadow <dialog> is named with aria-label={title} and described with aria-description, since ids do not cross the shadow boundary.'
     rn:
       element: Modal
       props: [visible, transparent, onRequestClose, accessibilityViewIsModal]

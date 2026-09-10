@@ -50,7 +50,8 @@ component:
     valueSize: { token: font.size.sm }
     fontFamily: { token: font.family.body }
     lineHeight: { token: font.lineHeight.normal }
-    partGap: { token: space.1, description: Vertical gap between the label row and the track. }
+    partGap: { token: space.1, description: 'Vertical gap between the label row and the track.' }
+    labelGap: { token: space.2, description: 'Horizontal gap between the label and the value text in the label row.' }
     transition: { token: motion.duration.base, description: 'Fill width change, with motion.easing.standard; instant under reduced motion.' }
   a11y:
     role: meter

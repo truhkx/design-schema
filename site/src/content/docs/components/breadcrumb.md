@@ -28,10 +28,11 @@ component:
       platforms: { web: onNavigate, lit: navigate, rn: onNavigate }
   styles:
     currentColor: { token: color.foreground, description: 'The current page, rendered as text with aria-current, in the regular weight.' }
+    itemColor: { token: color.foreground.muted, description: 'An ancestor item without `href`, rendered as plain text (a level that has no page of its own).' }
     separatorColor: { token: color.foreground.muted, description: 'A slash or chevron between items, aria-hidden.' }
     gap: { token: space.2, description: Gap on both sides of the separator. }
     fontFamily: { token: font.family.body }
-    fontSize: { token: font.size.sm, description: 'Set on the nav; the Links inherit it (Link has no typography of its own).' }
+    fontSize: { token: font.size.sm, description: 'Set on the nav; the Links inherit it on web. On native each ancestor Link is wrapped in a Text whose `overrides.fontSize` receives this binding (and any override of it), so the size is one value everywhere.' }
     fontWeight: { token: font.weight.regular }
     lineHeight: { token: font.lineHeight.normal }
     minTarget: { token: size.target.min, description: 'Each item reaches 24px tall via min-height on the list item, not on the inline Link.' }

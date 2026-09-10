@@ -268,24 +268,25 @@
     }
   },
   "FocusScope.rn": {
-    "hash": "dc57378f733802b0",
-    "lastAttemptHash": "dc57378f733802b0",
-    "generatedAt": "2026-09-10T02:42:28+00:00",
+    "hash": "b50db68c28973ffc",
+    "lastAttemptHash": "b50db68c28973ffc",
+    "generatedAt": "2026-09-10T06:15:02+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9488,
+    "costUsd": 0.1753,
     "files": [
-      "packages/rn/src/FocusScope.stories.tsx",
       "packages/rn/src/FocusScope.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Form.rn": {
@@ -558,6 +559,30 @@
       "packages/rn/src/index.ts"
     ],
     "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Tooltip.rn": {
+    "hash": "0223f58681e3055c",
+    "lastAttemptHash": "0223f58681e3055c",
+    "generatedAt": "2026-09-10T06:27:27+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.7521,
+    "files": [
+      "packages/rn/src/Tooltip.stories.tsx",
+      "packages/rn/src/Tooltip.test.tsx",
+      "packages/rn/src/Tooltip.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,

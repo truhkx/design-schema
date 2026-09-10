@@ -88,3 +88,6 @@ export type {
   MenuTriggerIcon,
   MenuTriggerVariant,
 } from './Menu';
+
+export { Tooltip } from './Tooltip';
+export type { TooltipDelay, TooltipOverridableBinding, TooltipPlacement, TooltipProps } from './Tooltip';

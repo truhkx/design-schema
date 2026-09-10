@@ -36,7 +36,7 @@ component:
       type: enum
       values: [tight, normal, loose]
       default: normal
-      description: Gap between the fields, from the layout rhythm.
+      description: Gap between the fields, from the layout rhythm. Fieldset renders the Stack itself; children are the raw fields.
   styles:
     legendColor: { token: color.foreground }
     legendSize: { token: font.size.md }
@@ -45,7 +45,8 @@ component:
     helperSize: { token: font.size.sm }
     errorText: { token: color.foreground.danger }
     partGap: { token: layout.gap.tight, description: 'Vertical gap between legend, description, fields and error.' }
-    fieldsGap: { token: 'layout.gap.{gap}' }
+    fieldsGap: { token: 'layout.gap.{gap}', description: 'The composed Stack''s gap. An `overrides.fieldsGap` is forwarded to the Stack''s own `overrides.gap`; Fieldset never styles the Stack itself.' }
+    disabledOpacity: { token: opacity.disabled }
     fontFamily: { token: font.family.body }
     lineHeight: { token: font.lineHeight.normal }
   copy:
@@ -61,7 +62,7 @@ component:
     web:
       element: fieldset
       attributes: [aria-describedby, aria-disabled]
-      notes: 'A native <fieldset> with a <legend>. No border and no padding (the browser defaults are reset); the group is structure, not a box — wrap it in a Box or Card for a surface. `disabled` uses aria-disabled on the fieldset plus each field''s own disabled handling (the native disabled attribute on fieldset would remove fields from the tab order). A <legend> does not participate in flex gap, so partGap below it is a margin.'
+      notes: 'A native <fieldset> with a <legend>. No border and no padding (the browser defaults are reset); the group is structure, not a box — wrap it in a Box or Card for a surface. `disabled` uses aria-disabled on the fieldset plus each field''s own disabled handling (the native disabled attribute on fieldset would remove fields from the tab order). A <legend> does not participate in flex gap, so partGap below it is a margin. With `error` set, the <fieldset> carries aria-invalid="true" and aria-describedby the error id (the group is the invalid thing; fields inside keep their own state).'
     lit:
       tag: ds-fieldset
       reflect: [disabled, gap]
@@ -84,7 +85,7 @@ Do not wrap a whole form in a Fieldset; the Form's `label` names the form. Do no
 
 ## Behavior
 
-Renders the legend, optional description, the fields in a Stack with `gap`, and an optional error. `disabled` disables every field inside while keeping them visible and focusable per each field's own rule. Inside a Form, the group itself is not a field; its children register individually, and the group `error` is set by the consumer from `onInvalid` or its own cross-field check. The `requiredIndicator` is appended to the legend when every field inside is required, so the indicator is not repeated on each.
+Renders the legend, optional description, the fields in a Stack with `gap`, and an optional error. `disabled` disables every field inside while keeping them visible and focusable per each field's own rule. Inside a Form, the group itself is not a field; its children register individually, and the group `error` is set by the consumer from `onInvalid` or its own cross-field check. The `requiredIndicator` is appended to the legend when every field inside is required, so the indicator is not repeated on each. The required indicator is derived: it appears when every direct child field has `required` (fields wrapped in a consumer's own container are not inspected — put fields directly inside the Fieldset). `disabled` and the legend reach the fields through `FieldsetContext`, which Input, Checkbox, Switch and RadioGroup read: they render disabled, and on native prefix their accessibility label with the legend; until a field reads the context, Fieldset also clones direct children with `disabled`. On React Native the group uses the `role="group"` prop (RN ≥ 0.74), not the legacy accessibilityRole.
 
 ## Content guidelines
 

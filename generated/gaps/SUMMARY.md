@@ -492,6 +492,13 @@ Doc: `site/src/content/docs/components/fieldset.md`
 - **DOC** Fieldset: added `aria-disabled` on the shadow `<fieldset>` when `disabled` is set, matching the React/Web platform note ('disabled uses aria-disabled on the fieldset') even though the lit platform note doesn't repeat it and a11y.requires doesn't list a disabled-state item — kept for parity with Checkbox/RadioGroup's own aria-disabled pattern on their controls. → `site/src/content/docs/components/fieldset.md`
 - **DOC** Fieldset: the error region is always rendered (empty when unset, hidden via `.error:empty`) rather than conditionally, matching Checkbox/RadioGroup's pattern so a role=alert element persists in the DOM for screen readers to announce a later change — the schema doesn't specify which approach to use. → `site/src/content/docs/components/fieldset.md`
 
+### 2026-09-10 02:07 — web round 1
+
+- **DOC** Fieldset: schema's props list has no `required`/`invalid` prop, yet `copy.requiredIndicator` and the behavior note say the indicator appears 'when every field inside is required' — implemented by inspecting each direct child's own `required` prop (Children.toArray + every), since there's no group-level flag to key off. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: composition maps `fields: Stack`, but the platform note only says 'a Stack for the children' without specifying whether Fieldset itself renders the Stack or the consumer is expected to pass one as children. Chose: Fieldset renders the Stack internally (children are the raw field elements), matching how `gap` naturally maps onto Stack's own gap prop — consistent with Card/Dialog precedent of composing Stack directly rather than documenting it as a no-op. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: disabled propagation says 'pass disabled down through a FieldsetContext... until then, the fieldset clones direct children with disabled' — implemented the clone-children fallback only (no FieldsetContext), since Input/Checkbox/Switch/RadioGroup don't read such a context yet and adding an unused context would be speculative; a real FieldsetContext should land when those components regenerate to read it. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: `fieldsGap` is listed as overridable, but forwarding an arbitrary token into the composed Stack without restyling it isn't possible (Stack only exposes a fixed `gap` enum, not an arbitrary token prop). Followed the existing Dialog/AlertDialog/Card precedent for this exact situation: declared the `--ds-fieldset-fields-gap` hook and included `fieldsGap` in the overridable type for API consistency, but it only takes effect through Stack's own closest-preset gap value (a comment in Fieldset.css notes this, matching Dialog.css's `footerGap` comment). → `site/src/content/docs/components/fieldset.md`
+
 ### 2026-09-10 02:04 — rn round 1
 
 - **DOC** Fieldset: schema's `requiredIndicator` rule ('appended when every field inside is required') requires introspecting children — implemented via React.Children.toArray + checking props.required on direct element children only; nested wrappers (e.g. a consumer-supplied Stack around fields) won't be seen. → `site/src/content/docs/components/fieldset.md`
@@ -904,7 +911,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 362 · CODE: 37 · TOOLING: 2 · NOISE: 8
+DOC: 366 · CODE: 37 · TOOLING: 2 · NOISE: 8
 
 ## Gates to fix
 

@@ -36,6 +36,7 @@ import './FocusScope.js';
 import './Dialog.js';
 import './AlertDialog.js';
 import './Menu.js';
+import './Tooltip.js';
 
 export { DsButton } from './Button.js';
 export type {
@@ -173,3 +174,6 @@ export type {
   MenuOpenChangeDetail,
   MenuOverridableBinding,
 } from './Menu.js';
+
+export { DsTooltip } from './Tooltip.js';
+export type { TooltipPlacement, TooltipDelay, TooltipOverridableBinding } from './Tooltip.js';

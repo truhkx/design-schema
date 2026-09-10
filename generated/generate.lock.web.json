@@ -275,25 +275,26 @@
     }
   },
   "FocusScope.web": {
-    "hash": "1a63e00d70eec66b",
-    "lastAttemptHash": "1a63e00d70eec66b",
-    "generatedAt": "2026-09-10T02:31:35+00:00",
+    "hash": "d7a07c69e9950927",
+    "lastAttemptHash": "d7a07c69e9950927",
+    "generatedAt": "2026-09-10T06:15:28+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9395,
+    "costUsd": 0.2085,
     "files": [
       "packages/react/src/FocusScope.css",
       "packages/react/src/FocusScope.stories.tsx",
-      "packages/react/src/FocusScope.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/FocusScope.tsx"
     ],
-    "gaps": 5,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Form.web": {
@@ -592,26 +593,52 @@
       "modules": true
     }
   },
-  "Tooltip.web": {
-    "hash": "68bb45f6a672f4ac",
-    "lastAttemptHash": "68bb45f6a672f4ac",
-    "generatedAt": "2026-09-10T04:34:08+00:00",
+  "Toast.web": {
+    "hash": "4e4ede92ef83d8e7",
+    "lastAttemptHash": "4e4ede92ef83d8e7",
+    "generatedAt": "2026-09-10T06:30:28+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.7701,
+    "costUsd": 2.5805,
     "files": [
-      "packages/react/src/Tooltip.css",
-      "packages/react/src/Tooltip.stories.tsx",
-      "packages/react/src/Tooltip.tsx",
+      "packages/react/src/Toast.css",
+      "packages/react/src/Toast.stories.tsx",
+      "packages/react/src/Toast.test.tsx",
+      "packages/react/src/Toast.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Tooltip.web": {
+    "hash": "42ca8d38a76b6d0d",
+    "lastAttemptHash": "42ca8d38a76b6d0d",
+    "generatedAt": "2026-09-10T06:16:18+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.2049,
+    "files": [
+      "packages/react/src/Tooltip.css",
+      "packages/react/src/Tooltip.stories.tsx",
+      "packages/react/src/Tooltip.tsx"
+    ],
+    "gaps": 3,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   }
 }

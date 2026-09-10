@@ -23,6 +23,10 @@ Bindings that carry an accessibility guarantee are **locked**: any color that ap
 
 An override changes *which token* a binding uses; props decide *whether* the part exists. `surface: none` renders no background, so `overrides.background` is ignored; `border: false` renders no border, so `overrides.border` and `overrides.borderWidth` are ignored; `radius: none` ignores `overrides.radius`. A consumer who wants a bordered box asks for one (`border`) and then may recolor it. This keeps the enum the single statement of what a component shows, and keeps an override from smuggling in a part the schema said was absent. Generators apply overrides only where the binding is in effect.
 
+## Composites forward overrides
+
+A composite never styles a child, but it may pass an override *through*: Fieldset hands `overrides.fieldsGap` to its Stack as `overrides.gap`; Divider hands `labelSize` to its Text as `fontSize`; Alert colors its Icon with `overrides.color`. The child resolves the token itself, so nothing is resolved twice and the child's locked bindings stay locked. This is the only way a composite influences a child's look, and it is why every component exposes `overrides` even when no consumer would set them directly.
+
 ## How the generated code is shaped
 
 On web and Lit, each binding produces two declarations: the hook with its default, and the rule that reads the hook.

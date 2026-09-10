@@ -9,3 +9,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - FocusScope (rn): restoreFocus's 'opener's node handle' has no capture mechanism on native since there's no opener ref prop and RN exposes no generic 'currently focused view' getter. I used TextInput.State.currentlyFocusedInput() as the only available proxy, so restoration only works when the opener was a TextInput — a Button/Pressable opener (the common case for a trigger that opens a dialog) will not get focus restored on unmount.
 - FocusScope: onEscapeAttempt's payload type isn't specified beyond 'with the direction' in prose; I typed it as `'forward' | 'backward'`.
 - FocusScope: the component has no open/trigger concept of its own (unlike Dialog), so the required 'Keyboard' story wraps it in local demo state (a trigger Button that mounts the scope) to satisfy the 'rendered open with its trigger and three focusable children' testability rule.
+
+## 2026-09-10 02:14 — round 1
+
+- FocusScope: RN has no API to walk arbitrary children for the first/last focusable descendant, so autoFocus values 'first', 'last', and 'container' all resolve to focusing the wrapper View; only 'none' differs — documented as an acknowledged platform limit in the component's JSDoc.
+- FocusScope: restoreFocus captures the opener via TextInput.State.currentlyFocusedInput(), the only 'currently focused element' RN exposes generically — an opener that isn't a TextInput (e.g. a Pressable button) cannot be captured, so focus restoration silently no-ops in that case.
+- FocusScope: onEscapeAttempt is accepted as a prop for API parity with web/lit but can never fire on native since there is no Tab order to confine.
+- FocusScope: keyboard-operable/focus-trap requirements are only partially met — trapped only maps to accessibilityViewIsModal (screen-reader swipe confinement); a hardware keyboard's Tab key is not confined at all, a stated platform limit rather than an implementation gap.

@@ -49,7 +49,7 @@ component:
     triggerFontSize: { token: font.size.md }
     triggerFontWeight: { token: font.weight.medium }
     triggerRadius: { token: radius.md }
-    icon: { token: color.foreground.muted, description: 'A chevron, 1em, pointing right when closed and down when open.' }
+    icon: { token: color.foreground.muted, description: 'The chevron is `Icon name="chevron-right" inline` rotated 90° when open, so it follows the trigger''s font size (including a `triggerFontSize` override). Mirrored in right-to-left writing on every platform (`[dir=rtl]` on web; `I18nManager.isRTL` → `chevron-left` on native).' }
     panelPaddingBlock: { token: space.sm }
     panelPaddingInline: { token: space.sm }
     panelColor: { token: color.foreground }

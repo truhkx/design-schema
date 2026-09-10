@@ -39,13 +39,14 @@ component:
     foreground: { token: 'color.status.{tone}.foreground', description: Heading color. }
     bodyColor: { token: color.foreground, description: 'Body text keeps the page foreground so long messages read as text, not as colored emphasis.' }
     border: { token: 'color.status.{tone}.border' }
-    icon: { token: 'color.status.{tone}.icon', description: 'Leading icon: info circle, check circle, warning triangle, or error octagon by tone, drawn as a 1em inline shape until an Icon component exists. Decorative; the tone is also conveyed by the heading or role.' }
+    icon: { token: 'color.status.{tone}.icon', description: 'Leading icon: info circle, check circle, warning triangle, or error octagon by tone, rendered with the system Icon (`info`, `success`, `warning`, `danger`) and colored by passing this token as `overrides.color` to the Icon — the sanctioned way to color a composed child. Decorative; the tone is also conveyed by the heading or role.' }
     borderWidth: { token: border.width.thin }
     radius: { token: radius.md }
     padding: { token: space.md }
     gap: { token: space.3, description: 'Horizontal gap between icon, content, and dismiss button.' }
     partGap: { token: space.1, description: Vertical gap between heading and body. }
-    iconSize: { token: font.size.lg }
+    iconSize: { token: font.size.lg, description: 'Forwarded to the Icon as `overrides.size`; Icon''s `size` enum is not used here.' }
+    headingSize: { token: font.size.md, description: 'The heading; body text uses `fontSize`.' }
     headingWeight: { token: font.weight.semibold }
     fontFamily: { token: font.family.body }
     fontSize: { token: font.size.md }
@@ -66,11 +67,11 @@ component:
     web:
       element: div
       attributes: [role]
-      notes: 'role="status" | "alert" from `live` (each implies its aria-live; set only the role); no role when off. Rendering the role on the component root is enough for the announcement, since React mounts the element and its content together. The dismiss button is the system Button (ghost, sm, iconOnly, label copy.dismissLabel) unchanged — composites never restyle a child; the ghost foreground is checked against every tone background.'
+      notes: 'role="status" | "alert" from `live` (each implies its aria-live; set only the role); no role when off. Rendering the role on the component root is enough for the announcement, since React mounts the element and its content together. The dismiss button is the system Button (ghost, sm, iconOnly, label copy.dismissLabel) unchanged — composites never restyle a child; the ghost foreground is checked against every tone background. The region''s accessible name is the heading (aria-labelledby) when present, otherwise the body element, so an Alert always has a name even without a heading.'
     lit:
       tag: ds-alert
       reflect: [tone, live, dismissible]
-      notes: 'The role is set on the host element via ElementInternals so the live region is in the light DOM tree where assistive technology expects it. `dismiss` is a composed CustomEvent; the inner button''s `press` is stopped so consumers see one event. `heading` is a property (attribute `heading`) or the named slot `heading`; body is the default slot.'
+      notes: 'The role is set on the host element via ElementInternals so the live region is in the light DOM tree where assistive technology expects it. `dismiss` is a composed CustomEvent; the inner button''s `press` is stopped so consumers see one event. `heading` is a property (attribute `heading`) or the named slot `heading`; body is the default slot. Accessible name: the host is named by aria-labelledby the heading when present, else by the body text (a status region is named by its content), via ElementInternals ariaLabelledByElements where supported and aria-label with the text otherwise.'
     rn:
       element: View
       props: [accessibilityRole=alert, accessibilityLiveRegion, accessibilityLabel]

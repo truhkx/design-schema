@@ -1,0 +1,12 @@
+# Gaps reported while generating Tooltip for lit
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-10 02:27 — round 1
+
+- Tooltip: the schema has no `events` section (unlike Menu/AlertDialog), so no CustomEvent is dispatched — all behavior is expressed through native aria-describedby/aria-labelledby, focus, and pointer events; treated the absence as intentional rather than an omission.
+- Tooltip: 'delay: none / a shared warm toolbar state' is described only qualitatively (no numeric grace window given for how long a tooltip stays 'warm' after closing). Chose motion.duration.base as that grace window (same token the default-delay formula already reads) — a module-level `warmUntil` timestamp set on every close.
+- Tooltip: because the Popover API sets `display: none` while closed, the popup (and its aria-describedby/aria-labelledby target) technically leaves the accessibility tree between shows, which sits in tension with the platform notes' 'the description is still in the accessibility tree' / 'never hover-only anywhere' language. Mitigated by always showing synchronously on focus (so AT users get it at the same moment they'd query it), matching how comparable production tooltips (e.g. Radix) handle this, but it's not literally 'always present'.
+- Tooltip: fontFamily/fontSize/lineHeight are overridable bindings, but the composed <ds-text> renders its own self-contained font hooks rather than inheriting CSS custom properties (unlike ds-link, per the Breadcrumb precedent's `font: inherit` comment). Forwarded these three via ds-text's own `overrides` prop (driven by Tooltip's JS `overrides` property), which works — but the parallel CSS escape hatch (`ds-tooltip.foo { --ds-tooltip-font-size: ... }`) described in the overrides contract will NOT reach the rendered text for these three bindings specifically.
+- Tooltip: 'shows ... immediately when the trigger receives keyboard focus' — implemented as 'any focus event shows immediately' since reliably distinguishing keyboard-origin focus from mouse-origin focus across arbitrary composed trigger types (ds-button, native <button>, ds-input, ds-link) isn't practical; this also matches how the pointer path already shows on hover, so the only behavioral difference is the delay, not the focus source.
+- Tooltip: `placement: start/end` is implemented as literal left/right (LTR only, not logical/RTL-aware), matching the existing Menu component's own `bottom-start/bottom-end` positioning code in this package, which is also not RTL-aware.

@@ -109,7 +109,7 @@ component:
     lit:
       tag: ds-menu
       reflect: [open, placement, icon-only]
-      notes: 'Uses the Popover API (popover="manual", showPopover()) for top-layer rendering without a portal, with a position: fixed fallback; anchor positioning is computed from the trigger rect. `items` is a property. Composed `action` (detail { id }) and `open-change` (detail { open }). The trigger is a <ds-button> in the shadow root; focus delegation lands on it.'
+      notes: 'Uses the Popover API (popover="manual", showPopover()) for top-layer rendering without a portal, with a position: fixed fallback; anchor positioning is computed from the trigger rect. `items` is a property. Composed `action` (detail { id }) and `open-change` (detail { open }). The trigger is a <ds-button> in the shadow root; focus delegation lands on it. The menu surface is named with aria-label from the trigger''s text (or the `label` property when given): aria-labelledby cannot reach a slotted trigger from the shadow root.'
     rn:
       element: Modal
       props: [visible, transparent, onRequestClose]

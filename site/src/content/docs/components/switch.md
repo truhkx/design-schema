@@ -85,7 +85,7 @@ component:
     rn:
       element: Switch
       props: [accessibilityRole=switch, accessibilityLabel, accessibilityHint, accessibilityState, trackColor, thumbColor, ios_backgroundColor]
-      notes: 'Uses the native Switch for platform-native feel; trackOn/trackOff map to trackColor {true, false} and thumb to thumbColor; ios_backgroundColor = trackOff. Platform limits: track and thumb sizes, radius, thumb travel and the focus ring are the OS values (trackWidth, trackHeight, thumbSize, thumbInset, radius, focusRing*, transition are not applied); a disabled native Switch is not focusable. The label row is a Pressable wrapping the Switch so the whole row toggles.'
+      notes: 'Uses the native Switch for platform-native feel; trackOn/trackOff map to trackColor {true, false} and thumb to thumbColor; ios_backgroundColor = trackOff. Platform limits: track and thumb sizes, radius, thumb travel and the focus ring are the OS values (trackWidth, trackHeight, thumbSize, thumbInset, radius, focusRing*, transition are not applied); a disabled native Switch is not focusable. The label row is a Pressable wrapping the Switch so the whole row toggles. The native Switch draws its own track and thumb, so trackWidth/trackHeight/thumbSize/thumbInset/radius are not overridable on native; the gap and text bindings are.'
   behavior:
     # Authored scenarios; the parser adds renders/enum/accessible-name/focusable ones from the schema.
     - name: click-on-track-toggles-on
@@ -168,7 +168,7 @@ Do not use a Switch for a choice that is only applied on Save or Submit; use Che
 
 ## Behavior
 
-Clicking or tapping the row, or pressing Space on the control, flips the state, moves the thumb, and fires `onChange` with the new boolean. Enter is neither intercepted nor used to toggle. The row is full width: with `labelPosition: start` the label is at the start and the switch at the row's end; with `end` the switch comes first and the label follows it. The consumer applies the effect immediately; if it can fail asynchronously, the switch should be controlled and flipped back with an error message elsewhere — the switch itself has no error state by design. Uncontrolled unless `checked` is provided. `disabled` switches are visible, readable and focusable (`aria-disabled`), and do not toggle. Thumb travel is animated with `transition`, and is instant when the user prefers reduced motion.
+Clicking or tapping the row, or pressing Space on the control, flips the state, moves the thumb, and fires `onChange` with the new boolean. Enter is neither intercepted nor used to toggle. The row is full width: with `labelPosition: start` the label is at the start and the switch at the row's end; with `end` the switch comes first and the label follows it. The consumer applies the effect immediately; if it can fail asynchronously, the switch should be controlled and flipped back with an error message elsewhere — the switch itself has no error state by design. Uncontrolled unless `checked` is provided. `disabled` switches are visible, readable and focusable (`aria-disabled`), and do not toggle. Thumb travel is animated with `transition`, and is instant when the user prefers reduced motion. Inside a Fieldset the field reads `FieldsetContext`: `disabled` from the group applies as if set on the field, and on native the legend prefixes the accessibility label ("Shipping address, Street").
 
 ## Content guidelines
 

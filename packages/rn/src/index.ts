@@ -175,3 +175,6 @@ export type {
   AccordionProps,
   AccordionValue,
 } from './Accordion';
+
+export { Slider } from './Slider';
+export type { SliderMark, SliderOverridableBinding, SliderProps, SliderShowValue, SliderValue } from './Slider';

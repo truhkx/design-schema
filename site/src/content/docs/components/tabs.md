@@ -6,7 +6,7 @@ component:
   category: navigation
   status: review
   apg: tabs
-  anatomy: [tablist, tab, tabLabel, tabIcon, indicator, panel]
+  anatomy: [tablist, tab, tabLabel, tabIcon, tabBadge, indicator, panel]
   composition:
     tabIcon: Icon
   props:
@@ -56,6 +56,8 @@ component:
     - { keys: [Tab], action: 'Moves focus to the selected tab, then out of the tab list into the panel (the list is one tab stop).', from: any, expect: manual }
     - { keys: [ArrowRight], action: 'Moves to the next tab, wrapping; selects it under automatic activation.', when: horizontal, from: first, expect: focus-next }
     - { keys: [ArrowLeft], action: 'Moves to the previous tab, wrapping.', when: horizontal, from: last, expect: focus-prev }
+    - { keys: [ArrowDown], action: 'Moves to the next tab, wrapping; selects it under automatic activation.', when: vertical, from: first, expect: manual }
+    - { keys: [ArrowUp], action: 'Moves to the previous tab, wrapping.', when: vertical, from: last, expect: manual }
     - { keys: [ArrowRight], action: From the last tab wraps to the first., when: horizontal, from: last, expect: focus-wraps-to-first }
     - { keys: [Home], action: First tab., from: last, expect: focus-first }
     - { keys: [End], action: Last tab., from: first, expect: focus-last }
@@ -68,7 +70,7 @@ component:
     tabPaddingInline: { token: space.md }
     tabGap: { token: layout.gap.tight, description: 'Between icon, label and badge inside a tab.' }
     listGap: { token: layout.gap.none, description: Tabs touch; the indicator separates them. }
-    indicator: { token: color.control.selectedBackground, description: 'The selected tab''s underline (horizontal) or side bar (vertical) — the selected-control fill, which is chosen per mode to meet 3:1 on the page (the primary button fill is not).' }
+    indicator: { token: color.control.selectedBackground, description: 'The selected tab''s underline (horizontal, flush against the list border at the bottom edge) or side bar (vertical, flush against the inline-end edge next to the panels) — the selected-control fill, which is chosen per mode to meet 3:1 on the page (the primary button fill is not).' }
     indicatorThickness: { token: border.width.focus }
     listBorder: { token: color.border, description: The rule under the whole tab list. }
     listBorderWidth: { token: border.width.thin }
@@ -120,7 +122,7 @@ Do not use Tabs for navigation to different pages — that is a nav Landmark of 
 
 ## Behavior
 
-The selected tab is the list's single tab stop. Arrow keys along the orientation move focus between enabled tabs and wrap; with `automatic` activation the moved-to tab is selected and its panel shown, with `manual` the user presses Enter or Space. Home and End jump. Tab from a tab moves into the selected panel. Disabled tabs are visible, announced disabled and skipped. Only the selected panel is rendered unless `keepMounted`, in which case unselected panels are hidden. The indicator animates to the selected tab. When tabs overflow horizontally, the list scrolls and the selected tab is kept in view.
+The selected tab is the list's single tab stop. Arrow keys along the orientation move focus between enabled tabs and wrap; with `automatic` activation the moved-to tab is selected and its panel shown, with `manual` the user presses Enter or Space. Home and End jump. Tab from a tab moves into the selected panel. Disabled tabs are visible, announced disabled and skipped. Only the selected panel is rendered unless `keepMounted`, in which case unselected panels are hidden. The indicator animates to the selected tab. When tabs overflow horizontally, the list scrolls and the selected tab is kept in view. Disabled tabs are `aria-disabled`, skipped by the arrow keys and not tab stops (a disabled tab has nothing to reach); they remain visible and readable. `fit: fill` stretches tabs along the orientation axis in both orientations. Badges are read as part of the tab's name ("Inbox, 3"). A tab without a matching panel, or a panel without a tab, is a development warning and is not rendered. On Lit, panels are light-DOM children, so `keepMounted: false` hides inactive panels with the `hidden` attribute rather than removing them.
 
 ## Content guidelines
 

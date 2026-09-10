@@ -38,6 +38,9 @@ component:
     placeholder:
       type: string
       description: Text shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. Not a substitute for the label.
+    open:
+      type: boolean
+      description: 'Controlled popup state, for programmatic opening and for stories and tests (the Keyboard story renders it open). Omit for the trigger-driven default.'
     multiple:
       type: boolean
       default: false
@@ -114,6 +117,7 @@ component:
   copy:
     placeholder: Select…
     selectedCount: '{count} selected'
+    done: Done
     required: '{label} is required.'
     invalid: '{label} is not valid.'
     requiredIndicator: ' (required)'
@@ -133,7 +137,7 @@ component:
     lit:
       tag: ds-select
       reflect: [multiple, required, disabled, invalid, native]
-      notes: 'Form-associated with setFormValue (FormData for multiple). Composes <ds-listbox> inside its shadow root so aria-activedescendant works; the popup uses the Popover API when available. Composed `change` and `open-change`. Implements the DsFormField interface.'
+      notes: 'Form-associated with setFormValue (FormData for multiple). Composes <ds-listbox> inside its shadow root so aria-activedescendant works; the popup uses the Popover API when available. Composed `change` and `open-change`. Implements the DsFormField interface. aria-activedescendant cannot reference an option inside the composed <ds-listbox>''s shadow root, so the trigger exposes the active option''s text through aria-describedby on a live element instead, and aria-controls points at the popup wrapper. ds-form collects ds-select, ds-listbox and ds-combobox like other fields; DsFormField.currentValue is `string | boolean | string[] | null`.'
     rn:
       element: Pressable
       props: [accessibilityRole=combobox, accessibilityLabel, accessibilityHint, accessibilityState, accessibilityValue]
@@ -152,7 +156,7 @@ Do not use a Select for two to six options; use a RadioGroup so every option is 
 
 ## Behavior
 
-The trigger shows the selected option's label (or the count / labels for `multiple`, or the placeholder). Activating it, or pressing Enter, Space or an arrow, opens the popup with the Listbox and the selected option active; the Listbox's keyboard model applies while focus visually stays on the trigger. Enter commits and closes (single) or toggles (multiple); Escape closes without changing the value; Tab commits and moves on; clicking outside closes. On close, focus returns to the trigger and `onChange` has fired if the value changed. Validation, `required`, `disabled` and errors work exactly as Input; the Form collects the value or array by `name`.
+The trigger shows the selected option's label (or the count / labels for `multiple`, or the placeholder). Activating it, or pressing Enter, Space or an arrow, opens the popup with the Listbox and the selected option active; the Listbox's keyboard model applies while focus visually stays on the trigger. Enter commits and closes (single) or toggles (multiple); Escape closes without changing the value; Tab commits and moves on; clicking outside closes. On close, focus returns to the trigger and `onChange` has fired if the value changed. Validation, `required`, `disabled` and errors work exactly as Input; the Form collects the value or array by `name`. The composed Listbox is `embedded`, receives `selectionFollowsFocus: false` (arrows move the active option; Enter commits) and `defaultActiveValue` set to the current selection so the popup opens with it active. With `multiple` and more than two selections the trigger shows `copy.selectedCount`; two or fewer are joined with a comma and a space. The popup's surface, border, radius and shadow are the popup wrapper's bindings; the Listbox draws none. The phone/tablet switch uses `layout.maxWidth.prose`, and the phone sheet's footer button is `copy.done`.
 
 ## Content guidelines
 

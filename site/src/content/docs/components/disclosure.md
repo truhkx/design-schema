@@ -37,7 +37,7 @@ component:
       description: 'When set, the trigger is wrapped in a heading of this level so the disclosure appears in the document outline — use for FAQ and accordion sections.'
   events:
     onToggle:
-      description: Fired after the state changes, with the new boolean `open`.
+      description: 'Fired after the state changes, with the new boolean `open` and a reason: `pointer`, `keyboard`, or `controlled` (Accordion relies on it).'
       platforms: { web: onToggle, lit: toggle, rn: onToggle }
   styles:
     triggerColor: { token: color.foreground }

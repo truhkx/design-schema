@@ -1,0 +1,200 @@
+/* Slider — styled only through Design Schema token custom properties. */
+
+.ds-slider {
+  /* labelWeight/fontSize/valueSize/helperSize/fontFamily/errorText are forwarded into the composed
+     Text elements' own overrides instead, since Text already exposes them (see Meter, RadioGroup). */
+  --ds-slider-track: var(--color-background-strong);
+  --ds-slider-fill: var(--color-control-selected-background);
+  --ds-slider-track-height: var(--space-1);
+  --ds-slider-track-radius: var(--radius-full);
+  --ds-slider-thumb: var(--color-control-background);
+  --ds-slider-thumb-border: var(--color-control-selected-background);
+  --ds-slider-thumb-border-width: var(--border-width-focus);
+  --ds-slider-thumb-size: var(--space-5);
+  --ds-slider-thumb-shadow: var(--shadow-raised);
+  --ds-slider-thumb-active-scale: var(--opacity-disabled);
+  --ds-slider-mark: var(--color-border-strong);
+  --ds-slider-mark-size: var(--space-1);
+  --ds-slider-mark-label-color: var(--color-foreground-muted);
+  --ds-slider-mark-label-size: var(--font-size-xs);
+  --ds-slider-bubble-surface: var(--color-inverse-surface);
+  --ds-slider-bubble-text: var(--color-inverse-foreground);
+  --ds-slider-part-gap: var(--space-1);
+  --ds-slider-track-padding-block: var(--space-3);
+  --ds-slider-min-target: var(--size-target-comfortable);
+  --ds-slider-focus-ring: var(--color-border-focus);
+  --ds-slider-focus-ring-width: var(--border-width-focus);
+  --ds-slider-disabled-opacity: var(--opacity-disabled);
+  --ds-slider-transition: var(--motion-duration-fast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-slider-part-gap);
+  inline-size: 100%;
+}
+
+.ds-slider__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.ds-slider__label,
+.ds-slider__value {
+  min-inline-size: 0;
+}
+
+/* body: the padded, positioned hit region — trackPaddingBlock gives the 44px thumbs room above and
+   below the thin rail without the rail itself growing. Pointer Events (with capture) live here so a
+   press anywhere in the padded region, not just on the 4px rail, starts a drag. */
+.ds-slider__body {
+  position: relative;
+  padding-block: var(--ds-slider-track-padding-block);
+  touch-action: none;
+}
+
+.ds-slider__track {
+  position: relative;
+  inline-size: 100%;
+  block-size: var(--ds-slider-track-height);
+  border-radius: var(--ds-slider-track-radius);
+  background-color: var(--ds-slider-track);
+}
+
+.ds-slider__fill {
+  position: absolute;
+  inset-block: 0;
+  border-radius: var(--ds-slider-track-radius);
+  background-color: var(--ds-slider-fill);
+}
+
+.ds-slider__marks {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: var(--ds-slider-track-height);
+  pointer-events: none;
+}
+
+.ds-slider__mark {
+  position: absolute;
+  inset-block-start: 50%;
+  transform: translate(-50%, -50%);
+  inline-size: var(--ds-slider-mark-size);
+  block-size: var(--ds-slider-mark-size);
+  border-radius: var(--radius-full);
+  background-color: var(--ds-slider-mark);
+}
+
+.ds-slider__mark-label {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-2));
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  font-size: var(--ds-slider-mark-label-size);
+  color: var(--ds-slider-mark-label-color);
+  white-space: nowrap;
+}
+
+/* thumb: a minTarget hit box centered on the value; the visible knob is a smaller child so the hit
+   area can exceed the visual size without the rail growing. */
+.ds-slider__thumb {
+  position: absolute;
+  inset-block-start: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--ds-slider-min-target);
+  block-size: var(--ds-slider-min-target);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.ds-slider__thumb[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.ds-slider__thumb-knob {
+  box-sizing: border-box;
+  position: relative;
+  inline-size: var(--ds-slider-thumb-size);
+  block-size: var(--ds-slider-thumb-size);
+  border-radius: var(--radius-full);
+  border: var(--ds-slider-thumb-border-width) solid var(--ds-slider-thumb-border);
+  background-color: var(--ds-slider-thumb);
+  box-shadow: var(--ds-slider-thumb-shadow);
+}
+
+/* thumbActiveScale: not a literal scale — a halo of the fill color, thumbSize larger on each side
+   (space.2), painted behind the knob (::before precedes the knob child in paint order). */
+.ds-slider__thumb--active::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  inline-size: calc(var(--ds-slider-thumb-size) + (2 * var(--space-2)));
+  block-size: calc(var(--ds-slider-thumb-size) + (2 * var(--space-2)));
+  border-radius: var(--radius-full);
+  background-color: var(--ds-slider-fill);
+  opacity: var(--ds-slider-thumb-active-scale);
+}
+
+/* focus-visible: replaced on the knob (the visual thumb) rather than left on the larger hit box. */
+.ds-slider__thumb:focus-visible {
+  outline: none;
+}
+.ds-slider__thumb:focus-visible .ds-slider__thumb-knob {
+  outline: var(--ds-slider-focus-ring-width) solid var(--ds-slider-focus-ring);
+  outline-offset: var(--ds-slider-focus-ring-width);
+}
+
+/* bubbleSurface/bubbleText: the hover/drag value bubble, like Tooltip's popup — inverse surface. */
+.ds-slider__bubble {
+  position: absolute;
+  inset-block-end: calc(100% + var(--space-2));
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  padding-block: var(--space-1);
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--ds-slider-bubble-surface);
+  color: var(--ds-slider-bubble-text);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* disabled: only the interactive region dims; the label and description stay fully readable. */
+.ds-slider--disabled .ds-slider__body {
+  opacity: var(--ds-slider-disabled-opacity);
+}
+
+.ds-slider__description {
+  margin: 0;
+}
+
+/* visually hidden: clipped to a 1px box, used for the range thumbs' "{label} minimum"/"maximum" names */
+.ds-slider__visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* transition: halo and bubble appearance only — the thumb itself follows the pointer with no transition. */
+@media (prefers-reduced-motion: no-preference) {
+  .ds-slider__thumb--active::before {
+    transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
+  }
+  .ds-slider__bubble {
+    transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
+  }
+}

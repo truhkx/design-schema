@@ -37,6 +37,9 @@ component:
       type: string
       description: Initial value(s).
       shape: 'string | string[]'
+    open:
+      type: boolean
+      description: 'Controlled popup state, for programmatic use and for stories and tests. Omit for the typing-driven default.'
     inputValue:
       type: string
       description: 'Controlled text of the input (what the user has typed). Usually uncontrolled; controlled by consumers driving `async` filtering.'
@@ -52,7 +55,7 @@ component:
       type: enum
       values: [startsWith, contains, none, async]
       default: contains
-      description: 'How typing narrows `options`: by prefix, by substring (default), not at all (the list is a picker; typing only moves the active option), or by the consumer (`async`: the component shows `copy.loading` and the consumer updates `options` from `onInputChange`).'
+      description: 'How typing narrows `options`: by prefix, by substring (default), not at all (the list is a picker; typing is type-ahead — it opens the list and moves the active option to the first label starting with the typed characters, without filtering), or by the consumer (`async`: the component shows `copy.loading` and the consumer updates `options` from `onInputChange`).'
     placeholder:
       type: string
       description: Example input shown while empty. Never the only description.
@@ -99,7 +102,8 @@ component:
     - { keys: [Escape], action: 'Closes the list if open; if closed and clearable, clears the input text.', when: list open, from: first, expect: closes }
     - { keys: [Tab], action: Closes the list and moves focus on. Under single-select a highlighted option is NOT committed by Tab (typing intent is ambiguous)., when: list open, from: first, expect: closes }
     - { keys: [Backspace], action: 'In an empty input with chips, removes the last chip.', when: multiple, from: first, expect: manual }
-    - { keys: [Home, End], action: 'Move the text caret (input semantics), not the list; Alt+ArrowDown/Up jump the list to first/last.', from: first, expect: manual }
+    - { keys: [Home, End], action: 'Move the text caret (input semantics), never the list.', from: first, expect: manual }
+    - { keys: [','], action: 'With allowCustom, commits the typed text as a custom value (as Enter does) and clears the input.', when: allowCustom, from: first, expect: manual }
     - { keys: [Alt+ArrowDown], action: Opens the list without moving the active option., from: first, expect: manual }
   styles:
     fieldBackground: { token: color.background }
@@ -186,7 +190,7 @@ Do not use a Combobox for fewer than about ten options that never grow — use S
 
 ## Behavior
 
-Typing filters `options` per `filter` and opens the list with no active option (so Enter commits typed text only when `allowCustom`); ArrowDown activates the first match without moving DOM focus from the input; Enter commits the active option, fires `onChange`, and — single — closes and shows the label in the input, or — multiple — adds a chip, clears the text and keeps the list open. Escape closes the list, then clears text if pressed again. Tab closes without committing an active option. Clicking the toggle button opens the full list; the clear button empties value and text. In `multiple`, Backspace on an empty input removes the last chip, and each chip's remove button removes that one; `onChange` receives the array in selection order. With `async`, the component shows `copy.loading` while `loading`, calls `onInputChange` on each keystroke, and renders whatever `options` the consumer supplies. Result counts, loading and "no matches" are announced politely. Validation and Form behavior are as Input; the value collected is the option value(s), or the custom string(s).
+Typing filters `options` per `filter` and opens the list with no active option (so Enter commits typed text only when `allowCustom`); ArrowDown activates the first match without moving DOM focus from the input; Enter commits the active option, fires `onChange`, and — single — closes and shows the label in the input, or — multiple — adds a chip, clears the text and keeps the list open. Escape closes the list, then clears text if pressed again. Tab closes without committing an active option. Clicking the toggle button opens the full list; the clear button empties value and text. In `multiple`, Backspace on an empty input removes the last chip, and each chip's remove button removes that one; `onChange` receives the array in selection order. With `async`, the component shows `copy.loading` while `loading`, calls `onInputChange` on each keystroke, and renders whatever `options` the consumer supplies. Result counts, loading and "no matches" are announced politely. Validation and Form behavior are as Input; the value collected is the option value(s), or the custom string(s). Filtering is case- and diacritic-insensitive on every platform. The result-count announcement is debounced by `motion.duration.base × 2` everywhere. The toggle button opens the full, unfiltered list for that opening; the next keystroke filters again. After a commit the input shows the selected option's label (single) or clears (multiple); a controlled `inputValue` is expected to follow the same rule. The composed Listbox is `embedded`, gets `loading` while an async filter runs, and with `allowCustom` is given a synthetic first option carrying `copy.addCustom`. On phones the chips render at the top of the sheet body.
 
 ## Content guidelines
 

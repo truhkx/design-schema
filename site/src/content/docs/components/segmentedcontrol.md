@@ -6,8 +6,9 @@ component:
   category: input
   status: review
   apg: radio
-  anatomy: [group, segment, segmentLabel, segmentIcon, indicator]
+  anatomy: [group, segment, segmentLabel, segmentIcon, tooltip, indicator]
   composition:
+    tooltip: Tooltip
     segmentIcon: Icon
   props:
     label:
@@ -59,12 +60,15 @@ component:
     segmentRadius: { token: radius.sm }
     segmentPaddingInline: { token: space.md }
     segmentPaddingBlock: { token: space.1 }
-    segmentGap: { token: layout.gap.tight, description: Between icon and label. }
+    segmentGap: { token: layout.gap.tight, description: 'Between icon and label inside a segment.' }
+    segmentSpacing: { token: space.0, description: 'Between adjacent segments: none — the pill slides under abutting segments.' }
+    selectedWeight: { token: font.weight.semibold, description: 'The selected segment''s label; unselected use fontWeight.' }
+    paddingBlockSm: { token: space.1, description: 'Vertical padding at size sm; md uses paddingBlock.' }
     fontFamily: { token: font.family.body }
     fontSize: { token: 'font.size.{size}' }
     fontWeight: { token: font.weight.medium }
     lineHeight: { token: font.lineHeight.normal }
-    minTarget: { token: size.target.min, description: 'Each segment; 44px on touch via the group height.' }
+    minTarget: { token: size.target.min, description: 'Each segment''s minimum; on touch platforms the group height is size.target.comfortable so every segment reaches 44px.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
     transition: { token: motion.duration.fast, description: Pill movement; instant under reduced motion. }
@@ -102,7 +106,7 @@ Do not use it to pick a value that is submitted later (RadioGroup) or that has c
 
 ## Behavior
 
-Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End jump. The pill slides to the selected segment. `fill` divides the width equally.
+Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End jump. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only.
 
 ## Content guidelines
 

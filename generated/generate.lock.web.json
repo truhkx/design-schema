@@ -724,6 +724,30 @@
       "modules": true
     }
   },
+  "Slider.web": {
+    "hash": "fda13272ddc0eebb",
+    "lastAttemptHash": "fda13272ddc0eebb",
+    "generatedAt": "2026-09-10T14:55:46+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.9196,
+    "files": [
+      "packages/react/src/Slider.css",
+      "packages/react/src/Slider.stories.tsx",
+      "packages/react/src/Slider.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Stack.web": {
     "hash": "395ec760b1de6f6c",
     "lastAttemptHash": "395ec760b1de6f6c",

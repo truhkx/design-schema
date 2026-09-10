@@ -45,6 +45,24 @@ component:
       type: boolean
       default: false
       description: At least one option must be selected to submit when inside a Form.
+    invalid:
+      type: boolean
+      default: false
+      description: Marks the list invalid (aria-invalid) with `copy.invalid`.
+    error:
+      type: string
+      description: Error message rendered below the list and linked by aria-describedby; implies invalid.
+    embedded:
+      type: boolean
+      default: false
+      description: 'The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; the list draws none of its own.'
+    defaultActiveValue:
+      type: string
+      description: The option that is active when the list first receives focus (Select opens with the selected option active). Defaults to the first selected, else the first enabled option.
+    loading:
+      type: boolean
+      default: false
+      description: Options are being fetched (async Combobox); the list shows `copy.loading` in place of the empty message and is aria-busy.
     disabled:
       type: boolean
       default: false
@@ -80,7 +98,7 @@ component:
     - { keys: [PageDown, PageUp], action: Moves by the visible row count., from: first, expect: manual }
   styles:
     surface: { token: color.background }
-    border: { token: color.border.strong, description: Only when standalone; inside a popup the popup owns the border. }
+    border: { token: color.border.strong, description: 'Only when not `embedded`; inside a popup the popup owns the border.' }
     borderWidth: { token: border.width.thin }
     radius: { token: radius.md }
     listPadding: { token: space.1 }
@@ -93,7 +111,7 @@ component:
     optionDescriptionSize: { token: font.size.sm }
     optionActiveBackground: { token: color.background.subtle, description: 'The focused/active option (keyboard or hover). Selection is shown by the check and weight, so active and selected are never confused.' }
     optionSelectedWeight: { token: font.weight.medium }
-    optionSelectedCheck: { token: color.control.selectedBackground, description: 'The check icon on selected options, in the selected-control fill (3:1 on both surfaces by derivation); always rendered (invisible slot when unselected) so labels align.' }
+    optionSelectedCheck: { token: color.control.selectedBackground, description: 'The check icon on selected options (rendered only with `multiple`; single-select shows selection by the row fill), in the selected-control fill (3:1 on both surfaces by derivation); always rendered (invisible slot when unselected) so labels align.' }
     groupLabelColor: { token: color.foreground.muted }
     groupLabelSize: { token: font.size.xs }
     groupLabelWeight: { token: font.weight.semibold }
@@ -109,7 +127,8 @@ component:
   copy:
     empty: No options
     required: '{label} is required.'
-    selectedCount: '{count} selected'
+    selectedCount: '{count} selected'  # not rendered by Listbox itself: exposed as accessibilityValue on native and available to the surrounding UI
+    loading: Loading…
   a11y:
     role: listbox
     requires: [accessible-name, selected-state, arrow-navigation, keyboard-operable, focus-visible, contrast-aa, target-24px, error-identification]
@@ -123,7 +142,7 @@ component:
   platforms:
     web:
       element: div
-      attributes: [role=listbox, aria-label, aria-labelledby, aria-multiselectable, aria-activedescendant, tabindex=0, role=option, aria-selected, aria-disabled, role=group]
+      attributes: [role=listbox, aria-label, aria-labelledby, aria-multiselectable, aria-activedescendant, aria-invalid, aria-required, aria-describedby, aria-busy, tabindex=0, role=option, aria-selected, aria-disabled, role=group]
       notes: 'The list is ONE focusable element (tabindex=0) and moves an aria-activedescendant pointer between <div role="option"> children instead of moving DOM focus — this is the one composite in the system that uses activedescendant, because Combobox must keep focus in its input while the list is navigated. Standalone, DOM focus sits on the list and the active option is scrolled into view. Options carry aria-selected; groups are role=group with aria-labelledby. Hover sets the active option. Native <select multiple> is not used: it cannot be styled or grouped consistently and its keyboard model differs per browser.'
     lit:
       tag: ds-listbox
@@ -147,7 +166,7 @@ Do not use a Listbox for two to seven options that fit on screen and need no scr
 
 ## Behavior
 
-The list is one tab stop. Arrow keys move the active option and, in single-select with `selectionFollowsFocus`, select it; Space selects or toggles, Enter selects; Home/End and PageUp/PageDown jump; typing letters moves to the matching label. In `multiple`, each option shows a check, Space toggles, Shift+Arrow extends, Ctrl/Cmd+A selects all, and `onChange` receives the array in option order. Disabled options are visible, announced, skipped by arrows and not selectable. The active option is always scrolled into view; the list scrolls after `maxVisible` rows. When `options` is empty, `emptyMessage` shows and the list is still focusable so a Combobox user hears "No options". Inside a Form, `name` collects the value (array for `multiple`) and `required` fails when nothing is selected.
+The list is one tab stop. Arrow keys move the active option and, in single-select with `selectionFollowsFocus`, select it; Space selects or toggles, Enter selects; Home/End and PageUp/PageDown jump; typing letters moves to the matching label. In `multiple`, each option shows a check, Space toggles, Shift+Arrow extends, Ctrl/Cmd+A selects all, and `onChange` receives the array in option order. Disabled options are visible, announced, skipped by arrows and not selectable. The active option is always scrolled into view; the list scrolls after `maxVisible` rows. When `options` is empty, `emptyMessage` shows and the list is still focusable so a Combobox user hears "No options". Inside a Form, `name` collects the value (array for `multiple`) and `required` fails when nothing is selected. Arrow keys clamp at the first and last enabled option (no wrapping; Home and End reach the ends). Home, End and type-ahead follow `selectionFollowsFocus` exactly as the arrows do. Enter selects only in single-select (a no-op with `multiple`, where Space toggles). Rows are `fontSize × lineHeight + 2 × optionPaddingBlock` tall, which is what `maxVisible` and PageUp/PageDown count; the first option row, not a group label, is the measure on native. Option icons render at Icon `size: sm`. Empty groups are omitted. Without `name` the list does not register with a Form.
 
 ## Content guidelines
 

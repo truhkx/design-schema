@@ -48,6 +48,7 @@ import './SegmentedControl.js';
 import './Listbox.js';
 import './Select.js';
 import './Combobox.js';
+import './Slider.js';
 
 export { DsAccordion } from './Accordion.js';
 export type {
@@ -297,3 +298,12 @@ export type {
   ComboboxOpenChangeDetail,
   ComboboxOverridableBinding,
 } from './Combobox.js';
+
+export { DsSlider } from './Slider.js';
+export type {
+  SliderShowValue,
+  SliderMark,
+  SliderValue,
+  SliderChangeDetail,
+  SliderOverridableBinding,
+} from './Slider.js';

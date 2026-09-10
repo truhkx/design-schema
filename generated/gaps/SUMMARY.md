@@ -1,10 +1,18 @@
 # Gap digest — phase Selection
 
-Generated 2026-09-10T10:16 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T10:22 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
 Doc: `site/src/content/docs/components/accordion.md`
+
+### 2026-09-10 10:22 — web round 1
+
+- **DOC** Accordion: keyboard model lists a `keyboard` reason on `onOpenChange`, but Disclosure's trigger is a native `<button>` whose `onToggle(open)` callback carries no originating event — Enter/Space activation and a pointer click both surface identically, so the keyboard-vs-pointer distinction can't be made without changing Disclosure's API. Chose to always report `reason: 'trigger'` for direct activation; `keyboard` is never emitted. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: `onOpenChange` reason `controlled` (fired when the consumer changes `value` externally, as opposed to via a trigger) is distinguished from a self-triggered `value` echo by comparing the next `value` to the set the component itself just emitted via `onChange`. This heuristic assumes a controlled parent updates `value` to exactly the emitted set on the next render; a parent that ignores the emitted ids and sets some other `value` in response to a trigger will be misclassified as `controlled` even though it was user-initiated. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the `item` and `trigger` anatomy parts have no `data-part` hook. The platform notes describe a flat `<div>` of Disclosures (no per-item wrapper element), so there's no DOM node to carry `data-part="item"` without adding a non-semantic wrapper (which would also break the flex-gap-based `itemGap` spacing model). `data-part="trigger"` would need to be added inside Disclosure's own button, but Disclosure (an existing, separately-generated component) doesn't currently tag it and this generation pass doesn't touch Disclosure's source. `triggerIcon` and `panel` are already tagged because Disclosure sets them itself. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: locked bindings `minTarget` (size.target.comfortable) and `focusRing`/`focusRingWidth` have no path through Disclosure's own `overrides` prop (Disclosure locks them too). `minTarget` is forced via the sanctioned 'consumer sets the hook from its own CSS' escape hatch (`.ds-accordion .ds-disclosure { --ds-disclosure-min-target: var(--size-target-comfortable); }`) since Disclosure's own default (size.target.min) is smaller than Accordion's spec. `focusRing`/`focusRingWidth` needed no such override — Disclosure's own defaults already resolve to the same tokens Accordion's schema specifies. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: `divider`/`dividerWidth` (color.border, border.width.thin) and `fontFamily`/`triggerFontSize`/`triggerFontWeight` (font.family.body, font.size.md, font.weight.medium) happen to equal Disclosure/Divider's own built-in defaults, so only `triggerPaddingBlock` (space.md vs Disclosure's space.sm) actually changes any rendered output; the others are forwarded to the composed children's `overrides` props purely so a consumer-supplied Accordion-level override still reaches them, per the 'forward to composed child's overrides, never CSS on the child' contract. → `site/src/content/docs/components/accordion.md`
 
 ### 2026-09-10 10:16 — lit round 1
 
@@ -1386,7 +1394,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 650 · CODE: 38 · TOOLING: 2 · NOISE: 14
+DOC: 655 · CODE: 38 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

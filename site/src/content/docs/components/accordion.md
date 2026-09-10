@@ -26,7 +26,7 @@ component:
       description: 'Opening one section closes the others. Off by default: users usually want to compare, and forced-closing is a common frustration.'
     value:
       type: string
-      description: 'Controlled open ids (array; a single id when `exclusive`).'
+      description: 'Controlled open ids: always an array (zero or one entry when `exclusive`); `onChange` reports the same shape.'
       shape: 'string | string[]'
     defaultValue:
       type: string
@@ -63,7 +63,7 @@ component:
     fontFamily: { token: font.family.body }
     triggerFontSize: { token: font.size.md }
     triggerFontWeight: { token: font.weight.medium }
-    minTarget: { token: size.target.comfortable }
+    minTarget: { token: size.target.min, description: 'The composed Disclosure''s own minimum; the accordion''s triggerPaddingBlock override raises the row to the comfortable size.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
   a11y:
@@ -98,7 +98,7 @@ Do not use an Accordion for content most users need — show it. Do not use it a
 
 ## Behavior
 
-Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows.
+Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows. `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)`, so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute); Accordion adds `data-part="item"` to each Disclosure root it renders.
 
 ## Content guidelines
 

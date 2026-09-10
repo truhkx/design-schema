@@ -700,6 +700,29 @@
       "modules": true
     }
   },
+  "Slider.lit": {
+    "hash": "28f8485b4f7e482a",
+    "lastAttemptHash": "28f8485b4f7e482a",
+    "generatedAt": "2026-09-10T14:51:30+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.0052,
+    "files": [
+      "packages/lit/src/Slider.stories.ts",
+      "packages/lit/src/Slider.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Stack.lit": {
     "hash": "d3d2d06f6cb02dda",
     "lastAttemptHash": "d3d2d06f6cb02dda",

@@ -212,3 +212,6 @@ export type {
   AccordionOpenChangeDetail,
   AccordionOverridableBinding,
 } from './Accordion';
+
+export { Slider } from './Slider';
+export type { SliderProps, SliderShowValue, SliderValue, SliderMark, SliderOverridableBinding } from './Slider';

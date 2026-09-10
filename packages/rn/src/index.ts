@@ -84,6 +84,7 @@ export type {
   MenuGroup,
   MenuItem,
   MenuItemTone,
+  MenuOpenChangeReason,
   MenuOverridableBinding,
   MenuPlacement,
   MenuProps,
@@ -96,7 +97,7 @@ export { Tooltip } from './Tooltip';
 export type { TooltipDelay, TooltipOverridableBinding, TooltipPlacement, TooltipProps } from './Tooltip';
 
 export { Popover } from './Popover';
-export type { PopoverCloseReason, PopoverOverridableBinding, PopoverPlacement, PopoverProps } from './Popover';
+export type { PopoverCloseReason, PopoverHeadingLevel, PopoverOverridableBinding, PopoverPlacement, PopoverProps } from './Popover';
 
 export { Toast, ToastProvider, useToast, toast } from './Toast';
 export type {

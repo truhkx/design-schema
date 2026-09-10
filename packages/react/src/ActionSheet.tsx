@@ -18,7 +18,7 @@ import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { FocusScope } from './FocusScope';
 import { Icon, type IconName } from './Icon';
-import { Menu, type MenuAction, type MenuItem } from './Menu';
+import { Menu, type MenuAction, type MenuItem, type MenuOpenChangeReason } from './Menu';
 import { Text, type TextOverridableBinding } from './Text';
 import './ActionSheet.css';
 
@@ -191,8 +191,8 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef(new Map<string, HTMLButtonElement>());
   const dragRef = useRef<{ startY: number; startTime: number } | null>(null);
-  const anchorRectRef = useRef<{ top: number; left: number; width: number; height: number } | null>(null);
-  const pendingMenuCloseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The element that opened the wide (Menu) presentation, so its popup can anchor to it.
+  const menuAnchorRef = useRef<HTMLElement | null>(null);
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
   const [present, setPresent] = useState(open);
@@ -207,15 +207,12 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
     if (open) setPresent(true);
   }, [open]);
 
-  // Captures the trigger's screen position at the moment the wide (Menu) presentation opens, so the
-  // popup anchors to it even though Menu itself renders its own (here, invisible) trigger element.
+  // Captures the trigger at the moment the wide (Menu) presentation opens, so Menu's `anchor` prop
+  // can position its popup against it (Menu renders no trigger of its own in that mode).
   useEffect(() => {
     if (!open || !isWide) return;
     const opener = document.activeElement;
-    if (opener instanceof HTMLElement) {
-      const rect = opener.getBoundingClientRect();
-      anchorRectRef.current = { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
-    }
+    if (opener instanceof HTMLElement) menuAnchorRef.current = opener;
   }, [open, isWide]);
 
   // Mount: open the native dialog, move focus to the first enabled action, then reveal on the next frame.
@@ -277,13 +274,6 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
     document.documentElement.classList.add('ds-action-sheet-lock-scroll');
     return () => document.documentElement.classList.remove('ds-action-sheet-lock-scroll');
   }, [present, isWide]);
-
-  useEffect(
-    () => () => {
-      if (pendingMenuCloseRef.current) clearTimeout(pendingMenuCloseRef.current);
-    },
-    [],
-  );
 
   const requestClose = (reason: ActionSheetCloseReason) => onClose?.(reason);
 
@@ -393,24 +383,15 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
     activateAction(action);
   };
 
-  // Menu closes itself (calling onOpenChange(false)) both for a real dismissal and, just before
-  // onAction, for a chosen action — it does not say which. A same-tick timeout tells them apart:
-  // onAction (called synchronously right after, by Menu) cancels it; a genuine dismissal lets it
-  // fire. Menu doesn't distinguish escape from an outside click either, so both map to 'escape' —
-  // the only reason of the four that fits a non-modal, scrim-less, cancel-row-less presentation.
-  const handleMenuOpenChange = (isOpen: boolean) => {
-    if (isOpen) return;
-    pendingMenuCloseRef.current = setTimeout(() => {
-      pendingMenuCloseRef.current = null;
-      requestClose('escape');
-    }, 0);
+  // Menu reports why it closed; an item choice (`action`) is handled by handleMenuAction instead,
+  // so every other reason (trigger, escape, outside) maps to 'escape' — the only ActionSheetCloseReason
+  // that fits this non-modal, scrim-less, cancel-row-less presentation.
+  const handleMenuOpenChange = ({ open: isOpen, reason }: { open: boolean; reason: MenuOpenChangeReason }) => {
+    if (isOpen || reason === 'action') return;
+    requestClose('escape');
   };
 
   const handleMenuAction = (id: string) => {
-    if (pendingMenuCloseRef.current) {
-      clearTimeout(pendingMenuCloseRef.current);
-      pendingMenuCloseRef.current = null;
-    }
     onAction?.(id);
   };
 
@@ -455,27 +436,14 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
 
   if (isWide) {
     if (!open) return null;
-    const anchor = anchorRectRef.current;
-    const anchorStyle: CSSProperties | undefined = anchor
-      ? {
-          position: 'fixed',
-          top: anchor.top,
-          left: anchor.left,
-          width: anchor.width,
-          height: anchor.height,
-          opacity: 0,
-          pointerEvents: 'none',
-        }
-      : undefined;
     return (
       <Menu
         label={accessibleLabel}
         items={toMenuItems(actions)}
         open
-        triggerIcon="none"
+        anchor={menuAnchorRef}
         onAction={handleMenuAction}
         onOpenChange={handleMenuOpenChange}
-        style={anchorStyle}
       />
     );
   }

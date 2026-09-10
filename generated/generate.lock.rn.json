@@ -602,19 +602,18 @@
     }
   },
   "Menu.rn": {
-    "hash": "78363b39358998ff",
-    "lastAttemptHash": "78363b39358998ff",
-    "generatedAt": "2026-09-10T06:44:43+00:00",
+    "hash": "c1656ad6334742ed",
+    "lastAttemptHash": "c1656ad6334742ed",
+    "generatedAt": "2026-09-10T22:21:04+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.233,
+    "costUsd": 1.49,
     "files": [
-      "packages/rn/src/Menu.stories.tsx",
-      "packages/rn/src/Menu.test.tsx",
-      "packages/rn/src/Menu.tsx"
+      "packages/rn/src/Menu.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -646,19 +645,19 @@
     }
   },
   "Popover.rn": {
-    "hash": "02e20b1bd53a9b46",
-    "lastAttemptHash": "02e20b1bd53a9b46",
-    "generatedAt": "2026-09-10T06:53:41+00:00",
+    "hash": "e126314959858d8d",
+    "lastAttemptHash": "e126314959858d8d",
+    "generatedAt": "2026-09-10T22:21:57+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7765,
+    "costUsd": 0.331,
     "files": [
       "packages/rn/src/Popover.stories.tsx",
       "packages/rn/src/Popover.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

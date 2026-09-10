@@ -68,7 +68,7 @@ export const AnchorPositioned: Story = {
     return (
       <div
         ref={anchor}
-        style={{ display: 'inline-block', padding: '2rem', border: '1px dashed currentColor' }}
+        style={{ display: 'inline-block', padding: '2rem', border: '1px dashed currentColor' }} // literal-ok: Storybook canvas decoration, not a component style
       >
         Right-click target (anchor)
         <Menu {...args} anchor={anchor} open />

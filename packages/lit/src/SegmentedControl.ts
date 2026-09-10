@@ -4,6 +4,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Icon.js';
 import type { IconName } from './Icon.js';
+import './Tooltip.js';
 
 export type SegmentedControlSize = 'sm' | 'md';
 
@@ -29,6 +30,9 @@ export type SegmentedControlOverridableBinding =
   | 'segmentPaddingInline'
   | 'segmentPaddingBlock'
   | 'segmentGap'
+  | 'segmentSpacing'
+  | 'selectedWeight'
+  | 'paddingBlockSm'
   | 'fontFamily'
   | 'fontSize'
   | 'fontWeight'
@@ -44,6 +48,9 @@ const HOOKS: Record<SegmentedControlOverridableBinding, string> = {
   segmentPaddingInline: '--ds-segmented-control-segment-padding-inline',
   segmentPaddingBlock: '--ds-segmented-control-segment-padding-block',
   segmentGap: '--ds-segmented-control-segment-gap',
+  segmentSpacing: '--ds-segmented-control-segment-spacing',
+  selectedWeight: '--ds-segmented-control-selected-weight',
+  paddingBlockSm: '--ds-segmented-control-padding-block-sm',
   fontFamily: '--ds-segmented-control-font-family', // literal-ok: CSS custom-property name, not a font stack
   fontSize: '--ds-segmented-control-font-size',
   fontWeight: '--ds-segmented-control-font-weight',

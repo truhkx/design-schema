@@ -121,6 +121,9 @@ function cssTimeToMs(value: string): number {
   return parseFloat(trimmed) || 0;
 }
 
+// Mirrors motion.duration.loop's own token default, for environments without a resolvable stylesheet (e.g. tests). // literal-ok: fallback mirrors the token default, not a design decision
+const FALLBACK_TYPEAHEAD_RESET_MS = 800;
+
 function flattenActions(items: MenuItem[]): MenuAction[] {
   const result: MenuAction[] = [];
   for (const item of items) {
@@ -420,8 +423,8 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     state.buffer += char.toLowerCase();
     // typeaheadReset: how long typed characters accumulate before the buffer clears.
     const resetMs = popupRef.current
-      ? cssTimeToMs(getComputedStyle(popupRef.current).getPropertyValue('--ds-menu-typeahead-reset') || '800ms')
-      : 800;
+      ? cssTimeToMs(getComputedStyle(popupRef.current).getPropertyValue('--ds-menu-typeahead-reset')) || FALLBACK_TYPEAHEAD_RESET_MS
+      : FALLBACK_TYPEAHEAD_RESET_MS;
     state.timer = setTimeout(() => {
       state.buffer = '';
     }, resetMs);

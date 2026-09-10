@@ -21,6 +21,7 @@ import { Icon } from './Icon';
 import { toEasing, useReducedMotion, useTheme } from './theme';
 
 export type PopoverPlacement = 'bottom-start' | 'bottom' | 'bottom-end' | 'top-start' | 'top' | 'top-end' | 'start' | 'end';
+export type PopoverHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
 export type PopoverCloseReason = 'trigger' | 'escape' | 'outside' | 'close-button' | 'tab-out';
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
@@ -45,6 +46,8 @@ export interface PopoverProps {
   children: React.ReactNode;
   /** Optional heading at the top of the panel, also the accessible name. Without it, the panel falls back to the trigger's own `label` when it has one. */
   heading?: string;
+  /** Heading level of the panel heading, so it fits the page outline. RN has no native heading levels — this only controls the `Heading`'s default typographic size. */
+  headingLevel?: PopoverHeadingLevel;
   /** Controlled open state. Omit for uncontrolled (the trigger toggles it). */
   open?: boolean;
   /** Preferred side and alignment; flips and shifts to stay within the window. */
@@ -174,6 +177,7 @@ export function Popover({
   trigger,
   children,
   heading,
+  headingLevel = '3',
   open,
   placement = 'bottom',
   modal = false,
@@ -501,7 +505,7 @@ export function Popover({
                     {showHeader ? (
                       <View style={headerStyle} testID="Popover.header">
                         <View style={headingWrapStyle}>
-                          {heading !== undefined ? <Heading level={2}>{heading}</Heading> : null}
+                          {heading !== undefined ? <Heading level={headingLevel}>{heading}</Heading> : null}
                         </View>
                         {dismissible ? (
                           <Button

@@ -20,3 +20,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: opening via ArrowUp to focus the last item can't be distinguished from Enter/Space activation on Button, so opening always focuses the first enabled item regardless of how it was triggered.
 - Menu: Button has no prop to carry accessibilityState.expanded, so the trigger's expanded/collapsed state isn't exposed to assistive technology on RN.
 - Menu: the popup is not scrollable — a very long item list just grows to fit its content, which can overflow the viewport on small screens.
+
+## 2026-09-10 18:21 — round 1
+
+- Menu: on phones ActionSheet has no slot for a group's label row or a mid-list separator (its own props are just `actions`/`title`/`cancelLabel`), so composing it means flattening groups and dropping their label, and dropping standalone separators, rather than the 'groups become dividers with a muted label' the platform notes describe. Chose to flatten silently (in `toActionSheetActions`) rather than fake a label via a disabled row, since that would misrepresent a heading as an inert menu item.
+- Menu: ActionSheet's four close reasons (escape, scrim, cancel, drag) don't map onto Menu's own onOpenChange reasons (trigger, escape, outside, action, controlled) 1:1 — `scrim`, `cancel` and `drag` all collapse to `outside` (`mapActionSheetCloseReason`).
+- Menu: `shortcut` display-only hints have no ActionSheet equivalent and are dropped in the phone presentation (reasonable since touch has no keyboard, but not explicit in the spec).
+- Menu: `typeaheadReset` is in the overrides union for schema completeness but has no runtime effect — there is no typeahead on this platform (no generic key-event API on `Pressable`), the same acknowledged limit as arrow-key navigation and Home/End.
+- Menu: the phone/tablet breakpoint isn't named by any of Menu's own style bindings, so the generator reused `layout.maxWidth.prose` — the same token/threshold `Select` and `Combobox` already use for their own phone-vs-tablet split — rather than inventing a new one.
+- Menu: `maxHeight`'s schema description says the popup is also capped by 'the viewport minus the gutter', but no gutter token is named; implemented as `windowHeight - popupOffset * 2`, reusing `popupOffset` for lack of a dedicated gutter binding.
+- Menu: the previously generated file's doc comments claimed two limits that no longer hold now that ActionSheet and Button's `expanded` prop exist in the package — both are fixed in this pass (composing ActionSheet on phones; passing `expanded` to the trigger Button).

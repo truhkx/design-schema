@@ -29,6 +29,11 @@ type Story = StoryObj<typeof Popover>;
 
 export const Default: Story = {};
 
+// headingLevel
+export const HeadingLevel2: Story = { args: { headingLevel: '2' } };
+export const HeadingLevel3: Story = { args: { headingLevel: '3' } };
+export const HeadingLevel4: Story = { args: { headingLevel: '4' } };
+
 // placement
 export const PlacementBottomStart: Story = { args: { placement: 'bottom-start' } };
 export const PlacementBottom: Story = { args: { placement: 'bottom' } };

@@ -988,19 +988,19 @@
     }
   },
   "Tabs.lit": {
-    "hash": "14c406a1e8dc5f7f",
-    "lastAttemptHash": "14c406a1e8dc5f7f",
-    "generatedAt": "2026-09-10T13:28:15+00:00",
+    "hash": "3eb1983ad29b9f7b",
+    "lastAttemptHash": "3eb1983ad29b9f7b",
+    "generatedAt": "2026-09-10T22:21:04+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8702,
+    "costUsd": 0.3293,
     "files": [
       "packages/lit/src/Tabs.stories.ts",
       "packages/lit/src/Tabs.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,

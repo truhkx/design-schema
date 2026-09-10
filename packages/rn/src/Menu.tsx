@@ -5,6 +5,7 @@ import {
   I18nManager,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text as RNText,
   View,
@@ -14,6 +15,8 @@ import {
 import type { LayoutChangeEvent, TextStyle, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
+import { ActionSheet } from './ActionSheet';
+import type { ActionSheetAction, ActionSheetCloseReason } from './ActionSheet';
 import { Button } from './Button';
 import type { ButtonVariant } from './Button';
 import { FocusScope } from './FocusScope';
@@ -26,6 +29,8 @@ export type MenuTriggerVariant = Extract<ButtonVariant, 'ghost' | 'secondary' | 
 export type MenuTriggerIcon = 'ellipsis' | 'chevron-down' | 'none';
 export type MenuPlacement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 export type MenuItemTone = 'default' | 'danger';
+/** Why `onOpenChange` fired. `action` (an item was chosen) always fires before `onAction`. `controlled` is a consumer-driven `open` prop change. */
+export type MenuOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'action' | 'controlled';
 
 /** A single actionable row. */
 export type MenuAction = {
@@ -50,6 +55,8 @@ export type MenuOverridableBinding =
   | 'radius'
   | 'popupPadding'
   | 'popupOffset'
+  | 'typeaheadReset'
+  | 'maxHeight'
   | 'minWidth'
   | 'itemPaddingBlock'
   | 'itemPaddingInline'
@@ -83,8 +90,8 @@ export interface MenuProps {
   open?: boolean;
   /** An item was chosen; receives its `id`. The menu closes itself first. */
   onAction?: (id: string) => void;
-  /** Fired when the menu opens or closes, with the new boolean. */
-  onOpenChange?: (open: boolean) => void;
+  /** Fired when the menu opens or closes, with the new state and why. */
+  onOpenChange?: (state: { open: boolean; reason: MenuOpenChangeReason }) => void;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<MenuOverridableBinding, TokenRef>>;
 }
@@ -106,6 +113,27 @@ function flattenActions(items: MenuItem[]): MenuAction[] {
     else result.push(item);
   }
   return result;
+}
+
+/**
+ * Flattens groups and drops separators for the phone (`ActionSheet`) presentation:
+ * `ActionSheet` accepts only a flat action list and has no slot for a group's own
+ * label row, so group labels are lost here rather than approximated by disabling a
+ * fake row — see the component doc's acknowledged limits.
+ */
+function toActionSheetActions(items: MenuItem[]): ActionSheetAction[] {
+  return flattenActions(items).map((action) => ({
+    id: action.id,
+    label: action.label,
+    icon: action.icon,
+    tone: action.tone,
+    disabled: action.disabled,
+  }));
+}
+
+/** `ActionSheet` distinguishes four dismissal paths where `Menu` only has `escape` and `outside`; `cancel` and `drag` both collapse to `outside`. */
+function mapActionSheetCloseReason(reason: ActionSheetCloseReason): MenuOpenChangeReason {
+  return reason === 'escape' ? 'escape' : 'outside';
 }
 
 /** Positions the popup from the trigger's measured rect for `placement`, flipping either axis on overflow. `start`/`end` resolve against the writing direction. */
@@ -156,34 +184,41 @@ function computeMenuPosition(
  * that stays selected (RadioGroup, or Select when it exists), or for a single item —
  * make that a Button.
  *
- * Renders the trigger as the system `Button` (`trailingIcon` normally, `leadingIcon`
- * when `iconOnly` since Button only shows a leading icon in that mode) and, while
- * open, a transparent `Modal` (`animationType="none"`, self-animated) with a full-
- * screen scrim `Pressable` and a popup `View` absolutely positioned from the
- * trigger's `measureInWindow()` rect for `placement`, flipping either axis on
- * overflow via `useWindowDimensions()`. The popup is measured once with itself (via
- * `onLayout`) before it fades and rises into place, so the flip never visibly jumps;
- * under reduced motion it appears at its final position and opacity immediately.
- * Items are `Pressable`s with `accessibilityRole="menuitem"` and
+ * Below `layout.maxWidth.prose` (phones), renders the trigger `Button` plus the
+ * package's own `ActionSheet` with the items flattened to a plain action list —
+ * groups become part of that list without their label row and separators are
+ * dropped, since `ActionSheet` has no slot for either (an acknowledged gap; see
+ * `toActionSheetActions`). `label` becomes `ActionSheet`'s `title`, so it still
+ * reads above the list and still names the accessible name. At or above that width
+ * (tablets and react-native-web), renders a transparent `Modal` (`animationType="none"`,
+ * self-animated) with a full-screen scrim `Pressable` and a popup `View` absolutely
+ * positioned from the trigger's `measureInWindow()` rect for `placement`, flipping
+ * either axis on overflow via `useWindowDimensions()`. The list scrolls in a
+ * `ScrollView` capped at `maxHeight` (and the viewport minus `popupOffset` on each
+ * side) so a long menu never grows past the screen. The popup is measured once with
+ * itself (via `onLayout`) before it fades and rises into place, so the flip never
+ * visibly jumps; under reduced motion it appears at its final position and opacity
+ * immediately. Items are `Pressable`s with `accessibilityRole="menuitem"` and
  * `accessibilityState={{ disabled }}` — never the native `disabled` prop, which
  * would drop them from the focus order; a press guard makes disabled items inert
  * instead. Choosing an item, an outside tap, and `onRequestClose` (Escape on
  * react-native-web, the Android back gesture on native) all close the menu and move
  * accessibility focus back to the trigger. `FocusScope` supplies
- * `accessibilityViewIsModal`; its own `restoreFocus` is skipped because the trigger
- * is a `Pressable`, not the `TextInput` it can capture, so focus is returned to the
- * trigger by hand instead.
+ * `accessibilityViewIsModal`; its own `restoreFocus` is skipped, the same convention
+ * `Popover`, `Select` and `SidePanel` use for an anchored dropdown, and focus is
+ * returned to the trigger by hand instead. The trigger `Button` carries
+ * `expanded={isOpen}`, reflected to `accessibilityState.expanded`.
+ * `onOpenChange` reports `{ open, reason }`; a controlled `open` prop that changes
+ * without a matching internal reason (a consumer toggling it directly) reports
+ * `reason: "controlled"`, the same self-echo convention `Disclosure` uses to avoid
+ * double-firing a change the trigger itself already reported.
  *
- * Acknowledged native limits: there is no `ActionSheet` component in this package
- * yet, so this always renders the anchored dropdown, on phones too, rather than the
- * touch presentation the docs describe. Arrow-key movement, Home/End, and typeahead
- * are a web keyboard model with no RN equivalent (no generic key-event API on
- * `Pressable`); each item is instead its own Tab stop, the same convention
- * `RadioGroup` uses. Opening with ArrowUp to focus the last item cannot be
- * distinguished from Enter/Space on `Button`, so opening always focuses the first
- * enabled item. `Button` has no hook to carry `accessibilityState.expanded`, so the
- * trigger's expanded/collapsed state is not exposed to assistive technology. Very
- * long menus are not scrollable; the popup grows to fit its content.
+ * Acknowledged native limits: arrow-key movement, Home/End, and typeahead are a web
+ * keyboard model with no RN equivalent (no generic key-event API on `Pressable`);
+ * each item is instead its own Tab stop, the same convention `RadioGroup` uses, and
+ * `typeaheadReset` has no effect since there is no typeahead to reset. Opening with
+ * ArrowUp to focus the last item cannot be distinguished from Enter/Space on
+ * `Button`, so opening always focuses the first enabled item.
  */
 export function Menu({
   label,
@@ -200,6 +235,7 @@ export function Menu({
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
   const windowSize = useWindowDimensions();
+  const isPhoneWidth = windowSize.width <= t.layoutMaxWidthProse;
 
   const triggerRef = React.useRef<View>(null);
   const itemRefs = React.useRef(new Map<string, View>());
@@ -215,12 +251,34 @@ export function Menu({
   const [popupSize, setPopupSize] = React.useState<{ width: number; height: number } | null>(null);
   const progress = React.useRef(new Animated.Value(0)).current;
 
+  // Distinguishes an `open` prop change one of this component's own handlers already
+  // reported from one the consumer made on their own; mirrors `Disclosure`'s self-echo
+  // tracking so a standard `open`/`onOpenChange` pairing doesn't double-fire.
+  const mountedRef = React.useRef(false);
+  const previousOpenRef = React.useRef(isOpen);
+  const selfEmittedRef = React.useRef<boolean | null>(null);
+  React.useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      previousOpenRef.current = isOpen;
+      return;
+    }
+    if (isControlled && previousOpenRef.current !== isOpen) {
+      const wasSelfEcho = selfEmittedRef.current === isOpen;
+      if (!wasSelfEcho) onOpenChange?.({ open: isOpen, reason: 'controlled' });
+    }
+    selfEmittedRef.current = null;
+    previousOpenRef.current = isOpen;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isControlled]);
+
   const border = overrides?.border ? (resolveToken(t, overrides.border) as string) : t.colorBorder;
   const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
   const shadow = overrides?.shadow ? (resolveToken(t, overrides.shadow) as typeof t.shadowOverlay) : t.shadowOverlay;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
   const popupPadding = overrides?.popupPadding ? (resolveToken(t, overrides.popupPadding) as number) : t.space1;
   const popupOffset = overrides?.popupOffset ? (resolveToken(t, overrides.popupOffset) as number) : t.space1;
+  const maxHeightCap = overrides?.maxHeight ? (resolveToken(t, overrides.maxHeight) as number) : t.layoutMaxWidthProse;
   // space.20 × 2.5 per the schema's own description — a multiplier, not a new token.
   const minWidth = overrides?.minWidth ? (resolveToken(t, overrides.minWidth) as number) : t.space20 * 2.5; // literal-ok: schema-specified multiplier
   const itemPaddingBlock = overrides?.itemPaddingBlock ? (resolveToken(t, overrides.itemPaddingBlock) as number) : t.spaceSm;
@@ -284,43 +342,54 @@ export function Menu({
     }
   }, []);
 
-  const changeOpen = (next: boolean): void => {
+  const changeOpen = (next: boolean, reason: MenuOpenChangeReason): void => {
     if (!isControlled) {
       setInternalOpen(next);
+    } else {
+      selfEmittedRef.current = next;
     }
-    onOpenChange?.(next);
+    onOpenChange?.({ open: next, reason });
   };
 
-  const closeMenu = (): void => {
+  const closeMenu = (reason: MenuOpenChangeReason): void => {
     if (!isOpen) {
       return;
     }
-    changeOpen(false);
+    changeOpen(false, reason);
     focusTrigger();
   };
 
   const handleTriggerPress = (): void => {
     if (isOpen) {
-      closeMenu();
+      closeMenu('trigger');
       return;
     }
-    changeOpen(true);
+    changeOpen(true, 'trigger');
   };
 
   const handleRequestClose = (): void => {
-    closeMenu();
+    closeMenu('escape');
   };
 
   const handleScrimPress = (): void => {
-    closeMenu();
+    closeMenu('outside');
   };
 
   const handleActivate = (action: MenuAction): void => {
     if (action.disabled === true) {
       return;
     }
-    closeMenu();
+    closeMenu('action');
     onAction?.(action.id);
+  };
+
+  const handleSheetAction = (id: string): void => {
+    closeMenu('action');
+    onAction?.(id);
+  };
+
+  const handleSheetClose = (reason: ActionSheetCloseReason): void => {
+    closeMenu(mapActionSheetCloseReason(reason));
   };
 
   const handlePopupLayout = (event: LayoutChangeEvent): void => {
@@ -330,7 +399,7 @@ export function Menu({
 
   // Measure the trigger the moment the menu opens; reset everything the moment it closes.
   React.useEffect(() => {
-    if (!isOpen) {
+    if (isPhoneWidth || !isOpen) {
       hasFocusedInitialRef.current = false;
       progress.setValue(0);
       setTriggerRect(null);
@@ -340,12 +409,12 @@ export function Menu({
     const node = triggerRef.current;
     node?.measureInWindow((x, y, width, height) => setTriggerRect({ x, y, width, height }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, isPhoneWidth]);
 
   // Once the trigger and the popup's own size are both known, fade/rise the popup in
   // (or snap under reduced motion) and move accessibility focus to the first item.
   React.useEffect(() => {
-    if (!isOpen || triggerRect === null || popupSize === null || hasFocusedInitialRef.current) {
+    if (isPhoneWidth || !isOpen || triggerRect === null || popupSize === null || hasFocusedInitialRef.current) {
       return undefined;
     }
     hasFocusedInitialRef.current = true;
@@ -368,16 +437,44 @@ export function Menu({
     });
     return () => animation.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, triggerRect, popupSize, reducedMotion]);
+  }, [isOpen, isPhoneWidth, triggerRect, popupSize, reducedMotion]);
 
   const popupWidth = triggerRect ? Math.max(minWidth, triggerRect.width) : minWidth;
   const popupHeight = popupSize?.height ?? 0;
   const position = triggerRect
     ? computeMenuPosition(triggerRect, popupWidth, popupHeight, placement, windowSize, popupOffset)
     : { top: 0, left: 0 };
+  const maxListHeight = Math.max(0, Math.min(maxHeightCap, windowSize.height - popupOffset * 2));
 
   const triggerIconElement =
     triggerIcon !== 'none' ? <Icon name={triggerIcon} color={triggerIconColor} /> : undefined;
+
+  const trigger = (
+    <Button
+      label={label}
+      variant={triggerVariant}
+      iconOnly={iconOnly}
+      expanded={isOpen}
+      leadingIcon={iconOnly ? triggerIconElement : undefined}
+      trailingIcon={iconOnly ? undefined : triggerIconElement}
+      onPress={handleTriggerPress}
+    />
+  );
+
+  if (isPhoneWidth) {
+    return (
+      <View testID="Menu">
+        {trigger}
+        <ActionSheet
+          open={isOpen}
+          title={label}
+          actions={toActionSheetActions(items)}
+          onAction={handleSheetAction}
+          onClose={handleSheetClose}
+        />
+      </View>
+    );
+  }
 
   const hostStyle: ViewStyle = { flex: 1 };
 
@@ -399,6 +496,9 @@ export function Menu({
     borderColor: border,
     backgroundColor: surfaceColor,
     overflow: 'hidden',
+  };
+
+  const listContentStyle: ViewStyle = {
     padding: popupPadding,
   };
 
@@ -491,14 +591,7 @@ export function Menu({
     <View testID="Menu">
       {/* `collapsable={false}` keeps this View in the native tree on Android so measureInWindow stays reliable. */}
       <View ref={triggerRef} collapsable={false}>
-        <Button
-          label={label}
-          variant={triggerVariant}
-          iconOnly={iconOnly}
-          leadingIcon={iconOnly ? triggerIconElement : undefined}
-          trailingIcon={iconOnly ? undefined : triggerIconElement}
-          onPress={handleTriggerPress}
-        />
+        {trigger}
       </View>
       <Modal visible={isOpen} transparent animationType="none" onRequestClose={handleRequestClose} statusBarTranslucent>
         <View style={hostStyle}>
@@ -518,7 +611,11 @@ export function Menu({
                 accessibilityLabel={label}
                 testID="Menu.popup"
               >
-                <View style={popupInnerStyle}>{items.map((item, index) => renderNode(item, String(index)))}</View>
+                <View style={popupInnerStyle}>
+                  <ScrollView style={{ maxHeight: maxListHeight }} contentContainerStyle={listContentStyle}>
+                    {items.map((item, index) => renderNode(item, String(index)))}
+                  </ScrollView>
+                </View>
               </Animated.View>
             </FocusScope>
           ) : null}

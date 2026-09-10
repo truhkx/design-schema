@@ -1,0 +1,12 @@
+# Gaps reported while generating ActionSheet for rn
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-10 03:08 — round 1
+
+- ActionSheet: spec says 'Above maxWidth: renders Menu anchored to the element that was focused when open became true' but the package's Menu always renders its own internal trigger Button and has no API to anchor to an externally-rendered element (ActionSheet has no trigger of its own — open is fully controlled). Composing Menu for this would require re-implementing its anchor/positioning logic, which the instructions forbid. Chose to always render the phone sheet presentation, on tablets too — the mirror image of the limitation Menu.tsx's own doc comment already acknowledges about ActionSheet. The `maxWidth` override is consequently a no-op on this platform.
+- ActionSheet: the web keyboard model (ArrowUp/ArrowDown/Home/End roving-tabindex between actions) has no RN equivalent — `Pressable` exposes no generic key-event API. Implemented the acknowledged-limit convention already used by Menu/RadioGroup: each row is its own Tab/focus stop; Enter/Space work through the platform's native activation. Reported here since the keyboard scenarios describing arrow movement cannot be expressed as RN tests.
+- ActionSheet: anatomy has no 'handle' part (unlike BottomSheet), but the platform notes say 'drag-to-dismiss on the header as BottomSheet.' Interpreted 'header' as the title area (present whether or not `title` is set) and attached the PanResponder there; no visual grab affordance is drawn since no handle bar exists in the anatomy.
+- ActionSheet: no padding/vertical-rhythm binding is defined for the title/header area or the cancel row's own inset (only itemPaddingInline/itemPaddingBlock are bound, for action rows). Reused itemPaddingInline for both, and a plain `t.spaceSm` (not bound to any override) for the header's vertical padding, matching the precedent BottomSheet set for its own unbound header spacing.
+- Menu.tsx's doc comment currently states 'there is no ActionSheet component in this package yet' — now stale now that ActionSheet exists. Left unedited since it's outside this generation's scope (only ActionSheet.tsx and index.ts were requested), but should be updated in a follow-up pass.
+- ActionSheet: behavior scenario 'has-accessible-name' is satisfied via `accessibilityLabel` on the surface (title ?? copy.defaultLabel) rather than a native heading/aria mechanism, matching the a11y.role: menu contract; no gap in coverage, noted for completeness.

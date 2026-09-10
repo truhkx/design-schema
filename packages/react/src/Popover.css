@@ -1,0 +1,178 @@
+/* Popover — styled only through Design Schema token custom properties. */
+
+.ds-popover {
+  display: inline-block;
+}
+
+.ds-popover__panel {
+  --ds-popover-border: var(--color-border);
+  --ds-popover-border-width: var(--border-width-thin);
+  --ds-popover-shadow: var(--shadow-overlay);
+  --ds-popover-radius: var(--radius-md);
+  --ds-popover-inset: var(--layout-inset-md);
+  --ds-popover-part-gap: var(--layout-gap-normal);
+  --ds-popover-offset: var(--space-2);
+  --ds-popover-arrow-size: var(--space-2);
+  --ds-popover-max-width: var(--layout-max-width-prose);
+  --ds-popover-layer: var(--layer-dropdown);
+  --ds-popover-enter: var(--motion-duration-fast);
+  --ds-popover-exit: var(--motion-duration-fast);
+  box-sizing: border-box;
+  position: fixed;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-inline-size: none;
+  max-block-size: none;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-family-body);
+  z-index: var(--ds-popover-layer);
+}
+
+/* Transparent so a modal popover's native ::backdrop never dims the page — it stays anchored, not a takeover. */
+.ds-popover__panel::backdrop {
+  background-color: transparent;
+}
+
+/* offset: the gap between trigger and panel, on the side the panel grows away from the trigger.
+   The fixed top/left/right/bottom coordinate itself is set from the trigger rect in JS with no gap. */
+.ds-popover__panel[data-side='bottom'] {
+  margin-block-start: var(--ds-popover-offset);
+}
+
+.ds-popover__panel[data-side='top'] {
+  margin-block-end: var(--ds-popover-offset);
+}
+
+.ds-popover__panel[data-side='start'] {
+  margin-inline-end: var(--ds-popover-offset);
+}
+
+.ds-popover__panel[data-side='end'] {
+  margin-inline-start: var(--ds-popover-offset);
+}
+
+.ds-popover__surface {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-popover-part-gap);
+  position: relative;
+  max-inline-size: min(var(--ds-popover-max-width), calc(100vw - 2 * var(--layout-gutter)));
+  max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  /* surface: locked — never overridable. */
+  background-color: var(--color-overlay-surface);
+  border-style: solid;
+  border-width: var(--ds-popover-border-width);
+  border-color: var(--ds-popover-border);
+  border-radius: var(--ds-popover-radius);
+  box-shadow: var(--ds-popover-shadow);
+  overflow: auto;
+  opacity: 0;
+  --ds-popover-enter-offset-x: 0;
+  --ds-popover-enter-offset-y: 0;
+  transform: translate(var(--ds-popover-enter-offset-x), var(--ds-popover-enter-offset-y));
+  transition-property: opacity, transform;
+  transition-duration: var(--ds-popover-exit);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+/* enter: fade and a space.1 slide from the trigger side; instant under reduced motion. */
+.ds-popover__panel[data-side='bottom'] .ds-popover__surface {
+  --ds-popover-enter-offset-y: calc(-1 * var(--space-1));
+}
+
+.ds-popover__panel[data-side='top'] .ds-popover__surface {
+  --ds-popover-enter-offset-y: var(--space-1);
+}
+
+.ds-popover__panel[data-side='start'] .ds-popover__surface {
+  --ds-popover-enter-offset-x: var(--space-1);
+}
+
+.ds-popover__panel[data-side='end'] .ds-popover__surface {
+  --ds-popover-enter-offset-x: calc(-1 * var(--space-1));
+}
+
+.ds-popover__panel--visible .ds-popover__surface {
+  opacity: 1;
+  transform: translate(0, 0);
+  transition-duration: var(--ds-popover-enter);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-popover__surface {
+    transition: none;
+  }
+}
+
+.ds-popover__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-popover-part-gap);
+  padding-inline: var(--ds-popover-inset);
+  padding-block-start: var(--ds-popover-inset);
+  flex: 0 0 auto;
+}
+
+.ds-popover__heading {
+  min-inline-size: 0;
+}
+
+/* focus-visible: the heading is only focused programmatically (no other focusable content), never removed. */
+.ds-popover__heading:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
+}
+
+.ds-popover__close {
+  flex: 0 0 auto;
+}
+
+/* body → the Box's own inset (default layout.inset.md, forwarded from the `inset` override). */
+.ds-popover__body {
+  flex: 1 1 auto;
+  min-block-size: 0;
+}
+
+.ds-popover__arrow {
+  position: absolute;
+  inline-size: var(--ds-popover-arrow-size);
+  block-size: var(--ds-popover-arrow-size);
+  /* surface/border: locked/bound to the panel's own — never overridden independently. */
+  background-color: var(--color-overlay-surface);
+  border-inline-start: var(--ds-popover-border-width) solid var(--ds-popover-border);
+  border-block-start: var(--ds-popover-border-width) solid var(--ds-popover-border);
+}
+
+.ds-popover__panel[data-side='bottom'] .ds-popover__arrow {
+  top: calc(var(--ds-popover-arrow-size) / -2);
+  left: calc(50% - var(--ds-popover-arrow-size) / 2);
+  transform: rotate(45deg);
+}
+
+.ds-popover__panel[data-side='top'] .ds-popover__arrow {
+  bottom: calc(var(--ds-popover-arrow-size) / -2);
+  left: calc(50% - var(--ds-popover-arrow-size) / 2);
+  transform: rotate(225deg);
+}
+
+.ds-popover__panel[data-side='start'] .ds-popover__arrow {
+  right: calc(var(--ds-popover-arrow-size) / -2);
+  top: calc(50% - var(--ds-popover-arrow-size) / 2);
+  transform: rotate(135deg);
+}
+
+.ds-popover__panel[data-side='end'] .ds-popover__arrow {
+  left: calc(var(--ds-popover-arrow-size) / -2);
+  top: calc(50% - var(--ds-popover-arrow-size) / 2);
+  transform: rotate(-45deg);
+}
+
+/* Body scroll lock while a modal Popover is present; toggled on <html> by the component. */
+html.ds-popover-lock-scroll {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}

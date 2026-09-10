@@ -34,9 +34,9 @@ component:
       type: boolean
       default: true
       description: Shows a dismiss button. Persistent toasts are always dismissible.
-    id:
+    toastId:
       type: string
-      description: Stable identity; showing a toast with the same id replaces the previous one instead of stacking.
+      description: 'Stable identity; showing a toast with the same toastId replaces the previous one instead of stacking (named toastId so it does not collide with the DOM `id` on Lit).'
   events:
     onAction:
       description: The action button was activated. The toast dismisses.
@@ -60,7 +60,7 @@ component:
     paddingBlock: { token: space.sm }
     paddingInline: { token: space.md }
     gap: { token: layout.gap.normal, description: 'Between icon, message, action and dismiss.' }
-    stackGap: { token: layout.gap.tight, description: Between stacked toasts in the region. }
+    stackGap: { token: layout.gap.tight, description: 'Between stacked toasts in the region. stackGap, regionInset and layer belong to the region (ToastRegion / ToastProvider) and are overridable on it, not on a toast.' }
     regionInset: { token: layout.gutter, description: 'Distance of the region from the viewport edge (bottom-start on wide screens, bottom center on phones, above the safe area).' }
     maxWidth: { token: layout.maxWidth.prose }
     fontFamily: { token: font.family.body }
@@ -93,7 +93,7 @@ component:
     rn:
       element: View
       props: [accessibilityLiveRegion, accessibilityRole]
-      notes: 'A ToastProvider mounted once at the app root renders the region as an absolutely positioned View (layer.toast zIndex, above the bottom safe-area inset, centered). Android: accessibilityLiveRegion="polite" (danger: "assertive"); iOS: AccessibilityInfo.announceForAccessibility on show. Timers pause while a toast is being touched. No F6; toasts are reached by swiping through the accessibility order. Android''s native ToastAndroid is not used, so actions and theming work.'
+      notes: 'A ToastProvider mounted once at the app root renders the region as an absolutely positioned View (layer.toast zIndex, above the bottom safe-area inset, centered). Android: accessibilityLiveRegion="polite" (danger: "assertive"); iOS: AccessibilityInfo.announceForAccessibility on show. Timers pause while a toast is being touched. No F6; toasts are reached by swiping through the accessibility order. Android''s native ToastAndroid is not used, so actions and theming work. React Native has no `status` role: danger toasts use accessibilityRole="alert", others no role, with accessibilityLiveRegion (assertive/polite) and a one-time AccessibilityInfo announcement. Timers pause while a toast is touched; F6 and Escape have no native equivalent.'
 ---
 
 A toast says "done" and gets out of the way. It confirms an action just taken, offers one chance to undo it, and leaves without being asked. It is the reason most confirmations do not need an AlertDialog: if the action is reversible, do it and toast an Undo.
@@ -108,7 +108,7 @@ Do not toast errors that need fixing (an Alert next to the problem), information
 
 ## Behavior
 
-Toasts are shown through an imperative call, since a notification is an event: `toast({ message, tone, actionLabel, onAction })`. Each appears in the notification region, is announced politely (assertively for `danger`), and dismisses after `duration`, when its action is used, when dismissed, or when a toast with the same `id` replaces it. Timers pause while the toast is hovered, focused or touched, and while the page is hidden. Focus never moves to a toast on its own; F6 brings it there when the user wants it, and Escape or the dismiss button sends it back. Up to three toasts stack, newest at the bottom on wide screens.
+Toasts are shown through an imperative call, since a notification is an event: `toast({ message, tone, actionLabel, onAction })`, which returns a promise resolving to `{ reason }` when the toast leaves. Each appears in the notification region, is announced politely (assertively for `danger`), and dismisses after `duration`, when its action is used, when dismissed, or when a toast with the same `id` replaces it. Timers pause while the toast is hovered, focused or touched, and while the page is hidden. Focus never moves to a toast on its own; F6 brings it there when the user wants it, and Escape or the dismiss button sends it back. Up to three toasts stack, newest at the bottom on wide screens.
 
 ## Content guidelines
 

@@ -11,3 +11,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: `shortcut` is passed verbatim into `aria-keyshortcuts` per the web notes ('Shortcuts are display-only (aria-keyshortcuts)'), but display strings like '⌘S' don't match the ARIA attribute's expected token format ('Meta+S'). Followed the schema literally since it names the attribute explicitly; flagging the mismatch for anyone tightening `aria-keyshortcuts` later.
 - Menu: the single `itemGap` token is reused both for spacing between rows/groups in the list and for the internal icon–label–shortcut gap inside one item, since the schema defines only one gap binding for the whole item anatomy.
 - Menu: `minWidth`'s '× 2.5' multiplier (space.20 → ~200px) is applied at the CSS use-site via `calc(var(--ds-menu-min-width) * 2.5)` so a per-instance override still scales proportionally, per the schema's 'the generator multiplies' note.
+
+## 2026-09-10 02:45 — round 1
+
+- Menu: `open` is documented as "controlled open state" with no explicit uncontrolled-close mechanism when using it purely as a boolean toggle from outside (no onOpenChange-driven two-way binding helper) — implemented as fully controlled-if-present (parent must flip `open` itself on onOpenChange), matching Dialog/AlertDialog convention in this package.
+- Menu: minWidth token math ("space.20 × 2.5, i.e. 200px") is described in prose, not as a generator-computed literal — implemented as calc(var(--ds-menu-min-width) * 2.5) in CSS to avoid a hard-coded px value, since the doc explicitly says 'no new token'.
+- Menu: spec's keyboard table marks ArrowDown-from-trigger and ArrowUp-from-trigger as `expect: manual` — verified via the Keyboard story (open:true) rather than an automated scenario, per the doc's own scenario list which only covers `renders-*` and `has-accessible-name`.

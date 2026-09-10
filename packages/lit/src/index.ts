@@ -38,6 +38,8 @@ import './AlertDialog.js';
 import './Menu.js';
 import './Tooltip.js';
 import './Toast.js';
+import './Popover.js';
+import './BottomSheet.js';
 
 export { DsButton } from './Button.js';
 export type {
@@ -191,3 +193,20 @@ export type {
   ToastOverridableBinding,
   ToastRegionOverridableBinding,
 } from './Toast.js';
+
+export { DsPopover } from './Popover.js';
+export type {
+  PopoverPlacement,
+  PopoverCloseReason,
+  PopoverOpenChangeDetail,
+  PopoverOverridableBinding,
+} from './Popover.js';
+
+export { DsBottomSheet } from './BottomSheet.js';
+export type {
+  BottomSheetHeight,
+  BottomSheetCloseReason,
+  BottomSheetCloseDetail,
+  BottomSheetDragDismissDetail,
+  BottomSheetOverridableBinding,
+} from './BottomSheet.js';

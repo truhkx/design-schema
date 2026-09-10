@@ -1,0 +1,170 @@
+/* ActionSheet — styled only through Design Schema token custom properties. */
+
+.ds-action-sheet {
+  --ds-action-sheet-scrim: var(--color-overlay-scrim);
+  --ds-action-sheet-shadow: var(--shadow-overlay);
+  --ds-action-sheet-radius: var(--radius-lg);
+  --ds-action-sheet-item-padding-block: var(--space-sm);
+  --ds-action-sheet-item-padding-inline: var(--layout-inset-md);
+  --ds-action-sheet-item-gap: var(--layout-gap-normal);
+  --ds-action-sheet-font-family: var(--font-family-body);
+  --ds-action-sheet-font-size: var(--font-size-md);
+  --ds-action-sheet-line-height: var(--font-line-height-normal);
+  --ds-action-sheet-divider: var(--color-border);
+  --ds-action-sheet-divider-width: var(--border-width-thin);
+  --ds-action-sheet-max-width: var(--layout-max-width-prose);
+  --ds-action-sheet-layer: var(--layer-sheet);
+  --ds-action-sheet-enter: var(--motion-duration-base);
+  --ds-action-sheet-exit: var(--motion-duration-fast);
+  box-sizing: border-box;
+  position: fixed;
+  inset-block-end: 0;
+  inset-inline: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  inline-size: 100%;
+  max-inline-size: none;
+  max-block-size: 90dvh;
+  background: transparent;
+  color: inherit;
+  z-index: var(--ds-action-sheet-layer);
+}
+
+/* scrim → color.overlay.scrim; ::backdrop inherits the custom property from its originating element. */
+.ds-action-sheet::backdrop {
+  background-color: var(--ds-action-sheet-scrim);
+}
+
+.ds-action-sheet__surface {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-overlay-surface); /* surface: locked — never overridable. */
+  border-start-start-radius: var(--ds-action-sheet-radius);
+  border-start-end-radius: var(--ds-action-sheet-radius);
+  box-shadow: var(--ds-action-sheet-shadow);
+  overflow: hidden;
+  padding-block-end: env(safe-area-inset-bottom);
+  transform: translateY(100%);
+  transition-property: transform;
+  transition-duration: var(--ds-action-sheet-exit);
+  transition-timing-function: var(--motion-easing-exit);
+  touch-action: none;
+}
+
+/* enter/exit: slide up from the bottom edge; visible uses `enter` and motion.easing.standard. */
+.ds-action-sheet--visible .ds-action-sheet__surface {
+  transform: translateY(0);
+  transition-duration: var(--ds-action-sheet-enter);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-action-sheet__surface {
+    transition: none;
+  }
+}
+
+/* handle: a 4×36 decorative pill centered above the title, aria-hidden and not focusable — supports
+   the drag gesture, which is additive to Cancel and Escape. */
+.ds-action-sheet__handle {
+  align-self: center;
+  inline-size: var(--space-10);
+  block-size: var(--space-1);
+  margin-block-start: var(--layout-gap-tight);
+  border-radius: var(--radius-full);
+  background-color: var(--color-foreground-muted);
+  flex: 0 0 auto;
+}
+
+.ds-action-sheet__title {
+  padding-inline: var(--ds-action-sheet-item-padding-inline);
+  padding-block: var(--layout-gap-tight);
+  flex: 0 0 auto;
+}
+
+.ds-action-sheet__list {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  overflow: auto;
+  font-family: var(--ds-action-sheet-font-family);
+  font-size: var(--ds-action-sheet-font-size);
+  line-height: var(--ds-action-sheet-line-height);
+}
+
+.ds-action-sheet__item {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-action-sheet-item-gap);
+  padding-block: var(--ds-action-sheet-item-padding-block);
+  padding-inline: var(--ds-action-sheet-item-padding-inline);
+  min-block-size: var(--size-target-comfortable); /* minTarget: locked — never overridable. */
+  border: 0;
+  background: none;
+  color: var(--color-foreground); /* itemColor: locked — never overridable. */
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--motion-duration-fast) var(--motion-easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-action-sheet__item {
+    transition: none;
+  }
+}
+
+/* itemHover: locked — pointer hover and keyboard focus share this highlight. */
+.ds-action-sheet__item:focus,
+.ds-action-sheet__item:hover {
+  background-color: var(--color-background-subtle);
+  outline: none;
+}
+
+.ds-action-sheet__item:focus-visible {
+  /* focusRing/focusRingWidth: locked — never overridable. */
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: calc(-1 * var(--border-width-focus));
+}
+
+.ds-action-sheet__item--danger {
+  color: var(--color-foreground-danger); /* itemDangerColor: locked — never overridable. */
+}
+
+.ds-action-sheet__item--disabled {
+  cursor: default;
+  opacity: var(--opacity-disabled);
+}
+
+.ds-action-sheet__item-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  line-height: 0;
+}
+
+.ds-action-sheet__item-label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.ds-action-sheet__divider {
+  flex: 0 0 auto;
+  block-size: var(--ds-action-sheet-divider-width);
+  background-color: var(--ds-action-sheet-divider);
+}
+
+.ds-action-sheet__cancel {
+  flex: 0 0 auto;
+  align-self: stretch;
+  margin: var(--ds-action-sheet-item-padding-inline);
+}
+
+/* Body scroll lock while any ActionSheet is present in its bottom-edge presentation; toggled on
+   <html> by the component. The wide (Menu) presentation manages its own layer and needs no lock. */
+html.ds-action-sheet-lock-scroll {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}

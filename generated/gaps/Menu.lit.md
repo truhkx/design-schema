@@ -15,3 +15,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-10 00:07 — round 2
 
 - Menu: tools/lint_literals.py's font-stack heuristic (`fontFamily\s*:\s*['"]`) matches any object key literally named `fontFamily` followed by a quoted string, regardless of content — it flagged the `HOOKS.fontFamily` CSS-custom-property-name entry as if it were a hardcoded font stack. Fixed by writing that one value as a template literal (`` `--ds-menu-font-family` ``) instead of a string literal, which is semantically identical but doesn't match the regex; no spec or token usage changed.
+
+## 2026-09-10 02:51 — round 1
+
+- Menu: keyboard action-item Home/End rows list `from: last`/`from: first` but the doc means "from anywhere while open" — implemented as always-first/always-last regardless of current focus, matching every other component's Home/End semantics.
+- Menu: `minWidth` doc says space.20 × 2.5 with 'the generator multiplies; no new token' — implemented as calc(var(--space-20) * 2.5) inline rather than a precomputed token, since no such token exists.
+- Menu: typeahead reset timing (500ms) has no token in the schema (it's an interaction timing, not motion) — chosen as a local constant rather than guessing a motion token.

@@ -1,0 +1,20 @@
+You are folding generation gaps back into the Design Schema docs. The docs (site/src/content/docs/components/*.md, YAML frontmatter = schema, prose = guidance) are the single source of truth; generated code is a projection. A "gap" is a line in generated/gaps/<Name>.<platform>.md where the generator had to guess because a doc was silent or ambiguous. Your job is to remove the ambiguity from the doc so the next generation does not guess — never to edit generated code.
+
+Read generated/gaps/SUMMARY.md first (DOC lines are grouped per component with the doc path). Then, for each component with DOC gaps newer than the timestamp in generated/gaps/folded.json (create it if missing; it maps gap file name → last folded mtime):
+
+1. Read the component doc and the gap lines. Decide the answer to each question the way the existing docs decide things. The rules that decide most of them:
+   - Overrides change values, never presence; a composite forwards an override to the child's own `overrides` (Fieldset → Stack `gap`, Alert → Icon `color`), never styles the child.
+   - Composition uses the system component for anything it provides (Icon for every glyph, Text for text, Button for buttons); the doc names the component and the props.
+   - Prop names must be attribute-safe on every platform (no `id`, `title`, `style`, `class`; positive booleans defaulting to false where possible).
+   - Every anatomy part named in the schema must have a home on every platform, or the doc says which platform lacks it and why.
+   - Every binding that the prose says exists must be in `styles`; a missing number (a delay, a gap, a size) becomes a binding on an existing token, expressed as token arithmetic if needed (`motion.duration.base × 3`), never a literal.
+   - Native limits are stated plainly in `platforms.rn.notes` (no hover, no status role, no F6), with the accessibility alternative named.
+   - Lit: ids do not cross shadow roots (use aria-label with the text); booleans defaulting to true are exposed as negated attributes; names tests read are plain attributes.
+   - Contrast pairs are claims: add a pair only for text or a meaningful non-text element, and never one that fails.
+   - A gap that reports "the file predated the convention" or "no changes needed" is NOISE: skip it. A gap about a tool (lint false positive, denied command, missing report) is TOOLING: append it to generated/gaps/TOOLING.md under today's date and skip. A gap that says a sibling component's code is wrong is CODE: append to generated/gaps/CODE.md and skip.
+2. Edit the doc: the smallest change that answers the question — a clause in a prop description, a sentence in a platform note, a new binding, a sentence in Behavior. Quote YAML flow-mapping strings containing `: ` or `, `. Do not rename or remove existing props, bindings, events or copy keys. Do not add `a11y.requires` entries. Do not touch any file outside site/src/content/docs/.
+3. After all edits run `node tools/py.mjs tools/parse.py` and `node tools/py.mjs tools/check_contrast.py`; both must report 0 errors/failures. If parse fails, fix the YAML you wrote.
+4. Append to generated/gaps/FOLDS.md one line per decision: `<date> <Component> <platform>: <gap in ten words> → <what the doc now says>`. Update generated/gaps/folded.json with each gap file's current mtime.
+5. Commit with `powershell -ExecutionPolicy Bypass -File .\commit.ps1 -m "fold: <components>"`.
+
+Be decisive: a folded doc that is slightly wrong is fixed in review; an unfolded gap is re-guessed on every generation. End with a three-line summary: components touched, decisions made, items deferred to TOOLING/CODE.

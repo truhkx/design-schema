@@ -22,25 +22,49 @@
     }
   },
   "AlertDialog.lit": {
-    "hash": "34e3a4b865d01aa9",
-    "lastAttemptHash": "34e3a4b865d01aa9",
-    "generatedAt": "2026-09-10T03:34:03+00:00",
+    "hash": "2dba8787f75a3430",
+    "lastAttemptHash": "2dba8787f75a3430",
+    "generatedAt": "2026-09-10T06:51:18+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0142,
+    "costUsd": 0.3584,
     "files": [
       "packages/lit/src/AlertDialog.stories.ts",
-      "packages/lit/src/AlertDialog.test.ts",
       "packages/lit/src/AlertDialog.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "BottomSheet.lit": {
+    "hash": "73f0b26218bf2643",
+    "lastAttemptHash": "73f0b26218bf2643",
+    "generatedAt": "2026-09-10T07:14:36+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.4977,
+    "files": [
+      "packages/lit/src/BottomSheet.stories.ts",
+      "packages/lit/src/BottomSheet.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Box.lit": {
@@ -180,25 +204,22 @@
     }
   },
   "Dialog.lit": {
-    "hash": "327a9cb7e1919aa8",
-    "lastAttemptHash": "327a9cb7e1919aa8",
-    "generatedAt": "2026-09-10T03:11:05+00:00",
+    "hash": "a557079485ca5e88",
+    "lastAttemptHash": "a557079485ca5e88",
+    "generatedAt": "2026-09-10T06:49:50+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.5901,
-    "files": [
-      "packages/lit/src/Dialog.stories.ts",
-      "packages/lit/src/Dialog.test.ts",
-      "packages/lit/src/Dialog.ts",
-      "packages/lit/src/index.ts"
-    ],
+    "costUsd": 0.2432,
+    "files": [],
     "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Disclosure.lit": {
@@ -430,25 +451,24 @@
     }
   },
   "Menu.lit": {
-    "hash": "1e164b43859e7d87",
-    "lastAttemptHash": "1e164b43859e7d87",
-    "generatedAt": "2026-09-10T04:07:28+00:00",
+    "hash": "c904d2124693630c",
+    "lastAttemptHash": "c904d2124693630c",
+    "generatedAt": "2026-09-10T06:51:49+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 3.08,
+    "rounds": 1,
+    "costUsd": 0.2135,
     "files": [
-      "packages/lit/src/Menu.stories.ts",
-      "packages/lit/src/Menu.test.ts",
-      "packages/lit/src/Menu.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Menu.ts"
     ],
-    "gaps": 8,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Meter.lit": {
@@ -465,6 +485,29 @@
       "packages/lit/src/index.ts"
     ],
     "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Popover.lit": {
+    "hash": "fdbda00855ea0c75",
+    "lastAttemptHash": "fdbda00855ea0c75",
+    "generatedAt": "2026-09-10T07:07:02+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.9395,
+    "files": [
+      "packages/lit/src/Popover.stories.ts",
+      "packages/lit/src/Popover.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,

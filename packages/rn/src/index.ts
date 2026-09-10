@@ -75,6 +75,9 @@ export type { DialogCloseReason, DialogInitialFocus, DialogOverridableBinding, D
 export { AlertDialog } from './AlertDialog';
 export type { AlertDialogCancelReason, AlertDialogOverridableBinding, AlertDialogProps, AlertDialogTone } from './AlertDialog';
 
+export { BottomSheet } from './BottomSheet';
+export type { BottomSheetCloseReason, BottomSheetHeight, BottomSheetOverridableBinding, BottomSheetProps } from './BottomSheet';
+
 export { Menu } from './Menu';
 export type {
   MenuAction,
@@ -92,6 +95,9 @@ export type {
 export { Tooltip } from './Tooltip';
 export type { TooltipDelay, TooltipOverridableBinding, TooltipPlacement, TooltipProps } from './Tooltip';
 
+export { Popover } from './Popover';
+export type { PopoverCloseReason, PopoverOverridableBinding, PopoverPlacement, PopoverProps } from './Popover';
+
 export { Toast, ToastProvider, useToast, toast } from './Toast';
 export type {
   ToastContextValue,
@@ -103,3 +109,23 @@ export type {
   ToastProviderProps,
   ToastTone,
 } from './Toast';
+
+export { ActionSheet } from './ActionSheet';
+export type {
+  ActionSheetAction,
+  ActionSheetActionTone,
+  ActionSheetCloseReason,
+  ActionSheetOverridableBinding,
+  ActionSheetProps,
+} from './ActionSheet';
+
+export { SidePanel, useSidePanelEdgeSwipe } from './SidePanel';
+export type {
+  SidePanelCloseReason,
+  SidePanelOverridableBinding,
+  SidePanelPersistent,
+  SidePanelProps,
+  SidePanelSide,
+  SidePanelWidth,
+  UseSidePanelEdgeSwipeOptions,
+} from './SidePanel';

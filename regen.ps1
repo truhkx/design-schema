@@ -11,6 +11,9 @@
 # current ones are skipped in seconds.
 #   powershell -ExecutionPolicy Bypass -File .\regen.ps1 -Gates               # also run keyboard + axe (needs Playwright)
 #   powershell -ExecutionPolicy Bypass -File .\regen.ps1 -DryRun              # print the plan
+#   powershell -ExecutionPolicy Bypass -File .\regen.ps1 -AutoFold            # after each phase, Claude Code folds the gaps (prompts/fold-gaps.md),
+#                                                                             #   parse must pass, then the next phase starts without a pause.
+#   Windows running in parallel take turns folding through generated\fold.lock; each folds only gap files newer than folded.json.
 #
 # Between phases (unless -NoPause) the script writes generated\gaps\SUMMARY.md (via tools/gap_digest.py when present,
 # else a concatenation), commits, and exits with code 3. Fold the gaps into the docs, run `node tools/py.mjs tools/parse.py`,
@@ -24,6 +27,8 @@ param(
   [switch]$Force,
   [switch]$Gates,
   [switch]$DryRun,
+  [switch]$AutoFold,
+  [string]$FoldModel = "sonnet",
   [string]$Model = ""
 )
 Set-Location $PSScriptRoot
@@ -45,9 +50,7 @@ $phases = @(
   @{ name = "Numeric";    components = "Slider,NumberInput,ProgressBar,Stepper,Search,DatePicker" },
   @{ name = "Rows";       components = "Toolbar,Carousel,Table" },
   @{ name = "Grids";      components = "DataGrid,TreeGrid,Tree" },
-  @{ name = "Streams";    components = "Splitter,Feed" },
-  # Pattern pages (site/src/content/docs/patterns) come last: they compose everything above.
-  @{ name = "Patterns";   pattern = "SettingsPage" }
+  @{ name = "Streams";    components = "Splitter,Feed" }
 )
 
 $plan = @()
@@ -64,7 +67,7 @@ if ($Phase -ne "") {
 }
 
 Log "Plan: $(($plan | ForEach-Object { $_.name }) -join ' -> ')  platforms=$Platform force=$($Force.IsPresent) gates=$($Gates.IsPresent) pause=$(-not $NoPause.IsPresent)"
-if ($DryRun) { $plan | ForEach-Object { Log "  $($_.name): $(if ($_.pattern) { 'pattern ' + $_.pattern } else { $_.components })" }; exit 0 }
+if ($DryRun) { $plan | ForEach-Object { Log "  $($_.name): $($_.components)" }; exit 0 }
 
 # Preparation: tokens, prompts, and a parse that must be clean before any model call.
 Log "== pnpm themes =="
@@ -93,14 +96,33 @@ function Write-GapSummary($phaseName) {
   }
 }
 
+function AutoFold($phaseName) {
+  # One window folds at a time. Others wait (up to 30 min), then fold whatever is still newer than folded.json.
+  $lock = "generated\fold.lock"
+  $waited = 0
+  while ((Test-Path $lock) -and $waited -lt 1800) { Start-Sleep -Seconds 15; $waited += 15 }
+  if (Test-Path $lock) { Log "fold lock held for 30 min; skipping auto-fold for $phaseName"; return }
+  Set-Content -Path $lock -Value "$Platform $phaseName $(Get-Date -Format s)"
+  try {
+    Log "== auto-fold ($FoldModel) after $phaseName =="
+    $prompt = Get-Content prompts\fold-gaps.md -Raw -Encoding utf8
+    $prompt | claude -p --model $FoldModel --permission-mode acceptEdits --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(node tools/*),Bash(py *),Bash(python *),Bash(powershell *),Bash(git *)" 2>&1 | ForEach-Object { Log "$_" }
+    node tools/py.mjs tools/parse.py 2>&1 | ForEach-Object { Log "$_" }
+    if ($LASTEXITCODE -ne 0) {
+      Log "auto-fold left the docs unparseable: stopping so a human can look (git diff site/src/content/docs)."
+      Remove-Item $lock -ErrorAction SilentlyContinue
+      exit 4
+    }
+  } finally { Remove-Item $lock -ErrorAction SilentlyContinue }
+}
+
 $i = 0
 foreach ($p in $plan) {
   $i++
   Log ""
-  $what = if ($p.pattern) { "pattern " + $p.pattern } else { $p.components }
-  Log "==== Phase $($p.name) ($i of $($plan.Count)): $what ===="
+  Log "==== Phase $($p.name) ($i of $($plan.Count)): $($p.components) ===="
   $args = @("tools/generate.py", "--platform", $Platform)
-  if ($p.pattern) { $args += @("--pattern", $p.pattern) } else { $args += @("--component", $p.components) }
+  $args += @("--component", $p.components)
   if ($Force) { $args += "--force" }
   if ($Gates) { $args += @("--with", "keyboard", "--with", "axe") }
   node tools/py.mjs @args 2>&1 | ForEach-Object { Log "$_" }
@@ -112,6 +134,11 @@ foreach ($p in $plan) {
     Log "Phase $($p.name) passed."
   }
   $last = ($i -eq $plan.Count)
+  if ($AutoFold -and -not $last) {
+    Write-GapSummary $p.name
+    AutoFold $p.name
+    continue
+  }
   if (-not $NoPause -and -not $last) {
     Write-GapSummary $p.name
     $next = $plan[$i].name

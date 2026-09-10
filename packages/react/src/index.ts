@@ -139,3 +139,28 @@ export type {
   ToastRegionProps,
   ToastRegionOverridableBinding,
 } from './Toast';
+
+export { Popover } from './Popover';
+export type {
+  PopoverProps,
+  PopoverPlacement,
+  PopoverOpenChangeReason,
+  PopoverOverridableBinding,
+} from './Popover';
+
+export { BottomSheet } from './BottomSheet';
+export type {
+  BottomSheetProps,
+  BottomSheetHeight,
+  BottomSheetCloseReason,
+  BottomSheetOverridableBinding,
+} from './BottomSheet';
+
+export { ActionSheet } from './ActionSheet';
+export type {
+  ActionSheetProps,
+  ActionSheetAction,
+  ActionSheetActionTone,
+  ActionSheetCloseReason,
+  ActionSheetOverridableBinding,
+} from './ActionSheet';

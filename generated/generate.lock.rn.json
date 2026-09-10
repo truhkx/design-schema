@@ -1,4 +1,27 @@
 {
+  "ActionSheet.rn": {
+    "hash": "0b23f9830ce5e609",
+    "lastAttemptHash": "0b23f9830ce5e609",
+    "generatedAt": "2026-09-10T07:08:47+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.6465,
+    "files": [
+      "packages/rn/src/ActionSheet.stories.tsx",
+      "packages/rn/src/ActionSheet.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Alert.rn": {
     "hash": "c134df494967eb75",
     "lastAttemptHash": "c134df494967eb75",
@@ -22,25 +45,50 @@
     }
   },
   "AlertDialog.rn": {
-    "hash": "908bbd685fe9d4da",
-    "lastAttemptHash": "908bbd685fe9d4da",
-    "generatedAt": "2026-09-10T03:37:51+00:00",
+    "hash": "7ada469f31cba2bf",
+    "lastAttemptHash": "7ada469f31cba2bf",
+    "generatedAt": "2026-09-10T06:44:08+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9477,
+    "costUsd": 0.3426,
     "files": [
       "packages/rn/src/AlertDialog.stories.tsx",
       "packages/rn/src/AlertDialog.test.tsx",
       "packages/rn/src/AlertDialog.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "BottomSheet.rn": {
+    "hash": "a2d2a9e2373e8299",
+    "lastAttemptHash": "a2d2a9e2373e8299",
+    "generatedAt": "2026-09-10T07:01:12+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.0065,
+    "files": [
+      "packages/rn/src/BottomSheet.stories.tsx",
+      "packages/rn/src/BottomSheet.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Box.rn": {
@@ -424,25 +472,26 @@
     }
   },
   "Menu.rn": {
-    "hash": "3971462bf5516a8f",
-    "lastAttemptHash": "3971462bf5516a8f",
-    "generatedAt": "2026-09-10T04:21:26+00:00",
+    "hash": "78363b39358998ff",
+    "lastAttemptHash": "78363b39358998ff",
+    "generatedAt": "2026-09-10T06:44:43+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.0607,
+    "costUsd": 0.233,
     "files": [
       "packages/rn/src/Menu.stories.tsx",
       "packages/rn/src/Menu.test.tsx",
-      "packages/rn/src/Menu.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Menu.tsx"
     ],
-    "gaps": 8,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Meter.rn": {
@@ -467,6 +516,29 @@
       "modules": true
     }
   },
+  "Popover.rn": {
+    "hash": "02e20b1bd53a9b46",
+    "lastAttemptHash": "02e20b1bd53a9b46",
+    "generatedAt": "2026-09-10T06:53:41+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.7765,
+    "files": [
+      "packages/rn/src/Popover.stories.tsx",
+      "packages/rn/src/Popover.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "RadioGroup.rn": {
     "hash": "38e3e2ad24d8b5e0",
     "lastAttemptHash": "38e3e2ad24d8b5e0",
@@ -480,6 +552,29 @@
       "packages/rn/src/index.ts"
     ],
     "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "SidePanel.rn": {
+    "hash": "006e190cf53384a1",
+    "lastAttemptHash": "006e190cf53384a1",
+    "generatedAt": "2026-09-10T07:17:31+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.7214,
+    "files": [
+      "packages/rn/src/SidePanel.stories.tsx",
+      "packages/rn/src/SidePanel.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -1,0 +1,149 @@
+/* BottomSheet — styled only through Design Schema token custom properties. */
+
+.ds-bottom-sheet {
+  --ds-bottom-sheet-scrim: var(--color-overlay-scrim);
+  --ds-bottom-sheet-shadow: var(--shadow-overlay);
+  --ds-bottom-sheet-radius: var(--radius-lg);
+  --ds-bottom-sheet-handle-height: var(--space-1);
+  --ds-bottom-sheet-handle-width: var(--space-10);
+  --ds-bottom-sheet-inset: var(--layout-inset-lg);
+  --ds-bottom-sheet-part-gap: var(--layout-gap-loose);
+  --ds-bottom-sheet-footer-gap: var(--layout-gap-tight);
+  --ds-bottom-sheet-max-width: var(--layout-max-width-prose);
+  --ds-bottom-sheet-layer: var(--layer-sheet);
+  --ds-bottom-sheet-enter: var(--motion-duration-base);
+  --ds-bottom-sheet-exit: var(--motion-duration-fast);
+  box-sizing: border-box;
+  position: fixed;
+  inset-block-end: 0;
+  inset-inline: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  inline-size: 100%;
+  max-inline-size: none;
+  max-block-size: 90dvh;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-family-body);
+  z-index: var(--ds-bottom-sheet-layer);
+}
+
+/* scrim → color.overlay.scrim; ::backdrop inherits the custom property from its originating element. */
+.ds-bottom-sheet::backdrop {
+  background-color: var(--ds-bottom-sheet-scrim);
+}
+
+/* height: content (default) sizes to the body up to the root's own 90dvh max-block-size; half and
+   full fix the block size instead, full leaving the top gutter clear so the scrim still reads. */
+.ds-bottom-sheet--height-half {
+  block-size: 50dvh;
+}
+
+.ds-bottom-sheet--height-full {
+  block-size: calc(100dvh - var(--layout-gutter));
+}
+
+.ds-bottom-sheet__surface {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  gap: var(--ds-bottom-sheet-part-gap);
+  background-color: var(--color-overlay-surface);
+  border-start-start-radius: var(--ds-bottom-sheet-radius);
+  border-start-end-radius: var(--ds-bottom-sheet-radius);
+  box-shadow: var(--ds-bottom-sheet-shadow);
+  overflow: hidden;
+  padding-block-end: env(safe-area-inset-bottom);
+  transform: translateY(100%);
+  transition-property: transform;
+  transition-duration: var(--ds-bottom-sheet-exit);
+  transition-timing-function: var(--motion-easing-exit);
+}
+
+/* enter/exit: slide up from the bottom edge; visible uses `enter` and motion.easing.standard. */
+.ds-bottom-sheet--visible .ds-bottom-sheet__surface {
+  transform: translateY(0);
+  transition-duration: var(--ds-bottom-sheet-enter);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+.ds-bottom-sheet__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-gap-tight);
+  padding-inline: var(--ds-bottom-sheet-inset);
+  padding-block-start: var(--layout-gap-tight);
+  flex: 0 0 auto;
+  touch-action: none;
+}
+
+/* handle → color.foreground.muted, locked: a 4×36 decorative pill centered in the header, aria-hidden and not focusable. */
+.ds-bottom-sheet__handle {
+  align-self: center;
+  inline-size: var(--ds-bottom-sheet-handle-width);
+  block-size: var(--ds-bottom-sheet-handle-height);
+  border-radius: var(--radius-full);
+  background-color: var(--color-foreground-muted);
+}
+
+.ds-bottom-sheet__heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--layout-gap-normal);
+  min-inline-size: 0;
+}
+
+.ds-bottom-sheet__title {
+  min-inline-size: 0;
+}
+
+/* hideTitle: the title stays in the DOM for the accessible name but is visually hidden — the
+   standard clip pattern, the one sanctioned pixel literal. */
+.ds-bottom-sheet__title--hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ds-bottom-sheet__close {
+  flex: 0 0 auto;
+}
+
+/* body → the Box's own inset (default layout.inset.lg); this is the part that scrolls when content
+   is taller than the sheet. */
+.ds-bottom-sheet__body {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow: auto;
+}
+
+.ds-bottom-sheet__footer {
+  padding-inline: var(--ds-bottom-sheet-inset);
+  padding-block-end: var(--ds-bottom-sheet-inset);
+  flex: 0 0 auto;
+}
+
+/* footerGap → layout.gap.tight, applied through the composed Stack's own gap scale (closest preset). */
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-bottom-sheet__surface {
+    transition: none;
+  }
+}
+
+/* Body scroll lock while any BottomSheet is present in its bottom-edge presentation; toggled on
+   <html> by the component. The Dialog presentation (wide viewports) locks scroll on its own. */
+html.ds-bottom-sheet-lock-scroll {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}

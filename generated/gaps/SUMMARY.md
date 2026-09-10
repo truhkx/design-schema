@@ -1,6 +1,6 @@
 # Gap digest — phase Focus
 
-Generated 2026-09-10T02:38 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T02:43 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Alert
 
@@ -400,6 +400,22 @@ Doc: `site/src/content/docs/components/container.md`
 ## Dialog
 
 Doc: `site/src/content/docs/components/dialog.md`
+
+### 2026-09-10 02:43 — web round 1
+
+- **DOC** Dialog: overrides.footerGap can't reach Stack's internal gap (Stack's gap is a fixed space.* preset with no override hook), so the footer row uses Stack's gap="tight" preset and the override is a no-op — same limit already documented for Fieldset's fieldsGap→Stack forwarding. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: composition doesn't name a component for header, so it renders as a plain div with its own --ds-dialog-header-gap/--ds-dialog-inset hooks (Card precedent for uncomposed anatomy). → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: gap between title and description inside the heading-group isn't named by any binding; used var(--layout-gap-tight) directly (valid token, not an overridable hook), matching Card's header-gap precedent. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: focusRing/focusRingWidth are locked but Dialog has no directly-focusable element of its own beyond the composed Button (close button); a dedicated :focus-visible rule was added on the title heading for initialFocus="title" since it's the one focus target Dialog itself introduces. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: container (portal target) isn't in the schema's props table but is implied by the overlay keyboard rule ('a container prop may override'); added as an optional prop defaulting to document.body. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: whether the close button should be visually disabled or a silent no-op when dismissible=false isn't specified; chose to keep it enabled/focusable with a no-op click handler (an unresponsive-but-enabled control was judged the worse a11y outcome to avoid, consistent with Escape always reporting). → `site/src/content/docs/components/dialog.md`
+
+### 2026-09-10 02:42 — rn round 1
+
+- **DOC** Dialog: RN has no descendant walker for FocusScope, so `initialFocus` is implemented by hand via AccessibilityInfo.setAccessibilityFocus on wrapping Views (title group, close button, body) rather than the first real focusable descendant — same acknowledged limit FocusScope documents for itself. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: scroll-lock has no native equivalent (no page scroll for a modal window to suppress), so it is intentionally not implemented on RN. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: `overrides.footerGap` cannot reach Stack's internal `gap`, since Stack's gap is a fixed space.* preset with no override hook — the override is a no-op for the footer row, same gap the web generator flagged. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: RN's typed accessibilityRole union has no 'dialog' value, so role is conveyed via accessibilityViewIsModal + accessibilityLabel/Hint rather than an explicit role. → `site/src/content/docs/components/dialog.md`
 
 ### 2026-09-09 23:23 — rn round 1
 
@@ -920,6 +936,18 @@ Doc: `site/src/content/docs/components/text.md`
 
 Doc: `site/src/content/docs/components/toast.md`
 
+### 2026-09-10 02:43 — lit round 1
+
+- **DOC** The spec's OverridableBinding list is flat across the whole component, but `region`/`toast` are two separate custom elements here (`ds-toast`, `ds-toast-region`). I put `stackGap`/`regionInset`/`layer` on `ds-toast-region`'s own `overrides` (exported as `ToastRegionOverridableBinding`) and everything else on `ds-toast`'s `overrides` (`ToastOverridableBinding`), since those three are structural to the shared region, not any one toast. → `site/src/content/docs/components/toast.md`
+- **DOC** `actionColor` (color.inverse.link) and `dismissColor` (color.inverse.foreground) are specified as distinct locked tokens, but the existing `<ds-button>` `inverse` prop (already built in Button.ts with a comment naming Toast) only implements one on-inverse ghost treatment (link-colored) with no way to select the other without restyling Button's shadow tree or adding a new Button prop — out of scope for this task. Both the action and dismiss buttons use `variant="ghost" inverse` unchanged, so the dismiss (close) button ends up link-colored rather than foreground-colored. → `site/src/content/docs/components/toast.md`
+- **DOC** The schema's `id` prop (stable identity for replace-instead-of-stack) collides with `HTMLElement.id`. Rather than adding a shadowing `@property() id`, I mapped it directly to the native `id` attribute/property (set by `toast()`, read back via `#id` selector) — `ds-toast` has no custom `id` property. → `site/src/content/docs/components/toast.md`
+- **DOC** `dismissible` defaults to `true` per the schema, which conflicts with the package's general boolean-attribute convention ("a boolean attribute cannot express false, so defaults are false"); the schema's explicit default wins, but that means `dismissible="false"` can't be expressed as a static HTML attribute — only by setting the JS property (fine given the component is only ever created imperatively by `toast()`). → `site/src/content/docs/components/toast.md`
+- **DOC** `ToastDismissReason` has no `'escape'` value, so Escape (a required keyboard interaction) dismisses with reason `'dismiss-button'` as the closest existing fit — flagging in case a distinct reason was intended. → `site/src/content/docs/components/toast.md`
+- **DOC** `has-accessible-name` is satisfied via a literal `aria-label` attribute set on the host from `message`, not `ElementInternals.ariaLabel` (the package's stated convention for live-region hosts, also used for `role`). `dom-accessibility-api` (used by the test suite's `toHaveAccessibleName`) does not read ARIAMixin values set through ElementInternals, only real attributes; real assistive tech reads either, so this only affects testability, not production behavior. → `site/src/content/docs/components/toast.md`
+- **DOC** The doc's Web platform notes describe one shared `<div role="region">` with a single `aria-live="polite"`, while individual toasts are `role="status"`/`"alert"`; for Lit I kept that per-toast role split but set the region's own `role`/`aria-label`/`aria-live` via plain attributes (not `ElementInternals`) for the same testability reason as above. → `site/src/content/docs/components/toast.md`
+- **DOC** No design token or breakpoint is named for the toast region's wide-vs-phone layout switch (bottom-start vs bottom-center); I used a `min-width: 572px` media query (the resolved px value of `layout.maxWidth.prose`), matching the `literal-ok` breakpoint convention already used in `Container.ts` for `layout.maxWidth.content`/`page`. → `site/src/content/docs/components/toast.md`
+- **DOC** `toast()` returns `Promise<ToastResult>` (resolving with `{ reason }` on dismissal) since the lit platform note says composed `dismiss`/`action` events "bubble to the region for the imperative API's promise" but doesn't specify the promise's shape — I inferred a dismissal-reason result from context. → `site/src/content/docs/components/toast.md`
+
 ### 2026-09-10 02:38 — rn round 1
 
 - **DOC** The schema's `styles` map is one flat list for the component, but on RN a Toast is really two things: a single toast (radius, shadow, paddingBlock, paddingInline, gap, maxWidth, fontFamily, fontSize, lineHeight, enter, exit) and a region a `ToastProvider` renders once (stackGap, regionInset, layer). I split `ToastOverridableBinding` accordingly: `Toast` resolves the first 11 keys and ignores the region-level 3; `ToastProvider` resolves the region-level 3 and ignores the rest. A caller who wants a non-default `layer`/`maxWidth` on a specific queued toast passes it through that toast's own `overrides`, not the provider's. → `site/src/content/docs/components/toast.md`
@@ -981,7 +1009,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 403 · CODE: 38 · TOOLING: 2 · NOISE: 8
+DOC: 422 · CODE: 38 · TOOLING: 2 · NOISE: 8
 
 ## Gates to fix
 

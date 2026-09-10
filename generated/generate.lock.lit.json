@@ -67,19 +67,18 @@
     }
   },
   "AlertDialog.lit": {
-    "hash": "2dba8787f75a3430",
-    "lastAttemptHash": "2dba8787f75a3430",
-    "generatedAt": "2026-09-10T06:51:18+00:00",
+    "hash": "b2c0e0ea33570113",
+    "lastAttemptHash": "b2c0e0ea33570113",
+    "generatedAt": "2026-09-10T22:02:16+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3584,
+    "costUsd": 0.2176,
     "files": [
       "packages/lit/src/AlertDialog.stories.ts",
-      "packages/lit/src/AlertDialog.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/AlertDialog.ts"
     ],
-    "gaps": 3,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -340,14 +339,17 @@
     }
   },
   "Dialog.lit": {
-    "hash": "a557079485ca5e88",
-    "lastAttemptHash": "a557079485ca5e88",
-    "generatedAt": "2026-09-10T06:49:50+00:00",
+    "hash": "d1d663de92f2e956",
+    "lastAttemptHash": "d1d663de92f2e956",
+    "generatedAt": "2026-09-10T22:01:39+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2432,
-    "files": [],
+    "costUsd": 1.7623,
+    "files": [
+      "packages/lit/src/Dialog.stories.ts",
+      "packages/lit/src/Dialog.ts"
+    ],
     "gaps": 7,
     "gates": {
       "parse": true,

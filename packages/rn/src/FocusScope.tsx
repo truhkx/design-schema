@@ -13,6 +13,12 @@ export interface FocusScopeProps {
   autoFocus?: FocusScopeAutoFocus;
   /** On unmount, focus returns to the element that was focused when the scope mounted, if it can still be found. */
   restoreFocus?: boolean;
+  /**
+   * Explicit element to restore focus to instead of the recorded opener. Required on
+   * native when the opener is not a `TextInput` — RN exposes no generic "currently
+   * focused element" — so every overlay passes its trigger ref.
+   */
+  returnFocusTo?: React.RefObject<View>;
   /** Pause the scope without unmounting it — used while a nested scope (a Menu inside a Dialog) is open, so the innermost active scope owns modal focus. */
   active?: boolean;
   /**
@@ -40,29 +46,32 @@ export interface FocusScopeProps {
  * order to confine on native: `autoFocus` calls `AccessibilityInfo.setAccessibilityFocus`
  * on the wrapper after mount (RN has no way to walk arbitrary children for the
  * "first" or "last" focusable descendant, so those and `container` all resolve to
- * the wrapper; only `none` skips it). `restoreFocus` captures whatever `TextInput`
- * was focused when the scope mounted — the only "currently focused element" RN
- * exposes — and refocuses it on unmount; an opener that was not a text input cannot
- * be captured, a platform limit. `onEscapeAttempt` never fires on native.
+ * the wrapper; only `none` skips it). `restoreFocus` refocuses `returnFocusTo` on
+ * unmount when given; otherwise it falls back to whatever `TextInput` was focused
+ * when the scope mounted — the only "currently focused element" RN exposes without
+ * an explicit ref — so an opener that is neither a text input nor passed via
+ * `returnFocusTo` cannot be restored, a platform limit. `onEscapeAttempt` never
+ * fires on native.
  */
 export function FocusScope({
   children,
   trapped = true,
   autoFocus = 'first',
   restoreFocus = true,
+  returnFocusTo,
   active = true,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onEscapeAttempt,
 }: FocusScopeProps): React.JSX.Element {
   const wrapperRef = React.useRef<View>(null);
-  const openerRef = React.useRef<ReturnType<typeof TextInput.State.currentlyFocusedInput> | null>(null);
+  const capturedOpenerRef = React.useRef<ReturnType<typeof TextInput.State.currentlyFocusedInput> | null>(null);
 
   React.useEffect(() => {
-    if (restoreFocus) {
+    if (restoreFocus && returnFocusTo === undefined) {
       try {
-        openerRef.current = TextInput.State.currentlyFocusedInput();
+        capturedOpenerRef.current = TextInput.State.currentlyFocusedInput();
       } catch {
-        openerRef.current = null;
+        capturedOpenerRef.current = null;
       }
     }
 
@@ -74,10 +83,13 @@ export function FocusScope({
     }
 
     return () => {
-      if (!restoreFocus || openerRef.current === null) {
+      if (!restoreFocus) {
         return;
       }
-      const node = findNodeHandle(openerRef.current);
+      // returnFocusTo, when given, is read at unmount rather than captured on mount
+      // since it names a stable trigger that outlives the scope either way.
+      const opener = returnFocusTo !== undefined ? returnFocusTo.current : capturedOpenerRef.current;
+      const node = opener === null || opener === undefined ? null : findNodeHandle(opener);
       if (node !== null) {
         AccessibilityInfo.setAccessibilityFocus(node);
       }

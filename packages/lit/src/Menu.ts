@@ -51,6 +51,8 @@ export type MenuOverridableBinding =
   | 'radius'
   | 'popupPadding'
   | 'popupOffset'
+  | 'typeaheadReset'
+  | 'maxHeight'
   | 'minWidth'
   | 'itemPaddingBlock'
   | 'itemPaddingInline'
@@ -74,6 +76,8 @@ const HOOKS: Record<MenuOverridableBinding, string> = {
   radius: '--ds-menu-radius',
   popupPadding: '--ds-menu-popup-padding',
   popupOffset: '--ds-menu-popup-offset',
+  typeaheadReset: '--ds-menu-typeahead-reset',
+  maxHeight: '--ds-menu-max-height',
   minWidth: '--ds-menu-min-width',
   itemPaddingBlock: '--ds-menu-item-padding-block',
   itemPaddingInline: '--ds-menu-item-padding-inline',
@@ -94,9 +98,6 @@ const HOOKS: Record<MenuOverridableBinding, string> = {
 
 /** Whether the running browser implements the Popover API. Evaluated once. */
 const POPOVER_SUPPORTED = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
-
-/** How long a typed-character run is remembered for typeahead before it resets. Not a design token — an interaction timing, not a motion one. */
-const TYPEAHEAD_RESET_MS = 500;
 
 function isSeparator(item: MenuItem): item is MenuSeparator {
   return 'separator' in item;
@@ -178,6 +179,8 @@ export class DsMenu extends LitElement {
       --ds-menu-radius: var(--radius-md);
       --ds-menu-popup-padding: var(--space-1);
       --ds-menu-popup-offset: var(--space-1);
+      --ds-menu-typeahead-reset: var(--motion-duration-loop);
+      --ds-menu-max-height: var(--layout-max-width-prose);
       --ds-menu-min-width: calc(var(--space-20) * 2.5);
       --ds-menu-item-padding-block: var(--space-sm);
       --ds-menu-item-padding-inline: var(--space-md);
@@ -214,7 +217,7 @@ export class DsMenu extends LitElement {
       box-shadow: var(--ds-menu-shadow);
       z-index: var(--ds-menu-layer);
       max-inline-size: calc(100vw - 2 * var(--layout-gutter));
-      max-block-size: calc(100vh - 2 * var(--layout-gutter));
+      max-block-size: min(var(--ds-menu-max-height), calc(100vh - 2 * var(--layout-gutter)));
       overflow-y: auto;
       opacity: 1;
       transform: translateY(0);
@@ -682,9 +685,10 @@ export class DsMenu extends LitElement {
     if (match) {
       void this.focusItem(match.id);
     }
+    const resetMs = parseFloat(getComputedStyle(this).getPropertyValue('--ds-menu-typeahead-reset')) || 0;
     this.typeaheadTimer = setTimeout(() => {
       this.typeaheadQuery = '';
-    }, TYPEAHEAD_RESET_MS);
+    }, resetMs);
   }
 
   private updatePosition(): void {

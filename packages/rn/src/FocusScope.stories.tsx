@@ -8,6 +8,30 @@ import { Stack } from './Stack';
 import { Text } from './Text';
 import { withTheme } from './decorators';
 
+/** Passes an explicit trigger ref via `returnFocusTo` rather than relying on the `TextInput` fallback. */
+function ReturnFocusToDemo(): React.JSX.Element {
+  const [open, setOpen] = React.useState(false);
+  const triggerRef = React.useRef<View>(null);
+  return (
+    <Stack gap="loose" align="start">
+      <View ref={triggerRef} collapsable={false}>
+        <Button label="Open panel" onPress={() => setOpen(true)} />
+      </View>
+      {open ? (
+        <FocusScope trapped autoFocus="first" restoreFocus returnFocusTo={triggerRef}>
+          <View>
+            <Stack gap="normal" align="start">
+              <Text>Panel content</Text>
+              <Button label="First action" />
+              <Button label="Close" onPress={() => setOpen(false)} />
+            </Stack>
+          </View>
+        </FocusScope>
+      ) : null}
+    </Stack>
+  );
+}
+
 /** A trigger plus a scope that mounts while open, so autoFocus/restoreFocus have something to do. */
 function FocusScopeDemo(props: FocusScopeProps): React.JSX.Element {
   const [open, setOpen] = React.useState(false);
@@ -59,6 +83,7 @@ export const AutoFocusNone: Story = { args: { autoFocus: 'none' } };
 export const NotTrapped: Story = { args: { trapped: false } };
 export const NoRestoreFocus: Story = { args: { restoreFocus: false } };
 export const Inactive: Story = { args: { active: false } };
+export const ReturnFocusTo: Story = { render: () => <ReturnFocusToDemo /> };
 
 /** Open with its trigger and three focusable children, for the axe gate and manual keyboard checks. */
 export const Keyboard: Story = {

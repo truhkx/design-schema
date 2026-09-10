@@ -111,8 +111,8 @@ export interface ToastProps
   duration?: ToastDuration;
   /** Shows a dismiss button. Persistent toasts are always dismissible. */
   dismissible?: boolean;
-  /** Stable identity; showing a toast with the same id replaces the previous one instead of stacking. */
-  id?: string;
+  /** Stable identity; showing a toast with the same toastId replaces the previous one instead of stacking. */
+  toastId?: string;
   /** The action button was activated. The toast dismisses. */
   onAction?: () => void;
   /** The toast left the screen: reason `timeout`, `dismiss-button`, `action`, or `replaced`. */
@@ -137,7 +137,7 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
     actionLabel,
     duration = 'short',
     dismissible = true,
-    id,
+    toastId,
     onAction,
     onDismiss,
     overrides,
@@ -159,12 +159,15 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
   const onDismissLatest = useRef(onDismiss);
   onDismissLatest.current = onDismiss;
 
-  const showDismiss = dismissible || duration === 'persistent';
+  // An action or danger tone forces the toast to stay until dismissed, regardless of `duration`.
+  const forcedPersistent = Boolean(actionLabel) || tone === 'danger';
+  const effectiveDuration: ToastDuration = forcedPersistent ? 'persistent' : duration;
+  const showDismiss = dismissible || effectiveDuration === 'persistent';
 
   if (isDev && !message) {
     console.warn('Toast: `message` is required and is the toast’s content; it must not be empty.');
   }
-  if (isDev && duration !== 'persistent' && (actionLabel || tone === 'danger')) {
+  if (isDev && duration !== 'persistent' && forcedPersistent) {
     console.warn(
       'Toast: `duration` should be `persistent` when an action is present or `tone` is `danger`, so the toast is never missed.',
     );
@@ -213,8 +216,8 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
 
   // Auto-dismiss timer: paused while hovered, focused-within, or the page is hidden.
   useEffect(() => {
-    if (duration === 'persistent') return undefined;
-    let remaining = duration === 'long' ? LONG_DURATION_MS : SHORT_DURATION_MS;
+    if (effectiveDuration === 'persistent') return undefined;
+    let remaining = effectiveDuration === 'long' ? LONG_DURATION_MS : SHORT_DURATION_MS;
     let startedAt = Date.now();
 
     const start = () => {
@@ -275,7 +278,7 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
       node?.removeEventListener('focusout', handleFocusOut);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [duration, dismiss]);
+  }, [effectiveDuration, dismiss]);
 
   // Escape dismisses the focused toast and moves focus out first, so it is never lost.
   useEffect(() => {
@@ -306,7 +309,7 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
     <div
       {...rest}
       ref={rootRef}
-      id={id}
+      id={toastId}
       data-ds="Toast"
       data-part="toast"
       data-tone={tone}
@@ -361,7 +364,7 @@ export interface ToastOptions {
   actionLabel?: string;
   duration?: ToastDuration;
   dismissible?: boolean;
-  id?: string;
+  toastId?: string;
   onAction?: () => void;
   onDismiss?: (reason: ToastDismissReason) => void;
 }
@@ -514,7 +517,7 @@ export const ToastRegion = forwardRef<HTMLDivElement, ToastRegionProps>(function
       {list.map((entry) => (
         <Toast
           key={entry.id}
-          id={entry.id}
+          toastId={entry.id}
           message={entry.message}
           tone={entry.tone}
           actionLabel={entry.actionLabel}
@@ -545,7 +548,7 @@ function ensureRegionMounted() {
  * rendered: `toast({ message: 'Link copied' })`. Returns the toast's `id`.
  */
 export function toast(options: ToastOptions): string {
-  const id = options.id ?? `ds-toast-${++toastCounter}`;
+  const id = options.toastId ?? `ds-toast-${++toastCounter}`;
   const tone = options.tone ?? 'neutral';
   const duration = options.duration ?? 'short';
 

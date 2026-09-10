@@ -12,3 +12,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Ctrl+End when `hasMore` only fires `onLoadMore` and does not move focus ('first triggers a load so the end is real'); the doc doesn't say whether the user must press Ctrl+End again once loading finishes and `hasMore` becomes false — implemented as 'press again after it loads', matching the Lit generation.
 - With zero items there is no article to attach the load-more IntersectionObserver to, so an empty feed with `hasMore: true` never self-triggers its first load — the caller must fetch the first page independently (before rendering Feed, or via its own effect). Not specified in the doc.
 - endMessage has no declared inset/padding binding of its own, so the `loadingInset` hook is reused for both the loading indicator's and the end message's surrounding padding — matches the sibling React Native generation's same choice absent a dedicated token.
+
+## 2026-09-10 19:25 — round 1
+
+- Feed: `newItemsOffset` is padding-block-start on the sticky button row rather than a margin, per the spacing rule (no margins between siblings) — the doc's own note confirms this choice.
+- Feed: the spec gives `loadingInset` and `endMessageInset` the same token (`layout.inset.md`) but separate overridable bindings; a prior pass had collapsed them into one shared CSS hook, silently making `endMessageInset` a no-op override — split into `--ds-feed-loading-inset` and `--ds-feed-end-message-inset` so both bindings are independently overridable as the schema requires.
+- Feed: 'once on mount when items is empty and not loading' (fires onLoadMore for an empty feed's first page) was missing from a prior pass — no IntersectionObserver target exists with zero articles, so this is a plain mount effect guarded by a ref so it fires once per empty-to-populated transition, not on every render.
+- Feed: no `copy.*` string covers relative timestamps ('3 min ago'); used `Intl.RelativeTimeFormat` (locale 'en') rather than inventing English copy, matching the interval boundaries the schema names (minute/hour/day/week) — same choice as the existing Lit generation.
+- Feed: `aria-setsize` while `hasMore` is `-1` per the platform notes; the visually-hidden `copy.position` span is rendered only once the total is known (`hasMore` false), which the schema states explicitly.

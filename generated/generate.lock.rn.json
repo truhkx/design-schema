@@ -739,6 +739,29 @@
       "modules": true
     }
   },
+  "Search.rn": {
+    "hash": "2c9d7d0a489b75f4",
+    "lastAttemptHash": "2c9d7d0a489b75f4",
+    "generatedAt": "2026-09-10T23:25:13+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.7355,
+    "files": [
+      "packages/rn/src/Search.stories.tsx",
+      "packages/rn/src/Search.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "SegmentedControl.rn": {
     "hash": "632b5530b9be4d7d",
     "lastAttemptHash": "632b5530b9be4d7d",

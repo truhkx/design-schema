@@ -47,6 +47,7 @@ export type FeedOverridableBinding =
   | 'timestampSize'
   | 'newItemsOffset'
   | 'loadingInset'
+  | 'endMessageInset'
   | 'endMessageSize'
   | 'fontFamily';
 
@@ -59,6 +60,7 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<FeedOverridableBinding, string>> = {
   unreadBorderWidth: '--ds-feed-unread-border-width',
   newItemsOffset: '--ds-feed-new-items-offset',
   loadingInset: '--ds-feed-loading-inset',
+  endMessageInset: '--ds-feed-end-message-inset',
 };
 
 function overridesToStyle(overrides: Partial<Record<FeedOverridableBinding, TokenRef>>): {
@@ -244,6 +246,17 @@ export const Feed = forwardRef<HTMLDivElement, FeedProps>(function Feed(
     }
     lastFirstIdRef.current = items[0]?.id;
   }, [items]);
+
+  // An empty feed has no last article to observe, so it asks for its first page itself.
+  const firedInitialLoadRef = useRef(false);
+  useEffect(() => {
+    if (items.length === 0 && hasMore && !loading && !firedInitialLoadRef.current) {
+      firedInitialLoadRef.current = true;
+      onLoadMoreRef.current?.();
+    } else if (items.length > 0) {
+      firedInitialLoadRef.current = false;
+    }
+  }, [items, hasMore, loading]);
 
   // Loads more as the last article nears view.
   useEffect(() => {

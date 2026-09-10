@@ -6,6 +6,7 @@
   --ds-feed-unread-border-width: var(--border-width-focus);
   --ds-feed-new-items-offset: var(--space-3);
   --ds-feed-loading-inset: var(--layout-inset-md);
+  --ds-feed-end-message-inset: var(--layout-inset-md);
   --ds-feed-focus-ring: var(--color-border-focus);
   --ds-feed-focus-ring-width: var(--border-width-focus);
   display: flex;
@@ -65,8 +66,10 @@
   border: 0;
 }
 
-/* loadingInset: also spaces the end message, since the doc gives no separate token for it. */
-.ds-feed__loading,
-.ds-feed__end-message {
+.ds-feed__loading {
   padding: var(--ds-feed-loading-inset);
+}
+
+.ds-feed__end-message {
+  padding: var(--ds-feed-end-message-inset);
 }

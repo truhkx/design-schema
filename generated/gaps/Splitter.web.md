@@ -12,3 +12,7 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Splitter: `paneMinTarget` ('a pane never shrinks below this on the drag axis before collapsing') is enforced via a CSS `minmax()` floor on the grid track, layered underneath the JS percent clamp (`minSize`/`maxSize`) — so a very narrow container can force the pane visually wider than the requested percent. The collapsed state explicitly drops this floor (grid track literal `0`) so collapse still reaches true zero width, per the web notes' 'inline-size 0'.
 - Splitter: 'the separator becomes inert' when stacked was implemented as `display: none` (plus `role="presentation"`, no `tabIndex`) rather than merely non-interactive-but-visible; the doc doesn't say whether the thin line should stay visible when stacked.
 - Splitter: used a real per-element container query (ResizeObserver on the splitter's own inline size, breakpoint read at runtime from the `layout.maxWidth.*` token) rather than a viewport `matchMedia`, since the doc calls it a 'container query' and nesting is explicitly supported (Splitter-in-a-pane). Guarded for environments without `ResizeObserver` (jsdom), matching the existing Toolbar.tsx pattern.
+
+## 2026-09-10 19:24 — round 1
+
+- Splitter: platform notes say the separator 'is not rendered' below stackBelow, but the existing implementation keeps it in the DOM with role="presentation" and display:none rather than omitting the node — kept as-is since it's already inert to AT and pointer input and all behavior scenarios pass.

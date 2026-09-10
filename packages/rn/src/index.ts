@@ -266,3 +266,6 @@ export type {
   StepperStep,
   StepperStepStatus,
 } from './Stepper';
+
+export { Search } from './Search';
+export type { SearchOverridableBinding, SearchProps, SearchSize, SearchSuggestion } from './Search';

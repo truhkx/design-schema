@@ -1,0 +1,61 @@
+/* Map generated design tokens onto Starlight's theme variables so the docs
+   site is itself themed by the system it documents. */
+:root {
+  --sl-color-accent: var(--color-action-primary-background);
+  --sl-color-accent-high: var(--color-foreground-strong);
+  --sl-color-text: var(--color-foreground);
+  --sl-color-bg: var(--color-background);
+  --sl-font: var(--font-family-body);
+}
+
+.ds-schema-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--sl-text-sm);
+}
+.ds-schema-table th,
+.ds-schema-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+.ds-schema-table code {
+  white-space: nowrap;
+}
+.ds-badge {
+  display: inline-block;
+  font-size: 0.75em;
+  padding: 0.1em 0.5em;
+  border-radius: 999px;
+  background: var(--sl-color-gray-5);
+  color: var(--sl-color-text);
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.ds-swatch {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--sl-color-hairline);
+  vertical-align: middle;
+  margin-right: 0.25rem;
+}
+.ds-ramp {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0.25rem 0;
+}
+.ds-ramp-name {
+  width: 5rem;
+  font-size: var(--sl-text-sm);
+  color: var(--sl-color-gray-2);
+}
+.ds-ramp .ds-swatch {
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+}

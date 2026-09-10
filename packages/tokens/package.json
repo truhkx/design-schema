@@ -1,0 +1,54 @@
+{
+  "name": "@design-schema/tokens",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Built design tokens, one entry per theme, mode and platform. Generated into dist/ by `pnpm themes` (Python fallback) or `pnpm tokens` (Style Dictionary).",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/names.d.ts",
+      "default": "./dist/names.js"
+    },
+    "./calm-precise/css": "./dist/calm-precise/css/tokens.css",
+    "./calm-precise/light": {
+      "types": "./dist/calm-precise/js/tokens.light.d.ts",
+      "default": "./dist/calm-precise/js/tokens.light.js"
+    },
+    "./calm-precise/dark": {
+      "types": "./dist/calm-precise/js/tokens.dark.d.ts",
+      "default": "./dist/calm-precise/js/tokens.dark.js"
+    },
+    "./calm-precise/rn/light": {
+      "types": "./dist/calm-precise/rn/tokens.light.d.ts",
+      "default": "./dist/calm-precise/rn/tokens.light.js"
+    },
+    "./calm-precise/rn/dark": {
+      "types": "./dist/calm-precise/rn/tokens.dark.d.ts",
+      "default": "./dist/calm-precise/rn/tokens.dark.js"
+    },
+    "./calm-precise/json/light": "./dist/calm-precise/json/tokens.light.json",
+    "./calm-precise/json/dark": "./dist/calm-precise/json/tokens.dark.json",
+    "./warm-friendly/css": "./dist/warm-friendly/css/tokens.css",
+    "./warm-friendly/light": {
+      "types": "./dist/warm-friendly/js/tokens.light.d.ts",
+      "default": "./dist/warm-friendly/js/tokens.light.js"
+    },
+    "./warm-friendly/dark": {
+      "types": "./dist/warm-friendly/js/tokens.dark.d.ts",
+      "default": "./dist/warm-friendly/js/tokens.dark.js"
+    },
+    "./warm-friendly/rn/light": {
+      "types": "./dist/warm-friendly/rn/tokens.light.d.ts",
+      "default": "./dist/warm-friendly/rn/tokens.light.js"
+    },
+    "./warm-friendly/rn/dark": {
+      "types": "./dist/warm-friendly/rn/tokens.dark.d.ts",
+      "default": "./dist/warm-friendly/rn/tokens.dark.js"
+    },
+    "./warm-friendly/json/light": "./dist/warm-friendly/json/tokens.light.json",
+    "./warm-friendly/json/dark": "./dist/warm-friendly/json/tokens.dark.json"
+  }
+}

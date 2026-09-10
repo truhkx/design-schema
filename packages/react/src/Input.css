@@ -1,0 +1,60 @@
+/* Input — styled only through Design Schema token custom properties. */
+
+.ds-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  inline-size: 100%;
+}
+
+.ds-input__label {
+  display: inline-block;
+  font-family: var(--font-family-body);
+}
+
+.ds-input__field {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--size-target-comfortable);
+  margin: 0;
+  padding-inline: var(--space-md);
+  padding-block: var(--space-sm);
+  border: var(--border-width-thin) solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font: inherit;
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-md);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.ds-input__field::placeholder {
+  color: var(--color-foreground-muted);
+  opacity: 1;
+}
+
+/* borderFocus + focus-visible ring. The outline is never removed. */
+.ds-input__field:focus-visible {
+  border-color: var(--color-border-focus);
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: 0;
+}
+
+/* borderInvalid */
+.ds-input__field[aria-invalid='true'] {
+  border-color: var(--color-border-danger);
+}
+
+/* disabled: visible, readable, not editable. */
+.ds-input__field[aria-disabled='true'] {
+  background-color: var(--color-background-subtle);
+  color: var(--color-foreground-muted);
+  cursor: not-allowed;
+}
+
+.ds-input__description,
+.ds-input__error {
+  margin: 0;
+}

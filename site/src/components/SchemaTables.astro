@@ -1,0 +1,101 @@
+---
+import type { ComponentDef } from '../../../schema/component';
+
+interface Props {
+  component: ComponentDef;
+}
+const { component: c } = Astro.props;
+const platformIds = Object.keys(c.platforms);
+const fmt = (v: unknown) => (v === undefined ? '—' : typeof v === 'string' ? v : JSON.stringify(v));
+---
+
+<p>
+  <span class="ds-badge">{c.category}</span>
+  <span class="ds-badge">status: {c.status}</span>
+  <span class="ds-badge">role: {c.a11y.role}</span>
+</p>
+
+<h2 id="anatomy">Anatomy</h2>
+<p>{c.anatomy.join(' · ')}</p>
+
+<h2 id="props">Props</h2>
+<table class="ds-schema-table">
+  <thead>
+    <tr><th>Prop</th><th>Type</th><th>Default</th><th>Description</th><th>Platforms</th></tr>
+  </thead>
+  <tbody>
+    {Object.entries(c.props).map(([name, p]) => (
+      <tr>
+        <td><code>{name}</code>{p.required && ' *'}</td>
+        <td><code>{p.type === 'enum' ? (p.values ?? []).join(' | ') : p.type}</code></td>
+        <td><code>{fmt(p.default)}</code></td>
+        <td>{p.description}{p.a11y && <><br /><small>♿ {p.a11y}</small></>}</td>
+        <td>{(p.platforms ?? platformIds).join(', ')}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+{Object.keys(c.events ?? {}).length > 0 && (
+  <>
+    <h2 id="events">Events</h2>
+    <table class="ds-schema-table">
+      <thead>
+        <tr><th>Event</th><th>Description</th>{platformIds.map((id) => <th>{id}</th>)}</tr>
+      </thead>
+      <tbody>
+        {Object.entries(c.events).map(([name, e]) => (
+          <tr>
+            <td><code>{name}</code></td>
+            <td>{e.description}</td>
+            {platformIds.map((id) => <td><code>{fmt((e.platforms as any)[id])}</code></td>)}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </>
+)}
+
+{Object.keys(c.styles ?? {}).length > 0 && (
+  <>
+    <h2 id="styles">Style bindings</h2>
+    <table class="ds-schema-table">
+      <thead><tr><th>Property</th><th>Token</th><th>Description</th></tr></thead>
+      <tbody>
+        {Object.entries(c.styles).map(([prop, s]) => (
+          <tr><td><code>{prop}</code></td><td><code>{s.token}</code></td><td>{s.description ?? ''}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </>
+)}
+
+<h2 id="accessibility-requirements">Accessibility requirements</h2>
+<ul>
+  {c.a11y.requires.map((r) => <li><code>{r}</code></li>)}
+</ul>
+{c.a11y.contrast && (
+  <table class="ds-schema-table">
+    <thead><tr><th>Foreground</th><th>Background</th><th>Level</th></tr></thead>
+    <tbody>
+      {c.a11y.contrast.map((pair) => (
+        <tr><td><code>{pair.foreground}</code></td><td><code>{pair.background}</code></td><td>{pair.level}{pair.large ? ' (large text)' : ''}</td></tr>
+      ))}
+    </tbody>
+  </table>
+)}
+
+<h2 id="platform-mapping">Platform mapping</h2>
+<table class="ds-schema-table">
+  <thead><tr><th>Platform</th><th>Renders as</th><th>Attributes / props</th><th>Notes</th></tr></thead>
+  <tbody>
+    {Object.entries(c.platforms).map(([id, p]) => (
+      <tr>
+        <td><code>{id}</code>{p.supported === false && ' (unsupported)'}</td>
+        <td><code>{p.tag ?? p.element ?? '—'}</code></td>
+        <td>{[...(p.attributes ?? []), ...(p.props ?? []), ...(p.reflect ?? []).map((r) => `reflect:${r}`)].map((a) => <code>{a} </code>)}</td>
+        <td>{p.notes ?? ''}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>

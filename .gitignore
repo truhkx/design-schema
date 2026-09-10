@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build outputs: everything below is recreated by `pnpm check`, `pnpm tokens`, `pnpm build` or a gate.
+site/dist/
+site/.astro/
+packages/tokens/dist/
+site/src/content/docs/foundations/spec-sheet.md
+generated/components.json
+generated/themes.json
+generated/prompts/
+generated/behavior/
+generated/keyboard/
+# Kept on purpose: generated/generate.lock.json (the hash CI checks) and generated/gaps/ (what the docs left ambiguous).
+
+# Local state, logs, caches
+logs/
+mcp/.chroma/
+__pycache__/
+.pytest_cache/
+test-results/
+playwright-report/
+*.log
+
+# Scratch folders that are not part of the system
+_to_delete/
+_xfer/
+Claude outputs/
+.claude/

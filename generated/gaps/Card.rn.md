@@ -1,0 +1,33 @@
+# Gaps reported while generating Card for rn
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-09 21:04 — round 1
+
+- interactive: the spec asks the child's own Pressable/Text node to render 'accessible={false}' when collapsed into the surrounding Pressable, but Button/Link don't forward unknown props to their inner element (they destructure a fixed prop list), so that prop would be silently dropped. Instead I wrap the located Button/Link in a `View` with `pointerEvents="none"` + `accessibilityElementsHidden` + `importantForAccessibility="no"`, which collapses touch and most screen-reader traversal into the outer Pressable but isn't guaranteed to remove it from a hardware-keyboard/tab order on every platform (notably react-native-web) the way a true single DOM node would. Flagging in case the schema wants Button/Link to grow an official 'render inert' escape hatch instead.
+- interactive: searched only `children` (the body) for the single required Link/Button, not `headerActions` or `footer`, since combining 'exactly one interactive child' with those other anatomy slots isn't specified and risks double targets; a Button/Link placed in `footer` or `headerActions` on an interactive card is not neutralized and stays independently focusable/pressable.
+- interactive border: the static border (surface default) and the locked focus ring use different token widths (`border.width.thin` vs `border.width.focus`). To avoid the ring toggle shifting layout (matching Button's own technique), interactive cards always reserve `border.width.focus` for their border, so `overrides.borderWidth` has no visible effect while a card is interactive — it only affects non-interactive, surface:default cards.
+- transition: there is no continuous pointer hover on native to animate between (same limitation Button/Link already document for their hover tokens), so `overrides.transition` is accepted by the type but has no runtime effect; `hoverBackground` instead styles the Pressable's momentary `pressed` state, swapped instantly with no animation.
+- header/footer/body rows are built as plain `View`s styled directly from `layout.gap.*` tokens rather than composed from the `Stack` component, because `Stack`'s `gap` prop only accepts the `space.*` scale ('0'..'12'), not the `layout.gap.*` tokens (`loose`/`normal`/`tight`) the schema specifies for `partGap`/`headerGap`/`footerGap`. This mirrors how Alert/Disclosure already lay out internal rows in this package without going through Stack.
+- no token binding is given for the gap between multiple `headerActions` items (only `headerGap`, between the heading and the whole actions group, is specified); used `space.2` as a reasonable small gap and flagged it here rather than inventing a new named binding.
+- Default story's `headerActions` demo uses a plain `ghost`/`sm` Button rather than the icon-only ghost Button the guidance describes, since Card's schema names no icon and the package has no Icon glyph specified for this use; kept it label-only to avoid inventing iconography.
+- Heading's `size` is left at its default per-level size; the web platform note says header size should be 'restrained per the theme' but gives no concrete size or token, so no additional restraint was applied on native.
+
+## 2026-09-09 21:51 — round 1
+
+- Card: transition (motion.duration.fast) has no runtime effect on native since Pressable's pressed style swaps instantly and there's no continuous hover state to animate between — kept the overridable binding for API parity but documented it as inert in the docstring, per the existing implementation's choice.
+- Card: header/footer are hand-built horizontal View rows using layout.gap.* tokens rather than the Stack component, since Stack's `gap` prop only accepts the space.* scale, not layout.gap.* — noted in the docstring rather than growing Stack's API.
+- Card: headerActions 'at most two' is a content guideline, not enforced in code (no runtime check on children count), consistent with how other components treat soft content limits.
+- Link: added exported LINK_EXTERNAL_SUFFIX purely so Card's interactive hit-area collapsing can reproduce Link's accessible name (including the external suffix) verbatim instead of duplicating the copy string — this was a pre-existing bug in the already-generated Card.tsx, now fixed.
+
+## 2026-09-09 21:52 — round 2
+
+- parse gate: failure is unrelated to Card — checkbox.md and switch.md carry a `behavior` frontmatter block (from the prior behavior-scenarios rollout) that schema/component.schema.json rejects under additionalProperties: false; card.md has no such key. Fixing this needs an edit to site/components/{checkbox,switch}.md or schema/component.schema.json, both outside my permitted paths (site/, schema/) — reporting rather than editing forbidden files. No Card code change addresses this gate.
+
+## 2026-09-09 21:52 — round 3
+
+- parse gate: unchanged from round 2 — failure is in checkbox.md (line 113) and switch.md (line 89), which retain a `behavior` frontmatter block from the earlier behavior-scenarios rollout that schema/component.schema.json rejects (additionalProperties: false). card.md has no `behavior` key and Card's generated files are unaffected (typecheck and all 11 Card.test.tsx tests pass). This requires editing site/src/content/docs/components/{checkbox,switch}.md or schema/component.schema.json, both outside my permitted paths (site/, schema/); no change to packages/rn/src/Card.* can fix it.
+
+## 2026-09-09 22:23 — round 1
+
+- Card: spec's borderWidth binding says border is 'Rendered only with surface default', but the interactive Pressable always reserves borderWidth at t.borderWidthFocus (transparent border color when subtle/unfocused) to avoid layout shift when focus toggles — kept this pre-existing, documented interpretation rather than making focus-ring width surface-conditional, since reserving space is necessary to prevent jank and the spec doesn't address focus-ring layout stability.

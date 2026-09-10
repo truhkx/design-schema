@@ -1,0 +1,50 @@
+/* Meter — styled only through Design Schema token custom properties. */
+
+.ds-meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  font-family: var(--font-family-body);
+  line-height: var(--font-line-height-normal);
+}
+
+/* label row: label at the start, value text at the end. */
+.ds-meter__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.ds-meter__label {
+  color: var(--color-foreground);
+}
+
+/* tone → color.status.{tone}.icon: the step guaranteed 3:1 against the page background. */
+.ds-meter--info { --ds-meter-fill: var(--color-status-info-icon); }
+.ds-meter--success { --ds-meter-fill: var(--color-status-success-icon); }
+.ds-meter--warning { --ds-meter-fill: var(--color-status-warning-icon); }
+.ds-meter--danger { --ds-meter-fill: var(--color-status-danger-icon); }
+
+/* track: clips the fill to the rounded ends. Deliberately low-contrast; the text identifies the meter. */
+.ds-meter__track {
+  overflow: hidden;
+  inline-size: 100%;
+  block-size: var(--space-2);
+  border-radius: var(--radius-full);
+  background-color: var(--color-background-strong);
+}
+
+.ds-meter__fill {
+  block-size: 100%;
+  border-radius: var(--radius-full);
+  background-color: var(--ds-meter-fill);
+}
+
+/* transition: fill width change; instant under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .ds-meter__fill {
+    transition: inline-size var(--motion-duration-base) var(--motion-easing-standard);
+  }
+}

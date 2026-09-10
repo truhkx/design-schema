@@ -1,0 +1,133 @@
+/* Checkbox — styled only through Design Schema token custom properties. */
+
+.ds-checkbox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-family: var(--font-family-body);
+  line-height: var(--font-line-height-normal);
+}
+
+/* minTarget: the whole row is the hit area. */
+.ds-checkbox__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--size-target-comfortable);
+}
+
+/* control: a native input drawn with the control tokens, never a hidden input under a fake box. */
+.ds-checkbox__control {
+  --ds-checkbox-control-size: var(--space-5);
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--ds-checkbox-control-size);
+  block-size: var(--ds-checkbox-control-size);
+  margin: 0;
+  padding: 0;
+  border: var(--border-width-thin) solid var(--color-control-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-control-background);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* indicator: drawn at controlSize minus 2 × space.1, in the selected foreground color. */
+.ds-checkbox__control::before {
+  content: '';
+  box-sizing: border-box;
+  display: block;
+  inline-size: calc(var(--ds-checkbox-control-size) - 2 * var(--space-1));
+  block-size: calc(var(--ds-checkbox-control-size) - 2 * var(--space-1));
+  opacity: 0;
+}
+
+/* controlSelectedBackground: checked and indeterminate fill; the border takes the same color. */
+.ds-checkbox__control:checked,
+.ds-checkbox__control:indeterminate {
+  border-color: var(--color-control-selected-background);
+  background-color: var(--color-control-selected-background);
+}
+
+/* indicatorStroke: stroke thickness of the check mark and dash. */
+.ds-checkbox__control::before {
+  --ds-checkbox-indicator-stroke: var(--border-width-focus);
+}
+
+/* Check mark: two edges of a box rotated 45°, scaled to the indicator area. */
+.ds-checkbox__control:checked::before {
+  inline-size: calc((var(--ds-checkbox-control-size) - 2 * var(--space-1)) * 0.4);
+  block-size: calc((var(--ds-checkbox-control-size) - 2 * var(--space-1)) * 0.75);
+  margin-block-start: calc(-1 * var(--space-1) / 2);
+  border-inline-end: var(--ds-checkbox-indicator-stroke) solid var(--color-control-selected-foreground);
+  border-block-end: var(--ds-checkbox-indicator-stroke) solid var(--color-control-selected-foreground);
+  transform: rotate(45deg);
+  opacity: 1;
+}
+
+/* Mixed dash: a bar in the indicator color. */
+.ds-checkbox__control:indeterminate::before {
+  block-size: var(--ds-checkbox-indicator-stroke);
+  background-color: var(--color-control-selected-foreground);
+  transform: none;
+  opacity: 1;
+}
+
+/* pressedOverlay: while pressed, the box shows the selected fill at disabledOpacity. */
+.ds-checkbox__control:not([aria-disabled='true']):not(:checked):not(:indeterminate):active {
+  background-color: color-mix(
+    in srgb,
+    var(--color-control-selected-background) calc(var(--opacity-disabled) * 100%),
+    var(--color-control-background)
+  );
+}
+
+/* controlBorderInvalid */
+.ds-checkbox__control[aria-invalid='true'] {
+  border-color: var(--color-border-danger);
+}
+
+/* focus-visible: never removed, only replaced by the token ring. */
+.ds-checkbox__control:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
+}
+
+/* disabled: stays focusable and readable; visually dimmed. */
+.ds-checkbox--disabled .ds-checkbox__control,
+.ds-checkbox--disabled .ds-checkbox__label {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.ds-checkbox__label {
+  cursor: pointer;
+  color: var(--color-foreground);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-regular);
+}
+
+.ds-checkbox__description,
+.ds-checkbox__error {
+  margin: 0;
+  padding-inline-start: calc(var(--space-5) + var(--space-2));
+}
+
+.ds-checkbox__description {
+  cursor: pointer;
+}
+
+/* transition: fill and indicator; removed under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .ds-checkbox__control {
+    transition:
+      background-color var(--motion-duration-fast) var(--motion-easing-standard),
+      border-color var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+  .ds-checkbox__control::before {
+    transition: opacity var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+}

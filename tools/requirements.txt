@@ -1,0 +1,6 @@
+pyyaml>=6.0
+jsonschema>=4.20
+# MCP server + vector index (mcp/)
+fastmcp>=2.10
+chromadb>=1.0
+anthropic>=0.40  # optional: tools/generate.py --runner api (the default cli runner needs only Claude Code)

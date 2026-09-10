@@ -1,0 +1,36 @@
+{
+  "id": "calm-precise",
+  "status": "review",
+  "tone": [
+    "calm",
+    "precise",
+    "quiet",
+    "trustworthy"
+  ],
+  "not": "playful",
+  "seed": {
+    "color": "#3B5BDB",
+    "typeface": "system",
+    "mono": "system"
+  },
+  "neutralTint": 0.25,
+  "scale": {
+    "base": 16,
+    "ratio": 1.2
+  },
+  "radius": "sm",
+  "density": "comfortable",
+  "motion": "subtle",
+  "elevation": "subtle",
+  "layout": {
+    "rhythm": "normal",
+    "contentWidth": 960
+  },
+  "modes": {
+    "default": "light",
+    "supports": [
+      "light",
+      "dark"
+    ]
+  }
+}

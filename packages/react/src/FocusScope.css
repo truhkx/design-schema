@@ -1,0 +1,24 @@
+/* FocusScope has no visual style bindings (styles: {} in the schema) — the wrapper is unstyled.
+   The sentinels use the sanctioned visually-hidden clip pattern so they are never seen. */
+
+.ds-focus-scope {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+/* The standard visually-hidden clip pattern; 1px is sanctioned here. */
+.ds-focus-scope__sentinel {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

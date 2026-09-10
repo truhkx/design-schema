@@ -1,0 +1,36 @@
+{
+  "id": "warm-sleek",
+  "status": "draft",
+  "tone": [
+    "warm",
+    "sleek",
+    "modern",
+    "light"
+  ],
+  "not": "cold",
+  "seed": {
+    "color": "#FFEBBA",
+    "typeface": "Google Sans",
+    "mono": "system"
+  },
+  "neutralTint": 0.35,
+  "scale": {
+    "base": 16,
+    "ratio": 1.25
+  },
+  "radius": "md",
+  "density": "comfortable",
+  "motion": "expressive",
+  "elevation": "pronounced",
+  "layout": {
+    "rhythm": "normal",
+    "contentWidth": 1040
+  },
+  "modes": {
+    "default": "light",
+    "supports": [
+      "light",
+      "dark"
+    ]
+  }
+}

@@ -1,0 +1,125 @@
+/* Dialog — styled only through Design Schema token custom properties. */
+
+.ds-dialog {
+  --ds-dialog-scrim: var(--color-overlay-scrim);
+  --ds-dialog-border: var(--color-border);
+  --ds-dialog-border-width: var(--border-width-thin);
+  --ds-dialog-shadow: var(--shadow-overlay);
+  --ds-dialog-radius: var(--radius-lg);
+  --ds-dialog-inset: var(--layout-inset-lg);
+  --ds-dialog-part-gap: var(--layout-gap-loose);
+  --ds-dialog-header-gap: var(--layout-gap-normal);
+  --ds-dialog-footer-gap: var(--layout-gap-tight);
+  --ds-dialog-width-sm: var(--layout-max-width-prose);
+  --ds-dialog-layer: var(--layer-dialog);
+  --ds-dialog-enter: var(--motion-duration-base);
+  --ds-dialog-exit: var(--motion-duration-fast);
+  box-sizing: border-box;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  max-inline-size: none;
+  max-block-size: none;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-family-body);
+  z-index: var(--ds-dialog-layer);
+}
+
+/* scrim → color.overlay.scrim; ::backdrop inherits the custom property from its originating element. */
+.ds-dialog::backdrop {
+  background-color: var(--ds-dialog-scrim);
+}
+
+.ds-dialog__surface {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-dialog-part-gap);
+  max-inline-size: calc(100vw - 2 * var(--layout-gutter));
+  max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  background-color: var(--color-overlay-surface);
+  border-style: solid;
+  border-width: var(--ds-dialog-border-width);
+  border-color: var(--ds-dialog-border);
+  border-radius: var(--ds-dialog-radius);
+  box-shadow: var(--ds-dialog-shadow);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(var(--space-2));
+  transition-property: opacity, transform;
+  transition-duration: var(--ds-dialog-exit);
+  transition-timing-function: var(--motion-easing-exit);
+}
+
+/* enter/exit: scrim fade and surface fade-and-rise; visible uses `enter` and motion.easing.standard. */
+.ds-dialog--visible .ds-dialog__surface {
+  opacity: 1;
+  transform: translateY(0);
+  transition-duration: var(--ds-dialog-enter);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+/* size → surface width; sm is the overridable widthSm token, md/lg are derived from layout.maxWidth.content. */
+.ds-dialog--sm .ds-dialog__surface { inline-size: var(--ds-dialog-width-sm); }
+.ds-dialog--md .ds-dialog__surface { inline-size: calc(var(--layout-max-width-content) * 0.75); }
+.ds-dialog--lg .ds-dialog__surface { inline-size: var(--layout-max-width-content); }
+
+.ds-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-dialog-header-gap);
+  padding-inline: var(--ds-dialog-inset);
+  padding-block-start: var(--ds-dialog-inset);
+  flex: 0 0 auto;
+}
+
+.ds-dialog__heading-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-gap-tight);
+  min-inline-size: 0;
+}
+
+.ds-dialog__title {
+  min-inline-size: 0;
+}
+
+/* focus-visible: the title is only focused programmatically (initialFocus="title"), never removed. */
+.ds-dialog__title:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
+}
+
+.ds-dialog__close {
+  flex: 0 0 auto;
+}
+
+/* body → the Box's own inset (default layout.inset.lg, forwarded from the `inset` override); this
+   is the part that scrolls when content is taller than the viewport. */
+.ds-dialog__body {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow: auto;
+}
+
+.ds-dialog__footer {
+  padding-inline: var(--ds-dialog-inset);
+  padding-block-end: var(--ds-dialog-inset);
+  flex: 0 0 auto;
+}
+
+/* footerGap → layout.gap.tight, applied through the composed Stack's own gap scale (closest preset). */
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-dialog__surface {
+    transition: none;
+  }
+}
+
+/* Body scroll lock while any Dialog is present; toggled on <html> by the component. */
+html.ds-dialog-lock-scroll {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}

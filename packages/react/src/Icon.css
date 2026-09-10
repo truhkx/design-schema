@@ -1,0 +1,34 @@
+/* Icon — styled only through Design Schema token custom properties. */
+
+/*
+ * The <svg> is 1em square; `size` sets the em. Glyphs inherit the text color (currentColor), so
+ * `color` is only the fallback for an icon with no colored ancestor.
+ */
+.ds-icon {
+  box-sizing: content-box;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+  color: var(--color-foreground);
+  /* strokeWidth: border.width.focus — line glyphs use the focus-ring width so they stay legible at xs. */
+  stroke-width: var(--border-width-focus);
+  overflow: visible;
+}
+
+/* Stroke thickness stays the token width on screen at every rendered size. */
+.ds-icon path {
+  vector-effect: non-scaling-stroke;
+}
+
+/* size → font.size.{size}: width and height. */
+.ds-icon--xs { font-size: var(--font-size-xs); }
+.ds-icon--sm { font-size: var(--font-size-sm); }
+.ds-icon--md { font-size: var(--font-size-md); }
+.ds-icon--lg { font-size: var(--font-size-lg); }
+.ds-icon--xl { font-size: var(--font-size-xl); }
+
+/* inline: 1em of the surrounding text, sitting on its baseline. */
+.ds-icon--inline {
+  font-size: inherit;
+  vertical-align: -0.125em;
+}

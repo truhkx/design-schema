@@ -1,0 +1,521 @@
+{
+  "color": {
+    "$type": "color",
+    "palette": {
+      "$description": "Derived by tools/theme.py \u2014 edit the theme doc, not this file.",
+      "neutral": {
+        "0": {
+          "$value": "#ffffff"
+        },
+        "50": {
+          "$value": "#f7f7f5"
+        },
+        "100": {
+          "$value": "#eeedea"
+        },
+        "200": {
+          "$value": "#dcdad7"
+        },
+        "300": {
+          "$value": "#bfbdb8"
+        },
+        "400": {
+          "$value": "#97958f"
+        },
+        "500": {
+          "$value": "#74716b"
+        },
+        "600": {
+          "$value": "#5a5852"
+        },
+        "700": {
+          "$value": "#44423c"
+        },
+        "800": {
+          "$value": "#2d2b26"
+        },
+        "900": {
+          "$value": "#1a1814"
+        },
+        "1000": {
+          "$value": "#000000"
+        }
+      },
+      "brand": {
+        "50": {
+          "$value": "#fff4da"
+        },
+        "100": {
+          "$value": "#fae6b5"
+        },
+        "200": {
+          "$value": "#e6d3a3"
+        },
+        "300": {
+          "$value": "#c7b68b"
+        },
+        "400": {
+          "$value": "#a59774"
+        },
+        "500": {
+          "$value": "#837961"
+        },
+        "600": {
+          "$value": "#696354"
+        },
+        "700": {
+          "$value": "#4f4d47"
+        },
+        "800": {
+          "$value": "#3a3832"
+        },
+        "900": {
+          "$value": "#26241f"
+        }
+      },
+      "danger": {
+        "50": {
+          "$value": "#fff2f0"
+        },
+        "100": {
+          "$value": "#ffdfdc"
+        },
+        "200": {
+          "$value": "#ffc3bd"
+        },
+        "300": {
+          "$value": "#ff958d"
+        },
+        "400": {
+          "$value": "#f5605c"
+        },
+        "500": {
+          "$value": "#d33a3c"
+        },
+        "600": {
+          "$value": "#b51d26"
+        },
+        "700": {
+          "$value": "#940014"
+        },
+        "800": {
+          "$value": "#6f000c"
+        },
+        "900": {
+          "$value": "#4c0005"
+        }
+      },
+      "success": {
+        "50": {
+          "$value": "#e0ffe0"
+        },
+        "100": {
+          "$value": "#befabe"
+        },
+        "200": {
+          "$value": "#a0eaa2"
+        },
+        "300": {
+          "$value": "#76d07a"
+        },
+        "400": {
+          "$value": "#4ab253"
+        },
+        "500": {
+          "$value": "#1d9330"
+        },
+        "600": {
+          "$value": "#00791d"
+        },
+        "700": {
+          "$value": "#005e14"
+        },
+        "800": {
+          "$value": "#00450c"
+        },
+        "900": {
+          "$value": "#002e05"
+        }
+      },
+      "warning": {
+        "50": {
+          "$value": "#fff4e1"
+        },
+        "100": {
+          "$value": "#ffe4b7"
+        },
+        "200": {
+          "$value": "#fccc78"
+        },
+        "300": {
+          "$value": "#e6ac3f"
+        },
+        "400": {
+          "$value": "#c58d00"
+        },
+        "500": {
+          "$value": "#9f7100"
+        },
+        "600": {
+          "$value": "#825b00"
+        },
+        "700": {
+          "$value": "#664700"
+        },
+        "800": {
+          "$value": "#4b3300"
+        },
+        "900": {
+          "$value": "#322000"
+        }
+      },
+      "info": {
+        "50": {
+          "$value": "#fff4da"
+        },
+        "100": {
+          "$value": "#ffe6a7"
+        },
+        "200": {
+          "$value": "#f1d17e"
+        },
+        "300": {
+          "$value": "#d9b249"
+        },
+        "400": {
+          "$value": "#bb9200"
+        },
+        "500": {
+          "$value": "#977500"
+        },
+        "600": {
+          "$value": "#7b5f00"
+        },
+        "700": {
+          "$value": "#604a00"
+        },
+        "800": {
+          "$value": "#473500"
+        },
+        "900": {
+          "$value": "#2f2200"
+        }
+      }
+    }
+  },
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "body": {
+        "$value": [
+          "Google Sans",
+          "system-ui",
+          "-apple-system",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif"
+        ]
+      },
+      "heading": {
+        "$value": [
+          "Google Sans",
+          "system-ui",
+          "-apple-system",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif"
+        ]
+      },
+      "mono": {
+        "$value": [
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Consolas",
+          "monospace"
+        ]
+      }
+    },
+    "weight": {
+      "$type": "fontWeight",
+      "regular": {
+        "$value": 400
+      },
+      "medium": {
+        "$value": 500
+      },
+      "semibold": {
+        "$value": 600
+      },
+      "bold": {
+        "$value": 700
+      }
+    },
+    "size": {
+      "$type": "dimension",
+      "xs": {
+        "$value": "10px"
+      },
+      "sm": {
+        "$value": "13px"
+      },
+      "md": {
+        "$value": "16px"
+      },
+      "lg": {
+        "$value": "20px"
+      },
+      "xl": {
+        "$value": "25px"
+      },
+      "2xl": {
+        "$value": "31px"
+      },
+      "3xl": {
+        "$value": "39px"
+      },
+      "4xl": {
+        "$value": "49px"
+      }
+    },
+    "lineHeight": {
+      "$type": "number",
+      "tight": {
+        "$value": 1.2
+      },
+      "normal": {
+        "$value": 1.5
+      },
+      "loose": {
+        "$value": 1.7
+      }
+    }
+  },
+  "space": {
+    "$type": "dimension",
+    "0": {
+      "$value": "0px"
+    },
+    "1": {
+      "$value": "4px"
+    },
+    "2": {
+      "$value": "8px"
+    },
+    "3": {
+      "$value": "12px"
+    },
+    "4": {
+      "$value": "16px"
+    },
+    "5": {
+      "$value": "20px"
+    },
+    "6": {
+      "$value": "24px"
+    },
+    "8": {
+      "$value": "32px"
+    },
+    "10": {
+      "$value": "40px"
+    },
+    "12": {
+      "$value": "48px"
+    },
+    "16": {
+      "$value": "64px"
+    },
+    "20": {
+      "$value": "80px"
+    },
+    "sm": {
+      "$value": "{space.2}"
+    },
+    "md": {
+      "$value": "{space.3}"
+    },
+    "lg": {
+      "$value": "{space.4}"
+    }
+  },
+  "layout": {
+    "$type": "dimension",
+    "gutter": {
+      "$description": "Horizontal page padding at each breakpoint.",
+      "narrow": {
+        "$value": "{space.4}"
+      },
+      "default": {
+        "$value": "{space.6}"
+      },
+      "wide": {
+        "$value": "{space.8}"
+      }
+    },
+    "section": {
+      "$description": "Vertical space between page sections (a Landmark, a heading group, a card row).",
+      "sm": {
+        "$value": "32px"
+      },
+      "md": {
+        "$value": "48px"
+      },
+      "lg": {
+        "$value": "64px"
+      }
+    },
+    "gap": {
+      "$description": "Gap between siblings in either direction \u2014 the presets Stack, Card and Container expose. Scaled by density and rhythm.",
+      "none": {
+        "$value": "{space.0}"
+      },
+      "tight": {
+        "$value": "4px"
+      },
+      "normal": {
+        "$value": "8px"
+      },
+      "loose": {
+        "$value": "16px"
+      },
+      "section": {
+        "$value": "32px"
+      }
+    },
+    "inset": {
+      "$description": "Padding presets surfaces expose (Box, Card): sm/md/lg map to the space aliases.",
+      "none": {
+        "$value": "{space.0}"
+      },
+      "sm": {
+        "$value": "{space.sm}"
+      },
+      "md": {
+        "$value": "{space.md}"
+      },
+      "lg": {
+        "$value": "{space.lg}"
+      },
+      "xl": {
+        "$value": "{space.8}"
+      }
+    },
+    "maxWidth": {
+      "$description": "Column widths. prose is a 65-character measure at the body size (px, so React Native can use it).",
+      "prose": {
+        "$value": "572px"
+      },
+      "content": {
+        "$value": "1040px"
+      },
+      "page": {
+        "$value": "1387px"
+      }
+    }
+  },
+  "size": {
+    "$type": "dimension",
+    "target": {
+      "min": {
+        "$value": "24px"
+      },
+      "comfortable": {
+        "$value": "44px"
+      }
+    }
+  },
+  "radius": {
+    "$type": "dimension",
+    "none": {
+      "$value": "0px"
+    },
+    "sm": {
+      "$value": "4px"
+    },
+    "md": {
+      "$value": "8px"
+    },
+    "lg": {
+      "$value": "12px"
+    },
+    "full": {
+      "$value": "999px"
+    }
+  },
+  "border": {
+    "width": {
+      "$type": "dimension",
+      "thin": {
+        "$value": "1px"
+      },
+      "focus": {
+        "$value": "2px"
+      }
+    }
+  },
+  "opacity": {
+    "$type": "number",
+    "disabled": {
+      "$value": 0.5
+    }
+  },
+  "layer": {
+    "$type": "number",
+    "base": {
+      "$value": 0
+    },
+    "raised": {
+      "$value": 1
+    },
+    "dropdown": {
+      "$value": 100
+    },
+    "sheet": {
+      "$value": 200
+    },
+    "dialog": {
+      "$value": 300
+    },
+    "toast": {
+      "$value": 400
+    }
+  },
+  "motion": {
+    "duration": {
+      "$type": "duration",
+      "fast": {
+        "$value": "160ms"
+      },
+      "base": {
+        "$value": "320ms"
+      },
+      "loop": {
+        "$value": "800ms"
+      }
+    },
+    "easing": {
+      "$type": "cubicBezier",
+      "standard": {
+        "$value": [
+          0.2,
+          0,
+          0,
+          1
+        ]
+      },
+      "exit": {
+        "$value": [
+          0.4,
+          0,
+          1,
+          1
+        ]
+      }
+    }
+  }
+}

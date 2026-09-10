@@ -1,0 +1,40 @@
+/* Breadcrumb — styled only through Design Schema token custom properties. */
+
+.ds-breadcrumb {
+  display: block;
+  min-inline-size: 0;
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-line-height-normal);
+}
+
+/* list: wraps on narrow widths so every ancestor stays reachable. */
+.ds-breadcrumb__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* minTarget: the block padding is added to the item, not the line. */
+.ds-breadcrumb__item {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--size-target-min);
+}
+
+/* separator: CSS-generated from copy.separator, so it is not in the accessibility tree. */
+.ds-breadcrumb__item + .ds-breadcrumb__item::before {
+  content: var(--ds-breadcrumb-separator);
+  margin-inline: var(--space-2);
+  color: var(--color-foreground-muted);
+}
+
+/* current: the current page, plain text in the regular weight. */
+.ds-breadcrumb__current,
+.ds-breadcrumb__text {
+  color: var(--color-foreground);
+}

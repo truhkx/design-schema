@@ -1,0 +1,8 @@
+/* Landmark — no visual bindings by design. A plain block; consumers lay it out like any block. */
+
+.ds-landmark {
+  display: block;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}

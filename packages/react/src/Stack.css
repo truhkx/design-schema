@@ -1,0 +1,45 @@
+/* Stack — styled only through Design Schema token custom properties. */
+
+.ds-stack {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+
+.ds-stack--vertical { flex-direction: column; }
+.ds-stack--horizontal { flex-direction: row; }
+
+/* gap → space.{gap} */
+.ds-stack--gap-0 { gap: var(--space-0); }
+.ds-stack--gap-1 { gap: var(--space-1); }
+.ds-stack--gap-2 { gap: var(--space-2); }
+.ds-stack--gap-3 { gap: var(--space-3); }
+.ds-stack--gap-4 { gap: var(--space-4); }
+.ds-stack--gap-5 { gap: var(--space-5); }
+.ds-stack--gap-6 { gap: var(--space-6); }
+.ds-stack--gap-8 { gap: var(--space-8); }
+.ds-stack--gap-10 { gap: var(--space-10); }
+.ds-stack--gap-12 { gap: var(--space-12); }
+
+.ds-stack--align-start { align-items: flex-start; }
+.ds-stack--align-center { align-items: center; }
+.ds-stack--align-end { align-items: flex-end; }
+.ds-stack--align-stretch { align-items: stretch; }
+
+.ds-stack--justify-start { justify-content: flex-start; }
+.ds-stack--justify-center { justify-content: center; }
+.ds-stack--justify-end { justify-content: flex-end; }
+.ds-stack--justify-between { justify-content: space-between; }
+
+.ds-stack--wrap { flex-wrap: wrap; }
+
+/* ul / ol: keep list semantics (role="list"), drop the default list styling. */
+.ds-stack--list {
+  list-style: none;
+}
+
+.ds-stack__item {
+  display: block;
+  min-inline-size: 0;
+}

@@ -1,0 +1,456 @@
+"""
+Parse component docs → machine-readable output.
+
+For every site/src/content/docs/components/*.md:
+  1. split YAML frontmatter from the Markdown body
+  2. validate frontmatter.component against schema/component.schema.json
+  3. split the body into sections by `## ` heading and check them against ALLOWED_HEADINGS
+  4. emit generated/components.json  (frontmatter + sections, one entry per component)
+  5. emit generated/prompts/<Name>.<platform>.md — the generation prompt ("mini-skill")
+     for each supported platform: frontmatter + guidance + prompts/templates/<platform>.md
+
+Exit code 1 on any validation error, so this can gate CI and the site build.
+
+Usage: python3 tools/parse.py
+"""
+from __future__ import annotations
+
+import sys
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")  # Windows consoles default to cp1252
+
+import itertools
+import json
+import re
+import sys
+from pathlib import Path
+
+import yaml
+try:  # jsonschema ≥4.x
+    from jsonschema import Draft202012Validator as Validator
+except ImportError:  # older distro packages (3.x): $defs refs still resolve as JSON pointers
+    from jsonschema import Draft7Validator as Validator
+
+ROOT = Path(__file__).resolve().parents[1]
+DOCS = ROOT / "site" / "src" / "content" / "docs" / "components"
+THEME_DOCS = ROOT / "site" / "src" / "content" / "docs" / "themes"
+SCHEMA = ROOT / "schema" / "component.schema.json"
+TEMPLATES = ROOT / "prompts" / "templates"
+OUT = ROOT / "generated"
+
+# The prose body is guidance, not schema. Sections are fixed so the docs site,
+# the MCP server, and the prompt builder can address them by name.
+THEME_HEADINGS = ["Overview", "Feel", "Not", "References", "When to use", "When not to use", "Accessibility", "Platform notes"]
+ALLOWED_HEADINGS = [
+    "Overview",
+    "When to use",
+    "When not to use",
+    "Behavior",
+    "Content guidelines",
+    "Accessibility",
+    "Platform notes",
+    "Examples",
+    "Related",
+]
+REQUIRED_HEADINGS = ["When to use", "Accessibility"]
+FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)$", re.S)
+STATUS_PUBLISHED = {"review", "stable"}
+
+
+class DocError(Exception):
+    pass
+
+
+def split_frontmatter(text: str, path: Path) -> tuple[dict, str]:
+    m = FRONTMATTER.match(text)
+    if not m:
+        raise DocError(f"{path.name}: missing YAML frontmatter block")
+    try:
+        fm = yaml.safe_load(m.group(1)) or {}
+    except yaml.YAMLError as e:
+        raise DocError(f"{path.name}: invalid YAML frontmatter: {e}") from e
+    return fm, m.group(2)
+
+
+def split_sections(body: str, path: Path, allowed: list[str] = ALLOWED_HEADINGS, required: list[str] = REQUIRED_HEADINGS) -> dict[str, str]:
+    """{'When to use': '...markdown...', ...}; text before the first ## goes to 'Overview'."""
+    sections: dict[str, str] = {}
+    current = "Overview"
+    buf: list[str] = []
+    in_fence = False
+    for line in body.splitlines():
+        if line.startswith("```"):
+            in_fence = not in_fence
+        if not in_fence and line.startswith("## "):
+            sections[current] = "\n".join(buf).strip()
+            current = line[3:].strip()
+            if not any(current == h or current.startswith(h + " ") for h in allowed):
+                raise DocError(
+                    f"{path.name}: heading '## {current}' is not allowed. Use one of: {', '.join(allowed)}"
+                )
+            if current in sections:
+                raise DocError(f"{path.name}: duplicate section '## {current}'")
+            buf = []
+        else:
+            buf.append(line)
+    sections[current] = "\n".join(buf).strip()
+    for h in required:
+        if not sections.get(h):
+            raise DocError(f"{path.name}: required section '## {h}' is missing or empty")
+    return {k: v for k, v in sections.items() if v}
+
+
+# Built token names (public form: a trailing `.default` dropped), for checking that every value an interpolated
+# binding can take resolves to a real token. Read from the built JSON when it exists, else from the theme tree.
+TOKEN_DIST = ROOT / "packages" / "tokens" / "dist" / "calm-precise" / "json" / "tokens.light.json"
+# Enum values that a binding renders as "nothing" instead of a token (the templates say so): `none` for a
+# background/border/padding, `full` for a max-width. A missing token for these values is not an error.
+NO_TOKEN_VALUES = {"none", "full"}
+_token_names: set[str] | None = None
+
+
+def token_names() -> set[str] | None:
+    """Public names of every built token, or None when nothing has been built yet (the check is then skipped)."""
+    global _token_names
+    if _token_names is not None:
+        return _token_names
+    names: set[str] | None = None
+    if TOKEN_DIST.exists():
+        names = set(json.loads(TOKEN_DIST.read_text(encoding="utf-8")))
+    else:
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from tokens import load_theme, public_name, themes  # noqa: E402
+
+            ids = themes()
+            if ids:
+                names = {public_name(k) for k in load_theme(ids[0], "light")}
+        except Exception:  # no derived themes yet: nothing to check against
+            names = None
+    _token_names = names
+    return names
+
+
+def validate(fm: dict, validator: Validator, path: Path) -> None:
+    errors = sorted(validator.iter_errors(fm), key=lambda e: list(e.path))
+    if errors:
+        lines = [f"{path.name}: frontmatter failed schema validation:"]
+        for e in errors:
+            where = ".".join(str(p) for p in e.path) or "(root)"
+            lines.append(f"  - {where}: {e.message}")
+        raise DocError("\n".join(lines))
+    c = fm["component"]
+    stem = path.stem.replace("-", "").lower()
+    if c["name"].lower() != stem:
+        raise DocError(f"{path.name}: component.name '{c['name']}' should match file name")
+    # Every prop referenced by a token slot must be an enum prop.
+    for prop_name, binding in c.get("styles", {}).items():
+        for slot in re.findall(r"\{([a-zA-Z]+)\}", binding["token"]):
+            p = c["props"].get(slot)
+            if not p or p["type"] != "enum":
+                raise DocError(f"{path.name}: styles.{prop_name} interpolates '{{{slot}}}' but '{slot}' is not an enum prop")
+    # …and every value the interpolation can take must resolve to a built token (after dropping a trailing
+    # `.default`), except the no-op values. Two docs shipped with a value that had no token before this check.
+    names = token_names()
+    if names is not None:
+        for prop_name, binding in c.get("styles", {}).items():
+            token = binding["token"]
+            slots = re.findall(r"\{([a-zA-Z]+)\}", token)
+            if not slots:
+                continue
+            for combo in itertools.product(*[c["props"][s_]["values"] for s_ in slots]):
+                ref = token
+                for s_, v in zip(slots, combo):
+                    ref = ref.replace("{" + s_ + "}", str(v))
+                public = ".".join(ref.split(".")[:-1]) if ref.endswith(".default") else ref
+                if public not in names and not (set(combo) & NO_TOKEN_VALUES):
+                    raise DocError(f"{path.name}: {c['name']}: styles.{prop_name} '{token}' → '{public}' is not a token")
+    # Overrides: a binding is locked when its token carries an accessibility guarantee — it appears in a contrast
+    # pair, or it is a focus ring / minimum target. Generators expose every other binding as a per-instance override.
+    contrast_tokens = {p[k] for p in c["a11y"].get("contrast", []) for k in ("foreground", "background")}
+    for b_name, binding in c.get("styles", {}).items():
+        auto = binding["token"] in contrast_tokens or b_name.startswith("focusRing") or b_name in ("minTarget", "dismissTarget")
+        binding["locked"] = bool(binding.get("locked", False) or auto)
+    # Composition parts must be anatomy parts, and name a component that exists (or is explicitly planned).
+    for part, comp in (c.get("composition") or {}).items():
+        if part not in c["anatomy"]:
+            raise DocError(f"{path.name}: composition.{part} is not in anatomy {c['anatomy']}")
+        comp_name = comp.replace("(planned)", "").strip()
+        if not (DOCS / f"{comp_name.lower()}.md").exists() and "(planned)" not in comp:
+            raise DocError(f"{path.name}: composition.{part} names '{comp}', which has no doc (mark it '(planned)')")
+    # Keyboard rules imply keyboard-operable, and Escape implies escape-dismiss.
+    kb = c.get("keyboard") or []
+    if kb and "keyboard-operable" not in c["a11y"]["requires"]:
+        raise DocError(f"{path.name}: has a keyboard block but a11y.requires lacks 'keyboard-operable'")
+    if any("Escape" in r["keys"] for r in kb) and "escape-dismiss" not in c["a11y"]["requires"]:
+        raise DocError(f"{path.name}: keyboard uses Escape but a11y.requires lacks 'escape-dismiss'")
+    # A gesture-triggered event must have a non-gesture alternative (WCAG 2.5.1 / 2.5.7).
+    if any(ev.get("gesture") for ev in c.get("events", {}).values()) and "gesture-alternative" not in c["a11y"]["requires"]:
+        raise DocError(f"{path.name}: declares a gesture event but a11y.requires lacks 'gesture-alternative'")
+    # Every event must map (or be explicitly unsupported) on every platform declared for the component.
+    for ev_name, ev in c.get("events", {}).items():
+        for platform, notes in c["platforms"].items():
+            if notes.get("supported", True) and platform not in ev["platforms"]:
+                raise DocError(f"{path.name}: events.{ev_name} has no mapping for platform '{platform}'")
+    validate_behavior(c, path)
+
+
+BEHAVIOR_STATES = {"checked", "expanded", "selected", "disabled", "invalid", "pressed", "open"}
+BEHAVIOR_FOCUS_TARGETS = {"none", "moved", "unchanged"}
+
+
+def validate_behavior(component: dict, path: Path) -> None:
+    """Cross-reference each authored `behavior` scenario against the rest of the schema:
+    props/anatomy/events/copy it names must exist, and anything React Native's harness
+    cannot express (keyboard, focus observation, an `invalid` state) must narrow `platforms`
+    to exclude 'rn' rather than leave the generator to guess."""
+    anatomy = component.get("anatomy") or []
+    props = component.get("props") or {}
+    events = component.get("events") or {}
+    copy = component.get("copy") or {}
+    declared_platforms = set(component.get("platforms") or {})
+
+    seen_names: set[str] = set()
+    for sc in component.get("behavior") or []:
+        name = sc["name"]
+        if name in seen_names:
+            raise DocError(f"{path.name}: duplicate behavior scenario '{name}'")
+        seen_names.add(name)
+        if "derived" in sc:
+            raise DocError(f"{path.name}: behavior scenario '{name}' sets 'derived' — only the parser may set that key")
+
+        scenario_platforms = sc.get("platforms")
+        if scenario_platforms is not None:
+            for plat in scenario_platforms:
+                if plat not in declared_platforms:
+                    raise DocError(f"{path.name}: scenario '{name}' platforms includes '{plat}', which the component does not declare")
+
+        for prop_name, value in (sc.get("given") or {}).items():
+            prop = props.get(prop_name)
+            if prop is None:
+                raise DocError(f"{path.name}: scenario '{name}' given: unknown prop '{prop_name}'")
+            if prop["type"] == "enum" and value not in prop["values"]:
+                raise DocError(f"{path.name}: scenario '{name}' given.{prop_name}: '{value}' is not one of {prop['values']}")
+            if prop["type"] == "boolean" and not isinstance(value, bool):
+                raise DocError(f"{path.name}: scenario '{name}' given.{prop_name} must be a boolean, got {value!r}")
+
+        when = sc.get("when") or {}
+        if "click" in when and when["click"] not in anatomy:
+            raise DocError(f"{path.name}: scenario '{name}' when.click: unknown anatomy part '{when['click']}'")
+        if "focus" in when and when["focus"] not in anatomy:
+            raise DocError(f"{path.name}: scenario '{name}' when.focus: unknown anatomy part '{when['focus']}'")
+        if "key" in when:
+            effective = set(scenario_platforms) if scenario_platforms is not None else declared_platforms
+            if "rn" in effective:
+                raise DocError(f"{path.name}: scenario '{name}' uses when.key but React Native has no keyboard — narrow platforms to exclude 'rn'")
+
+        for item in sc.get("then") or []:
+            if "event" in item:
+                ev = item["event"]
+                if ev not in events:
+                    raise DocError(f"{path.name}: scenario '{name}' then.event: unknown event '{ev}'")
+                if item.get("fired") is False and "with" in item:
+                    raise DocError(f"{path.name}: scenario '{name}': `with` on an event that must not fire")
+            for key in ("focus", "focused"):
+                if key in item:
+                    target = item[key]
+                    if target not in anatomy and target not in BEHAVIOR_FOCUS_TARGETS:
+                        raise DocError(f"{path.name}: scenario '{name}' then.{key}: unknown anatomy part '{target}'")
+            if "copy" in item and item["copy"] not in copy:
+                raise DocError(f"{path.name}: scenario '{name}' then.copy: unknown copy key '{item['copy']}'")
+            if "state" in item and item["state"] not in BEHAVIOR_STATES:
+                raise DocError(f"{path.name}: scenario '{name}' then.state '{item['state']}' must be one of {sorted(BEHAVIOR_STATES)}")
+
+            item_platforms = item.get("platforms")
+            if item_platforms is not None:
+                for plat in item_platforms:
+                    if plat not in declared_platforms:
+                        raise DocError(f"{path.name}: scenario '{name}' then item platforms includes '{plat}', which the component does not declare")
+                if scenario_platforms is not None and not set(item_platforms) <= set(scenario_platforms):
+                    raise DocError(f"{path.name}: scenario '{name}' then item platforms {item_platforms} outside the scenario's platforms {scenario_platforms}")
+
+            if item_platforms is not None:
+                effective = set(item_platforms)
+            elif scenario_platforms is not None:
+                effective = set(scenario_platforms)
+            else:
+                effective = declared_platforms
+            if "rn" in effective:
+                if "focusable" in item:
+                    raise DocError(f"{path.name}: scenario '{name}' then.focusable: React Native cannot observe focus — narrow platforms to exclude 'rn'")
+                if item.get("state") == "invalid":
+                    raise DocError(f"{path.name}: scenario '{name}' then.state invalid: React Native has no invalid accessibility state — narrow platforms to exclude 'rn'")
+
+
+def derive_behavior(component: dict) -> list[dict]:
+    """Scenarios the schema already implies, so authors only write what it cannot infer:
+    one render per enum value, an accessible-name check, a focusable check for
+    keyboard-operable controls, and an error-identification check when there's an `error` prop."""
+    props = component.get("props") or {}
+    requires = (component.get("a11y") or {}).get("requires") or []
+    declared_platforms = list(component.get("platforms") or {})
+
+    scenarios: list[dict] = [{"name": "renders", "then": [{"renders": True}], "derived": True}]
+
+    for prop_name, prop in props.items():
+        if prop.get("type") != "enum":
+            continue
+        for value in prop.get("values") or []:
+            sc = {"name": f"renders-{prop_name}-{value}", "given": {prop_name: value},
+                  "then": [{"renders": True}], "derived": True}
+            if "platforms" in prop:
+                sc["platforms"] = prop["platforms"]
+            scenarios.append(sc)
+
+    if "accessible-name" in requires:
+        scenarios.append({"name": "has-accessible-name", "then": [{"name": True}], "derived": True})
+
+    if "keyboard-operable" in requires:
+        scenarios.append({
+            "name": "control-is-focusable",
+            "then": [{"focusable": True}],
+            "platforms": sorted(p for p in declared_platforms if p != "rn"),
+            "derived": True,
+        })
+
+    if "error-identification" in requires and "error" in props:
+        scenarios.append({
+            "name": "error-is-identified",
+            "given": {"error": "Fix this before continuing."},
+            "then": [
+                {"text": "Fix this before continuing."},
+                {"state": "invalid", "is": True, "platforms": ["web", "lit"]},
+            ],
+            "derived": True,
+        })
+
+    return scenarios
+
+
+def merged_behavior(component: dict, derived: list[dict]) -> list[dict]:
+    """Authored scenarios plus the derived ones, minus any derived scenario whose name an author already used."""
+    authored = component.get("behavior") or []
+    names = {sc["name"] for sc in authored}
+    return list(authored) + [sc for sc in derived if sc["name"] not in names]
+
+
+def behavior_for(component: dict, derived: list[dict], platform: str) -> list[dict]:
+    """The merged scenario list narrowed to one platform: scenarios and `then` items whose
+    `platforms` exclude it are dropped (with the now-redundant key stripped from survivors),
+    and a scenario left with no applicable expectations is dropped entirely."""
+    result = []
+    for sc in merged_behavior(component, derived):
+        scenario_platforms = sc.get("platforms")
+        if scenario_platforms is not None and platform not in scenario_platforms:
+            continue
+        then_items = []
+        for item in sc["then"]:
+            item_platforms = item.get("platforms")
+            if item_platforms is not None:
+                if platform not in item_platforms:
+                    continue
+                item = {k: v for k, v in item.items() if k != "platforms"}
+            then_items.append(item)
+        if not then_items:
+            continue
+        result.append({**sc, "then": then_items})
+    return result
+
+
+def render_prompt(c: dict, sections: dict[str, str], platform: str, fm_yaml: str) -> str:
+    template = (TEMPLATES / f"{platform}.md").read_text()
+    guidance = "\n\n".join(f"## {h}\n\n{sections[h]}" for h in ALLOWED_HEADINGS if h in sections)
+    scenarios = behavior_for(c, derive_behavior(c), platform)
+    behavior_yaml = yaml.safe_dump(scenarios, sort_keys=False, allow_unicode=True).strip() if scenarios else "[]"
+    return (
+        template.replace("{{NAME}}", c["name"])
+        .replace("{{PLATFORM}}", platform)
+        .replace("{{SCHEMA_YAML}}", fm_yaml.strip())
+        .replace("{{GUIDANCE}}", guidance)
+        .replace("{{PLATFORM_NOTES}}", yaml.safe_dump(c["platforms"][platform], sort_keys=False).strip())
+        .replace("{{OVERRIDABLE}}", ", ".join(f"`{k}`" for k, v in c.get("styles", {}).items() if not v.get("locked")) or "none")
+        .replace("{{LOCKED}}", ", ".join(f"`{k}`" for k, v in c.get("styles", {}).items() if v.get("locked")) or "none")
+        .replace("{{BEHAVIOR_COUNT}}", str(len(scenarios)))
+        .replace("{{BEHAVIOR_YAML}}", behavior_yaml)
+    )
+
+
+def parse_themes() -> tuple[list[dict], list[str]]:
+    """Theme docs → generated/themes.json + generated/prompts/theme.<id>.md (the 'feel' skill)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from tokens import css_name, load_theme, public_name  # noqa: E402
+
+    themes, errors = [], []
+    template = (TEMPLATES / "theme.md").read_text()
+    for path in sorted(THEME_DOCS.glob("*.md")):
+        try:
+            fm, body = split_frontmatter(path.read_text(encoding="utf-8"), path)
+            if "theme" not in fm:
+                continue
+            t = fm["theme"]
+            sections = split_sections(body, path, THEME_HEADINGS, ["Feel", "When to use"])
+            try:
+                light = load_theme(t["id"], "light")
+            except FileNotFoundError:
+                raise DocError(f"{path.name}: tokens/themes/{t['id']} missing — run tools/theme.py first")
+            resolved = {public_name(p): e["$value"] for p, e in light.items() if p.startswith("color.") and "palette" not in p}
+            tokens_txt = "\n".join(f"{css_name(p):<44} {v}" for p, v in resolved.items())
+            guidance = "\n\n".join(f"## {h}\n\n{v}" for h, v in sections.items() if h != "Overview")
+            prompt = (template.replace("{{NAME}}", fm.get("title", t["id"]))
+                      .replace("{{TONE}}", ", ".join(t["tone"])).replace("{{NOT}}", t["not"])
+                      .replace("{{THEME_YAML}}", yaml.safe_dump({"theme": t}, sort_keys=False).strip())
+                      .replace("{{TOKENS_LIGHT}}", tokens_txt).replace("{{GUIDANCE}}", guidance))
+            (OUT / "prompts" / f"theme.{t['id']}.md").write_text(prompt)
+            themes.append({"id": t["id"], "title": fm.get("title", t["id"]), "description": fm.get("description", ""),
+                           "published": t.get("status", "draft") in STATUS_PUBLISHED, "theme": t, "sections": sections,
+                           "source": str(path.relative_to(ROOT))})
+        except DocError as e:
+            errors.append(str(e))
+    (OUT / "themes.json").write_text(json.dumps(themes, indent=2, ensure_ascii=False) + "\n")
+    return themes, errors
+
+
+def main() -> int:
+    validator = Validator(json.loads(SCHEMA.read_text()))
+    (OUT / "prompts").mkdir(parents=True, exist_ok=True)
+    components = []
+    errors: list[str] = []
+    for path in sorted(DOCS.glob("*.md")):
+        try:
+            text = path.read_text(encoding="utf-8")
+            fm, body = split_frontmatter(text, path)
+            if "component" not in fm:
+                raise DocError(f"{path.name}: no `component:` block in frontmatter")
+            validate(fm, validator, path)
+            sections = split_sections(body, path)
+            c = fm["component"]
+            entry = {
+                "id": path.stem,
+                "title": fm.get("title", c["name"]),
+                "description": fm.get("description", ""),
+                "published": c.get("status", "draft") in STATUS_PUBLISHED,
+                "component": c,
+                "behaviorDerived": derive_behavior(c),
+                "sections": sections,
+                "source": str(path.relative_to(ROOT)),
+            }
+            components.append(entry)
+            fm_yaml = yaml.safe_dump({"component": c}, sort_keys=False, allow_unicode=True)
+            for platform, notes in c["platforms"].items():
+                if not notes.get("supported", True) or not (TEMPLATES / f"{platform}.md").exists():
+                    continue
+                (OUT / "prompts" / f"{c['name']}.{platform}.md").write_text(render_prompt(c, sections, platform, fm_yaml))
+        except DocError as e:
+            errors.append(str(e))
+    (OUT / "components.json").write_text(json.dumps(components, indent=2, ensure_ascii=False) + "\n")
+    themes, theme_errors = parse_themes()
+    errors += theme_errors
+    for e in errors:
+        print(f"✖ {e}", file=sys.stderr)
+    print(f"{'✖' if errors else '✔'} {len(components)} component(s), {len(themes)} theme(s) parsed, {len(errors)} error(s) → {OUT.relative_to(ROOT)}/")
+    return 1 if errors else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,106 @@
+/* Card — styled only through Design Schema token custom properties. */
+
+.ds-card {
+  --ds-card-padding-block: var(--layout-inset-md);
+  --ds-card-padding-inline: var(--layout-inset-md);
+  --ds-card-part-gap: var(--layout-gap-loose);
+  --ds-card-header-gap: var(--layout-gap-normal);
+  --ds-card-footer-gap: var(--layout-gap-tight);
+  --ds-card-actions-gap: var(--layout-gap-tight);
+  --ds-card-background: var(--color-background);
+  --ds-card-border: var(--color-border);
+  --ds-card-border-width: var(--border-width-thin);
+  --ds-card-radius: var(--radius-lg);
+  --ds-card-hover-background: var(--color-background-subtle);
+  --ds-card-focus-ring: var(--color-border-focus);
+  --ds-card-focus-ring-width: var(--border-width-focus);
+  --ds-card-transition: var(--motion-duration-fast);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-card-part-gap);
+  margin: 0;
+  padding-block: var(--ds-card-padding-block);
+  padding-inline: var(--ds-card-padding-inline);
+  background-color: var(--ds-card-background);
+  border-style: solid;
+  border-width: 0;
+  border-color: var(--ds-card-border);
+  border-radius: var(--ds-card-radius);
+  font-family: var(--font-family-body);
+}
+
+/* inset → layout.inset.{inset} */
+.ds-card--inset-sm { --ds-card-padding-block: var(--layout-inset-sm); --ds-card-padding-inline: var(--layout-inset-sm); }
+.ds-card--inset-md { --ds-card-padding-block: var(--layout-inset-md); --ds-card-padding-inline: var(--layout-inset-md); }
+.ds-card--inset-lg { --ds-card-padding-block: var(--layout-inset-lg); --ds-card-padding-inline: var(--layout-inset-lg); }
+
+/* surface → color.background.{surface} (locked); `default` also draws the border, `subtle` does not. */
+.ds-card--surface-default {
+  --ds-card-background: var(--color-background);
+  --ds-card-hover-background: var(--color-background-subtle);
+  border-width: var(--ds-card-border-width);
+}
+.ds-card--surface-subtle {
+  --ds-card-background: var(--color-background-subtle);
+  --ds-card-hover-background: var(--color-background-strong);
+  border-width: 0;
+}
+
+.ds-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-card-header-gap);
+}
+
+.ds-card__heading {
+  min-inline-size: 0;
+}
+
+.ds-card__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-card-actions-gap);
+  flex: 0 0 auto;
+}
+
+.ds-card__body {
+  min-inline-size: 0;
+}
+
+.ds-card__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-card-footer-gap);
+}
+
+/* interactive: the card grows the single link/button child's hit area to its own bounds. */
+.ds-card--interactive {
+  position: relative;
+}
+
+.ds-card--interactive .ds-card__interactive-target::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+/* hoverBackground: interactive cards only, on pointer hover. */
+.ds-card--interactive:hover {
+  background-color: var(--ds-card-hover-background);
+}
+
+/* focus-visible: the card draws the ring while its single interactive child has focus, never removed. */
+.ds-card--interactive:focus-within {
+  outline: var(--ds-card-focus-ring-width) solid var(--ds-card-focus-ring);
+  outline-offset: var(--ds-card-focus-ring-width);
+}
+
+/* transition: hoverBackground, with motion.easing.standard. */
+@media (prefers-reduced-motion: no-preference) {
+  .ds-card--interactive {
+    transition: background-color var(--ds-card-transition) var(--motion-easing-standard);
+  }
+}

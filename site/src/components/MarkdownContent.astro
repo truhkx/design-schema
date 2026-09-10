@@ -1,0 +1,21 @@
+---
+/**
+ * Starlight override: pages with a `component:` frontmatter block get the schema
+ * tables (props, events, styles, a11y, platforms); pages with a `theme:` block get
+ * the decisions table and derived swatches. Both render ABOVE the hand-written
+ * guidance and are never hand-written in Markdown — they are projections of the
+ * frontmatter, which keeps docs and code in sync.
+ */
+import Default from '@astrojs/starlight/components/MarkdownContent.astro';
+import SchemaTables from './SchemaTables.astro';
+import ThemeSwatches from './ThemeSwatches.astro';
+
+const { entry } = Astro.locals.starlightRoute;
+const data = entry.data as any;
+---
+
+<Default {...Astro.props}>
+  {data.component && <SchemaTables component={data.component} />}
+  {data.theme && <ThemeSwatches theme={data.theme} />}
+  <slot />
+</Default>

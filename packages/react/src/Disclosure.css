@@ -1,0 +1,99 @@
+/* Disclosure — styled only through Design Schema token custom properties. */
+
+.ds-disclosure {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+/* headingLevel: the heading has no styling of its own; the button carries it. */
+.ds-disclosure__heading {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+}
+
+/* trigger: a real button, plain by design — no border, no card. */
+.ds-disclosure__trigger {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: var(--size-target-min);
+  min-block-size: var(--size-target-min);
+  margin: 0;
+  padding-block: var(--space-sm);
+  padding-inline: var(--space-sm);
+  border: 0;
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--color-foreground);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--font-line-height-normal);
+  text-align: start;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* triggerBackgroundHover: pointer hover and pressed state, only while activatable. */
+.ds-disclosure__trigger:not([aria-disabled='true']):hover,
+.ds-disclosure__trigger:not([aria-disabled='true']):active {
+  background-color: var(--color-background-subtle);
+}
+
+/* focus-visible: never removed, only replaced by the token ring. */
+.ds-disclosure__trigger:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
+}
+
+/* disabled: stays focusable and announced; visually dimmed. */
+.ds-disclosure__trigger[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+/* icon: a chevron, 1em, pointing right when closed and down when open. */
+.ds-disclosure__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  inline-size: 1em;
+  block-size: 1em;
+  color: var(--color-foreground-muted);
+  line-height: 0;
+}
+
+.ds-disclosure__icon svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+[dir='rtl'] .ds-disclosure__icon {
+  transform: scaleX(-1);
+}
+
+.ds-disclosure__trigger[aria-expanded='true'] .ds-disclosure__icon {
+  transform: rotate(90deg);
+}
+
+/* transition: chevron rotation only; the panel does not animate. Instant under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .ds-disclosure__icon {
+    transition: transform var(--motion-duration-base) var(--motion-easing-standard);
+  }
+}
+
+/* panel: follows the trigger in reading order; rendered only while open. */
+.ds-disclosure__panel {
+  padding-block: var(--space-sm);
+  padding-inline: var(--space-sm);
+  color: var(--color-foreground);
+}
+
+/* keepMounted: a closed panel is hidden, not unmounted; `hidden` must win over the panel display. */
+.ds-disclosure__panel[hidden] {
+  display: none;
+}

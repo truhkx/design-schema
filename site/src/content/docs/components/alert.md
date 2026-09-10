@@ -1,0 +1,115 @@
+---
+title: Alert
+description: An inline message that tells the user something important about the current view — information, success, a warning, or an error — with the right announcement for how it arrived.
+component:
+  name: Alert
+  category: feedback
+  status: review
+  apg: alert
+  anatomy: [container, icon, heading, body, dismissButton]
+  props:
+    tone:
+      type: enum
+      values: [info, success, warning, danger]
+      default: info
+      description: What kind of message this is. Sets the colors and the icon, which together convey the tone without relying on color.
+    heading:
+      type: string
+      description: 'A short bold first line for the message. Optional for one-line messages. Named `heading`, not `title`, because `title` is a native attribute (tooltip) on every platform element.'
+    children:
+      type: content
+      required: true
+      description: The message body. Text and Links; no headings or form controls.
+    live:
+      type: enum
+      values: [status, alert, 'off']
+      default: status
+      description: 'How the alert is announced when it appears. `status` is polite (most messages), `alert` interrupts (only for errors that block the user), `off` for alerts already present when the view loads.'
+      a11y: 'Maps to role=status, role=alert, or a plain region. Never use `alert` for success or info.'
+    dismissible:
+      type: boolean
+      default: false
+      description: Shows a dismiss button at the end of the alert. Activating it fires `onDismiss`; the consumer removes the alert (the component is controlled by its presence in the tree).
+  events:
+    onDismiss:
+      description: Fired when the user activates the dismiss button. The consumer removes the alert.
+      platforms: { web: onDismiss, lit: dismiss, rn: onDismiss }
+  styles:
+    background: { token: 'color.status.{tone}.background' }
+    foreground: { token: 'color.status.{tone}.foreground', description: Heading color. }
+    bodyColor: { token: color.foreground, description: 'Body text keeps the page foreground so long messages read as text, not as colored emphasis.' }
+    border: { token: 'color.status.{tone}.border' }
+    icon: { token: 'color.status.{tone}.icon', description: 'Leading icon: info circle, check circle, warning triangle, or error octagon by tone, drawn as a 1em inline shape until an Icon component exists. Decorative; the tone is also conveyed by the heading or role.' }
+    borderWidth: { token: border.width.thin }
+    radius: { token: radius.md }
+    padding: { token: space.md }
+    gap: { token: space.3, description: 'Horizontal gap between icon, content, and dismiss button.' }
+    partGap: { token: space.1, description: Vertical gap between heading and body. }
+    iconSize: { token: font.size.lg }
+    headingWeight: { token: font.weight.semibold }
+    fontFamily: { token: font.family.body }
+    fontSize: { token: font.size.md }
+    lineHeight: { token: font.lineHeight.normal }
+    dismissMargin: { token: space.1, description: 'Negative block/inline-end margin on the dismiss Button so its target sits in the corner without enlarging the padding; the Button keeps its own colors, radius and focus ring.' }
+  copy:
+    dismissLabel: Dismiss
+  a11y:
+    role: status
+    requires: [live-region, contrast-aa, accessible-name, focus-visible, keyboard-operable, target-24px]
+    contrast:
+      - { foreground: 'color.status.{tone}.foreground', background: 'color.status.{tone}.background', level: AA }
+      - { foreground: color.foreground, background: 'color.status.{tone}.background', level: AA }
+      - { foreground: 'color.status.{tone}.icon', background: 'color.status.{tone}.background', level: AA, large: true }
+      - { foreground: color.link, background: 'color.status.{tone}.background', level: AA }
+      - { foreground: color.action.ghost.foreground, background: 'color.status.{tone}.background', level: AA }
+  platforms:
+    web:
+      element: div
+      attributes: [role]
+      notes: 'role="status" | "alert" from `live` (each implies its aria-live; set only the role); no role when off. Rendering the role on the component root is enough for the announcement, since React mounts the element and its content together. The dismiss button is the system Button (ghost, sm, iconOnly, label copy.dismissLabel) unchanged — composites never restyle a child; the ghost foreground is checked against every tone background.'
+    lit:
+      tag: ds-alert
+      reflect: [tone, live, dismissible]
+      notes: 'The role is set on the host element via ElementInternals so the live region is in the light DOM tree where assistive technology expects it. `dismiss` is a composed CustomEvent; the inner button''s `press` is stopped so consumers see one event. `heading` is a property (attribute `heading`) or the named slot `heading`; body is the default slot.'
+    rn:
+      element: View
+      props: [accessibilityRole=alert, accessibilityLiveRegion, accessibilityLabel]
+      notes: 'live=alert → accessibilityRole="alert" and accessibilityLiveRegion="assertive"; status → accessibilityLiveRegion="polite"; off → neither. iOS ignores live regions, so with live≠off call AccessibilityInfo.announceForAccessibility on mount and again whenever heading or body change (a changed message is a new message). The label is heading + body when body is a string; otherwise heading only — a body that is not plain text should carry its own accessible text. The dismiss button is the system Button.'
+---
+
+An alert is the system speaking to the user inside the page: "this saved", "this failed", "this is about to expire". It stays where it is until the user has dealt with it or dismissed it, unlike a Toast (planned), which leaves on its own. Its tone is set by color, by an icon, and by the announcement role, so no single channel carries the meaning.
+
+## When to use
+
+Use an Alert for a message that relates to the current view and should stay visible: a failed save above the form, an expiring trial at the top of a screen, a success confirmation after submit, a note that some features are unavailable offline. Choose `tone` by what the user should do: `info` to know, `success` to relax, `warning` to be careful, `danger` to fix something. Use `dismissible` for messages the user can safely put away; leave persistent problems undismissable.
+
+## When not to use
+
+Do not use an Alert for field-level validation; Input and the form controls render their own errors, and Form renders the summary. Do not use it for transient confirmations that need no action; use Toast (planned). Do not use it as a callout for general prose ("Tip: …") in documentation; that is a Note (planned) with no live semantics. Do not stack more than two alerts in a view; combine or prioritise.
+
+## Behavior
+
+An Alert rendered with `live: status` or `alert` is announced by screen readers when it appears in the tree, without moving focus. An Alert present at load with `live: off` is read in sequence like any content. The dismiss button fires `onDismiss` and the consumer removes the alert. Because activation happens inside the alert, the component first moves focus to the next focusable element after the alert in reading order (or to the previous one when there is none), so focus is never lost when the alert disappears; if nothing outside the alert is focusable, focus is left alone. On native, focus cannot be moved programmatically to an arbitrary element, an acknowledged limit. Alerts never auto-dismiss and never animate in — a message that fades or slides is a Toast.
+
+## Content guidelines
+
+The heading says what happened in a few words ("Changes saved", "Payment failed"); the body says what it means and what to do next, in one or two sentences, with a Link if there is somewhere to go. Do not restate the tone in the heading ("Error: …", "Warning!") — the icon and role carry it, and screen readers already announce `alert` as an alert. Do not use exclamation marks. `danger` alerts are the only ones where the body may start with the cause.
+
+## Accessibility
+
+The message is announced when it appears, politely for `status` and immediately for `alert` (WCAG 4.1.3 Status Messages), and it is never used to move focus (3.2.1). Tone is conveyed by the icon shape and the heading, not only by color (1.4.1). Heading, body, links, the dismiss button and icon meet contrast on the tinted background in both modes — 4.5:1 for text and 3:1 for the icon (1.4.3, 1.4.11); the build checks every tone. The dismiss button has an accessible name from `copy.dismissLabel`, visible focus, and a 24px target (2.4.7, 2.5.8). Only `danger` and blocking `warning` alerts use `live: alert`; interrupting for good news is a real cost to screen-reader users.
+
+## Platform notes
+
+### Web
+Render `<div role={live === 'off' ? undefined : live}>` — `role="status"` implies `aria-live="polite"` and `role="alert"` implies assertive, so set only the role. Inside: the icon (`aria-hidden` inline SVG), a content column with the heading as a `<p>` in `headingWeight` and `foreground` (a raw element, not Text, which has no status tones; and not a heading element, so it does not disturb the outline) and the body, and, when dismissible, the system Button (`ghost`, `size: sm`, `iconOnly`, label `copy.dismissLabel`, a 1em × glyph as `leadingIcon`) pulled into the corner with `dismissMargin`. The `heading` prop must not be forwarded as the native `title` attribute. Colors come from the `{tone}` bindings; use `border` on all sides at `borderWidth`.
+
+### Lit
+`<ds-alert tone="danger" live="alert" heading="Payment failed">` sets `role` on the host via `ElementInternals` so the live region is the host itself, which assistive technology sees in the light DOM. The body is the default slot and `heading` is a property (or a named `heading` slot for rich headings). Dispatch a composed `dismiss` CustomEvent (stop the inner `press`); the consumer removes the element. The dismiss `<ds-button>` is used unchanged — no `::part` restyling. Reflect `tone`, `live` and `dismissible`.
+
+### React Native
+Render a `View` with `accessibilityRole="alert"` when `live` is `alert`, `accessibilityLiveRegion="assertive"` or `"polite"` by `live`, and `accessibilityLabel` = heading + body (when body is a string) so the whole message is one announcement. iOS does not honour live regions: in an effect on mount, when `live !== 'off'`, call `AccessibilityInfo.announceForAccessibility()` with the heading and body joined by a full stop, and again whenever they change. Apply `background`, `border` and `radius` from the tone tokens; render the icon with the `icon` color and `accessibilityElementsHidden`. The dismiss button is the system Button (`ghost`, `sm`, `iconOnly`, with a × glyph as `leadingIcon`), pulled into the corner with `dismissMargin`.
+
+## Related
+
+Form, Toast (planned), Note (planned), Dialog (planned).

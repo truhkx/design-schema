@@ -1,0 +1,79 @@
+---
+/**
+ * Renders the derived palette and semantic tokens for a theme page so the
+ * output of tools/theme.py can be judged by eye. Reads the resolved JSON that
+ * tools/tokens.py (or Style Dictionary) writes to packages/tokens/dist/<id>/json/.
+ */
+import type { ThemeDef } from '../../../schema/theme';
+
+interface Props {
+  theme: ThemeDef;
+}
+const { theme } = Astro.props;
+
+const files = import.meta.glob('../../../packages/tokens/dist/*/json/tokens.*.json', { eager: true }) as Record<
+  string,
+  { default: Record<string, string | number | string[]> }
+>;
+const modes = theme.modes.supports
+  .map((m) => ({ mode: m, tokens: files[`../../../packages/tokens/dist/${theme.id}/json/tokens.${m}.json`]?.default }))
+  .filter((m) => m.tokens);
+
+const ramps = ['neutral', 'brand', 'danger', 'success', 'warning', 'info'];
+const rampSteps = (tokens: Record<string, unknown>, ramp: string) =>
+  Object.entries(tokens)
+    .filter(([k]) => k.startsWith(`color.palette.${ramp}.`))
+    .map(([k, v]) => ({ step: k.split('.').at(-1)!, value: String(v) }));
+const semantic = (tokens: Record<string, unknown>) =>
+  Object.entries(tokens).filter(([k, v]) => k.startsWith('color.') && !k.includes('palette') && typeof v === 'string');
+---
+
+<p>
+  <span class="ds-badge">tone: {theme.tone.join(', ')}</span>
+  <span class="ds-badge">not: {theme.not}</span>
+  <span class="ds-badge">status: {theme.status}</span>
+</p>
+
+<h2 id="decisions">Decisions</h2>
+<table class="ds-schema-table">
+  <tbody>
+    <tr><th>Seed color</th><td><span class="ds-swatch" style={`background:${theme.seed.color}`}></span> <code>{theme.seed.color}</code></td></tr>
+    <tr><th>Typeface</th><td><code>{theme.seed.typeface}</code> · mono <code>{theme.seed.mono}</code></td></tr>
+    <tr><th>Type scale</th><td>{theme.scale.base}px × {theme.scale.ratio}</td></tr>
+    <tr><th>Radius</th><td><code>{theme.radius}</code></td></tr>
+    <tr><th>Density</th><td><code>{theme.density}</code></td></tr>
+    <tr><th>Neutral tint</th><td>{theme.neutralTint}</td></tr>
+    <tr><th>Modes</th><td>{theme.modes.supports.join(', ')} (default {theme.modes.default})</td></tr>
+  </tbody>
+</table>
+
+{modes.length === 0 && <p><em>Run <code>pnpm themes</code> to derive tokens for this theme.</em></p>}
+
+{modes.length > 0 && (
+  <>
+    <h2 id="palette">Derived palette</h2>
+    {ramps.map((ramp) => (
+      <div class="ds-ramp">
+        <span class="ds-ramp-name">{ramp}</span>
+        {rampSteps(modes[0].tokens, ramp).map((s) => (
+          <span class="ds-swatch" style={`background:${s.value}`} title={`${ramp}.${s.step} ${s.value}`}></span>
+        ))}
+      </div>
+    ))}
+
+    <h2 id="semantic">Semantic colors</h2>
+    <table class="ds-schema-table">
+      <thead><tr><th>Token</th>{modes.map((m) => <th>{m.mode}</th>)}</tr></thead>
+      <tbody>
+        {semantic(modes[0].tokens).map(([name]) => (
+          <tr>
+            <td><code>{name}</code></td>
+            {modes.map((m) => (
+              <td><span class="ds-swatch" style={`background:${m.tokens[name]}`}></span> <code>{String(m.tokens[name])}</code></td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </>
+)}

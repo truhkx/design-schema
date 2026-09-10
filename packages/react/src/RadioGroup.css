@@ -1,0 +1,137 @@
+/* RadioGroup — styled only through Design Schema token custom properties. */
+
+.ds-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: var(--font-family-body);
+  line-height: var(--font-line-height-normal);
+}
+
+.ds-radio-group__legend {
+  padding: 0;
+  color: var(--color-foreground);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+}
+
+/* A legend does not take part in the fieldset's flex gap; add the partGap below it explicitly. */
+.ds-radio-group__legend + * {
+  margin-block-start: var(--space-1);
+}
+
+.ds-radio-group__description,
+.ds-radio-group__error,
+.ds-radio-group__option-description {
+  margin: 0;
+}
+
+/* orientation → listGap on both axes; horizontal wraps rather than overflows. */
+.ds-radio-group__list {
+  display: flex;
+  gap: var(--space-2);
+}
+.ds-radio-group--vertical .ds-radio-group__list {
+  flex-direction: column;
+}
+.ds-radio-group--horizontal .ds-radio-group__list {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.ds-radio-group__option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* minTarget: the whole row is the hit area. */
+.ds-radio-group__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--size-target-comfortable);
+}
+
+/* control: a native radio drawn with the control tokens. */
+.ds-radio-group__control {
+  --ds-radio-control-size: var(--space-5);
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--ds-radio-control-size);
+  block-size: var(--ds-radio-control-size);
+  margin: 0;
+  padding: 0;
+  border: var(--border-width-thin) solid var(--color-control-border);
+  border-radius: var(--radius-full);
+  background-color: var(--color-control-background);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* indicator: the centre dot, controlSize minus 2 × space.1 in diameter. */
+.ds-radio-group__control::before {
+  content: '';
+  display: block;
+  inline-size: calc(var(--ds-radio-control-size) - 2 * var(--space-1));
+  block-size: calc(var(--ds-radio-control-size) - 2 * var(--space-1));
+  border-radius: var(--radius-full);
+  background-color: var(--color-control-selected-background);
+  transform: scale(0);
+}
+
+/* controlSelectedBackground: selected border color; the fill stays controlBackground. */
+.ds-radio-group__control:checked {
+  border-color: var(--color-control-selected-background);
+}
+
+.ds-radio-group__control:checked::before {
+  transform: scale(1);
+}
+
+/* controlBorderInvalid */
+.ds-radio-group__control[aria-invalid='true'] {
+  border-color: var(--color-border-danger);
+}
+
+/* focus-visible: never removed, only replaced by the token ring. */
+.ds-radio-group__control:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
+}
+
+.ds-radio-group__label {
+  cursor: pointer;
+  color: var(--color-foreground);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-regular);
+}
+
+.ds-radio-group__option-description {
+  padding-inline-start: calc(var(--space-5) + var(--space-2));
+}
+
+/* disabled: group-disabled radios stay focusable; option-disabled ones are natively disabled. Both dim. */
+.ds-radio-group__option--disabled .ds-radio-group__control,
+.ds-radio-group__option--disabled .ds-radio-group__label,
+.ds-radio-group__option--disabled .ds-radio-group__option-description {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+/* transition: dot and border; removed under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .ds-radio-group__control {
+    transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+  .ds-radio-group__control::before {
+    transition: transform var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+}

@@ -1,0 +1,40 @@
+/* Text — styled only through Design Schema token custom properties. */
+
+.ds-text {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family-body);
+  line-height: var(--font-line-height-normal);
+}
+
+/* size → font.size.{size} */
+.ds-text--size-xs { font-size: var(--font-size-xs); }
+.ds-text--size-sm { font-size: var(--font-size-sm); }
+.ds-text--size-md { font-size: var(--font-size-md); }
+.ds-text--size-lg { font-size: var(--font-size-lg); }
+.ds-text--size-xl { font-size: var(--font-size-xl); }
+
+/* weight → font.weight.{weight} */
+.ds-text--weight-regular { font-weight: var(--font-weight-regular); }
+.ds-text--weight-medium { font-weight: var(--font-weight-medium); }
+.ds-text--weight-semibold { font-weight: var(--font-weight-semibold); }
+.ds-text--weight-bold { font-weight: var(--font-weight-bold); }
+
+/* tone → color.foreground.{tone} */
+.ds-text--tone-default { color: var(--color-foreground); }
+.ds-text--tone-strong { color: var(--color-foreground-strong); }
+.ds-text--tone-muted { color: var(--color-foreground-muted); }
+.ds-text--tone-danger { color: var(--color-foreground-danger); }
+.ds-text--tone-on-action { color: var(--color-foreground-on-action); }
+
+.ds-text--align-start { text-align: start; }
+.ds-text--align-center { text-align: center; }
+.ds-text--align-end { text-align: end; }
+
+/* truncate: one line with an ellipsis; the full text is exposed via `title`. */
+.ds-text--truncate {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

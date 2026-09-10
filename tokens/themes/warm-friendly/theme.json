@@ -1,0 +1,36 @@
+{
+  "id": "warm-friendly",
+  "status": "draft",
+  "tone": [
+    "warm",
+    "friendly",
+    "generous",
+    "unhurried"
+  ],
+  "not": "corporate",
+  "seed": {
+    "color": "#C8552D",
+    "typeface": "system",
+    "mono": "system"
+  },
+  "neutralTint": 0.3,
+  "scale": {
+    "base": 16,
+    "ratio": 1.333
+  },
+  "radius": "lg",
+  "density": "roomy",
+  "motion": "subtle",
+  "elevation": "subtle",
+  "layout": {
+    "rhythm": "loose",
+    "contentWidth": 1040
+  },
+  "modes": {
+    "default": "light",
+    "supports": [
+      "light",
+      "dark"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+/* Heading — styled only through Design Schema token custom properties. */
+
+.ds-heading {
+  margin-block-start: 0;
+  margin-block-end: var(--space-sm);
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-line-height-tight);
+  color: var(--color-foreground-strong);
+}
+
+/* size → font.size.{size} */
+.ds-heading--size-4xl { font-size: var(--font-size-4xl); }
+.ds-heading--size-3xl { font-size: var(--font-size-3xl); }
+.ds-heading--size-2xl { font-size: var(--font-size-2xl); }
+.ds-heading--size-xl { font-size: var(--font-size-xl); }
+.ds-heading--size-lg { font-size: var(--font-size-lg); }
+.ds-heading--size-md { font-size: var(--font-size-md); }
+
+.ds-heading--align-start { text-align: start; }
+.ds-heading--align-center { text-align: center; }
+.ds-heading--align-end { text-align: end; }

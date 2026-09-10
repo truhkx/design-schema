@@ -1,0 +1,114 @@
+/* Switch — styled only through Design Schema token custom properties. */
+
+/* minTarget: the whole row toggles. The row is full width. */
+.ds-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  min-block-size: var(--size-target-comfortable);
+  font-family: var(--font-family-body);
+  line-height: var(--font-line-height-normal);
+}
+
+/* labelPosition changes flex order only: `start` puts the label first and the track at the row end. */
+.ds-switch--label-start {
+  justify-content: space-between;
+}
+.ds-switch--label-start .ds-switch__text { order: 0; }
+.ds-switch--label-start .ds-switch__control { order: 1; }
+.ds-switch--label-end .ds-switch__text { order: 1; }
+.ds-switch--label-end .ds-switch__control { order: 0; }
+
+.ds-switch__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.ds-switch__label {
+  cursor: pointer;
+  color: var(--color-foreground);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-regular);
+}
+
+.ds-switch__description {
+  margin: 0;
+  cursor: pointer;
+}
+
+/* track: a native input sized trackWidth × trackHeight, drawn with the control tokens. */
+.ds-switch__control {
+  --ds-switch-track-width: var(--space-10);
+  --ds-switch-track-height: var(--space-6);
+  --ds-switch-thumb-size: var(--space-5);
+  --ds-switch-thumb-inset: var(--space-1);
+  box-sizing: border-box;
+  position: relative;
+  flex: 0 0 auto;
+  inline-size: var(--ds-switch-track-width);
+  block-size: var(--ds-switch-track-height);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background-color: var(--color-control-track-off);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* thumb: inset evenly on the short axis; travels trackWidth − thumbSize − 2 × thumbInset when on. */
+.ds-switch__control::before {
+  content: '';
+  position: absolute;
+  inset-block-start: calc((var(--ds-switch-track-height) - var(--ds-switch-thumb-size)) / 2);
+  inset-inline-start: var(--ds-switch-thumb-inset);
+  inline-size: var(--ds-switch-thumb-size);
+  block-size: var(--ds-switch-thumb-size);
+  border-radius: var(--radius-full);
+  background-color: var(--color-control-selected-foreground);
+}
+
+/* trackOn */
+.ds-switch__control:checked {
+  background-color: var(--color-control-selected-background);
+}
+
+.ds-switch__control:checked::before {
+  transform: translateX(
+    calc(var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset))
+  );
+}
+
+[dir='rtl'] .ds-switch__control:checked::before {
+  transform: translateX(
+    calc(-1 * (var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset)))
+  );
+}
+
+/* focus-visible: drawn around the track, offset by focusRingWidth like the other controls. Never removed. */
+.ds-switch__control:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
+}
+
+/* disabled: stays focusable and readable; visually dimmed. */
+.ds-switch--disabled .ds-switch__control,
+.ds-switch--disabled .ds-switch__label,
+.ds-switch--disabled .ds-switch__description {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+/* transition: thumb travel and track color; travel is instant under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .ds-switch__control {
+    transition: background-color var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+  .ds-switch__control::before {
+    transition: transform var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+}

@@ -1,0 +1,21 @@
+# Gaps reported while generating Icon for web
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-09 18:09 — round 1
+
+- Icon: the styles say status shapes are 'filled ... plus a stroke' but also that 'filled glyphs have no stroke'. A currentColor stroke on a currentColor fill would be invisible, so I drew the inner mark (i, check, !, x) as an evenodd hole in a single filled path with no stroke. The doc should say which it means.
+- Icon: strokeWidth binds border.width.focus (2px) but does not say whether that is 2 user units on the 16-grid (scales with size) or 2 screen pixels at every size. 'Stays legible at xs' reads as screen pixels, so I used vector-effect: non-scaling-stroke. This also makes line glyphs heavier than the 1.5-unit strokes the existing components draw; confirm the intended weight.
+- Icon: the web note says to render `width height` on the svg, but attributes cannot take a CSS custom property. I render width/height as 1em and set font-size from font.size.{size} in CSS (inline mode inherits font-size). Document this or drop the attribute mention.
+- Icon: vertical alignment of a non-inline icon is unspecified for web (Lit says inline-flex host). I used display: inline-block; vertical-align: middle.
+- Icon: `dash` and `minus` are both horizontal lines and the doc does not distinguish them. I drew dash shorter (4–12) for the indeterminate-checkbox mark and minus full width (3–13) to pair with plus. Say what the difference is, or merge them.
+- Icon: the paths table is told to be exported from Icon.tsx but Lit says it is 'imported by no one else'. I export it from the module (per the web note) and not from the package index. Confirm whether it belongs in the public API.
+- Icon: label='' is treated as no label (decorative). The doc should say whether an empty string is an error or decorative.
+- Icon: no explicit glyph geometry is given. I reused the existing Disclosure/Link/Breadcrumb/Alert paths for chevrons, external, ellipsis and close so the planned swap is visually neutral; the other shapes are my own drawings on the 16-grid and may need design review.
+- Icon: type-check could not be run (no node_modules in the workspace); the files were reviewed by hand against @types/react SVG typings.
+
+## 2026-09-09 18:10 — round 2
+
+- Icon: no Icon changes were needed; both typecheck failures were pre-existing in Landmark and the Preferences demo. The Icon gaps from round one still stand (filled-plus-stroke contradiction on status shapes, screen-pixel vs user-unit stroke width, width/height attributes vs CSS sizing, unspecified vertical alignment, dash vs minus, public export of the paths table, empty-string label).
+- Alert: the Preferences demo used a `title` prop but the Alert schema names it `heading`. I changed the demo to `heading`; the demo doc or the Alert schema should agree on the name.
+- Landmark: the doc does not say how the web element is chosen at the type level. The forwarded ref is typed HTMLElement; I render through createElement<HTMLAttributes<HTMLElement>, HTMLElement> so a union of tag names does not intersect ref types. Consider stating that the ref is HTMLElement, not the specific element for `as`.

@@ -1,0 +1,31 @@
+---
+title: Design Schema
+description: A documentation-first design system that generates accessible, tokenized components for React, web components, and React Native from one Markdown source of truth.
+template: splash
+hero:
+  tagline: Write the documentation. Generate the design system.
+  actions:
+    - text: How it works
+      link: /process/from-vision-to-system/
+      icon: right-arrow
+    - text: See a component
+      link: /components/button/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid stagger>
+  <Card title="One source of truth" icon="document">
+    Each component is a Markdown file: YAML frontmatter for the schema, prose for the guidance. Docs, props tables, prompts, and code are all projections of it.
+  </Card>
+  <Card title="Tokens, not values" icon="seti:css">
+    W3C Design Tokens built with Style Dictionary into CSS variables, JS, and React Native objects. Semantic names like <code>foreground.strong</code> work on every platform.
+  </Card>
+  <Card title="Accessibility enforced" icon="approve-check">
+    WCAG 2.2 requirements are schema constraints. Contrast is checked against the tokens for every theme and variant at build time.
+  </Card>
+  <Card title="Made for AI tools" icon="rocket">
+    Every schema, guidance section, and generation prompt is a build output — ready to serve through an MCP server so any AI client can generate on-system components.
+  </Card>
+</CardGrid>

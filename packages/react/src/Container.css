@@ -1,0 +1,34 @@
+/* Container — styled only through Design Schema token custom properties. */
+
+.ds-container {
+  box-sizing: border-box;
+  display: block;
+  margin-inline: auto;
+  max-inline-size: var(--ds-container-max-width, none);
+  padding-inline: var(--ds-container-padding-inline);
+}
+
+/* width → layout.maxWidth.{width}; full sets no hook, so max-inline-size falls back to none. */
+.ds-container--width-prose { --ds-container-max-width: var(--layout-max-width-prose); }
+.ds-container--width-content { --ds-container-max-width: var(--layout-max-width-content); }
+.ds-container--width-page { --ds-container-max-width: var(--layout-max-width-page); }
+
+/* gutter → layout.gutter.{gutter}; none renders no padding. default is responsive: narrow below
+   layout.maxWidth.content, the base gutter through layout.maxWidth.page, wide above it. Custom
+   properties are not valid in media queries, so the breakpoints are the resolved px values of
+   those two tokens, read from the token file at generation time. */
+.ds-container--gutter-narrow { --ds-container-padding-inline: var(--layout-gutter-narrow); }
+.ds-container--gutter-wide { --ds-container-padding-inline: var(--layout-gutter-wide); }
+.ds-container--gutter-none { --ds-container-padding-inline: 0; }
+.ds-container--gutter-default { --ds-container-padding-inline: var(--layout-gutter-narrow); }
+
+@media (min-width: 960px) { /* literal-ok: breakpoint from layout.maxWidth.content */
+  .ds-container--gutter-default { --ds-container-padding-inline: var(--layout-gutter); }
+}
+
+@media (min-width: 1280px) { /* literal-ok: breakpoint from layout.maxWidth.page */
+  .ds-container--gutter-default { --ds-container-padding-inline: var(--layout-gutter-wide); }
+}
+
+/* align → margin-inline; center keeps the column centered, start pins it to the inline start. */
+.ds-container--align-start { margin-inline: 0; }

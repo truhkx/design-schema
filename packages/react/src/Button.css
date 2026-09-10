@@ -1,0 +1,90 @@
+/* Button — styled only through Design Schema token custom properties. */
+
+.ds-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-inline-size: var(--size-target-min);
+  min-block-size: var(--size-target-min);
+  padding-block: var(--space-sm);
+  margin: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-body);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-md);
+  background-color: var(--ds-button-background);
+  color: var(--ds-button-foreground);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* size → paddingInline: space.{size} */
+.ds-button--sm { padding-inline: var(--space-sm); }
+.ds-button--md { padding-inline: var(--space-md); }
+.ds-button--lg { padding-inline: var(--space-lg); }
+
+/* Icon-only buttons are square: same padding on every side. */
+.ds-button--icon-only { padding-inline: var(--space-sm); }
+
+/* variant → color.action.{variant}.* */
+.ds-button--primary {
+  --ds-button-background: var(--color-action-primary-background);
+  --ds-button-background-hover: var(--color-action-primary-background-hover);
+  --ds-button-foreground: var(--color-action-primary-foreground);
+}
+.ds-button--secondary {
+  --ds-button-background: var(--color-action-secondary-background);
+  --ds-button-background-hover: var(--color-action-secondary-background-hover);
+  --ds-button-foreground: var(--color-action-secondary-foreground);
+}
+.ds-button--ghost {
+  --ds-button-background: var(--color-action-ghost-background);
+  --ds-button-background-hover: var(--color-action-ghost-background-hover);
+  --ds-button-foreground: var(--color-action-ghost-foreground);
+}
+.ds-button--danger {
+  --ds-button-background: var(--color-action-danger-background);
+  --ds-button-background-hover: var(--color-action-danger-background-hover);
+  --ds-button-foreground: var(--color-action-danger-foreground);
+}
+
+/* backgroundHover: pointer hover and pressed state, only while activatable. */
+.ds-button:not([aria-disabled='true']):not([aria-busy='true']):hover,
+.ds-button:not([aria-disabled='true']):not([aria-busy='true']):active {
+  background-color: var(--ds-button-background-hover);
+}
+
+/* focus-visible: never removed, only replaced by the token ring. */
+.ds-button:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
+}
+
+/* disabled: stays focusable and announced; visually dimmed. */
+.ds-button[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+/* loading: announces busy, ignores activation, keeps its size. */
+.ds-button[aria-busy='true'] {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.ds-button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.ds-button__label {
+  display: inline-block;
+}

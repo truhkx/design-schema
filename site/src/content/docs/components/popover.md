@@ -16,7 +16,7 @@ component:
     trigger:
       type: content
       required: true
-      description: 'Exactly one focusable element — usually a Button — that opens the popover. The popover adds aria-expanded and aria-controls to it.'
+      description: 'Exactly one focusable element — usually a Button — that opens the popover; typed as a single element, since it is cloned with aria-expanded/aria-controls (Button''s `expanded` prop on native) and the toggle handler.'
     children:
       type: content
       required: true
@@ -24,6 +24,11 @@ component:
     heading:
       type: string
       description: Optional heading at the top of the panel, also the accessible name. Without it, the panel is named by the trigger.
+    headingLevel:
+      type: enum
+      values: ['2', '3', '4']
+      default: '3'
+      description: Heading level of the panel heading, so it fits the page outline (a popover usually sits under a level-2 section).
     open:
       type: boolean
       description: Controlled open state. Omit for uncontrolled (the trigger toggles it).
@@ -31,7 +36,7 @@ component:
       type: enum
       values: [bottom-start, bottom, bottom-end, top-start, top, top-end, start, end]
       default: bottom
-      description: Preferred side and alignment; flips and shifts to stay in the viewport.
+      description: 'Preferred side and alignment; flips and shifts to stay in the viewport. All eight values are logical: `start`/`end` and the `-start`/`-end` alignments mirror in right-to-left writing (the same rule as Tooltip and Menu).'
     modal:
       type: boolean
       default: false
@@ -82,10 +87,10 @@ component:
     web:
       element: div
       attributes: [role=dialog, aria-labelledby, aria-modal, aria-expanded, aria-controls]
-      notes: 'The trigger is cloned with aria-expanded and aria-controls. The panel is <div role="dialog" aria-labelledby={heading or trigger}> rendered through a portal with position: fixed from the trigger rect (flip and shift to stay within the viewport, repositioned on scroll/resize), on layer.dropdown, wrapped in FocusScope (trapped only when modal; autoFocus first). Non-modal: a document pointerdown outside panel+trigger closes; focusout to outside closes; Tab past the last element closes and lets focus continue. Modal: uses a native <dialog> with showModal() positioned at the trigger. Use the Popover API (popover="manual") where available for top-layer rendering.'
+      notes: 'The trigger is cloned with aria-expanded and aria-controls. The panel is <div role="dialog" aria-labelledby={heading or trigger}> rendered through a portal with position: fixed from the trigger rect (flip and shift to stay within the viewport, repositioned on scroll/resize), on layer.dropdown, wrapped in FocusScope (trapped only when modal; autoFocus first). Non-modal: a document pointerdown outside panel+trigger closes; focusout to outside closes; Tab past the last element closes and lets focus continue. Modal: uses a native <dialog> with showModal() positioned at the trigger. Use the Popover API (popover="manual") where available for top-layer rendering. Non-modal popovers never lock page scroll and use only the pointerdown-outside listener for dismissal (Tab/Shift+Tab handlers own the keyboard exits; no focusout listener). The arrow, when shown, is centered on the panel edge, not on the trigger.'
     lit:
       tag: ds-popover
-      reflect: [open, placement, modal, show-arrow]
+      reflect: [open, placement, modal, show-arrow, no-dismiss, heading-level]
       notes: 'Slots: `trigger` and default. The panel renders in the shadow root with the Popover API (top layer, no z-index issues) or a fixed fallback. aria-controls cannot cross the shadow boundary, so aria-expanded is set on the slotted trigger and the panel is named by `heading` (aria-label) or the trigger''s text copied into aria-label. Composed `open-change`.'
     rn:
       element: Modal

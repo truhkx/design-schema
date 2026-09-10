@@ -5,9 +5,10 @@ export type FormValidateMode = 'submit' | 'blur' | 'change';
 
 /**
  * What a field contributes to the collected values. Input contributes a string, Switch a
- * boolean, Checkbox its `value` when checked and `undefined` when not; `undefined` is omitted.
+ * boolean, Checkbox its `value` when checked, Listbox an array of values when `multiple`, and
+ * `undefined` when not; `undefined` is omitted.
  */
-export type FormFieldValue = string | boolean | undefined;
+export type FormFieldValue = string | string[] | boolean | undefined;
 
 /**
  * What an Input registers with its enclosing Form so the Form can collect

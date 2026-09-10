@@ -42,6 +42,10 @@ import './Popover.js';
 import './BottomSheet.js';
 import './ActionSheet.js';
 import './SidePanel.js';
+import './Tabs.js';
+import './SegmentedControl.js';
+import './Listbox.js';
+import './Select.js';
 
 export { DsButton } from './Button.js';
 export type {
@@ -232,3 +236,42 @@ export type {
   SidePanelOpenChangeDetail,
   SidePanelOverridableBinding,
 } from './SidePanel.js';
+
+export { DsTabs, DsTabPanel } from './Tabs.js';
+export type {
+  TabsActivation,
+  TabsOrientation,
+  TabsFit,
+  TabsTab,
+  TabsChangeDetail,
+  TabsOverridableBinding,
+} from './Tabs.js';
+
+export { DsSegmentedControl } from './SegmentedControl.js';
+export type {
+  SegmentedControlSize,
+  SegmentedControlOption,
+  SegmentedControlChangeDetail,
+  SegmentedControlOverridableBinding,
+} from './SegmentedControl.js';
+
+export { DsListbox } from './Listbox.js';
+export type {
+  ListboxMaxVisible,
+  ListboxItem,
+  ListboxGroupOption,
+  ListboxOption,
+  ListboxValue,
+  ListboxChangeDetail,
+  ListboxActiveChangeDetail,
+  ListboxOverridableBinding,
+} from './Listbox.js';
+
+export { DsSelect } from './Select.js';
+export type {
+  SelectNative,
+  SelectValue,
+  SelectChangeDetail,
+  SelectOpenChangeDetail,
+  SelectOverridableBinding,
+} from './Select.js';

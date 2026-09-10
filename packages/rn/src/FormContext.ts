@@ -5,10 +5,11 @@ export type FormValidateMode = 'submit' | 'blur' | 'change';
 
 /**
  * What one field contributes on submit: a string (Input, RadioGroup, a checked
- * Checkbox's `value`), a boolean (Switch), or `undefined` for an unchecked Checkbox,
+ * Checkbox's `value`), a boolean (Switch), an array of strings (a `multiple`
+ * Listbox), or `undefined` for an unchecked Checkbox or an empty Listbox selection,
  * which is then left out of the collected values.
  */
-export type FormFieldValue = string | boolean | undefined;
+export type FormFieldValue = string | boolean | string[] | undefined;
 
 /** The values `onSubmit` receives, keyed by field name. */
 export type FormValues = Record<string, Exclude<FormFieldValue, undefined>>;

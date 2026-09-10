@@ -1,10 +1,18 @@
 # Gap digest — phase Overlays
 
-Generated 2026-09-10T03:25 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T03:40 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## ActionSheet
 
 Doc: `site/src/content/docs/components/actionsheet.md`
+
+### 2026-09-10 03:26 — lit round 1
+
+- **DOC** ActionSheet: the schema prop is `title`, but `HTMLElement` already defines `title` as the tooltip attribute (per this package's own convention for exactly this collision, e.g. AlertDialog/BottomSheet/Dialog's `heading`). Renamed the Lit property/attribute to `heading`, matching the rest of the overlay components, even though the anatomy composes it as `Text` rather than a real heading element. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: anatomy lists no `handle`/header part, yet the `close` event's reason enum includes `drag` and the Behavior prose says 'a drag close[s] it'. Added an unlisted, undocumented decorative `.handle` bar (mirrored from `ds-bottom-sheet`'s own handle, using its same locked `color.foreground.muted` token) so the drag gesture has something to read as grabbable; the schema should either add a `handle` anatomy part with its own style binding, or state explicitly that drag applies only on native (RN) since it isn't part of ActionSheet's own anatomy. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet (wide/`<ds-menu>` presentation): the web platform note says the menu is 'anchored to the element that was focused when `open` became true,' but `<ds-menu>` only positions its popup from its own internal trigger button — it has no public API for an external anchor. Worked around this by placing the `<ds-menu>` host itself at the opener's screen rect (`position: fixed`, matching size, `opacity: 0`) so its own trigger inherits that position; this is an approximation (the real trigger button's intrinsic padding/min-target size can differ slightly from the original opener's), not pixel-exact anchoring. `Menu` would need its own anchor-rect prop to do this correctly. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet (wide/`<ds-menu>` presentation): the close reason enum is `escape | scrim | cancel | drag`, but `<ds-menu>`'s `open-change` event doesn't say why it closed (Escape and an outside pointerdown both just report `{ open: false }`), and there's no scrim or Cancel row in this presentation at all. Every non-modal dismissal in the wide presentation is reported as `close` with reason `escape` as the closest fit of the four; none of the reasons actually describe 'clicked outside a non-modal popup.' → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: no `dismissible`/always-dismissible note in the schema (unlike BottomSheet's explicit `dismissible` prop) — assumed the sheet is always dismissible via Escape/scrim/Cancel since no such prop is listed. → `site/src/content/docs/components/actionsheet.md`
 
 ### 2026-09-10 03:16 — web round 1
 
@@ -993,6 +1001,18 @@ Doc: `site/src/content/docs/components/radiogroup.md`
 
 Doc: `site/src/content/docs/components/sidepanel.md`
 
+### 2026-09-10 03:40 — lit round 1
+
+- **DOC** SidePanel: doc prop `title` renamed to `heading` for both the JS property and the attribute (not just mapped) to avoid colliding with `HTMLElement.title`, matching the existing precedent in Dialog.ts and BottomSheet.ts rather than keeping the doc's literal attribute name. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: `aria-controls` from the trigger to the panel is never set — the panel lives inside the shadow root and an id there can't be referenced by an IDREF from the light-DOM trigger, same limitation already accepted in Popover.ts. The panel is instead only named via `aria-labelledby` inside the shadow root. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: `swipeable` is exposed as a reflected boolean property/attribute for API parity but no swipe gesture is wired up on the web platform — the doc parenthesizes the swipe-to-open half as '(native only)' and the Lit platform notes don't describe a gesture handler (unlike BottomSheet's explicit pointer-drag implementation), so I left it inert on Lit and noted this rather than guessing at a touch implementation. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: copy.openLabel ('Open menu') has no natural home in the component itself since `trigger` is fully consumer-supplied slotted content (the component never renders its own trigger text) — I used it verbatim as the trigger button's label in the stories to satisfy 'use copy.* verbatim', but a real consumer would follow the guidance text ('Menu', 'Filters') instead. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the example `<ds-icon name="menu">` from the platform notes can't be used — 'menu' is not in Icon's `IconName` union (packages/lit/src/Icon.ts). Stories render the trigger as a label-only button instead of guessing at a substitute glyph. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: 'A Link followed inside the panel closes it with reason navigation' is implemented as a click listener on the body wrapper checking for an `<a>` or `<ds-link>` in the composed path; the doc doesn't specify the exact detection heuristic (e.g. whether it should also cover a `<ds-button>` acting as a link), so this is a best-effort interpretation. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: safe-area padding is only applied via `env(safe-area-inset-bottom)` on the footer row (relevant since the panel is full-height); the web/React notes also mention `env(safe-area-inset-left)`/`-right`, but those are physical properties that don't map cleanly onto the `side`-based logical-property layout used here, and the Lit platform notes don't call safe-area out explicitly, so inline safe-area was left out. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the non-modal scrim `<div>` shows/hides via the `hidden` attribute rather than crossfading; the modal path gets a real transition through the native `<dialog>::backdrop`, but doc doesn't specify whether the non-modal scrim should also fade, so I kept it simple. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: in persistent mode the landmark role is always `complementary` — the schema has no prop letting a Lit consumer choose `navigation` (the React version gets this via a `Landmark as="nav"` composition the schema doesn't expose here), so a navigation-heavy panel can't get the more specific role on this platform without an added prop. → `site/src/content/docs/components/sidepanel.md`
+
 ### 2026-09-10 03:25 — web round 1
 
 - **DOC** SidePanel: `trigger` is typed `content` in the schema, but showing/hiding it requires cloning a single element to attach aria-expanded/aria-controls/onClick — typed it as `ReactElement` (matching this package's existing Popover convention) rather than a generic ReactNode. → `site/src/content/docs/components/sidepanel.md`
@@ -1172,7 +1192,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 517 · CODE: 38 · TOOLING: 2 · NOISE: 14
+DOC: 531 · CODE: 38 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

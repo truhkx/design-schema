@@ -1,4 +1,27 @@
 {
+  "Accordion.rn": {
+    "hash": "6346b0580263dc73",
+    "lastAttemptHash": "6346b0580263dc73",
+    "generatedAt": "2026-09-10T14:03:35+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.7376,
+    "files": [
+      "packages/rn/src/Accordion.stories.tsx",
+      "packages/rn/src/Accordion.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "ActionSheet.rn": {
     "hash": "0b23f9830ce5e609",
     "lastAttemptHash": "0b23f9830ce5e609",
@@ -196,6 +219,29 @@
       "packages/rn/src/index.ts"
     ],
     "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Combobox.rn": {
+    "hash": "0f608d1069c4ddd0",
+    "lastAttemptHash": "0f608d1069c4ddd0",
+    "generatedAt": "2026-09-10T14:00:18+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.5657,
+    "files": [
+      "packages/rn/src/Combobox.stories.tsx",
+      "packages/rn/src/Combobox.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -471,6 +517,30 @@
       "modules": true
     }
   },
+  "Listbox.rn": {
+    "hash": "1a4295736d57eff7",
+    "lastAttemptHash": "1a4295736d57eff7",
+    "generatedAt": "2026-09-10T13:41:17+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.993,
+    "files": [
+      "packages/rn/src/FormContext.ts",
+      "packages/rn/src/Listbox.stories.tsx",
+      "packages/rn/src/Listbox.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Menu.rn": {
     "hash": "78363b39358998ff",
     "lastAttemptHash": "78363b39358998ff",
@@ -561,6 +631,51 @@
       "modules": true
     }
   },
+  "SegmentedControl.rn": {
+    "hash": "530a37c1154bf24d",
+    "lastAttemptHash": "530a37c1154bf24d",
+    "generatedAt": "2026-09-10T13:31:46+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.0097,
+    "files": [
+      "packages/rn/src/SegmentedControl.stories.tsx",
+      "packages/rn/src/SegmentedControl.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Select.rn": {
+    "hash": "7bad744555f8c77d",
+    "lastAttemptHash": "7bad744555f8c77d",
+    "generatedAt": "2026-09-10T13:48:05+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.1779,
+    "files": [
+      "packages/rn/src/Select.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "SidePanel.rn": {
     "hash": "006e190cf53384a1",
     "lastAttemptHash": "006e190cf53384a1",
@@ -630,6 +745,29 @@
       "packages/rn/src/index.ts"
     ],
     "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Tabs.rn": {
+    "hash": "d558f36137c3e048",
+    "lastAttemptHash": "d558f36137c3e048",
+    "generatedAt": "2026-09-10T13:25:53+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.3779,
+    "files": [
+      "packages/rn/src/Tabs.stories.tsx",
+      "packages/rn/src/Tabs.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,

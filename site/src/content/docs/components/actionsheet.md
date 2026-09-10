@@ -6,10 +6,10 @@ component:
   category: overlay
   status: review
   apg: menu-button
-  anatomy: [scrim, surface, focusScope, title, list, item, itemIcon, cancelButton]
+  anatomy: [scrim, surface, focusScope, handle, header, heading, list, item, itemIcon, cancelButton]
   composition:
     focusScope: FocusScope
-    title: Text
+    heading: Text
     itemIcon: Icon
     cancelButton: Button
   props:
@@ -17,7 +17,7 @@ component:
       type: boolean
       required: true
       description: Controlled visibility.
-    title:
+    heading:
       type: string
       description: 'What the actions apply to ("Photo.jpg"), shown muted above the list. Also the accessible name; when omitted the name is `copy.defaultLabel`.'
     actions:
@@ -25,6 +25,10 @@ component:
       required: true
       shape: '{ id: string; label: string; icon?: IconName; tone?: "default" | "danger"; disabled?: boolean }[]'
       description: Two to about eight actions. `danger` actions are visually distinct and grouped last.
+    dismissible:
+      type: boolean
+      default: true
+      description: 'Escape, the scrim, the cancel row and the drag all request close; Escape still reports through onClose when false, as in Dialog.'
     cancelLabel:
       type: string
       description: Label of the explicit cancel row on phones. Defaults to `copy.cancelLabel`.
@@ -51,7 +55,8 @@ component:
     radius: { token: radius.lg }
     itemPaddingBlock: { token: space.sm }
     itemPaddingInline: { token: layout.inset.md }
-    itemGap: { token: layout.gap.normal, description: Between icon and label. }
+    itemGap: { token: layout.gap.normal, description: 'Between icon and label. Rows have no gap between them: their rhythm comes from itemPaddingBlock.' }
+    headerPaddingBlock: { token: space.sm, description: 'Vertical padding of the header (handle + heading) and of the cancel row.' }
     itemHover: { token: color.background.subtle }
     itemColor: { token: color.foreground }
     itemDangerColor: { token: color.foreground.danger }
@@ -92,7 +97,7 @@ component:
     rn:
       element: Modal
       props: [visible, transparent, onRequestClose, accessibilityViewIsModal]
-      notes: 'A native Modal sheet: a View with accessibilityRole="menu" containing Pressable rows with accessibilityRole="menuitem" and a separate Cancel Button, drag-to-dismiss on the header as BottomSheet. iOS''s ActionSheetIOS is not used, so the look matches the theme on both platforms. On tablets above maxWidth, presents as Menu.'
+      notes: 'A native Modal sheet: a View with accessibilityRole="menu" containing Pressable rows with accessibilityRole="menuitem" and a separate Cancel Button, drag-to-dismiss on the header as BottomSheet. iOS''s ActionSheetIOS is not used, so the look matches the theme on both platforms. On tablets above maxWidth, presents as Menu. The surface uses the RN >= 0.74 `role="menu"` prop with accessibilityViewIsModal; rows are `role="menuitem"`. Arrow keys do not exist on native; each row is its own focus stop.'
 ---
 
 An action sheet answers "what can I do with this?" — the long-press or overflow menu of mobile. It lists a handful of verbs, groups the dangerous one at the bottom, and adds an explicit Cancel because thumbs miss. On wide screens the same list is a Menu next to what was clicked.
@@ -107,7 +112,7 @@ Do not use it for navigation (Menu in a nav Landmark, or Links), for settings wi
 
 ## Behavior
 
-Opening presents the list with focus on the first action; arrow keys move between actions, Enter or Space chooses and fires `onAction(id)`, Escape, the scrim, the Cancel row, or a drag close it with `onClose`. Disabled actions are shown, skipped by arrow navigation, and announced as disabled. On wide screens the sheet becomes a Menu anchored to the opener: same actions, same events, no Cancel row (clicking outside closes). Focus returns to the opener on close in both presentations.
+Opening presents the list with focus on the first action; arrow keys move between actions, Enter or Space chooses and fires `onAction(id)`, Escape, the scrim, the Cancel row, or a drag close it with `onClose`. Disabled actions are shown, skipped by arrow navigation, and announced as disabled. On wide screens the sheet becomes a Menu anchored to the opener: same actions, same events, no Cancel row (clicking outside closes). Focus returns to the opener on close in both presentations. On phones the sheet has BottomSheet''s handle and header, and the drag-to-dismiss gesture lives on them (the same 25% / 1.5 px/ms rule). Above the breakpoint it renders Menu with `anchor` set to the element that was focused when `open` became true (Menu renders no trigger in that mode), and maps Menu''s onOpenChange reasons to its own: `escape` → escape, `outside` → scrim, `action` → nothing (onAction fires instead).
 
 ## Content guidelines
 
@@ -120,10 +125,10 @@ The list is a `menu` of `menuitem`s with an accessible name (WCAG 4.1.2, APG men
 ## Platform notes
 
 ### Web
-Below the breakpoint, reuse BottomSheet's `<dialog>` mechanics with `height: content`, a `<p>` title (muted, small), `<div role="menu" aria-label={title ?? copy.defaultLabel}>` of `<button role="menuitem" tabindex={roving}>` rows (icon via `<Icon>`, label, `aria-disabled` for disabled), a divider before the danger group, and a separate Cancel `<Button variant="secondary">` under a divider. Above the breakpoint, render `<Menu>` with the same `actions`, anchored to `document.activeElement` at open time.
+Below the breakpoint, reuse BottomSheet's `<dialog>` mechanics with `height: content`, a `<p>` title (muted, small), `<div role="menu" aria-label={heading ?? copy.defaultLabel}>` of `<button role="menuitem" tabindex={roving}>` rows (icon via `<Icon>`, label, `aria-disabled` for disabled), a divider before the danger group, and a separate Cancel `<Button variant="secondary">` under a divider. Above the breakpoint, render `<Menu>` with the same `actions`, anchored to `document.activeElement` at open time.
 
 ### Lit
-`<ds-action-sheet open title="Photo.jpg" .actions=${[...]}>`; shadow `<dialog>` or `<ds-menu>` by `matchMedia`; composed `action` and `close`.
+`<ds-action-sheet open heading="Photo.jpg" .actions=${[...]}>`; shadow `<dialog>` or `<ds-menu>` by `matchMedia`; composed `action` and `close`.
 
 ### React Native
 `Modal` sheet with `View accessibilityRole="menu"` of `Pressable accessibilityRole="menuitem"` rows (`accessibilityState={{ disabled }}`), a divider and a Cancel `Button`; drag-to-dismiss on the header via `PanResponder`; `onRequestClose` → `onClose('escape')`. On tablets above the breakpoint, `Menu`.

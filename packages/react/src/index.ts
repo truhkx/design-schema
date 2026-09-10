@@ -174,3 +174,28 @@ export type {
   SidePanelOpenChangeReason,
   SidePanelOverridableBinding,
 } from './SidePanel';
+
+export { Tabs, TabPanel } from './Tabs';
+export type {
+  TabsProps,
+  TabPanelProps,
+  TabsItem,
+  TabsActivation,
+  TabsOrientation,
+  TabsFit,
+  TabsOverridableBinding,
+} from './Tabs';
+
+export { SegmentedControl } from './SegmentedControl';
+export type {
+  SegmentedControlProps,
+  SegmentedControlOption,
+  SegmentedControlSize,
+  SegmentedControlOverridableBinding,
+} from './SegmentedControl';
+
+export { Listbox } from './Listbox';
+export type { ListboxProps, ListboxOption, ListboxValue, ListboxMaxVisible, ListboxOverridableBinding } from './Listbox';
+
+export { Select } from './Select';
+export type { SelectProps, SelectValue, SelectNative, SelectOverridableBinding } from './Select';

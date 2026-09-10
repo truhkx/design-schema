@@ -6,11 +6,11 @@ component:
   category: overlay
   status: review
   apg: alertdialog
-  anatomy: [scrim, surface, focusScope, icon, title, description, footer]
+  anatomy: [scrim, surface, focusScope, icon, heading, description, footer]
   composition:
     focusScope: FocusScope
     icon: Icon
-    title: Heading
+    heading: Heading
     description: Text
     footer: Stack
   props:
@@ -18,7 +18,7 @@ component:
       type: boolean
       required: true
       description: Controlled visibility, as in Dialog.
-    title:
+    heading:
       type: string
       required: true
       description: 'The question or statement, as a level-2 Heading and the accessible name ("Delete 3 files?").'
@@ -66,7 +66,8 @@ component:
     partGap: { token: layout.gap.loose, description: Between the text block and the footer. }
     textGap: { token: layout.gap.tight, description: Between title and description. }
     iconGap: { token: layout.gap.normal, description: Between the icon and the text block. }
-    footerGap: { token: layout.gap.tight }
+    footerGap: { token: layout.gap.tight, description: 'Forwarded to the footer Stack as `overrides.gap`.' }
+    iconSize: { token: font.size.lg, description: 'Forwarded to the tone Icon as `overrides.size`.' }
     icon: { token: 'color.status.{tone}.icon' }
     width: { token: layout.maxWidth.prose, description: 'Always the small size; an alert dialog with more content is a Dialog.' }
     layer: { token: layer.dialog }
@@ -91,11 +92,11 @@ component:
     lit:
       tag: ds-alert-dialog
       reflect: [open, tone]
-      notes: 'Same shadow <dialog> approach as ds-dialog with role="alertdialog". Dispatches composed `confirm` and `cancel` (detail { reason }). No slots: title, description and labels are properties, so the element is fully described by attributes. The shadow <dialog> is named with aria-label={title} and described with aria-description, since ids do not cross the shadow boundary.'
+      notes: 'Same shadow <dialog> approach as ds-dialog with role="alertdialog". Dispatches composed `confirm` and `cancel` (detail { reason }). No slots: title, description and labels are properties, so the element is fully described by attributes. The shadow <dialog> is named with aria-label={heading} and described with aria-description, since ids do not cross the shadow boundary.'
     rn:
       element: Modal
       props: [visible, transparent, onRequestClose, accessibilityViewIsModal]
-      notes: 'Native Modal as in Dialog; the scrim Pressable is absent (no scrim dismissal) — the scrim is a plain View. onRequestClose → onCancel reason escape. Initial accessibility focus on the title so the question is read, then the buttons follow in order Cancel, Confirm. iOS also offers Alert.alert() natively; this component does not use it, so the look matches the theme and the buttons follow the system''s order and variants.'
+      notes: 'Native Modal as in Dialog; the scrim Pressable is absent (no scrim dismissal) — the scrim is a plain View. onRequestClose → onCancel reason escape. Initial accessibility focus on the title so the question is read, then the buttons follow in order Cancel, Confirm. iOS also offers Alert.alert() natively; this component does not use it, so the look matches the theme and the buttons follow the system''s order and variants. The surface uses the RN >= 0.74 `role="alertdialog"` prop with accessibilityViewIsModal. `confirmDisabled` maps to Button''s `disabled`, which on native is accessibilityState.disabled plus a press guard (the control stays focusable), per Button''s own contract.'
 ---
 
 An alert dialog is a Dialog with one job: get a considered yes or no. It looks like a Dialog and behaves like one in every way that keeps people safe, and differs in every way that keeps them from answering by accident — no close button, no scrim dismissal, focus starting on Cancel, the confirming action named after what it does.
@@ -126,7 +127,7 @@ Role `alertdialog` tells assistive technology this is a decision, and the title 
 Native `<dialog role="alertdialog" aria-modal="true" aria-labelledby aria-describedby>` through a portal, opened with `showModal()`. Handle `cancel` (preventDefault, then `onCancel('escape')`). Do not attach a scrim click handler. Footer is a horizontal Stack, `gap: tight`, Cancel then Confirm in DOM order (Cancel first so it is focused first; visually the primary sits at the end via `justify: end`). The icon is `<Icon name={tone}>` colored by the tone token.
 
 ### Lit
-`<ds-alert-dialog open tone="danger" title="Delete 3 files?" description="…" confirm-label="Delete files">`. Shadow `<dialog>` with `showModal()`; composed `confirm` and `cancel` events. Renders `<ds-heading>`, `<ds-text>`, `<ds-icon>`, `<ds-stack>` and two `<ds-button>`s.
+`<ds-alert-dialog open tone="danger" heading="Delete 3 files?" description="…" confirm-label="Delete files">`. Shadow `<dialog>` with `showModal()`; composed `confirm` and `cancel` events. Renders `<ds-heading>`, `<ds-text>`, `<ds-icon>`, `<ds-stack>` and two `<ds-button>`s.
 
 ### React Native
 `Modal` as in Dialog, no scrim `Pressable`. `onRequestClose` → `onCancel('escape')`. Set accessibility focus to the title after the enter animation; Cancel precedes Confirm in the accessibility order. Buttons are the system `Button` (`secondary` for cancel; `danger` or `primary` for confirm by tone).

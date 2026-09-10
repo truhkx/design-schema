@@ -6,10 +6,10 @@ component:
   category: overlay
   status: review
   apg: disclosure
-  anatomy: [trigger, scrim, surface, focusScope, header, title, body, footer, closeButton]
+  anatomy: [trigger, scrim, surface, focusScope, header, heading, body, footer, closeButton]
   composition:
     focusScope: FocusScope
-    title: Heading
+    heading: Heading
     closeButton: Button
     body: Box
     footer: Stack
@@ -20,11 +20,11 @@ component:
     open:
       type: boolean
       description: Controlled visibility. Omit for uncontrolled (the trigger toggles it).
-    title:
+    heading:
       type: string
       required: true
-      description: 'The panel''s title and accessible name ("Menu", "Filters", "Your cart"). May be visually hidden with `hideTitle`.'
-    hideTitle:
+      description: 'The panel''s title and accessible name ("Menu", "Filters", "Your cart"). May be visually hidden with `hideHeading`.'
+    hideHeading:
       type: boolean
       default: false
       description: Keep the title for assistive technology but do not render it (a navigation panel whose List is self-explanatory).
@@ -51,6 +51,11 @@ component:
       values: [never, content, page]
       default: never
       description: 'Above this layout width the panel stops being an overlay and becomes a fixed sidebar beside the content: always visible, no scrim, no trap, part of the page''s tab order, and the trigger is hidden. `content` switches at layout.maxWidth.content, `page` at layout.maxWidth.page. Below it, the overlay behavior applies. This is how one component serves a phone''s hamburger menu and a desktop''s sidebar.'
+    role:
+      type: enum
+      values: [complementary, navigation]
+      default: complementary
+      description: 'The landmark the panel exposes (in persistent mode and as the region''s role when open): `navigation` for a menu of Links, `complementary` for filters, a cart, a detail. On web this is the Landmark component''s `as`.'
     modal:
       type: boolean
       default: false
@@ -62,7 +67,7 @@ component:
     dismissible:
       type: boolean
       default: true
-      description: Escape, the close button, a scrim tap / outside click, and the swipe gesture all request close. When false, only the trigger and footer actions close it.
+      description: 'Escape, the close button, a scrim tap / outside click, and the swipe gesture all request close. When false, the close button is not rendered and taps outside do nothing; Escape still reports through onOpenChange with reason escape (the consumer decides), as in Dialog.'
     swipeable:
       type: boolean
       default: true
@@ -98,7 +103,6 @@ component:
     focusRingWidth: { token: border.width.focus }
   copy:
     closeLabel: Close
-    openLabel: Open menu
   a11y:
     role: none
     requires: [accessible-name, expanded-state, focus-restore, escape-dismiss, gesture-alternative, keyboard-operable, focus-visible, contrast-aa, reduced-motion, target-44px, landmark-role, focus-trap, inert-background, scroll-lock]
@@ -114,11 +118,11 @@ component:
     lit:
       tag: ds-side-panel
       reflect: [open, side, width, persistent, dismissible, swipeable]
-      notes: 'Slots `trigger`, default and `footer`. Shadow <dialog> for overlay mode; in persistent mode the host itself lays out as the sidebar (display: block in the parent grid) and the slotted content renders in an <aside> in the shadow root. Composed `open-change`. matchMedia listener on the persistent breakpoint.'
+      notes: 'Slots `trigger`, default and `footer`. Shadow <dialog> for overlay mode; in persistent mode the host itself lays out as the sidebar (display: block in the parent grid) and the slotted content renders in an <aside> in the shadow root. Composed `open-change`. matchMedia listener on the persistent breakpoint. `aria-controls` cannot reach the shadow panel from the slotted trigger, so only aria-expanded is set on it; the panel is named by its heading inside the shadow root. `role` selects the landmark role of the shadow region. `container` is not needed: the panel lives in the shadow root.'
     rn:
       element: Modal
       props: [visible, transparent, onRequestClose, accessibilityViewIsModal]
-      notes: 'Native Modal with an Animated.View surface translated from the start (or end) edge, scrim Pressable to close, PanResponder for the swipe (edge-swipe to open needs a gesture on the screen root; offer it via a `useSidePanelEdgeSwipe` hook rather than assuming). onRequestClose → escape. Tablets in landscape with `persistent` set: render as a sibling View beside the content (no Modal), matching the web sidebar. RTL flips `start`/`end` via I18nManager.'
+      notes: 'Native Modal with an Animated.View surface translated from the start (or end) edge, scrim Pressable to close, PanResponder for the swipe (edge-swipe to open needs a gesture on the screen root; offer it via a `useSidePanelEdgeSwipe` hook rather than assuming). onRequestClose → escape. Tablets in landscape with `persistent` set: render as a sibling View beside the content (no Modal), matching the web sidebar. RTL flips `start`/`end` via I18nManager. Non-modal ''page stays live'' cannot be reproduced under RN Modal (it intercepts all touches); only tap-outside-to-close is possible, and the doc accepts that. `role` maps to the RN >= 0.74 `role` prop on the persistent sidebar View. `navigation` as a close reason is never emitted natively (no router hook). `useSidePanelEdgeSwipe` requires the panel to be controlled (`open`).'
 ---
 
 A side panel is the drawer: hidden off the edge until a button asks for it, then sliding in beside the page. It is built on the simplest APG pattern that fits — a button with `aria-expanded` that controls a region — so by default it behaves like a disclosure that happens to slide: focus stays on the button, Tab walks into the panel, Escape puts it away. Only when a panel must be finished or dismissed does it become a modal dialog at the edge. It holds whatever a page needs at hand but not on screen — the navigation List, a set of filters, the cart — and on a wide screen the same component can stay put as a sidebar, so a product has one menu, not a phone menu and a desktop one.
@@ -133,7 +137,7 @@ Do not use a SidePanel for a short list of actions (Menu, ActionSheet), for a ta
 
 ## Behavior
 
-The trigger toggles the panel and reflects it with `aria-expanded`. Non-modal (default): opening slides the panel in from `side` and fades the scrim if shown; focus stays on the trigger, and the next Tab enters the panel because it sits right after the trigger in the document; Shift+Tab from the first control returns to the trigger with the panel still open; the page stays live. Modal: focus moves to the first control (or the title), the page is inert and scroll-locked, Tab is confined. In both, the body scrolls within the panel and the footer stays pinned; Escape (from inside), the close button, a scrim or outside tap, and a swipe toward the edge request close; following a Link inside closes it with reason `navigation`; closing returns focus to the trigger. Above the `persistent` breakpoint the panel is simply there: no scrim, no trap, the trigger hidden, the same content in the page's tab order as a `complementary` (or navigation) landmark; crossing the breakpoint while open keeps the content and drops the overlay chrome. `start` and `end` follow the writing direction.
+The trigger toggles the panel and reflects it with `aria-expanded`. Non-modal (default): opening slides the panel in from `side` and fades the scrim if shown; focus stays on the trigger, and the next Tab enters the panel because it sits right after the trigger in the document; Shift+Tab from the first control returns to the trigger with the panel still open; the page stays live. Modal: focus moves to the first control (or the title), the page is inert and scroll-locked, Tab is confined. In both, the body scrolls within the panel and the footer stays pinned; Escape (from inside), the close button, a scrim or outside tap, and a swipe toward the edge request close; following a Link inside closes it with reason `navigation`; closing returns focus to the trigger. Above the `persistent` breakpoint the panel is simply there: no scrim, no trap, the trigger hidden, the same content in the page's tab order as a `complementary` (or navigation) landmark; crossing the breakpoint while open keeps the content and drops the overlay chrome. `start` and `end` follow the writing direction. The swipe-to-dismiss gesture lives on the header (not the close button). When closed the panel is either unmounted or `hidden` — both remove it from the accessibility tree; the exit transition finishes first. The non-modal scrim fades with the panel''s enter/exit durations. The trigger is a single element; a `menu` Icon exists for the usual icon-only trigger.
 
 ## Content guidelines
 
@@ -146,10 +150,10 @@ The default is the APG disclosure pattern: a button with `aria-expanded` and `ar
 ## Platform notes
 
 ### Web
-Clone the trigger with `aria-expanded`, `aria-controls`, `onClick` (toggle). Non-modal: render `<aside aria-labelledby id hidden={!open} data-ds="SidePanel" class="ds-side-panel--{side} ds-side-panel--{width}">` (or `Landmark as="nav"`) directly after the trigger, `position: fixed`, and an optional scrim `<div aria-hidden>` before it; keydown Escape inside → close + focus trigger; pointerdown outside (document listener) → close when dismissible; `hidden` is applied after the exit transition ends. Modal: render `<dialog aria-labelledby>` through `showModal()` with `position: fixed; inset-block: 0; inset-inline-start: 0` (or `-end`), `inline-size` from the width tokens (`min(var(--ds-side-panel-width), 100vw - var(--ds-side-panel-edge-gutter))`), translated from `-100%` to `0` over `enter`, `::backdrop` from `scrim`; wrap content in `FocusScope trapped={modal} autoFocus={modal ? 'first' : false} restoreFocus`; header `Stack` horizontal with the `Heading` (`level 2`, visually hidden when `hideTitle`) and the close `Button` (`ghost`, `iconOnly`, `close` Icon); body `Box` scrolling; footer `Stack`. Click on the backdrop and Escape → close. A `click` on an `<a>` inside with a client-side router → close with `navigation`. Persistent: `matchMedia('(min-width: <token px>)')` (`literal-ok: breakpoint from layout.maxWidth.*`) renders `Landmark as="complementary"` (or `"nav"`) with the same children and `border-inline-end` from `border`, and the trigger with `hidden`; the page layout places it with a grid column of the width token. Safe area via `env(safe-area-inset-left)`/`-right`.
+Clone the trigger with `aria-expanded`, `aria-controls`, `onClick` (toggle). Non-modal: render `<aside aria-labelledby id hidden={!open} data-ds="SidePanel" class="ds-side-panel--{side} ds-side-panel--{width}">` (or `Landmark as="nav"`) directly after the trigger, `position: fixed`, and an optional scrim `<div aria-hidden>` before it; keydown Escape inside → close + focus trigger; pointerdown outside (document listener) → close when dismissible; `hidden` is applied after the exit transition ends. Modal: render `<dialog aria-labelledby>` through `showModal()` with `position: fixed; inset-block: 0; inset-inline-start: 0` (or `-end`), `inline-size` from the width tokens (`min(var(--ds-side-panel-width), 100vw - var(--ds-side-panel-edge-gutter))`), translated from `-100%` to `0` over `enter`, `::backdrop` from `scrim`; wrap content in `FocusScope trapped={modal} autoFocus={modal ? 'first' : false} restoreFocus`; header `Stack` horizontal with the `Heading` (`level 2`, visually hidden when `hideHeading`) and the close `Button` (`ghost`, `iconOnly`, `close` Icon); body `Box` scrolling; footer `Stack`. Click on the backdrop and Escape → close. A `click` on an `<a>` inside with a client-side router → close with `navigation`. Persistent: `matchMedia('(min-width: <token px>)')` (`literal-ok: breakpoint from layout.maxWidth.*`) renders `Landmark as="complementary"` (or `"nav"`) with the same children and `border-inline-end` from `border`, and the trigger with `hidden`; the page layout places it with a grid column of the width token. Safe area via `env(safe-area-inset-left)`/`-right`.
 
 ### Lit
-`<ds-side-panel title="Menu" persistent="content"><ds-button slot="trigger" icon-only icon="menu" label="Menu"></ds-button><ds-list>…</ds-list></ds-side-panel>`; shadow `<dialog>`; persistent mode switches the host to `display: block` in the parent grid and renders an `<aside>`; composed `open-change`.
+`<ds-side-panel heading="Menu" persistent="content"><ds-button slot="trigger" icon-only icon="menu" label="Menu"></ds-button><ds-list>…</ds-list></ds-side-panel>`; shadow `<dialog>`; persistent mode switches the host to `display: block` in the parent grid and renders an `<aside>`; composed `open-change`.
 
 ### React Native
 `Modal` with an `Animated.View` panel at the `start`/`end` edge (`I18nManager.isRTL` flips), width from tokens capped at screen width minus `edgeGutter`, scrim `Pressable`, `PanResponder` swipe toward the edge to dismiss, `FocusScope`, `onRequestClose` → escape. `persistent` on tablets above the breakpoint renders a sibling `View` with `accessibilityRole="none"` and a label, beside the content. Provide `useSidePanelEdgeSwipe()` for the edge-swipe-to-open gesture on the screen root.

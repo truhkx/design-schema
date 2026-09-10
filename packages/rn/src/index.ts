@@ -129,3 +129,49 @@ export type {
   SidePanelWidth,
   UseSidePanelEdgeSwipeOptions,
 } from './SidePanel';
+
+export { Tabs, TabPanel } from './Tabs';
+export type {
+  TabsActivation,
+  TabsFit,
+  TabsOrientation,
+  TabsOverridableBinding,
+  TabsProps,
+  TabsTab,
+  TabPanelProps,
+} from './Tabs';
+
+export { SegmentedControl } from './SegmentedControl';
+export type {
+  SegmentedControlOption,
+  SegmentedControlOverridableBinding,
+  SegmentedControlProps,
+  SegmentedControlSize,
+} from './SegmentedControl';
+
+export { Listbox } from './Listbox';
+export type {
+  ListboxGroup,
+  ListboxItem,
+  ListboxMaxVisible,
+  ListboxOption,
+  ListboxOverridableBinding,
+  ListboxProps,
+  ListboxValue,
+} from './Listbox';
+
+export { Select } from './Select';
+export type { SelectNative, SelectOverridableBinding, SelectProps, SelectValue } from './Select';
+
+export { Combobox } from './Combobox';
+export type { ComboboxFilter, ComboboxOverridableBinding, ComboboxProps, ComboboxValue } from './Combobox';
+
+export { Accordion } from './Accordion';
+export type {
+  AccordionHeadingLevel,
+  AccordionItem,
+  AccordionOpenChangeReason,
+  AccordionOverridableBinding,
+  AccordionProps,
+  AccordionValue,
+} from './Accordion';

@@ -485,6 +485,31 @@
       "modules": true
     }
   },
+  "Listbox.web": {
+    "hash": "a47049db6dc1932e",
+    "lastAttemptHash": "a47049db6dc1932e",
+    "generatedAt": "2026-09-10T13:40:50+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.8918,
+    "files": [
+      "packages/react/src/FormContext.ts",
+      "packages/react/src/Listbox.css",
+      "packages/react/src/Listbox.stories.tsx",
+      "packages/react/src/Listbox.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 11,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Menu.web": {
     "hash": "a6c67145c0e3d54c",
     "lastAttemptHash": "a6c67145c0e3d54c",
@@ -579,6 +604,54 @@
       "modules": true
     }
   },
+  "SegmentedControl.web": {
+    "hash": "6210c9ba9174da52",
+    "lastAttemptHash": "6210c9ba9174da52",
+    "generatedAt": "2026-09-10T13:31:24+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.0042,
+    "files": [
+      "packages/react/src/SegmentedControl.css",
+      "packages/react/src/SegmentedControl.stories.tsx",
+      "packages/react/src/SegmentedControl.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Select.web": {
+    "hash": "4964560cde53d02e",
+    "lastAttemptHash": "4964560cde53d02e",
+    "generatedAt": "2026-09-10T13:59:08+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 3.6225,
+    "files": [
+      "packages/react/src/Select.css",
+      "packages/react/src/Select.stories.tsx",
+      "packages/react/src/Select.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "SidePanel.web": {
     "hash": "ede8cadd07ff4c1e",
     "lastAttemptHash": "ede8cadd07ff4c1e",
@@ -651,6 +724,30 @@
       "packages/react/src/index.ts"
     ],
     "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Tabs.web": {
+    "hash": "88a3ec4c66406a7c",
+    "lastAttemptHash": "88a3ec4c66406a7c",
+    "generatedAt": "2026-09-10T13:26:25+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.2487,
+    "files": [
+      "packages/react/src/Tabs.css",
+      "packages/react/src/Tabs.stories.tsx",
+      "packages/react/src/Tabs.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

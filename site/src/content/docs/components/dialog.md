@@ -6,10 +6,10 @@ component:
   category: overlay
   status: review
   apg: dialog-modal
-  anatomy: [scrim, surface, focusScope, header, title, description, body, footer, closeButton]
+  anatomy: [scrim, surface, focusScope, header, heading, description, body, footer, closeButton]
   composition:
     focusScope: FocusScope
-    title: Heading
+    heading: Heading
     description: Text
     closeButton: Button
     body: Box
@@ -19,7 +19,7 @@ component:
       type: boolean
       required: true
       description: Controlled visibility. The consumer owns it; the dialog requests changes through `onClose`.
-    title:
+    heading:
       type: string
       required: true
       description: The dialog's title, rendered as a level-2 Heading and used as the accessible name. Says what the task is ("Rename project").
@@ -35,6 +35,10 @@ component:
     footer:
       type: content
       description: The action row. Primary action first, then one secondary; follows Form's action-order rule. A dialog with no footer must be dismissable from its body.
+    hideHeading:
+      type: boolean
+      default: false
+      description: 'Visually hide the heading while it remains the accessible name (BottomSheet forwards its own hideHeading here above the breakpoint).'
     size:
       type: enum
       values: [sm, md, lg]
@@ -43,7 +47,7 @@ component:
     dismissible:
       type: boolean
       default: true
-      description: 'Escape, the close button and a scrim click all request close. Set false for a dialog that must be answered (then provide the answers in the footer); Escape still fires `onClose` with reason `escape` so the consumer can decide.'
+      description: 'Escape, the close button and a scrim click all request close. Set false for a dialog that must be answered (then provide the answers in the footer): the close button is not rendered and the scrim does nothing; Escape still fires `onClose` with reason `escape` so the consumer can decide.'
     initialFocus:
       type: enum
       values: [first, title, close]
@@ -72,7 +76,8 @@ component:
     inset: { token: layout.inset.lg, description: 'Padding of header, body and footer.' }
     partGap: { token: layout.gap.loose, description: 'Gap between header, body and footer.' }
     headerGap: { token: layout.gap.normal, description: Between title/description and the close button. }
-    footerGap: { token: layout.gap.tight, description: Between footer actions. }
+    footerGap: { token: layout.gap.tight, description: 'Between footer actions; forwarded to the footer Stack as `overrides.gap`. The footer row is end-aligned (Form''s action-row rule), unlike Card''s start-aligned footer.' }
+    descriptionGap: { token: layout.gap.tight, description: 'Between the heading and the description inside the header group.' }
     widthSm: { token: layout.maxWidth.prose, description: 'Surface width for size sm; md is 3/4 of content and lg is content — both derived from layout.maxWidth.content by the generator, not new tokens.' }
     layer: { token: layer.dialog }
     enter: { token: motion.duration.base, description: 'Scrim fade and surface fade-and-rise (translateY of space.2), motion.easing.standard; instant under reduced motion.' }
@@ -93,22 +98,22 @@ component:
     web:
       element: dialog
       attributes: [aria-modal, aria-labelledby, aria-describedby]
-      notes: 'A native <dialog> opened with showModal(), which gives the top layer, Escape (cancel event → onClose reason escape, preventDefault when not dismissible), and background inertness for free. Rendered through a portal into document.body. ::backdrop is the scrim; a click on the dialog element outside its surface (event.target === dialog) is the scrim click. Focus trap: showModal() traps by inertness; Tab wrap is implemented explicitly because the browser lets Tab leave to the URL bar. Body scroll locked with overflow: hidden on <html> while open, compensating for scrollbar width via scrollbar-gutter. Focus restore to document.activeElement at open time.'
+      notes: 'A native <dialog> opened with showModal(), which gives the top layer, Escape (cancel event → onClose reason escape, preventDefault when not dismissible), and background inertness for free. Rendered through a portal into document.body. ::backdrop is the scrim; a click on the dialog element outside its surface (event.target === dialog) is the scrim click. Focus trap: showModal() traps by inertness; Tab wrap is implemented explicitly because the browser lets Tab leave to the URL bar. Body scroll locked with overflow: hidden on <html> while open, compensating for scrollbar width via scrollbar-gutter. Focus restore to document.activeElement at open time. `container?: HTMLElement` (default document.body) is the portal target — a platform prop every portaled overlay accepts, not a schema prop.'
     lit:
       tag: ds-dialog
-      reflect: [open, size, dismissible]
-      notes: 'Wraps a native <dialog> in the shadow root; the top layer works from inside shadow DOM. `open` is a reflected property the consumer sets; the element calls showModal()/close() in updated(). `close` is a composed CustomEvent with detail { reason }; `opened` likewise. Slots: default (body), `footer`. Title and description are properties rendered as <ds-heading level="2"> and <ds-text>. The close button is a <ds-button variant="ghost" size="sm" icon-only> with <ds-icon name="close">. Accessible name: ids do not cross the shadow boundary, so the shadow <dialog> carries aria-label={title} (and aria-description from the description text) rather than aria-labelledby.'
+      reflect: [open, size, no-dismiss, initial-focus]
+      notes: 'Wraps a native <dialog> in the shadow root; the top layer works from inside shadow DOM. `open` is a reflected property the consumer sets; the element calls showModal()/close() in updated(). `close` is a composed CustomEvent with detail { reason }; `opened` likewise. Slots: default (body), `footer`. Title and description are properties rendered as <ds-heading level="2"> and <ds-text>. The close button is a <ds-button variant="ghost" size="sm" icon-only> with <ds-icon name="close">. Accessible name: ids do not cross the shadow boundary, so the shadow <dialog> carries aria-label={heading} (and aria-description from the description text) rather than aria-labelledby.'
     rn:
       element: Modal
       props: [visible, transparent, animationType=none, onRequestClose, statusBarTranslucent, accessibilityViewIsModal]
-      notes: 'Native Modal with transparent background; the scrim is a full-screen Pressable (accessible={false}) in color.overlay.scrim; the surface is a View with accessibilityViewIsModal so VoiceOver/TalkBack ignore the page behind. onRequestClose (Android back) → onClose reason escape. Focus: AccessibilityInfo.setAccessibilityFocus on the title or first control after the enter animation. Keyboard avoidance with KeyboardAvoidingView so a Form in the body stays visible. Enter/exit animated with Animated (opacity + translateY), skipped under reduce motion. Size maps to maxWidth from the same tokens; on phones the surface is full-width with the gutter as margin.'
+      notes: 'Native Modal with transparent background; the scrim is a full-screen Pressable (accessible={false}) in color.overlay.scrim; the surface is a View with accessibilityViewIsModal so VoiceOver/TalkBack ignore the page behind. onRequestClose (Android back) → onClose reason escape. Focus: AccessibilityInfo.setAccessibilityFocus on the title or first control after the enter animation. Keyboard avoidance with KeyboardAvoidingView so a Form in the body stays visible. Enter/exit animated with Animated (opacity + translateY), skipped under reduce motion. Size maps to maxWidth from the same tokens; on phones the surface is full-width with the gutter as margin. The surface carries the RN >= 0.74 `role="dialog"` prop (as Landmark and Fieldset use `role`), alongside accessibilityViewIsModal; the legacy accessibilityRole union has no dialog value. Scroll lock has no native meaning and is not implemented.'
 ---
 
 A dialog interrupts. It takes the whole screen's attention for one task and gives it back when the task is done or abandoned. Everything about it — the scrim, the trapped focus, the inert page behind, Escape, focus returning to where it was — exists to make that interruption safe and reversible. Anything that does not need the interruption should not be a dialog.
 
 ## When to use
 
-Use a Dialog for a short task that must complete before the user continues and needs its own space: rename, create-with-a-few-fields, choose from options with consequences, confirm something reversible with a form attached. Keep it to one screen of content; a dialog that scrolls much is a page. Give it a `title` that names the task and a `footer` with the completing action first.
+Use a Dialog for a short task that must complete before the user continues and needs its own space: rename, create-with-a-few-fields, choose from options with consequences, confirm something reversible with a form attached. Keep it to one screen of content; a dialog that scrolls much is a page. Give it a `heading` that names the task and a `footer` with the completing action first.
 
 ## When not to use
 
@@ -132,10 +137,10 @@ The dialog has role `dialog`, `aria-modal`, an accessible name from the title an
 Render through a portal into `document.body`: `<dialog aria-labelledby aria-describedby>` containing the surface. Call `showModal()` when `open` becomes true and `close()` when false; listen to `cancel` (Escape) and call `preventDefault()` on it always, reporting through `onClose('escape')` — the consumer owns `open`. Style `::backdrop` with the scrim token and `@media (prefers-reduced-motion: no-preference)` transitions. Detect a scrim click as a `click` whose target is the `<dialog>` element itself. Implement Tab wrapping with a keydown handler over the dialog's focusable elements. Lock scroll with a class on `<html>` (`overflow: hidden; scrollbar-gutter: stable`). Store `document.activeElement` on open; on close, focus it if still connected. Size classes set `inline-size` from the width tokens with `max-inline-size: calc(100vw - 2 * var(--layout-gutter))`.
 
 ### Lit
-`<ds-dialog open title="Rename project">` with a `<dialog>` in the shadow root; `showModal()` works from a shadow root and the element is placed in the top layer. Because the light-DOM slotted content is not inside the shadow `<dialog>` in the composed tree only visually, the Tab-wrap handler must collect focusable elements from both the shadow root and assigned slot nodes. Dispatch composed `close` and `opened`. Reflect `open` so `ds-dialog[open]` can be styled. Compose `<ds-heading>`, `<ds-text>`, `<ds-button>`, `<ds-icon>`, `<ds-box>`, `<ds-stack>`.
+`<ds-dialog open heading="Rename project">` with a `<dialog>` in the shadow root; `showModal()` works from a shadow root and the element is placed in the top layer. Because the light-DOM slotted content is not inside the shadow `<dialog>` in the composed tree only visually, the Tab-wrap handler must collect focusable elements from both the shadow root and assigned slot nodes. Dispatch composed `close` and `opened`. Reflect `open` so `ds-dialog[open]` can be styled. Compose `<ds-heading>`, `<ds-text>`, `<ds-button>`, `<ds-icon>`, `<ds-box>`, `<ds-stack>`.
 
 ### React Native
-`Modal` with `transparent`, `animationType="none"` (the component animates itself), `onRequestClose` → `onClose('escape')`, `statusBarTranslucent`. Inside: an `Animated.View` scrim (`Pressable` for the scrim click, `accessible={false}`), and the surface `View` with `accessibilityViewIsModal`, `accessibilityLabel={title}`, `accessibilityHint={description}`. Wrap the body in `ScrollView` inside `KeyboardAvoidingView`. After the enter animation, `setAccessibilityFocus` on the title (or first control). Size uses `maxWidth` from the width tokens and `marginHorizontal: layout.gutter`; below the content measure the surface is full width. The close button is the system `Button` with `leadingIcon` an `Icon name="close"`.
+`Modal` with `transparent`, `animationType="none"` (the component animates itself), `onRequestClose` → `onClose('escape')`, `statusBarTranslucent`. Inside: an `Animated.View` scrim (`Pressable` for the scrim click, `accessible={false}`), and the surface `View` with `accessibilityViewIsModal`, `accessibilityLabel={heading}`, `accessibilityHint={description}`. Wrap the body in `ScrollView` inside `KeyboardAvoidingView`. After the enter animation, `setAccessibilityFocus` on the title (or first control). Size uses `maxWidth` from the width tokens and `marginHorizontal: layout.gutter`; below the content measure the surface is full width. The close button is the system `Button` with `leadingIcon` an `Icon name="close"`.
 
 ## Related
 

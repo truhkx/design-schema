@@ -41,13 +41,17 @@ component:
       description: Preferred position of the popup relative to the trigger; flips automatically when it would overflow the viewport.
     open:
       type: boolean
-      description: Controlled open state. Omit for an uncontrolled menu.
+      description: 'Controlled open state (the parent flips it from onOpenChange). Omit for an uncontrolled menu.'
+    anchor:
+      type: object
+      shape: 'RefObject<HTMLElement | View>'
+      description: 'Position the popup relative to this element instead of rendering a trigger; the trigger part is omitted and `open` must be controlled. Used by ActionSheet above its breakpoint and by context menus.'
   events:
     onAction:
       description: An item was chosen; receives its `id`. The menu closes itself first.
       platforms: { web: onAction, lit: action, rn: onAction }
     onOpenChange:
-      description: Fired when the menu opens or closes, with the new boolean.
+      description: 'Fired when the menu opens or closes, with `{ open, reason }` — reason: `trigger`, `escape`, `outside`, `action` (an item was chosen; fired before onAction), `controlled`.'
       platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange }
   keyboard:
     - { keys: [Enter, ' ', ArrowDown], action: Opens the menu and focuses the first item., when: focus on trigger, from: trigger, expect: manual }
@@ -55,8 +59,8 @@ component:
     - { keys: [ArrowDown], action: Moves to the next enabled item., when: menu open, from: first, expect: focus-next }
     - { keys: [ArrowDown], action: From the last item wraps to the first., when: menu open, from: last, expect: focus-wraps-to-first }
     - { keys: [ArrowUp], action: From the first item wraps to the last., when: menu open, from: first, expect: focus-wraps-to-last }
-    - { keys: [Home], action: First enabled item., when: menu open, from: last, expect: focus-first }
-    - { keys: [End], action: Last enabled item., when: menu open, from: first, expect: focus-last }
+    - { keys: [Home], action: First enabled item., when: menu open, from: inside, expect: focus-first }
+    - { keys: [End], action: Last enabled item., when: menu open, from: inside, expect: focus-last }
     - { keys: [Enter, ' '], action: Activates the focused item and closes., when: menu open, from: first, expect: closes }
     - { keys: [Escape], action: Closes and returns focus to the trigger., when: menu open, from: inside, expect: focus-trigger }
     - { keys: [Tab, Shift+Tab], action: Closes and moves focus to the next/previous tabbable element after the trigger., when: menu open, from: inside, expect: closes }
@@ -69,6 +73,8 @@ component:
     radius: { token: radius.md }
     popupPadding: { token: space.1, description: Inset around the list so item hover backgrounds do not touch the border. }
     popupOffset: { token: space.1, description: Gap between trigger and popup. }
+    typeaheadReset: { token: motion.duration.loop, description: 'How long typed characters accumulate before the typeahead buffer clears.' }
+    maxHeight: { token: layout.maxWidth.prose, description: 'The popup never exceeds the viewport minus the gutter; beyond that the list scrolls (the token is the cap used on wide screens).' }
     minWidth: { token: space.20, description: 'Popup is at least this wide (space.20 × 2.5, i.e. 200px at comfortable density — the generator multiplies; no new token) and at least the trigger width.' }
     itemPaddingBlock: { token: space.sm }
     itemPaddingInline: { token: space.md }
@@ -113,7 +119,7 @@ component:
     rn:
       element: Modal
       props: [visible, transparent, onRequestClose]
-      notes: 'Menus on touch are ActionSheets: on phones Menu renders an ActionSheet with the same items (groups become dividers with a muted label); on tablets and react-native-web it renders a transparent Modal with an absolutely positioned popup measured from the trigger via measureInWindow(). Items are Pressables with accessibilityRole="menuitem"; the trigger Button carries accessibilityState.expanded. Typeahead and arrow keys apply only when a hardware keyboard is present.'
+      notes: 'Menus on touch are ActionSheets: on phones Menu renders an ActionSheet with the same items (groups become dividers with a muted label); on tablets and react-native-web it renders a transparent Modal with an absolutely positioned popup measured from the trigger via measureInWindow(). Items are Pressables with accessibilityRole="menuitem"; the trigger Button carries accessibilityState.expanded. Typeahead and arrow keys apply only when a hardware keyboard is present. The popup uses the RN >= 0.74 `role="menu"` prop and items `role="menuitem"`; the trigger Button receives `expanded` so accessibilityState.expanded is exposed. On phones the Menu renders ActionSheet (composition, now that it exists); the anchored dropdown is the tablet and react-native-web presentation. The list scrolls within maxHeight.'
 ---
 
 A menu hides a handful of actions behind one button so a toolbar or a row stays quiet. It is the desktop counterpart of ActionSheet — anchored to what was clicked, gone with a click elsewhere, fully driveable from the keyboard, with typeahead for long lists.

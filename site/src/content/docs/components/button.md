@@ -34,6 +34,9 @@ component:
       values: [button, submit]
       default: button
       description: '`submit` submits the enclosing Form. Everything else is `button`.'
+    expanded:
+      type: boolean
+      description: 'Set by a parent that the button discloses (Menu, Popover, SidePanel, Disclosure): aria-expanded on web, accessibilityState.expanded on native. Consumers rarely set it directly.'
     disabled:
       type: boolean
       default: false

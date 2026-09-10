@@ -314,3 +314,6 @@ export type {
   TreeGridCellChangeDetail,
   TreeGridOverridableBinding,
 } from './TreeGrid';
+
+export { Tree } from './Tree';
+export type { TreeProps, TreeNode, TreeNodeChildren, TreeSelectable, TreeOverridableBinding } from './Tree';

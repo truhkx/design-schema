@@ -1124,6 +1124,30 @@
       "modules": true
     }
   },
+  "Tree.web": {
+    "hash": "69d0c064145acf38",
+    "lastAttemptHash": "69d0c064145acf38",
+    "generatedAt": "2026-09-10T18:31:49+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.619,
+    "files": [
+      "packages/react/src/Tree.css",
+      "packages/react/src/Tree.stories.tsx",
+      "packages/react/src/Tree.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "TreeGrid.web": {
     "hash": "56235e918712cc4a",
     "lastAttemptHash": "56235e918712cc4a",

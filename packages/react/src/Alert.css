@@ -11,6 +11,7 @@
   --ds-alert-gap: var(--space-3);
   --ds-alert-part-gap: var(--space-1);
   --ds-alert-icon-size: var(--font-size-lg);
+  --ds-alert-heading-size: var(--font-size-md);
   --ds-alert-heading-weight: var(--font-weight-semibold);
   --ds-alert-font-family: var(--font-family-body);
   --ds-alert-font-size: var(--font-size-md);
@@ -72,6 +73,7 @@
 .ds-alert__heading {
   margin: 0;
   color: var(--ds-alert-foreground);
+  font-size: var(--ds-alert-heading-size);
   font-weight: var(--ds-alert-heading-weight);
 }
 

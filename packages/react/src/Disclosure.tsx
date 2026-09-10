@@ -17,6 +17,9 @@ import './Disclosure.css';
 /** Accepts the schema's string values and their numeric equivalents. */
 export type DisclosureHeadingLevel = '2' | '3' | '4' | '5' | '6' | 2 | 3 | 4 | 5 | 6;
 
+/** Why the state changed: a pointer click, a keyboard activation (Enter/Space), or an external `open` prop change. */
+export type DisclosureToggleReason = 'pointer' | 'keyboard' | 'controlled';
+
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type DisclosureOverridableBinding =
   | 'triggerPaddingBlock'
@@ -75,8 +78,11 @@ export interface DisclosureProps
   headingLevel?: DisclosureHeadingLevel;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<DisclosureOverridableBinding, TokenRef>>;
-  /** Fired after the state changes, with the new boolean `open`. */
-  onToggle?: (open: boolean) => void;
+  /**
+   * Fired after the state changes, with the new boolean `open` and a reason: `pointer`,
+   * `keyboard`, or `controlled` (Accordion relies on it).
+   */
+  onToggle?: (open: boolean, reason: DisclosureToggleReason) => void;
 }
 
 /**
@@ -130,14 +136,40 @@ export const Disclosure = forwardRef<HTMLButtonElement, DisclosureProps>(functio
     }
   }, [isOpen]);
 
+  // Distinguishes an `open` prop change the trigger's own click already reported (reason
+  // 'pointer'/'keyboard') from one the consumer made on their own (reason 'controlled').
+  const mountedRef = useRef(false);
+  const previousOpenRef = useRef(isOpen);
+  const selfEmittedRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      previousOpenRef.current = isOpen;
+      return;
+    }
+    if (isControlled && previousOpenRef.current !== isOpen) {
+      const wasSelfEcho = selfEmittedRef.current === isOpen;
+      if (!wasSelfEcho) onToggle?.(isOpen, 'controlled');
+    }
+    selfEmittedRef.current = null;
+    previousOpenRef.current = isOpen;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isControlled]);
+
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     if (disabled) {
       event.preventDefault();
       return;
     }
     const next = !isOpen;
-    if (!isControlled) setInternalOpen(next);
-    onToggle?.(next);
+    if (isControlled) {
+      selfEmittedRef.current = next;
+    } else {
+      setInternalOpen(next);
+    }
+    // A native button's click event carries `detail: 0` when it was dispatched by a keyboard
+    // activation (Enter/Space) rather than a pointing device.
+    onToggle?.(next, event.detail === 0 ? 'keyboard' : 'pointer');
   };
 
   const classes = ['ds-disclosure', isOpen ? 'ds-disclosure--open' : null, className ?? null].filter(Boolean).join(' ');

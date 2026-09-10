@@ -119,10 +119,14 @@ export class DsBreadcrumb extends LitElement {
       color: var(--color-foreground-muted);
     }
 
-    /* currentColor: the current page (and any ancestor without an href), rendered as text in the regular weight */
-    .current,
-    .text {
+    /* currentColor: the current page, rendered as text in the regular weight */
+    .current {
       color: var(--color-foreground);
+    }
+
+    /* itemColor: an ancestor without an href, rendered as plain text */
+    .text {
+      color: var(--color-foreground-muted);
     }
   `;
 

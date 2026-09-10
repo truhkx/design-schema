@@ -16,6 +16,7 @@ export type MeterOverridableBinding =
   | 'fontFamily'
   | 'lineHeight'
   | 'partGap'
+  | 'labelGap'
   | 'transition';
 
 const HOOKS: Record<MeterOverridableBinding, string> = {
@@ -27,6 +28,7 @@ const HOOKS: Record<MeterOverridableBinding, string> = {
   fontFamily: `--ds-meter-font-family`,
   lineHeight: '--ds-meter-line-height',
   partGap: '--ds-meter-part-gap',
+  labelGap: '--ds-meter-label-gap',
   transition: '--ds-meter-transition',
 };
 
@@ -68,6 +70,7 @@ export class DsMeter extends LitElement {
       --ds-meter-font-family: var(--font-family-body);
       --ds-meter-line-height: var(--font-line-height-normal);
       --ds-meter-part-gap: var(--space-1);
+      --ds-meter-label-gap: var(--space-2);
       --ds-meter-transition: var(--motion-duration-base);
     }
 
@@ -85,7 +88,7 @@ export class DsMeter extends LitElement {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
-      gap: var(--space-2);
+      gap: var(--ds-meter-label-gap);
       line-height: var(--ds-meter-line-height);
     }
 

@@ -227,18 +227,18 @@
     }
   },
   "Checkbox.rn": {
-    "hash": "f6f3d8d0fd971073",
-    "lastAttemptHash": "f6f3d8d0fd971073",
-    "generatedAt": "2026-09-10T05:45:54+00:00",
+    "hash": "e1322e117f725308",
+    "lastAttemptHash": "e1322e117f725308",
+    "generatedAt": "2026-09-10T21:44:23+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7266,
+    "costUsd": 0.3986,
     "files": [
-      "packages/rn/src/Checkbox.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Checkbox.stories.tsx",
+      "packages/rn/src/Checkbox.tsx"
     ],
-    "gaps": 5,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -672,18 +672,19 @@
     }
   },
   "RadioGroup.rn": {
-    "hash": "38e3e2ad24d8b5e0",
-    "lastAttemptHash": "38e3e2ad24d8b5e0",
-    "generatedAt": "2026-09-10T05:51:24+00:00",
+    "hash": "38c6396ceccd0879",
+    "lastAttemptHash": "38c6396ceccd0879",
+    "generatedAt": "2026-09-10T21:46:37+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8892,
+    "costUsd": 0.2221,
     "files": [
+      "packages/rn/src/RadioGroup.stories.tsx",
       "packages/rn/src/RadioGroup.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -806,18 +807,17 @@
     }
   },
   "Switch.rn": {
-    "hash": "fb84b29535076c2f",
-    "lastAttemptHash": "fb84b29535076c2f",
-    "generatedAt": "2026-09-10T05:47:31+00:00",
+    "hash": "b051b6baea0580fc",
+    "lastAttemptHash": "b051b6baea0580fc",
+    "generatedAt": "2026-09-10T21:45:50+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3962,
+    "costUsd": 0.3456,
     "files": [
-      "packages/rn/src/Switch.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Switch.tsx"
     ],
-    "gaps": 1,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,

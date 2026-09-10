@@ -31,6 +31,8 @@ export type CheckboxOverridableBinding =
 export interface CheckboxProps {
   /** Visible label. Tapping it toggles the control. Also the `accessibilityLabel`. */
   label: string;
+  /** Visually hide the label (it remains the accessible name via `accessibilityLabel`): a selection column in a Table, where the row name is the label. */
+  hideLabel?: boolean;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
   /** The value submitted when checked. Lets several checkboxes share a `name` to form a multi-select. */
@@ -89,6 +91,7 @@ const COPY = {
  */
 export function Checkbox({
   label,
+  hideLabel = false,
   name,
   value = 'on',
   checked,
@@ -275,9 +278,11 @@ export function Checkbox({
               </Animated.View>
             </Animated.View>
             <View style={textColumnStyle}>
-              <Text overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}>
-                {visibleLabel}
-              </Text>
+              {hideLabel ? null : (
+                <Text overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}>
+                  {visibleLabel}
+                </Text>
+              )}
               {description !== undefined ? (
                 <Text size="sm" tone="muted" overrides={helperOverrides}>
                   {description}

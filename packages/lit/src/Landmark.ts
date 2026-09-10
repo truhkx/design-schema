@@ -21,12 +21,13 @@ const DISTINCT_BY_LABEL: ReadonlySet<string> = new Set(['navigation', 'complemen
  * `<ds-landmark>` — Landmark (category: layout, APG: landmarks).
  *
  * `<ds-landmark role="navigation" label="Main">` uses **no shadow root and no
- * wrapper element**: the host itself takes the landmark role and accessible
- * name through `ElementInternals` (`internals.role`, `internals.ariaLabel`),
- * so it is the landmark in the light DOM tree and its children are ordinary
- * light-DOM children. The `role` attribute on the host is the landmark role
- * and is reflected as a styling hook. The element is a plain block; consumers
- * lay it out like any block.
+ * wrapper element**: the host itself is the landmark in the light DOM tree
+ * and its children are ordinary light-DOM children. The landmark role and
+ * accessible name are plain `role` / `aria-label` attributes reflected
+ * straight onto the host (real attributes, not `ElementInternals`, so the
+ * accessible-name computation the test suite uses can see them — the same
+ * attributes are what real assistive tech reads). The element is a plain
+ * block; consumers lay it out like any block.
  *
  * ## When to use
  *
@@ -47,15 +48,8 @@ export class DsLandmark extends LitElement {
    */
   @property({ reflect: true, attribute: 'role' }) landmark?: LandmarkRole;
 
-  /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. */
-  @property() label?: string;
-
-  private readonly internals: ElementInternals;
-
-  constructor() {
-    super();
-    this.internals = this.attachInternals();
-  }
+  /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Reflects to `aria-label`. */
+  @property({ reflect: true, attribute: 'aria-label' }) label?: string;
 
   /** No shadow root: children stay in the light DOM and the host is the landmark. */
   protected override createRenderRoot(): HTMLElement {
@@ -69,26 +63,17 @@ export class DsLandmark extends LitElement {
     if (this.style.display === '') {
       this.style.display = 'block';
     }
-    this.syncInternals();
     this.warnInDev();
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (changed.has('landmark') || changed.has('label')) {
-      this.syncInternals();
-      if (this.hasUpdated) {
-        this.warnInDev();
-      }
+    if ((changed.has('landmark') || changed.has('label')) && this.hasUpdated) {
+      this.warnInDev();
     }
   }
 
   protected override render() {
     return nothing;
-  }
-
-  private syncInternals(): void {
-    this.internals.role = this.landmark ?? null;
-    this.internals.ariaLabel = this.label ?? null;
   }
 
   private warnInDev(): void {

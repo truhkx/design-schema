@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import { ifDefined } from 'lit/directives/if-defined.js';
 import './Landmark.js';
 import './Heading.js';
 import './Text.js';
@@ -27,7 +26,7 @@ const meta: Meta<LandmarkArgs> = {
     label: 'Related articles',
   },
   render: (args) => html`
-    <ds-landmark role=${args.role} label=${ifDefined(args.label)}>
+    <ds-landmark role=${args.role} .label=${args.label}>
       <ds-stack gap="2">
         <ds-heading level="2">${args.label ?? args.role}</ds-heading>
         <ds-text tone="muted"
@@ -49,7 +48,7 @@ export const RoleBanner: Story = { args: { role: 'banner', label: undefined } };
 export const RoleNavigation: Story = {
   args: { role: 'navigation', label: 'Main' },
   render: (args) => html`
-    <ds-landmark role=${args.role} label=${ifDefined(args.label)}>
+    <ds-landmark role=${args.role} .label=${args.label}>
       <ds-stack element="ul" direction="horizontal" gap="4">
         <ds-link href="#docs" label="Docs"></ds-link>
         <ds-link href="#pricing" label="Pricing"></ds-link>
@@ -71,7 +70,7 @@ export const PageStructure: Story = {
       <ds-landmark role="banner">
         <ds-text weight="semibold">Acme Console</ds-text>
       </ds-landmark>
-      <ds-landmark role="navigation" label="Main">
+      <ds-landmark role="navigation" aria-label="Main">
         <ds-stack element="ul" direction="horizontal" gap="4">
           <ds-link href="#overview" label="Overview"></ds-link>
           <ds-link href="#settings" label="Settings"></ds-link>
@@ -81,7 +80,7 @@ export const PageStructure: Story = {
         <ds-heading level="1">Overview</ds-heading>
         <ds-text>Main content of the page.</ds-text>
       </ds-landmark>
-      <ds-landmark role="complementary" label="Tips">
+      <ds-landmark role="complementary" aria-label="Tips">
         <ds-text tone="muted">Press ? for keyboard shortcuts.</ds-text>
       </ds-landmark>
       <ds-landmark role="contentinfo">

@@ -48,18 +48,19 @@
     }
   },
   "Alert.web": {
-    "hash": "096cd2f11373c3be",
-    "lastAttemptHash": "096cd2f11373c3be",
-    "generatedAt": "2026-09-10T05:54:52+00:00",
+    "hash": "33847c4f8a4382bb",
+    "lastAttemptHash": "33847c4f8a4382bb",
+    "generatedAt": "2026-09-10T21:47:31+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0462,
+    "costUsd": 0.5856,
     "files": [
       "packages/react/src/Alert.css",
+      "packages/react/src/Alert.test.tsx",
       "packages/react/src/Alert.tsx"
     ],
-    "gaps": 3,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -373,15 +374,14 @@
     }
   },
   "Disclosure.web": {
-    "hash": "3f5a9cc152eeb095",
-    "lastAttemptHash": "3f5a9cc152eeb095",
-    "generatedAt": "2026-09-10T05:48:58+00:00",
+    "hash": "0dc494bf098ea1ab",
+    "lastAttemptHash": "0dc494bf098ea1ab",
+    "generatedAt": "2026-09-10T21:45:14+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6118,
+    "costUsd": 0.6274,
     "files": [
-      "packages/react/src/Disclosure.css",
       "packages/react/src/Disclosure.tsx",
       "packages/react/src/index.ts"
     ],
@@ -585,17 +585,19 @@
     }
   },
   "Landmark.web": {
-    "hash": "b8248e9916431bc9",
-    "lastAttemptHash": "b8248e9916431bc9",
-    "generatedAt": "2026-09-10T05:56:35+00:00",
+    "hash": "ddeabf91a532b5c6",
+    "lastAttemptHash": "ddeabf91a532b5c6",
+    "generatedAt": "2026-09-10T21:48:47+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3136,
+    "costUsd": 0.2517,
     "files": [
+      "packages/react/src/Landmark.css",
+      "packages/react/src/Landmark.stories.tsx",
       "packages/react/src/Landmark.tsx"
     ],
-    "gaps": 1,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,

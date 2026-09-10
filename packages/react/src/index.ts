@@ -61,7 +61,12 @@ export type {
 } from './RadioGroup';
 
 export { Disclosure } from './Disclosure';
-export type { DisclosureProps, DisclosureHeadingLevel, DisclosureOverridableBinding } from './Disclosure';
+export type {
+  DisclosureProps,
+  DisclosureHeadingLevel,
+  DisclosureToggleReason,
+  DisclosureOverridableBinding,
+} from './Disclosure';
 
 export { Alert } from './Alert';
 export type { AlertProps, AlertTone, AlertLive, AlertOverridableBinding } from './Alert';

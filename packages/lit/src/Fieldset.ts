@@ -194,6 +194,7 @@ export class DsFieldset extends LitElement {
         part="group"
         aria-describedby=${ifDefined(describedBy)}
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
+        aria-invalid=${ifDefined(this.error ? 'true' : undefined)}
       >
         <legend part="legend"
           >${this.legend}${this.allFieldsRequired

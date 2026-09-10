@@ -28,6 +28,9 @@ export const Default: Story = {};
 
 export const Checked: Story = { args: { defaultChecked: true } };
 
+/** For a selection column in a Table, where the row name is the label. */
+export const HideLabel: Story = { args: { label: 'Select row', name: 'row-1', hideLabel: true } };
+
 export const WithDescription: Story = {
   args: { description: 'One email a month; no marketing from partners.' },
 };

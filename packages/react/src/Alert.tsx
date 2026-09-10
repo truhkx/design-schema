@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from 'react';
+import { forwardRef, useId, useImperativeHandle, useRef, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Icon } from './Icon';
@@ -19,6 +19,7 @@ export type AlertOverridableBinding =
   | 'gap'
   | 'partGap'
   | 'iconSize'
+  | 'headingSize'
   | 'headingWeight'
   | 'fontFamily'
   | 'fontSize'
@@ -33,6 +34,7 @@ const OVERRIDE_HOOK: Record<AlertOverridableBinding, string> = {
   gap: '--ds-alert-gap',
   partGap: '--ds-alert-part-gap',
   iconSize: '--ds-alert-icon-size',
+  headingSize: '--ds-alert-heading-size',
   headingWeight: '--ds-alert-heading-weight',
   fontFamily: '--ds-alert-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-alert-font-size',
@@ -105,6 +107,9 @@ export const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
   const rootRef = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => rootRef.current as HTMLDivElement, []);
 
+  const headingId = useId();
+  const bodyId = useId();
+
   // The component is controlled by its presence in the tree: the consumer removes it on dismiss.
   const handleDismiss = () => {
     // Activation happened inside the alert; move focus out first so it is never lost.
@@ -118,7 +123,16 @@ export const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
   const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
 
   return (
-    <div {...rest} ref={rootRef} data-ds="Alert" data-part="container" className={classes} style={mergedStyle} role={live === 'off' ? undefined : live}>
+    <div
+      {...rest}
+      ref={rootRef}
+      data-ds="Alert"
+      data-part="container"
+      className={classes}
+      style={mergedStyle}
+      role={live === 'off' ? undefined : live}
+      aria-labelledby={heading ? headingId : bodyId}
+    >
       <span className="ds-alert__icon" data-part="icon" aria-hidden="true">
         <Icon
           name={tone}
@@ -131,11 +145,11 @@ export const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
       </span>
       <div className="ds-alert__content">
         {heading ? (
-          <p className="ds-alert__heading" data-part="heading">
+          <p id={headingId} className="ds-alert__heading" data-part="heading">
             {heading}
           </p>
         ) : null}
-        <div className="ds-alert__body" data-part="body">
+        <div id={bodyId} className="ds-alert__body" data-part="body">
           {children}
         </div>
       </div>

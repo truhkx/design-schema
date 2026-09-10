@@ -1,6 +1,29 @@
-# Gap digest — phase Core
+# Gap digest — phase Controls
 
-Generated 2026-09-10T01:31 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T02:04 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+
+## Alert
+
+Doc: `site/src/content/docs/components/alert.md`
+
+### 2026-09-10 01:57 — lit round 1
+
+- **DOC** Alert: the schema's spec text says the icon is 'drawn as a 1em inline shape until an Icon component exists', but ds-icon (with info/success/warning/danger status shapes and a close glyph) now exists in the package, so I composed <ds-icon> for both the tone icon and the dismiss button's glyph instead of hand-drawn SVG, per the generation rule to never draw icons by hand. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: iconSize is listed as overridable, but the composed <ds-icon> only exposes size via a fixed xs/sm/md/lg/xl enum, not an arbitrary token. I drove it through ds-icon's own documented CSS hook (--ds-icon-size) set from Alert's --ds-alert-icon-size hook on the .icon element, rather than the size attribute, so a per-instance override still works without touching ds-icon's shadow internals — the spec doesn't say how a generic TokenRef override should reconcile with a child's quantized size API. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the previous implementation had no --ds-alert-* CSS custom-property hooks or overrides property at all (unlike the sibling components already regenerated in this pass), so I added the full Overrides contract (border, borderWidth, radius, padding, gap, partGap, iconSize, headingWeight, fontFamily, fontSize, lineHeight, dismissMargin) and a data-ds="Alert" host attribute to match current package convention; neither was called out explicitly as missing in the task, but both are required by the package-conventions doc. → `site/src/content/docs/components/alert.md`
+
+### 2026-09-10 01:57 — rn round 1
+
+- **DOC** Alert: the styles.icon description says the leading glyph is 'drawn as a 1em inline shape until an Icon component exists', but this package's Icon component already exists (and its own docblock names Alert's status shape as a documented use case, referring to a 'retired Unicode-glyph implementation'). Replaced the Unicode-glyph tone icon and the '×' dismiss glyph with `<Icon name={tone} .../>` and `<Icon name="close" .../>`, matching how Dialog's close button is built — this is a doc/reality mismatch, not an ambiguity in the schema itself. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the schema's Overrides section lists 12 overridable bindings (border, borderWidth, radius, padding, gap, partGap, iconSize, headingWeight, fontFamily, fontSize, lineHeight, dismissMargin) but the file on disk before this change had no `overrides` prop at all — added `AlertOverridableBinding` and wired every binding through `resolveToken`, following the pattern used by Button/Disclosure/RadioGroup, and exported the new type from index.ts. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the file on disk was also missing the package-wide `testID="<Name>"` convention on the root View; added `testID="Alert"`. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: heading and body share a single `fontSize`/`fontFamily`/`lineHeight` binding set per the schema (no separate heading-size token), so overriding `fontSize` resizes both the heading and, when the body is a plain string, the Text body; a non-string body (composed Text/Link children) does not receive the override since Alert cannot reach into a child's props, consistent with 'never restyle a child.' → `site/src/content/docs/components/alert.md`
+
+### 2026-09-10 01:54 — web round 1
+
+- **DOC** Alert: `iconSize` override needed to reach both the Alert's own centering-math hook (`--ds-alert-icon-size`, used in the icon wrapper's margin calc) and Icon's own `size` override, since Icon owns its rendered dimensions independently of the wrapper's box. Forwarded the same TokenRef to both, following the precedent of Divider forwarding `labelSize`/`fontFamily` into Text's own `overrides`. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: anatomy names `container` for the root part; used `data-part="container"` alongside `data-ds="Alert"` on the same element, following Card's precedent of stacking `data-ds` and a root-level `data-part` (there it's `surface`). → `site/src/content/docs/components/alert.md`
+- **CODE** Alert: schema locks `icon` (color.status.{tone}.icon) but gives no mechanism to apply it — Icon's own CSS (`.ds-icon { color: var(--ds-icon-color) }`) always wins over any ancestor `color`, so a CSS hook on the wrapper span can't recolor it (this appears to be a real, pre-existing issue in AlertDialog.css, which sets `.ds-alert-dialog--tone-* .ds-alert-dialog__icon { color: ... }` with a comment claiming 'Icon draws in currentColor' — that rule has no effect given Icon.css as written). I used Icon's own public `overrides={{ color: 'color.status.{tone}.icon' }}` prop instead, which reliably wins via inline style; this differs from AlertDialog's approach and the two composites should probably be reconciled.
 
 ## AlertDialog
 
@@ -106,6 +129,25 @@ Doc: `site/src/content/docs/components/box.md`
 - **DOC** Box: a11y.role is 'none' and a11y.requires is empty, so none of the 33 scenarios exercise interaction or accessibility assertions — every one reduces to a render check (`container.firstChild` not null), per the spec's own `then: renders: true` for each. → `site/src/content/docs/components/box.md`
 - **DOC** Box: 'surface: none renders nothing rather than a token' was implemented by simply not setting the `--ds-box-background` custom property for that modifier (falling back to the CSS `var(..., transparent)` default) rather than omitting a background-color declaration entirely — functionally equivalent but worth flagging as an interpretation. → `site/src/content/docs/components/box.md`
 - **DOC** Box: the spec's Related section names Card and Container, neither of which exists in the package yet, so Box does not compose with them (nothing to compose with). → `site/src/content/docs/components/box.md`
+
+## Breadcrumb
+
+Doc: `site/src/content/docs/components/breadcrumb.md`
+
+### 2026-09-10 02:01 — lit round 1
+
+- **DOC** Breadcrumb (lit): the ellipsis button used a hand-drawn inline `<svg>` three-dot glyph instead of the system `ds-icon`; swapped for `<ds-icon name="ellipsis" inline>`, which already exists in the shared icon set. → `site/src/content/docs/components/breadcrumb.md`
+- **CODE** Breadcrumb (lit): schema lists no `overrides`-hook wiring explicitly, but the package convention requires every overridable style binding to be a `--ds-breadcrumb-*` CSS hook plus an `overrides` property; the pre-existing file had neither — added `BreadcrumbOverridableBinding` (gap, fontFamily, fontSize, fontWeight, lineHeight) with hooks, matching the pattern in RadioGroup.ts.
+- **CODE** Breadcrumb (lit): the pre-existing file lacked `data-ds="Breadcrumb"` and `shadowRootOptions.delegatesFocus`; the latter is required for the generated `control-is-focusable` behavior test to pass (calling `.focus()` on the host must delegate into the shadow tree while `document.activeElement` stays the host) — added both.
+
+### 2026-09-10 01:59 — rn round 1
+
+- **DOC** Breadcrumb (rn): the schema says the nav's fontSize binding is inherited by nested Links ('Set on the nav; the Links inherit it'), but ancestor items wrap Link in `<Text size="sm">`, a fixed enum prop, so a `fontSize` override changes the nav's own text (current page, separators, ellipsis glyph) but not the ancestor Links' inherited size — Link has no way to receive an arbitrary token override for inherited typography. Left as-is since fixing it would mean adding a new prop to Link, which the instructions say grows only via the child's own schema. → `site/src/content/docs/components/breadcrumb.md`
+
+### 2026-09-10 01:58 — web round 1
+
+- **DOC** Breadcrumb: the previously-generated file predated the data-ds/data-part/overrides conventions (no testability hooks, no overrides prop, and an inline hand-drawn SVG for the ellipsis instead of the system Icon component). Brought it up to current convention: added data-ds="Breadcrumb", data-part on nav/list/item/link/current, an overrides prop for the non-locked bindings (gap, fontFamily, fontSize, fontWeight, lineHeight), CSS hooks (--ds-breadcrumb-*) for every binding including the locked ones, and swapped the inline SVG for <Icon name="ellipsis" inline />. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the schema's `styles` block gives a token only for the current-page text (color.foreground, locked as currentColor) and the separator (color.foreground.muted); it says nothing about the color of an ancestor item that has no href and renders as plain (non-link) text. Kept the existing choice of reusing currentColor (color.foreground) for that plain-text case, since it isn't the current page but is also not decorative punctuation like the separator. → `site/src/content/docs/components/breadcrumb.md`
 
 ## Button
 
@@ -241,6 +283,29 @@ Doc: `site/src/content/docs/components/card.md`
 - **DOC** No demo file was requested/added; Card composes Button/Link/Stack/Text/Heading only inside stories, not a dedicated demo under packages/react/demo/. → `site/src/content/docs/components/card.md`
 - **DOC** Dev-only warning for `interactive` (wrong child count/type) checks `Children.count(children) !== 1 || !isValidElement(children)`; it doesn't verify the child is actually a Link or Button (can't reliably introspect arbitrary child types), so a single non-interactive child passes silently. → `site/src/content/docs/components/card.md`
 
+## Checkbox
+
+Doc: `site/src/content/docs/components/checkbox.md`
+
+### 2026-09-10 01:45 — rn round 1
+
+- **DOC** Checkbox: the existing file predated the package's overrides contract (no `overrides` prop, no `CheckboxOverridableBinding`) and drew the checkmark as a raw Unicode '✓' Text glyph and a hand-drawn dash View. Icon.tsx's own docstring explicitly names 'the check in a Checkbox' as a supported use case and calls the Unicode approach 'retired', so rewrote to use `<Icon name="check"/"dash">` with `color=colorControlSelectedForeground` and `overrides.strokeWidth` forwarding the `indicatorStroke` binding, and added the full overrides contract following Box/Button/Input's established pattern. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: `indicator` box is spec'd as 'controlSize minus 2 × space.1' but Icon's `size` prop only accepts discrete font-size-scale presets (xs/sm/md/lg/xl) or a token-ref override, not an arbitrary computed pixel value — used `size="xs"` (closest preset to the default ~12px derived size) centered in the drawn box via flexbox; a `controlSize` override will not proportionally rescale the glyph. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: `validateValue` was missing the `invalid` → `copy.invalid` branch the schema's precedence (`error` → `required` → `invalid`) requires — Input already implements this three-branch precedence, so mirrored it exactly (text only surfaces once a Form validation run populates `formError`, matching the existing 'Invalid' story's documented behavior of showing no message until then). → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: `transition` binding's exact scope ('fill and indicator transitions') is descriptive, not literal — implemented as a single Animated.Value driving box background/border color (unchecked → controlSelectedBackground) and indicator opacity together, eased with motion.easing.standard and skipped under `useReducedMotion()`, mirroring Button's pressed-background animation pattern. The `pressedOverlay` effect is instantaneous and dims the whole box (border+fill+indicator), not just an overlay layer on the fill, since RN has no cheap way to layer a second tinted surface without restyling the border. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: root View now carries `testID="Checkbox"`, which the original file lacked. → `site/src/content/docs/components/checkbox.md`
+
+### 2026-09-10 01:43 — lit round 1
+
+- **DOC** Checkbox: the indicator's check-mark/dash inset math ('controlSize minus 2 × space.1') isn't tied to any named overridable binding — partGap is documented specifically as the vertical gap between label/description/error, a different anatomy target, even though it shares space.1 as a default. Left the inset as a non-overridable literal var(--space-1) rather than repurposing partGap's hook for an unrelated part. → `site/src/content/docs/components/checkbox.md`
+- **CODE** Checkbox: Checkbox.ts and Checkbox.stories.ts already existed, fully implementing props/events/forms/behavior/a11y, but predated the overrides-hook convention — added the CheckboxOverridableBinding type, --ds-checkbox-* CSS hooks on :host, the `overrides` property, applyOverrides(), and the data-ds="Checkbox" testability attribute, mirroring Button.ts's pattern (many other components in the package — Switch, Alert, RadioGroup, Disclosure, Meter, Breadcrumb, Landmark, FocusScope — are still missing this and weren't in scope to fix here).
+
+### 2026-09-10 01:41 — web round 1
+
+- **DOC** Checkbox: the `indicator` binding's description ('controlSize minus 2 × space.1') references space.1 as a fixed layout detail of that binding, not the `partGap` override binding (which is semantically the vertical gap between label/description/error) — kept the indicator inset as the literal `var(--space-1)` token so overriding `partGap` doesn't resize the checkmark. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: anatomy lists `indicator` as a part, but per the web platform notes it's drawn as a CSS ::before pseudo-element on the control, not a real DOM node, so it has no element to carry `data-part="indicator"`; only `description` and `errorMessage` got the attribute (control and label are already reachable by role/label). → `site/src/content/docs/components/checkbox.md`
+- **CODE** Checkbox: the file already existed from an earlier generation pass without the overrides contract (--ds-checkbox-* hooks, `overrides` prop) or data-ds/data-part testability hooks that Input.tsx and Card.tsx now use; I retrofitted Checkbox.tsx/.css to match that established pattern rather than leaving it stale.
+
 ## Container
 
 Doc: `site/src/content/docs/components/container.md`
@@ -368,6 +433,29 @@ Doc: `site/src/content/docs/components/dialog.md`
 - **DOC** Dialog: jsdom (used by the `tests` gate) implements the `open` IDL property on `HTMLDialogElement` but not `showModal()`/`close()` or the `cancel` event. The component calls the real methods via optional chaining (so nothing throws) and also assigns `dialog.open = true/false` as a fallback so the element isn't hidden by the UA `dialog:not([open])` rule under engines that lack `showModal()`; this assignment is a no-op in real browsers since `showModal()`/`close()` already reflect `open` themselves. → `site/src/content/docs/components/dialog.md`
 - **DOC** Dialog: `container` (portal target) isn't in the schema's `props` table but is implied by the keyboard/overlay rule ("a `container` prop may override" the portal target) and needed for testability/embedding; added it as an optional prop defaulting to `document.body`. → `site/src/content/docs/components/dialog.md`
 
+## Disclosure
+
+Doc: `site/src/content/docs/components/disclosure.md`
+
+### 2026-09-10 01:54 — rn round 1
+
+- **DOC** The rn platform notes only say the trigger contains "the chevron and a Text" without naming a component; the general icon rule ("never draw an inline SVG... by hand") and Icon's own docstring (which lists "the chevron in a Disclosure" as a usage example) make clear it should be the system Icon, so I render `<Icon name="chevron-right">` rotated 90deg via Animated for the open state, since chevron-right's path rotated 90deg matches chevron-down exactly — the file previously hand-drew the chevron with bordered Views, which I replaced. → `site/src/content/docs/components/disclosure.md`
+- **DOC** The spec's overridable-bindings table (triggerFontSize etc.) applies to the trigger text, but Icon only accepts an enum `size` (xs/sm/md/lg/xl) tied to fixed tokens, not an arbitrary resolved number. To keep the 1em chevron in sync with an overridden triggerFontSize, I forward the same TokenRef to Icon's own `overrides.size`; the schema doesn't spell this out. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Web platform notes call for mirroring the chevron under `[dir=rtl]`; RN platform notes say nothing about RTL, and there's a `chevron-left` glyph available but no guidance on when to use it on native. I left the chevron unmirrored (matches the RN notes as given) — flagging in case RTL support is expected there too. → `site/src/content/docs/components/disclosure.md`
+- **DOC** The previously-generated file was missing `overrides`/`DisclosureOverridableBinding` entirely and the root `testID="Disclosure"` hook required by package convention; both were added to match the other generated components. → `site/src/content/docs/components/disclosure.md`
+
+### 2026-09-10 01:52 — lit round 1
+
+- **DOC** Disclosure: schema's `styles` block lists `triggerPaddingBlock`, `triggerPaddingInline`, `triggerGap`, `triggerFontFamily`, `triggerFontSize`, `triggerFontWeight`, `triggerRadius`, `panelPaddingBlock`, `panelPaddingInline`, `disabledOpacity`, `transition` as overridable, but the file I found already checked in had no `overrides` property or `--ds-disclosure-*` hooks at all (styles read raw tokens directly) — added the `DisclosureOverridableBinding` type, `HOOKS` map, `overrides` property and `applyOverrides()` to match the Overrides contract and the pattern used by every other component in the package. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the chevron was hand-drawn as an inline `<svg>`, but `Icon.ts`'s own doc comment explicitly names 'the chevron in a Disclosure' as intended `<ds-icon>` usage and the icon rule forbids hand-drawn SVGs — replaced it with `<ds-icon name="chevron-right" inline>` and kept the rotation in Disclosure's own CSS (transform, not a glyph swap) so the `transition` binding still animates the rotation rather than a discrete icon change. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: host was missing `data-ds="Disclosure"` (the testability hook convention) — added it in `connectedCallback`. → `site/src/content/docs/components/disclosure.md`
+- **CODE** Generated test `generated/behavior/Disclosure.lit.test.ts`'s `has-accessible-name` case asserts `toHaveAccessibleName(props.label)`, but Disclosure has no `label` prop (its accessible name comes from `summary`), so it always compares against `undefined` and fails — same failure reproduces verbatim in `Icon.lit.test.ts` (which I did not touch), confirming this is a pre-existing generator gap in `tools/behavior_tests.py`'s prop-name assumption, not a defect in this component; left it alone since `generated/` is out of scope for this pass.
+
+### 2026-09-10 01:48 — web round 1
+
+- **CODE** Disclosure: file already existed from a prior generation but predated the overrides/testability-hook conventions (no `overrides` prop, no `data-ds`/`data-part` hooks, CSS used raw tokens instead of `--ds-disclosure-*` hooks). Brought it in line with Button/Card: added `DisclosureOverridableBinding` + `overrides` prop, rewrote CSS to define all style-binding hooks (including locked ones) on `.ds-disclosure` and read from the hooks, added `data-ds="Disclosure"` on the root and `data-part` on `triggerIcon` and `panel` (the `trigger` button itself is reachable by role+accessible name so it was left without a `data-part`, matching Menu's trigger).
+- **CODE** Disclosure: overrides are consumer-facing style hooks on the root `<div>`, but the pre-existing `DisclosureProps` type extends `ComponentPropsWithoutRef<'button'>` (since `ref`/`...rest` target the inner trigger button, per the spec's `useImperativeHandle`). This means a consumer-supplied `style` prop is typed as button CSSProperties but is applied to the wrapper div, not the button — same shape either way in practice, so left as-is rather than widening the prop surface.
+
 ## Divider
 
 Doc: `site/src/content/docs/components/divider.md`
@@ -391,6 +479,18 @@ Doc: `site/src/content/docs/components/divider.md`
 - **DOC** The schema doesn't say what happens when `orientation="vertical"` and `label` is set together. Docs only describe the label+line layout for horizontal dividers, and a 1px-wide vertical column has no room for centered text, so I ignore `label` on vertical dividers (render a plain line) rather than rotating the label layout. → `site/src/content/docs/components/divider.md`
 - **DOC** `spacing` schema says overrides 'change values, never presence' — treated `spacing: "none"` (the default) as the 'off' state, so `overrides.spacing` is a no-op unless a non-none spacing value is also selected, matching how Box treats radius: none. → `site/src/content/docs/components/divider.md`
 - **DOC** labelSize/fontFamily overrides are passed straight through as TokenRefs to the composed `Text`'s own `overrides` prop (which resolves them itself) rather than resolving them a second time in Divider — avoids double token resolution but relies on Text's override keys (`fontSize`, `fontFamily`) matching Divider's binding names one-for-one. → `site/src/content/docs/components/divider.md`
+
+## Fieldset
+
+Doc: `site/src/content/docs/components/fieldset.md`
+
+### 2026-09-10 02:04 — rn round 1
+
+- **DOC** Fieldset: schema's `requiredIndicator` rule ('appended when every field inside is required') requires introspecting children — implemented via React.Children.toArray + checking props.required on direct element children only; nested wrappers (e.g. a consumer-supplied Stack around fields) won't be seen. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: FieldsetContext (legend + disabled) is created and provided as the spec directs, but Input, Checkbox, Switch and RadioGroup don't yet read it (out of scope — I only touched Fieldset.tsx), so the 'Shipping address, Street' accessibilityLabel prefixing described in the RN platform notes has no effect until those four components are regenerated to consume useFieldsetContext(). → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: same gap applies to `disabled` propagation — since fields don't read the context yet, I added a fallback that clones direct children with `disabled: true` (mirroring the interim behavior the spec describes for web) so the prop is still functional today; this fallback isn't explicitly specified for RN and only reaches direct children, not ones nested in an intermediate wrapper. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: schema's a11y.role is `group`, which isn't in RN's legacy `accessibilityRole` union — used the RN ≥0.74 `role="group"` prop instead (same pattern Landmark.tsx already uses for web-only ARIA roles). → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: no `disabledOpacity` binding is listed in the schema's styles/overrides tables (unlike RadioGroup/Input), so `opacity.disabled` is applied as a fixed, non-overridable token rather than through `overrides`. → `site/src/content/docs/components/fieldset.md`
 
 ## FocusScope
 
@@ -578,6 +678,23 @@ Doc: `site/src/content/docs/components/input.md`
 - **DOC** Input: precedence between borderInvalid and borderFocus when a field is both invalid and focused isn't specified. Chose to keep the invalid (danger) border color visible even while focused, so the error state stays communicated during editing; a focus-visible outline/ring is not used here so this is purely a border-color choice. → `site/src/content/docs/components/input.md`
 - **CODE** Input: the Behavior guidance says disabled fields must be 'focusable (aria-disabled + readOnly on web — never the native disabled attribute)', but the pre-existing implementation used the native `disabled` attribute on the inner `<input>`, which removes it from the tab order. Fixed to use `aria-disabled` + `readonly` + a `.disabled` class for styling, and excluded disabled fields from ElementInternals form submission/validation manually (since native `disabled` no longer does that for us).
 
+## Landmark
+
+Doc: `site/src/content/docs/components/landmark.md`
+
+### 2026-09-10 01:58 — lit round 1
+
+- **DOC** Landmark (lit): the schema's anatomy list names a single `region` part, but the platform notes mandate no shadow root (host itself is the landmark, children stay in light DOM), so there is no shadow tree to carry a `part="region"` hook. Used the host-level `data-ds="Landmark"` attribute as the only testability hook, consistent with components that do have shadow roots. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark (lit): `as` is documented as web-only in the schema, so it was correctly omitted from the Lit element entirely — no attribute or property for it. → `site/src/content/docs/components/landmark.md`
+
+### 2026-09-10 01:57 — rn round 1
+
+- **CODE** Landmark: pre-existing implementation matched the spec fully except it lacked the mandatory testID="Landmark" testability hook; added it to the root View. No other ambiguity found.
+
+### 2026-09-10 01:56 — web round 1
+
+- **CODE** Landmark: the file already existed from a prior generation pass and matched the spec, except it was missing the `data-ds="Landmark"` testability hook required by package conventions (all 25 other components have it). Added it; had to widen the `createElement` generic prop type to `HTMLAttributes<HTMLElement> & { 'data-ds': string }` since raw `createElement` (used here instead of JSX because the ref must satisfy a union of element types) doesn't get TypeScript's JSX-only allowance for arbitrary `data-*` attributes.
+
 ## Link
 
 Doc: `site/src/content/docs/components/link.md`
@@ -642,6 +759,50 @@ Doc: `site/src/content/docs/components/menu.md`
 - **DOC** Menu: the single `itemGap` token is reused both for spacing between rows/groups in the list and for the internal icon–label–shortcut gap inside one item, since the schema defines only one gap binding for the whole item anatomy. → `site/src/content/docs/components/menu.md`
 - **DOC** Menu: `minWidth`'s '× 2.5' multiplier (space.20 → ~200px) is applied at the CSS use-site via `calc(var(--ds-menu-min-width) * 2.5)` so a per-instance override still scales proportionally, per the schema's 'the generator multiplies' note. → `site/src/content/docs/components/menu.md`
 
+## Meter
+
+Doc: `site/src/content/docs/components/meter.md`
+
+### 2026-09-10 02:02 — lit round 1
+
+- **DOC** Meter (lit): the internal gap between the label and the value text within the label row has no named binding in the schema (only partGap, described as the label-row-to-track gap, is listed) — left it as a fixed var(--space-2), not overridable. → `site/src/content/docs/components/meter.md`
+- **CODE** Meter (lit): the schema's overrides contract (trackHeight, radius, labelSize, labelWeight, valueSize, fontFamily, lineHeight, partGap, transition) and the package's data-ds testability hook were present in every other lit component but missing from the pre-existing Meter.ts; added the --ds-meter-* CSS hooks, the `overrides` property/applyOverrides wiring, and `data-ds="Meter"` in connectedCallback to match convention, and exported the new MeterOverridableBinding type from index.ts.
+
+### 2026-09-10 02:02 — web round 1
+
+- **DOC** Meter: the platform notes said the label row uses a `Text element="span"` but the value text is a plain `<span>` in `valueColor`. I used the Text component for both (element="span", tone="muted" for value) since valueColor/labelColor are locked tokens that already match Text's default/`muted` tones, and Text's own `overrides` prop is the sanctioned way to expose `labelSize`/`labelWeight`/`valueSize`/`fontFamily`/`lineHeight` per-instance without restyling a child (following the Alert precedent of delegating a binding — `iconSize` — into a composed child's own override contract) rather than duplicating Text's typography CSS on Meter's own hooks. → `site/src/content/docs/components/meter.md`
+- **CODE** Meter: pre-existing Meter.tsx/css/stories in the tree predated the `overrides`/`OverridableBinding`/`data-ds`+`data-part` conventions (visible in Switch, Alert, Card). Regenerated all three plus the index.ts export to add `MeterOverridableBinding` (trackHeight, radius, labelSize, labelWeight, valueSize, fontFamily, lineHeight, partGap, transition), `data-ds="Meter"`/`data-part` hooks on container/label/valueText/track/fill, since the task said to add these hooks to any file touched.
+
+### 2026-09-10 02:00 — rn round 1
+
+- **DOC** Meter: existing Meter.tsx was missing the overrides prop (and MeterOverridableBinding type) required by the schema's overrides contract, plus the testID="Meter" testability hook — added both, mapping trackHeight/radius/labelSize/labelWeight/valueSize/fontFamily/lineHeight/partGap/transition to overrides and keeping track/fill/labelColor/valueColor locked, and exported MeterOverridableBinding from index.ts. → `site/src/content/docs/components/meter.md`
+
+## RadioGroup
+
+Doc: `site/src/content/docs/components/radiogroup.md`
+
+### 2026-09-10 01:51 — rn round 1
+
+- **DOC** RadioGroup: the existing RN file predated the current styles/overrides section entirely (no overrides prop, no RadioGroupOverridableBinding, item type named RadioOption instead of RadioGroupOption). Rewrote it to match the schema's 16 overridable bindings and locked bindings, matching the equivalent React implementation's OVERRIDE_HOOK list for cross-platform consistency. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the schema's Behavior section says invalid validation precedence is error -> required -> invalid (rendering copy.invalid), same as Input/Checkbox, but the platforms.rn.notes text only mentions 'required with nothing selected fails submit with copy.required' and doesn't mention copy.invalid. Implemented the full three-step precedence (error, required, invalid) to match the general Behavior section and the Checkbox/Input convention, since the rn notes read as incomplete rather than contradictory. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the previous implementation passed the native `disabled` prop to each option's Pressable for individually-disabled options, citing arrow-key-skip behavior — but that reasoning is from platforms.web.notes, not rn, and it directly contradicts this package's stated convention ('do not pass disabled to Pressable — it removes focus'). Changed disabled options to stay focus stops (accessibilityState.disabled + a press guard, no native disabled), consistent with how Checkbox handles its own disabled state and with the rn notes' claim that 'every radio is a stop for the screen reader and for hardware-keyboard focus.' → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the schema's `transition` style binding (motion.duration.fast) wasn't wired to anything in the prior implementation. Added a per-option Animated crossfade of the selected border color and indicator dot opacity (mirroring Checkbox's fill animation), reusing motion.easing.standard and respecting useReducedMotion(), since the spec names a transition token but doesn't say which visual property it drives on native. → `site/src/content/docs/components/radiogroup.md`
+
+### 2026-09-10 01:48 — lit round 2
+
+- **DOC** RadioGroup: the `literals` gate's font-stack regex (`fontFamily\s*:\s*['"]`) false-positives on the HOOKS map entry `fontFamily: '--ds-radio-group-font-family'` — that's a CSS custom-property name, not a hard-coded font stack. Marked it `literal-ok` rather than renaming the binding key (which would break the established override-hook naming convention shared with Checkbox/Switch). → `site/src/content/docs/components/radiogroup.md`
+
+### 2026-09-10 01:47 — lit round 1
+
+- **DOC** RadioGroup: `radioIndicator` (the centre dot) is a `::after` pseudo-element and cannot carry a `part` attribute; no separate element exists for it, consistent with Checkbox's indicator. → `site/src/content/docs/components/radiogroup.md`
+- **CODE** RadioGroup: part names use simplified kebab-case (`radio-label`, `radio-description`, `error`) rather than the schema's exact anatomy strings (`radioLabel`, `radioDescription`, `errorMessage`); this pre-existing choice matches the convention already used by Checkbox/Switch in this package, so I kept it for consistency rather than diverging.
+
+### 2026-09-10 01:46 — web round 1
+
+- **DOC** RadioGroup.tsx/.css pre-existed but predated the overrides/data-ds/data-part conventions now required across the package; brought it in line: added RadioGroupOverridableBinding (the 16 non-locked bindings from styles), an overrides prop wired through cssVar()/OVERRIDE_HOOK the same way Checkbox/Switch do, data-ds="RadioGroup" on the fieldset root, and data-part on description, radio, radioLabel, radioDescription, and errorMessage (group/legend/radioIndicator left without data-part since they're reachable via role or are pseudo-elements, matching the Checkbox/Switch precedent). → `site/src/content/docs/components/radiogroup.md`
+- **DOC** CSS previously read design tokens directly instead of through --ds-radio-group-<binding> hooks; rewrote it so every schema binding (locked and overridable) is a custom-property hook on .ds-radio-group, mirroring Checkbox.css/Switch.css, so overrides actually take effect. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** helperSize/descriptionText/errorText were only applied via the shared Text component's size/tone props, not as CSS hooks on the wrapper classes; added explicit font-size/color rules on .ds-radio-group__description, __option-description, and __error keyed to the hooks (same pattern as Checkbox) so the overridable helperSize binding has an effect and locked descriptionText/errorText are hooks rather than baked-in token references. → `site/src/content/docs/components/radiogroup.md`
+
 ## Stack
 
 Doc: `site/src/content/docs/components/stack.md`
@@ -673,6 +834,28 @@ Doc: `site/src/content/docs/components/stack.md`
 - **DOC** Stack: the schema changes `gap` from the old raw spacing scale ('0'-'12') to a layout-rhythm enum (none/tight/normal/loose/section mapping to layout.gap.*), a breaking prop-type change. I updated only Stack itself per scope, but this leaves stale literal gap values ('0'-'6') in other already-generated files that consume Stack — packages/react/src/AlertDialog.tsx, Card.stories.tsx, Dialog.tsx, Dialog.stories.tsx, Disclosure.stories.tsx, Form.stories.tsx, Landmark.stories.tsx, and demo/Preferences.tsx, demo/SignIn.tsx — which now fail typecheck against StackGap and need fixing in those components' own regeneration passes. → `site/src/content/docs/components/stack.md`
 - **DOC** Stack: spec's 'Overridable: gap' section doesn't specify whether a Storybook story should demonstrate `overrides`; I omitted one since sibling layout components (Box, Container) that also support overrides don't have an Overrides story either, for consistency. → `site/src/content/docs/components/stack.md`
 - **DOC** Stack: added Stack.test.tsx (not explicitly requested by this job but required by the behavior-scenarios rollout already applied to Switch/Box/Card/Container) covering all 21 scenarios verbatim as render-only assertions, matching the Box.test.tsx pattern. → `site/src/content/docs/components/stack.md`
+
+## Switch
+
+Doc: `site/src/content/docs/components/switch.md`
+
+### 2026-09-10 01:47 — rn round 1
+
+- **DOC** Switch (rn): the existing implementation lacked the `overrides` prop and `testID` required by every component in this package. Added `SwitchOverridableBinding` covering only `gap`, `partGap`, `labelSize`, `labelWeight`, `helperSize`, `fontFamily`, `lineHeight`, `disabledOpacity` — excluded `trackWidth`, `trackHeight`, `thumbSize`, `thumbInset`, `radius`, `transition` from the type entirely (rather than accepting-and-ignoring them) since the platform notes say those are OS-controlled by the native Switch and would be silent no-ops; also added `testID="Switch"` to the root Pressable. → `site/src/content/docs/components/switch.md`
+
+### 2026-09-10 01:45 — lit round 2
+
+- **DOC** Switch: no new spec gap — the literals gate flagged `fontFamily: '--ds-switch-font-family'` in the HOOKS map as a font-stack literal (a regex false positive on the key name, not the value); fixed by using a backtick string like Checkbox.ts does for the same binding. → `site/src/content/docs/components/switch.md`
+
+### 2026-09-10 01:45 — lit round 1
+
+- **CODE** Switch: the pre-existing Switch.ts had no overrides mechanism (no --ds-switch-* hooks, no SwitchOverridableBinding/overrides property) despite the spec's Overrides section requiring one; added it following the Checkbox.ts pattern, mapping trackWidth/trackHeight/thumbSize/thumbInset/radius/gap/partGap/labelSize/labelWeight/helperSize/fontFamily/lineHeight/disabledOpacity/transition to hooks and leaving trackOff/trackOn/thumb/labelColor/descriptionText/focusRing/focusRingWidth/minTarget as raw locked tokens.
+- **CODE** Switch: the pre-existing file also lacked the data-ds="Switch" testability attribute; added it in connectedCallback per package convention, no spec ambiguity.
+
+### 2026-09-10 01:43 — web round 1
+
+- **DOC** Switch already had a Switch.tsx/css/stories/test set that predated the overrides/data-ds/data-part conventions (visible in Checkbox); I brought it up to that convention — added `SwitchOverridableBinding`, `overrides` prop, per-instance CSS hooks for every listed binding (locked bindings get hooks too, just excluded from the TS union), `data-ds="Switch"` on the root, and `data-part="description"` on the description Text — without touching the existing behavior logic, which already matched the schema's behavior scenarios and passed all 16 existing tests unchanged. → `site/src/content/docs/components/switch.md`
+- **DOC** The schema doesn't say whether the description's helper text size/color should be enforced by a local CSS rule or left to Text's own `size="sm" tone="muted"` props; followed Checkbox's precedent of setting both (Text props for the semantic class and a local rule reading the `--ds-switch-helper-size`/`--ds-switch-description-text` hooks) so the override hooks actually take effect. → `site/src/content/docs/components/switch.md`
 
 ## Text
 
@@ -713,7 +896,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 306 · CODE: 22 · TOOLING: 2 · NOISE: 8
+DOC: 357 · CODE: 37 · TOOLING: 2 · NOISE: 8
 
 ## Gates to fix
 

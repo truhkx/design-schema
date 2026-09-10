@@ -1,0 +1,11 @@
+# Gaps reported while generating Fieldset for lit
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-10 02:07 — round 1
+
+- Fieldset: composition maps legend/description to Text and fields to Stack, but every existing Lit field composite (RadioGroup, Checkbox, Input) renders raw <legend>/<p> styled to the same tokens instead of instantiating ds-text, and the platform notes require fields to stay in the light DOM (ruling out wrapping them in a shadow ds-stack). Followed that precedent: raw elements for legend/description, and a plain flex '.fields' wrapper (gap from fieldsGap) around the default <slot> instead of a shadow <ds-stack>.
+- Fieldset: the schema has no `required` prop, only a copy.requiredIndicator and the behavior note 'appended to the legend when every field inside is required'. Implemented as a computed getter that queries slotted ds-input/ds-checkbox/ds-switch/ds-radio-group and checks their `required` property at render time; it only recomputes on property changes and on the default slot's `slotchange`, not on ad-hoc mutation of a field's `required` property after connection (mirrors the same limitation ds-form's disabled-sync already accepts).
+- Fieldset: `disabled` propagation targets ds-input, ds-checkbox, ds-switch and ds-radio-group (same set ds-form uses for its own fields), since the spec says 'every field inside' without enumerating tags; nested ds-fieldset was not included as a target since the spec doesn't mention fieldset-in-fieldset (and Related explicitly says RadioGroup already is a fieldset, implying no nesting).
+- Fieldset: added `aria-disabled` on the shadow `<fieldset>` when `disabled` is set, matching the React/Web platform note ('disabled uses aria-disabled on the fieldset') even though the lit platform note doesn't repeat it and a11y.requires doesn't list a disabled-state item — kept for parity with Checkbox/RadioGroup's own aria-disabled pattern on their controls.
+- Fieldset: the error region is always rendered (empty when unset, hidden via `.error:empty`) rather than conditionally, matching Checkbox/RadioGroup's pattern so a role=alert element persists in the DOM for screen readers to announce a later change — the schema doesn't specify which approach to use.

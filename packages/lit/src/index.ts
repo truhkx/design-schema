@@ -22,6 +22,7 @@ import './Link.js';
 import './Checkbox.js';
 import './Switch.js';
 import './RadioGroup.js';
+import './Fieldset.js';
 import './Disclosure.js';
 import './Alert.js';
 import './Landmark.js';
@@ -100,6 +101,9 @@ export type {
   RadioGroupChangeDetail,
   RadioGroupOverridableBinding,
 } from './RadioGroup.js';
+
+export { DsFieldset } from './Fieldset.js';
+export type { FieldsetGap, FieldsetOverridableBinding } from './Fieldset.js';
 
 export { DsDisclosure } from './Disclosure.js';
 export type { DisclosureHeadingLevel, DisclosureToggleDetail, DisclosureOverridableBinding } from './Disclosure.js';

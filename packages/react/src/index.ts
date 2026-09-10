@@ -124,3 +124,6 @@ export type { TooltipProps, TooltipPlacement, TooltipDelay, TooltipOverridableBi
 
 export { Divider } from './Divider';
 export type { DividerProps, DividerOrientation, DividerSpacing, DividerOverridableBinding } from './Divider';
+
+export { Fieldset } from './Fieldset';
+export type { FieldsetProps, FieldsetGap, FieldsetOverridableBinding } from './Fieldset';

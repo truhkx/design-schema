@@ -1,0 +1,51 @@
+/* Fieldset — styled only through Design Schema token custom properties. */
+
+.ds-fieldset {
+  --ds-fieldset-legend-color: var(--color-foreground);
+  --ds-fieldset-legend-size: var(--font-size-md);
+  --ds-fieldset-legend-weight: var(--font-weight-medium);
+  --ds-fieldset-description-text: var(--color-foreground-muted);
+  --ds-fieldset-helper-size: var(--font-size-sm);
+  --ds-fieldset-error-text: var(--color-foreground-danger);
+  --ds-fieldset-part-gap: var(--layout-gap-tight);
+  --ds-fieldset-fields-gap: var(--layout-gap-normal);
+  --ds-fieldset-font-family: var(--font-family-body);
+  --ds-fieldset-line-height: var(--font-line-height-normal);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-fieldset-part-gap);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: var(--ds-fieldset-font-family);
+  line-height: var(--ds-fieldset-line-height);
+}
+
+.ds-fieldset__legend {
+  padding: 0;
+  color: var(--ds-fieldset-legend-color);
+  font-size: var(--ds-fieldset-legend-size);
+  font-weight: var(--ds-fieldset-legend-weight);
+}
+
+/* A legend does not take part in the fieldset's flex gap; add the partGap below it explicitly. */
+.ds-fieldset__legend + * {
+  margin-block-start: var(--ds-fieldset-part-gap);
+}
+
+.ds-fieldset__description,
+.ds-fieldset__error {
+  margin: 0;
+  font-size: var(--ds-fieldset-helper-size);
+}
+
+.ds-fieldset__description {
+  color: var(--ds-fieldset-description-text);
+}
+
+.ds-fieldset__error {
+  color: var(--ds-fieldset-error-text);
+}
+
+/* fieldsGap → layout.gap.{gap}, applied through the composed Stack's own gap scale (closest preset). */

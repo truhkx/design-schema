@@ -1,0 +1,15 @@
+# Gaps reported while generating NumberInput for rn
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-10 19:03 — round 1
+
+- Hold-to-repeat: the spec requires the stepper buttons to repeat while held, timed from the resolved theme at pointerdown (motion.duration.base delay, motion.duration.fast interval). The composition contract mandates the composed child be this package's `Button`, which only exposes `onPress` (no onPressIn/onPressOut) — implementing hold-to-repeat would mean bypassing composition or growing Button's own props, both out of scope here. Implemented single-tap stepping only.
+- accessibilityRole="adjustable" on the TextInput (mandated by platforms.rn.props) is in real tension with the field being directly typable: VoiceOver/TalkBack treat 'adjustable' as swipe-up/down only and often suppress the double-tap-to-edit gesture. Implemented literally (role=adjustable plus increment/decrement/pageup/pagedown/home/end accessibility actions), but direct typing under a screen reader may be unreliable as a result — a native platform limitation, not a coding gap.
+- copy.outOfRange ('{label} must be between {min} and {max}.') assumes both min and max are set. The doc never addresses the single-bound case, and inventing wording for a missing placeholder isn't allowed, so I only surface this message when both bounds are defined; with only one bound, the value still clamps on blur but silently (no error text).
+- The onChange→onChangeText platform mapping means this component's onChangeText prop carries a `number | undefined`, not RN's usual string — same name as TextInput's own string-based prop, which may surprise consumers. Followed the schema's literal mapping rather than renaming.
+- Form's FormFieldValue union has no numeric variant (same limitation Slider already hit), so despite the spec saying 'the collected value is a number,' the field registers a stringified number with the Form, consistent with Slider's precedent.
+- NumberInput's schema/Related section never mentions Fieldset, so unlike its nearest sibling Input, this component does not register with FieldsetContext (no legend-prefixed accessible name, no fieldset-driven disabled). Flagging in case parity with Input was actually expected.
+- The 'ships a Keyboard story open with its trigger and ≥3 focusable children' testability rule reads as written for overlay/disclosure components (trigger + open panel); NumberInput is a plain spinbutton with no trigger or open state, so no Keyboard story was added.
+- The rn platform note '(numbers-and-punctuation on iOS for negatives)' isn't fully spelled out as a rule, so I inferred: use keyboardType="numbers-and-punctuation" on iOS when negative values are allowed (min undefined or min < 0), else "decimal-pad" — a judgment call worth double-checking against real device behavior.
+- leadingText/format:currency can both render a currency symbol at once (Intl's own symbol plus a manually supplied leadingText like "$"); the spec doesn't state a precedence/exclusivity rule here, so both are rendered independently as authored.

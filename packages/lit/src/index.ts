@@ -438,6 +438,7 @@ export type {
   TreeGridCellChangeDetail,
   TreeGridExpandChangeDetail,
   TreeGridExpandDetail,
+  TreeGridColumnResizeDetail,
   TreeGridOverridableBinding,
 } from './TreeGrid.js';
 

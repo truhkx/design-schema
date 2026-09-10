@@ -65,7 +65,7 @@ export const WithError: Story = { args: { steps: stepsWithError, current: 'payme
 export const CustomLabel: Story = { args: { label: 'Checkout progress' } };
 
 /**
- * Every step is a Button (navigable: 'all'), giving at least three focusable controls to tab
+ * Every step is navigable (navigable: 'all'), giving at least three focusable controls to tab
  * through and activate with Enter/Space, per the component's keyboard model.
  */
 export const Keyboard: Story = {

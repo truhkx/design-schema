@@ -19,13 +19,14 @@ import { FormContext, useFormContext } from './FormContext';
 import { Icon } from './Icon';
 import type { ListboxOption } from './Listbox';
 import { Popover, type PopoverOpenChangeReason } from './Popover';
-import { Select } from './Select';
+import { Select, type SelectOverridableBinding } from './Select';
 import { Stack } from './Stack';
 import { Text, type TextOverridableBinding } from './Text';
 import './DatePicker.css';
 
 export type DatePickerRangeValue = { start: string; end: string };
 export type DatePickerValue = string | DatePickerRangeValue;
+export type DatePickerSize = 'sm' | 'md';
 
 /** copy.* — used verbatim; `{label}`/`{month}`/`{year}`/`{pattern}`/`{min}`/`{max}` are replaced as noted. */
 const COPY = {
@@ -63,6 +64,8 @@ export type DatePickerOverridableBinding =
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
+  | 'paddingBlockSm'
+  | 'paddingInlineSm'
   | 'calendarInset'
   | 'calendarGap'
   | 'daySize'
@@ -74,15 +77,23 @@ export type DatePickerOverridableBinding =
   | 'weekdayWeight'
   | 'monthTitleSize'
   | 'monthTitleWeight'
+  | 'partGap'
+  | 'fieldGap'
   | 'dayFontSize'
   | 'fontFamily'
   | 'lineHeight'
   | 'labelWeight'
   | 'helperSize'
+  | 'minTargetSm'
   | 'disabledOpacity'
   | 'transition';
 
-/** labelWeight/helperSize forward into the composed label/description Text's own overrides, like Select and NumberInput. */
+/**
+ * labelWeight/helperSize forward into the composed label/description Text's own overrides, like
+ * Select and NumberInput; monthTitleSize forwards into the composed month/year Select's own
+ * `fontSize` override — Select has no `fontWeight` override to forward monthTitleWeight into, so
+ * that binding only ever reaches the (non-rendering) root hook.
+ */
 const ROOT_OVERRIDE_HOOK: Partial<Record<DatePickerOverridableBinding, string>> = {
   borderFocus: '--ds-date-picker-border-focus',
   borderInvalid: '--ds-date-picker-border-invalid',
@@ -90,6 +101,8 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<DatePickerOverridableBinding, string>> 
   radius: '--ds-date-picker-radius',
   paddingInline: '--ds-date-picker-padding-inline',
   paddingBlock: '--ds-date-picker-padding-block',
+  paddingBlockSm: '--ds-date-picker-padding-block-sm',
+  paddingInlineSm: '--ds-date-picker-padding-inline-sm',
   calendarInset: '--ds-date-picker-calendar-inset',
   calendarGap: '--ds-date-picker-calendar-gap',
   daySize: '--ds-date-picker-day-size',
@@ -101,7 +114,10 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<DatePickerOverridableBinding, string>> 
   weekdayWeight: '--ds-date-picker-weekday-weight',
   monthTitleSize: '--ds-date-picker-month-title-size',
   monthTitleWeight: '--ds-date-picker-month-title-weight',
+  partGap: '--ds-date-picker-part-gap',
+  fieldGap: '--ds-date-picker-field-gap',
   dayFontSize: '--ds-date-picker-day-font-size',
+  minTargetSm: '--ds-date-picker-min-target-sm',
   disabledOpacity: '--ds-date-picker-disabled-opacity',
   transition: '--ds-date-picker-transition',
 };
@@ -110,10 +126,12 @@ function resolveOverrides(overrides: Partial<Record<DatePickerOverridableBinding
   rootStyle: CSSProperties;
   labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
   descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  monthSelectOverrides: Partial<Record<SelectOverridableBinding, TokenRef>>;
 } {
   const rootStyle: Record<string, string> = {};
   const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
   const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const monthSelectOverrides: Partial<Record<SelectOverridableBinding, TokenRef>> = {};
 
   for (const binding of Object.keys(overrides) as DatePickerOverridableBinding[]) {
     const ref = overrides[binding];
@@ -124,6 +142,11 @@ function resolveOverrides(overrides: Partial<Record<DatePickerOverridableBinding
     }
     if (binding === 'helperSize') {
       descriptionOverrides.fontSize = ref;
+      continue;
+    }
+    if (binding === 'monthTitleSize') {
+      monthSelectOverrides.fontSize = ref;
+      rootStyle[ROOT_OVERRIDE_HOOK.monthTitleSize!] = cssVar(ref);
       continue;
     }
     if (binding === 'fontFamily') {
@@ -142,7 +165,7 @@ function resolveOverrides(overrides: Partial<Record<DatePickerOverridableBinding
     if (hook) rootStyle[hook] = cssVar(ref);
   }
 
-  return { rootStyle: rootStyle as CSSProperties, labelOverrides, descriptionOverrides };
+  return { rootStyle: rootStyle as CSSProperties, labelOverrides, descriptionOverrides, monthSelectOverrides };
 }
 
 /* Only declared when the bundler defines it; never assumed. */
@@ -360,6 +383,7 @@ export interface DatePickerProps
     | 'max'
     | 'required'
     | 'disabled'
+    | 'size'
     | 'onChange'
     | 'onFocus'
     | 'onBlur'
@@ -376,6 +400,8 @@ export interface DatePickerProps
   value?: DatePickerValue;
   /** Initial value. */
   defaultValue?: DatePickerValue;
+  /** Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default. */
+  open?: boolean;
   /** Pick a start and an end date in one calendar; two inputs in the field. */
   range?: boolean;
   /** Earliest selectable date (ISO). Earlier days are disabled and the error uses `copy.tooEarly`. */
@@ -394,6 +420,10 @@ export interface DatePickerProps
   description?: string;
   /** Must have a value to submit. */
   required?: boolean;
+  /** Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search. */
+  hideLabel?: boolean;
+  /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
+  size?: DatePickerSize;
   /** Not editable, still readable. */
   disabled?: boolean;
   /** Error message; implies invalid. */
@@ -423,6 +453,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
     name,
     value,
     defaultValue,
+    open: openProp,
     range = false,
     min,
     max,
@@ -432,6 +463,8 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
     placeholder,
     description,
     required = false,
+    hideLabel = false,
+    size = 'md',
     disabled = false,
     error,
     container,
@@ -501,7 +534,9 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
     }
   }
 
-  const [open, setOpen] = useState(false);
+  const isOpenControlled = openProp !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isOpenControlled ? openProp : internalOpen;
   const [pendingRangeStart, setPendingRangeStart] = useState<ISODate | null>(null);
   const [displayedMonth, setDisplayedMonth] = useState<YearMonth>(() => {
     const p = parseISO(committedStart) ?? parseISO(todayISO())!;
@@ -510,7 +545,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
   const [focusedDate, setFocusedDate] = useState<ISODate>(() => committedStart ?? todayISO());
 
   const dayRefs = useRef(new Map<ISODate, HTMLButtonElement>());
-  const pendingFocusRef = useRef(false);
+  const pendingFocusRef = useRef(open);
 
   function disabledCheck(iso: ISODate): boolean {
     return isDayDisabled(iso, min, max, isDateDisabled);
@@ -545,12 +580,12 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
     setFocusedDate(toISO(p.year, p.month, p.day));
     pendingFocusRef.current = true;
     setPendingRangeStart(null);
-    setOpen(true);
+    if (!isOpenControlled) setInternalOpen(true);
     onOpenChange?.(true);
   }
 
   function closeCalendar() {
-    setOpen(false);
+    if (!isOpenControlled) setInternalOpen(false);
     setPendingRangeStart(null);
     onOpenChange?.(false);
   }
@@ -805,12 +840,15 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
   }
 
   // --- Rendering ----------------------------------------------------------------------------------
-  const { rootStyle, labelOverrides, descriptionOverrides } = overrides
+  const { rootStyle, labelOverrides, descriptionOverrides, monthSelectOverrides } = overrides
     ? resolveOverrides(overrides)
-    : { rootStyle: undefined, labelOverrides: undefined, descriptionOverrides: undefined };
+    : { rootStyle: undefined, labelOverrides: undefined, descriptionOverrides: undefined, monthSelectOverrides: undefined };
   const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
 
-  const classes = ['ds-date-picker', isDisabled ? 'ds-date-picker--disabled' : null, className ?? null].filter(Boolean).join(' ');
+  const classes = ['ds-date-picker', `ds-date-picker--${size}`, isDisabled ? 'ds-date-picker--disabled' : null, className ?? null]
+    .filter(Boolean)
+    .join(' ');
+  const labelClasses = ['ds-date-picker__label', hideLabel ? 'ds-date-picker__visually-hidden' : null].filter(Boolean).join(' ');
 
   const describedBy = [description ? descriptionId : null, resolvedError ? errorId : null].filter(Boolean).join(' ');
 
@@ -836,7 +874,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
   const calendarButton = (
     <Button
       variant="ghost"
-      size="sm"
+      size={size}
       iconOnly
       label={range ? COPY.openRange : COPY.open}
       leadingIcon={<Icon name="calendar" inline />}
@@ -846,16 +884,16 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
   );
 
   return (
-    <div className={classes} data-ds="DatePicker" style={mergedStyle}>
+    <div className={classes} data-ds="DatePicker" data-ds-field style={mergedStyle}>
       {range ? (
-        <span id={id} className="ds-date-picker__label" data-part="label">
+        <span id={id} className={labelClasses} data-part="label">
           <Text element="span" weight="medium" overrides={labelOverrides}>
             {label}
             {required ? <span className="ds-date-picker__required">{COPY.requiredIndicator}</span> : null}
           </Text>
         </span>
       ) : (
-        <label htmlFor={id} className="ds-date-picker__label" data-part="label">
+        <label htmlFor={id} className={labelClasses} data-part="label">
           <Text element="span" weight="medium" overrides={labelOverrides}>
             {label}
             {required ? <span className="ds-date-picker__required">{COPY.requiredIndicator}</span> : null}
@@ -976,20 +1014,26 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
                 <span className="ds-date-picker__header-select" data-part="monthSelect">
                   <Select
                     label={COPY.month}
+                    hideLabel
+                    size="sm"
                     name={`${id}-month`}
                     options={monthOptions}
                     value={String(displayedMonth.month)}
                     disabled={isDisabled}
+                    overrides={monthSelectOverrides}
                     onChange={(v) => retargetFocusedDate(displayedMonth.year, Number(v as string))}
                   />
                 </span>
                 <span className="ds-date-picker__header-select" data-part="yearSelect">
                   <Select
                     label={COPY.year}
+                    hideLabel
+                    size="sm"
                     name={`${id}-year`}
                     options={yearOptions}
                     value={String(displayedMonth.year)}
                     disabled={isDisabled}
+                    overrides={monthSelectOverrides}
                     onChange={(v) => retargetFocusedDate(Number(v as string), displayedMonth.month)}
                   />
                 </span>

@@ -1,6 +1,5 @@
 import { forwardRef, useId, type ComponentPropsWithoutRef, type CSSProperties } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
-import { Button } from './Button';
 import { Text, type TextOverridableBinding } from './Text';
 import { Icon } from './Icon';
 import './Stepper.css';
@@ -18,10 +17,12 @@ export type StepperOrientation = 'horizontal' | 'vertical';
 export type StepperNavigable = 'none' | 'completed' | 'all';
 
 const COPY = {
+  navLabel: 'Progress',
   stepOf: 'Step {current} of {total}',
   complete: 'completed',
   current: 'current step',
   error: 'has an error',
+  stepLabel: 'Step {n}: {label}',
 };
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
@@ -37,6 +38,8 @@ export type StepperOverridableBinding =
   | 'labelCurrentWeight'
   | 'labelSize'
   | 'descriptionSize'
+  | 'stepHover'
+  | 'stepRadius'
   | 'stepGap'
   | 'partGap'
   | 'fontFamily'
@@ -53,6 +56,8 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<StepperOverridableBinding, string>> = {
   indicatorFontWeight: '--ds-stepper-indicator-font-weight',
   connector: '--ds-stepper-connector',
   connectorWidth: '--ds-stepper-connector-width',
+  stepHover: '--ds-stepper-step-hover',
+  stepRadius: '--ds-stepper-step-radius',
   stepGap: '--ds-stepper-step-gap',
   partGap: '--ds-stepper-part-gap',
   transition: '--ds-stepper-transition',
@@ -117,10 +122,10 @@ export interface StepperProps extends Omit<ComponentPropsWithoutRef<'nav'>, 'chi
   navigable?: StepperNavigable;
   /**
    * Show only the current step's label and "Step 2 of 5"; the indicators stay. Automatic on
-   * narrow viewports for horizontal steppers.
+   * narrow viewports for horizontal steppers. Has no effect when `orientation` is `vertical`.
    */
   compact?: boolean;
-  /** Accessible name of the navigation landmark. Change it only if the page has another progress indicator. */
+  /** Accessible name of the navigation landmark. Defaults to `copy.navLabel`. */
   label?: string;
   /** Per-instance style overrides: each entry sets the matching CSS hook, or the composed Text's own override, to that token. */
   overrides?: Partial<Record<StepperOverridableBinding, TokenRef>>;
@@ -142,6 +147,13 @@ function isStepNavigable(status: StepperStepStatus, navigable: StepperNavigable)
   return status === 'complete';
 }
 
+function statusWordFor(status: StepperStepStatus): string | undefined {
+  if (status === 'complete') return COPY.complete;
+  if (status === 'current') return COPY.current;
+  if (status === 'error') return COPY.error;
+  return undefined;
+}
+
 /**
  * Stepper — Design Schema, category: navigation.
  *
@@ -159,7 +171,7 @@ export const Stepper = forwardRef<HTMLElement, StepperProps>(function Stepper(
     orientation = 'horizontal',
     navigable = 'completed',
     compact = false,
-    label = 'Progress',
+    label = COPY.navLabel,
     overrides,
     onStepSelect,
     className,
@@ -194,12 +206,36 @@ export const Stepper = forwardRef<HTMLElement, StepperProps>(function Stepper(
           const isCurrent = status === 'current';
           const isLast = index === steps.length - 1;
           const stepIsNavigable = isStepNavigable(status, navigable);
+          const statusWord = statusWordFor(status);
 
-          const statusWord =
-            status === 'complete' ? COPY.complete : status === 'current' ? COPY.current : status === 'error' ? COPY.error : undefined;
-          const statusId = statusWord ? `ds-stepper${generatedId}-status-${step.id}` : undefined;
           const descriptionId = step.description ? `ds-stepper${generatedId}-description-${step.id}` : undefined;
-          const describedBy = [descriptionId, statusId].filter(Boolean).join(' ') || undefined;
+          const statusId = !stepIsNavigable && statusWord ? `ds-stepper${generatedId}-status-${step.id}` : undefined;
+
+          // A navigable step is its own native button — not the Button component, whose
+          // single-label API cannot hold an indicator, label and description together.
+          const numberedLabel = COPY.stepLabel.replace('{n}', String(index + 1)).replace('{label}', step.label);
+          const accessibleLabel = statusWord ? `${numberedLabel}, ${statusWord}` : numberedLabel;
+
+          const indicator = (
+            <span className="ds-stepper__indicatorWrap">
+              <span className="ds-stepper__indicator" data-part="indicator" aria-hidden="true">
+                {status === 'complete' ? (
+                  <Icon name="check" inline />
+                ) : status === 'error' ? (
+                  <Icon name="danger" inline />
+                ) : (
+                  index + 1
+                )}
+              </span>
+              {!isLast && (
+                <span
+                  className={`ds-stepper__connector${status === 'complete' ? ' ds-stepper__connector--complete' : ''}`}
+                  data-part="connector"
+                  aria-hidden="true"
+                />
+              )}
+            </span>
+          );
 
           const labelText = (
             <Text
@@ -229,49 +265,37 @@ export const Stepper = forwardRef<HTMLElement, StepperProps>(function Stepper(
             </Text>
           ) : null;
 
-          const hiddenStatus = statusWord ? (
-            <span id={statusId} className="ds-stepper__visually-hidden">
-              {statusWord}
-            </span>
-          ) : null;
-
           return (
             <li key={step.id} className={`ds-stepper__item ds-stepper__item--${status}`} data-part="step">
-              <span className="ds-stepper__indicatorWrap">
-                <span className="ds-stepper__indicator" data-part="indicator" aria-hidden="true">
-                  {status === 'complete' ? (
-                    <Icon name="check" inline />
-                  ) : status === 'error' ? (
-                    <Icon name="danger" inline />
-                  ) : (
-                    index + 1
-                  )}
-                </span>
-                {!isLast && (
-                  <span
-                    className={`ds-stepper__connector${status === 'complete' ? ' ds-stepper__connector--complete' : ''}`}
-                    data-part="connector"
-                    aria-hidden="true"
-                  />
-                )}
-              </span>
-              <span className="ds-stepper__content">
-                {stepIsNavigable ? (
-                  <Button
-                    variant="ghost"
-                    label={step.label}
-                    aria-current={isCurrent ? 'step' : undefined}
-                    aria-describedby={describedBy}
-                    onClick={() => onStepSelect?.(step.id)}
-                  />
-                ) : (
-                  <div className="ds-stepper__control" aria-current={isCurrent ? 'step' : undefined}>
+              {stepIsNavigable ? (
+                <button
+                  type="button"
+                  className="ds-stepper__control ds-stepper__control--navigable"
+                  aria-label={accessibleLabel}
+                  aria-describedby={descriptionId}
+                  aria-current={isCurrent ? 'step' : undefined}
+                  onClick={() => onStepSelect?.(step.id)}
+                >
+                  {indicator}
+                  <span className="ds-stepper__content">
                     {labelText}
-                  </div>
-                )}
-                {descriptionText}
-                {hiddenStatus}
-              </span>
+                    {descriptionText}
+                  </span>
+                </button>
+              ) : (
+                <div className="ds-stepper__control" aria-current={isCurrent ? 'step' : undefined}>
+                  {indicator}
+                  <span className="ds-stepper__content">
+                    {labelText}
+                    {descriptionText}
+                    {statusWord && (
+                      <span id={statusId} className="ds-stepper__visually-hidden">
+                        {statusWord}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
             </li>
           );
         })}

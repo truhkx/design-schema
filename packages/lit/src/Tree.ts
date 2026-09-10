@@ -7,6 +7,7 @@ import './Button.js';
 import './Icon.js';
 import './Text.js';
 import './Link.js';
+import './Heading.js';
 import type { IconName } from './Icon.js';
 
 /** A node in the hierarchy. `id` must be stable across renders. `href` makes the node a Link (navigation trees);
@@ -22,6 +23,8 @@ export interface TreeNode {
   href?: string;
   children?: TreeNode[] | 'lazy';
 }
+
+export type TreeHeadingLevel = '2' | '3' | '4';
 
 export type TreeSelectable = 'none' | 'single' | 'multiple';
 
@@ -58,8 +61,8 @@ const NEGATED_BOOLEAN_CONVERTER = {
 };
 
 /** Overridable style hooks; see the `overrides` property. `rowSelected`, `rowSelectedBorder`, `labelColor`,
-    `iconColor`, `badgeColor`, `minTarget`, `focusRing` and `focusRingWidth` are accessibility-bearing and locked
-    (excluded). */
+    `iconColor`, `badgeColor`, `checkboxBorder`, `checkboxSelected`, `checkboxMark`, `minTarget`, `focusRing` and
+    `focusRingWidth` are accessibility-bearing and locked (excluded). */
 export type TreeOverridableBinding =
   | 'indent'
   | 'rowHeight'
@@ -69,11 +72,15 @@ export type TreeOverridableBinding =
   | 'rowHover'
   | 'rowSelectedBorderWidth'
   | 'labelSelectedWeight'
+  | 'headingSize'
   | 'badgeSize'
   | 'expandButtonSize'
   | 'guideLine'
   | 'guideLineWidth'
   | 'checkboxGap'
+  | 'checkboxSize'
+  | 'checkboxBackground'
+  | 'checkboxRadius'
   | 'fontFamily'
   | 'fontSize'
   | 'lineHeight'
@@ -89,11 +96,15 @@ const HOOKS: Record<TreeOverridableBinding, string> = {
   rowHover: '--ds-tree-row-hover',
   rowSelectedBorderWidth: '--ds-tree-row-selected-border-width',
   labelSelectedWeight: '--ds-tree-label-selected-weight',
+  headingSize: '--ds-tree-heading-size',
   badgeSize: '--ds-tree-badge-size',
   expandButtonSize: '--ds-tree-expand-button-size',
   guideLine: '--ds-tree-guide-line',
   guideLineWidth: '--ds-tree-guide-line-width',
   checkboxGap: '--ds-tree-checkbox-gap',
+  checkboxSize: '--ds-tree-checkbox-size',
+  checkboxBackground: '--ds-tree-checkbox-background',
+  checkboxRadius: '--ds-tree-checkbox-radius',
   fontFamily: '--ds-tree-font-family',
   fontSize: '--ds-tree-font-size',
   lineHeight: '--ds-tree-line-height',
@@ -135,15 +146,19 @@ interface VisibleEntry {
  * @fires expand-change - Fired with the array of expanded ids.
  * @fires expand - Fired with the id of a `children: "lazy"` node being expanded; the caller loads and replaces `children`.
  * @fires activate - Fired on Enter or double-click on a node, with its id. Nodes with `href` navigate instead.
+ * @csspart heading - The composed `<ds-heading>` shown when `showLabel` (anatomy: heading).
  * @csspart container - The `role="tree"` root list (anatomy: container).
  * @csspart node - Each `role="treeitem"` (anatomy: node).
  * @csspart node-row - The node's visible row (anatomy: nodeRow).
  * @csspart expand-button - The composed `<ds-button>` toggling a parent's children (anatomy: expandButton).
  * @csspart indent - The per-level indent/guide-line spacer (anatomy: indent).
  * @csspart icon - The composed `<ds-icon>` for a node's `icon` (anatomy: icon).
- * @csspart label - The composed `<ds-text>` or `<ds-link>` label (anatomy: label).
+ * @csspart label - The composed `<ds-text>` label of a node without `href` (anatomy: label).
+ * @csspart link - The composed `<ds-link>` label of a node with `href` (anatomy: link).
  * @csspart badge - The composed `<ds-text>` badge (anatomy: badge).
+ * @csspart checkbox - The drawn checkbox glyph in `multiple` mode (anatomy: checkbox).
  * @csspart group - A nested `role="group"` list of children (anatomy: group).
+ * @csspart empty-state - The composed `<ds-text>` shown when `nodes` is empty (anatomy: emptyState).
  */
 @customElement('ds-tree')
 export class DsTree extends LitElement {
@@ -165,11 +180,15 @@ export class DsTree extends LitElement {
       --ds-tree-row-hover: var(--color-action-ghost-background-hover);
       --ds-tree-row-selected-border-width: var(--border-width-focus);
       --ds-tree-label-selected-weight: var(--font-weight-medium);
+      --ds-tree-heading-size: var(--font-size-md);
       --ds-tree-badge-size: var(--font-size-xs);
       --ds-tree-expand-button-size: var(--size-target-min);
       --ds-tree-guide-line: var(--color-border);
       --ds-tree-guide-line-width: var(--border-width-thin);
       --ds-tree-checkbox-gap: var(--layout-gap-tight);
+      --ds-tree-checkbox-size: var(--space-4);
+      --ds-tree-checkbox-background: var(--color-control-background);
+      --ds-tree-checkbox-radius: var(--radius-sm);
       --ds-tree-font-family: var(--font-family-body);
       --ds-tree-font-size: var(--font-size-sm);
       --ds-tree-line-height: var(--font-line-height-normal);
@@ -194,12 +213,10 @@ export class DsTree extends LitElement {
       border: 0;
     }
 
+    /* headingSize forwards into ds-heading's own hook; margin trimmed to the tighter tree-heading gap */
     .tree-heading {
-      margin: 0;
-      padding-block-end: var(--space-2);
-      font-size: var(--ds-tree-font-size);
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-foreground);
+      --ds-heading-font-size: var(--ds-tree-heading-size);
+      --ds-heading-margin-block-end: var(--space-2);
     }
 
     ul.tree,
@@ -260,9 +277,10 @@ export class DsTree extends LitElement {
       box-shadow: inset var(--ds-tree-row-selected-border-width) 0 0 0 var(--color-control-selected-background);
     }
 
+    /* labelSelectedWeight forwards into ds-text's own hook; ds-link has no font-weight hook to forward to (see gaps) */
     li[aria-selected='true'] > .node-row .node-label,
     li[aria-checked='true'] > .node-row .node-label {
-      font-weight: var(--ds-tree-label-selected-weight);
+      --ds-text-font-weight: var(--ds-tree-label-selected-weight);
     }
 
     .indent {
@@ -291,26 +309,26 @@ export class DsTree extends LitElement {
     }
 
     .checkbox-glyph {
-      inline-size: 1em;
-      block-size: 1em;
+      inline-size: var(--ds-tree-checkbox-size);
+      block-size: var(--ds-tree-checkbox-size);
       flex: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       box-sizing: border-box;
-      /* iconColor: color.foreground.muted, locked */
-      border: var(--border-width-thin) solid var(--color-foreground-muted);
-      border-radius: var(--ds-tree-row-radius);
-      color: var(--color-background);
+      /* checkboxBorder: color.control.border, locked */
+      border: var(--border-width-thin) solid var(--color-control-border);
+      border-radius: var(--ds-tree-checkbox-radius);
+      background: var(--ds-tree-checkbox-background);
+      /* checkboxMark: color.control.selectedForeground, locked */
+      color: var(--color-control-selected-foreground);
       margin-inline-end: var(--ds-tree-checkbox-gap);
     }
-    .checkbox-glyph[data-checked] {
+    .checkbox-glyph[data-checked],
+    .checkbox-glyph[data-indeterminate] {
+      /* checkboxSelected: color.control.selectedBackground, locked */
       background: var(--color-control-selected-background);
       border-color: var(--color-control-selected-background);
-    }
-    .checkbox-glyph[data-indeterminate] {
-      /* iconColor: color.foreground.muted, locked */
-      color: var(--color-foreground-muted);
     }
 
     .node-icon {
@@ -325,9 +343,10 @@ export class DsTree extends LitElement {
       white-space: nowrap;
     }
 
+    /* badgeSize forwards into ds-text's own hook */
     .node-badge {
       flex: none;
-      font-size: var(--ds-tree-badge-size);
+      --ds-text-font-size: var(--ds-tree-badge-size);
     }
 
     .loading-row {
@@ -339,8 +358,11 @@ export class DsTree extends LitElement {
   /** What the tree lists ("Folders", "Categories"). The accessible name of the tree; visually hidden unless `showLabel`. */
   @property() label!: string;
 
-  /** Shows `label` as a heading above the tree. */
+  /** Shows `label` as a heading above the tree; then the tree is `aria-labelledby` it instead of `aria-label`. */
   @property({ type: Boolean, reflect: true, attribute: 'show-label' }) showLabel = false;
+
+  /** Heading level of the visible label in the page outline; its size is `headingSize` regardless. */
+  @property({ reflect: true, attribute: 'heading-level' }) headingLevel: TreeHeadingLevel = '2';
 
   /** The hierarchy. A property, not an attribute. */
   @property({ attribute: false }) nodes: TreeNode[] = [];
@@ -433,21 +455,35 @@ export class DsTree extends LitElement {
   protected override render() {
     const items = this.nodes;
     return html`
-      ${this.showLabel ? html`<h2 class="tree-heading">${this.label}</h2>` : nothing}
+      ${this.showLabel
+        ? html`<ds-heading
+            id=${this.headingId}
+            class="tree-heading"
+            part="heading"
+            level=${this.headingLevel}
+            size="md"
+            >${this.label}</ds-heading
+          >`
+        : nothing}
       <ul
         class="tree"
         part="container"
         role="tree"
-        aria-label=${this.label}
+        aria-label=${ifDefined(this.showLabel ? undefined : this.label)}
+        aria-labelledby=${ifDefined(this.showLabel ? this.headingId : undefined)}
         aria-multiselectable=${ifDefined(this.selectable === 'multiple' ? 'true' : undefined)}
         @keydown=${this.handleKeydown}
       >
         ${items.length === 0
-          ? html`<li role="presentation"><ds-text tone="muted">${COPY_EMPTY}</ds-text></li>`
+          ? html`<li role="presentation"><ds-text part="empty-state" tone="muted">${COPY_EMPTY}</ds-text></li>`
           : items.map((node, index) => this.renderNode(node, 1, index + 1, items.length, undefined))}
       </ul>
       <span class="visually-hidden" role="status">${this.liveMessage}</span>
     `;
+  }
+
+  private get headingId(): string {
+    return `${this.instanceId}-heading`;
   }
 
   private renderNode(
@@ -531,14 +567,8 @@ export class DsTree extends LitElement {
             : nothing}
           ${node.icon ? html`<ds-icon class="node-icon" part="icon" name=${node.icon} inline></ds-icon>` : nothing}
           ${node.href
-            ? html`<ds-link class="node-label" part="label" tabindex="-1" href=${node.href} label=${node.label}></ds-link>`
-            : html`<ds-text
-                class="node-label"
-                part="label"
-                element="span"
-                weight=${selected || checked?.checked ? 'medium' : 'regular'}
-                >${node.label}</ds-text
-              >`}
+            ? html`<ds-link class="node-label" part="link" tabindex="-1" href=${node.href} label=${node.label}></ds-link>`
+            : html`<ds-text class="node-label" part="label" element="span">${node.label}</ds-text>`}
           ${node.badge !== undefined
             ? html`<ds-text class="node-badge" part="badge" element="span" size="xs" tone="muted">${node.badge}</ds-text>`
             : nothing}

@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { DatePicker } from './DatePicker';
 
@@ -61,25 +60,18 @@ export const WithLocale: Story = {
   args: { label: 'Geburtsdatum', name: 'birth-date-de', locale: 'de-DE', defaultValue: '2026-09-10' },
 };
 
-/** Forces the calendar open on mount so the story demonstrates the composed Popover's grid, not just the closed field. */
-function KeyboardOpenDemo() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    containerRef.current?.querySelector<HTMLButtonElement>('button[aria-label="Choose date"]')?.click();
-  }, []);
-  return (
-    <div ref={containerRef}>
-      <DatePicker label="Meeting date" name="meeting-date-keyboard" defaultValue="2026-09-10" />
-    </div>
-  );
-}
+export const SizeSm: Story = { args: { size: 'sm' } };
+
+export const SizeMd: Story = { args: { size: 'md' } };
+
+export const HideLabelTrue: Story = { args: { hideLabel: true } };
+
+export const OpenTrue: Story = { args: { open: true } };
 
 /**
  * Open/present with its trigger and the calendar's controls — month/year navigation, the day grid
- * (one roving tab stop), Today and Clear — for the keyboard gate. DatePicker has no controlled
- * `open` prop (it is not in the schema), so the calendar button is clicked programmatically on
- * mount instead of via a decorator, matching the wrapping this story would otherwise need.
+ * (one roving tab stop), Today and Clear — for the keyboard gate.
  */
 export const Keyboard: Story = {
-  render: () => <KeyboardOpenDemo />,
+  args: { label: 'Meeting date', name: 'meeting-date-keyboard', defaultValue: '2026-09-10', open: true },
 };

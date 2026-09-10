@@ -13,6 +13,9 @@ export type { TextAlign, TextOverridableBinding, TextProps, TextSize, TextStyleC
 export { Input } from './Input';
 export type { InputOverridableBinding, InputProps, InputSize, InputType } from './Input';
 
+export { NumberInput } from './NumberInput';
+export type { NumberInputFormat, NumberInputOverridableBinding, NumberInputProps, NumberInputSize } from './NumberInput';
+
 export { Form } from './Form';
 export type { FormOverridableBinding, FormProps, FormValidateMode } from './Form';
 export { FormContext, useFormContext } from './FormContext';
@@ -250,3 +253,6 @@ export type { SplitterOrientation, SplitterOverridableBinding, SplitterProps, Sp
 
 export { Feed } from './Feed';
 export type { FeedHeadingLevel, FeedItem, FeedOverridableBinding, FeedProps } from './Feed';
+
+export { ProgressBar } from './ProgressBar';
+export type { ProgressBarAnnounce, ProgressBarOverridableBinding, ProgressBarProps, ProgressBarTone } from './ProgressBar';

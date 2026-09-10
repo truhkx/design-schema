@@ -8,6 +8,8 @@
   --ds-stepper-indicator-font-weight: var(--font-weight-semibold);
   --ds-stepper-connector: var(--color-border);
   --ds-stepper-connector-width: var(--border-width-focus);
+  --ds-stepper-step-hover: var(--color-action-ghost-background-hover);
+  --ds-stepper-step-radius: var(--radius-sm);
   --ds-stepper-step-gap: var(--layout-gap-normal);
   --ds-stepper-part-gap: var(--space-2);
   --ds-stepper-font-family: var(--font-family-body); /* literal-ok: CSS custom-property hook name, not a font stack */
@@ -21,8 +23,11 @@
   --ds-stepper-indicator-error-foreground: var(--color-status-danger-foreground);
   --ds-stepper-indicator-error-border: var(--color-status-danger-icon);
   --ds-stepper-connector-complete: var(--color-control-selected-background);
+  --ds-stepper-label-color: var(--color-foreground);
+  --ds-stepper-label-upcoming-color: var(--color-foreground-muted);
+  --ds-stepper-description-color: var(--color-foreground-muted);
+  --ds-stepper-indicator-color: var(--color-foreground);
   --ds-stepper-min-target: var(--size-target-min);
-  /* realized by the composed Button's own focus-visible style; kept for escape-hatch parity */
   --ds-stepper-focus-ring: var(--color-border-focus);
   --ds-stepper-focus-ring-width: var(--border-width-focus);
   display: block;
@@ -41,13 +46,45 @@
   min-inline-size: 0;
 }
 
+.ds-stepper__control {
+  display: flex;
+  min-inline-size: 0;
+  flex: 1 1 auto;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+  border-radius: var(--ds-stepper-step-radius);
+}
+
+.ds-stepper__control--navigable {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ds-stepper__control--navigable {
+    transition: background-color var(--ds-stepper-transition) var(--motion-easing-standard);
+  }
+}
+
+.ds-stepper__control--navigable:hover,
+.ds-stepper__control--navigable:active {
+  background-color: var(--ds-stepper-step-hover);
+}
+
+.ds-stepper__control--navigable:focus-visible {
+  outline: var(--ds-stepper-focus-ring-width) solid var(--ds-stepper-focus-ring);
+  outline-offset: var(--ds-stepper-focus-ring-width);
+}
+
 .ds-stepper__indicatorWrap {
   display: flex;
   flex: none;
 }
 
-/* indicator: the number/glyph text color has no dedicated binding for the default (current/upcoming)
-   state, so it uses color.foreground directly, matching the a11y foreground/background contrast pair. */
 .ds-stepper__indicator {
   display: inline-flex;
   flex: none;
@@ -58,7 +95,7 @@
   border-radius: var(--radius-full);
   background-color: var(--ds-stepper-indicator-background);
   border: var(--ds-stepper-indicator-border-width) solid var(--ds-stepper-indicator-border);
-  color: var(--color-foreground);
+  color: var(--ds-stepper-indicator-color);
   font-size: var(--ds-stepper-indicator-font-size);
   font-weight: var(--ds-stepper-indicator-font-weight);
 }
@@ -103,12 +140,16 @@
   min-inline-size: 0;
 }
 
-.ds-stepper__control {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-inline-size: var(--ds-stepper-min-target);
-  min-block-size: var(--ds-stepper-min-target);
+.ds-stepper__label {
+  color: var(--ds-stepper-label-color);
+}
+
+.ds-stepper__item--upcoming .ds-stepper__label {
+  color: var(--ds-stepper-label-upcoming-color);
+}
+
+.ds-stepper__description {
+  color: var(--ds-stepper-description-color);
 }
 
 .ds-stepper__label,
@@ -145,9 +186,14 @@
 
 .ds-stepper--horizontal .ds-stepper__item {
   flex: 1 1 0;
+}
+
+.ds-stepper--horizontal .ds-stepper__control {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  inline-size: 100%;
+  min-block-size: var(--ds-stepper-min-target);
 }
 
 .ds-stepper--horizontal .ds-stepper__indicatorWrap {
@@ -175,6 +221,10 @@
   padding-block-end: var(--ds-stepper-step-gap);
 }
 
+.ds-stepper--vertical .ds-stepper__control {
+  min-inline-size: var(--ds-stepper-min-target);
+}
+
 .ds-stepper--vertical .ds-stepper__indicatorWrap {
   flex-direction: column;
   align-items: center;
@@ -192,10 +242,11 @@
   padding-block-end: var(--ds-stepper-part-gap);
 }
 
-/* compact: only the current step's label/description stay reachable visually; the indicator row and
-   the "Step n of m" count remain. The hidden content stays in the accessibility tree (visually-hidden,
-   not display:none) since compacting is a viewport concern, not an information one. */
-.ds-stepper--compact .ds-stepper__item:not(.ds-stepper__item--current) .ds-stepper__content {
+/* compact applies to horizontal steppers only: only the current step's label/description stay
+   reachable visually; the indicator row and the "Step n of m" count remain. The hidden content
+   stays in the accessibility tree (visually-hidden, not display:none) since compacting is a
+   viewport concern, not an information one. */
+.ds-stepper--horizontal.ds-stepper--compact .ds-stepper__item:not(.ds-stepper__item--current) .ds-stepper__content {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -208,7 +259,7 @@
   border: 0;
 }
 
-.ds-stepper--compact .ds-stepper__compactStatus {
+.ds-stepper--horizontal.ds-stepper--compact .ds-stepper__compactStatus {
   display: inline;
   margin-inline-start: var(--ds-stepper-part-gap);
 }

@@ -647,6 +647,29 @@
       "modules": true
     }
   },
+  "NumberInput.rn": {
+    "hash": "57c5ad8925b3900f",
+    "lastAttemptHash": "57c5ad8925b3900f",
+    "generatedAt": "2026-09-10T23:03:26+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.8753,
+    "files": [
+      "packages/rn/src/NumberInput.stories.tsx",
+      "packages/rn/src/NumberInput.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Popover.rn": {
     "hash": "e126314959858d8d",
     "lastAttemptHash": "e126314959858d8d",

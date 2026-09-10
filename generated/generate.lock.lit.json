@@ -291,13 +291,13 @@
     }
   },
   "DataGrid.lit": {
-    "hash": "173c1d08dc745305",
-    "lastAttemptHash": "173c1d08dc745305",
-    "generatedAt": "2026-09-10T18:08:31+00:00",
+    "hash": "ce284cc144c780d1",
+    "lastAttemptHash": "ce284cc144c780d1",
+    "generatedAt": "2026-09-10T22:59:01+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.9192,
+    "costUsd": 0.4984,
     "files": [
       "packages/lit/src/DataGrid.stories.ts",
       "packages/lit/src/DataGrid.ts",
@@ -1114,19 +1114,19 @@
     }
   },
   "TreeGrid.lit": {
-    "hash": "7ee4b19cca43262c",
-    "lastAttemptHash": "7ee4b19cca43262c",
-    "generatedAt": "2026-09-10T18:22:58+00:00",
+    "hash": "7f941976fcb99cef",
+    "lastAttemptHash": "7f941976fcb99cef",
+    "generatedAt": "2026-09-10T23:04:03+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.4139,
+    "costUsd": 1.7649,
     "files": [
       "packages/lit/src/TreeGrid.stories.ts",
       "packages/lit/src/TreeGrid.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 16,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

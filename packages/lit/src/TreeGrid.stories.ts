@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import './TreeGrid.js';
 import type {
   TreeGridCellChangeDetail,
+  TreeGridColumnResizeDetail,
   TreeGridDensity,
   TreeGridExpandChangeDetail,
   TreeGridExpandDetail,
@@ -25,12 +27,14 @@ interface TreeGridArgs {
   editable: boolean;
   density: TreeGridDensity;
   height: TreeGridHeight;
+  stickyHeader: boolean;
   loading: boolean;
   showStatusBar: boolean;
+  emptyMessage?: string;
 }
 
 const accountColumns: DataGridColumn[] = [
-  { key: 'name', header: 'Account', isRowHeader: true, width: 220 },
+  { key: 'name', header: 'Account', isRowHeader: true, width: 220, resizable: true },
   { key: 'code', header: 'Code', width: 100 },
   {
     key: 'balance',
@@ -89,7 +93,9 @@ const meta: Meta<TreeGridArgs> = {
   title: 'TreeGrid/Lit',
   tags: ['autodocs'],
   parameters: {
-    actions: { handles: ['expand-change', 'expand', 'sort-change', 'selection-change', 'cell-change'] },
+    actions: {
+      handles: ['expand-change', 'expand', 'sort-change', 'selection-change', 'cell-change', 'column-resize'],
+    },
   },
   argTypes: {
     selectable: { control: 'select', options: ['none', 'row', 'cell'] },
@@ -98,8 +104,10 @@ const meta: Meta<TreeGridArgs> = {
     hideCaption: { control: 'boolean' },
     selectChildren: { control: 'boolean' },
     editable: { control: 'boolean' },
+    stickyHeader: { control: 'boolean' },
     loading: { control: 'boolean' },
     showStatusBar: { control: 'boolean' },
+    emptyMessage: { control: 'text' },
   },
   args: {
     caption: 'Chart of accounts',
@@ -112,6 +120,7 @@ const meta: Meta<TreeGridArgs> = {
     editable: false,
     density: 'compact',
     height: 'viewport',
+    stickyHeader: true,
     loading: false,
     showStatusBar: true,
   },
@@ -127,14 +136,17 @@ const meta: Meta<TreeGridArgs> = {
       ?editable=${args.editable}
       density=${args.density}
       height=${args.height}
+      ?no-sticky-header=${!args.stickyHeader}
       ?loading=${args.loading}
       ?no-status-bar=${!args.showStatusBar}
+      empty-message=${ifDefined(args.emptyMessage)}
       @expand-change=${(event: CustomEvent<TreeGridExpandChangeDetail>) => console.log('expand-change', event.detail)}
       @expand=${(event: CustomEvent<TreeGridExpandDetail>) => console.log('expand', event.detail)}
       @sort-change=${(event: CustomEvent<TreeGridSortChangeDetail>) => console.log('sort-change', event.detail)}
       @selection-change=${(event: CustomEvent<TreeGridSelectionChangeDetail>) =>
         console.log('selection-change', event.detail)}
       @cell-change=${(event: CustomEvent<TreeGridCellChangeDetail>) => console.log('cell-change', event.detail)}
+      @column-resize=${(event: CustomEvent<TreeGridColumnResizeDetail>) => console.log('column-resize', event.detail)}
     ></ds-tree-grid>
   `,
 };
@@ -165,8 +177,10 @@ export const Editable: Story = { args: { editable: true } };
 export const Loading: Story = { args: { loading: true } };
 export const Empty: Story = { args: { data: [] } };
 export const NoStatusBar: Story = { args: { showStatusBar: false } };
+export const NoStickyHeader: Story = { args: { stickyHeader: false, height: 'content' } };
 export const AllExpanded: Story = { args: { defaultExpanded: ['*'] } };
 export const Lazy: Story = { args: { defaultExpanded: ['equity'] } };
+export const CustomEmptyMessage: Story = { args: { data: [], emptyMessage: 'No accounts yet.' } };
 
 /**
  * A fully expanded tree with a sortable, editable balance column — enough focusable structure (several row

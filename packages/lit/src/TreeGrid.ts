@@ -62,6 +62,12 @@ export type TreeGridExpandChangeDetail = string[];
 /** Detail carried by the `expand` CustomEvent: the id of the `children: "lazy"` row being expanded. */
 export type TreeGridExpandDetail = string;
 
+/** Detail carried by the `column-resize` CustomEvent. */
+export interface TreeGridColumnResizeDetail {
+  column: string;
+  width: number;
+}
+
 /* copy.* — used verbatim */
 const COPY_EXPAND = (rowName: string): string => `Expand ${rowName}`;
 const COPY_COLLAPSE = (rowName: string): string => `Collapse ${rowName}`;
@@ -81,10 +87,12 @@ const COPY_EDITING = (column: string): string => `Editing ${column}. Enter to sa
 const COPY_INVALID = (message: string): string => message;
 const COPY_ROW_COUNT = (count: number): string => `${count} rows`;
 const COPY_POSITION = (row: number, column: string): string => `Row ${row}, ${column}`;
+const COPY_RESIZE = (column: string): string => `Resize ${column}`;
 const COPY_EMPTY = 'Nothing to show.';
 const COPY_SCROLL_HINT = 'Scroll sideways to see more columns';
 
 const DEFAULT_COLUMN_WIDTH = 160;
+const MIN_COLUMN_WIDTH = 64;
 const SELECT_COLUMN_KEY = '__select__';
 
 /** Negates a boolean attribute: `no-status-bar` present means the property is `false`. */
@@ -164,6 +172,7 @@ interface VisibleRow {
  * @fires sort-change - Fired when a sortable header is activated, with `{ column, direction }`.
  * @fires selection-change - Fired with the selection matching `selectable`: `{ rows }` or `{ cell }`.
  * @fires cell-change - Fired when an edit commits, with `{ rowId, column, value, previous }`.
+ * @fires column-resize - Fired with `{ column, width }` when a resizable column edge drag ends.
  * @csspart container - The wrapper (anatomy: container).
  * @csspart scroll-region - The scrolling grid element (anatomy: scrollRegion; same element as `grid`).
  * @csspart grid - The `role="treegrid"` element (anatomy: grid; same element as `scroll-region`).
@@ -262,6 +271,10 @@ export class DsTreeGrid extends LitElement {
       position: sticky;
       inset-block-start: 0;
       z-index: 3;
+    }
+
+    :host([height='content'][no-sticky-header]) .header {
+      position: static;
     }
 
     :host([data-header-scrolled]) .header {
@@ -421,6 +434,21 @@ export class DsTreeGrid extends LitElement {
       --ds-button-padding-block: 0;
     }
 
+    .resize-handle {
+      position: absolute;
+      inset-block: 0;
+      /* resizeHandle / resizeHandleWidth: not overridable bindings on TreeGrid (unlike DataGrid); fixed tokens */
+      inset-inline-end: calc(var(--space-1) / -2);
+      inline-size: var(--space-1);
+      cursor: col-resize;
+      touch-action: none;
+      z-index: 5;
+    }
+    .resize-handle:hover,
+    .resize-handle.active {
+      background: var(--color-border-strong);
+    }
+
     .expand-button {
       --ds-button-padding-inline: 0;
       --ds-button-padding-block: 0;
@@ -489,8 +517,17 @@ export class DsTreeGrid extends LitElement {
   /** Controlled sort; applies within each level, siblings ordered, hierarchy kept. */
   @property({ attribute: false }) sort?: TreeGridSort;
 
+  /** Initial sort; the grid sorts `data` itself when `sort` is not supplied. */
+  @property({ attribute: false }) defaultSort?: TreeGridSort;
+
   /** `row` adds a checkbox column; `cell` selects one cell. */
   @property({ reflect: true }) selectable: TreeGridSelectable = 'none';
+
+  /** Controlled selected row ids (row mode). */
+  @property({ attribute: false }) selected?: string[];
+
+  /** Initially selected row ids (row mode), when `selected` is not supplied. */
+  @property({ attribute: false }) defaultSelected?: string[];
 
   /** Selecting a parent row selects its loaded descendants; the parent shows indeterminate when only some are selected. */
   @property({ type: Boolean, reflect: true, attribute: 'select-children' }) selectChildren = false;
@@ -501,12 +538,20 @@ export class DsTreeGrid extends LitElement {
   /** Row height. */
   @property({ reflect: true }) density: TreeGridDensity = 'compact';
 
+  /** The header stays visible while the body scrolls. Exposed as the negated `no-sticky-header` attribute;
+      always true when `height` is `viewport` or `fixed`. */
+  @property({ attribute: 'no-sticky-header', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  stickyHeader = true;
+
   /** `viewport` fills the height under the header and scrolls internally; `content` grows with rows; `fixed`
       uses a fixed block size. */
   @property({ reflect: true }) height: TreeGridHeight = 'viewport';
 
   /** Data is being fetched: sets `aria-busy` and shows `copy.loading` in the status bar. Existing rows stay. */
   @property({ type: Boolean, reflect: true }) loading = false;
+
+  /** Shown in place of the body when `data` is empty. Defaults to `copy.empty`. */
+  @property({ attribute: 'empty-message' }) emptyMessage?: string;
 
   /** A footer line with row count and selection count. Exposed as the negated `no-status-bar` attribute
       (the doc's default is `true`, so per the negated-boolean-attribute convention this can't be a positively
@@ -517,7 +562,6 @@ export class DsTreeGrid extends LitElement {
   /** Per-instance style overrides: `{ indent: 'space.6' }`. Locked bindings are ignored. */
   @property({ attribute: false }) overrides?: Partial<Record<TreeGridOverridableBinding, TokenRef>>;
 
-  /** Selection is internal-only and uncontrolled: the schema doesn't expose a `selected`/`defaultSelected` prop. */
   @state() private internalSelectedRows: string[] = [];
   @state() private internalSelectedCell: DataGridCellRef | null = null;
   @state() private internalExpanded: string[] = [];
@@ -525,6 +569,7 @@ export class DsTreeGrid extends LitElement {
   @state() private activeRowIndex = -1;
   @state() private activeColKey = '';
   @state() private editing?: EditingState;
+  @state() private columnWidths: Record<string, number> = {};
   @state() private bodyScrollTop = 0;
   @state() private viewportPx = 0;
   @state() private liveMessage = '';
@@ -532,6 +577,8 @@ export class DsTreeGrid extends LitElement {
   private readonly instanceId = nextTreeGridId();
   private rowHeightPx = 0;
   private resizeObserver?: ResizeObserver;
+  private activeDrag?: { column: string; pointerId: number; startX: number; startWidth: number };
+  private selectionAnchorId?: string;
 
   @query('.grid-scroll') private readonly gridEl?: HTMLElement;
 
@@ -550,6 +597,12 @@ export class DsTreeGrid extends LitElement {
       this.internalExpanded = this.defaultExpanded?.includes('*')
         ? this.allIdsWithChildren(this.data)
         : (this.defaultExpanded ?? []);
+    }
+    if (this.sort === undefined) {
+      this.internalSort = this.defaultSort;
+    }
+    if (this.selected === undefined) {
+      this.internalSelectedRows = this.defaultSelected ?? [];
     }
     if (this.gridEl) {
       this.resizeObserver = new ResizeObserver(() => {
@@ -715,13 +768,24 @@ export class DsTreeGrid extends LitElement {
           : column.abbr
             ? html`<abbr title=${column.header}>${column.abbr}</abbr>`
             : column.header}
+        ${column.resizable ? this.renderResizeHandle(column) : nothing}
       </div>
     `;
   }
 
+  private renderResizeHandle(column: DataGridColumn) {
+    return html`<div
+      class=${classMap({ 'resize-handle': true, active: this.activeDrag?.column === column.key })}
+      part="resize-handle"
+      aria-label=${COPY_RESIZE(column.header)}
+      @pointerdown=${(event: PointerEvent) => this.handleResizeStart(event, column)}
+    ></div>`;
+  }
+
   private renderEmptyState() {
+    const message = this.emptyMessage ?? COPY_EMPTY;
     return html`<div class="empty-row" part="empty-state">
-      <ds-text tone="muted">${COPY_EMPTY}</ds-text>
+      <ds-text tone="muted">${message}</ds-text>
     </div>`;
   }
 
@@ -1085,7 +1149,7 @@ export class DsTreeGrid extends LitElement {
   /* ---------- selection ---------- */
 
   private currentSelectedRows(): string[] {
-    return this.internalSelectedRows;
+    return this.selected ?? this.internalSelectedRows;
   }
 
   private rowCheckedState(vr: VisibleRow): { checked: boolean; indeterminate: boolean } {
@@ -1123,8 +1187,35 @@ export class DsTreeGrid extends LitElement {
     this.commitRowSelection(next);
   }
 
+  /** Shift+Space: extends the row selection from the last plain-Space anchor through the focused row, inclusive
+      (visible-row order); with `selectChildren` each row added to the range cascades its loaded descendants. */
+  private extendRowSelection(activeVr: VisibleRow, rows: VisibleRow[]): void {
+    const anchorId = this.selectionAnchorId ?? activeVr.row.id;
+    const anchorIndex = rows.findIndex((vr) => vr.row.id === anchorId);
+    const activeIndex = rows.findIndex((vr) => vr.row.id === activeVr.row.id);
+    if (anchorIndex === -1 || activeIndex === -1) {
+      return;
+    }
+    const [start, end] = anchorIndex <= activeIndex ? [anchorIndex, activeIndex] : [activeIndex, anchorIndex];
+    const next = new Set(this.currentSelectedRows());
+    for (const vr of rows.slice(start, end + 1)) {
+      if (vr.placeholder) {
+        continue;
+      }
+      next.add(vr.row.id);
+      if (this.selectChildren) {
+        for (const id of this.collectDescendantIds(vr.row)) {
+          next.add(id);
+        }
+      }
+    }
+    this.commitRowSelection([...next]);
+  }
+
   private commitRowSelection(next: string[]): void {
-    this.internalSelectedRows = next;
+    if (this.selected === undefined) {
+      this.internalSelectedRows = next;
+    }
     const total = this.visibleRows().filter((vr) => !vr.placeholder).length;
     this.liveMessage = COPY_SELECTED_ROWS(next.length, total);
     this.dispatchEvent(
@@ -1154,6 +1245,7 @@ export class DsTreeGrid extends LitElement {
   private handleSelectRowChange(event: CustomEvent<CheckboxChangeDetail>, vr: VisibleRow): void {
     event.stopPropagation();
     this.toggleRowSelection(vr);
+    this.selectionAnchorId = vr.row.id;
   }
 
   private commitCellSelection(cell: DataGridCellRef | null): void {
@@ -1186,6 +1278,51 @@ export class DsTreeGrid extends LitElement {
     this.liveMessage = COPY_SORTED_ANNOUNCEMENT(columnDef?.header ?? column, direction);
     this.dispatchEvent(new CustomEvent<TreeGridSortChangeDetail>('sort-change', { detail: next, bubbles: true, composed: true }));
   }
+
+  /* ---------- column resize ---------- */
+
+  private handleResizeStart(event: PointerEvent, column: DataGridColumn): void {
+    event.stopPropagation();
+    event.preventDefault();
+    const target = event.currentTarget as HTMLElement;
+    target.setPointerCapture(event.pointerId);
+    this.activeDrag = { column: column.key, pointerId: event.pointerId, startX: event.clientX, startWidth: this.columnWidth(column) };
+    target.addEventListener('pointermove', this.handleResizeMove);
+    target.addEventListener('pointerup', this.handleResizeEnd);
+  }
+
+  private readonly handleResizeMove = (event: PointerEvent): void => {
+    if (!this.activeDrag) {
+      return;
+    }
+    const column = this.columns.find((c) => c.key === this.activeDrag?.column);
+    const minWidth = column?.minWidth ?? MIN_COLUMN_WIDTH;
+    const delta = event.clientX - this.activeDrag.startX;
+    const width = Math.max(minWidth, this.activeDrag.startWidth + delta);
+    this.columnWidths = { ...this.columnWidths, [this.activeDrag.column]: width };
+  };
+
+  private readonly handleResizeEnd = (event: PointerEvent): void => {
+    const target = event.currentTarget as HTMLElement;
+    target.removeEventListener('pointermove', this.handleResizeMove);
+    target.removeEventListener('pointerup', this.handleResizeEnd);
+    const drag = this.activeDrag;
+    this.activeDrag = undefined;
+    if (!drag) {
+      return;
+    }
+    const width = this.columnWidths[drag.column];
+    if (width !== undefined) {
+      this.dispatchEvent(
+        new CustomEvent<TreeGridColumnResizeDetail>('column-resize', {
+          detail: { column: drag.column, width },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    }
+    this.requestUpdate();
+  };
 
   /* ---------- editing ---------- */
 
@@ -1258,7 +1395,7 @@ export class DsTreeGrid extends LitElement {
   /* ---------- layout ---------- */
 
   private columnWidth(column: DataGridColumn): number {
-    return column.width ?? column.minWidth ?? DEFAULT_COLUMN_WIDTH;
+    return this.columnWidths[column.key] ?? column.width ?? column.minWidth ?? DEFAULT_COLUMN_WIDTH;
   }
 
   private effectiveColumnKeys(): string[] {
@@ -1580,7 +1717,12 @@ export class DsTreeGrid extends LitElement {
         if (this.selectable === 'row') {
           event.preventDefault();
           if (activeVr && !activeVr.placeholder) {
-            this.toggleRowSelection(activeVr);
+            if (event.shiftKey) {
+              this.extendRowSelection(activeVr, rows);
+            } else {
+              this.toggleRowSelection(activeVr);
+              this.selectionAnchorId = activeVr.row.id;
+            }
           }
         }
         return;

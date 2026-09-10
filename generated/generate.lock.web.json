@@ -327,20 +327,19 @@
     }
   },
   "DatePicker.web": {
-    "hash": "82b8e0d6e69e22bc",
-    "lastAttemptHash": "82b8e0d6e69e22bc",
-    "generatedAt": "2026-09-10T15:48:50+00:00",
+    "hash": "98a60afe7a856ad9",
+    "lastAttemptHash": "98a60afe7a856ad9",
+    "generatedAt": "2026-09-10T23:08:56+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 4.2177,
+    "costUsd": 1.7041,
     "files": [
       "packages/react/src/DatePicker.css",
       "packages/react/src/DatePicker.stories.tsx",
-      "packages/react/src/DatePicker.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/DatePicker.tsx"
     ],
-    "gaps": 13,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -796,13 +795,13 @@
     }
   },
   "Search.web": {
-    "hash": "18e4bc0253dede5f",
-    "lastAttemptHash": "18e4bc0253dede5f",
-    "generatedAt": "2026-09-10T15:30:23+00:00",
+    "hash": "281f8595cf55e940",
+    "lastAttemptHash": "281f8595cf55e940",
+    "generatedAt": "2026-09-10T23:03:25+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.5758,
+    "costUsd": 0.4981,
     "files": [
       "packages/react/src/Search.css",
       "packages/react/src/Search.stories.tsx",
@@ -960,20 +959,19 @@
     }
   },
   "Stepper.web": {
-    "hash": "d50957a3bdaf3b12",
-    "lastAttemptHash": "d50957a3bdaf3b12",
-    "generatedAt": "2026-09-10T15:21:16+00:00",
+    "hash": "30803f4258284090",
+    "lastAttemptHash": "30803f4258284090",
+    "generatedAt": "2026-09-10T23:01:39+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.759,
+    "costUsd": 1.0114,
     "files": [
       "packages/react/src/Stepper.css",
       "packages/react/src/Stepper.stories.tsx",
-      "packages/react/src/Stepper.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Stepper.tsx"
     ],
-    "gaps": 6,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

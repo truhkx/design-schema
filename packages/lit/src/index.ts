@@ -56,6 +56,7 @@ import './Search.js';
 import './DatePicker.js';
 import './Toolbar.js';
 import './Carousel.js';
+import './Table.js';
 
 export { DsAccordion } from './Accordion.js';
 export type {
@@ -365,3 +366,22 @@ export type {
   CarouselChangeDetail,
   CarouselOverridableBinding,
 } from './Carousel.js';
+
+export { DsTable } from './Table.js';
+export type {
+  TableRow,
+  TableColumn,
+  TableColumnAlign,
+  TableColumnWidth,
+  TableColumnHideBelow,
+  TableSortDirection,
+  TableSort,
+  TableSelectable,
+  TableResponsive,
+  TableMaxHeight,
+  TableDensity,
+  TableSortChangeDetail,
+  TableSelectionChangeDetail,
+  TableRowPressDetail,
+  TableOverridableBinding,
+} from './Table.js';

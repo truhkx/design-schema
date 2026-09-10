@@ -907,6 +907,29 @@
       "modules": true
     }
   },
+  "Table.lit": {
+    "hash": "8148e113dc3bad63",
+    "lastAttemptHash": "8148e113dc3bad63",
+    "generatedAt": "2026-09-10T17:22:08+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 4.1792,
+    "files": [
+      "packages/lit/src/Table.stories.ts",
+      "packages/lit/src/Table.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 10,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Tabs.lit": {
     "hash": "14c406a1e8dc5f7f",
     "lastAttemptHash": "14c406a1e8dc5f7f",

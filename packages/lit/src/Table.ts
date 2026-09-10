@@ -9,6 +9,7 @@ import './Checkbox.js';
 import './Icon.js';
 import './Text.js';
 import type { CheckboxChangeDetail } from './Checkbox.js';
+import type { HeadingOverridableBinding } from './Heading.js';
 
 /** A single record. `id` must be stable across renders; it is what selection and keys use. */
 export interface TableRow {
@@ -30,7 +31,8 @@ export interface TableColumn {
   width?: TableColumnWidth;
   isRowHeader?: boolean;
   hideBelow?: TableColumnHideBelow;
-  /** Formats the cell. Lit templates (never raw HTML). Omitted on the row-header column enables the built-in row Button that fires `row-press`. */
+  /** Formats the cell. Lit templates (never raw HTML) — e.g. `<ds-text tone="muted">` for a secondary value
+      (`cellMutedColor`). Omitted on the row-header column enables the built-in row Button that fires `row-press`. */
   render?: (row: TableRow) => unknown;
 }
 
@@ -264,7 +266,7 @@ export class DsTable extends LitElement {
     }
 
     .sentinel {
-      block-size: 1px;
+      block-size: 1px; /* literal-ok: IntersectionObserver measurement sentinel, not a rendered size */
     }
 
     :host([max-height='viewport']) .wrapper {
@@ -277,13 +279,7 @@ export class DsTable extends LitElement {
       overflow-x: auto;
       scrollbar-width: none;
       /* mask-image alpha channel: opaque/transparent stops, not a color. literal-ok: mask alpha marker, not a color */
-      mask-image: linear-gradient(
-        to right,
-        transparent,
-        black var(--ds-table-scroll-fade),
-        black calc(100% - var(--ds-table-scroll-fade)),
-        transparent
-      ); /* literal-ok: mask alpha marker, not a color */
+      mask-image: linear-gradient(to right, transparent, black var(--ds-table-scroll-fade), black calc(100% - var(--ds-table-scroll-fade)), transparent); /* literal-ok: mask alpha marker, not a color */
     }
     .scroll-region::-webkit-scrollbar {
       display: none;
@@ -392,16 +388,13 @@ export class DsTable extends LitElement {
 
     .align-end {
       text-align: end;
-      font-family: var(--ds-table-numeric-font);
-      font-variant-numeric: tabular-nums;
     }
     .align-center {
       text-align: center;
     }
-
-    .cell-muted {
-      /* cellMutedColor: color.foreground.muted, locked */
-      color: var(--color-foreground-muted);
+    .numeric {
+      font-family: var(--ds-table-numeric-font);
+      font-variant-numeric: tabular-nums;
     }
 
     .empty-cell {
@@ -430,6 +423,7 @@ export class DsTable extends LitElement {
         display: none;
       }
 
+      /* visually hidden (clip pattern): thead stays in the tree, off-screen, so its columnheaders are still reachable */
       :host([responsive='stack']) thead {
         position: absolute;
         inline-size: 1px;
@@ -457,7 +451,7 @@ export class DsTable extends LitElement {
         display: block;
         padding: 0;
         border: 0;
-        box-shadow: none;
+        /* box-shadow is left alone: it is how the selected-row start-edge bar is drawn (see rowSelectedBorder) */
       }
 
       :host([responsive='stack']) tbody td[data-label]::before {
@@ -591,10 +585,7 @@ export class DsTable extends LitElement {
         aria-colcount=${colCount}
       >
         <caption id="caption" part="caption" class=${this.hideCaption ? 'visually-hidden' : ''}>
-          <ds-heading
-            part="caption-heading"
-            level="2"
-            .overrides=${{ fontSize: 'font.size.md', fontWeight: 'font.weight.semibold', marginBlockEnd: 'space.0' } as const}
+          <ds-heading part="caption-heading" level="2" size="md" .overrides=${this.captionOverrides}
             >${this.caption}</ds-heading
           >
         </caption>
@@ -660,9 +651,8 @@ export class DsTable extends LitElement {
       return nothing;
     }
     if (this.selectable === 'single') {
-      return html`<th role="columnheader" scope="col" part="select-all-cell">
-        <span class="visually-hidden">${COPY_SELECT_ALL}</span>
-      </th>`;
+      // No select-all in single mode; each row's own Checkbox already carries `copy.selectRow`.
+      return html`<th role="columnheader" scope="col" part="select-all-cell"></th>`;
     }
     const selected = this.currentSelected();
     const allSelected = rows.length > 0 && rows.every((row) => selected.includes(row.id));
@@ -680,14 +670,12 @@ export class DsTable extends LitElement {
   private renderColumnHeader(column: TableColumn) {
     const currentSort = this.currentSort();
     const direction = currentSort?.column === column.key ? currentSort.direction : undefined;
-    const hideBelow = column.hideBelow ? `hide-below-${column.hideBelow}` : '';
-    const align = column.align ? `align-${column.align === 'start' ? 'start' : column.align}` : '';
     return html`
       <th
         role="columnheader"
         scope="col"
         part="column-header"
-        class=${classMap({ [hideBelow]: Boolean(hideBelow), [align]: Boolean(align) })}
+        class=${this.headerCellClass(column)}
         abbr=${ifDefined(column.abbr)}
         aria-sort=${ifDefined(column.sortable ? (direction ?? 'none') : undefined)}
       >
@@ -756,18 +744,11 @@ export class DsTable extends LitElement {
   }
 
   private renderCell(column: TableColumn, row: TableRow, rowName: string, rowPressEnabled: boolean) {
-    const hideBelow = column.hideBelow ? `hide-below-${column.hideBelow}` : '';
-    const align = column.align ? `align-${column.align === 'start' ? 'start' : column.align}` : '';
     const content = column.render ? column.render(row) : String(row[column.key] ?? '');
 
     if (column.isRowHeader) {
       return html`
-        <th
-          role="rowheader"
-          scope="row"
-          part="row-header"
-          class=${classMap({ [hideBelow]: Boolean(hideBelow), [align]: Boolean(align) })}
-        >
+        <th role="rowheader" scope="row" part="row-header" class=${this.headerCellClass(column)}>
           ${rowPressEnabled
             ? html`<ds-button
                 class="row-header-button"
@@ -782,15 +763,26 @@ export class DsTable extends LitElement {
     }
 
     return html`
-      <td
-        role="cell"
-        part="cell"
-        class=${classMap({ [hideBelow]: Boolean(hideBelow), [align]: Boolean(align) })}
-        data-label=${column.header}
-      >
-        ${content}
-      </td>
+      <td role="cell" part="cell" class=${this.bodyCellClass(column)} data-label=${column.header}>${content}</td>
     `;
+  }
+
+  private headerCellClass(column: TableColumn): string {
+    return [
+      column.hideBelow ? `hide-below-${column.hideBelow}` : '',
+      column.align === 'end' ? 'align-end' : column.align === 'center' ? 'align-center' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  private bodyCellClass(column: TableColumn): string {
+    return [
+      column.hideBelow ? `hide-below-${column.hideBelow}` : '',
+      column.align === 'end' ? 'align-end numeric' : column.align === 'center' ? 'align-center' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
   }
 
   private sortButtonLabel(column: TableColumn, direction: TableSortDirection | undefined): string {
@@ -811,14 +803,14 @@ export class DsTable extends LitElement {
     if (this.sort !== undefined) {
       return this.data;
     }
-    const state = this.internalSort;
-    if (!state) {
+    const sortState = this.internalSort;
+    if (!sortState) {
       return this.data;
     }
-    const factor = state.direction === 'ascending' ? 1 : -1;
+    const factor = sortState.direction === 'ascending' ? 1 : -1;
     return [...this.data].sort((a, b) => {
-      const left = a[state.column];
-      const right = b[state.column];
+      const left = a[sortState.column];
+      const right = b[sortState.column];
       if (typeof left === 'string' && typeof right === 'string') {
         return left.localeCompare(right, undefined, { numeric: true }) * factor;
       }
@@ -923,6 +915,19 @@ export class DsTable extends LitElement {
       { root, threshold: 0 },
     );
     this.headerObserver.observe(this.sentinelEl);
+  }
+
+  /** `captionSize`/`captionWeight` overrides forwarded to the composed Heading; its own default weight and this
+      fixed `size="md"` already match the caption tokens, so nothing is forwarded unless the consumer overrides them. */
+  private get captionOverrides(): Partial<Record<HeadingOverridableBinding, TokenRef>> {
+    const result: Partial<Record<HeadingOverridableBinding, TokenRef>> = { marginBlockEnd: 'space.0' };
+    if (this.overrides?.captionSize) {
+      result.fontSize = this.overrides.captionSize;
+    }
+    if (this.overrides?.captionWeight) {
+      result.fontWeight = this.overrides.captionWeight;
+    }
+    return result;
   }
 
   private applyOverrides(): void {

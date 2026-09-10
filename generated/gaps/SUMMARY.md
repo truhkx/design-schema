@@ -1,6 +1,6 @@
-# Gap digest — phase Numeric
+# Gap digest — phase Rows
 
-Generated 2026-09-10T11:53 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T13:15 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -394,6 +394,42 @@ Doc: `site/src/content/docs/components/card.md`
 - **DOC** 'renders' scenarios only assert `container.firstChild` is non-null per the platform contract (no role on Card), so they don't verify heading level, inset, or surface actually applied — kept them literal to the schema-derived scenario list rather than expanding scope. → `site/src/content/docs/components/card.md`
 - **DOC** No demo file was requested/added; Card composes Button/Link/Stack/Text/Heading only inside stories, not a dedicated demo under packages/react/demo/. → `site/src/content/docs/components/card.md`
 - **DOC** Dev-only warning for `interactive` (wrong child count/type) checks `Children.count(children) !== 1 || !isValidElement(children)`; it doesn't verify the child is actually a Link or Button (can't reliably introspect arbitrary child types), so a single non-interactive child passes silently. → `site/src/content/docs/components/card.md`
+
+## Carousel
+
+Doc: `site/src/content/docs/components/carousel.md`
+
+### 2026-09-10 13:12 — web round 1
+
+- **DOC** Carousel: no play/pause glyph exists in the shared Icon set, so the play/pause control renders as a text-labeled `secondary` Button (copy.play/copy.pause) instead of an icon button; adding `play`/`pause` to IconName would let it match the prev/next arrow-button style. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: 'Previous and Next move one slide (or one page of perView)' is ambiguous between single-slide and per-page (perView) stepping; implemented single-slide stepping only (matches the singular copy.previous/copy.next text) — perView only affects how many slides are simultaneously visible/inert, not the arrow step size. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: doc says autoplay 'stops on hover, focus, touch, or the play/pause button; never restarts on its own after the user pauses it' — read literally, so hover/focus/touch pauses are also permanent (only the play button restarts it), unlike the common carousel convention where autoplay resumes after the pointer leaves. Flagging in case the intent was a temporary hover-pause. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: 'interval below 5000 is refused in development' — implemented as a hard floor of 5000ms in all environments (with a dev-only console.warn), not just a development-mode-only restriction, since always allowing faster rotation seemed like an accessibility risk. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: when not looping, autoplay reaching the last slide wraps back to the first rather than stopping — the doc doesn't say what an ambient, non-looping autoplay should do at the end. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: `picker: tabs`'s tab text falls back to the 1-based slide position when `CarouselSlide` has no `label`; the schema has no per-slide naming prop of its own (the Lit platform note's `heading` attribute isn't in the web props list), so `CarouselSlide.label` was added as the slide's short name for tabs/announcements. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the `transition` token (motion.duration.base) is applied to the dot's active/inactive color swap only — native scroll-snap slide movement is animated by the browser's own smooth-scroll timing (toggled instant under reduced motion via JS), which cannot be bound to a CSS easing/duration custom property. → `site/src/content/docs/components/carousel.md`
+
+### 2026-09-10 13:06 — lit round 1
+
+- **DOC** Carousel: composition maps prevButton/nextButton to Button, but the a11y.contrast pairs (`color.foreground` on `color.overlay.surface`) don't match any Button variant's own token pair (all variants use `color.action.*`), and restyling a composed child's shadow DOM is forbidden. Chose `variant="ghost"` (closest to a bare icon) wrapped in a `.control` div that supplies the `controlBackground`/`controlShadow`/`radius` surface behind it, so the surface shows through the ghost button's transparent background — an approximation, not the literal token pair. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: `pickerItem` (dots/tabs) isn't in the `composition` map, and the `dot`/`dotActive` locked tokens don't correspond to any Button token, so dots and tabs are implemented as plain native `<button>`s in Carousel's own shadow root rather than composed `<ds-button>`s, despite the web platform note's mention of 'Button ghost iconOnly' for dots. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: no breakpoint/prose-width token exists anywhere in the token set for 'fewer [slides] shown as the viewport narrows (one below the prose width)'. Implemented a single `@container` step (48rem) below which `perView` always collapses to 1, rather than a graduated per-step reduction — an approximation pending a real breakpoint token. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the `transition` binding (motion.duration.base) is described as timing 'slide movement', but slide movement is native scroll-snap scrolling via `scrollIntoView`, whose animation duration browsers don't expose as a CSS-controllable value. The hook is wired up (and used for the picker dot's active-color transition) but does not actually govern the scroll animation's speed. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: spec doesn't say whether `autoplay`'s automatic advance wraps past the last slide when `loop` is false. Chose to always wrap during autoplay ticks regardless of `loop` (so rotation doesn't silently freeze at the last slide), since 'ambient rotation' implies continuous cycling; `loop` still governs whether the Prev/Next buttons and Home/End wrap. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: 'Below 5000 is refused in development' is ambiguous between a dev-only warning vs. an always-enforced floor. Chose to enforce a 5000ms floor only when `import.meta.env.DEV` is true (matching the literal wording); production builds honor a shorter `interval` as given. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the tabs-picker's `aria-controls` references a slide `id` that lives in the light DOM from a `<button>` inside the shadow root — an IDREF that cannot cross the shadow boundary (same known limitation already accepted for `<ds-tabs>`'s `aria-controls`/`<ds-tab-panel>` in this codebase); kept for consistency with that precedent rather than treated as a new gap to fix. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: no play/pause icon exists in `IconName`, so the play/pause `Button` renders with only its text label (`copy.play`/`copy.pause`), not `icon-only` like the arrows — visually inconsistent with the arrow buttons until a play/pause glyph is added to Icon. → `site/src/content/docs/components/carousel.md`
+
+### 2026-09-10 13:01 — rn round 1
+
+- **DOC** Carousel: "Previous and Next move one slide (or one page of perView)" doesn't define page alignment, so Next/Prev/autoplay/swipe-detection all advance exactly one slide index at a time; perView only changes how many slides are visible at once (item width = viewport/perView), never the step size. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: styles.controlBackground (color.overlay.surface, locked) and controlShadow can't be applied to prevButton/nextButton directly — the composed Button has no plain 'background' override slot, and restyling a child is forbidden. Implemented as Button variant="ghost" (transparent) inside a small wrapper View that carries controlBackground/controlShadow and a radiusFull backdrop, so the 'overlaid arrows sit on a readable surface' intent is preserved without touching Button internals. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the play/pause control is rendered only when autoplay && !reducedMotion, since 'Starts only when the user has not asked for reduced motion' makes rotation permanently impossible under reduced motion — judged a visible-but-dead control worse than omitting it; a persistently-rendered disabled pause button may have been intended instead. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: 'stops on hover, focus, touch' — hover doesn't apply on native. Touch is handled (onTouchStart on the region, onScrollBeginDrag on the track). Focus-based pausing could only be wired for the hand-built picker items; prevButton/nextButton/playButton are composed Buttons with no onFocus prop exposed, so focusing them cannot pause autoplay. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: platforms.rn asks for accessibilityRole="adjustable" with increment/decrement actions on the region while also requiring prevButton/nextButton/picker to be individually reachable in tab order. Implemented without accessible={true} on the region so descendants stay individually focusable, with adjustable role/actions layered on as the documented swipe alternative — exact VoiceOver behavior for an adjustable-but-not-collapsed container is unverified. → `site/src/content/docs/components/carousel.md`
+- **DOC** CarouselSlide.heading is a plain string prop (not rendered) used only to build each slide's accessibility name and its tabs-picker label, since RN can't extract text from arbitrary children; the visible content must repeat its own heading (e.g. inside a Card), mirroring the web model's separate aria-label. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: snap=false only disables native paging/snapToInterval (scrolling/swiping still works); the spec only describes snap's 'on' behavior. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: non-loop autoplay that reaches the last page simply stops advancing (no bounce/reverse), since the spec doesn't define wrap-less autoplay's end behavior. → `site/src/content/docs/components/carousel.md`
 
 ## Checkbox
 
@@ -1419,6 +1455,25 @@ Doc: `site/src/content/docs/components/switch.md`
 
 Doc: `site/src/content/docs/components/test-failures.md`
 
+## Table
+
+Doc: `site/src/content/docs/components/table.md`
+
+### 2026-09-10 13:15 — rn round 1
+
+- **DOC** Column `width: 'auto'` vs `'min'` are not distinguished: RN has no text-measurement API without an extra layout pass, so both render as a fixed `space.20` width; only `width: 'fill'` (flex:1) is distinct. → `site/src/content/docs/components/table.md`
+- **DOC** `responsive: 'scroll'` at true phone widths (< layout.maxWidth.prose) has no effect — the platform notes say phones are always stacked; a `__DEV__` warning fires when this combination is requested. → `site/src/content/docs/components/table.md`
+- **DOC** True synced sticky row-header column for `responsive: scroll` is not implemented (no gesture-handler/reanimated dependency is permitted for a second synced list); the whole table scrolls horizontally together instead, with `stickyColumnShadow` toggled on the row-header cells once the region has scrolled as a partial visual approximation. → `site/src/content/docs/components/table.md`
+- **DOC** `Button` (the mandated `sortButton` composition) exposes only a single `label` prop with no separate accessible-hint slot, so `copy.sortAscending`/`copy.sortDescending` (the current-sort-state phrase) are exposed via an adjacent visually-hidden `Text` in the header cell rather than on the Button itself; the visible label stays the plain column header. → `site/src/content/docs/components/table.md`
+- **DOC** The phone-layout sort `Toolbar` needs a required, non-visible `label` (accessible name) but the schema has no copy template for it; constructed as `Sort ${caption}`. → `site/src/content/docs/components/table.md`
+- **DOC** `selectable: 'single'` toggles the row off when its own checkbox is pressed again (radio-like exclusivity otherwise) — the spec doesn't say whether re-clicking a selected single-select row should deselect it. → `site/src/content/docs/components/table.md`
+- **DOC** `transition` is resolved but not animated (no Animated.timing wired to it) — mirrors Card's documented rationale that there is no continuous hover on touch to animate between; sort-icon/hover changes are instant. → `site/src/content/docs/components/table.md`
+- **DOC** `scrollFade` is applied as horizontal edge padding on the `responsive: scroll` region rather than a gradient mask — there's no CSS mask-image equivalent, and adding an SVG gradient (as Toolbar's internal fade does) was judged not worth the complexity for a non-tested visual affordance. → `site/src/content/docs/components/table.md`
+- **DOC** The `footer` anatomy part has no corresponding prop anywhere in the schema (no footer content is described) and is not rendered. → `site/src/content/docs/components/table.md`
+- **DOC** The caption's `Heading` level is not specified by the schema (Table has no `headingLevel`-style prop); defaulted to level `2`. → `site/src/content/docs/components/table.md`
+- **DOC** `column.abbr` is accepted for shape parity with the web/Lit shape but has no native effect — RN has no equivalent to the web `abbr` attribute; the full `header` text is always both the visible label and the accessible name. → `site/src/content/docs/components/table.md`
+- **DOC** When no column has `isRowHeader: true`, `selectRow` falls back to the row's `id` for its accessible name, and `onRowPress` (if set) has no dedicated header cell to become a Button — this case isn't described in the schema. → `site/src/content/docs/components/table.md`
+
 ## Tabs
 
 Doc: `site/src/content/docs/components/tabs.md`
@@ -1509,6 +1564,44 @@ Doc: `site/src/content/docs/components/toast.md`
 - **DOC** The `id` prop on a directly-rendered `<Toast>` (outside the `toast()`/`ToastRegion` store) is just the native DOM id attribute; the 'same id replaces the previous toast' de-duplication only happens inside the store, so standalone Toast usage gets no replace semantics from `id` alone. → `site/src/content/docs/components/toast.md`
 - **DOC** F6 focus-restore keeps only one `previousFocusRef` at the ToastRegion level; if focus moves around by mouse between an F6 entry and a second F6 press, 'return to where focus was' returns to the most recent F6-recorded origin rather than tracking arbitrary intermediate focus changes. → `site/src/content/docs/components/toast.md`
 
+## Toolbar
+
+Doc: `site/src/content/docs/components/toolbar.md`
+
+### 2026-09-10 12:56 — web round 1
+
+- **DOC** overflow:menu says every control 'must provide overflowLabel', but no existing composed component (Button, SegmentedControl, Select, Switch) declares that prop, so it can't be passed without a TS error. actionFromElement() reads props.overflowLabel defensively at runtime and falls back to aria-label → label → string children → a generated id — works today only because Button/SegmentedControl expose `label`. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Collapsed controls only regain real behavior in the overflow Menu if they expose onClick (e.g. Button). SegmentedControl/Select/Switch use onChange with a value argument Toolbar can't reconstruct, so if one of those overflows into the Menu, its row renders but activating it is a silent no-op. There's no guidance in the schema on how (or whether) stateful controls should overflow at all. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Arrow-key hand-off to composite controls (SegmentedControl/RadioGroup) is implemented generically via `event.defaultPrevented` (Toolbar defers whenever an inner control already handled the key) rather than true edge-detection. In practice this means the whole Left/Right axis is permanently owned by a nested SegmentedControl (it never reaches an 'edge' since it wraps internally) — only the orthogonal Up/Down bubble to the Toolbar. Matches 'keep their own inner arrow keys' but not the more precise 'only when pointing out' wording. → `site/src/content/docs/components/toolbar.md`
+- **DOC** `size` is documented as 'passed to the child controls that accept it', but children are opaque ReactNode built by the consumer. Toolbar has no safe way to detect which child components accept `size` without importing every related component for identity checks, so it isn't forwarded — I only added a `ds-toolbar--size-{sm,md}` class (no current visual effect, since the schema's styles don't vary by size). Consumers must pass `size` to each child themselves. → `site/src/content/docs/components/toolbar.md`
+- **DOC** `ToolbarGroup` exists only in prose/notes, not in the schema's own anatomy/props. I invented its API (`label?`, `children`) as an exported sibling (mirroring `TabPanel`/`Tabs`); `label` doubles as its aria-label and its heading when it collapses into the overflow Menu — a guess with no schema backing. → `site/src/content/docs/components/toolbar.md`
+- **DOC** The `overflowButton` anatomy part has no dedicated data-part hook: it's Menu's own internal trigger Button, rendered by composition rather than by Toolbar directly. Only `overflowMenu` (the Menu root) carries a part hook. → `site/src/content/docs/components/toolbar.md`
+- **DOC** `focusRing`/`focusRingWidth` (locked) have no selector reading them in Toolbar.css — every focusable element belongs to a composed child that already owns its own focus ring, and restyling it would violate 'never restyle a child'. The hooks are declared on the root purely for the documented external-CSS escape hatch. → `site/src/content/docs/components/toolbar.md`
+- **DOC** overflow:menu measurement is a two-pass 'show everything, measure, then collapse' technique that fully remeasures on every resize (rather than incrementally); this can show a brief flash of all controls mid drag-resize in a real browser (usually invisible since React settles before paint). jsdom has no ResizeObserver, so tests only exercise the one-shot initial measurement — live resize reaction is unverified by the test suite. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Density's itemGap/itemGapCompact only applies between controls inside a ToolbarGroup; a bare (ungrouped) top-level control is spaced from neighbors by groupGap instead, since the schema doesn't specify how grouped vs. ungrouped spacing should mix. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Vertical-orientation behavior (Up/Down arrows, vertical scroll+mask direction) mirrors the horizontal implementation by construction but hasn't been visually verified in a real browser. → `site/src/content/docs/components/toolbar.md`
+
+### 2026-09-10 12:53 — lit round 1
+
+- **DOC** Toolbar: anatomy lists `overflowButton` and `overflowMenu` as separate parts, but composition maps them both to Menu (which already composes its own Button trigger internally). I rendered a single composed `<ds-menu part="overflow">` that fulfills both anatomy entries — there is no separate CSS part for just the trigger button. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the roving-tabindex/overflow candidate list is defined as every descendant carrying `data-ds` that is a direct child of the toolbar or one level inside a `<ds-toolbar-group>` (leaf controls are never descended into further). The doc's 'assigned elements' phrasing doesn't specify this recursion depth or how to avoid accidentally picking up a control's own slotted decorative children (e.g. an icon in a leading-icon slot); I chose 'stop descending at the first data-ds element' to avoid that. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: 'a control with its own arrow-key model keeps it — the toolbar hands the key to them when focus is inside' is only partly implemented. I skip the toolbar's own arrow handling entirely whenever focus is inside a SegmentedControl/RadioGroup or an open Menu, rather than detecting when focus is at that widget's edge pointing outward (which would require reaching into the composed child's internal state). So arrow keys never escape those widgets back into toolbar-level roving focus. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: `overflow: menu`'s collapse granularity operates on individual top-level controls (flattened across `ds-toolbar-group` wrappers), not whole groups as a unit — the doc's 'each control must provide overflowLabel' language doesn't say whether a group collapses atomically or its members collapse individually; I chose per-control so a partially-collapsed group is possible. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the reserved width/height set aside for the overflow trigger before it's known to be needed is approximated from the `--size-target-min` token read via `getComputedStyle`, since the trigger isn't rendered yet at that point and there's no schema-specified reservation amount. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: `groupGap` ('either side of a separator') is forwarded to the auto-inserted Divider's own `--ds-divider-spacing` hook, which adds *additional* margin around it on top of the uniform flex `itemGap`/`itemGapCompact` already applied by the container — so the true visual gap around a separator is itemGap+groupGap, not exactly groupGap, since flexbox `gap` can't isolate one pair of children. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: `size` is documented as 'passed to the child controls that accept it' with no propagation algorithm given. I implemented it as a one-time default (a control without its own `size` attribute is given the toolbar's, once, when first observed) rather than a continuous sync, and later changes to the toolbar's `size` prop do not revisit already-defaulted children. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: `focusRing`/`focusRingWidth` are locked style bindings in the schema, but in this implementation the host itself is never given a tabindex (real focus always lands on a slotted control, each with its own focus ring) — added a defensive `:host(:focus-visible)` rule using these tokens that should never actually trigger in normal use. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: `ToolbarGroup` (`<ds-toolbar-group>`) is named only in the Lit platform notes, not as its own schema component with documented props/styles, so its layout (gap forwarding, `data-vertical` for orientation) is inferred rather than specified. → `site/src/content/docs/components/toolbar.md`
+
+### 2026-09-10 12:46 — rn round 1
+
+- **DOC** Toolbar: `overflow: menu` has no RN equivalent — children are opaque ReactNode with no `overflowLabel` metadata and there's no ResizeObserver-equivalent to measure them, so `menu` renders the same scrollable row as `overflow: scroll` (with a __DEV__ warning); the `overflowButton`/`overflowMenu` anatomy parts (Button/Menu) are consequently not rendered on this platform. → `site/src/content/docs/components/toolbar.md`
+- **DOC** ToolbarGroup: named in the guidance and the web/Lit platform notes as the grouping wrapper, but has no schema of its own and isn't in the `composition` map (only separator/overflowButton/overflowMenu are). Implemented grouping instead as: placing a `Divider` child between clusters gets `groupGap` on both sides (vs. `itemGap`/`itemGapCompact` elsewhere) and is length-constrained to `separatorLength` via a wrapping View — no separate `ToolbarGroup` component was created. → `site/src/content/docs/components/toolbar.md`
+- **DOC** size: 'Passed to the child controls that accept it' has no defined mechanism for arbitrary ReactNode children, so `size` is injected via `React.cloneElement` on any child that doesn't already set its own `size` prop (same fallback pattern `Fieldset` uses for `disabled`); children with no `size` prop at all (e.g. `Switch`) silently receive and ignore it. → `site/src/content/docs/components/toolbar.md`
+- **DOC** keyboard model (roving tabindex, Arrow/Home/End navigation): RN's `Pressable` has no generic key-event API, so this is a web-only concern reachable through react-native-web, matching the same acknowledged limit already documented on `Tabs` and `Menu`. Native reachability is by swipe/scroll only. → `site/src/content/docs/components/toolbar.md`
+- **DOC** fadeWidth's 'gradient from the toolbar background to transparent' has no RN core primitive (no CSS mask-image); implemented with `react-native-svg`'s `LinearGradient` (the package's one sanctioned dependency, already used by `Icon`) rather than skipping the effect. → `site/src/content/docs/components/toolbar.md`
+- **DOC** paddingInline/paddingBlock are treated as fixed logical-CSS axes (inline = horizontal, block = vertical) independent of the `orientation` prop, matching Box's insetBlock/insetInline convention — the spec doesn't say whether they should rotate with a vertical toolbar's layout axis. → `site/src/content/docs/components/toolbar.md`
+
 ## Tooltip
 
 Doc: `site/src/content/docs/components/tooltip.md`
@@ -1549,7 +1642,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 749 · CODE: 39 · TOOLING: 2 · NOISE: 14
+DOC: 809 · CODE: 39 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

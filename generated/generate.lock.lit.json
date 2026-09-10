@@ -199,19 +199,19 @@
     }
   },
   "Carousel.lit": {
-    "hash": "8cdde6597be513e3",
-    "lastAttemptHash": "8cdde6597be513e3",
-    "generatedAt": "2026-09-10T17:06:48+00:00",
+    "hash": "d50987a36aed9173",
+    "lastAttemptHash": "d50987a36aed9173",
+    "generatedAt": "2026-09-10T22:56:49+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.7494,
+    "costUsd": 0.237,
     "files": [
       "packages/lit/src/Carousel.stories.ts",
       "packages/lit/src/Carousel.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -957,19 +957,19 @@
     }
   },
   "Table.lit": {
-    "hash": "8148e113dc3bad63",
-    "lastAttemptHash": "8148e113dc3bad63",
-    "generatedAt": "2026-09-10T17:22:08+00:00",
+    "hash": "82914677a142a3a1",
+    "lastAttemptHash": "82914677a142a3a1",
+    "generatedAt": "2026-09-10T22:58:03+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 4.1792,
+    "costUsd": 0.5232,
     "files": [
       "packages/lit/src/Table.stories.ts",
       "packages/lit/src/Table.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1047,19 +1047,18 @@
     }
   },
   "Toolbar.lit": {
-    "hash": "eeb1ca151b3a3054",
-    "lastAttemptHash": "eeb1ca151b3a3054",
-    "generatedAt": "2026-09-10T16:53:42+00:00",
+    "hash": "0271636d1b62efc2",
+    "lastAttemptHash": "0271636d1b62efc2",
+    "generatedAt": "2026-09-10T22:56:08+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.1149,
+    "costUsd": 0.3864,
     "files": [
       "packages/lit/src/Toolbar.stories.ts",
-      "packages/lit/src/Toolbar.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Toolbar.ts"
     ],
-    "gaps": 9,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,

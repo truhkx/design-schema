@@ -385,6 +385,7 @@ export type {
 export { DsTable } from './Table.js';
 export type {
   TableRow,
+  TableCaptionLevel,
   TableColumn,
   TableColumnAlign,
   TableColumnWidth,

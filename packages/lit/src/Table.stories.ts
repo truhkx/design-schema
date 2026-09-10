@@ -4,6 +4,7 @@ import './Table.js';
 import './Button.js';
 import './Icon.js';
 import type {
+  TableCaptionLevel,
   TableColumn,
   TableDensity,
   TableMaxHeight,
@@ -17,6 +18,7 @@ import type {
 
 interface TableArgs {
   caption: string;
+  captionLevel: TableCaptionLevel;
   hideCaption: boolean;
   columns: TableColumn[];
   data: TableRow[];
@@ -66,6 +68,7 @@ const meta: Meta<TableArgs> = {
     actions: { handles: ['sort-change', 'selection-change', 'row-press'] },
   },
   argTypes: {
+    captionLevel: { control: 'select', options: ['2', '3', '4'] },
     selectable: { control: 'select', options: ['none', 'single', 'multiple'] },
     responsive: { control: 'select', options: ['stack', 'scroll'] },
     maxHeight: { control: 'select', options: ['none', 'viewport'] },
@@ -77,6 +80,7 @@ const meta: Meta<TableArgs> = {
   },
   args: {
     caption: 'Open invoices',
+    captionLevel: '2',
     hideCaption: false,
     columns: invoiceColumns,
     data: invoiceRows,
@@ -91,6 +95,7 @@ const meta: Meta<TableArgs> = {
   render: (args) => html`
     <ds-table
       caption=${args.caption}
+      caption-level=${args.captionLevel}
       ?hide-caption=${args.hideCaption}
       .columns=${args.columns}
       .data=${args.data}
@@ -114,6 +119,11 @@ export default meta;
 type Story = StoryObj<TableArgs>;
 
 export const Default: Story = {};
+
+/* captionLevel */
+export const CaptionLevel2: Story = { args: { captionLevel: '2' } };
+export const CaptionLevel3: Story = { args: { captionLevel: '3' } };
+export const CaptionLevel4: Story = { args: { captionLevel: '4' } };
 
 /* selectable */
 export const SelectableNone: Story = { args: { selectable: 'none' } };

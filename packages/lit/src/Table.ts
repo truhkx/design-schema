@@ -43,6 +43,7 @@ export interface TableSort {
   direction: TableSortDirection;
 }
 
+export type TableCaptionLevel = '2' | '3' | '4';
 export type TableSelectable = 'none' | 'single' | 'multiple';
 export type TableResponsive = 'stack' | 'scroll';
 export type TableMaxHeight = 'none' | 'viewport';
@@ -475,6 +476,9 @@ export class DsTable extends LitElement {
   /** What the table lists ("Open invoices"). Rendered as the `<caption>` and the accessible name. */
   @property() caption!: string;
 
+  /** Heading level of the caption in the page outline; its size (`captionSize`) is fixed regardless. */
+  @property({ attribute: 'caption-level' }) captionLevel: TableCaptionLevel = '2';
+
   /** Visually hides the caption; it remains the accessible name. */
   @property({ type: Boolean, reflect: true, attribute: 'hide-caption' }) hideCaption = false;
 
@@ -585,7 +589,7 @@ export class DsTable extends LitElement {
         aria-colcount=${colCount}
       >
         <caption id="caption" part="caption" class=${this.hideCaption ? 'visually-hidden' : ''}>
-          <ds-heading part="caption-heading" level="2" size="md" .overrides=${this.captionOverrides}
+          <ds-heading part="caption-heading" level=${this.captionLevel} size="md" .overrides=${this.captionOverrides}
             >${this.caption}</ds-heading
           >
         </caption>

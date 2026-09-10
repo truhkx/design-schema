@@ -748,20 +748,20 @@
     }
   },
   "ProgressBar.web": {
-    "hash": "bcac08502380578d",
-    "lastAttemptHash": "bcac08502380578d",
-    "generatedAt": "2026-09-10T15:10:14+00:00",
+    "hash": "3c5d59b0788ffa74",
+    "lastAttemptHash": "3c5d59b0788ffa74",
+    "generatedAt": "2026-09-10T22:56:10+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7604,
+    "costUsd": 0.5912,
     "files": [
       "packages/react/src/ProgressBar.css",
       "packages/react/src/ProgressBar.stories.tsx",
       "packages/react/src/ProgressBar.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,

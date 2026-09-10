@@ -300,20 +300,19 @@
     }
   },
   "DataGrid.web": {
-    "hash": "3cb46a21aa942fd2",
-    "lastAttemptHash": "3cb46a21aa942fd2",
-    "generatedAt": "2026-09-10T18:12:49+00:00",
+    "hash": "cf5302eae3461a39",
+    "lastAttemptHash": "cf5302eae3461a39",
+    "generatedAt": "2026-09-10T23:16:23+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 4.1319,
+    "costUsd": 0.7675,
     "files": [
       "packages/react/src/DataGrid.css",
       "packages/react/src/DataGrid.stories.tsx",
-      "packages/react/src/DataGrid.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/DataGrid.tsx"
     ],
-    "gaps": 17,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

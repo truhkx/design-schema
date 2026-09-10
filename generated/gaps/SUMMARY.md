@@ -1,10 +1,28 @@
 # Gap digest — phase final
 
-Generated 2026-09-10T16:53 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T19:16 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
 Doc: `site/src/content/docs/components/accordion.md`
+
+### 2026-09-10 18:47 — rn round 1
+
+- **DOC** Accordion: `onChange` payload shape is unspecified beyond "the open ids"; emit `string[]` always (0/1 entries under `exclusive`) since the wording is plural, while `value`/`defaultValue` still accept a bare `string` for exclusive controlled convenience per the `value` prop's own description — the two props use slightly different shapes by design. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: `exclusive` + multi-id `defaultValue`/`value` isn't addressed by the spec; only the first id opens and a `__DEV__` warning fires for the uncontrolled case. → `site/src/content/docs/components/accordion.md`
+- NOISE: 3 repeated or empty line(s) collapsed
+
+### 2026-09-10 18:43 — web round 1
+
+- **DOC** Accordion: the guidance says "Accordion adds data-part=\"item\" to each Disclosure root it renders," but Disclosure's `...rest` props are spread onto its internal <button> trigger, not its outer root <div> — there is no prop Accordion can pass to land `data-part` on the Disclosure root without modifying Disclosure itself (out of scope for this generator). Left unimplemented; a wrapper div per item was rejected since it would break the flex-column layout that places Dividers as direct siblings. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: onOpenChange's `reason` enum includes `keyboard` (distinguishing Enter/Space from a pointer click), but Disclosure's trigger is a native <button>, so both activation methods dispatch as an ordinary click — the only signal available is `event.detail === 0`, which Disclosure already uses to report `keyboard` vs `pointer` on its own `onToggle`, but Accordion's `onOpenChange` collapses both into a single `trigger` reason since the schema only offers `trigger`/`exclusive`/`controlled`/`keyboard` and doesn't say whether `trigger` also covers keyboard activation. Kept as `trigger` for both, per the type's own doc comment. → `site/src/content/docs/components/accordion.md`
+- **CODE** Accordion: fixed a real bug while reviewing — controlled `value` with `exclusive` and multiple ids previously passed all ids through unfiltered (only `defaultValue` was truncated to the first id); now both paths call the same `resolveExclusiveIds` helper and warn in dev, matching the guidance's "the first is opened and a development warning notes the rest."
+
+### 2026-09-10 18:36 — lit round 1
+
+- **DOC** Accordion: `value`/`defaultValue` shape is `string | string[]` but the doc never states the empty/none representation for non-exclusive mode; treated an empty array (or empty string) as "nothing open" and `''` as the exclusive empty case in `toValue`/`toIdSet`. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the `items` prop's shape omits `content`'s Lit-specific representation beyond 'a slot per item on Lit'; implemented each item's panel content as a slot named after the item's `id`, requiring light-DOM `<div slot="id">` siblings alongside `items` — not spelled out in the schema, only inferable from the platform note. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: keyboard spec lists Enter/Space to toggle under `from: first` but the trigger is a native `<button>`, so Enter/Space activation is free via the browser's native click synthesis — no explicit handler needed; noting this since the derived keyboard tests may expect an explicit listener to exist. → `site/src/content/docs/components/accordion.md`
 
 ### 2026-09-10 10:22 — web round 1
 
@@ -33,6 +51,20 @@ Doc: `site/src/content/docs/components/accordion.md`
 ## ActionSheet
 
 Doc: `site/src/content/docs/components/actionsheet.md`
+
+### 2026-09-10 18:28 — rn round 1
+
+- **DOC** ActionSheet: schema names the prop `heading` (anatomy `heading`, copy `defaultLabel`) but the file on disk had it as `title`, and Menu.tsx (which composes ActionSheet for its phone-width presentation) passed `title={label}`; renamed the prop and updated Menu.tsx's two references so the package still typechecks — this is a cross-file consistency fix beyond ActionSheet.tsx itself. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: `dismissible` is a new prop in this spec pass with no prior implementation; gated scrim-tap, drag-to-dismiss, and the Cancel row (via Button's `disabled`, matching BottomSheet's close-button convention) on it, while Escape always reports through `onClose('escape')` regardless, per the prop's own description ('as in Dialog'). → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: anatomy now lists `handle`, matching the platform notes' 'the sheet has BottomSheet's handle and header'; added a non-interactive handle bar (`space.10`/`space.1`/`radius.full`/`color.foreground.muted`, same fixed values BottomSheet uses) since no binding exposes it as overridable or locked in the schema's styles list. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: added `headerPaddingBlock` (`space.sm`) as the schema now names it explicitly ('vertical padding of the header ... and of the cancel row'); applied it to both the header and the cancel row's vertical padding, replacing the previous ad hoc `t.spaceSm` comment. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the header's handle-to-heading gap and the header's horizontal alignment have no named binding in the schema (only `itemGap`, described as icon-to-label within a row); kept BottomSheet's own hardcoded `layoutGapTight` for that internal spacing, same as before. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: wide-screen Menu presentation above `maxWidth` remains unimplemented on RN (acknowledged in the existing doc comment) since the package's Menu always renders its own trigger and can't anchor to an external element — `maxWidth` stays a no-op override, unchanged from the prior implementation. → `site/src/content/docs/components/actionsheet.md`
+
+### 2026-09-10 18:13 — lit round 1
+
+- **DOC** ActionSheet: `dismissible`'s wide-screen (Menu) equivalent is unspecified — the doc says only 'clicking outside closes' for the wide presentation and doesn't say whether that outside-click close should be suppressed when dismissible is false. Kept it unconditional (mapped to reason 'escape', which the doc says always reports) since Menu has no scrim/cancel row to gate. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: anatomy lists 'handle' but a11y/copy give it no description; mirrored BottomSheet's implementation (aria-hidden decorative pill, color.foreground.muted) since the doc's own platform notes say 'the same 25%/1.5px/ms rule' as BottomSheet's drag gesture. → `site/src/content/docs/components/actionsheet.md`
 
 ### 2026-09-10 03:26 — lit round 1
 
@@ -65,6 +97,24 @@ Doc: `site/src/content/docs/components/actionsheet.md`
 
 Doc: `site/src/content/docs/components/alert.md`
 
+### 2026-09-10 17:54 — rn round 1
+
+- **CODE** Alert.tsx already existed and matched the spec almost entirely, except it was missing the `headingSize` overridable binding entirely — the heading reused the body's `fontSize` override, so overriding `fontSize` alone would incorrectly resize the heading too, and there was no way to size the heading independently. Added `headingSize` (default `font.size.md`) to `AlertOverridableBinding`, used it for the heading's font size and line height, and sized the icon-alignment cell off the heading's line height when a heading is present (falling back to the body's line height otherwise) since the schema doesn't specify which line the icon should align to when both exist.
+
+### 2026-09-10 17:47 — web round 1
+
+- **DOC** Alert: index.ts already exported Alert/AlertProps/AlertTone/AlertLive/AlertOverridableBinding from a prior generation round, so no index.ts change was needed this pass. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: `heading` is rendered as a `<p>` (not a heading element) per the web platform notes, so `a11y.requires: heading-hierarchy` from the generic ruleset doesn't apply here — the doc's own platform note overrides the generic rule and Alert's `a11y.requires` list doesn't include it either, so no gap in practice, just flagging the apparent tension. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: `target-24px` and `focus-visible` are satisfied by delegating to the composed system Button (ghost/sm/iconOnly) for the dismiss control rather than the Alert root itself having a target size or focus style of its own — the root has no interactive semantics. → `site/src/content/docs/components/alert.md`
+- **CODE** Alert: the pre-existing Alert.tsx/Alert.css were missing the `headingSize` binding entirely (schema lists it as overridable, distinct from `fontSize` used by the body) — added the `--ds-alert-heading-size` hook and applied it to `.ds-alert__heading`.
+- **CODE** Alert: the pre-existing root had no `aria-labelledby`, so the region had no accessible name from the heading/body per the web platform note ('named by the heading when present, otherwise the body element') — added `useId()`-based ids on the heading and body and wired `aria-labelledby` on the root accordingly.
+
+### 2026-09-10 17:41 — lit round 1
+
+- **DOC** Alert: the existing Alert.ts had no accessible-name implementation at all (no aria-labelledby/aria-label logic), despite the platform note requiring the region be named by the heading, else the body. Implemented it via ElementInternals.ariaLabelledByElements pointing at the rendered .heading/.body element where supported, falling back to a literal aria-label attribute (built from the target slot's flattened assignedNodes text) elsewhere — following the exact 'literal attribute, not internals.ariaLabel' precedent already established in Toast.ts, since ElementInternals.ariaLabel/role aren't read by the dom-accessibility-api test harness. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the spec's styles.icon description says the tone icon is colored by passing its token as `overrides.color` to the composed Icon ('the sanctioned way to color a composed child'), but the existing implementation (and the identical precedent in Toast.ts for its own locked `icon` binding) colors it via a `:host([tone=...]) .icon { color: ... }` rule relying on Icon's documented color-inheritance channel instead. Left this as-is for consistency with the established codebase convention rather than switching to an explicit `.overrides` object, since both are equally 'sanctioned' per the composition rule's 'or its documented --ds-<child>-* hook' clause. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: moveFocusOnward only ever searched for a focusable element after the alert in the document; the guidance requires falling back to the closest previous focusable element when none follows. Fixed to try forward first, then fall back to the nearest preceding candidate. → `site/src/content/docs/components/alert.md`
+
 ### 2026-09-10 01:57 — lit round 1
 
 - **DOC** Alert: the schema's spec text says the icon is 'drawn as a 1em inline shape until an Icon component exists', but ds-icon (with info/success/warning/danger status shapes and a close glyph) now exists in the package, so I composed <ds-icon> for both the tone icon and the dismiss button's glyph instead of hand-drawn SVG, per the generation rule to never draw icons by hand. → `site/src/content/docs/components/alert.md`
@@ -87,6 +137,23 @@ Doc: `site/src/content/docs/components/alert.md`
 ## AlertDialog
 
 Doc: `site/src/content/docs/components/alertdialog.md`
+
+### 2026-09-10 18:14 — rn round 1
+
+- **DOC** AlertDialog: the existing implementation used a prop named `title` instead of the schema's `heading`; renamed the prop (and stories/test args) to `heading` to match the schema and the sibling components' convention (Dialog, Alert) of avoiding `title` since it collides with a native HTML/RN attribute name. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: `iconSize` is listed as overridable in the schema but was missing from `AlertDialogOverridableBinding` and never forwarded to the tone Icon; added it and wired it through `Icon`'s `overrides.size`, following the exact pattern Alert.tsx uses for its own `iconSize` binding. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: `footerGap` was declared in the overridable-binding type but a comment claimed Stack had 'no override hook' and the override was silently dropped; Stack does accept `overrides.gap` (used by Dialog.tsx for the same seam), so wired `overrides?.footerGap` through to the footer Stack's `overrides` prop and removed the inaccurate comment. → `site/src/content/docs/components/alertdialog.md`
+
+### 2026-09-10 18:14 — web round 1
+
+- **DOC** AlertDialog: the file predated this schema revision and used `title` instead of `heading`, had no `container` portal-target prop, and had no `iconSize` overridable binding or data-part attributes on focusScope/heading/description/footer — renamed/added throughout AlertDialog.tsx/.css/.stories.tsx/.test.tsx to match, following the same pattern already applied to Dialog for the same schema drift. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: unlike the existing Dialog/Fieldset precedent (which declare a footerGap/fieldsGap root hook but leave it unwired, since Stack's `gap` prop was believed to have no override path), I forwarded `overrides.footerGap` into the composed Stack's own `overrides.gap` and confirmed in Stack.css that its per-value gap classes do read `var(--ds-stack-gap)`, so the inline override actually takes effect. Same treatment for `iconSize` → Icon's `overrides.size`, mirroring Alert's existing iconSize→Icon forwarding. This makes AlertDialog's forwarding functional where Dialog's is a documented no-op; worth reconciling Dialog/Fieldset to the same fix in a later pass. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: `container` (portal target) isn't in the schema's props table, but the platform overlay rule ('every overlay rendered through a portal accepts container?') and the existing Dialog precedent both call for it; added as an optional prop defaulting to document.body. → `site/src/content/docs/components/alertdialog.md`
+
+### 2026-09-10 18:02 — lit round 1
+
+- **DOC** AlertDialog: platform note says the shadow <dialog> should be named with aria-label/aria-description since 'ids do not cross the shadow boundary', but heading/description live inside the same shadow root as the dialog, so aria-labelledby="heading"/aria-describedby="description" (matching Dialog's own pattern) works and was kept instead of duplicating the strings into aria-label/aria-description. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: confirmDisabled maps to ds-button's `disabled` (matching the RN note's 'stays focusable' contract is not fully achievable on web since a disabled button is unfocusable); used plain `disabled` rather than `aria-disabled` since Button's own contract wasn't overridden here — flagged as a gap since the RN notes imply focusable-but-inert. → `site/src/content/docs/components/alertdialog.md`
 
 ### 2026-09-10 02:51 — lit round 1
 
@@ -139,6 +206,34 @@ Doc: `site/src/content/docs/components/alertdialog.md`
 
 Doc: `site/src/content/docs/components/bottomsheet.md`
 
+### 2026-09-10 18:25 — rn round 2
+
+- **DOC** BottomSheet: the typecheck gate requires the whole `rn` package to compile, which meant fixing four consumers (Combobox.tsx, DataGrid.tsx, Select.tsx, TreeGrid.tsx) still passing the old `title` prop to BottomSheet — renamed each to `heading` to match this component's current spec; none of them used the old `hideTitle`/`draggable` names so no further changes were needed there. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the drag gesture's dismiss threshold and release velocity aren't quantified for native; used 25% of measured sheet height (matching the web note's stated 25%) and 1.5 px/ms, with Animated.decay for post-release motion since the spec names no native mechanism for 'continues at the drag velocity'. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the RN notes say the ScrollView's scrollY-at-0 'hands the gesture to the pan responder,' implying the body can also start a drag-dismiss when scrolled to top. PanResponder is attached only to the header/handle, not the ScrollView, since arbitrating responder ownership between the two without a new gesture dependency is unreliable. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: there is no `initialFocus` prop (unlike Dialog), so focus placement on open relies entirely on FocusScope's default `autoFocus="first"`, which on native resolves to the scope's own wrapper rather than a real first-focusable descendant — the same acknowledged limit FocusScope documents for itself. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: `scroll-lock` (a11y.requires) has no native equivalent — no page scroll for a modal `Modal` to suppress — so it isn't implemented, matching Dialog's existing documented limitation. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: `accessibilityRole="dialog"` (a11y.role) is not set explicitly, matching the existing Dialog/AlertDialog implementations, which rely on `accessibilityViewIsModal` plus native `Modal` instead of RN's inconsistently-supported 'dialog' accessibilityRole value. → `site/src/content/docs/components/bottomsheet.md`
+- NOISE: 1 repeated or empty line(s) collapsed
+
+### 2026-09-10 18:24 — rn round 1
+
+- **DOC** BottomSheet: the drag gesture's dismiss threshold ('released past the threshold') and velocity aren't quantified for native; I used 25% of measured sheet height (matching the web note's stated 25%) and 1.5 px/ms release velocity, with Animated.decay for the post-release motion since the spec's 'continues at the drag velocity' names no native mechanism. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the RN notes say the ScrollView's scrollY-at-0 'hands the gesture to the pan responder,' implying the body itself can start a drag-dismiss when scrolled to top. I attached the PanResponder only to the header/handle, not the ScrollView, since arbitrating responder ownership between a ScrollView and a PanResponder without a new gesture dependency is unreliable — dragging must start on the header. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: there is no `initialFocus` prop on this component (unlike Dialog), so focus placement on open relies entirely on FocusScope's default `autoFocus="first"`, which on native resolves to the scope's own wrapper rather than a real first-focusable descendant — the same acknowledged limit FocusScope documents for itself. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: `accessibilityRole="dialog"` (a11y.role) is not set explicitly on the surface, matching the existing Dialog/AlertDialog implementations in this package, which rely on `accessibilityViewIsModal` plus the native `Modal` instead of RN's inconsistently-supported 'dialog' accessibilityRole value. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: renaming `title`/`hideTitle`/`draggable` to the current spec's `heading`/`hideHeading`/`dragToDismiss` breaks four existing callers outside this file's scope (Combobox.tsx, DataGrid.tsx, Select.tsx, TreeGrid.tsx) that still pass the old prop names — left unfixed as out of scope for a single-component regen; they need their own regen pass or a follow-up patch before `tsc` is clean package-wide. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the 5 behavior scenarios (renders x4, has-accessible-name) have no corresponding *.test.tsx in this package (unlike Dialog/AlertDialog/Menu) — no test file was in scope per the Output section, so scenario coverage is not yet automated for this component on RN. → `site/src/content/docs/components/bottomsheet.md`
+- NOISE: 1 repeated or empty line(s) collapsed
+
+### 2026-09-10 18:11 — lit round 1
+
+- **DOC** BottomSheet: platforms.lit.reflect lists `drag-to-dismiss` literally (non-negated), but `dragToDismiss` defaults to `true` — the package's own 'booleans that default to true' rule (used correctly for `dismissible` → `no-dismiss` right next to it in the same list) would call for `no-drag-to-dismiss` instead. Implemented the literal `drag-to-dismiss` form since it's explicit in the schema, but this means an author can't declaratively express `dragToDismiss=false` in static HTML (only via JS property or by omitting-then-toggling) — flagging the inconsistency rather than silently 'fixing' it. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: no `initialFocus` prop (unlike Dialog). Guidance only says focus moves 'to the first control or the title'; implemented Dialog's default chain (first focusable in body, else close button, else heading) with no way to configure it otherwise. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the `content` height's 90dvh viewport cap is scoped off for `half`/`full` (which set an explicit block-size instead) since the doc's `full` formula (`calc(100dvh - layout.gutter)`) would otherwise be clamped by a globally-applied cap — this scoping isn't stated explicitly in the doc. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: `drag-dismiss` has no described `detail` shape in the schema, so the CustomEvent carries none (`void`). → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: behavior when the viewport crosses the `maxWidth` breakpoint while `open` (a live resize mid-session) isn't specified — no animated hand-off between the sheet and Dialog presentations is implemented; the template swaps on next render and each presentation manages its own scroll-lock/focus independently. → `site/src/content/docs/components/bottomsheet.md`
+
 ### 2026-09-10 03:14 — lit round 1
 
 - **DOC** BottomSheet: the schema names the title prop `title`, but `title` is a native HTMLElement member (tooltip). Renamed to `heading` (property and attribute) to match the established Dialog/AlertDialog convention in this package rather than shadowing the native accessor; `hideTitle`/`hide-title` kept its schema name even though it now hides the `heading` field. → `site/src/content/docs/components/bottomsheet.md`
@@ -171,6 +266,11 @@ Doc: `site/src/content/docs/components/bottomsheet.md`
 ## Box
 
 Doc: `site/src/content/docs/components/box.md`
+
+### 2026-09-10 17:17 — rn round 1
+
+- **DOC** Box: no a11y.requires and role: none, so RN has nothing to implement beyond the View styling — no ambiguity. → `site/src/content/docs/components/box.md`
+- **DOC** Box: spec doesn't say whether border color is itself overridable separately from borderWidth; treated `border` override binding as the border color (colorBorder) and `borderWidth` as the width, consistent with the styles block listing both `border` (color.border) and `borderWidth` (border.width.thin) as separate overridable bindings. → `site/src/content/docs/components/box.md`
 
 ### 2026-09-10 00:52 — web round 1
 
@@ -246,6 +346,20 @@ Doc: `site/src/content/docs/components/box.md`
 
 Doc: `site/src/content/docs/components/breadcrumb.md`
 
+### 2026-09-10 17:58 — rn round 1
+
+- **DOC** Breadcrumb (rn): focus-after-expand targets the View wrapping the first revealed item via AccessibilityInfo.setAccessibilityFocus, not the Link/Text itself — RN Text-based links have no reliable native focus target, so the container View is used as the closest available proxy; acceptable given the docs' acknowledged limit that Text/Link has no focus events on native, but flagging the choice. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb (rn): onNavigate's third `event` parameter from the schema's platform-neutral description does not exist on native (schema explicitly says 'on native there is no event, the handler is the navigation'), so the RN signature is (item, index) only — not a discrepancy, just noting the platform divergence is intentional per spec. → `site/src/content/docs/components/breadcrumb.md`
+
+### 2026-09-10 17:49 — web round 1
+
+- **DOC** Breadcrumb: `itemColor` (color.foreground.muted, for an ancestor without href) was previously wired to the same CSS hook as `currentColor` (color.foreground); added a separate `--ds-breadcrumb-item-color` hook so the two locked bindings are independently themeable/contrast-checkable as the schema lists them distinctly. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: spec doesn't say whether the ellipsis button needs its own override-hook-bearing class; kept the existing `ds-breadcrumb__expand` marker class with no CSS rules (Button styles itself), since giving it real rules would count as restyling a composed child. → `site/src/content/docs/components/breadcrumb.md`
+
+### 2026-09-10 17:46 — lit round 1
+
+- **DOC** Breadcrumb: platforms.lit.reflect lists `collapse` un-negated even though its default is `true`; the package-wide boolean convention says a true-default boolean should reflect a negated attribute (e.g. `no-collapse`) since a present boolean attribute can't express `false` via raw HTML. Followed the explicit spec (`reflect: - collapse`, 'never change the doc's prop name') and kept the property/attribute named `collapse`, but a consumer writing `<ds-breadcrumb collapse="false">` in static HTML (not a Lit template) will still get `collapse=true`. Flagging for the doc to reconcile. → `site/src/content/docs/components/breadcrumb.md`
+
 ### 2026-09-10 02:01 — lit round 1
 
 - **DOC** Breadcrumb (lit): the ellipsis button used a hand-drawn inline `<svg>` three-dot glyph instead of the system `ds-icon`; swapped for `<ds-icon name="ellipsis" inline>`, which already exists in the shared icon set. → `site/src/content/docs/components/breadcrumb.md`
@@ -264,6 +378,24 @@ Doc: `site/src/content/docs/components/breadcrumb.md`
 ## Button
 
 Doc: `site/src/content/docs/components/button.md`
+
+### 2026-09-10 17:21 — rn round 1
+
+- **DOC** Button: existing Button.tsx predated the current schema's `expanded`, `accessibleName` and `overflowLabel` props (present in the Lit implementation but missing here). Added them: `expanded` maps to `accessibilityState.expanded` (omitted, not `false`, when undefined); `accessibleName` overrides `accessibilityLabel` (falls back to `label`); `overflowLabel` is declared on the type only, since it's data read by a collapsing Toolbar parent, not rendered by Button itself. → `site/src/content/docs/components/button.md`
+- **DOC** Button: Menu.tsx, Popover.tsx and Toolbar.tsx contain doc comments asserting 'Button has no hook to carry accessibilityState.expanded' / 'no overflowLabel metadata' as acknowledged native limits. That's now stale for `expanded` (Button supports it) and for `overflowLabel` on Menu/Popover triggers specifically, though Toolbar's overflow:menu limitation is separately caused by the lack of a ResizeObserver equivalent, not by the missing prop. Left those files untouched since this task scopes to Button only — a follow-up pass should revisit whether Menu/Popover triggers now wire up `expanded`. → `site/src/content/docs/components/button.md`
+- **DOC** Button: no Button.test.tsx exists yet; the behavior-scenario-to-test rollout (tracked separately) hasn't reached Button, so no test file was added — stories cover the 12 scenarios' renders/props instead. → `site/src/content/docs/components/button.md`
+
+### 2026-09-10 17:21 — web round 1
+
+- **DOC** Fixed a spec deviation: `loading` was not hiding `trailingIcon` per the schema ('hides trailingIcon'); trailingIcon now only renders when not loading. → `site/src/content/docs/components/button.md`
+- **DOC** `expanded` (schema prop mapping to aria-expanded) is implemented by leaving `aria-expanded` un-omitted from the native `ComponentPropsWithoutRef<'button'>` passthrough rather than adding a dedicated `expanded` boolean prop — existing composed callers (Popover, Menu, Disclosure, SidePanel, Combobox, Search) already pass `aria-expanded` directly this way, so I kept that established convention instead of introducing a second, redundant prop. → `site/src/content/docs/components/button.md`
+- **CODE** Button already existed with variant/size/type/disabled/iconOnly/loading/inverse/track fully implemented; added the two schema props that were missing entirely: `accessibleName` (overrides aria-label, falls back to iconOnly's label-as-name behavior) and `overflowLabel` (plain data prop, read by Toolbar.tsx's overflow-collapse logic via element.props, not rendered by Button itself).
+
+### 2026-09-10 17:17 — lit round 1
+
+- **DOC** Menu.ts's trigger sets a raw `aria-expanded` attribute directly on the `<ds-button>` host element rather than setting the new `expanded` property — that attribute doesn't forward into the shadow-DOM `<button>`, so it currently has no effect on the accessible state. Out of scope for this Button-only pass; flagging so Menu (and any other disclosure parent: Popover, SidePanel, Disclosure) can be updated to use `.expanded=` instead. → `site/src/content/docs/components/button.md`
+- **DOC** IconOnly story previously drew a hand-typed Unicode '✕' glyph in the leading-icon slot, violating the 'never draw a Unicode glyph by hand' rule; replaced with `<ds-icon name="close">`. → `site/src/content/docs/components/button.md`
+- **CODE** Button: schema lists `expanded`, `accessibleName`, and `overflowLabel` props and a `spinnerStroke` overridable binding that the pre-existing Button.ts didn't implement; added them (expanded as a non-reflected, attribute:false boolean since it's a tri-state undefined/true/false set by disclosure parents via JS property, not a plain HTML attribute; accessibleName maps to aria-label taking priority over the iconOnly fallback; overflowLabel is a plain data prop for Toolbar to read, with no rendering effect in Button itself).
 
 ### 2026-09-10 01:12 — rn round 1
 
@@ -295,6 +427,25 @@ Doc: `site/src/content/docs/components/button.md`
 ## Card
 
 Doc: `site/src/content/docs/components/card.md`
+
+### 2026-09-10 17:42 — rn round 1
+
+- **DOC** Card: the schema's `focusable` prop (tabindex=-1 scripted focus, own ring) was entirely missing from the previously-generated Card.tsx despite being in the current schema and despite Feed already composing Card — added it now. Implemented as: `React.forwardRef<View, CardProps>` exposing the root's native View (RN's `NativeMethods.focus()/.blur()`) so a container can move focus to it by script; `tabIndex={-1}` on the root, which is a real DOM tabIndex=-1 (scriptable, no tab stop) under react-native-web where this package's stories/tests run, but on native Android RN's own `tabIndex` typing documents `-1` as simply not-focusable, so the 'scriptable via -1' semantics are a react-native-web-only guarantee, not a cross-platform one. → `site/src/content/docs/components/card.md`
+- **DOC** Card: RN core's `View` TypeScript type has no `onFocus`/`onBlur` (Flow types support them; DataGrid/Tree instead use `Pressable`, which is typed, for focus tracking) even though the runtime and react-native-web support them — added a local `FocusableViewProps` cast (`View as unknown as ForwardRefExoticComponent<...>`) rather than reaching for `any`, but this means the ring-drawing half of `focusable` is only verified to work on react-native-web, not asserted against real native builds. → `site/src/content/docs/components/card.md`
+- **DOC** Card: no component in this package currently calls the new ref to drive scripted focus — Feed.tsx (the consumer the schema names: 'so a container (Feed) can move focus to it by script') renders a native FlatList with no equivalent of the web doc's PageUp/PageDown scripted-paging interaction, so `focusable` is wired up (prop, ref, ring) but has zero current callers on this platform. Wiring Feed itself to use it was out of scope for this Card-only generation pass. → `site/src/content/docs/components/card.md`
+- **DOC** Card: added a `__DEV__` warning when `interactive` and `focusable` are both set (interactive wins, focusable is a no-op) since the schema doesn't say what should happen for that combination — treated it as a documented no-op rather than a runtime error, matching the codebase's existing soft-guard style (e.g. the interactive child-count warning already in this file). → `site/src/content/docs/components/card.md`
+- **DOC** Card: no behavior-scenario test covers `focusable` (the 11 generated scenarios predate this prop), so its addition is untested by the generated Card.test.tsx; only manually verified via `tsc --noEmit` and the existing 11 `renders: true` tests, which still pass unchanged. → `site/src/content/docs/components/card.md`
+
+### 2026-09-10 17:33 — web round 1
+
+- **DOC** Card: the existing Card.tsx/Card.css (generated in an earlier round) omitted the `focusable` prop entirely — added tabIndex={focusable ? -1 : undefined}, a `ds-card--focusable` modifier class, and a `:focus-visible` ring rule reusing the same locked focusRing/focusRingWidth hooks as `interactive`; no story existed to demonstrate it either, so I added `Focusable`. → `site/src/content/docs/components/card.md`
+- **DOC** Card: spec doesn't say whether `interactive` and `focusable` can be combined (e.g. a Feed item that is both a link-card and scriptable-focus target); left them orthogonal (independent classes/attributes) since nothing forbids it, but didn't add a dev warning for the combination. → `site/src/content/docs/components/card.md`
+
+### 2026-09-10 17:28 — lit round 1
+
+- **DOC** Card: `focusable` is a boolean prop but is absent from `platforms.lit.reflect` (which lists only inset, surface, interactive, heading-level), unlike `interactive` which is boolean and reflected. Followed the explicit reflect list literally and left `focusable` non-reflecting (still a real boolean attribute via the default Lit boolean converter, just not reflected back to the DOM), but this is inconsistent with the general 'booleans get reflect: true' convention stated elsewhere and may be a doc omission. → `site/src/content/docs/components/card.md`
+- **DOC** Card: a11y.role is declared as `none` at the schema level, but platforms.web notes require an `article` role labelled by the heading when `heading` is set. Implemented per the web notes (role toggles article/none via ElementInternals) since platform notes are more specific than the generic a11y block; flagging in case `role: none` was meant to apply uniformly. → `site/src/content/docs/components/card.md`
+- **DOC** Card: no behavior scenario exercises `focusable` (all 11 scenarios only cover renders/headingLevel/inset/surface), so its tabindex/:focus-visible behavior has no generated test coverage — only a manual `FocusableTrue` story was added. → `site/src/content/docs/components/card.md`
 
 ### 2026-09-10 01:26 — lit round 1
 
@@ -399,6 +550,18 @@ Doc: `site/src/content/docs/components/card.md`
 
 Doc: `site/src/content/docs/components/carousel.md`
 
+### 2026-09-10 19:12 — web round 1
+
+- **DOC** Carousel: 'Under reduced motion the play/pause control is not rendered' was not implemented in the existing generated file (button showed whenever autoplay was true); fixed by gating rendering on !prefersReducedMotion() in addition to autoplay, matching the pattern already used elsewhere in this file for scroll behavior. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: 'Below layout.maxWidth.prose perView collapses to one' was missing from the existing CSS; implemented as a `@container (max-width: 572px)` rule forcing `.ds-carousel__slide { flex-basis: 100% }`, duplicating the prose breakpoint as a literal (container queries can't read custom properties) — the same convention already used in Table.css for its hideBelow breakpoints. → `site/src/content/docs/components/carousel.md`
+- **CODE** Carousel.tsx/.css/.stories.tsx/.test.tsx and the index.ts export already existed from a prior generation round (see generated/gaps/Carousel.web.md, round 1) with gaps already on record for: no play/pause icon in the shared Icon set, single-slide vs per-page arrow stepping, permanent vs temporary hover/focus/touch pause, hard interval floor in all environments (not just dev), non-looping autoplay wrapping at the end, and CarouselSlide.label as an added prop for tabs/announcements — none of those were re-litigated here since the doc hasn't changed.
+
+### 2026-09-10 18:56 — lit round 1
+
+- **DOC** Carousel: schema gives no explicit rule for how `loop` interacts with `autoplay` at the last slide when `loop` is false; the doc's Behavior section says autoplay stops at the last slide without loop, but doesn't say whether it should hold there or need `loop` semantics for the tick itself — implemented autoplay's tick as always wrapping modulo total regardless of `loop`, and disabled autoplay entirely once total <= 1, treating this as the more literal reading of 'stops at the last slide' (does not advance past it) while still requiring a wrap eventually since the doc's ambient-photo use case implies continuous rotation; documented via inline comment rather than silently guessing. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: `perView` narrowing to 1 'below the prose width' is implemented as a CSS container query at 48rem against the viewport's own inline size (container-type: inline-size) rather than `layout.maxWidth.prose`'s exact token value, since the schema does not expose that token's pixel/rem value directly to a component-level CSS file — used the nearest reasonable rem approximation. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the schema's `platforms.web` notes describe the picker `dots` variant as `Button ghost iconOnly` composed buttons, but the lit platform notes only say IntersectionObserver + slotted track, with no instruction on whether the lit picker's dot/tab items should be composed `ds-button` or the component's own plain `<button>`; the guidance section states 'Picker items are Carousel's own buttons, not the Button component,' which the lit file follows (plain `<button class="dot">`/`<button class="tab">`) — flagging since the web platform note contradicts this guidance line for the web React version, but lit correctly follows the guidance's plain-button instruction. → `site/src/content/docs/components/carousel.md`
+
 ### 2026-09-10 13:12 — web round 1
 
 - **DOC** Carousel: no play/pause glyph exists in the shared Icon set, so the play/pause control renders as a text-labeled `secondary` Button (copy.play/copy.pause) instead of an icon button; adding `play`/`pause` to IconName would let it match the prev/next arrow-button style. → `site/src/content/docs/components/carousel.md`
@@ -435,6 +598,18 @@ Doc: `site/src/content/docs/components/carousel.md`
 
 Doc: `site/src/content/docs/components/checkbox.md`
 
+### 2026-09-10 17:44 — rn round 1
+
+- **DOC** Checkbox: added a `HideLabel` story since Storybook convention requires one per enum/notable-state prop and none existed; used Input's `HideLabel` story as the naming/shape template since the schema gives no example props for a Table selection-column use case. → `site/src/content/docs/components/checkbox.md`
+- **CODE** Checkbox: the file and its index.ts export already existed from a prior generation pass and matched the spec closely; the only omission was the `hideLabel` prop. Implemented it by following Input.tsx's established RN convention — the label Text node is not rendered, and `accessibilityLabel` (always set to `visibleLabel`) continues to carry the accessible name — since the spec doesn't give an RN-specific rendering for hideLabel beyond 'visually hide'.
+
+### 2026-09-10 17:39 — web round 1
+
+- **DOC** Checkbox: the existing Checkbox.tsx/.css/.stories.tsx (from a prior generation pass) were missing the `hideLabel` prop entirely, despite it being a required schema prop with its own a11y contract (label stays the accessible name via the standard visually-hidden clip pattern, matching Input's `ds-input__visually-hidden`). Added the prop, the `ds-checkbox__visually-hidden` CSS class, and a `HideLabel` story. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the root was also missing `data-ds-field`, which the package convention requires on every field component so Form can discover fields by attribute (Input.tsx already has it). Added it alongside the existing `data-ds="Checkbox"`. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: Table.tsx's selection-column and select-all Checkbox usages (packages/react/src/Table.tsx:444, :515) are exactly the case the schema calls out for `hideLabel` ('a selection column in a Table, where the row name is the label') but don't pass it, so the row/column name is currently rendered as visible checkbox label text next to each row. Left Table.tsx unchanged since it's outside this Checkbox-generation task's scope — flagging for a follow-up pass on Table. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: no Checkbox.test.tsx was generated for the 15 behavior scenarios; the current generation prompt's Output section only calls for Checkbox.tsx and Checkbox.stories.tsx, and per project memory the behavior-scenario test rollout is being done target-by-target separately (Switch, Box, Card, Container so far) and hasn't reached Checkbox yet. → `site/src/content/docs/components/checkbox.md`
+
 ### 2026-09-10 01:45 — rn round 1
 
 - **DOC** Checkbox: the existing file predated the package's overrides contract (no `overrides` prop, no `CheckboxOverridableBinding`) and drew the checkmark as a raw Unicode '✓' Text glyph and a hand-drawn dash View. Icon.tsx's own docstring explicitly names 'the check in a Checkbox' as a supported use case and calls the Unicode approach 'retired', so rewrote to use `<Icon name="check"/"dash">` with `color=colorControlSelectedForeground` and `overrides.strokeWidth` forwarding the `indicatorStroke` binding, and added the full overrides contract following Box/Button/Input's established pattern. → `site/src/content/docs/components/checkbox.md`
@@ -457,6 +632,35 @@ Doc: `site/src/content/docs/components/checkbox.md`
 ## Combobox
 
 Doc: `site/src/content/docs/components/combobox.md`
+
+### 2026-09-10 18:46 — rn round 1
+
+- **DOC** Combobox: no open/defaultOpen prop in the schema, so the Keyboard story ships closed with ≥3 options rather than pre-opened. → `site/src/content/docs/components/combobox.md`
+- **DOC** allowCustom: copy.addCustom row is implemented as a sentinel-prefixed synthetic ListboxOption prepended to Listbox's options, since Listbox has no injected-action-row concept. → `site/src/content/docs/components/combobox.md`
+- **DOC** Keyboard model: Listbox rows are touch Pressables with no key-event API, so ArrowDown/ArrowUp/Home/End/Alt+ArrowDown have no native equivalent; Enter only commits typed custom text; Escape only fires via onKeyPress (hardware keyboard/react-native-web only); Tab's non-commit behavior has no native hook, blur-closes instead. → `site/src/content/docs/components/combobox.md`
+- **DOC** Platform notes mention chips 'in the sheet header' but BottomSheet's API has no header slot, so chips + TextInput render at the top of the sheet body instead. → `site/src/content/docs/components/combobox.md`
+- **DOC** Phone closed-field summary shows chips read-only with no remove/clear button (nesting Pressables would conflict); removal/clearing only available once the sheet is open. → `site/src/content/docs/components/combobox.md`
+- **DOC** Loading row and empty/no-matches row are both modeled through Listbox's single emptyMessage slot, since Listbox has no separate loading-row concept. → `site/src/content/docs/components/combobox.md`
+- **DOC** Tablet/react-native-web popup Modal deliberately does not focus-trap (unlike Select/Menu/Dialog), since focus must stay in the text input per the APG combobox model. → `site/src/content/docs/components/combobox.md`
+- **DOC** Added a 'Done' copy string for the BottomSheet footer under multiple, not present in the schema's copy block (same addition Select's RN generation makes). → `site/src/content/docs/components/combobox.md`
+- **DOC** Result-count/loading/empty announcements use AccessibilityInfo.announceForAccessibility on both iOS and Android, unlike the iOS-only gating used elsewhere for error announcements, since the spec doesn't distinguish platforms here. → `site/src/content/docs/components/combobox.md`
+
+### 2026-09-10 18:41 — web round 1
+
+- **DOC** Combobox: keyboard spec is internally contradictory between the Home/End entry's prose ('Alt+ArrowDown/Up jump to first/last') and the dedicated Alt+ArrowDown entry ('opens without moving active option'); implemented the dedicated entry literally, no Alt+ArrowUp binding and no jump-to-first/last. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: 'keydown forwarded to the Listbox handler so DOM focus never leaves the input' has no supporting Listbox API for external control; implemented by dispatching a native bubbling KeyboardEvent at the mounted Listbox DOM node (queued until mount). → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: 'opens with no active option' after each filtering keystroke is enforced by remounting the Listbox via a `key` bump per keystroke (skipped for filter:none, which never filters). → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: for filter:none, spec says typing should typeahead-jump the active option; not implemented — typing under filter:none only opens the list, ArrowDown/ArrowUp still move it. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: 'toggle button opens the full list' implemented as a one-shot bypass of the typed-text filter rather than clearing the typed text, since the spec doesn't say the toggle clears input. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: chip label truncation (~20 chars) implemented via CSS ellipsis with no fixed character/width cap, since no style binding defines one. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: custom-entry dedup compares normalized typed text against both option value and label; spec doesn't specify which field(s). → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: initial input text for an uncontrolled single-select with defaultValue/value is derived from the matching option's label; the schema doesn't say whether the input should show the label on mount vs. staying empty. → `site/src/content/docs/components/combobox.md`
+
+### 2026-09-10 18:36 — lit round 1
+
+- **DOC** Combobox: `platforms.web.notes` specifies the live-region debounce as ~500ms and separately the guidance section states it should be `motion.duration.base × 2`; the implementation uses a literal 500ms constant (STATUS_DEBOUNCE_MS) rather than a token, since interaction-timing debounce is not one of the listed style bindings — flagged in-code as a deliberate deviation from the doc's `motion.duration.base × 2` wording. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `open` is documented as a controlled prop under `props.open` but is not listed in `platforms.lit.reflect`; the implementation omits it entirely as a public property (popup open/closed state is fully internal, driven by typing/toggle/Escape/Tab) since the keyboard model gives no explicit programmatic-open contract the way Select's `open` prop does — the Keyboard story opens the popup via a simulated toggle-button click instead of setting a prop. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `native member collision` guidance and `Select`'s existing `size` reflected attribute pattern were used as precedent for how `SelectSize` should be exported (unrelated house-keeping fix already present in index.ts, not part of this Combobox generation). → `site/src/content/docs/components/combobox.md`
 
 ### 2026-09-10 10:13 — web round 1
 
@@ -497,6 +701,17 @@ Doc: `site/src/content/docs/components/combobox.md`
 ## Container
 
 Doc: `site/src/content/docs/components/container.md`
+
+### 2026-09-10 17:34 — rn round 1
+
+- **DOC** No token exists for a 'none' gutter or a 'full' max-width, and no layoutMaxWidthFull/zero-gutter token is named in the spec — used a literal 0 for gutter:none padding and simply omit maxWidth for width:full, per the doc's 'renders no max-width'/'renders no padding' language. → `site/src/content/docs/components/container.md`
+- **DOC** Container has no interaction or a11y role to assert, so all 11 behavior scenarios collapse to a 'renders: true' check per given-prop combination, matching Box's derived-only test shape. → `site/src/content/docs/components/container.md`
+- **DOC** The element prop is scoped to web/lit only in the schema, so it's absent from ContainerProps entirely on RN, inferred from Box's identical pattern rather than stated verbatim. → `site/src/content/docs/components/container.md`
+
+### 2026-09-10 17:32 — web round 1
+
+- **DOC** Container: schema doesn't specify whether `align: start` clears margin-inline entirely or just the inline-start side; chose margin-inline: 0 (both sides), matching Box/Card sibling-spacing convention. → `site/src/content/docs/components/container.md`
+- **DOC** Container: `full` width intentionally emits no --ds-container-max-width hook (falls back to `none`) rather than a literal value, per the 'a resolved path ending in a no-op renders nothing' rule — worth confirming this is the intended reading for `width` (not just background/border/max-width bindings named in the general rule). → `site/src/content/docs/components/container.md`
 
 ### 2026-09-10 01:19 — web round 1
 
@@ -589,6 +804,28 @@ Doc: `site/src/content/docs/components/container.md`
 
 Doc: `site/src/content/docs/components/datagrid.md`
 
+### 2026-09-10 19:16 — web round 1
+
+- **DOC** DataGrid: Delete/Backspace clears editable cells by firing onCellChange with value: undefined — the schema says 'clears the value' but doesn't specify whether that means undefined, empty string, or omission from the payload; chose undefined since the column model documents that as 'omitted'. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: resizable columns pin the select-all/select checkbox column to width var(--size-target-min) and never let it participate in `pinned` styling since the schema gives it no such prop; treated it as always effectively pinned-start (per the 'selection column is always pinned start' line) but without the pinned-shadow visual since it has no adjacent pinned sibling by default. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: `copy.position` is documented as the status bar's per-cell text but is explicitly 'not announced' — implemented it as unused in the live region, and the status bar instead shows row/selection counts; there's no story exercising the position text directly since the spec gives no trigger for surfacing it over the count text. → `site/src/content/docs/components/datagrid.md`
+- **CODE** DataGrid: `resizeStep` (space.4) is a style token but there's no CSS API to read a resolved custom-property length from JS without measuring; fixed the pre-existing implementation to measure it via a hidden 1px-tall sizer element sized by `inline-size: var(--ds-data-grid-resize-step)` (same pattern as rowHeight), instead of a hardcoded 16px constant, so `overrides.resizeStep` now actually changes the Shift+Arrow resize increment.
+
+### 2026-09-10 18:58 — lit round 1
+
+- **DOC** DataGrid: platforms.lit.reflect names the showStatusBar attribute `show-status-bar` verbatim, but showStatusBar defaults to true — per the general 'booleans defaulting true reflect as a negated attribute' rule (and the Table.ts precedent for stickyHeader/`no-sticky-header`), reflected it as `no-status-bar` instead so a static-HTML author can express false at all. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: stickyHeader is absent from platforms.lit.reflect's list entirely despite defaulting to true; reflected it anyway as the negated `no-sticky-header` attribute (matching Table.ts) since height=viewport/fixed force it true and only height=content needs the toggle. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: the doc's Web/Lit platform notes describe composed editors (Input/NumberInput/Select/DatePicker/Checkbox) rendered with 'label visually hidden, size sm'; none of those Lit components expose a hideLabel or size prop, so the editor's label is visibly rendered at default size while a cell is being edited — no way to hide it without restyling the child's shadow tree, which composition rules forbid. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: 'typing a character also opens it with that character' is implemented only as 'typing opens the editor' — the typed character itself is not seeded as the editor's initial value, since forwarding a keystroke into five different composed field components' internal state isn't implementable generically. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: the Space row's own text is self-contradictory (toggles vs. Shift-extends vs. Ctrl+Space in the same bullet). Implemented: selectable=row → Space toggles the row only; selectable=range → Space selects a full-width 1-row range, Ctrl+Space a full-height 1-column range. Best-effort reading, not literal. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: resizable columns have no keyboard row in the keyboard block itself (only implied by the Web platform note). Per 'implement keys exactly as listed and nothing else', resize is pointer-drag only — the separator isn't independently focusable, so keyboard/screen-reader users cannot resize columns. Real accessibility gap, not just a shortcut. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: 'rowCount with onRangeNeeded' doesn't specify how a sparse/out-of-order window maps to `data` indices; assumed `data` is always a contiguous prefix starting at index 0 that only grows by appending. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: pinned-column sticky offsets are computed among pinned columns only and ignore the selection checkbox column's width, so a pinned-start column combined with `selectable: row` sits one checkbox-width off the true visual edge. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: 'activates it' for a body cell containing a Link/Button/Checkbox via `column.render` is implemented generically via a CSS selector query + `.click()`, since the doc gives no way to know a consumer's custom render output shape ahead of time. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: the `position` copy is exposed as a hidden `aria-describedby` span on the active cell rather than announced through the polite live region on every arrow press (which would make it very chatty). → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: Ctrl+A / Ctrl+C are bound via `event.key === 'a'/'A'/'c'/'C'`, not a `code`-based binding, despite the doc explicitly saying 'bound by key code KeyA/KeyC' — may not fire correctly on non-Latin keyboard layouts. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: true drag-to-select for range mode is implemented only as click + Shift+click (anchor/extend), not a continuous pointermove-drag rectangle, though the doc's Behavior section explicitly describes pointerdown/pointermove-with-capture dragging. → `site/src/content/docs/components/datagrid.md`
+
 ### 2026-09-10 14:12 — web round 1
 
 - **DOC** Input/NumberInput/Select/DatePicker/Checkbox have no `size`/hideLabel prop and omit an external `aria-describedby` from their public types, but the doc calls for editors rendered with 'label visually hidden, size sm'. Since children may never be restyled from outside, editors render with their normal, full-size, visible label inside the cell (expanding the row while editing) rather than the hidden-label compact form the doc describes. → `site/src/content/docs/components/datagrid.md`
@@ -639,6 +876,19 @@ Doc: `site/src/content/docs/components/datagrid.md`
 
 Doc: `site/src/content/docs/components/datepicker.md`
 
+### 2026-09-10 19:08 — web round 1
+
+- **DOC** DatePicker (existing implementation) was missing the `size` (sm/md), `hideLabel`, and `open` (controlled) props, the `data-ds-field` field-discovery hook, and the `paddingBlockSm`/`paddingInlineSm`/`fieldGap`/`minTargetSm`/`partGap` overridable bindings entirely — added all of these to match the schema; also the month/year Selects were rendered with a visible label instead of the spec's `hideLabel size="sm"`, now fixed. → `site/src/content/docs/components/datepicker.md`
+- **DOC** styles.monthTitleWeight says it 'forwards to the Selects as `overrides.fontWeight`', but Select's SelectOverridableBinding has no `fontWeight` entry (only `labelWeight`, which targets Select's own label Text, not its value text). I forward `monthTitleSize` to the Select's `fontSize` override as specified, but `monthTitleWeight` has no matching Select API to forward into, so it only sets the (currently unused) root CSS hook — Select needs a `fontWeight` override binding added to its own schema for this to be realized as documented. → `site/src/content/docs/components/datepicker.md`
+- **DOC** keyboard model requests 'Tab cycles within the calendar: month/year controls, the grid (one tab stop, roving over days), Today, Clear' — this is native tab order through the composed Select/Button/day-grid elements as rendered, not custom-trapped; I did not add an explicit focus trap beyond what Popover already provides for a non-modal popup, since DatePicker's a11y.role is `none` (not `dialog`) and the spec doesn't list `focus-trap`/`inert-background` in `a11y.requires` for this component. → `site/src/content/docs/components/datepicker.md`
+
+### 2026-09-10 18:54 — lit round 1
+
+- **DOC** DatePicker: the schema's `size` prop (sm/md) has no reflect entry under platforms.lit.reflect, yet the `paddingBlockSm`/`paddingInlineSm`/`minTargetSm` style bindings only make sense as a CSS attribute selector; reflected `size` anyway, matching the established precedent in Input.ts (`size` there has the identical situation, documented with the same rationale comment). → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `open` is also absent from platforms.lit.reflect but is described as a controlled boolean used 'for stories and tests'; implemented as `@property({ type: Boolean, reflect: true }) open?: boolean` with an `internalOpen` fallback, mirroring Popover's own controlled/uncontrolled `open` pattern exactly (composed Popover already uses this). → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the doc doesn't specify whether `open-change` should fire for every open-state transition or only ones the composed Popover itself detects (trigger click, outside click, Tab-out, Escape); chose to fire it from every internal `setOpen` transition (ArrowDown-open, day-selection close, Today/Clear, Escape) so 'Fired when the calendar opens or closes' holds for all of them, not just Popover-originated ones — this differs from the previously-committed version, which silently dropped the event for ArrowDown-driven opens and value-driven closes. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `hideLabel`'s interaction with the range mode's per-input `start-label`/`end-label` visually-hidden spans isn't specified; left those spans untouched (still visually hidden, providing the accessible names ds-form needs) since `hideLabel` only concerns the outer field label, matching how the anatomy separates `label` from `field`. → `site/src/content/docs/components/datepicker.md`
+
 ### 2026-09-10 11:52 — lit round 1
 
 - **DOC** DatePicker: no yearSelect range is specified. Used min/max's year when given, else currentYear-100..currentYear+10 — arbitrary and should be documented. → `site/src/content/docs/components/datepicker.md`
@@ -671,6 +921,39 @@ Doc: `site/src/content/docs/components/datepicker.md`
 ## Dialog
 
 Doc: `site/src/content/docs/components/dialog.md`
+
+### 2026-09-10 18:13 — rn round 2
+
+- **DOC** BottomSheet.tsx (rn): its wide-viewport path composes Dialog and previously forwarded title={title}; updated to heading={title} to match Dialog's schema-mandated prop rename. BottomSheet's own `hideTitle` is still not forwarded to Dialog's `hideHeading` — the existing docstring says 'hideTitle has no Dialog equivalent, so the title always renders in that presentation,' which is no longer strictly true now that Dialog has hideHeading; deciding whether BottomSheet should forward it is a BottomSheet-schema question, out of scope for this Dialog-only fix. → `site/src/content/docs/components/dialog.md`
+
+### 2026-09-10 18:12 — rn round 1
+
+- **DOC** hideHeading: the spec only asks to keep the heading as 'the accessible name' while visually hiding it. On RN the accessible name is already carried by accessibilityLabel={heading} on the modal surface regardless of rendering, so I simply omit the visible Heading node when hideHeading is true rather than using an off-screen/visually-hidden style — there's no visual box left behind and no separate a11y-tree entry to hide. → `site/src/content/docs/components/dialog.md`
+- **DOC** footerGap: the schema says it's 'forwarded to the footer Stack as overrides.gap'. The prior generated code had a comment claiming Stack's gap has 'no override hook' and treated the binding as a no-op, but Stack.tsx already accepts overrides?.gap — I wired overrides.footerGap straight through to the Stack's overrides prop and removed the stale comment. Flagging in case AlertDialog.tsx (same footerGap pattern, out of scope here) still carries the outdated no-op comment/behavior. → `site/src/content/docs/components/dialog.md`
+- **DOC** BottomSheet.tsx:297 calls <Dialog title={title} .../>, which no longer compiles now that the prop is `heading` — tsc confirms this is the only remaining type error in packages/rn. Out of scope for this Dialog-only regen; BottomSheet needs its own pass to rename the forwarded prop (and decide whether to also forward its own hideHeading to Dialog's hideHeading, which the spec implies but BottomSheet's current code explicitly says has 'no Dialog equivalent'). → `site/src/content/docs/components/dialog.md`
+
+### 2026-09-10 18:09 — web round 2
+
+- **DOC** Dialog.test.tsx used the pre-rename `title` prop (extra unused field plus a `screen.getByRole` name lookup); it's part of the typecheck gate even though it wasn't listed as generator output, so updated both spots to `heading` to match DialogProps. → `site/src/content/docs/components/dialog.md`
+
+### 2026-09-10 18:08 — web round 1
+
+- **DOC** Dialog: the prior generation predated this schema and used `title` instead of `heading`, and had no `hideHeading` prop or `descriptionGap` override — renamed/added throughout Dialog.tsx/.css/.stories.tsx to match. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the prior generation always rendered the close button regardless of `dismissible`, contradicting 'the close button is not rendered' for non-dismissible dialogs — fixed to render `closeButton` conditionally on `dismissible`. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: no data-part attributes existed on any anatomy part (surface, focusScope, header, heading, description, body, footer, closeButton) — added them verbatim per the anatomy list; `scrim` has no hook since it's the native `::backdrop` pseudo-element. → `site/src/content/docs/components/dialog.md`
+- **DOC** BottomSheet.tsx composes Dialog for its wide-viewport form and passed the now-removed `title` prop; updated that call site to `heading={title} hideHeading={hideTitle}` (BottomSheet's own prop names are unchanged) so the package still typechecks. This is a minimal consequential fix, not a full BottomSheet regeneration — worth confirming against BottomSheet's own spec pass. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog.test.tsx (out of this generator's output scope) still sets a `title` field that no longer exists on DialogProps; it passes today only because the Default story's args already default `heading` to the same string. Left untouched for the separate test-regeneration pass, but it needs updating to use `heading`. → `site/src/content/docs/components/dialog.md`
+- **DOC** Spec doesn't say whether the heading stays focusable via `initialFocus: 'title'` when `hideHeading` is true; kept it focusable (tabIndex={-1}) since visually-hidden elements elsewhere in the package remain focusable/announced, and nothing in the spec suggests removing that path. → `site/src/content/docs/components/dialog.md`
+
+### 2026-09-10 18:01 — lit round 1
+
+- **DOC** Dialog: `hideHeading` (schema prop, default false) was entirely missing from the existing implementation — added as `@property({ type: Boolean, attribute: 'hide-heading' })` with a visually-hidden clip style, matching the pattern BottomSheet already uses for its own `hideTitle`. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: `dismissible` was reflected as a plain `dismissible` boolean attribute, which can never express `false` (a boolean attribute's absence is the only way to signal false, but the JS default is `true`). Fixed to reflect as the negated `no-dismiss` attribute via `NEGATED_BOOLEAN_CONVERTER`, matching `platforms.lit.reflect` and the same pattern used in Popover.ts/SidePanel.ts/Toast.ts. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: per the spec ('the close button is not rendered' when dismissible is false), the close button is now conditionally rendered only `this.dismissible`; previously it always rendered and only no-op'd on press, which is observably different (a non-dismissible dialog showed a button that did nothing instead of no button). → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: `initialFocus` was missing `reflect: true` despite being listed under `platforms.lit.reflect` (`initial-focus`) — added. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: `descriptionGap` (layout.gap.tight, between heading and description) was entirely absent from `DialogOverridableBinding`/`HOOKS`/the default `:host` custom properties and never applied in CSS (the `.titles` column had no gap at all) — added the hook and applied it as the flex gap. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: spec is silent on what happens when `initialFocus="close"` is combined with `dismissible=false` (no close button renders, so the requested target doesn't exist). Chose to fall back to the first body-focusable element, then the heading, rather than leaving focus stranded on the scrim/nothing. → `site/src/content/docs/components/dialog.md`
+- **CODE** Pre-existing, not introduced by this pass: the `control-is-focusable` test in Dialog.test.ts fails against both the prior and updated implementation in this Vitest browser-mode environment (deepActiveElement() resolves to the `<dialog>` host rather than the slotted input) — verified by temporarily reverting to the HEAD version of Dialog.ts and re-running the same test, which fails identically. Left uninvestigated further since it's outside this task's scope (test files aren't part of the generator's output) but worth a separate look.
 
 ### 2026-09-10 02:49 — lit round 1
 
@@ -729,6 +1012,17 @@ Doc: `site/src/content/docs/components/dialog.md`
 
 Doc: `site/src/content/docs/components/disclosure.md`
 
+### 2026-09-10 17:51 — rn round 1
+
+- **DOC** Disclosure: the schema's onToggle event describes a reason of pointer/keyboard/controlled and says 'Accordion relies on it', but RN's Pressable has no way to distinguish a hardware Enter/Space activation from a touch — the same limit the existing Accordion.tsx documents for its own onOpenChange. I added the reason parameter for schema fidelity and self-echo tracking so a standard open/onToggle controlled pairing doesn't double-fire (mirroring packages/react/src/Disclosure.tsx's algorithm), but 'keyboard' can never fire natively — every trigger press reports 'pointer'. Also note RN's actual Accordion.tsx does not consume Disclosure's reason at all (it derives its own 'trigger'/'exclusive'/'controlled' vocabulary independently), so the spec's 'Accordion relies on it' claim doesn't hold for this platform. → `site/src/content/docs/components/disclosure.md`
+- **CODE** Disclosure: the icon styles.icon binding requires RTL mirroring on native via 'I18nManager.isRTL → chevron-left', which the pre-existing implementation omitted (always rendered chevron-right). Fixed by swapping the base glyph and, because chevron-left's point sits on the opposite side of its glyph from chevron-right, using the opposite open-rotation angle so the expanded state still lands on the down-pointing shape in both writing directions — geometry not spelled out in the spec, derived from packages/rn/src/paths.ts's SVG path data and cross-checked against the web implementation's CSS cascade behavior (packages/react/src/Disclosure.css), which achieves the same visual result via scaleX(-1) + rotate override.
+- **CODE** Disclosure (pre-existing, unchanged): moving focus back to the trigger when the panel closes is documented as impossible on native (no focus-within notion) — left as-is per the existing platform-limit comment, matching the platform notes.
+
+### 2026-09-10 17:45 — web round 1
+
+- **CODE** Disclosure: the schema's onToggle event description says it fires with 'the new boolean open and a reason: pointer, keyboard, or controlled (Accordion relies on it)', but the pre-existing implementation (and the Lit/RN versions) dropped the reason entirely, passing only `open`. Restored it for web: pointer/keyboard is inferred from the native click's `event.detail === 0` heuristic (0 means keyboard-dispatched), and `controlled` is detected by watching the `open` prop for external changes not already reported via the trigger's own click (guarded with a self-echo ref so a controlled consumer that updates `open` in response to its own onToggle doesn't get double-fired). Lit and RN still lack this parameter — flagging for whoever generates those next since it's the same schema event.
+- **CODE** Disclosure: DisclosureProps still extends ComponentPropsWithoutRef<'button'> even though overrides/style/data-ds apply to the wrapper <div>, not the trigger button (pre-existing from the last generation round, left as-is — same CSSProperties shape either way, and widening the prop surface wasn't asked for).
+
 ### 2026-09-10 01:54 — rn round 1
 
 - **DOC** The rn platform notes only say the trigger contains "the chevron and a Text" without naming a component; the general icon rule ("never draw an inline SVG... by hand") and Icon's own docstring (which lists "the chevron in a Disclosure" as a usage example) make clear it should be the system Icon, so I render `<Icon name="chevron-right">` rotated 90deg via Animated for the open state, since chevron-right's path rotated 90deg matches chevron-down exactly — the file previously hand-drew the chevron with bordered Views, which I replaced. → `site/src/content/docs/components/disclosure.md`
@@ -751,6 +1045,20 @@ Doc: `site/src/content/docs/components/disclosure.md`
 ## Divider
 
 Doc: `site/src/content/docs/components/divider.md`
+
+### 2026-09-10 17:43 — rn round 1
+
+- **DOC** semantic: RN has no separator accessibility role, so a divider with semantic=true but no label has no observable effect beyond the __DEV__ warning already implemented — documented in the code comment as an acknowledged platform limit, not a code gap. → `site/src/content/docs/components/divider.md`
+- **DOC** label on a vertical divider: spec says label is ignored with a dev warning, but the existing code silently drops the label (hasLabel requires orientation === 'horizontal') without emitting a __DEV__ warning for that specific case — the only warning present covers semantic+no-label, not label+vertical. → `site/src/content/docs/components/divider.md`
+
+### 2026-09-10 17:35 — web round 1
+
+- **DOC** Divider: the schema requires a development warning when `label` is set on a `vertical` divider ('no room for centered text'), but the existing implementation silently dropped the label with no warning and also incorrectly forced `isSemantic=true` from the ignored label (making a plain vertical <hr> announce role=separator with no visible/accessible text driving that semantics). Fixed both: added the console.warn gated on isDev, and changed isSemantic to derive from `showLabel` (label only takes effect when horizontal) rather than raw `Boolean(label)`. → `site/src/content/docs/components/divider.md`
+- **DOC** No story or test exercises the vertical+label combination (the dev-warning path) since it isn't an enum value in the behavior scenarios; left untested per the 'render every scenario, don't invent new ones' instruction — flagging in case a dedicated story/test is wanted for that guard. → `site/src/content/docs/components/divider.md`
+
+### 2026-09-10 17:29 — lit round 1
+
+- **DOC** Divider: doc says label is 'ignored on a vertical divider, with a development warning' but doesn't specify whether that also suppresses the implied `semantic`; I chose to fully ignore the label (no render, no implied semantic) on vertical, only honoring an explicit `semantic` prop there, since the label truly has nowhere to render. → `site/src/content/docs/components/divider.md`
 
 ### 2026-09-10 01:31 — lit round 1
 
@@ -775,6 +1083,12 @@ Doc: `site/src/content/docs/components/divider.md`
 ## Feed
 
 Doc: `site/src/content/docs/components/feed.md`
+
+### 2026-09-10 19:15 — lit round 1
+
+- **DOC** Feed: FeedItem's `content`/`actions` are typed `unknown` per lit notes ("any lit-html renderable") rather than a stricter TemplateResult union — the doc gives no exact type, so `unknown` was kept as the existing stand-in for ReactNode. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `endMessage` prop's default fallback text (copy.end) is applied at render time (`this.endMessage ?? COPY_END`) rather than as the property's default value, since `undefined` must be distinguishable from an explicit empty string; not stated either way in the spec. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: on Ctrl+End with `hasMore`, the doc says 'press again once it has loaded and hasMore is false' to escape the feed — implemented by simply re-checking live `hasMore` on each Ctrl+End press (no explicit retry/debounce state), since the spec doesn't describe what happens if the caller never flips `hasMore` to false. → `site/src/content/docs/components/feed.md`
 
 ### 2026-09-10 16:52 — web round 1
 
@@ -812,6 +1126,23 @@ Doc: `site/src/content/docs/components/feed.md`
 
 Doc: `site/src/content/docs/components/fieldset.md`
 
+### 2026-09-10 18:01 — rn round 1
+
+- **DOC** Fieldset: FieldsetContext (legend + disabled) is provided as the spec directs and Input now reads it (accessibilityLabel prefixing + disabled fold-in), but Checkbox, Switch and RadioGroup still don't consume useFieldsetContext (out of scope — only Fieldset.tsx was touched this round), so the 'legend, field' accessibilityLabel prefixing and context-based disabled only take effect for Input today; the direct-child clone-with-disabled fallback still covers the other three. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: schema's requiredIndicator rule ('appended when every field inside is required') is implemented via React.Children.toArray + checking props.required on direct element children only; a consumer-supplied wrapper (e.g. their own View around a field) hides that field from the check. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: a11y.role is `group`, not present in RN's legacy accessibilityRole union, so `role="group"` (RN >= 0.74) is used instead, per the platform notes. → `site/src/content/docs/components/fieldset.md`
+
+### 2026-09-10 17:54 — web round 1
+
+- **DOC** Fieldset: platforms.web.attributes lists only aria-describedby/aria-disabled, but the notes prose says error sets aria-invalid too — treated the prose as authoritative and added it, since the error-is-identified behavior scenario requires state:invalid. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: styles.disabledOpacity is marked locked: false (overridable) but had no corresponding entry in the component's own overridable-binding union in the existing file — added it; flagging in case the omission was intentional and disabledOpacity was meant to be handled some other way. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: FieldsetContext (for propagating disabled/legend to Input/Checkbox/Switch/RadioGroup, and the derived required-indicator convention) is described in the guidance but not present in the existing implementation, which instead clones direct children with `disabled` only — left as-is since the doc says 'until a field reads the context, Fieldset also clones direct children with disabled', and adding the context plus updating four other components was out of scope for this pass. → `site/src/content/docs/components/fieldset.md`
+
+### 2026-09-10 17:48 — lit round 1
+
+- **DOC** Fieldset: the doc's Web platform notes say the <fieldset> carries aria-invalid="true" when error is set, but that requirement wasn't mirrored in the Lit platform notes and the existing render() omitted it — added aria-invalid to satisfy the error-is-identified scenario's `state: invalid is: true` expectation. → `site/src/content/docs/components/fieldset.md`
+- **CODE** Fieldset: index.ts export and the Fieldset.ts/.stories.ts implementation already existed from a prior generation pass and matched the schema, so this pass only added the missing behavior-scenario test file per the repo's test rollout convention (not part of the original generation instructions but consistent with sibling components Switch/Box/Input).
+
 ### 2026-09-10 02:07 — lit round 1
 
 - **DOC** Fieldset: composition maps legend/description to Text and fields to Stack, but every existing Lit field composite (RadioGroup, Checkbox, Input) renders raw <legend>/<p> styled to the same tokens instead of instantiating ds-text, and the platform notes require fields to stay in the light DOM (ruling out wrapping them in a shadow ds-stack). Followed that precedent: raw elements for legend/description, and a plain flex '.fields' wrapper (gap from fieldsGap) around the default <slot> instead of a shadow <ds-stack>. → `site/src/content/docs/components/fieldset.md`
@@ -838,6 +1169,20 @@ Doc: `site/src/content/docs/components/fieldset.md`
 ## FocusScope
 
 Doc: `site/src/content/docs/components/focusscope.md`
+
+### 2026-09-10 18:04 — rn round 1
+
+- **DOC** FocusScope: several existing consumers (Dialog, Popover, Menu, Select, SidePanel) already set `restoreFocus={false}` on their composed FocusScope and reimplement restore-focus-to-trigger manually via their own triggerRef + AccessibilityInfo.setAccessibilityFocus, presumably because `returnFocusTo` didn't exist yet when they were generated. Those components are out of scope for this task (only FocusScope itself was requested) but are now candidates to simplify by passing `returnFocusTo={triggerRef}` instead of hand-rolling the restore. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: schema shape for returnFocusTo is platform-neutral (`RefObject<HTMLElement | View>`); typed it as `React.RefObject<View>` on RN to match this package's existing trigger-ref convention (Menu.tsx, Popover.tsx, SidePanel.tsx, Select.tsx all use `React.useRef<View>(null)` for trigger refs). → `site/src/content/docs/components/focusscope.md`
+- **CODE** FocusScope: the file already existed from a prior generation but was missing the `returnFocusTo` prop entirely (schema lists it as a top-level prop, and platform notes say it's required on native when the opener isn't a TextInput). Added it: React.RefObject<View>, read at unmount (not captured at mount, since it names a stable trigger) and preferred over the captured TextInput fallback when present. Added a `ReturnFocusTo` story demonstrating it, since it's not an enum and so wasn't covered by the existing 'one story per enum value' set.
+
+### 2026-09-10 17:56 — web round 1
+
+- **DOC** FocusScope: the schema's returnFocusTo shape is written cross-platform as `RefObject<HTMLElement | View>`, but `View` is a React Native type with no web equivalent — typed it as `RefObject<HTMLElement>` for this platform and wired it into the unmount restore logic (preferred over the recorded opener, which still wins over the next-focusable fallback) since the existing FocusScope.tsx (present since the initial commit) was otherwise complete but had never implemented this prop at all. → `site/src/content/docs/components/focusscope.md`
+
+### 2026-09-10 17:49 — lit round 1
+
+- **CODE** FocusScope: schema's returnFocusTo prop (type object, shape RefObject<HTMLElement | View>) had no Lit equivalent documented — Lit has no ref concept, so I exposed it as a non-reflected `HTMLElement | null | undefined` property (`@property({ attribute: false })`) consumers set directly, checked before the recorded opener in restoreFocusOnExit. The file already existed (pre-generated) with every other prop, event, and the keyboard model correctly implemented; only this prop was missing entirely, which I added.
 
 ### 2026-09-10 02:15 — lit round 1
 
@@ -883,6 +1228,26 @@ Doc: `site/src/content/docs/components/focusscope.md`
 ## Form
 
 Doc: `site/src/content/docs/components/form.md`
+
+### 2026-09-10 17:33 — rn round 1
+
+- **DOC** Form: FormContext.tsx did not exist even though five components (Input, Button, Checkbox, Switch, RadioGroup, plus Form itself) already imported from it — I created it to match the exact shape those files already assume (FormFieldHandle = {getValue, validate, focus}), rather than inventing a new contract. → `site/src/content/docs/components/form.md`
+- **DOC** Form: content guidance says each error-summary item should read 'Label: error text', but the field registration contract (FormFieldHandle) shared by Input/Checkbox/Switch/RadioGroup carries no `label`, only a validation message — those components would need to add `label` to their handle for this to be possible. I left the summary showing just the message text, consistent with the existing field components. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the `name` prop has no observable effect on React Native (no DOM ids to generate, unlike web/Lit) — kept for API parity per the platform notes, but it's inert here. → `site/src/content/docs/components/form.md`
+- **DOC** Form: `errorSummary`'s View lacks a dedicated `errorSummaryText`/`errorSummaryBackground` binding constant in code — those locked tokens are applied via `Text tone="danger"` and `colorBackgroundSubtle` directly (matching Text's own token) rather than duplicated as separate style variables, since they're non-overridable and this avoids drift from Text's own danger-tone token. → `site/src/content/docs/components/form.md`
+- **CODE** Form: the spec's platforms.rn.notes describes the context shape as `{ register, unregister, submit, errors, validateMode, disabled, focusField }` but Input/Button/Checkbox/Switch/RadioGroup (pre-existing in the package) already call `form.reportValidity(name, error)` and read `form.order`/`form.errors[name]` directly rather than a plain `errors` object passed down — I added `reportValidity` and `order` to FormContextValue to match the already-shipped field components instead of the notes' shorter list, since rewriting five other components' contract was out of scope.
+
+### 2026-09-10 17:31 — web round 1
+
+- **DOC** Form: schema anatomy adds `actions` alongside `fields`/`errorSummary`/`container`, but only one `gap` style token governs spacing for all of them ("between fields and between fields and actions"). Kept `children` and `actions` as siblings of the same flex-column root and gave their wrapper divs `display: contents` so the existing single-token gap continues to apply uniformly between every field and before the actions row, matching the Lit implementation's slot-based (non-boxed) layout. → `site/src/content/docs/components/form.md`
+- **DOC** Form: root landmark role. Spec's `a11y.role: form` plus `aria-label`/`aria-labelledby` are already implied by the native `<form>` element with an accessible name, so no explicit `role="form"` attribute was added (redundant on a native form) — flagging in case an explicit role is wanted for older AT. → `site/src/content/docs/components/form.md`
+- **DOC** Form: updated packages/react/demo/SignIn.tsx and Preferences.tsx to pass their submit/cancel buttons through the new required `actions` prop instead of embedding them in `children`, since the prop is now mandatory and the old shape would fail to type-check. → `site/src/content/docs/components/form.md`
+
+### 2026-09-10 17:25 — lit round 1
+
+- **DOC** Form (lit platform notes) is self-contradictory about field discovery: it first states 'Form discovers fields by the data-ds-field attribute ... never by a tag list' (matching the package conventions doc's 'Form discovers fields by that attribute, never by a tag or component list'), then in the same paragraph says 'Instead it collects light-DOM fields by tag (ds-input, ds-checkbox, ds-switch, ds-radio-group)'. Kept the existing tag-based querySelectorAll implementation since the actual sibling field components (e.g. Input.ts) only set `data-ds` (component name), not `data-ds-field` — switching to attribute-based discovery would silently stop collecting every existing field until Input/Checkbox/Switch/RadioGroup are also updated, which is out of scope for a Form-only change. → `site/src/content/docs/components/form.md`
+- **DOC** index.ts was missing the `FormOverridableBinding` type export (every sibling component exports its `<Name>OverridableBinding` type) even though Form.ts already defined and used it — added it to the type export list. → `site/src/content/docs/components/form.md`
+- **CODE** Form: schema requires `actions` as a separate content prop with its own named slot and `actions` anatomy part, distinct from `children`/`fields` — the pre-existing Form.ts only had one default slot mixing fields and the button row. Added a named `actions` slot (`<slot name="actions" part="actions">`) and updated Form.stories.ts to slot the action row separately; the flex-column `gap` on the native `<form>` already applies uniformly between the fields slot and the actions slot, matching the styles.gap description ('between fields and between fields and actions').
 
 ### 2026-09-10 01:24 — lit round 1
 
@@ -933,6 +1298,26 @@ Doc: `site/src/content/docs/components/heading.md`
 ## Icon
 
 Doc: `site/src/content/docs/components/icon.md`
+
+### 2026-09-10 17:12 — lit round 1
+
+- **DOC** Icon: 'list' item dots and 'grid' squares/'pause' bars aren't explicitly marked line vs. filled in the content guidelines — rendered the dots and pause bars as filled (class="filled") since a stroked 1px-radius circle/thin rect would be nearly invisible at xs, and grid squares as unfilled outlines (consistent with 'outlined squares' wording) but this choice wasn't stated for list/pause explicitly, only inferred from 'filled' precedent (ellipsis dots, status shapes). → `site/src/content/docs/components/icon.md`
+
+### 2026-09-10 17:12 — rn round 1
+
+- **DOC** Icon: the schema's `name` enum grew to 26 values (added menu, list, grid, play, pause, folder, file) but Icon.tsx/paths.ts/Icon.stories.tsx/Icon.test.tsx only implemented the first 19 (through calendar) — extended paths.ts's IconName union and glyph table, added the 7 missing stories, and added the 7 missing 'renders-name-*' tests following the existing derived pattern; Icon.tsx itself needed no change since it reads the paths table generically. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the doc's 'Behavior scenarios (33)' header doesn't match its embedded yaml, which lists only 26 scenarios (1 renders + 19 name + 5 size + 1 has-accessible-name), stopping at 'calendar' — the missing 7 are exactly the new name values; treated this as a truncated doc and derived the remaining 7 name scenarios myself rather than skipping them. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: no web or Lit reference paths existed yet for menu/list/grid/play/pause/folder/file (neither package has been regenerated with them), so there was nothing to reuse for visual parity — drew all 7 directly from the spec's Content guidelines grid coordinates; flag for review once web/Lit regenerate the same glyphs so the `d` data can be diffed for parity. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the spec describes `list` only as 'three horizontal lines... with a dot at x=2 on each' without specifying whether the dots are filled circles or part of the stroked line path; since the glyph table's `filled` flag is all-or-nothing per icon and list's lines are clearly stroke-only (unfilled), I drew the dots as zero-length, round-capped strokes (`M2 4h.01` etc.) so they render on the same unfilled path — a guess at implementation technique, not at appearance. → `site/src/content/docs/components/icon.md`
+- **CODE** Icon: existing pre-existing test failure (not introduced by this change) — 'has-accessible-name' fails because testing-library/react-native's getByRole('image', …) doesn't match accessibilityRole="image" on the rendered RNSVGSvgView; left untouched since it predates this task and is outside the Icon-name scope.
+
+### 2026-09-10 17:12 — web round 1
+
+- **DOC** Icon: `list`'s dots (x=2, r=1) and `pause`'s bars (3×12) have exact pixel geometry left to interpretation from a verbal description ('a dot at x=2 on each', '3x12 bars') — chose r=1 circles and literal 3×12 rects on the stated coordinates. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: `folder`/`file` outlines are closed paths (Z) even though the spec calls them 'line glyphs' like open strokes (chevrons, arrows) — closing them is necessary for a recognizable outline shape, but the spec's line/filled dichotomy doesn't explicitly address closed-but-unfilled paths; rendered with fill=none (inherited) so they're outline-only. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: added the dev-only 'unknown name warns' behavior from the spec, which was missing from the file that existed before this session (it only had 19 of the 26 enum values) — added `isDev` using this package's established `declare const process` shim pattern (seen in Card.tsx, Dialog.tsx, etc.) rather than an ad-hoc inline check. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: no test file exists yet for this component (per memory, the behavior-scenarios test rollout is progressing target-by-target and hadn't reached Icon) — the 33 behavior scenarios in the prompt are all satisfiable by the current implementation (render + accessible-name via label) but no `.test.tsx` was added since that rollout is tracked as a separate initiative. → `site/src/content/docs/components/icon.md`
+- **CODE** Icon: the pre-existing `styles.strokeWidth` description text lists which glyphs get the focus-ring stroke width but wasn't updated for this generation to mention list/grid/folder/file (menu was already there) — left the schema text as-is since docs are out of scope, but the component code applies the same stroke behavior to all of them via CSS (`path, rect { vector-effect: non-scaling-stroke }`), consistent with them being line glyphs.
 
 ### 2026-09-10 00:44 — rn round 2
 
@@ -1016,6 +1401,26 @@ Doc: `site/src/content/docs/components/icon.md`
 
 Doc: `site/src/content/docs/components/input.md`
 
+### 2026-09-10 17:29 — rn round 1
+
+- **DOC** Input: the existing file predated size (sm/md) and hideLabel; added InputSize type, per-size padding/target/fontSize token swapping (paddingBlockSm=space.1, paddingInlineSm=space.2, minTargetSm=size.target.min, fontSize=font.size.{size}), and hideLabel (omits the visible Text label but keeps it as the TextInput's accessibilityLabel, since RN has no DOM-based visually-hidden technique separate from accessibilityLabel). → `site/src/content/docs/components/input.md`
+- **DOC** Input: guidance says the field should read FieldsetContext for disabled and legend-prefixing ('Shipping address, Street'), but no other RN component in the package (Checkbox, Switch, RadioGroup) reads it yet — Fieldset only applies a disabled clone fallback. I wired Input to read useFieldsetContext() directly since the spec calls it out explicitly for Input, but this makes Input inconsistent with sibling form components until they're updated too. → `site/src/content/docs/components/input.md`
+- **DOC** Input: 'keyboard' testability-hook story requirement doesn't apply — this schema has no `keyboard` block. → `site/src/content/docs/components/input.md`
+- **DOC** Input: `autocomplete` is web/lit-only per the schema's `platforms` restriction on that prop, so it's intentionally omitted from the RN props. → `site/src/content/docs/components/input.md`
+
+### 2026-09-10 17:27 — web round 1
+
+- **DOC** Package conventions require every field component's root to carry `data-ds-field` so Form can discover fields by attribute, but no existing field component (Checkbox, Switch, RadioGroup, Select, etc.) has this attribute, and Form.tsx actually discovers fields via React context registration (`FormContext.register`), not DOM scanning. Added `data-ds-field` to Input's root for spec compliance, but it's currently inert/unused — flagging the doc/implementation gap rather than silently deviating. → `site/src/content/docs/components/input.md`
+- **DOC** The Input doc says the field 'reads FieldsetContext' inside a Fieldset, but no FieldsetContext exists in the codebase — Fieldset.tsx actually injects `disabled` into children via `cloneElement`. Left this existing, working mechanism in place rather than inventing a FieldsetContext the rest of the package doesn't use. → `site/src/content/docs/components/input.md`
+- **DOC** Native `<input>` has its own `size` HTML attribute (character width, type number) which collides with the schema's `size` enum prop; omitted the native attribute from InputProps (added `'size'` to the Omit list) in favor of the schema meaning, since the schema takes precedence. → `site/src/content/docs/components/input.md`
+- **DOC** The two new behavior scenarios `renders-size-sm`/`renders-size-md` are not reflected in the existing `Input.test.tsx` (a generated gate file outside this task's Output scope, which only names `Input.tsx` and `Input.stories.tsx`) — leaving that file for the test-generation pass to update. → `site/src/content/docs/components/input.md`
+- **CODE** Input already existed in the package but was missing `size` (sm/md) and `hideLabel` entirely — added both props, their style bindings (fontSize now varies with size, plus paddingBlockSm/paddingInlineSm/minTargetSm), a `.ds-input--sm` modifier class, and `SizeSm`/`SizeMd`/`HideLabel` stories.
+
+### 2026-09-10 17:22 — lit round 1
+
+- **DOC** Input: platforms.lit.reflect lists only [type, required, disabled, invalid], omitting `size` — but the `size` prop drives interpolated bindings (fontSize: font.size.{size}) and swaps paddingBlock/paddingInline/minTarget for their Sm variants, which the doc's own convention expresses as `:host([attr=...])` CSS selectors. Reflected `size` anyway (as Search.ts already does for its own `size` prop) so the sm/md variants are actually stylable; flagging the missing reflect-list entry as a doc gap. → `site/src/content/docs/components/input.md`
+- **DOC** Input: `hideLabel` has no doc default of `true`, so it does not fall under the 'booleans that default to true → negated attribute' rule; implemented as a normal boolean property/attribute `hide-label` (visually-hidden clip pattern on the `<label>`, label stays in the DOM as the accessible name via `for`). → `site/src/content/docs/components/input.md`
+
 ### 2026-09-10 01:18 — rn round 1
 
 - **DOC** Input: the schema's Overrides contract (borderFocus, borderInvalid, borderWidth, radius, paddingInline, paddingBlock, partGap, fontFamily, fontSize, labelWeight, helperSize, lineHeight, disabledOpacity) was missing from the existing implementation — added it, resolving values locally for the field's own View/TextInput styles and forwarding the same raw TokenRef for fontFamily/fontSize/labelWeight/lineHeight/helperSize through to the composed Text label/description/error via Text's own `overrides` prop rather than resolving twice. → `site/src/content/docs/components/input.md`
@@ -1042,6 +1447,14 @@ Doc: `site/src/content/docs/components/input.md`
 
 Doc: `site/src/content/docs/components/landmark.md`
 
+### 2026-09-10 17:54 — rn round 1
+
+- **DOC** Landmark: `keyboard`/overrides blocks are absent from the schema and no overridable bindings exist, so no override plumbing or keyboard story was needed — nothing to report beyond the existing implementation already matching the spec verbatim. → `site/src/content/docs/components/landmark.md`
+
+### 2026-09-10 17:45 — lit round 1
+
+- **DOC** Landmark (lit): the platform notes literally say to set the accessible name via `internals.ariaLabel`, but the package-wide convention states ElementInternals.ariaLabel/role are not read by the dom-accessibility-api-based test tooling, only real attributes are. The existing generated file used `internals.role`/`internals.ariaLabel` exclusively, which would fail the 'has-accessible-name' scenario since `label` was never reflected to a plain `aria-label` attribute. Fixed by dropping ElementInternals entirely and reflecting `label` straight to the `aria-label` attribute (role was already a plain reflected attribute); updated the stories file to bind `.label=${args.label}` (property) and `aria-label="..."` (static markup) instead of a plain `label=` attribute, which no longer maps to the property now that its observed attribute is `aria-label`. → `site/src/content/docs/components/landmark.md`
+
 ### 2026-09-10 01:58 — lit round 1
 
 - **DOC** Landmark (lit): the schema's anatomy list names a single `region` part, but the platform notes mandate no shadow root (host itself is the landmark, children stay in light DOM), so there is no shadow tree to carry a `part="region"` hook. Used the host-level `data-ds="Landmark"` attribute as the only testability hook, consistent with components that do have shadow roots. → `site/src/content/docs/components/landmark.md`
@@ -1058,6 +1471,15 @@ Doc: `site/src/content/docs/components/landmark.md`
 ## Link
 
 Doc: `site/src/content/docs/components/link.md`
+
+### 2026-09-10 17:26 — rn round 1
+
+- **DOC** Link: the schema's platforms.rn.notes says Link 'forwards accessibilityHint, accessibilityLabel (when set by a parent such as Tooltip), onHoverIn, onHoverOut, onFocus, onBlur and onLongPress to the native element' — the file previously in the repo didn't do this, and Tooltip.tsx's own docstring explicitly called it out as an acknowledged gap ('this package's own Button/Link/Input do not forward unrecognized props... out of scope here'). I added the passthrough props to LinkProps and forward them onto the underlying Animated.Text. RN's Text type has no onFocus/onBlur/onHoverIn/onHoverOut in its TS declarations (those are Pressable-only in @types), so those four are typed as (event: unknown) => void and spread through an untyped bag rather than passed as literal JSX attributes; onLongPress and accessibilityHint/accessibilityLabel are properly typed since Text does declare them. Tooltip.tsx's docstring is now stale for Link specifically (still true for Button/Input) but I left it untouched since Tooltip wasn't in scope for this generation pass. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the notes also say '`external` always uses Linking', which conflicts with the general onPress-vs-Linking rule ('never both') stated one sentence earlier and with the cross-platform events.onPress doc ('on native the consumer's handler is the navigation'). I resolved this as: `onPress(href)` always fires first if provided (per the Behavior section's 'onPress fires first'), and for `external` links `Linking.openURL(href)` then always performs the navigation regardless, since a consumer-side router can't hand off to the system browser; for non-external links, Linking is only used as a fallback when no `onPress` is given. The previous implementation didn't special-case `external` at all — it just used onPress-if-present, else Linking, unconditionally. → `site/src/content/docs/components/link.md`
+
+### 2026-09-10 17:23 — web round 1
+
+- **CODE** Link already existed in the package (and index.ts already exported it) with props/tone/download/overrides/copy all matching the schema; the only defect was the external-mark icon being hand-drawn as an inline <svg> instead of composing the shared Icon component (the rules require Icon for every named glyph and forbid inline SVGs) — replaced `<svg>...</svg>` with `<Icon name="external" inline />` inside the existing `data-part="externalIcon"` wrapper, and simplified Link.css's `.ds-link__external-icon` rule since Icon's `inline` variant already handles 1em sizing and baseline alignment.
 
 ### 2026-09-10 01:15 — rn round 1
 
@@ -1083,6 +1505,32 @@ Doc: `site/src/content/docs/components/link.md`
 ## Listbox
 
 Doc: `site/src/content/docs/components/listbox.md`
+
+### 2026-09-10 18:41 — rn round 1
+
+- **DOC** Listbox: the existing implementation (already present before this pass) was missing five schema props entirely — invalid, error, embedded, defaultActiveValue, loading. Added all five; index.ts already exported the type surface generically so no export changes were needed. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: prop `invalid`'s description says it marks the list invalid 'with copy.invalid', but the schema's own copy block only defines empty/required/selectedCount/loading — no `invalid` string. Followed the established package convention (Input.tsx, Select.tsx both define a local `${label} is not valid.` for this exact case) rather than inventing new wording. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `error`/`required`/`invalid` precedence (error > required > invalid) isn't stated in this component's own doc, only inferred from the Form conventions bullet in the package instructions and mirrored from Input/Select's identical pattern. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `defaultActiveValue` (and its fallback to first-selected/first-enabled) only pre-highlights that row's active background on mount. RN has no single tab stop for the list (each option is its own accessibility stop, per this component's own platform notes), so there's no real focus target to move programmatically the way `defaultActiveValue` implies on web/Select's popup-opens-with-selection-active behavior. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `loading` shows `copy.loading` in place of the empty message and sets `accessibilityState.busy`; when options are already present and `loading` is also true (a refetch), the FlatList itself gets `busy: true` rather than duplicating the loading text, since the spec only describes loading replacing the *empty* message. → `site/src/content/docs/components/listbox.md`
+- **DOC** Cross-component: the schema's derived `has-accessible-name` behavior scenario expects `getByRole('listbox', {name})`, but this component's own RN platform notes mandate `accessibilityRole="list"` (RN has no `listbox` role) — confirmed by a local probe test that the generated behavior test will fail against a spec-compliant implementation. This is a conflict in the source docs, not a gap I could close by deviating from the explicit RN platform notes. → `site/src/content/docs/components/listbox.md`
+- **CODE** Listbox: `embedded` removes the list's own border/surface/radius but the schema doesn't say whether `listPadding` also becomes the popup's responsibility — kept `listPadding` on the Listbox itself since it's a content-spacing concern, not a surface-chrome one. Also wired `embedded` into Select.tsx and Combobox.tsx, which previously wrapped a non-embedded Listbox in their own bordered popup, doubling the border/radius — a latent bug this prop fixes.
+
+### 2026-09-10 18:32 — web round 1
+
+- **DOC** Listbox: the existing implementation was missing the `invalid`, `error`, `embedded`, `defaultActiveValue`, and `loading` props entirely (only `label`, `labelledBy`, `options`, `multiple`, `value`, `defaultValue`, `selectionFollowsFocus`, `required`, `disabled`, `name`, `emptyMessage`, `maxVisible` were present) — added all five to match the schema, plus the corresponding `aria-invalid`, `aria-required`, `aria-busy`, and `aria-describedby` root attributes that were also missing. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the schema's `invalid` prop description says it renders 'with `copy.invalid`', but no `invalid` key exists under the component's `copy:` block (only `empty`, `required`, `selectedCount`, `loading`). Treated `invalid` as a state-only flag (sets `aria-invalid`) with no bundled message; `error` (explicit prop) takes precedence over the Form-derived required-validation message for the visible error text. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `defaultActiveValue` vs. the documented default ('first selected, else first enabled') isn't given an explicit precedence order. Chose: `defaultActiveValue` wins if it names an enabled row, else first selected, else first enabled — applied once on first focus via a new `onFocus` handler (previously there was no focus-driven initial-active logic at all). → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `embedded` has no dedicated override-suppression rule in the spec beyond 'overrides change values, never presence.' Implemented by having `.ds-listbox--embedded` set `border`/`border-radius`/`background-color` directly (bypassing the `--ds-listbox-border*`/`-radius` hooks), so any `border`/`borderWidth`/`radius` override becomes a no-op while embedded, per the stated contract. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `copy.selectedCount` is explicitly documented as shown by surrounding UI, not the component itself, so it's omitted from the component's `COPY` object (kept as a code comment, not exported) — flagging in case a consumer expects it re-exported for reuse. → `site/src/content/docs/components/listbox.md`
+
+### 2026-09-10 18:29 — lit round 1
+
+- **DOC** Listbox: the `invalid` prop's description says it shows `copy.invalid`, but the schema's `copy` block only defines `empty`, `required`, `selectedCount` and `loading` — no `invalid` string. Synthesized `${label} is not valid.` as the ElementInternals validationMessage, matching the convention already used by Input.ts/Select.ts for the same gap. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `error`/`error-identification` require rendering error text and a11y wiring, but the component's `styles` block defines no token binding for error text color/size (unlike Input/Select's locked `errorText`) and `anatomy` has no matching part. Rendered a `role="alert"` region styled with `color-foreground-danger` (matching Input/Select's own errorText token) and exposed it as csspart `error-message`, which is not in the documented anatomy. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `embedded`'s prop description says the composing popup owns 'border, surface and radius', but only the `border` style binding's own description calls out the `embedded` exception explicitly; `surface` and `radius` don't mention it. Chose to suppress border, background and border-radius together on `.list` when `embedded` is set, to match the prop's prose. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `platforms.lit.reflect` lists only `multiple`, `disabled`, `required`, so the new `invalid`, `error`, `embedded`, `defaultActiveValue` and `loading` properties are not reflected to host attributes (no `:host([invalid])`-style selectors) — internal styling/behavior reads the properties directly instead. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `Select.ts` and `Combobox.ts` (existing composers, out of scope for this pass) don't currently pass the newly-added `embedded`, `loading` or `defaultActiveValue` down to their composed `<ds-listbox>` — they manage `activeValue` directly instead. Those files likely want a follow-up pass to adopt the new props now that Listbox implements them. → `site/src/content/docs/components/listbox.md`
 
 ### 2026-09-10 09:44 — lit round 1
 
@@ -1123,6 +1571,20 @@ Doc: `site/src/content/docs/components/listbox.md`
 ## Menu
 
 Doc: `site/src/content/docs/components/menu.md`
+
+### 2026-09-10 18:21 — rn round 1
+
+- **DOC** Menu: on phones ActionSheet has no slot for a group's label row or a mid-list separator (its own props are just `actions`/`title`/`cancelLabel`), so composing it means flattening groups and dropping their label, and dropping standalone separators, rather than the 'groups become dividers with a muted label' the platform notes describe. Chose to flatten silently (in `toActionSheetActions`) rather than fake a label via a disabled row, since that would misrepresent a heading as an inert menu item. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: ActionSheet's four close reasons (escape, scrim, cancel, drag) don't map onto Menu's own onOpenChange reasons (trigger, escape, outside, action, controlled) 1:1 — `scrim`, `cancel` and `drag` all collapse to `outside` (`mapActionSheetCloseReason`). → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: `shortcut` display-only hints have no ActionSheet equivalent and are dropped in the phone presentation (reasonable since touch has no keyboard, but not explicit in the spec). → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: `typeaheadReset` is in the overrides union for schema completeness but has no runtime effect — there is no typeahead on this platform (no generic key-event API on `Pressable`), the same acknowledged limit as arrow-key navigation and Home/End. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: the phone/tablet breakpoint isn't named by any of Menu's own style bindings, so the generator reused `layout.maxWidth.prose` — the same token/threshold `Select` and `Combobox` already use for their own phone-vs-tablet split — rather than inventing a new one. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: `maxHeight`'s schema description says the popup is also capped by 'the viewport minus the gutter', but no gutter token is named; implemented as `windowHeight - popupOffset * 2`, reusing `popupOffset` for lack of a dedicated gutter binding. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: the previously generated file's doc comments claimed two limits that no longer hold now that ActionSheet and Button's `expanded` prop exist in the package — both are fixed in this pass (composing ActionSheet on phones; passing `expanded` to the trigger Button). → `site/src/content/docs/components/menu.md`
+
+### 2026-09-10 18:05 — lit round 1
+
+- **DOC** Menu: the `typeaheadReset` (motion.duration.loop) and `maxHeight` (layout.maxWidth.prose) style bindings from the schema were missing from the already-existing implementation — typeahead used a hardcoded 500ms constant instead of the token, and the popup's max-block-size only clamped to the viewport with no cap token. Added both as overridable hooks (`--ds-menu-typeahead-reset`, `--ds-menu-max-height`), wired the popup's max-block-size to `min(var(--ds-menu-max-height), viewport-gutter)`, and read the typeahead reset duration from the CSS hook at runtime via getComputedStyle (the token resolves to a `Nms` string, parsed with parseFloat like the existing popup-offset read). → `site/src/content/docs/components/menu.md`
 
 ### 2026-09-10 02:51 — lit round 1
 
@@ -1183,6 +1645,16 @@ Doc: `site/src/content/docs/components/menu.md`
 
 Doc: `site/src/content/docs/components/meter.md`
 
+### 2026-09-10 17:52 — web round 1
+
+- **DOC** Meter: the schema's `labelGap` binding (space.2, horizontal gap between label and value in the header row) was implemented in CSS as a bare `gap: var(--space-2)` with no override hook and was missing from `MeterOverridableBinding` — added `--ds-meter-label-gap` and included `labelGap` in the overridable union so it matches the other overridable bindings. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: no `src/Meter.test.tsx` existed for the 6 behavior scenarios (only the auto-generated `generated/behavior/Meter.web.test.tsx` did) — added one following the Alert/Button/Carousel `has-accessible-name` pattern (`screen.getByRole('meter', { name })`), matching this package's now-broad test-rollout convention (21+ components already have adopted `<Name>.test.tsx` files, well beyond what the stale memory note tracked). → `site/src/content/docs/components/meter.md`
+- **CODE** Meter: index.ts already exported Meter/MeterProps/MeterTone/MeterOverridableBinding and Meter.tsx/Meter.css/Meter.stories.tsx already existed from a prior generation pass, matching the spec closely — treated this as a completion/fix pass rather than a from-scratch generation.
+
+### 2026-09-10 17:47 — lit round 1
+
+- **DOC** Meter: `labelGap` (space.2, horizontal gap between label and value text) was in the overridable-bindings list but missing from the existing implementation — the `.row` gap was hardcoded to `var(--space-2)` instead of a `--ds-meter-label-gap` hook; added the hook and wired it into `overrides`/HOOKS/default styles. → `site/src/content/docs/components/meter.md`
+
 ### 2026-09-10 02:02 — lit round 1
 
 - **DOC** Meter (lit): the internal gap between the label and the value text within the label row has no named binding in the schema (only partGap, described as the label-row-to-track gap, is listed) — left it as a fixed var(--space-2), not overridable. → `site/src/content/docs/components/meter.md`
@@ -1200,6 +1672,40 @@ Doc: `site/src/content/docs/components/meter.md`
 ## NumberInput
 
 Doc: `site/src/content/docs/components/numberinput.md`
+
+### 2026-09-10 19:03 — rn round 1
+
+- **DOC** Hold-to-repeat: the spec requires the stepper buttons to repeat while held, timed from the resolved theme at pointerdown (motion.duration.base delay, motion.duration.fast interval). The composition contract mandates the composed child be this package's `Button`, which only exposes `onPress` (no onPressIn/onPressOut) — implementing hold-to-repeat would mean bypassing composition or growing Button's own props, both out of scope here. Implemented single-tap stepping only. → `site/src/content/docs/components/numberinput.md`
+- **DOC** accessibilityRole="adjustable" on the TextInput (mandated by platforms.rn.props) is in real tension with the field being directly typable: VoiceOver/TalkBack treat 'adjustable' as swipe-up/down only and often suppress the double-tap-to-edit gesture. Implemented literally (role=adjustable plus increment/decrement/pageup/pagedown/home/end accessibility actions), but direct typing under a screen reader may be unreliable as a result — a native platform limitation, not a coding gap. → `site/src/content/docs/components/numberinput.md`
+- **DOC** copy.outOfRange ('{label} must be between {min} and {max}.') assumes both min and max are set. The doc never addresses the single-bound case, and inventing wording for a missing placeholder isn't allowed, so I only surface this message when both bounds are defined; with only one bound, the value still clamps on blur but silently (no error text). → `site/src/content/docs/components/numberinput.md`
+- **DOC** The onChange→onChangeText platform mapping means this component's onChangeText prop carries a `number | undefined`, not RN's usual string — same name as TextInput's own string-based prop, which may surprise consumers. Followed the schema's literal mapping rather than renaming. → `site/src/content/docs/components/numberinput.md`
+- **DOC** Form's FormFieldValue union has no numeric variant (same limitation Slider already hit), so despite the spec saying 'the collected value is a number,' the field registers a stringified number with the Form, consistent with Slider's precedent. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput's schema/Related section never mentions Fieldset, so unlike its nearest sibling Input, this component does not register with FieldsetContext (no legend-prefixed accessible name, no fieldset-driven disabled). Flagging in case parity with Input was actually expected. → `site/src/content/docs/components/numberinput.md`
+- **DOC** The 'ships a Keyboard story open with its trigger and ≥3 focusable children' testability rule reads as written for overlay/disclosure components (trigger + open panel); NumberInput is a plain spinbutton with no trigger or open state, so no Keyboard story was added. → `site/src/content/docs/components/numberinput.md`
+- **DOC** The rn platform note '(numbers-and-punctuation on iOS for negatives)' isn't fully spelled out as a rule, so I inferred: use keyboardType="numbers-and-punctuation" on iOS when negative values are allowed (min undefined or min < 0), else "decimal-pad" — a judgment call worth double-checking against real device behavior. → `site/src/content/docs/components/numberinput.md`
+- **DOC** leadingText/format:currency can both render a currency symbol at once (Intl's own symbol plus a manually supplied leadingText like "$"); the spec doesn't state a precedence/exclusivity rule here, so both are rendered independently as authored. → `site/src/content/docs/components/numberinput.md`
+
+### 2026-09-10 18:53 — web round 1
+
+- **DOC** The existing implementation used prop names `prefix`/`suffix` and `showSteppers` (default true) that contradict the spec's `leadingText`/`trailingText` (the spec explicitly says 'Not prefix: that name is a native Element member') and `hideSteppers` (default false); renamed to match the schema. `data-part` values stayed `prefix`/`suffix` since those are the anatomy names verbatim, distinct from the prop names. → `site/src/content/docs/components/numberinput.md`
+- **DOC** The `size` (sm/md) and `hideLabel` props were entirely missing from the prior implementation; added them following Input's pattern (paddingBlockSm/paddingInlineSm/minTargetSm bindings, a `--sm` modifier class, and a visually-hidden label wrapper). → `site/src/content/docs/components/numberinput.md`
+- **DOC** copy.currencyMissing and its dev-only console.warn (format: currency without currency) were missing; added, following the `isDev` pattern used elsewhere in the package (e.g. Select.tsx). → `site/src/content/docs/components/numberinput.md`
+- **DOC** copy.outOfRange ('{label} must be between {min} and {max}') only renders when both `min` and `max` are defined, since the template requires both values; if only one bound is set and a blur-time clamp occurs, no outOfRange message is shown (fell back to no message beyond the invalid/required checks) — the schema doesn't specify wording for a single-bound clamp. → `site/src/content/docs/components/numberinput.md`
+- **DOC** Hold-to-repeat timings are hardcoded constants (400ms/80ms) rather than read from the resolved theme at pointerdown via `motion.duration.base`/`motion.duration.fast`, matching this package's existing precedent (Tooltip.tsx's DEFAULT_DELAY_MS) since components can't read a resolved custom-property value without a DOM measurement at that exact moment. → `site/src/content/docs/components/numberinput.md`
+- **DOC** Platform notes fix stepper Buttons at 'ghost, sm, iconOnly' unconditionally, while the `minTargetSm` binding's description implies the steppers might use a different Button size at NumberInput size md vs sm ('the stepper buttons become Button size sm' at size sm). Kept the literal platform-notes instruction (steppers always Button size='sm') since it's the more concrete rule. → `site/src/content/docs/components/numberinput.md`
+- **CODE** Fixed a behavior bug: stepBy() previously added the step delta to a `min ?? max ?? 0` base for both directions when the field was empty, which doesn't match the spec's literal 'from empty, ArrowUp goes to min ?? 0 and ArrowDown goes to max ?? 0' (i.e. jump directly to the bound, not bound-plus-step).
+
+### 2026-09-10 18:41 — lit round 1
+
+- **DOC** NumberInput: props.label's a11y note says 'label/for on the input', but composition mandates label: Text, and ds-text only renders <p>/<span> (never <label>). Used aria-labelledby pointing at the ds-text's id instead, the same accommodation Slider made for its own Text-composed label. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: platforms.lit.reflect lists 'show-steppers' literally, but showSteppers defaults to true and a boolean attribute can't express false for a default-true prop. Kept the property named showSteppers and exposed it as the negated 'hide-steppers' attribute (NEGATED_BOOLEAN_CONVERTER) instead of the literal reflect-list name. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: prop `prefix` collides with the native, read-only Element.prefix (namespace prefix, type string|null) that a custom element inherits. Typed it `string | null` instead of `string | undefined`; doc should avoid `prefix` as a prop name the same way overlays avoid title/id/role. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the doc's Behavior section says clamping 'reports' copy.outOfRange 'when the field is required and the user typed out of range'; implemented literally (silent clamp, no error, when not required), and only when both min and max are defined (the copy template needs both). Flagging in case the intent was for outOfRange to fire regardless of `required`. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: format: percent's relationship between the stored plain number and the displayed percentage isn't specified. Chose to store/parse the number as typed (e.g. 50) and divide by 100 only when formatting through Intl's 'percent' style. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: format: currency with no `currency` prop would make Intl.NumberFormat throw; defaulted to 'USD' and added a dev-only console.warn using copy.currencyMissing verbatim. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the doc doesn't define a starting value for ArrowUp/ArrowDown/steppers when the field is empty. Implemented native-input-like behavior: increment from empty jumps to `min ?? 0`, decrement jumps to `max ?? 0`. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: Web platform notes describe stepper hold-to-repeat using 'motion.duration.base initial delay and motion.duration.fast interval'; applied the same timing to the Lit steppers (read live from CSS custom properties at pointerdown) since the general Behavior section states steppers repeat while held for every platform, even though the Lit platform notes themselves don't mention it. → `site/src/content/docs/components/numberinput.md`
+- **CODE** NumberInput: <ds-form>'s field discovery (FIELD_SELECTOR/FIELD_TAGS in Form.ts) only recognizes ds-input, ds-checkbox, ds-switch, ds-radio-group — not ds-number-input (the same pre-existing gap already affects ds-slider). NumberInput is form-associated via ElementInternals for a plain native <form> and calls the ancestor <ds-form>'s public submit() on Enter, but <ds-form> won't collect/validate/disable-propagate to it until Form.ts's field list is updated (out of scope here); relatedly, DsFormField's `currentValue: string | boolean | null` type doesn't fit a numeric field, so NumberInput does not declare `implements DsFormField` even though it satisfies the shape at runtime.
 
 ### 2026-09-10 11:06 — web round 1
 
@@ -1229,6 +1735,16 @@ Doc: `site/src/content/docs/components/numberinput.md`
 ## Popover
 
 Doc: `site/src/content/docs/components/popover.md`
+
+### 2026-09-10 18:21 — rn round 1
+
+- **CODE** Popover: the file already existed (fully built) but was missing the schema's `headingLevel` prop entirely — Heading level was hardcoded to 2. Added `headingLevel?: '2'|'3'|'4'|2|3|4` (default '3'), threaded to `Heading`'s `level` prop, plus the three HeadingLevel2/3/4 stories and the exported `PopoverHeadingLevel` type; everything else (positioning, modal/non-modal behavior, arrow, overrides, focus handling) was already complete and left unchanged.
+- **CODE** Popover (pre-existing, unchanged): non-modal outside-tap dismissal is approximated — the native `Modal` intercepts all touches behind it, so 'the page stays interactive' from the web spec can't be reproduced, only 'tapping outside closes it'.
+- **CODE** Popover (pre-existing, unchanged): Tab/Shift+Tab tab-out has no native key-event API on `Pressable` and is not implemented; phones render the same tablet/react-native-web transparent-Modal layout since `BottomSheet` composition for phones isn't wired up here.
+
+### 2026-09-10 18:06 — lit round 1
+
+- **DOC** Popover: the existing generated Popover.ts had `heading-level` listed under platforms.lit.reflect and headingLevel in the schema (enum '2'|'3'|'4', default '3'), but the class had no headingLevel property and the panel heading was hardcoded to level="3" — added the missing @property (reflected, attribute heading-level), wired it into the <ds-heading level> binding, exported PopoverHeadingLevel from index.ts, and added the HeadingLevel2/3/4 stories plus the headingLevel arg/argType that were also missing. → `site/src/content/docs/components/popover.md`
 
 ### 2026-09-10 03:06 — lit round 1
 
@@ -1267,6 +1783,24 @@ Doc: `site/src/content/docs/components/popover.md`
 
 Doc: `site/src/content/docs/components/progressbar.md`
 
+### 2026-09-10 19:09 — rn round 1
+
+- **DOC** ProgressBar: rn platform props list only names accessibilityRole/accessibilityLabel/accessibilityValue, but the web build sets aria-busy for indeterminate; I added accessibilityState={{ busy: true }} as the RN analog since RN's accessibilityState does support 'busy' — flagging in case the doc wants this made explicit. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: for indeterminate accessibilityValue, I omit both `now` and `text` (only min/max) rather than reporting a misleading 0%/unknown value text; the doc only says web omits aria-valuenow, not aria-valuetext, so this is a judgment call. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the indeterminate sweep's easing isn't specified (the `transition` binding's motion.easing.standard is described only for the determinate width change); I used Easing.linear for the continuous loop since a standard ease-in-out would visibly hitch at the loop seam — worth confirming or adding an explicit easing note to indeterminateLoop. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: added a non-finite-value/max<=min dev warning and clamp, mirroring Meter's documented robustness behavior, even though the ProgressBar schema doesn't spell this out explicitly. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: 'moved backward resets announcements' is implemented as reset-on-any-decrease of the rounded percent, and additionally reset whenever the bar re-enters indeterminate (a restart signal); the doc only describes the value-decrease case, so the indeterminate-reset behavior is an inference. → `site/src/content/docs/components/progressbar.md`
+
+### 2026-09-10 18:56 — web round 1
+
+- **DOC** ProgressBar: default formatValue and the value-text computation don't guard against max <= min (an invalid range); behavior when min/max are misconfigured is unspecified in the doc, so it falls back to treating the bar as empty rather than warning, matching Meter's non-throwing behavior but without Meter's dev-mode console warning (the ProgressBar doc doesn't request one). → `site/src/content/docs/components/progressbar.md`
+
+### 2026-09-10 18:43 — lit round 1
+
+- **DOC** ProgressBar: schema's `formatValue` shape is `(value, min, max) => string` but the on-disk file typed it as `(value, max) => string` and computed the default percentage as value/max instead of the range-aware (value-min)/(max-min) used by the fill itself — fixed both to match the schema and to stay consistent with the fill's own `percent` getter. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the Behavior section says the live region is `role="status"` on Lit (not ElementInternals) but the region lacked the role attribute — added `role="status"` alongside `aria-live="polite"`. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the class doc explains role/aria-value* are set as plain host attributes rather than via ElementInternals, deviating from the platform note's literal wording ('ElementInternals role="progressbar" with ariaValueNow/Min/Max/Text on the host') because the accessible-name/value test tooling only reads real attributes — left as-is since it was already a deliberate, documented choice in the existing code, but flagging it since it reads as a contradiction with the platform notes section verbatim. → `site/src/content/docs/components/progressbar.md`
+
 ### 2026-09-10 11:12 — lit round 1
 
 - **DOC** ProgressBar: platform notes say role/aria-value* go through ElementInternals on the host, but the package convention (established by Toast.ts's own comment) is that ElementInternals.role/ariaLabel aren't visible to the accessible-name/value computation the test suite uses — only real attributes are. I set role, aria-valuemin/max/now/text and aria-label as plain host attributes instead (kept real AT compatibility, since plain ARIA attributes work identically to ElementInternals for actual assistive tech), and skipped ElementInternals entirely. → `site/src/content/docs/components/progressbar.md`
@@ -1285,6 +1819,12 @@ Doc: `site/src/content/docs/components/progressbar.md`
 ## RadioGroup
 
 Doc: `site/src/content/docs/components/radiogroup.md`
+
+### 2026-09-10 17:42 — web round 1
+
+- **DOC** RadioGroup: no test file existed for the 4 behavior scenarios in this prompt, unlike sibling components (Switch, Card, Box, Container) that already have one; added RadioGroup.test.tsx following that same convention (setup() from the Default story's args, one it() per scenario) and confirmed all 4 pass. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the fieldset root has no explicit role attribute, so it exposes the browser's native implicit role of 'group' rather than the schema's declared a11y.role: radiogroup (a <fieldset> has no native 'radiogroup' mapping) — left as-is to match the platform notes' instruction to rely on native <fieldset>/<legend> semantics and not add ARIA the schema doesn't call for explicitly, but this is a real mismatch between the declared role and what assistive tech will report; the error-is-identified test asserts the group via getByRole('group')/aria-invalid rather than getByRole('radiogroup'). → `site/src/content/docs/components/radiogroup.md`
+- NOISE: 1 repeated or empty line(s) collapsed
 
 ### 2026-09-10 01:51 — rn round 1
 
@@ -1312,6 +1852,20 @@ Doc: `site/src/content/docs/components/radiogroup.md`
 
 Doc: `site/src/content/docs/components/search.md`
 
+### 2026-09-10 19:03 — web round 1
+
+- **DOC** Search: `action`-driven submission is implemented as fully JS-controlled navigation (`window.location.assign` with `URLSearchParams`) rather than a native `<form method="get" action>` submission, so Enter, the submit button, and choosing a suggestion all share one trimmed-query/empty-guard path (`trySubmit`/`submitQuery`). → `site/src/content/docs/components/search.md`
+- **DOC** Search's `styles` list has no popup surface/border/radius/shadow bindings (unlike Combobox's), so the suggestions dropdown relies entirely on Listbox's own default look with no elevation shadow. → `site/src/content/docs/components/search.md`
+- **DOC** Listbox's built-in ArrowUp navigation has no way to reach a 'no highlight' state at the top of the list; implemented by intercepting ArrowUp in Search itself when the current highlight is already the first suggestion. → `site/src/content/docs/components/search.md`
+- **DOC** The schema now lists `landmark: Landmark` in `composition`, but the platform note literally specifies `<form role="search" data-ds="Search">` as the landmark element; composing the actual `Landmark` component would force its hard-coded `data-ds="Landmark"` onto the root, breaking the mandatory `data-ds="Search"` testability hook. Kept the bare `role="search"` attribute on the native `<form>` rather than nesting/wrapping with `Landmark`, since the two requirements directly conflict and the hook takes precedence. → `site/src/content/docs/components/search.md`
+- **DOC** No `aria-label` is added to the search landmark itself (distinct from the input's own label) when `showLabel` is false — the doc's 'do not put two search landmarks on a page' guidance was read as implying a single search landmark never needs a distinguishing name of its own. → `site/src/content/docs/components/search.md`
+- NOISE: 1 repeated or empty line(s) collapsed
+
+### 2026-09-10 18:48 — lit round 1
+
+- **DOC** Search: the composition table lists `landmark: Landmark` and the Guidance section says "The landmark is the composed Landmark (`search`) named by `label`", but the platform notes (web and lit) both describe the landmark as a plain `role="search"` attribute on the `<form>` itself with no mention of composing `<ds-landmark>`. Treated the composition table + Guidance line as authoritative (matching the generator-conventions rule to compose named Related components rather than re-implement them) and wrapped the shadow-root `<form>` in `<ds-landmark role="search" .label>` when the `landmark` prop is true, rendering the bare `<form>` otherwise. → `site/src/content/docs/components/search.md`
+- **CODE** Search: Guidance says "the Listbox is `embedded`" but neither the composition table nor the platform notes call out the `embedded` prop on `<ds-listbox>` (a pre-existing Listbox prop that suppresses its own border/surface/radius so a wrapping popup owns them — mirrors the same pattern documented for Select/Combobox's popup, which don't currently set it either). Added the `embedded` attribute to Search's `<ds-listbox>` so its own border/background don't double up with the `.popup` wrapper's border/surface/radius.
+
 ### 2026-09-10 11:34 — lit round 1
 
 - **DOC** Search: platforms.lit.reflect lists `landmark` as the reflected attribute, but the package's own boolean-defaults-to-true rule (like Combobox's `clearable` → `no-clear`) requires a negated attribute since the default is `true`. Implemented as property `landmark` reflected via `no-landmark` (absent = true), contradicting the schema's literal attribute name. → `site/src/content/docs/components/search.md`
@@ -1335,6 +1889,19 @@ Doc: `site/src/content/docs/components/search.md`
 ## SegmentedControl
 
 Doc: `site/src/content/docs/components/segmentedcontrol.md`
+
+### 2026-09-10 18:35 — rn round 1
+
+- **DOC** minTarget used t.sizeTargetMin, but the schema note says touch platforms (RN is always touch) bump the group height to size.target.comfortable so segments reach 44px — changed to t.sizeTargetComfortable, matching the sibling RadioGroup/Tabs implementations. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** selectedWeight (font.weight.semibold) was not applied anywhere — the selected segment's label now uses it instead of the shared fontWeight, per the schema description 'The selected segment's label; unselected use fontWeight.' → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** segmentSpacing (space.0, locked: false) had no code path at all; added `gap: segmentSpacing` on the group row so an override can space out segments — default remains 0 so the pill-under-abutting-segments look is unchanged. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** iconOnly segments are not wrapped in Tooltip on RN per the doc's own platform note ('on native the label is the accessibility label') even though `tooltip` appears in the schema's composition/anatomy — kept accessibilityLabel-only, no Tooltip import, consistent with that note. → `site/src/content/docs/components/segmentedcontrol.md`
+- **CODE** The file already existed from a prior generation pass but had drifted from the schema; brought it into line rather than a full rewrite: added the three missing overridable bindings (segmentSpacing, selectedWeight, paddingBlockSm) that were declared in the schema's Overridable list but absent from the type union and implementation.
+- **CODE** paddingBlockSm vs segmentPaddingBlock: both default to the same token (space.1) so there was no visible bug, but they are separate override hooks per the schema (sm-size padding overridable independently of md-size padding) — segmentPaddingBlock is now picked by size instead of applied uniformly.
+
+### 2026-09-10 18:24 — lit round 1
+
+- **DOC** SegmentedControl: minTarget's description says 'on touch platforms the group height is size.target.comfortable so every segment reaches 44px', but CSS has no reliable 'is this a touch platform' query (only pointer:coarse, which also fires on hybrid laptops), and no other Lit component in this package gates size.target.comfortable behind a media query — they all use it unconditionally. Kept segments at the locked size.target.min (24px) unconditionally rather than guessing at a pointer-coarse media query; flagging since the touch-comfortable bump described in the schema isn't implemented. → `site/src/content/docs/components/segmentedcontrol.md`
 
 ### 2026-09-10 09:33 — lit round 1
 
@@ -1360,6 +1927,27 @@ Doc: `site/src/content/docs/components/segmentedcontrol.md`
 ## Select
 
 Doc: `site/src/content/docs/components/select.md`
+
+### 2026-09-10 18:45 — rn round 1
+
+- **DOC** Select: the prior generation of Select.tsx omitted the `size` (sm/md), `hideLabel`, and `open` props entirely despite being required by the schema. Added them: `size` follows Input's pattern (`triggerPaddingBlockSm`/`minTargetSm` overridable bindings swap in at `sm`, and the trigger/label text use Text's own `size` prop rather than a resolved number); `hideLabel` hides the visible label Text while it remains the trigger's `accessibilityLabel`, matching Input; `open` is a controlled escape hatch mirroring Menu's `isControlled`/`internalOpen` pattern. → `site/src/content/docs/components/select.md`
+- **DOC** Select: `fontSize: token: font.size.{size}` has no direct mechanism to thread into the composed Listbox, since Listbox's `overrides.fontSize` takes a TokenRef string, not a resolved number, and Listbox already defaults to `font.size.md` internally. Chose to only pass an explicit `'font.size.sm' as TokenRef` override when `size === 'sm'` and no caller override is given (the Breadcrumb component uses this same literal-TokenRef pattern), leaving `md` to fall through to Listbox's own default rather than resolving and re-passing a number. → `site/src/content/docs/components/select.md`
+- **DOC** Select: no `Select.stories.tsx` existed for rn at all (previously flagged in generated/gaps/Select.rn.md as an output-scope omission from a prior run). Created it with `Default`, one story per `size` and `native` enum value, notable states (`Multiple`, `Grouped`, `HideLabel`, `Required`, `Disabled`, `Invalid`, `WithError`, `WithDescription`), and a `Keyboard` story using the newly-added `open: true` prop to render pre-opened with 4 focusable options, matching Menu's convention now that Select has a controlled `open`. → `site/src/content/docs/components/select.md`
+- **CODE** Select: pre-existing gaps from generated/gaps/Select.rn.md still apply unchanged — `native: always` has no native-picker equivalent and collapses to the same phone/tablet split as `auto`; the phone/tablet breakpoint reuses `t.layoutMaxWidthProse` though it isn't one of Select's own bindings; the BottomSheet's `multiple` footer button uses a literal 'Done' (schema's `copy` block has no entry for it); the popup wraps Listbox's own border/background inside the popup's own surface, which can double up visually; focus-restore-on-close uses `findNodeHandle` + `AccessibilityInfo.setAccessibilityFocus` rather than FocusScope's `restoreFocus`; and only Escape/outside-tap dismiss and Enter-as-press-commit are wired from the web keyboard model (arrow/Home/End/typeahead/Tab-commits have no `Pressable` equivalent).
+
+### 2026-09-10 18:40 — web round 1
+
+- **DOC** Select: the doc now includes a real `open` prop (controlled popup state) and a `size` (sm/md) prop; these were absent from the existing implementation, so I added them — `open` as a standard controlled/uncontrolled boolean mirroring `value`, and `size` following Input's sm/md convention (`triggerPaddingBlockSm`, `minTargetSm`, and `fontSize` swapped to `font.size.sm` via a `.ds-select--sm` modifier class). → `site/src/content/docs/components/select.md`
+- **DOC** Select: with `open` now available, updated the `Keyboard` story so the first of three trigger instances renders with `open` — this satisfies 'renders it open/present with its trigger' literally, while the other two closed triggers keep the ≥3-focusable-children count, since a single open Select still only exposes two focusable nodes (trigger + the embedded Listbox's one aria-activedescendant tab stop) and three separately-focusable children inside one instance remain structurally impossible. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the guidance text says the composed Listbox is `embedded` and receives `defaultActiveValue` set to the current selection, but the existing implementation wired neither. Wired both now, and moved the popup's surface/border/radius to be drawn by the `.ds-select__popup` wrapper itself (an embedded Listbox draws none of its own), removing the previous CSS custom-property forwarding hack into `--ds-listbox-*`, which would have been a no-op once `embedded` zeroes those rules out. → `site/src/content/docs/components/select.md`
+- **DOC** Select: added the missing `hideLabel` prop (listed in the schema's prop table but absent from the existing code) and the package's standard `data-ds-field` attribute on the root (present on Input/Checkbox but missing on both of Select's render paths) — both plain omissions, not doc ambiguities. → `site/src/content/docs/components/select.md`
+- **CODE** Pre-existing, out of scope: the generated behavior test (generated/behavior/Select.web.test.tsx) throws when jsdom's `HTMLElement.scrollIntoView` (unimplemented in jsdom) is hit by Listbox's own focus-handling code once the popup opens and focus moves to the embedded Listbox — this call path predates this change (Select already moved focus onto the Listbox on open) and lives in Listbox.tsx, not Select.tsx.
+
+### 2026-09-10 18:35 — lit round 1
+
+- **DOC** Select: the schema lists `size` as a prop with a `fontSize: font.size.{size}` binding and sm-specific `triggerPaddingBlockSm`/`minTargetSm` bindings, but `platforms.lit.reflect` omits `size` — reflected it anyway (`reflect: true`) since an attribute selector is required to apply the per-size CSS, matching the established pattern for `size` on Button and Input in this same package. → `site/src/content/docs/components/select.md`
+- **DOC** Select: `copy.selectedCount`, `copy.done`, `copy.required`, `copy.invalid` and `copy.requiredIndicator` are all defined, but the guidance's 'Behavior' section says the phone/tablet sheet footer button uses `copy.done` — that switch is React Native-only per the platform notes (BottomSheet), so `copy.done` is unused on this Lit build; left unreferenced rather than invented into an unspecified UI element. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the previously generated file's trigger used `aria-labelledby="label value"`, which pulled the placeholder/value text into the accessible name (e.g. 'Country Select…' instead of 'Country'), failing the schema's own `has-accessible-name` behavior scenario. Fixed to `aria-labelledby="label"` only, matching the native-`<select>` fallback branch, which already only referenced `label`; the current value is still conveyed visually and via the trigger's text content, just not folded into the accessible name. → `site/src/content/docs/components/select.md`
 
 ### 2026-09-10 09:59 — web round 1
 
@@ -1400,6 +1988,18 @@ Doc: `site/src/content/docs/components/select.md`
 
 Doc: `site/src/content/docs/components/sidepanel.md`
 
+### 2026-09-10 18:31 — rn round 1
+
+- **DOC** SidePanel: schema's `role` prop (complementary/navigation landmark) was missing from the prior implementation entirely; added it, but per the rn platform notes ('role maps to the RN >= 0.74 role prop on the persistent sidebar View') it only reaches the persistent sidebar's native `role` — the non-persistent overlay surface has no `<aside>`/landmark equivalent on native, so its region role is not exposed while disclosed or modal, unlike web's `<aside>`/Landmark treatment of the non-modal region. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the prior implementation used `title`/`hideTitle` prop names, diverging from the schema's `heading`/`hideHeading` (and from BottomSheet/Dialog's own naming convention in this package); renamed throughout the component, its stories, and doc comments to match the schema exactly. → `site/src/content/docs/components/sidepanel.md`
+
+### 2026-09-10 18:19 — lit round 1
+
+- **DOC** SidePanel: doc prop `role` (values complementary/navigation) renamed to `landmark` for the Lit JS property/attribute to avoid colliding with the native `Element.role` ARIA-reflection accessor, per the 'roles on the host' naming convention; it is not reflected (also absent from platforms.lit.reflect) and only drives the `role` attribute set on the shadow `<aside>` (persistent) or non-modal `<dialog>` (overlay-open) region. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: `hideTitle`/`hide-title` from a prior generation round (based on an earlier doc draft using `title`) renamed to `hideHeading`/`hide-heading` to match the current schema's prop name. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: `modal`'s stray `reflect: true` (left over from the earlier round) removed since `modal` is not listed under `platforms.lit.reflect` and no CSS reads a `:host([modal])` selector — its overlay/dialog-vs-aside branching is already handled entirely in render() logic. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: prior-round gaps around `aria-controls` never reaching the shadow panel, `swipeable` being inert on web (native-only gesture), and the persistent-mode `<aside>`'s role previously being hardcoded still apply as documented in generated/gaps/SidePanel.lit.md rounds 1-2, except the last is now resolved by the new `landmark` prop. → `site/src/content/docs/components/sidepanel.md`
+
 ### 2026-09-10 03:40 — lit round 1
 
 - **DOC** SidePanel: doc prop `title` renamed to `heading` for both the JS property and the attribute (not just mapped) to avoid colliding with `HTMLElement.title`, matching the existing precedent in Dialog.ts and BottomSheet.ts rather than keeping the doc's literal attribute name. → `site/src/content/docs/components/sidepanel.md`
@@ -1437,6 +2037,29 @@ Doc: `site/src/content/docs/components/sidepanel.md`
 
 Doc: `site/src/content/docs/components/slider.md`
 
+### 2026-09-10 18:53 — rn round 1
+
+- **DOC** Slider: `invalid`/`required` have no dedicated visual token in the schema's `styles` block (unlike Input's border-color treatment), so a failed slider looks identical to a valid one until `errorMessage` renders — chose not to invent an unlisted color rather than reuse a locked binding. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: no `copy.*` entry defines a visible '(required)' label suffix (only the required/invalid *messages* are specified), so — unlike Input's convention — the label text is left unmodified when `required` is set. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: PageUp/PageDown/Home/End from the keyboard table have no native gesture equivalent; exposed them as custom `accessibilityActions` ('pageup'/'pagedown'/'home'/'end') alongside `increment`/`decrement`. Only increment/decrement get the native VoiceOver swipe / TalkBack volume-key binding — the other four surface in the platform's generic 'Actions' menu, a platform ceiling rather than an implementation gap. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: mapped the Forms doc's `validate: blur` (defined explicitly only for toggles) onto a drag/interaction's end (`onSlidingComplete`) as the closest analogue to blur for a pointer-driven control; this interpretation isn't spelled out for Slider specifically. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the Keyboard story previously combined a plain slider with a range slider (3 thumbs); corrected it to render only the range form per the doc text ('The Keyboard story renders the range form... the three-focusable rule does not apply'). → `site/src/content/docs/components/slider.md`
+- **CODE** Slider: the schema's `snapToMarks`, `required`, and `invalid` props were absent from the pre-existing implementation (drag-to-marks was inferred from `step` being left `undefined`, a workaround not in the schema). Added the real `snapToMarks` boolean (step now defaults to 1 per spec, keys always use `step`, drag/click snap to marks only when `snapToMarks` is set), plus `required`/`invalid` with the schema's `error` → `required` → `invalid` precedence and `copy.required`/`copy.invalid`.
+
+### 2026-09-10 18:47 — web round 1
+
+- **DOC** Slider: the existing file was missing the `required`, `invalid`, and `snapToMarks` props entirely (schema declares them); added them with copy.required/copy.invalid validation precedence (error → required → invalid) matching Input/NumberInput's pattern, `required` treated as 'current value equals the effective default' per the schema description ('must have a value other than the default to submit'). → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: platforms.web.attributes for the thumb role=slider list does not include aria-invalid or aria-required (unlike Input/NumberInput's own attribute lists), so I did not add them to the thumb divs; invalid state is instead surfaced via a `ds-slider--invalid` root class (no dedicated visual token exists for it in styles) plus the existing aria-describedby link to the error text. Flagging in case aria-invalid was intended to be implicit. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: copy.rangeText was previously not used (the beside-label range text was hardcoded as `${low} – ${high}`); now built from COPY.rangeText.replace, matching the 'use copy.* verbatim' rule. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the file never called `form.validateField` on interaction, so `required`/`invalid` (and `error`) never re-validated live in `validate: 'change'`/`'blur'` Forms, only at submit. Added `validateField` calls on commit (change mode) and on interaction-end/onChangeEnd (blur or change mode), mirroring Input/NumberInput, since the spec's blur-note ('validate: blur means on-change for toggles') implies drag/key-release should count as the commit point for a non-typed control like Slider. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: `snapToMarks` only affects pointer drag/click (per spec: 'keys still move by step, PageUp/Down by mark'); implemented as a separate snap function passed into `updateThumb`, defaulting to step-snapping for the keyboard path. → `site/src/content/docs/components/slider.md`
+
+### 2026-09-10 18:40 — lit round 1
+
+- **DOC** Slider: platforms.web.attributes doesn't list aria-required, but copy.required implies a required state must be identified — added aria-required on each thumb to match the pattern used by other required form fields (Input, RadioGroup) in this package. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: 'must have a value other than the default to submit' doesn't define what 'the default' is when defaultValue is unset — chose the same fallback the value prop itself documents (min, or [min, max]) so required and value share one notion of default. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: platforms.lit.reflect lists only range/disabled/show-value, so required and snapToMarks are plain (non-reflected) boolean properties, consistent with the explicit list rather than the broader convention some other fields use. → `site/src/content/docs/components/slider.md`
+
 ### 2026-09-10 10:55 — web round 1
 
 - **DOC** Slider: schema props have no `required`/`invalid` fields and `copy` only defines minimumLabel/maximumLabel, unlike Input/Checkbox/RadioGroup's required+invalid+copy.required/copy.invalid pattern. Implemented `validate()` as just returning the `error` prop, with no required-field enforcement. → `site/src/content/docs/components/slider.md`
@@ -1463,6 +2086,10 @@ Doc: `site/src/content/docs/components/slider.md`
 ## Splitter
 
 Doc: `site/src/content/docs/components/splitter.md`
+
+### 2026-09-10 19:11 — lit round 1
+
+- **DOC** Splitter: the `transition` style binding's doc says it covers 'Collapse and restore, and the separator color' but the implementation only transitions the separator's background color — `--ds-splitter-primary-size` drives `grid-template-columns` and changes instantly on collapse/restore since animating a custom-property-valued grid track needs a global `@property` registration (`syntax: '<percentage>'`), which has inconsistent support when declared inside a shadow-root-adopted stylesheet; left unanimated rather than risk a silently-broken transition. → `site/src/content/docs/components/splitter.md`
 
 ### 2026-09-10 16:38 — rn round 1
 
@@ -1500,6 +2127,15 @@ Doc: `site/src/content/docs/components/splitter.md`
 
 Doc: `site/src/content/docs/components/stack.md`
 
+### 2026-09-10 17:15 — web round 1
+
+- **DOC** Stack was already generated for React and matched the spec except for one thing: `overrides.gap` did not no-op at `gap: none` (styles.gap.description requires the presence rule). Fixed Stack.css so the base rule and `.ds-stack--gap-none` set `gap: 0` literally instead of reading `var(--ds-stack-gap)`, mirroring Box's background/radius presence-rule pattern — the hook is only read by the tight/normal/loose/section modifier classes. → `site/src/content/docs/components/stack.md`
+- **DOC** The prompt's general convention list says enum props whose values are quoted digits (citing 'Heading level, Stack gap') accept both string and number, but Stack's actual gap values are words (none/tight/normal/loose/section), not digits — treated this as a stale/generic template line that doesn't apply to Stack and left gap as a plain string union. → `site/src/content/docs/components/stack.md`
+
+### 2026-09-10 17:14 — lit round 1
+
+- **CODE** Stack: schema says gap: none must make overrides.gap a no-op (presence rule), but the pre-existing implementation applied inline style overrides unconditionally, letting an override win over gap="none". Fixed by skipping the gap hook when gap is "none" and re-running applyOverrides when gap changes.
+
 ### 2026-09-10 00:52 — rn round 2
 
 - **DOC** Stack: Round 1's spec-correct rewrite of `gap` from the raw spacing scale ('0'..'12') to the semantic layout-rhythm enum (none/tight/normal/loose/section) broke nine consumers still on the old numeric values, which the typecheck gate caught. Fixed the consumers rather than weakening Stack's type, mapping each usage by matching pixel value where an old spacing-scale token equals a new layout-gap token exactly (space0=layoutGapNone=0, space1=layoutGapTight=4, space2=layoutGapNormal=8, space4=layoutGapLoose=16) and by semantic role for the one value with no exact match: '6' (space6=24px) was always used as the outermost Stack wrapping a whole screen's major sections, so it became 'section' (32px) per the spec's own definition ('section between page sections') even though it's not the closest pixel match to loose (16px). → `site/src/content/docs/components/stack.md`
@@ -1532,6 +2168,17 @@ Doc: `site/src/content/docs/components/stack.md`
 
 Doc: `site/src/content/docs/components/stepper.md`
 
+### 2026-09-10 19:01 — web round 1
+
+- **DOC** Stepper (web): the spec contradicts itself on navigable steps — platforms.web.notes and the Guidance 'Platform notes > Web' both say the label/description are 'wrapped in a Button variant="ghost"', but the Behavior section says a navigable step is 'its own native <button> ... not the Button component, whose single-label API cannot hold an indicator, label and description'. Checked Button.tsx: it takes only `label: string`, no children slot, confirming the literal instruction is technically impossible. Resolved per the Behavior section — built a native `<button type="button">` (styled with the stepHover/stepRadius/focusRing bindings) wrapping indicator+label+description, matching the same own-native-button pattern Tabs.tsx already uses for its multi-part tab control. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper (web): copy.stepLabel ('Step {n}: {label}') plus the status word is used as `aria-label` only for navigable steps, per the Behavior section's specific wording. The doc doesn't say whether non-navigable (inert) steps get the same numbered prefix or should rely on the native <ol> ordinal announced by screen readers. Chose the latter for non-navigable steps (visible label + visually-hidden status word only) to avoid double-announcing the position. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper (web): 'compact applies to horizontal steppers only' (Behavior section) is enforced only via CSS scoping (`.ds-stepper--horizontal.ds-stepper--compact`); the `ds-stepper--compact` class is still applied when `orientation="vertical"` even though it has no visual effect there. The doc doesn't say whether the class itself should be suppressed in that case. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper (web): the previous generation of this file was missing the `stepHover` and `stepRadius` overridable bindings (present in the Overrides contract) and used `color: var(--color-foreground)` directly on the indicator instead of a dedicated `indicatorColor` hook; both are now added as CSS custom-property hooks per the styles/overrides sections. → `site/src/content/docs/components/stepper.md`
+
+### 2026-09-10 18:45 — lit round 1
+
+- **DOC** Stepper: stepHover and stepRadius were listed in the schema's styles and Overridable set but had no CSS binding in the file I found — added `--ds-stepper-step-hover` (color.action.ghost.backgroundHover, applied on button.control:hover/:active) and `--ds-stepper-step-radius` (radius.sm, applied as border-radius on .control) plus a background-color transition using the existing transition hook, since the spec didn't say whether radius applies to the non-navigable div control too — I applied it to both for a consistent hit-area shape since only the interactive affordance (hover/press) is button-only. → `site/src/content/docs/components/stepper.md`
+
 ### 2026-09-10 11:26 — lit round 1
 
 - **DOC** Stepper: composition table says `step: Button`, but ds-button's API only supports a single text label plus leading/trailing icon slots — it has no default slot for the label+description Text pair the platform notes describe as 'wrapped inside' the Button. Implemented the interactive step control as a native <button> (styled with the component's own tokens), matching the precedent in Disclosure.ts (which also declares its own locked focusRing/focusRingWidth bindings rather than relying on a composed Button's). ds-text is still used for the label/description parts. → `site/src/content/docs/components/stepper.md`
@@ -1554,6 +2201,16 @@ Doc: `site/src/content/docs/components/stepper.md`
 ## Switch
 
 Doc: `site/src/content/docs/components/switch.md`
+
+### 2026-09-10 17:45 — rn round 1
+
+- **DOC** Switch (rn): trackWidth, trackHeight, thumbSize, thumbInset, radius and transition are OS-controlled by the native Switch, so they are omitted from SwitchOverridableBinding entirely (rather than accepted-and-ignored) since an override on them would be a silent no-op; gap, partGap, labelSize, labelWeight, helperSize, fontFamily, lineHeight and disabledOpacity remain overridable. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch (rn): the spec's Behavior section says the field reads FieldsetContext to fold in group disabled and prefix the legend into the accessible name, but Fieldset.tsx documents that Input/Checkbox/Switch/RadioGroup haven't been updated to read it yet and instead relies on a clone-children fallback that force-sets `disabled` on direct children; left Switch consistent with that documented interim state rather than adding FieldsetContext support to only this one component. → `site/src/content/docs/components/switch.md`
+
+### 2026-09-10 17:40 — web round 1
+
+- **DOC** Switch: the package convention doc says form-field components carry data-ds-field for Form to discover them, but Form.tsx actually discovers fields via context registration (useFormContext().register), not DOM query — data-ds-field is only present on Checkbox and Input among 13 form-registering components (RadioGroup, Select, Combobox, etc. also omit it). Left Switch consistent with the majority pattern rather than adding the attribute unilaterally; this is a system-wide convention/implementation mismatch worth resolving once, not per-component. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: guidance mentions 'Inside a Fieldset the field reads FieldsetContext: disabled from the group applies as if set on the field,' but no FieldsetContext exists anywhere in the package (Checkbox, the closest sibling, doesn't implement it either) — Switch only inherits disabled from FormContext, not from a Fieldset group. Not implemented, since inventing that cross-cutting context for one component would be inconsistent with how its neighbors currently behave. → `site/src/content/docs/components/switch.md`
 
 ### 2026-09-10 01:47 — rn round 1
 
@@ -1580,6 +2237,17 @@ Doc: `site/src/content/docs/components/test-failures.md`
 ## Table
 
 Doc: `site/src/content/docs/components/table.md`
+
+### 2026-09-10 19:13 — web round 1
+
+- **DOC** Table: existing generated component was missing the `captionLevel` prop entirely (schema field, its Heading wiring, stories, and the three `renders-captionLevel-*` behavior-scenario tests) despite the schema requiring it and 3 of the 14 behavior scenarios exercising it — added `TableCaptionLevel = '2' | '3' | '4' | 2 | 3 | 4`, wired it to the composed caption Heading's `level` (kept `size="md"` fixed per 'its size is captionSize regardless'), and filled in the missing stories/tests/export. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `width: 'min'` and `'fill'` are approximated as `<col style={{ inlineSize: '1%' }}>` / `100%` since the schema gives no concrete sizing rule for these values beyond 'auto sizes to content'; not a token-backed value so left as inline style rather than a class. → `site/src/content/docs/components/table.md`
+
+### 2026-09-10 18:57 — lit round 1
+
+- **DOC** Table: the previously-generated Table.ts/Table.stories.ts (present before this pass) fully implemented the schema except the required `captionLevel` prop was entirely missing — no property, no wiring to the composed Heading's `level`, no stories, despite three dedicated behavior scenarios (renders-captionLevel-2/3/4) and a copy line referencing it. Added `captionLevel: '2' | '3' | '4'` (default '2', not reflected since it isn't in platforms.lit.reflect), wired it to `<ds-heading level>`, exported `TableCaptionLevel`, and added CaptionLevel2/3/4 stories plus the arg/control. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `SCROLL_STEP_PX` (arrow-key scroll distance in the scroll region) has no doc value — the guidance says 'Arrow keys in the scroll region scroll by `space.10`' but `@container`/keydown handlers can't read a custom property at authoring time for a JS constant, so the existing code uses a literal 40px with a comment; not fixed by this pass, flagging since `space.10`'s px value should be confirmed against the token build rather than guessed. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `rowActions` header cell text ('Actions') has no visible column but the doc doesn't state whether it should also appear in a `data-label` for the stacked responsive mode (unlabeled action buttons when stacked). Existing code leaves the rowActions cell without a `data-label`, so stacked view won't show an 'Actions' label before the actions — left as-is since the schema doesn't request one, but worth a doc call-out. → `site/src/content/docs/components/table.md`
 
 ### 2026-09-10 13:29 — web round 1
 
@@ -1625,6 +2293,21 @@ Doc: `site/src/content/docs/components/table.md`
 
 Doc: `site/src/content/docs/components/tabs.md`
 
+### 2026-09-10 18:32 — rn round 1
+
+- **DOC** Tabs: `activation` (automatic/manual) has no native equivalent since Pressable exposes no key-event API — every tab is its own accessibility stop and touch always selects immediately, so the prop is accepted/typed for parity but has no observable effect on RN; documented in the component doc comment rather than reported as a fresh gap since the spec's own platform notes anticipate this. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the keyboard table's Tab-into-panel and arrow/Home/End movement are web-only per the spec's own 'keyboard rules describe the web keyboard model' clause; no native substitute exists beyond making the panel itself a normal focusable region, so nothing further was implemented. → `site/src/content/docs/components/tabs.md`
+
+### 2026-09-10 18:28 — web round 1
+
+- **DOC** Tabs: the doc says 'a tab without a matching panel, or a panel without a tab, is a development warning and is not rendered' — the existing implementation did neither; added isDev console.warn for each orphaned tab/panel and filtered both from rendering, matching the style of existing components' dev warnings (e.g. Card, DataGrid). → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs.tsx called `tabEl.scrollIntoView(...)` unguarded; jsdom/older environments don't implement it. Added the same `typeof tabEl.scrollIntoView === 'function'` guard already used in Carousel.tsx. → `site/src/content/docs/components/tabs.md`
+- **CODE** Tabs.stories.tsx composed multiple TabPanel children via a JSX Fragment (`<>...</>`) assigned to `children` in args — React.Children.toArray does not flatten Fragments (only real arrays), so panels were never matched to tabs and silently never rendered even before this pass. The doc doesn't specify how to author multi-element `content` props for Storybook args (vs. direct JSX nesting where Babel already produces an array), so I chose to pass an array of TabPanel elements instead; note the sibling Carousel.stories.tsx has the identical Fragment pattern and is very likely subject to the same bug, but that's out of scope for this task.
+
+### 2026-09-10 18:21 — lit round 1
+
+- **DOC** Tabs: aria-controls on the shadow-root <button role="tab"> points at the light-DOM <ds-tab-panel> id, but IDREFs don't cross the shadow boundary (the same limitation the doc calls out for the panel's aria-labelledby, which is why panels use aria-label instead). The doc doesn't offer a workaround for this direction; kept aria-controls as specified since it's the literal attribute the platform notes require, but it will not resolve for assistive tech across the boundary. → `site/src/content/docs/components/tabs.md`
+
 ### 2026-09-10 09:28 — lit round 1
 
 - **DOC** Tabs: anatomy lists tablist/tab/tabLabel/tabIcon/indicator/panel but omits a badge part even though tabs[].badge and the badgeColor/badgeSize style bindings exist; rendered the badge as a visible span inside the tab but did not give it a `part` (parts must be anatomy names verbatim), so it can't be targeted via ::part. → `site/src/content/docs/components/tabs.md`
@@ -1655,6 +2338,11 @@ Doc: `site/src/content/docs/components/tabs.md`
 
 Doc: `site/src/content/docs/components/text.md`
 
+### 2026-09-10 17:16 — rn round 1
+
+- **DOC** Text: platform notes say the boolean TextNestingContext is replaced by TextStyleContext ({ fontSize, color, nested }), but that context is consumed directly by Link.tsx and Icon.tsx (not just Text.tsx). Renaming it required editing both consumers too, beyond the single Text.tsx file, to keep the package compiling — Link now reads `.nested` instead of the raw boolean, and Icon now inherits the surrounding Text's actual fontSize/color when `inline` and nested, resolving Icon's own previously-documented gap. → `site/src/content/docs/components/text.md`
+- **DOC** Icon: the schema doesn't define precedence between an explicit `overrides.color`/`overrides.size` and the new inherited-from-Text value when `inline` is nested. Chose: explicit `color` prop > `overrides` > inherited Text context > default token — i.e. an override still wins over inheritance, since overrides are the system's one per-instance styling surface and inheritance is only a fallback. → `site/src/content/docs/components/text.md`
+
 ### 2026-09-10 00:46 — rn round 1
 
 - **DOC** Text (rn): platforms.rn.props lists only numberOfLines/ellipsizeMode/allowFontScaling, not overrides — added overrides?: Partial<Record<TextOverridableBinding, TokenRef>> anyway per the general Overrides contract (fontFamily, fontSize, fontWeight, lineHeight, color), matching how Box/Card/Container/Dialog implement it despite the same omission in their platform notes. → `site/src/content/docs/components/text.md`
@@ -1677,6 +2365,27 @@ Doc: `site/src/content/docs/components/text.md`
 ## Toast
 
 Doc: `site/src/content/docs/components/toast.md`
+
+### 2026-09-10 18:09 — rn round 1
+
+- **DOC** Toast: renamed the identity prop from `id` to `toastId` to match the current schema (props.toastId) and the sibling web/react implementation, which had already made this rename; the internal `ToastEntry`/dispatcher still key stacked toasts by an internally-generated `id` distinct from the caller-supplied `toastId`, matching react's pattern. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: `duration`'s description now says the toast 'is persistent regardless of this prop' when `actionLabel` is set or `tone` is `danger` — previously this repo's RN component only warned in `__DEV__` without changing behavior. Implemented it as real behavior (`forcedPersistent` -> `effectiveDuration`, feeding both the dismiss-button visibility and the auto-dismiss timer), matching `packages/react/src/Toast.tsx`'s `forcedPersistent`/`effectiveDuration` pattern, and kept the `__DEV__` warning for the case where a caller still passes a non-persistent `duration` explicitly. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast (carried over from the prior generation round, still true): `a11y.requires: escape-dismiss` and the F6 focus-navigation keyboard rules describe the web keyboard model and have no native equivalent (no hardware-keydown API for an arbitrary View, and this package's `Button` doesn't expose focus events externally) — dismissal stays reachable via the always-visible dismiss button and native activation only. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast (carried over): `a11y.role: status` has no React Native `accessibilityRole` equivalent; mirrored `Alert`'s convention of `accessibilityRole="alert"` only for `danger`, plus `accessibilityLiveRegion` and a one-time iOS `AccessibilityInfo.announceForAccessibility` call. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast (carried over): 'pauses on hover and on focus-within' (web) is implemented as pause-on-touch only (`onTouchStart`/`onTouchEnd`/`onTouchCancel`) since native has no hover and no way to observe focus entering the composed `Button` children from the parent `View`. → `site/src/content/docs/components/toast.md`
+
+### 2026-09-10 18:04 — web round 1
+
+- **DOC** Toast: `duration` prop was named per spec, but the persistent-override rule ('action or danger tone forces persistent regardless of `duration`') was previously only a dev warning — the auto-dismiss timer still used the raw prop. Fixed by computing an `effectiveDuration` (forced to 'persistent' when `actionLabel` is set or `tone === 'danger'`) and using it for both the timer and `showDismiss`. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the identity prop was implemented as `id` (and reused as the DOM `id` attribute) instead of the schema's `toastId`; renamed to `toastId` throughout (ToastProps, ToastOptions, ToastRegion wiring) to match the schema literally, since platform prop names aren't remapped the way events are. → `site/src/content/docs/components/toast.md`
+- **DOC** Schema doesn't specify whether the DOM `id` attribute should still be set from `toastId` (platforms.web attributes list doesn't include `id`); kept the existing convenience of `id={toastId}` on the root since nothing else in the doc claims that attribute and it's harmless. → `site/src/content/docs/components/toast.md`
+
+### 2026-09-10 17:55 — lit round 1
+
+- **DOC** Toast: schema lists `toastId` as a component prop (explicitly named to avoid colliding with the DOM `id`), but it was missing as a `@property` on `<ds-toast>` — added `toastId` (attribute `toast-id`) and switched the imperative `toast()` replace/evict logic from hijacking the native `id` to comparing `toastId`. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: `dismissible` defaults to `true` (named in the package's own boolean-default-true rule alongside `stickyHeader`/`showValue`) but was implemented as a plain reflected `dismissible` boolean attribute, which cannot express `false` from HTML — fixed to the established negated-attribute convention (`no-dismiss` + `NEGATED_BOOLEAN_CONVERTER`, matching `ProgressBar.showValue`/`hide-value`). → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: duration timers read `--motion-duration-loop` via `getComputedStyle` on each `<ds-toast>` at its own connect, whereas the doc says the short/long durations are 'computed at region mount' (implying a single read cached on `<ds-toast-region>` and reused). Functionally equivalent since the token inherits identically to the toast and the region, but left as-is rather than restructuring the mount-time caching, since no scenario or test exercises the distinction — flagging in case the doc intends true region-level caching for performance. → `site/src/content/docs/components/toast.md`
+- **CODE** Toast: `MAX_TOASTS` eviction counts the just-replaced (soon-to-close) toast when a `toastId` match triggers a replace, since `requestDismiss` only starts the exit transition rather than removing the element synchronously — pre-existing behavior, not touched, but could over-evict by one in the rare case a same-`toastId` replace coincides with an already-full region.
 
 ### 2026-09-10 02:43 — lit round 1
 
@@ -1714,6 +2423,19 @@ Doc: `site/src/content/docs/components/toast.md`
 ## Toolbar
 
 Doc: `site/src/content/docs/components/toolbar.md`
+
+### 2026-09-10 19:09 — web round 1
+
+- **DOC** overflow: menu measurement: the spec says a ResizeObserver measures children and moves trailing ones into the Menu, but doesn't specify what happens when a group (not just a Button) would need to partially collapse — the implementation collapses whole trailing entries (controls or entire groups) rather than splitting a group, since 'Only Buttons collapse' but groups mix Buttons with non-collapsible controls; chose whole-entry-at-a-time collapsing from the end. → `site/src/content/docs/components/toolbar.md`
+- **DOC** overflowLabel is used for the Menu label lookup, but SegmentedControl/Select/Switch never collapse per spec — the code doesn't special-case those types, it relies on them being measured as fixed-width and naturally landing before the collapse boundary; if a toolbar is narrow enough that a non-Button control itself doesn't fit, there's no documented fallback, so it's left visible and may overflow the container. → `site/src/content/docs/components/toolbar.md`
+- **DOC** orientation: vertical with overflow: menu is not addressed by the spec (menu overflow implies a fixed cross-axis, wrap/scroll make more sense vertically) — implemented generically but not verified against a specific vertical+menu scenario in the doc. → `site/src/content/docs/components/toolbar.md`
+- **DOC** 'roving-tabindex'/'arrow-navigation' interaction with composite children (SegmentedControl) relies on the child calling preventDefault() on arrow keys it handles itself; this is an assumption about SegmentedControl's existing implementation rather than something re-verified here. → `site/src/content/docs/components/toolbar.md`
+- NOISE: 1 repeated or empty line(s) collapsed
+
+### 2026-09-10 18:56 — lit round 1
+
+- **DOC** Toolbar: overflow='menu' width budget reserves space for the 'More' trigger via a CSS var `--size-target-min` that doesn't exist in the tokens package, so it always resolves to 0; correctness is preserved by the ResizeObserver re-running recalcOverflow once the trigger becomes visible and shrinks .container, but this causes an extra reflow/possible one-frame overflow instead of reserving space up front. Spec doesn't define a token for 'reserve room for the overflow trigger', so left as-is rather than guessing one. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: overflowLabel is documented per-child-control but isn't a Toolbar prop itself; implementation reads a `overflow-label` attribute (falling back to `label` then textContent) off each collapsed child at runtime, which matches the platform note's intent but isn't spelled out as a contract in the schema. → `site/src/content/docs/components/toolbar.md`
 
 ### 2026-09-10 12:56 — web round 1
 
@@ -1753,6 +2475,26 @@ Doc: `site/src/content/docs/components/toolbar.md`
 
 Doc: `site/src/content/docs/components/tooltip.md`
 
+### 2026-09-10 18:05 — rn round 1
+
+- **DOC** Tooltip: the schema's composition example (attach to Button/Link/Input) doesn't actually work on RN — none of this package's Button, Link or Input forward unrecognized props, so the cloned accessibilityHint/accessibilityLabel and hover/focus/long-press handlers are silently dropped unless the child forwards extra props onto a native Pressable/TextInput; fixing this requires those components' own schemas to grow a passthrough. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: RN has no generic hardware-keyboard event API; Escape is only wired via a `window` keydown listener gated to `Platform.OS === 'web'`, since the popup is never shown on true native. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: 'placement flips when it would overflow the viewport' is not implemented for top/bottom — the bubble isn't portaled or measured against the window like Menu's dropdown, so there's no viewport rect to flip against; only start/end resolve against writing direction. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the schema has no `open` prop, but the testability rule asks for a Keyboard story 'rendering it open'; there's no declarative way to force that without inventing a prop or adding an interaction-testing dependency, so the Keyboard story instead renders three focusable triggers and documents that a reviewer must focus/hover/long-press one to open it. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the 'warm' toolbar grace window's duration isn't specified beyond the default-delay formula; `motion.duration.base` was reused as a judgment call. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: 'child must be focusable' and the describes semantics are accessibility contracts RN can't introspect at runtime; only a dev-mode warning checks that exactly one child element was passed. → `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-10 18:00 — web round 1
+
+- **DOC** Tooltip: the schema's platforms.web attribute list (role=tooltip, id) reads as belonging to the single portaled popup div, but a later prose note requires the description to be 'always in the accessibility tree' via a separate visually-hidden copy distinct from 'a second copy' (the visible popup). I split these into two nodes (persistent hidden span carrying id+role=tooltip; portaled popup now aria-hidden and copy-only) since the terse attribute list and the prose note are only reconcilable this way — flagging in case the intended architecture was instead a single always-mounted node whose visibility is toggled with CSS rather than mount/unmount. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: no dedicated icon exists in the shared Icon set for 'bold'/'italic'/'underline' toolbar-style demos, so the icon-only story reuses `Icon name="check"` as a placeholder glyph, matching the existing convention in Toolbar.stories.tsx rather than a semantically accurate icon. → `site/src/content/docs/components/tooltip.md`
+- **CODE** Tooltip: WARM_WINDOW_MS and CLOSE_GRACE_MS (toolbar 'warm' window and hover-to-popup grace period) are not backed by a schema token — the doc names the effects but not durations, so these reuse the default show-delay length and an arbitrary 100ms respectively (pre-existing choice, left unchanged).
+
+### 2026-09-10 17:51 — lit round 1
+
+- **DOC** Tooltip: the schema's `open` prop ("controlled visibility, for stories and tests only ... the Keyboard story renders the tooltip open with it") was missing from the prior implementation; added `@property({ type: Boolean }) open?: boolean` (unreflected, matching platforms.lit.reflect which lists only placement/describes) that forces showPopup()/hidePopup() on change, and updated the Keyboard story to render `<ds-tooltip open>` instead of relying on native-button autofocus. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: Escape hiding the popup does not reset the `open` property back to false (only the internal `visible`/popover-open DOM state changes) — acceptable since the schema calls `open` a one-way initializer for stories/tests, not a fully two-way controlled prop like Popover's, but noting the asymmetry in case a future scenario expects `open` itself to flip. → `site/src/content/docs/components/tooltip.md`
+
 ### 2026-09-10 02:27 — lit round 1
 
 - **DOC** Tooltip: the schema has no `events` section (unlike Menu/AlertDialog), so no CustomEvent is dispatched — all behavior is expressed through native aria-describedby/aria-labelledby, focus, and pointer events; treated the absence as intentional rather than an omission. → `site/src/content/docs/components/tooltip.md`
@@ -1791,6 +2533,12 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 Doc: `site/src/content/docs/components/tree.md`
 
+### 2026-09-10 19:10 — lit round 1
+
+- **DOC** Tree: schema names both a `label` and a `link` anatomy part but never distinguishes when each applies; inferred that `label` is the ds-text-rendered node label (no `href`) and `link` is the ds-link-rendered one (`href` set), and split the previously-shared `part="label"` accordingly. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: `labelSelectedWeight` is documented as forwarded to the label Text's `overrides.fontWeight`, but ds-link (used for `href` nodes) exposes no font-weight override hook at all, so a selected navigation node's label cannot be bolded via this binding — only non-href (ds-text) labels respond to `--ds-tree-label-selected-weight`. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: `headingSize` says it's 'forwarded as overrides.fontSize' to the composed Heading; implemented by setting ds-heading's own `--ds-heading-font-size` custom property from the Tree's `--ds-tree-heading-size` hook (CSS-level forwarding) rather than calling the Heading's `overrides` prop with a TokenRef, since the latter would freeze the value and defeat runtime CSS overriding of the hook — same pattern already used by Divider for its composed Text. → `site/src/content/docs/components/tree.md`
+
 ### 2026-09-10 14:34 — lit round 1
 
 - **DOC** showGuides defaults to true, but platforms.lit.reflect literally names the attribute 'show-guides'; per this package's own negated-boolean-attribute convention (a true-default boolean can't be a positively-named attribute) I implemented it as 'hide-guides' instead, following the doc's own 'showValue -> hide-value' precedent — this contradicts the schema's literal reflect-list entry. → `site/src/content/docs/components/tree.md`
@@ -1828,6 +2576,14 @@ Doc: `site/src/content/docs/components/tree.md`
 ## TreeGrid
 
 Doc: `site/src/content/docs/components/treegrid.md`
+
+### 2026-09-10 19:03 — lit round 1
+
+- **DOC** TreeGrid: keyboard block lists keys ['F2','Escape',' ','Ctrl+A','Shift+ArrowLeft','Shift+ArrowRight'] with action text 'As DataGrid (Shift+Space extends the row selection...)' — the key list and the prose disagree (ArrowLeft/Right are already bound to column nav and expand/collapse, and DataGrid has no Shift+ArrowLeft/Right row-selection behavior to mirror). Implemented Shift+Space (matching the prose) to extend row selection from the last plain-Space anchor through the focused row, cascading descendants when selectChildren is set; Shift+ArrowLeft/ArrowRight are left as plain column-nav/expand-collapse (shift ignored), since binding them to selection would conflict with their existing meaning. → `site/src/content/docs/components/treegrid.md`
+- **DOC** TreeGrid: DataGridColumn.resizable drag-resize has no resizeHandle/resizeHandleWidth entries in TreeGrid's own styles/overrides block (unlike DataGrid, which has both), so the resize handle color and width are fixed to color.border.strong/space.1 directly rather than exposed as overridable hooks. → `site/src/content/docs/components/treegrid.md`
+- **DOC** TreeGrid: no anatomy entry exists for a resize handle (DataGrid has the same omission), so the rendered handle uses part="resize-handle" without a corresponding anatomy/csspart doc entry, matching DataGrid's precedent rather than inventing new anatomy. → `site/src/content/docs/components/treegrid.md`
+- **DOC** TreeGrid: copy.expandAll/copy.collapseAll still have no anatomy, prop, or keyboard action anywhere in the schema (only `*` expands one row's siblings) — left unused on web, as in the prior round. → `site/src/content/docs/components/treegrid.md`
+- **DOC** TreeGrid: copy.level/copy.childCount remain unused on web (native aria-level/aria-setsize/aria-posinset carry that information instead; RN's platform note is the one that composes them into accessibilityLabel). → `site/src/content/docs/components/treegrid.md`
 
 ### 2026-09-10 14:22 — lit round 1
 
@@ -1876,7 +2632,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 972 · CODE: 39 · TOOLING: 2 · NOISE: 14
+DOC: 1328 · CODE: 79 · TOOLING: 2 · NOISE: 22
 
 ## Gates to fix
 

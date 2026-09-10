@@ -6,6 +6,10 @@ import './Divider.css';
 export type DividerOrientation = 'horizontal' | 'vertical';
 export type DividerSpacing = 'none' | 'tight' | 'normal' | 'loose';
 
+/* Only declared when the bundler defines it; never assumed. */
+declare const process: { env: Record<string, string | undefined> } | undefined;
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+
 /**
  * Style bindings that can be overridden per instance; accessibility-bearing bindings (labelColor)
  * are never in this list. `labelSize` and `fontFamily` are forwarded to the composed `Text`
@@ -75,7 +79,11 @@ export const Divider = forwardRef<HTMLElement, DividerProps>(function Divider(
   ref,
 ) {
   const showLabel = Boolean(label) && orientation === 'horizontal';
-  const isSemantic = semantic || Boolean(label);
+  const isSemantic = semantic || showLabel;
+
+  if (isDev && label && orientation === 'vertical') {
+    console.warn('Divider: `label` is ignored on a vertical divider — a vertical line has no room for centered text.');
+  }
 
   const classes = [
     'ds-divider',

@@ -226,18 +226,19 @@
     }
   },
   "Checkbox.lit": {
-    "hash": "9529fbd8fc16fcd3",
-    "lastAttemptHash": "9529fbd8fc16fcd3",
-    "generatedAt": "2026-09-10T05:43:39+00:00",
+    "hash": "45720a6cf7a53f74",
+    "lastAttemptHash": "45720a6cf7a53f74",
+    "generatedAt": "2026-09-10T21:30:44+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.033,
+    "costUsd": 0.2873,
     "files": [
+      "packages/lit/src/Checkbox.stories.ts",
       "packages/lit/src/Checkbox.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 2,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -359,17 +360,18 @@
     }
   },
   "Disclosure.lit": {
-    "hash": "ef90a1a70490490f",
-    "lastAttemptHash": "ef90a1a70490490f",
-    "generatedAt": "2026-09-10T05:52:43+00:00",
+    "hash": "1dc4776976ad1776",
+    "lastAttemptHash": "1dc4776976ad1776",
+    "generatedAt": "2026-09-10T21:34:18+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8707,
+    "costUsd": 0.2527,
     "files": [
+      "packages/lit/src/Disclosure.stories.ts",
       "packages/lit/src/Disclosure.ts"
     ],
-    "gaps": 4,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -738,18 +740,19 @@
     }
   },
   "RadioGroup.lit": {
-    "hash": "03aa20288ec1a905",
-    "lastAttemptHash": "03aa20288ec1a905",
-    "generatedAt": "2026-09-10T05:48:17+00:00",
+    "hash": "df65a49edc7d7f23",
+    "lastAttemptHash": "df65a49edc7d7f23",
+    "generatedAt": "2026-09-10T21:33:23+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 0.6992,
+    "rounds": 1,
+    "costUsd": 0.4172,
     "files": [
+      "packages/lit/src/RadioGroup.stories.ts",
       "packages/lit/src/RadioGroup.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 3,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -944,18 +947,19 @@
     }
   },
   "Switch.lit": {
-    "hash": "2077a1d6b914ce68",
-    "lastAttemptHash": "2077a1d6b914ce68",
-    "generatedAt": "2026-09-10T05:45:36+00:00",
+    "hash": "f1e9784ef8c89356",
+    "lastAttemptHash": "f1e9784ef8c89356",
+    "generatedAt": "2026-09-10T21:31:51+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 0.5146,
+    "rounds": 1,
+    "costUsd": 0.2896,
     "files": [
+      "packages/lit/src/Switch.stories.ts",
       "packages/lit/src/Switch.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 3,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -73,7 +73,19 @@ export function Preferences({ onSubmit, onInvalid, onCancel, onDismissAlert, sto
           Notifications already scheduled for today are sent with your current settings.
         </Alert>
 
-        <Form name="preferences" label="Notification preferences" validate="submit" onSubmit={handleSubmit} onInvalid={onInvalid}>
+        <Form
+          name="preferences"
+          label="Notification preferences"
+          validate="submit"
+          onSubmit={handleSubmit}
+          onInvalid={onInvalid}
+          actions={
+            <Stack direction="horizontal" gap="tight" align="center" wrap>
+              <Button label="Save" type="submit" variant="primary" />
+              <Button label="Cancel" variant="secondary" onClick={onCancel} />
+            </Stack>
+          }
+        >
           <Stack gap="normal">
             <RadioGroup label="Email digest" name="digest" options={DIGEST_OPTIONS} defaultValue="weekly" required />
 
@@ -110,11 +122,6 @@ export function Preferences({ onSubmit, onInvalid, onCancel, onDismissAlert, sto
                 description="Larger emails; counts against attachment storage."
               />
             </Disclosure>
-
-            <Stack direction="horizontal" gap="tight" align="center" wrap>
-              <Button label="Save" type="submit" variant="primary" />
-              <Button label="Cancel" variant="secondary" onClick={onCancel} />
-            </Stack>
           </Stack>
         </Form>
       </Stack>

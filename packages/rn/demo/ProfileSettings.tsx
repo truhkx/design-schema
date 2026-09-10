@@ -54,7 +54,18 @@ export function ProfileSettings({
           </Heading>
           <Text tone="muted">Update how your name and email appear to the rest of your team.</Text>
         </Stack>
-        <Form name="profile-settings" label="Profile settings" disabled={submitting} onSubmit={onSubmit}>
+        <Form
+          name="profile-settings"
+          label="Profile settings"
+          disabled={submitting}
+          onSubmit={onSubmit}
+          actions={
+            <Stack direction="horizontal" gap="normal" align="center">
+              <Button label="Save changes" type="submit" loading={submitting} />
+              <Button label="Cancel" variant="secondary" onPress={onCancel} />
+            </Stack>
+          }
+        >
           <Input
             label="Display name"
             name="displayName"
@@ -71,10 +82,6 @@ export function ProfileSettings({
             placeholder="name@example.com"
             required
           />
-          <Stack direction="horizontal" gap="normal" align="center">
-            <Button label="Save changes" type="submit" loading={submitting} />
-            <Button label="Cancel" variant="secondary" onPress={onCancel} />
-          </Stack>
         </Form>
       </Stack>
     </View>

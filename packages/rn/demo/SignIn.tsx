@@ -39,13 +39,20 @@ export function SignIn({ onSubmit, onForgotPassword, submitting = false }: SignI
           </Heading>
           <Text tone="muted">Use the email you signed up with.</Text>
         </Stack>
-        <Form name="sign-in" label="Sign in" disabled={submitting} onSubmit={onSubmit}>
+        <Form
+          name="sign-in"
+          label="Sign in"
+          disabled={submitting}
+          onSubmit={onSubmit}
+          actions={
+            <Stack gap="normal" align="start">
+              <Button label="Sign in" type="submit" loading={submitting} />
+              <Button label="Forgot password?" variant="ghost" onPress={onForgotPassword} />
+            </Stack>
+          }
+        >
           <Input label="Email address" name="email" type="email" required placeholder="name@example.com" />
           <Input label="Password" name="password" type="password" required />
-          <Stack gap="normal" align="start">
-            <Button label="Sign in" type="submit" loading={submitting} />
-            <Button label="Forgot password?" variant="ghost" onPress={onForgotPassword} />
-          </Stack>
         </Form>
       </Stack>
     </View>

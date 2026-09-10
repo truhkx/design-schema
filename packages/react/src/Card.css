@@ -98,6 +98,12 @@
   outline-offset: var(--ds-card-focus-ring-width);
 }
 
+/* focusable: scripted focus (e.g. Feed) draws the ring on the card itself; not a tab stop. */
+.ds-card--focusable:focus-visible {
+  outline: var(--ds-card-focus-ring-width) solid var(--ds-card-focus-ring);
+  outline-offset: var(--ds-card-focus-ring-width);
+}
+
 /* transition: hoverBackground, with motion.easing.standard. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-card--interactive {

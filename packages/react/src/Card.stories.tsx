@@ -68,3 +68,5 @@ export const Interactive: Story = {
     children: <Link href="#" label="View plan details" />,
   },
 };
+
+export const Focusable: Story = { args: { focusable: true } };

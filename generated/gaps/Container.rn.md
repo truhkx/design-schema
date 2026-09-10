@@ -23,3 +23,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-09 21:59 — round 3
 
 - parse gate: unchanged from round 2 — unrelated to Container. checkbox.md and switch.md carry a `behavior:` frontmatter block (from the 2026-09-09 behavior-scenarios rollout) that schema/component.schema.json's `component` definition rejects (`additionalProperties: false`, no `behavior` key defined). container.md parses cleanly and Container.tsx/.stories.tsx/.test.tsx/index.ts are unchanged and passing (11/11 tests). Fixing this needs a schema/component.schema.json edit (add a `behavior` property) or a checkbox.md/switch.md frontmatter edit — both are under the forbidden site/schema paths for this generator pass, so I'm reporting rather than editing. This is a repo-wide gate blocker, not something fixable from the Container generator.
+
+## 2026-09-10 17:34 — round 1
+
+- No token exists for a 'none' gutter or a 'full' max-width, and no layoutMaxWidthFull/zero-gutter token is named in the spec — used a literal 0 for gutter:none padding and simply omit maxWidth for width:full, per the doc's 'renders no max-width'/'renders no padding' language.
+- Container has no interaction or a11y role to assert, so all 11 behavior scenarios collapse to a 'renders: true' check per given-prop combination, matching Box's derived-only test shape.
+- The element prop is scoped to web/lit only in the schema, so it's absent from ContainerProps entirely on RN, inferred from Box's identical pattern rather than stated verbatim.

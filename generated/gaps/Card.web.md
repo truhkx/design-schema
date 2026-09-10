@@ -31,3 +31,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-10 01:21 — round 1
 
 - Card: root and header/headerActions/body/footer parts had no `data-part` hook even though role is `none` (so none of them are locatable by role) and only `heading` matches a string prop; per the package's testability convention I added `data-part="surface"` to the root and `data-part` to header/headerActions/body/footer. No behavior scenario currently exercises these locators (all 11 are bare `renders` checks against `data-ds`), so this is forward-looking compliance with the convention doc rather than something the current gate required.
+
+## 2026-09-10 17:33 — round 1
+
+- Card: the existing Card.tsx/Card.css (generated in an earlier round) omitted the `focusable` prop entirely — added tabIndex={focusable ? -1 : undefined}, a `ds-card--focusable` modifier class, and a `:focus-visible` ring rule reusing the same locked focusRing/focusRingWidth hooks as `interactive`; no story existed to demonstrate it either, so I added `Focusable`.
+- Card: spec doesn't say whether `interactive` and `focusable` can be combined (e.g. a Feed item that is both a link-card and scriptable-focus target); left them orthogonal (independent classes/attributes) since nothing forbids it, but didn't add a dev warning for the combination.

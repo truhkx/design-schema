@@ -31,14 +31,22 @@ export function SignIn({ onSubmit, onInvalid, onForgotPassword }: SignInProps) {
         <Text tone="muted">Use the email you signed up with.</Text>
       </Stack>
 
-      <Form name="sign-in" label="Sign in" validate="submit" onSubmit={handleSubmit} onInvalid={onInvalid}>
-        <Stack gap="normal">
-          <Input label="Email address" name="email" type="email" required autocomplete="email" />
-          <Input label="Password" name="password" type="password" required autocomplete="current-password" />
+      <Form
+        name="sign-in"
+        label="Sign in"
+        validate="submit"
+        onSubmit={handleSubmit}
+        onInvalid={onInvalid}
+        actions={
           <Stack direction="horizontal" gap="tight" align="center" justify="between" wrap>
             <Button label="Sign in" type="submit" variant="primary" />
             <Button label="Forgot password?" variant="ghost" onClick={onForgotPassword} />
           </Stack>
+        }
+      >
+        <Stack gap="normal">
+          <Input label="Email address" name="email" type="email" required autocomplete="email" />
+          <Input label="Password" name="password" type="password" required autocomplete="current-password" />
         </Stack>
       </Form>
     </Stack>

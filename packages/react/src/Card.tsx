@@ -81,6 +81,12 @@ export interface CardProps extends Omit<ComponentPropsWithoutRef<'article'>, 'ch
    * or Button) whose action the card extends to its full area; the card itself is not focusable.
    */
   interactive?: boolean;
+  /**
+   * The card root takes tabindex=-1 so a container (Feed) can move focus to it by script, and
+   * draws its own focus ring when focused that way. Not a tab stop; not for making cards
+   * clickable (`interactive`).
+   */
+  focusable?: boolean;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<CardOverridableBinding, TokenRef>>;
 }
@@ -104,6 +110,7 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
     inset = 'md',
     surface = 'default',
     interactive = false,
+    focusable = false,
     overrides,
     className,
     style,
@@ -125,6 +132,7 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
     `ds-card--inset-${inset}`,
     `ds-card--surface-${surface}`,
     interactive ? 'ds-card--interactive' : null,
+    focusable ? 'ds-card--focusable' : null,
     className ?? null,
   ]
     .filter(Boolean)
@@ -154,6 +162,7 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
       className={classes}
       style={mergedStyle}
       aria-labelledby={headingId}
+      tabIndex={focusable ? -1 : undefined}
     >
       {showHeader ? (
         <div className="ds-card__header" data-part="header">

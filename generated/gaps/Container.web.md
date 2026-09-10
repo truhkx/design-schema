@@ -39,3 +39,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Container: default paddingInline hook is only set per gutter modifier class (not on .ds-container base), consistent with other interpolated bindings in the package — chose to leave it unset at base so 'none' truly renders 0 with no fallback token flash.
 - Container: overridable maxWidth hook has no effect for width:full since no modifier class sets it — treated as correct per the spec's 'overrides are no-ops where the binding is not in effect' rule.
+
+## 2026-09-10 17:32 — round 1
+
+- Container: schema doesn't specify whether `align: start` clears margin-inline entirely or just the inline-start side; chose margin-inline: 0 (both sides), matching Box/Card sibling-spacing convention.
+- Container: `full` width intentionally emits no --ds-container-max-width hook (falls back to `none`) rather than a literal value, per the 'a resolved path ending in a no-op renders nothing' rule — worth confirming this is the intended reading for `width` (not just background/border/max-width bindings named in the general rule).

@@ -14,8 +14,10 @@ export type { FormFieldValue, FormValidateMode, FormValues } from './FormContext
 export type FormOverridableBinding = 'gap' | 'errorSummaryBorder';
 
 export interface FormProps {
-  /** Fields (Input etc.), layout (Stack), and at least one Button with `type: submit`. */
+  /** Fields (Input etc.) and layout (Stack). The action row goes in `actions`. */
   children: React.ReactNode;
+  /** The action row: at least one Button with `type: submit`, primary first. Rendered after the fields with the form gap; the `actions` anatomy part. */
+  actions: React.ReactNode;
   /** Identifier for the form, used for analytics and as the base of generated ids. */
   name?: string;
   /** Accessible name for the form landmark, e.g. "Sign in". Required when a page has more than one form. */
@@ -47,19 +49,22 @@ function summaryTitle(count: number): string {
  *
  * When to use: Use Form whenever two or more fields are submitted together, and for
  * any single field whose submission has consequences (sign-in, search with side
- * effects). Place actions (submit, cancel) at the end in a Stack. Give the form a
- * `label` when the page contains more than one.
+ * effects). Pass the submit and cancel Buttons in `actions`, primary first. Give
+ * the form a `label` when the page contains more than one.
  *
- * React Native has no form element. Form renders a `View` with `accessibilityLabel`
- * and provides a context; each Input registers `{ getValue, validate, focus }` by
- * name (Checkbox, Switch and RadioGroup register the same way), a Button with
- * `type: submit` calls `submit()`, and the last Input's return
- * key submits. On a failed submission the error summary is announced
- * (`accessibilityLiveRegion="assertive"` on Android, `announceForAccessibility` on
- * iOS) and focus moves to the first invalid field.
+ * React Native has no form element. Form renders a `View` with `role="form"` and
+ * `accessibilityLabel` and provides a context; each Input registers
+ * `{ getValue, validate, focus }` by name (Checkbox, Switch and RadioGroup register
+ * the same way), a Button with `type: submit` calls `submit()`, and the last
+ * Input's return key submits. `children` (the fields) and `actions` (the action
+ * row) render in separate anatomy parts, both spaced by `gap`. On a failed
+ * submission the error summary is announced (`accessibilityLiveRegion="assertive"`
+ * on Android, `announceForAccessibility` on iOS) and focus moves to the summary
+ * when `errorSummary` is on, otherwise to the first invalid field.
  */
 export function Form({
   children,
+  actions,
   name,
   label,
   validate = 'submit',
@@ -214,6 +219,13 @@ export function Form({
     gap,
   };
 
+  // The same gap also separates individual fields, so the rhythm is uniform
+  // whether siblings are two fields or a fields block and the action row.
+  const fieldsStyle: ViewStyle = {
+    flexDirection: 'column',
+    gap,
+  };
+
   const summaryStyle: ViewStyle = {
     borderWidth: tokens.borderWidthThin,
     borderColor: errorSummaryBorderColor,
@@ -231,9 +243,9 @@ export function Form({
 
   return (
     <FormContext.Provider value={contextValue}>
-      <View accessibilityLabel={label} testID="Form" style={containerStyle}>
+      <View testID="Form" role="form" accessibilityLabel={label} style={containerStyle}>
         {errorSummary && errorEntries.length > 0 ? (
-          <View ref={summaryRef} accessibilityLiveRegion="assertive" style={summaryStyle}>
+          <View ref={summaryRef} testID="Form.errorSummary" accessibilityLiveRegion="assertive" style={summaryStyle}>
             <Text tone="danger" weight="semibold">
               {summaryTitle(errorEntries.length)}
             </Text>
@@ -250,7 +262,10 @@ export function Form({
             ))}
           </View>
         ) : null}
-        {children}
+        <View testID="Form.fields" style={fieldsStyle}>
+          {children}
+        </View>
+        <View testID="Form.actions">{actions}</View>
       </View>
     </FormContext.Provider>
   );

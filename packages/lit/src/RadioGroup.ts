@@ -21,6 +21,8 @@ export interface RadioGroupChangeDetail {
 
 /** copy.required */
 const COPY_REQUIRED = (label: string): string => `${label} is required.`;
+/** copy.invalid */
+const COPY_INVALID = (label: string): string => `${label} is not valid.`;
 /** copy.requiredIndicator */
 const COPY_REQUIRED_INDICATOR = ' (required)';
 
@@ -541,7 +543,7 @@ export class DsRadioGroup extends LitElement {
     if (this.error) {
       this.internals.setValidity({ customError: true }, this.error, anchor);
     } else if (this.invalid) {
-      this.internals.setValidity({ customError: true }, `${this.label} is invalid`, anchor);
+      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), anchor);
     } else if (this.required && value === null) {
       this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor);
     } else {

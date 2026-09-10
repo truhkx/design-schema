@@ -100,7 +100,18 @@ export function Preferences({
           <Alert tone="info" heading="Digest times follow your profile time zone" live="off">
             Change the time zone in Profile settings if digests arrive at the wrong hour.
           </Alert>
-          <Form name="notification-preferences" label="Notification preferences" disabled={submitting} onSubmit={onSubmit}>
+          <Form
+            name="notification-preferences"
+            label="Notification preferences"
+            disabled={submitting}
+            onSubmit={onSubmit}
+            actions={
+              <Stack direction="horizontal" gap="normal" align="center">
+                <Button label="Save" type="submit" loading={submitting} />
+                <Button label="Cancel" variant="secondary" onPress={onCancel} />
+              </Stack>
+            }
+          >
             <RadioGroup
               label="Email digest"
               name="digest"
@@ -133,10 +144,6 @@ export function Preferences({
             <Disclosure summary="Advanced options" keepMounted>
               <Checkbox label="Include activity from archived projects" name="includeArchived" />
             </Disclosure>
-            <Stack direction="horizontal" gap="normal" align="center">
-              <Button label="Save" type="submit" loading={submitting} />
-              <Button label="Cancel" variant="secondary" onPress={onCancel} />
-            </Stack>
           </Form>
         </Stack>
       </Landmark>

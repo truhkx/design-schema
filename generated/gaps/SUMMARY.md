@@ -1,6 +1,6 @@
-# Gap digest — phase Controls
+# Gap digest — phase Focus
 
-Generated 2026-09-10T02:07 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T02:30 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Alert
 
@@ -511,6 +511,23 @@ Doc: `site/src/content/docs/components/fieldset.md`
 
 Doc: `site/src/content/docs/components/focusscope.md`
 
+### 2026-09-10 02:15 — lit round 1
+
+- **DOC** FocusScope: schema lists no styles and 'Overridable: none / Locked: none', so no `overrides` property was added — only visually-hidden sentinel styling exists, which is token-exempt by convention. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: 'container' autoFocus relies on `delegatesFocus` redirecting `this.focus()` to the shadow tree's tabindex=-1 anchor node standing in for the host, since the host itself carries no tabindex; this satisfies 'focus goes to the scope's own wrapper' without making the host part of the natural tab order. → `site/src/content/docs/components/focusscope.md`
+
+### 2026-09-10 02:15 — web round 1
+
+- **DOC** FocusScope: the derived 'control-is-focusable' scenario assumes a focusable root control, but FocusScope's root is tabindex=-1 (programmatically focusable only, never Tab-reachable itself) — interpreted 'focusable' as 'accepts .focus() calls', not 'reachable by Tab'. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the keyboard rule 'Tab, from: first, expect: focus-next' (ordinary forward movement) has no explicit handler — it's satisfied by native browser Tab order since the component only intercepts Tab at the trapped edges, which may or may not be what the keyboard gate expects to see as an explicit code path. → `site/src/content/docs/components/focusscope.md`
+
+### 2026-09-10 02:14 — rn round 1
+
+- **DOC** FocusScope: RN has no API to walk arbitrary children for the first/last focusable descendant, so autoFocus values 'first', 'last', and 'container' all resolve to focusing the wrapper View; only 'none' differs — documented as an acknowledged platform limit in the component's JSDoc. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: restoreFocus captures the opener via TextInput.State.currentlyFocusedInput(), the only 'currently focused element' RN exposes generically — an opener that isn't a TextInput (e.g. a Pressable button) cannot be captured, so focus restoration silently no-ops in that case. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: onEscapeAttempt is accepted as a prop for API parity with web/lit but can never fire on native since there is no Tab order to confine. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: keyboard-operable/focus-trap requirements are only partially met — trapped only maps to accessibilityViewIsModal (screen-reader swipe confinement); a hardware keyboard's Tab key is not confined at all, a stated platform limit rather than an implementation gap. → `site/src/content/docs/components/focusscope.md`
+
 ### 2026-09-09 22:42 — rn round 1
 
 - **DOC** FocusScope: the prompt's behavior-scenarios block was left as an unfilled placeholder ({{BEHAVIOR_COUNT}}/{{BEHAVIOR_YAML}}), so no real scenarios were provided — I did not fabricate a FocusScope.test.tsx rather than rubber-stamp untested behavior; add one once real scenarios exist. → `site/src/content/docs/components/focusscope.md`
@@ -872,6 +889,10 @@ Doc: `site/src/content/docs/components/switch.md`
 - **DOC** Switch already had a Switch.tsx/css/stories/test set that predated the overrides/data-ds/data-part conventions (visible in Checkbox); I brought it up to that convention — added `SwitchOverridableBinding`, `overrides` prop, per-instance CSS hooks for every listed binding (locked bindings get hooks too, just excluded from the TS union), `data-ds="Switch"` on the root, and `data-part="description"` on the description Text — without touching the existing behavior logic, which already matched the schema's behavior scenarios and passed all 16 existing tests unchanged. → `site/src/content/docs/components/switch.md`
 - **DOC** The schema doesn't say whether the description's helper text size/color should be enforced by a local CSS rule or left to Text's own `size="sm" tone="muted"` props; followed Checkbox's precedent of setting both (Text props for the semantic class and a local rule reading the `--ds-switch-helper-size`/`--ds-switch-description-text` hooks) so the override hooks actually take effect. → `site/src/content/docs/components/switch.md`
 
+## TEST-FAILURES
+
+Doc: `site/src/content/docs/components/test-failures.md`
+
 ## Text
 
 Doc: `site/src/content/docs/components/text.md`
@@ -895,9 +916,48 @@ Doc: `site/src/content/docs/components/text.md`
 - **DOC** Text: the existing committed Text.tsx predated the current package conventions (no data-ds hook, no overrides/CSS-hook system, element enum still included label/legend/htmlFor from an older schema version). Regenerated it to match the current schema (element: p|span only — labels/legends are now owned by Input/Fieldset per the schema note) and the current Card/Box/Container convention: root data-ds="Text", TextOverridableBinding (fontFamily, fontSize, fontWeight, lineHeight, color) with --ds-text-* CSS custom-property hooks, and an overrides prop using cssVar/TokenRef from @design-schema/tokens. → `site/src/content/docs/components/text.md`
 - **DOC** Text: no Text.test.tsx existed; added one modeled on Card.test.tsx (meta.args + scenario `given`, one it() per behavior scenario) since the repo's other recently-touched components (Switch, Box, Card, Container) all ship this file alongside the component. → `site/src/content/docs/components/text.md`
 
+## Toast
+
+Doc: `site/src/content/docs/components/toast.md`
+
+### 2026-09-10 02:30 — web round 1
+
+- **DOC** Escape-dismiss has no matching value in the `onDismiss` reason enum (timeout/dismiss-button/action/replaced); mapped Escape to reason 'dismiss-button' as the closest semantic match. → `site/src/content/docs/components/toast.md`
+- **DOC** dismissColor (color.inverse.foreground) can't be independently expressed: both action and dismiss buttons are composed via Button's `inverse` ghost variant, which always renders ghost text in color.inverse.link (Button has no foreground-color override slot), so per the 'never restyle a child' rule both buttons end up the same color rather than dismiss reading as the more neutral color.inverse.foreground. → `site/src/content/docs/components/toast.md`
+- **DOC** focusRing/focusRingWidth (locked, color.border.focus/border.width.focus) have no locus of application: Toast's own root isn't focusable, and its only focusable children (the composed Buttons) already use focusRingInverse via Button's `inverse` prop, so these two bindings are declared in the schema but not wired to any CSS. → `site/src/content/docs/components/toast.md`
+- **DOC** duration's schema default stays `short` even though the guidance says persistent is 'required' when there's an action or tone is danger; rather than silently overriding the documented default, added a dev-only console.warn nudging the consumer instead. → `site/src/content/docs/components/toast.md`
+- **DOC** Same-id replacement and 3-toast overflow eviction remove the old/evicted entry synchronously from the store and call its onDismiss('replaced') immediately, without playing that toast's own exit transition (only UI-triggered dismissal — timeout/button/action — waits for the fade-out). → `site/src/content/docs/components/toast.md`
+- **DOC** short/long duration timings (~5s/~10s, 'computed from motion.duration.loop × 6/×12 so themes without motion still get sensible times') are hardcoded ms constants (5000/10000) rather than read from the active theme at runtime, since a component has no way to measure a resolved CSS custom property synchronously (same precedent as Tooltip's DEFAULT_DELAY_MS) — exact timing won't track a theme's actual motion.duration.loop value. → `site/src/content/docs/components/toast.md`
+- **DOC** The `id` prop on a directly-rendered `<Toast>` (outside the `toast()`/`ToastRegion` store) is just the native DOM id attribute; the 'same id replaces the previous toast' de-duplication only happens inside the store, so standalone Toast usage gets no replace semantics from `id` alone. → `site/src/content/docs/components/toast.md`
+- **DOC** F6 focus-restore keeps only one `previousFocusRef` at the ToastRegion level; if focus moves around by mouse between an F6 entry and a second F6 press, 'return to where focus was' returns to the most recent F6-recorded origin rather than tracking arbitrary intermediate focus changes. → `site/src/content/docs/components/toast.md`
+
 ## Tooltip
 
 Doc: `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-10 02:27 — lit round 1
+
+- **DOC** Tooltip: the schema has no `events` section (unlike Menu/AlertDialog), so no CustomEvent is dispatched — all behavior is expressed through native aria-describedby/aria-labelledby, focus, and pointer events; treated the absence as intentional rather than an omission. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: 'delay: none / a shared warm toolbar state' is described only qualitatively (no numeric grace window given for how long a tooltip stays 'warm' after closing). Chose motion.duration.base as that grace window (same token the default-delay formula already reads) — a module-level `warmUntil` timestamp set on every close. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: because the Popover API sets `display: none` while closed, the popup (and its aria-describedby/aria-labelledby target) technically leaves the accessibility tree between shows, which sits in tension with the platform notes' 'the description is still in the accessibility tree' / 'never hover-only anywhere' language. Mitigated by always showing synchronously on focus (so AT users get it at the same moment they'd query it), matching how comparable production tooltips (e.g. Radix) handle this, but it's not literally 'always present'. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: fontFamily/fontSize/lineHeight are overridable bindings, but the composed <ds-text> renders its own self-contained font hooks rather than inheriting CSS custom properties (unlike ds-link, per the Breadcrumb precedent's `font: inherit` comment). Forwarded these three via ds-text's own `overrides` prop (driven by Tooltip's JS `overrides` property), which works — but the parallel CSS escape hatch (`ds-tooltip.foo { --ds-tooltip-font-size: ... }`) described in the overrides contract will NOT reach the rendered text for these three bindings specifically. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: 'shows ... immediately when the trigger receives keyboard focus' — implemented as 'any focus event shows immediately' since reliably distinguishing keyboard-origin focus from mouse-origin focus across arbitrary composed trigger types (ds-button, native <button>, ds-input, ds-link) isn't practical; this also matches how the pointer path already shows on hover, so the only behavioral difference is the delay, not the focus source. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: `placement: start/end` is implemented as literal left/right (LTR only, not logical/RTL-aware), matching the existing Menu component's own `bottom-start/bottom-end` positioning code in this package, which is also not RTL-aware. → `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-10 02:27 — rn round 1
+
+- **DOC** Tooltip: the schema's own composition example (attach to a Button/Link/Input) can't actually work on RN — none of this package's Button, Link or Input forward unrecognized props, so the accessibilityHint/accessibilityLabel and onLongPress/onHoverIn/onHoverOut/onFocus/onBlur handlers Tooltip clones onto its child are silently dropped when the child is one of those three. They only take effect on a child that forwards extra props onto a native Pressable/TextInput (or a raw core RN element). Fixing this for real requires Button/Link/Input's own schemas to grow a passthrough or an accessibilityHint/description prop, which is out of scope for a single-file generation; I implemented the clone as specified and called this out prominently in the doc comment rather than silently shipping something that looks functional but isn't. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: RN has no generic hardware-keyboard event API, and the schema only says 'on native implement the subset hardware keyboards can reach' plus 'react-native-web ... hover and focus behave as on web' without specifying how Escape should be wired there. I gated a `window`/`keydown` listener to `Platform.OS === 'web'` (a real browser exists under react-native-web) and left true native with no Escape path, since the popup is never shown there. This is a judgment call, not a documented requirement. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: 'placement... flips when it would overflow the viewport' is not implemented for top/bottom. Unlike Menu's dropdown, the tooltip bubble isn't portaled or measured against the window, so there's no viewport rect to flip against without adding that machinery; placement is static (start/end still resolve against writing direction). → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the schema defines no `open`/`onOpenChange` prop (correctly — visibility is meant to be fully hover/focus/long-press driven), but the generic testability rule asks for a `Keyboard` story 'rendering it open'. There's no declarative way to force that without inventing a prop, and no interaction-testing package (`@storybook/test` or similar) is present in devDependencies to script it programmatically (adding one would violate the no-new-dependencies rule). The Keyboard story instead renders three tooltip-wrapped focusable triggers (satisfying the 'at least three focusable children' half) and documents that a reviewer must focus/hover/long-press a trigger to actually open it. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the 'warm' toolbar grace window (how long a tooltip stays warm after hiding so the next sibling shows instantly) has no specified duration beyond the default-delay formula. I reused `motion.duration.base` as that window as a judgment call; the schema/web notes describe the behavior but not its length. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: 'the child must be focusable' (a11y requirement) and the `describes` semantics are accessibility contracts, not something checked at runtime — RN has no generic way to introspect whether an arbitrary subtree is focusable. Only a dev-mode warning verifies that exactly one child element was passed. → `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-10 02:16 — web round 1
+
+- **DOC** Tooltip: schema gives no explicit duration for `motion.duration.base` or the toolbar 'warm' window length, so the existing implementation hardcodes DEFAULT_DELAY_MS=600ms (matching the doc's 'roughly 600ms') and reuses that same value for WARM_WINDOW_MS, plus an unspecified 100ms CLOSE_GRACE_MS to let the pointer cross the offset gap onto the popup — none of these three constants are backed by a token. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: schema's `keyboard` block only lists Escape; the web notes also imply hide-on-blur/pointerleave which are not in the `keyboard` table, so those are treated as pointer/focus behavior rather than keyboard actions, per 'implement every key → action exactly as listed and nothing else'. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: anatomy names `trigger` and `popup` as parts, but only `text` gets a `data-part` hook — the trigger is the caller's own cloned element (not an owned node) and the popup is the root itself (already identified by `data-ds="Tooltip"`), so no additional `data-part` was added for either. → `site/src/content/docs/components/tooltip.md`
 
 ### 2026-09-10 00:34 — web round 1
 
@@ -911,7 +971,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 366 · CODE: 37 · TOOLING: 2 · NOISE: 8
+DOC: 397 · CODE: 37 · TOOLING: 2 · NOISE: 8
 
 ## Gates to fix
 

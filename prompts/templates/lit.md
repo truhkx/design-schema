@@ -48,6 +48,14 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: {{OVERRIDABLE}}
 Locked (accessibility-bearing, never overridable): {{LOCKED}}
 
+## Behavior scenarios ({{BEHAVIOR_COUNT}})
+
+Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
+
+```yaml
+{{BEHAVIOR_YAML}}
+```
+
 ## Platform notes ({{PLATFORM}})
 
 ```yaml

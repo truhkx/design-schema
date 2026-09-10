@@ -318,6 +318,14 @@ class ApiRunner(Runner):
 REPORT = re.compile(r"```json\s*(\{.*?\})\s*```", re.S)
 
 
+NO_REPORT = "(model did not return the JSON report block)"
+REPORT_NUDGE = """Your reply did not end with the JSON report block. Do not change any file. Reply with only that block now:
+
+```json
+{"files": ["<every file you wrote or edited, repo-relative>"], "gaps": ["<every place the spec made you guess>"]}
+```"""
+
+
 def parse_report(text: str) -> dict:
     blocks = REPORT.findall(text)
     for b in reversed(blocks):
@@ -327,7 +335,7 @@ def parse_report(text: str) -> dict:
                 return {"files": [str(f) for f in d.get("files", [])], "gaps": [str(g) for g in d.get("gaps", [])]}
         except json.JSONDecodeError:
             continue
-    return {"files": [], "gaps": ["(model did not return the JSON report block)"]}
+    return {"files": [], "gaps": [NO_REPORT]}
 
 
 def custom_dir(platform: str) -> Path:
@@ -410,6 +418,15 @@ def generate_one(name: str, platform: str, args, lock: dict) -> bool:
         custom_changed = restore_custom(platform, custom_before)
         cost += c
         rep = parse_report(text)
+        if not rep["files"] and NO_REPORT in rep["gaps"] and args.runner == "cli" and session:
+            # The model finished without the trailing report (Text.lit did). One cheap resumed turn asks for it, so
+            # the files it touched reach the lock; the original gap line stays if the second reply has none either.
+            print(f"  round {round_no}: no JSON report — asking once more for it", flush=True)
+            text2, session, c2 = runner.run(REPORT_NUDGE, session)
+            cost += c2
+            rep2 = parse_report(text2)
+            if rep2["files"] or NO_REPORT not in rep2["gaps"]:
+                rep = {"files": rep2["files"], "gaps": rep2["gaps"] + ["(report recovered after a second request)"]}
         files = sorted(set(files) | set(rep["files"]))  # union across rounds: fix rounds often touch other files
         all_gaps += rep["gaps"]
         record_gaps(name, platform, rep["gaps"], round_no)

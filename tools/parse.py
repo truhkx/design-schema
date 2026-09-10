@@ -587,6 +587,9 @@ def render_prompt(c: dict, sections: dict[str, str], platform: str, fm_yaml: str
             guidance = guidance + "\n\n" + prose
     scenarios = behavior_for(c, derive_behavior(c), platform)
     behavior_yaml = yaml.safe_dump(scenarios, sort_keys=False, allow_unicode=True).strip() if scenarios else "[]"
+    if "{{BEHAVIOR_YAML}}" not in template:
+        # A template without the placeholder must still hand the generator its scenarios (the tests gate runs them).
+        guidance += "\n\n## Behavior scenarios (" + str(len(scenarios)) + ")\n\nOne test per scenario, in this order.\n\n```yaml\n" + behavior_yaml + "\n```"
     return (
         template.replace("{{NAME}}", c["name"])
         .replace("{{PLATFORM}}", platform)

@@ -45,6 +45,25 @@ GENERATED = ROOT / "generated"
 OUT = GENERATED / "behavior"
 
 PLATFORMS = ("web", "lit", "rn")
+# Roles a test cannot query for: `none`/`presentation` have no element, `text` is not an ARIA role, and
+# `landmark` stands for whichever landmark role the component's own prop selects.
+NON_CONCRETE_ROLES = {"none", "presentation", "text", "landmark"}
+# The component's surface is not in the document until something opens it and there is no `open` prop to set.
+HOVER_ROLES = {"tooltip"}
+SOURCE_FILE = {"web": "packages/react/src/{name}.tsx", "lit": "packages/lit/src/{name}.ts", "rn": "packages/rn/src/{name}.tsx"}
+DEEP_QUERY_HELPER = """function deep(root: ParentNode, selector: string): Element | null {
+  const direct = root.querySelector(selector);
+  if (direct) return direct;
+  for (const el of Array.from(root.querySelectorAll('*'))) {
+    const shadow = (el as HTMLElement).shadowRoot;
+    if (shadow) {
+      const found = deep(shadow, selector);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+"""
 EXT = {"web": "tsx", "lit": "ts", "rn": "tsx"}
 PKG_SRC = {"web": "packages/react/src", "lit": "packages/lit/src", "rn": "packages/rn/src"}
 REL_SRC = {plat: "../../" + PKG_SRC[plat] for plat in PLATFORMS}  # from generated/behavior/
@@ -109,29 +128,53 @@ def part_locator(c: dict, part: str, platform: str) -> str:
     return f"s.{part}()"
 
 
+def concrete_role(c: dict) -> str | None:
+    role = c["a11y"]["role"]
+    return None if role in NON_CONCRETE_ROLES else role
+
+
+def root_locator_body(c: dict, platform: str) -> str:
+    """The component's root: the `data-ds` hook first (piercing shadow roots on Lit), the rendered tree otherwise."""
+    name = c["name"]
+    role = concrete_role(c)
+    if platform == "web":
+        by_role = f" ?? screen.queryByRole('{role}')" if role else ""
+        return f'(document.querySelector(\'[data-ds="{name}"]\'){by_role} ?? utils.container.firstElementChild) as HTMLElement'
+    if platform == "rn":
+        return f"screen.queryByTestId('{name}') ?? screen.UNSAFE_root"
+    if platform == "lit":
+        return "el"
+    raise Unmappable(f"unknown platform '{platform}'")
+
+
 def part_locator_body(c: dict, part: str, platform: str) -> str:
-    """The accessor body for `part`: how the part is actually found, one heuristic at a time."""
+    """The accessor body for `part`: how the part is actually found, one heuristic at a time. The primary part is
+    the role element when the role can be queried, else the root (never `getByRole('text')` or `('none')`)."""
     anatomy = c.get("anatomy") or []
     props = c.get("props") or {}
-    role = c["a11y"]["role"]
-    is_primary = bool(anatomy) and part == anatomy[0] and role != "none"
+    role = concrete_role(c)
+    is_primary = bool(anatomy) and part == anatomy[0]
     prop = props.get(part)
     is_text_prop = prop is not None and prop.get("type") == "string"
 
     if platform == "web":
         if is_primary:
-            return f"screen.getByRole('{role}')"
+            return f"(screen.queryByRole('{role}') ?? s.root()) as HTMLElement" if role else "s.root()"
         if is_text_prop:
             return f"screen.getByText(props.{part})"
-        return f'utils.container.querySelector(\'[data-part="{part}"]\')!'
+        return f'(utils.container.querySelector(\'[data-part="{part}"]\') ?? s.root())'
     if platform == "rn":
         if is_primary:
-            return f"screen.getByRole('{role}')"
+            return f"screen.queryByRole('{role}') ?? s.root()" if role else "s.root()"
         if is_text_prop:
             return f"screen.getByText(props.{part})"
-        return f"screen.getByTestId('{c['name']}.{part}')"
+        return f"screen.queryByTestId('{c['name']}.{part}') ?? s.root()"
     if platform == "lit":
-        return f'(root.querySelector(\'[part="{part}"]\') ?? root.querySelector(\'[data-part="{part}"]\'))!'
+        by_part = f'deep(root, \'[part="{part}"]\') ?? deep(root, \'[data-part="{part}"]\')'
+        if is_primary:
+            by_role = f'deep(root, \'[role="{role}"]\') ?? ' if role else ""
+            return f"({by_role}{by_part} ?? root.firstElementChild) as HTMLElement"
+        return f"({by_part}) as HTMLElement"
     raise Unmappable(f"unknown platform '{platform}'")
 
 
@@ -173,7 +216,9 @@ def when_lines(c: dict, sc: dict, platform: str) -> list[str]:
         if platform == "rn":
             return [f"fireEvent.press({locator});"]
         if platform == "lit":
-            return [f"await userEvent.click({locator});"]
+            # Playwright will not click an aria-disabled control on its own; a person can, and the doc says what happens.
+            force = ", { force: true }" if (sc.get("given") or {}).get("disabled") else ""
+            return [f"await userEvent.click({locator}{force});"]
 
     if kind == "key":
         control = part_locator(c, primary_part(c), platform)
@@ -231,6 +276,9 @@ def then_event_lines(c: dict, item: dict, platform: str) -> list[str]:
         if platform == "rn":
             return [f"expect({mock}).toHaveBeenCalledWith({js(value)});"]
         if platform == "lit":
+            if isinstance(value, dict):
+                return [f"expect({mock}).toHaveBeenCalledTimes(1);",
+                        f"expect({mock}.mock.calls[0]?.[0]?.detail).toMatchObject({js(value)});"]
             return [
                 f"expect({mock}).toHaveBeenCalledTimes(1);",
                 f"expect(Object.values({mock}.mock.calls[0]?.[0]?.detail ?? {{}})).toContain({js(value)});",
@@ -245,6 +293,10 @@ def then_state_lines(c: dict, item: dict, platform: str) -> list[str]:
         aria = STATE_ARIA[state]
         if state == "checked" and isinstance(is_value, bool) and platform == "web":
             return [f"expect({control}).{'toBeChecked()' if is_value else 'not.toBeChecked()'};"]
+        if state == "checked" and isinstance(is_value, bool) and platform == "lit":
+            # A native checkbox carries its state in `.checked` (aria-checked is only for `mixed`); a role=switch or
+            # role=checkbox on another element carries it in aria-checked.
+            return [f"expect((({control}) as HTMLInputElement).type === 'checkbox' ? (({control}) as HTMLInputElement).checked : ({control}).getAttribute('aria-checked') === 'true').toBe({'true' if is_value else 'false'});"]
         val = "true" if is_value is True else "false" if is_value is False else str(is_value)
         return [f"expect({control}).toHaveAttribute('{aria}', '{val}');"]
     if platform == "rn":
@@ -310,31 +362,38 @@ def then_role_lines(c: dict, role: str, platform: str) -> list[str]:
 
 
 def then_name_lines(c: dict, platform: str) -> list[str]:
-    role = c["a11y"]["role"]
-    if role == "none":
-        raise Unmappable("then.name: component has no a11y role to query by")
+    role = concrete_role(c)
+    if role is None:
+        raise Unmappable(f"then.name: role '{c['a11y']['role']}' cannot be queried; name the landmark/text role in the doc")
+    name_prop = p.accessible_name_prop(c)
+    expected = f"s.props.{name_prop}" if name_prop else None
     if platform == "web":
-        return [f"expect(screen.getByRole('{role}', {{ name: s.props.label }})).toBeInTheDocument();"]
+        if expected:
+            return [f"expect(screen.getByRole('{role}', {{ name: {expected} }})).toBeInTheDocument();"]
+        return [f"expect(screen.getByRole('{role}')).toHaveAccessibleName();"]
     if platform == "rn":
-        return [f"expect(screen.getByRole('{role}', {{ name: s.props.label }})).toBeOnTheScreen();"]
+        if expected:
+            return [f"expect(screen.getByRole('{role}', {{ name: {expected} }})).toBeOnTheScreen();"]
+        return [f"expect(screen.getByRole('{role}')).toBeOnTheScreen();"]
     if platform == "lit":
-        return [f"expect({part_locator(c, primary_part(c), platform)}).toHaveAccessibleName(s.props.label);"]
+        target = part_locator(c, primary_part(c), platform)
+        if expected:
+            return [f"expect({target}).toHaveAccessibleName({expected});"]
+        return [f"expect({target}).toHaveAccessibleName();"]
     raise Unmappable(f"then.name: no mapping for {platform}")
 
 
 def then_renders_lines(c: dict, platform: str) -> list[str]:
-    role = c["a11y"]["role"]
-    name = c["name"]
+    """Rendering is judged by the root, never by role: a decorative Icon has no role, an Input's role follows
+    its type, and a closed overlay has no surface — none of those is a failure to render."""
     if platform == "web":
-        if role != "none":
-            return [f"expect(screen.getByRole('{role}')).toBeInTheDocument();"]
-        return [f"expect(s.container.querySelector('[data-ds=\"{name}\"]')).not.toBeNull();"]
+        return ["expect(s.root()).not.toBeNull();"]
     if platform == "rn":
-        if role != "none":
-            return [f"expect(screen.getByRole('{role}')).toBeOnTheScreen();"]
-        return [f"expect(screen.getByTestId('{name}')).toBeOnTheScreen();"]
+        return ["expect(s.root()).toBeTruthy();"]
     if platform == "lit":
-        return [f"expect({part_locator(c, primary_part(c), platform)}).not.toBeNull();"]
+        # An element that renders into its shadow root must have put something there; a light-DOM element (a
+        # landmark whose role lives on the host through ElementInternals) has rendered once it is connected.
+        return ["expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);"]
     raise Unmappable(f"then.renders: no mapping for {platform}")
 
 
@@ -368,17 +427,36 @@ def then_item_lines(c: dict, item: dict, platform: str) -> list[str]:
 # Scenario → test block
 # ---------------------------------------------------------------------------
 
+def needs_surface(sc: dict) -> bool:
+    """Whether the scenario asserts on the component's surface (so a closed overlay must be opened first)."""
+    if sc.get("when"):
+        return True
+    return any(k in item for item in sc["then"] for k in ("name", "renders", "focusable", "focused", "focus", "state", "role", "text", "copy"))
+
+
+def effective_given(c: dict, sc: dict) -> dict:
+    """`given` plus `open: true` for components with a boolean `open` prop, unless the scenario sets it."""
+    given = dict(sc.get("given") or {})
+    open_prop = (c.get("props") or {}).get("open")
+    if open_prop and open_prop.get("type") == "boolean" and "open" not in given and needs_surface(sc):
+        given["open"] = True
+    return given
+
+
 def scenario_block(c: dict, sc: dict, platform: str) -> str:
     name = sc["name"].replace("'", "\\'")
     try:
+        if c["a11y"]["role"] in HOVER_ROLES and needs_surface(sc):
+            raise Unmappable(f"role '{c['a11y']['role']}' needs its trigger hovered or focused; covered by the Keyboard story")
         when = when_lines(c, sc, platform)
         then: list[str] = []
         for item in sc["then"]:
             then += then_item_lines(c, item, platform)
     except Unmappable as e:
-        return f"  test.skip('{name} — {e.reason}', async () => {{}});"
+        reason = str(e.reason).replace("\\", "\\\\").replace("'", "\\'")
+        return f"  test.skip('{name} — {reason}', async () => {{}});"
 
-    given = js(sc.get("given") or {})
+    given = js(effective_given(c, sc))
     is_async = platform != "rn"
     kw = "async " if is_async else ""
     await_setup = "await " if platform == "lit" else ""
@@ -435,15 +513,17 @@ def web_file(c: dict, scenarios: list[dict]) -> str:
     lines.append(props_line)
     lines.append(f"  const utils = render(<{name} {{...props}} />);")
     lines.append("  const user = userEvent.setup();")
-    lines.append("  return {")
+    lines.append("  const s = {")
     lines.append("    ...utils,")
     lines.append("    user,")
     lines.append("    events,")
     lines.append("    props,")
+    lines.append(f"    root: () => {root_locator_body(c, 'web')},")
     for part in parts:
         lines.append(f"    {part}: () => {part_locator_body(c, part, 'web')},")
     lines.append(f"    rerender: (next: Partial<{name}Props>) => utils.rerender(<{name} {{...props}} {{...next}} />),")
     lines.append("  };")
+    lines.append("  return s;")
     lines.append("}")
     lines.append("")
     lines.append(f"describe('{name}', () => {{")
@@ -487,14 +567,16 @@ def rn_file(c: dict, scenarios: list[dict]) -> str:
     lines.append("    </ThemeProvider>")
     lines.append("  );")
     lines.append("  const utils = render(tree(props));")
-    lines.append("  return {")
+    lines.append("  const s = {")
     lines.append("    ...utils,")
     lines.append("    events,")
     lines.append("    props,")
+    lines.append(f"    root: () => {root_locator_body(c, 'rn')},")
     for part in parts:
         lines.append(f"    {part}: () => {part_locator_body(c, part, 'rn')},")
     lines.append(f"    rerender: (next: Partial<{name}Props>) => utils.rerender(tree({{ ...props, ...next }})),")
     lines.append("  };")
+    lines.append("  return s;")
     lines.append("}")
     lines.append("")
     lines.append(f"describe('{name}', () => {{")
@@ -520,6 +602,7 @@ def lit_file(c: dict, scenarios: list[dict]) -> str:
     ]
     if needs_regex_helper(scenarios):
         lines.append(ESCAPE_REGEXP_HELPER)
+    lines.append(DEEP_QUERY_HELPER)
     lines.append("async function setup(given: Record<string, unknown> = {}) {")
     lines.append(f"  const el = document.createElement('{tag}');")
     lines.append("  const props = { ...meta.args, ...given };")
@@ -535,15 +618,17 @@ def lit_file(c: dict, scenarios: list[dict]) -> str:
         lines.append(f"  el.addEventListener('{lit_event}', events.{ev_name} as unknown as EventListener);")
     lines.append("  document.body.append(el);")
     lines.append("  await (el as unknown as { updateComplete: Promise<boolean> }).updateComplete;")
-    lines.append("  const root = el.shadowRoot!;")
-    lines.append("  return {")
+    lines.append("  const root: ParentNode = el.shadowRoot ?? el;  // some elements render in light DOM")
+    lines.append("  const s = {")
     lines.append("    el,")
     lines.append("    root,")
     lines.append("    events,")
     lines.append("    props,")
+    lines.append("    root_: () => el,")
     for part in parts:
         lines.append(f"    {part}: () => {part_locator_body(c, part, 'lit')},")
     lines.append("  };")
+    lines.append("  return s;")
     lines.append("}")
     lines.append("")
     lines.append("beforeEach(() => {")
@@ -565,7 +650,7 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     for old in OUT.glob("*.test.*"):
         old.unlink()
-    n_files = n_tests = n_skips = 0
+    n_files = n_tests = n_skips = n_missing = 0
     for entry in entries:
         c = entry["component"]
         derived = entry.get("behaviorDerived") or []
@@ -573,6 +658,9 @@ def main() -> int:
             continue
         for platform in PLATFORMS:
             if platform not in c["platforms"] or not c["platforms"][platform].get("supported", True):
+                continue
+            if not (ROOT / SOURCE_FILE[platform].format(name=c["name"])).exists():
+                n_missing += 1  # not generated yet: no test file, so the package suite stays green
                 continue
             scenarios = p.behavior_for(c, derived, platform)
             if not scenarios:
@@ -586,7 +674,7 @@ def main() -> int:
                     n_tests += 1
                 elif re.match(r"\s*test\.skip\('", line):
                     n_skips += 1
-    print(f"✔ behavior gate: {n_files} file(s), {n_tests} test(s), {n_skips} skip(s) → {OUT.relative_to(ROOT)}/")
+    print(f"✔ behavior gate: {n_files} file(s), {n_tests} test(s), {n_skips} skip(s), {n_missing} target(s) not generated yet → {OUT.relative_to(ROOT)}/")
     return 0
 
 

@@ -94,9 +94,28 @@ class TestGeneratedFilesContainOneTestPerScenario:
 
 
 class TestPartLocator:
-    def test_primary_part_is_located_by_role(self):
-        assert bt.part_locator_body(WIDGET, "control", "web") == "screen.getByRole('button')"
-        assert bt.part_locator_body(WIDGET, "control", "rn") == "screen.getByRole('button')"
+    def test_primary_part_is_located_by_role_with_the_root_as_fallback(self):
+        assert bt.part_locator_body(WIDGET, "control", "web") == "(screen.queryByRole('button') ?? s.root()) as HTMLElement"
+        assert bt.part_locator_body(WIDGET, "control", "rn") == "screen.queryByRole('button') ?? s.root()"
+
+    @pytest.mark.parametrize("role", ["none", "text", "landmark", "presentation"])
+    def test_a_role_that_cannot_be_queried_never_reaches_get_by_role(self, role):
+        c = {**WIDGET, "a11y": {"role": role, "requires": []}}
+        assert bt.part_locator_body(c, "control", "web") == "s.root()"
+        assert bt.part_locator_body(c, "control", "rn") == "s.root()"
+        assert "role=" not in bt.part_locator_body(c, "control", "lit")
+
+    def test_the_root_is_the_data_ds_hook_first(self):
+        web = bt.root_locator_body(WIDGET, "web")
+        assert web.startswith("(document.querySelector('[data-ds=\"Widget\"]')"), "the hook is searched document-wide: portals render outside the container"
+        assert "screen.queryByRole('button')" in web and web.endswith("utils.container.firstElementChild) as HTMLElement")
+        assert "queryByRole" not in bt.root_locator_body({**WIDGET, "a11y": {"role": "none", "requires": []}}, "web")
+        assert bt.root_locator_body(WIDGET, "rn") == "screen.queryByTestId('Widget') ?? screen.UNSAFE_root"
+
+    def test_lit_primary_tries_role_then_part_then_first_child_through_shadow_roots(self):
+        body = bt.part_locator_body(WIDGET, "control", "lit")
+        assert body.index('[role="button"]') < body.index('[part="control"]') < body.index("root.firstElementChild")
+        assert body.startswith("(deep(root,")
 
     def test_a_part_matching_a_string_prop_is_located_by_its_text(self):
         assert bt.part_locator_body(WIDGET, "label", "web") == "screen.getByText(props.label)"
@@ -104,7 +123,7 @@ class TestPartLocator:
 
     def test_an_unhooked_part_falls_back_to_the_data_part_or_testid_convention(self):
         assert "data-part=\"indicator\"" in bt.part_locator_body(WIDGET, "indicator", "web")
-        assert bt.part_locator_body(WIDGET, "indicator", "rn") == "screen.getByTestId('Widget.indicator')"
+        assert bt.part_locator_body(WIDGET, "indicator", "rn") == "screen.queryByTestId('Widget.indicator') ?? s.root()"
 
     def test_lit_tries_the_native_part_attribute_then_data_part(self):
         body = bt.part_locator_body(WIDGET, "label", "lit")
@@ -149,11 +168,24 @@ class TestMain:
         monkeypatch.setattr(bt, "ROOT", tmp_path)
         monkeypatch.setattr(bt, "GENERATED", generated)
         monkeypatch.setattr(bt, "OUT", generated / "behavior")
+        for platform in bt.PLATFORMS:  # the component exists in every package
+            src = tmp_path / bt.SOURCE_FILE[platform].format(name="Widget")
+            src.parent.mkdir(parents=True, exist_ok=True)
+            src.write_text("export {};", encoding="utf-8")
 
         def write(entries):
             import json
             (generated / "components.json").write_text(json.dumps(entries), encoding="utf-8")
         return generated, write
+
+    def test_a_component_not_generated_yet_gets_no_test_file(self, sandbox, tmp_path, capsys):
+        generated, write = sandbox
+        (tmp_path / bt.SOURCE_FILE["lit"].format(name="Widget")).unlink()
+        write([self.entry(behavior=[CLICK])])
+        bt.main()
+        names = sorted(p.name for p in (generated / "behavior").glob("*.test.*"))
+        assert names == ["Widget.rn.test.tsx", "Widget.web.test.tsx"]
+        assert "1 target(s) not generated yet" in capsys.readouterr().out
 
     def entry(self, behavior=None, derived=None):
         c = dict(WIDGET)
@@ -187,3 +219,51 @@ class TestMain:
         write([self.entry(derived=[{"name": "renders", "then": [{"renders": True}], "derived": True}])])
         bt.main()
         assert (generated / "behavior" / "Widget.web.test.tsx").exists()
+
+
+class TestSurfaces:
+    OVERLAY = {**WIDGET, "name": "Sheet", "anatomy": ["surface"], "a11y": {"role": "dialog", "requires": []},
+               "props": {"open": {"type": "boolean", "description": "x"}, "title": {"type": "string", "required": True, "description": "x"}}}
+
+    def test_a_closed_by_default_overlay_is_opened_for_scenarios_that_need_its_surface(self):
+        block = bt.scenario_block(self.OVERLAY, {"name": "renders", "then": [{"renders": True}]}, "web")
+        assert "setup({ open: true })" in block or "setup({\"open\": true})" in block or '"open": true' in block
+
+    def test_an_authored_open_value_is_kept(self):
+        block = bt.scenario_block(self.OVERLAY, {"name": "closed", "given": {"open": False}, "then": [{"renders": True}]}, "web")
+        assert "true" not in block.split("setup(")[1].split(")")[0]
+
+    def test_a_component_without_an_open_prop_is_untouched(self):
+        block = bt.scenario_block(WIDGET, {"name": "renders", "then": [{"renders": True}]}, "web")
+        assert "open" not in block
+
+    def test_a_hover_surface_is_skipped_with_the_reason(self):
+        tip = {**WIDGET, "name": "Tooltip", "a11y": {"role": "tooltip", "requires": []}}
+        block = bt.scenario_block(tip, {"name": "renders", "then": [{"renders": True}]}, "web")
+        assert block.startswith("  test.skip('renders")
+        assert "needs its trigger hovered" in block
+        assert "\\'tooltip\\'" in block, "quotes inside the reason are escaped for the JS string literal"
+
+
+
+class TestNameAndRenders:
+    def test_renders_never_queries_by_role(self):
+        for platform in bt.PLATFORMS:
+            lines = bt.then_renders_lines(WIDGET, platform)
+            assert not any("ByRole" in ln for ln in lines)
+
+    def test_name_uses_the_prop_that_carries_the_accessible_name(self):
+        assert bt.then_name_lines(WIDGET, "web") == ["expect(screen.getByRole('button', { name: s.props.label })).toBeInTheDocument();"]
+        icon = {**WIDGET, "name": "Icon", "anatomy": ["glyph"], "a11y": {"role": "img", "requires": ["accessible-name"]},
+                "props": {"label": {"type": "string", "description": "x", "a11y": "aria-label when set"}}}
+        assert "s.props.label" in bt.then_name_lines(icon, "web")[0]
+
+    def test_name_without_a_naming_prop_asserts_a_non_empty_name(self):
+        heading = {**WIDGET, "name": "Heading", "anatomy": ["text"], "a11y": {"role": "heading", "requires": ["accessible-name"]},
+                   "props": {"children": {"type": "content", "required": True, "description": "x"}}}
+        assert bt.then_name_lines(heading, "web") == ["expect(screen.getByRole('heading')).toHaveAccessibleName();"]
+
+    def test_name_on_an_unqueryable_role_is_unmappable(self):
+        text = {**WIDGET, "a11y": {"role": "text", "requires": []}}
+        with pytest.raises(bt.Unmappable, match="cannot be queried"):
+            bt.then_name_lines(text, "web")

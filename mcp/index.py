@@ -191,7 +191,7 @@ def prompt_chunks() -> list[dict]:
             theme = f.name[len("theme."):-3]
             meta = {"kind": "prompt", "platform": "all", "component": "", "theme": theme, "category": "prompt", "status": "generated", "section": "Feel skill", "path": str(f.relative_to(ROOT)), "granularity": "file"}
         else:
-            name, platform = f.stem.split(".", 1)
+            name, platform = f.stem.rsplit(".", 1)  # Pattern.<Name>.<platform> keeps its dot in the name
             meta = {"kind": "prompt", "platform": platform, "component": name, "theme": "", "category": "prompt", "status": "generated", "section": "Generation prompt", "path": str(f.relative_to(ROOT)), "granularity": "file"}
         chunks.append({"id": f"prompt:{f.stem}", "text": text[:MAX_CHARS], "meta": meta})
     return chunks

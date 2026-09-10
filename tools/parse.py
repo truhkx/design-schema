@@ -301,6 +301,11 @@ def validate_behavior(component: dict, path: Path) -> None:
                     raise DocError(f"{path.name}: scenario '{name}' then.state invalid: React Native has no invalid accessibility state — narrow platforms to exclude 'rn'")
 
 
+# ARIA widget roles whose element itself takes focus (WAI-ARIA 1.2 widget roles minus composite containers).
+WIDGET_ROLES = {"button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider",
+                "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "gridcell",
+                "scrollbar", "separator", "progressbar"} - {"separator", "progressbar"}
+
 ACCESSIBLE_NAME_HINTS = ("accessible name", "aria-label", "accessibilitylabel", "accessibility label")
 ACCESSIBLE_NAME_PROPS = ("label", "caption", "title")
 ACCESSIBLE_NAME_PLACEHOLDER = "Accessible name"
@@ -364,7 +369,9 @@ def derive_behavior(component: dict) -> list[dict]:
             sc["given"] = given
         scenarios.append(sc)
 
-    if "keyboard-operable" in requires:
+    if "keyboard-operable" in requires and (component.get("a11y") or {}).get("role") in WIDGET_ROLES:
+        # A container (form, navigation, status region) is keyboard-operable through its children; only a widget
+        # role names something that itself takes focus.
         scenarios.append({
             "name": "control-is-focusable",
             "then": [{"focusable": True}],

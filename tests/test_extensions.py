@@ -37,6 +37,7 @@ def sandbox(tmp_path, monkeypatch, component):
     monkeypatch.setattr(p, "OUT", out)
     monkeypatch.setattr(p, "TEMPLATES", templates)
     monkeypatch.setattr(p, "THEME_DOCS", tmp_path / "no-themes")
+    monkeypatch.setattr(p, "PATTERN_DOCS", tmp_path / "no-patterns")
     monkeypatch.setattr(p, "ROOT", tmp_path)
     monkeypatch.setattr(p, "token_names", lambda: None)
     (docs / "widget.md").write_text("---\n" + yaml.safe_dump({"title": "Widget", "component": component}, sort_keys=False) + "---\n" + BODY, encoding="utf-8")

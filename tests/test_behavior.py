@@ -235,3 +235,17 @@ class TestAccessibleNameGiven:
         fm, _ = p.split_frontmatter(path.read_text(encoding="utf-8"), path)
         sc = next(s for s in p.derive_behavior(fm["component"]) if s["name"] == "has-accessible-name")
         assert sc.get("given", {}).get("label"), "Icon's name comes from its optional label"
+
+
+class TestFocusableDerivation:
+    """control-is-focusable only where the role names something that itself takes focus."""
+
+    @pytest.mark.parametrize("role", ["button", "switch", "textbox", "link", "menuitem"])
+    def test_widget_roles_get_the_scenario(self, component, role):
+        component["a11y"] = {"role": role, "requires": ["keyboard-operable"]}
+        assert "control-is-focusable" in [s["name"] for s in p.derive_behavior(component)]
+
+    @pytest.mark.parametrize("role", ["form", "navigation", "status", "dialog", "menu", "radiogroup", "separator", "none"])
+    def test_containers_and_regions_do_not(self, component, role):
+        component["a11y"] = {"role": role, "requires": ["keyboard-operable"]}
+        assert "control-is-focusable" not in [s["name"] for s in p.derive_behavior(component)]

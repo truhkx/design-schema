@@ -244,7 +244,7 @@ class CliRunner(Runner):
     def run(self, prompt, resume):
         argv = [self.exe, "-p", "--output-format", "json", "--permission-mode", "acceptEdits",
                 "--model", self.model, "--max-turns", str(self.max_turns),
-                "--allowedTools", "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(pnpm *),Bash(npx tsc *),Bash(node tools/*),Bash(python3 *),Bash(python *),Bash(py *),Bash(grep *),Bash(find *),Bash(cat *),Bash(head *),Bash(tail *),Bash(awk *)"]
+                "--allowedTools", "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(pnpm *),Bash(npm run *),Bash(npx tsc *),Bash(npx vitest *),Bash(npx jest *),Bash(npx eslint *),Bash(node tools/*),Bash(python3 *),Bash(python *),Bash(py *),Bash(grep *),Bash(find *),Bash(cat *),Bash(head *),Bash(tail *),Bash(awk *),Bash(which *),Bash(where *),PowerShell(pnpm *),PowerShell(npm run *),PowerShell(npx *),PowerShell(py *),PowerShell(node tools/*),mcp__design-schema__*"]
         if resume:
             argv += ["--resume", resume]
         env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}

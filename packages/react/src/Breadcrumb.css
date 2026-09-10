@@ -1,12 +1,21 @@
 /* Breadcrumb — styled only through Design Schema token custom properties. */
 
 .ds-breadcrumb {
+  --ds-breadcrumb-gap: var(--space-2);
+  --ds-breadcrumb-font-family: var(--font-family-body); /* literal-ok: CSS custom-property hook name, not a font stack */
+  --ds-breadcrumb-font-size: var(--font-size-sm);
+  --ds-breadcrumb-font-weight: var(--font-weight-regular);
+  --ds-breadcrumb-line-height: var(--font-line-height-normal);
+  /* locked: accessibility-bearing, never overridable */
+  --ds-breadcrumb-current-color: var(--color-foreground);
+  --ds-breadcrumb-separator-color: var(--color-foreground-muted);
+  --ds-breadcrumb-min-target: var(--size-target-min);
   display: block;
   min-inline-size: 0;
-  font-family: var(--font-family-body);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--font-line-height-normal);
+  font-family: var(--ds-breadcrumb-font-family);
+  font-size: var(--ds-breadcrumb-font-size);
+  font-weight: var(--ds-breadcrumb-font-weight);
+  line-height: var(--ds-breadcrumb-line-height);
 }
 
 /* list: wraps on narrow widths so every ancestor stays reachable. */
@@ -23,18 +32,18 @@
 .ds-breadcrumb__item {
   display: inline-flex;
   align-items: center;
-  min-block-size: var(--size-target-min);
+  min-block-size: var(--ds-breadcrumb-min-target);
 }
 
 /* separator: CSS-generated from copy.separator, so it is not in the accessibility tree. */
 .ds-breadcrumb__item + .ds-breadcrumb__item::before {
   content: var(--ds-breadcrumb-separator);
-  margin-inline: var(--space-2);
-  color: var(--color-foreground-muted);
+  margin-inline: var(--ds-breadcrumb-gap);
+  color: var(--ds-breadcrumb-separator-color);
 }
 
 /* current: the current page, plain text in the regular weight. */
 .ds-breadcrumb__current,
 .ds-breadcrumb__text {
-  color: var(--color-foreground);
+  color: var(--ds-breadcrumb-current-color);
 }

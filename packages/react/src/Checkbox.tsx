@@ -6,16 +6,67 @@ import {
   useRef,
   type ChangeEvent,
   type ComponentPropsWithoutRef,
+  type CSSProperties,
   type MouseEvent,
 } from 'react';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text } from './Text';
 import { useFormContext } from './FormContext';
 import './Checkbox.css';
 
-/** copy.required — `{label}` is replaced by the visible label. */
-const REQUIRED_MESSAGE = '{label} is required.';
-/** copy.requiredIndicator */
-const REQUIRED_INDICATOR = ' (required)';
+/** copy.* — used verbatim; `{label}` is replaced by the visible label. */
+const COPY = {
+  required: '{label} is required.',
+  invalid: '{label} is not valid.',
+  requiredIndicator: ' (required)',
+};
+
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type CheckboxOverridableBinding =
+  | 'controlBackground'
+  | 'controlBorderWidth'
+  | 'indicatorStroke'
+  | 'pressedOverlay'
+  | 'controlBorderInvalid'
+  | 'controlSize'
+  | 'controlRadius'
+  | 'gap'
+  | 'partGap'
+  | 'labelSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'fontFamily'
+  | 'lineHeight'
+  | 'disabledOpacity'
+  | 'transition';
+
+const OVERRIDE_HOOK: Record<CheckboxOverridableBinding, string> = {
+  controlBackground: '--ds-checkbox-control-background',
+  controlBorderWidth: '--ds-checkbox-control-border-width',
+  indicatorStroke: '--ds-checkbox-indicator-stroke',
+  pressedOverlay: '--ds-checkbox-pressed-overlay',
+  controlBorderInvalid: '--ds-checkbox-control-border-invalid',
+  controlSize: '--ds-checkbox-control-size',
+  controlRadius: '--ds-checkbox-control-radius',
+  gap: '--ds-checkbox-gap',
+  partGap: '--ds-checkbox-part-gap',
+  labelSize: '--ds-checkbox-label-size',
+  labelWeight: '--ds-checkbox-label-weight',
+  helperSize: '--ds-checkbox-helper-size',
+  fontFamily: '--ds-checkbox-font-family', // literal-ok: CSS custom-property hook name, not a font stack
+  lineHeight: '--ds-checkbox-line-height',
+  disabledOpacity: '--ds-checkbox-disabled-opacity',
+  transition: '--ds-checkbox-transition',
+};
+
+function overridesToStyle(overrides: Partial<Record<CheckboxOverridableBinding, TokenRef>>): CSSProperties {
+  const style: Record<string, string> = {};
+  for (const binding of Object.keys(overrides) as CheckboxOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+  }
+  return style as CSSProperties;
+}
 
 export interface CheckboxProps
   extends Omit<
@@ -56,6 +107,8 @@ export interface CheckboxProps
   description?: string;
   /** The error message. Setting it marks the control invalid. Say what to do ("Accept the terms to continue"). */
   error?: string;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<CheckboxOverridableBinding, TokenRef>>;
   /** Fired when the checked state changes, with the new boolean. */
   onChange?: (checked: boolean, event: ChangeEvent<HTMLInputElement>) => void;
 }
@@ -81,10 +134,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
     invalid = false,
     description,
     error,
+    overrides,
     onChange,
     onClick,
     id: idProp,
     className,
+    style,
     ...rest
   },
   ref,
@@ -124,8 +179,8 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
       validate: () => {
         const { label: currentLabel, required: isRequired, invalid: isInvalidProp, error: errorProp } = latest.current;
         if (errorProp !== undefined) return errorProp;
-        if (isRequired && !inputRef.current?.checked) return REQUIRED_MESSAGE.replace('{label}', currentLabel);
-        if (isInvalidProp) return `${currentLabel} is not valid.`;
+        if (isRequired && !inputRef.current?.checked) return COPY.required.replace('{label}', currentLabel);
+        if (isInvalidProp) return COPY.invalid.replace('{label}', currentLabel);
         return null;
       },
       focus: () => inputRef.current?.focus(),
@@ -167,8 +222,11 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
     .filter(Boolean)
     .join(' ');
 
+  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+
   return (
-    <div className={classes}>
+    <div className={classes} data-ds="Checkbox" style={mergedStyle}>
       <div className="ds-checkbox__row">
         <input
           {...rest}
@@ -192,7 +250,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           {label}
           {required ? (
             <Text element="span" size="sm" tone="muted" className="ds-checkbox__required">
-              {REQUIRED_INDICATOR}
+              {COPY.requiredIndicator}
             </Text>
           ) : null}
         </label>
@@ -201,6 +259,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
         <Text
           element="p"
           id={descriptionId}
+          data-part="description"
           size="sm"
           tone="muted"
           className="ds-checkbox__description"
@@ -210,7 +269,15 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
         </Text>
       ) : null}
       {resolvedError ? (
-        <Text element="p" id={errorId} role="alert" size="sm" tone="danger" className="ds-checkbox__error">
+        <Text
+          element="p"
+          id={errorId}
+          role="alert"
+          data-part="errorMessage"
+          size="sm"
+          tone="danger"
+          className="ds-checkbox__error"
+        >
           {resolvedError}
         </Text>
       ) : null}

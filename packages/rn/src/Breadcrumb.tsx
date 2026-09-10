@@ -1,10 +1,15 @@
 import * as React from 'react';
 import { AccessibilityInfo, Text as RNText, View, findNodeHandle } from 'react-native';
 import type { TextStyle, ViewStyle } from 'react-native';
+import { resolveToken } from '@design-schema/tokens';
+import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Link } from './Link';
 import { Text } from './Text';
 import { toFontWeight, toLineHeight, useTheme } from './theme';
+
+/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+export type BreadcrumbOverridableBinding = 'gap' | 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight';
 
 export interface BreadcrumbProps {
   /** The trail from root to current page, in order. Every item but the last needs an `href`; an ancestor without one renders as plain text (never an empty link). The last is the current page and its `href` is ignored. */
@@ -13,6 +18,8 @@ export interface BreadcrumbProps {
   label?: string;
   /** When there are more than four items, show the first, an ellipsis, and the last two; the ellipsis is a button that reveals the rest. */
   collapse?: boolean;
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  overrides?: Partial<Record<BreadcrumbOverridableBinding, TokenRef>>;
   /** Fired when a non-current item is activated, as `(item, index)`. On native the handler is the navigation; without one the Link falls back to `Linking.openURL`. */
   onNavigate?: (item: { label: string; href?: string }, index: number) => void;
 }
@@ -57,6 +64,7 @@ export function Breadcrumb({
   items,
   label = 'Breadcrumb',
   collapse = true,
+  overrides,
   onNavigate,
 }: BreadcrumbProps): React.JSX.Element {
   const { tokens } = useTheme();
@@ -79,8 +87,16 @@ export function Breadcrumb({
     }
   }, [pendingFocus]);
 
-  const fontSize = tokens.fontSizeSm;
-  const lineHeight = toLineHeight(fontSize, tokens.fontLineHeightNormal);
+  const gap = overrides?.gap ? (resolveToken(tokens, overrides.gap) as number) : tokens.space2;
+  const fontFamily = overrides?.fontFamily ? (resolveToken(tokens, overrides.fontFamily) as string) : tokens.fontFamilyBody;
+  const fontSize = overrides?.fontSize ? (resolveToken(tokens, overrides.fontSize) as number) : tokens.fontSizeSm;
+  const fontWeightToken = overrides?.fontWeight
+    ? (resolveToken(tokens, overrides.fontWeight) as number)
+    : tokens.fontWeightRegular;
+  const lineHeightMultiplier = overrides?.lineHeight
+    ? (resolveToken(tokens, overrides.lineHeight) as number)
+    : tokens.fontLineHeightNormal;
+  const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
 
   const navStyle: ViewStyle = {
     flexDirection: 'row',
@@ -96,9 +112,9 @@ export function Breadcrumb({
   };
 
   const textStyle: TextStyle = {
-    fontFamily: tokens.fontFamilyBody,
+    fontFamily,
     fontSize,
-    fontWeight: toFontWeight(tokens.fontWeightRegular),
+    fontWeight: toFontWeight(fontWeightToken),
     lineHeight,
   };
 
@@ -110,7 +126,7 @@ export function Breadcrumb({
   const separatorStyle: TextStyle = {
     ...textStyle,
     color: tokens.colorForegroundMuted,
-    marginHorizontal: tokens.space2,
+    marginHorizontal: gap,
   };
 
   const ellipsisTextStyle: TextStyle = {
@@ -193,7 +209,7 @@ export function Breadcrumb({
   });
 
   return (
-    <View role="navigation" accessibilityLabel={label} style={navStyle}>
+    <View testID="Breadcrumb" role="navigation" accessibilityLabel={label} style={navStyle}>
       {nodes}
     </View>
   );

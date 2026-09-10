@@ -45,12 +45,12 @@ component:
     loading:
       type: boolean
       default: false
-      description: Replaces the icon slot with a 1em ring spinner in `currentColor`, keeps the label space so layout does not shift, and blocks repeat activation while an action is pending.
+      description: 'Shows a 1em ring spinner in `currentColor` in the leading icon slot (whether or not `leadingIcon` is set; for `iconOnly` it replaces the sole glyph), hides `trailingIcon`, keeps the label visible and the layout unchanged, and blocks repeat activation while an action is pending.'
       platforms: [web, lit, rn]
     inverse:
       type: boolean
       default: false
-      description: 'The button sits on an inverse surface (Toast, Tooltip-like panels): `ghost` text uses color.inverse.link and hover uses a translucent inverse foreground; the focus ring uses color.inverse.focus. Only `ghost` is meaningful on inverse surfaces; other variants keep their own fills.'
+      description: 'The button sits on an inverse surface (Toast, Tooltip-like panels): `ghost` text uses color.inverse.link and hover uses color.inverse.foreground at 12% over the surface (the sanctioned color-mix of tokens on web/Lit; an alpha of the resolved color on native); the focus ring uses color.inverse.focus for every variant while `inverse` is true, since the ring must read against the inverse surface. Only `ghost` changes its fill on inverse surfaces; other variants keep their own fills.'
   events:
     onPress:
       description: Fired when the button is activated by pointer, keyboard (Enter/Space), or assistive technology.
@@ -74,6 +74,7 @@ component:
     disabledOpacity: { token: opacity.disabled, description: 'Applied to the whole button when disabled; colors are unchanged so contrast math still holds for the enabled state.' }
     transition: { token: motion.duration.fast, description: 'Background/foreground transitions on hover and press, with motion.easing.standard.' }
     loadingSpin: { token: motion.duration.loop, description: 'One rotation of the loading indicator; disabled under prefers-reduced-motion.' }
+    spinnerStroke: { token: border.width.focus, description: 'Ring thickness of the loading spinner: a 1em circle with one quarter transparent, drawn in currentColor.' }
   a11y:
     role: button
     requires: [accessible-name, focus-visible, keyboard-operable, target-24px, contrast-aa]
@@ -88,7 +89,7 @@ component:
       notes: Use aria-disabled rather than the disabled attribute so the button remains discoverable by keyboard and screen readers.
     lit:
       tag: ds-button
-      reflect: [variant, size, type, disabled, icon-only, loading]
+      reflect: [variant, size, type, disabled, icon-only, loading, inverse]
       notes: 'Wraps a native <button> in the shadow root with delegatesFocus so the host element is focusable. `press` is a composed CustomEvent. Icons are named slots `leading-icon` / `trailing-icon`. ds-button is NOT form-associated (a FACE with a reflected disabled attribute becomes truly disabled and unfocusable); `type=submit` is handled by ds-form listening for `press`, and by `closest(''form'')?.requestSubmit()` when placed directly in a native form.'
     rn:
       element: Pressable

@@ -2,6 +2,8 @@ import { LitElement, css, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { html, literal, type StaticValue } from 'lit/static-html.js';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
+import './Icon.js';
 
 export type DisclosureHeadingLevel = '2' | '3' | '4' | '5' | '6';
 
@@ -9,6 +11,34 @@ export type DisclosureHeadingLevel = '2' | '3' | '4' | '5' | '6';
 export interface DisclosureToggleDetail {
   open: boolean;
 }
+
+/** Overridable style hooks; see the `overrides` property. `triggerColor`, `triggerBackgroundHover`, `icon`, `panelColor`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
+export type DisclosureOverridableBinding =
+  | 'triggerPaddingBlock'
+  | 'triggerPaddingInline'
+  | 'triggerGap'
+  | 'triggerFontFamily'
+  | 'triggerFontSize'
+  | 'triggerFontWeight'
+  | 'triggerRadius'
+  | 'panelPaddingBlock'
+  | 'panelPaddingInline'
+  | 'disabledOpacity'
+  | 'transition';
+
+const HOOKS: Record<DisclosureOverridableBinding, string> = {
+  triggerPaddingBlock: '--ds-disclosure-trigger-padding-block',
+  triggerPaddingInline: '--ds-disclosure-trigger-padding-inline',
+  triggerGap: '--ds-disclosure-trigger-gap',
+  triggerFontFamily: '--ds-disclosure-trigger-font-family',
+  triggerFontSize: '--ds-disclosure-trigger-font-size',
+  triggerFontWeight: '--ds-disclosure-trigger-font-weight',
+  triggerRadius: '--ds-disclosure-trigger-radius',
+  panelPaddingBlock: '--ds-disclosure-panel-padding-block',
+  panelPaddingInline: '--ds-disclosure-panel-padding-inline',
+  disabledOpacity: '--ds-disclosure-disabled-opacity',
+  transition: '--ds-disclosure-transition',
+};
 
 const HEADINGS: Record<DisclosureHeadingLevel, StaticValue> = {
   '2': literal`h2`,
@@ -34,7 +64,8 @@ function isHeadingLevel(value: unknown): value is DisclosureHeadingLevel {
  * rendered and its wrapper gets `hidden` while closed, which is required when
  * the panel holds form fields (a `<ds-form>` skips fields inside a closed
  * disclosure without it). Toggling dispatches a composed `toggle` CustomEvent
- * with `{ open }`.
+ * with `{ open }`. The chevron is composed from `<ds-icon name="chevron-right">`
+ * and rotated in CSS rather than swapping glyphs, so the rotation animates.
  *
  * ## When to use
  *
@@ -60,7 +91,18 @@ export class DsDisclosure extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      font-family: var(--font-family-body);
+      --ds-disclosure-trigger-padding-block: var(--space-sm);
+      --ds-disclosure-trigger-padding-inline: var(--space-sm);
+      --ds-disclosure-trigger-gap: var(--space-2);
+      --ds-disclosure-trigger-font-family: var(--font-family-body);
+      --ds-disclosure-trigger-font-size: var(--font-size-md);
+      --ds-disclosure-trigger-font-weight: var(--font-weight-medium);
+      --ds-disclosure-trigger-radius: var(--radius-md);
+      --ds-disclosure-panel-padding-block: var(--space-sm);
+      --ds-disclosure-panel-padding-inline: var(--space-sm);
+      --ds-disclosure-disabled-opacity: var(--opacity-disabled);
+      --ds-disclosure-transition: var(--motion-duration-base);
+      font-family: var(--ds-disclosure-trigger-font-family);
     }
 
     :host([hidden]) {
@@ -78,17 +120,17 @@ export class DsDisclosure extends LitElement {
       box-sizing: border-box;
       display: inline-flex;
       align-items: center;
-      gap: var(--space-2);
+      gap: var(--ds-disclosure-trigger-gap);
       min-inline-size: var(--size-target-min);
       min-block-size: var(--size-target-min);
       margin: 0;
-      padding-block: var(--space-sm);
-      padding-inline: var(--space-sm);
+      padding-block: var(--ds-disclosure-trigger-padding-block);
+      padding-inline: var(--ds-disclosure-trigger-padding-inline);
       border: 0;
-      border-radius: var(--radius-md);
-      font-family: var(--font-family-body);
-      font-size: var(--font-size-md);
-      font-weight: var(--font-weight-medium);
+      border-radius: var(--ds-disclosure-trigger-radius);
+      font-family: var(--ds-disclosure-trigger-font-family);
+      font-size: var(--ds-disclosure-trigger-font-size);
+      font-weight: var(--ds-disclosure-trigger-font-weight);
       line-height: var(--font-line-height-normal);
       text-align: start;
       color: var(--color-foreground);
@@ -110,18 +152,15 @@ export class DsDisclosure extends LitElement {
     }
 
     :host([disabled]) .trigger {
-      opacity: var(--opacity-disabled);
+      opacity: var(--ds-disclosure-disabled-opacity);
       cursor: not-allowed;
     }
 
     /* icon: a chevron, 1em, pointing right when closed and down when open */
     .icon {
       flex: none;
-      inline-size: 1em;
-      block-size: 1em;
       color: var(--color-foreground-muted);
-      fill: currentColor;
-      transition: transform var(--motion-duration-base) var(--motion-easing-standard);
+      transition: transform var(--ds-disclosure-transition) var(--motion-easing-standard);
     }
     :host([open]) .icon {
       transform: rotate(90deg);
@@ -141,8 +180,8 @@ export class DsDisclosure extends LitElement {
     }
 
     .panel {
-      padding-block: var(--space-sm);
-      padding-inline: var(--space-sm);
+      padding-block: var(--ds-disclosure-panel-padding-block);
+      padding-inline: var(--ds-disclosure-panel-padding-inline);
       color: var(--color-foreground);
     }
     .panel[hidden] {
@@ -168,6 +207,9 @@ export class DsDisclosure extends LitElement {
   /** When set, the trigger is wrapped in a heading of this level so it appears in the outline. */
   @property({ attribute: 'heading-level' }) headingLevel?: DisclosureHeadingLevel;
 
+  /** Per-instance style overrides: `{ triggerRadius: 'radius.sm' }`. Locked bindings are ignored. */
+  @property({ attribute: false }) overrides?: Partial<Record<DisclosureOverridableBinding, TokenRef>>;
+
   /** Uncontrolled open state (seeded from `defaultOpen`). */
   @state() private internalOpen = false;
 
@@ -178,13 +220,20 @@ export class DsDisclosure extends LitElement {
     return this.open ?? this.internalOpen;
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'Disclosure');
+  }
+
   protected override willUpdate(changed: PropertyValues): void {
     if (!this.hasUpdated) {
       this.internalOpen = this.defaultOpen;
-      return;
+    }
+    if (changed.has('overrides')) {
+      this.applyOverrides();
     }
     // A controlled close (or an uncontrolled one) removes/hides the panel: move focus first.
-    if ((changed.has('open') || changed.has('internalOpen')) && !this.currentOpen) {
+    if (this.hasUpdated && (changed.has('open') || changed.has('internalOpen')) && !this.currentOpen) {
       this.moveFocusOutOfPanel();
     }
   }
@@ -203,9 +252,7 @@ export class DsDisclosure extends LitElement {
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
         @click=${this.handleClick}
       >
-        <svg class="icon" part="trigger-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">
-          <path d="M5.5 2.5 11 8l-5.5 5.5-1.06-1.06L8.88 8 4.44 3.56 5.5 2.5Z" />
-        </svg>
+        <ds-icon class="icon" part="trigger-icon" name="chevron-right" inline></ds-icon>
         <span class="summary">${this.summary}</span>
       </button>
     `;
@@ -248,6 +295,18 @@ export class DsDisclosure extends LitElement {
     const active = document.activeElement;
     if (active !== null && active !== this && this.contains(active)) {
       this.triggerEl.focus();
+    }
+  }
+
+  private applyOverrides(): void {
+    for (const binding of Object.keys(HOOKS) as DisclosureOverridableBinding[]) {
+      const ref = this.overrides?.[binding];
+      const hook = HOOKS[binding];
+      if (ref === undefined) {
+        this.style.removeProperty(hook);
+      } else {
+        this.style.setProperty(hook, cssVar(ref));
+      }
     }
   }
 }

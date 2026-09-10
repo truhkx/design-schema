@@ -1,0 +1,11 @@
+# Gaps reported while generating Checkbox for rn
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-10 01:45 — round 1
+
+- Checkbox: the existing file predated the package's overrides contract (no `overrides` prop, no `CheckboxOverridableBinding`) and drew the checkmark as a raw Unicode '✓' Text glyph and a hand-drawn dash View. Icon.tsx's own docstring explicitly names 'the check in a Checkbox' as a supported use case and calls the Unicode approach 'retired', so rewrote to use `<Icon name="check"/"dash">` with `color=colorControlSelectedForeground` and `overrides.strokeWidth` forwarding the `indicatorStroke` binding, and added the full overrides contract following Box/Button/Input's established pattern.
+- Checkbox: `indicator` box is spec'd as 'controlSize minus 2 × space.1' but Icon's `size` prop only accepts discrete font-size-scale presets (xs/sm/md/lg/xl) or a token-ref override, not an arbitrary computed pixel value — used `size="xs"` (closest preset to the default ~12px derived size) centered in the drawn box via flexbox; a `controlSize` override will not proportionally rescale the glyph.
+- Checkbox: `validateValue` was missing the `invalid` → `copy.invalid` branch the schema's precedence (`error` → `required` → `invalid`) requires — Input already implements this three-branch precedence, so mirrored it exactly (text only surfaces once a Form validation run populates `formError`, matching the existing 'Invalid' story's documented behavior of showing no message until then).
+- Checkbox: `transition` binding's exact scope ('fill and indicator transitions') is descriptive, not literal — implemented as a single Animated.Value driving box background/border color (unchecked → controlSelectedBackground) and indicator opacity together, eased with motion.easing.standard and skipped under `useReducedMotion()`, mirroring Button's pressed-background animation pattern. The `pressedOverlay` effect is instantaneous and dims the whole box (border+fill+indicator), not just an overlay layer on the fill, since RN has no cheap way to layer a second tinted surface without restyling the border.
+- Checkbox: root View now carries `testID="Checkbox"`, which the original file lacked.

@@ -18,6 +18,9 @@ export type { FormOverridableBinding, FormProps, FormValidateMode } from './Form
 export { FormContext, useFormContext } from './FormContext';
 export type { FormContextValue, FormFieldHandle, FormFieldValue, FormValues } from './FormContext';
 
+export { Fieldset, FieldsetContext, useFieldsetContext } from './Fieldset';
+export type { FieldsetContextValue, FieldsetGap, FieldsetOverridableBinding, FieldsetProps } from './Fieldset';
+
 export { Stack } from './Stack';
 export type { StackAlign, StackDirection, StackGap, StackJustify, StackOverridableBinding, StackProps } from './Stack';
 
@@ -28,28 +31,28 @@ export { Link } from './Link';
 export type { LinkOverridableBinding, LinkProps, LinkTone } from './Link';
 
 export { Checkbox } from './Checkbox';
-export type { CheckboxProps } from './Checkbox';
+export type { CheckboxOverridableBinding, CheckboxProps } from './Checkbox';
 
 export { Switch } from './Switch';
-export type { SwitchLabelPosition, SwitchProps } from './Switch';
+export type { SwitchLabelPosition, SwitchOverridableBinding, SwitchProps } from './Switch';
 
 export { RadioGroup } from './RadioGroup';
-export type { RadioGroupOrientation, RadioGroupProps, RadioOption } from './RadioGroup';
+export type { RadioGroupOption, RadioGroupOrientation, RadioGroupOverridableBinding, RadioGroupProps } from './RadioGroup';
 
 export { Disclosure } from './Disclosure';
-export type { DisclosureHeadingLevel, DisclosureProps } from './Disclosure';
+export type { DisclosureHeadingLevel, DisclosureOverridableBinding, DisclosureProps } from './Disclosure';
 
 export { Alert } from './Alert';
-export type { AlertLive, AlertProps, AlertTone } from './Alert';
+export type { AlertLive, AlertOverridableBinding, AlertProps, AlertTone } from './Alert';
 
 export { Landmark } from './Landmark';
 export type { LandmarkProps, LandmarkRole } from './Landmark';
 
 export { Breadcrumb } from './Breadcrumb';
-export type { BreadcrumbItem, BreadcrumbProps } from './Breadcrumb';
+export type { BreadcrumbItem, BreadcrumbOverridableBinding, BreadcrumbProps } from './Breadcrumb';
 
 export { Meter } from './Meter';
-export type { MeterProps, MeterTone } from './Meter';
+export type { MeterOverridableBinding, MeterProps, MeterTone } from './Meter';
 
 export { Icon } from './Icon';
 export type { IconName, IconOverridableBinding, IconProps, IconSize } from './Icon';

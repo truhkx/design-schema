@@ -1,0 +1,10 @@
+# Gaps reported while generating RadioGroup for rn
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-10 01:51 — round 1
+
+- RadioGroup: the existing RN file predated the current styles/overrides section entirely (no overrides prop, no RadioGroupOverridableBinding, item type named RadioOption instead of RadioGroupOption). Rewrote it to match the schema's 16 overridable bindings and locked bindings, matching the equivalent React implementation's OVERRIDE_HOOK list for cross-platform consistency.
+- RadioGroup: the schema's Behavior section says invalid validation precedence is error -> required -> invalid (rendering copy.invalid), same as Input/Checkbox, but the platforms.rn.notes text only mentions 'required with nothing selected fails submit with copy.required' and doesn't mention copy.invalid. Implemented the full three-step precedence (error, required, invalid) to match the general Behavior section and the Checkbox/Input convention, since the rn notes read as incomplete rather than contradictory.
+- RadioGroup: the previous implementation passed the native `disabled` prop to each option's Pressable for individually-disabled options, citing arrow-key-skip behavior — but that reasoning is from platforms.web.notes, not rn, and it directly contradicts this package's stated convention ('do not pass disabled to Pressable — it removes focus'). Changed disabled options to stay focus stops (accessibilityState.disabled + a press guard, no native disabled), consistent with how Checkbox handles its own disabled state and with the rn notes' claim that 'every radio is a stop for the screen reader and for hardware-keyboard focus.'
+- RadioGroup: the schema's `transition` style binding (motion.duration.fast) wasn't wired to anything in the prior implementation. Added a per-option Animated crossfade of the selected border color and indicator dot opacity (mirroring Checkbox's fill animation), reusing motion.easing.standard and respecting useReducedMotion(), since the spec names a transition token but doesn't say which visual property it drives on native.

@@ -1,7 +1,9 @@
-import { LitElement, css, html, unsafeCSS, type TemplateResult } from 'lit';
+import { LitElement, css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Link.js';
 import './Button.js';
+import './Icon.js';
 
 /** Shape of each entry in `items`. */
 export interface BreadcrumbItem {
@@ -23,6 +25,17 @@ const COPY_EXPAND_LABEL = 'Show all pages';
 
 /** Trails longer than this collapse (first, ellipsis, last two). */
 const COLLAPSE_ABOVE = 4;
+
+/** Overridable style hooks; see the `overrides` property. `currentColor`, `separatorColor` and `minTarget` are locked and excluded. */
+export type BreadcrumbOverridableBinding = 'gap' | 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight';
+
+const HOOKS: Record<BreadcrumbOverridableBinding, string> = {
+  gap: '--ds-breadcrumb-gap',
+  fontFamily: '--ds-breadcrumb-font-family', // literal-ok: CSS custom-property name, not a font stack
+  fontSize: '--ds-breadcrumb-font-size',
+  fontWeight: '--ds-breadcrumb-font-weight',
+  lineHeight: '--ds-breadcrumb-line-height',
+};
 
 /**
  * `<ds-breadcrumb>` — Breadcrumb (category: navigation, APG pattern: breadcrumb).
@@ -56,17 +69,27 @@ const COLLAPSE_ABOVE = 4;
  */
 @customElement('ds-breadcrumb')
 export class DsBreadcrumb extends LitElement {
+  static override shadowRootOptions: ShadowRootInit = {
+    ...LitElement.shadowRootOptions,
+    delegatesFocus: true,
+  };
+
   static override styles = css`
     :host {
       display: block;
+      --ds-breadcrumb-gap: var(--space-2);
+      --ds-breadcrumb-font-family: var(--font-family-body);
+      --ds-breadcrumb-font-size: var(--font-size-sm);
+      --ds-breadcrumb-font-weight: var(--font-weight-regular);
+      --ds-breadcrumb-line-height: var(--font-line-height-normal);
     }
 
     /* fontSize etc. on the nav; ds-link inherits (font: inherit on its anchor) */
     nav {
-      font-family: var(--font-family-body);
-      font-size: var(--font-size-sm);
-      font-weight: var(--font-weight-regular);
-      line-height: var(--font-line-height-normal);
+      font-family: var(--ds-breadcrumb-font-family);
+      font-size: var(--ds-breadcrumb-font-size);
+      font-weight: var(--ds-breadcrumb-font-weight);
+      line-height: var(--ds-breadcrumb-line-height);
     }
 
     :host([hidden]) {
@@ -92,7 +115,7 @@ export class DsBreadcrumb extends LitElement {
     /* separator: copy.separator in separatorColor, gap on both sides, aria-hidden by construction */
     li + li::before {
       content: '${unsafeCSS(COPY_SEPARATOR)}';
-      margin-inline: var(--space-2);
+      margin-inline: var(--ds-breadcrumb-gap);
       color: var(--color-foreground-muted);
     }
 
@@ -112,8 +135,22 @@ export class DsBreadcrumb extends LitElement {
   /** When there are more than four items, show the first, an ellipsis, and the last two. */
   @property({ type: Boolean, reflect: true }) collapse = true;
 
+  /** Per-instance style overrides: `{ gap: 'space.3' }`. Locked bindings are ignored. */
+  @property({ attribute: false }) overrides?: Partial<Record<BreadcrumbOverridableBinding, TokenRef>>;
+
   /** Whether the user has revealed the collapsed items. */
   @state() private expanded = false;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'Breadcrumb');
+  }
+
+  protected override willUpdate(changed: PropertyValues): void {
+    if (changed.has('overrides')) {
+      this.applyOverrides();
+    }
+  }
 
   protected override render() {
     const items = this.items;
@@ -135,11 +172,7 @@ export class DsBreadcrumb extends LitElement {
                 label=${COPY_EXPAND_LABEL}
                 @press=${this.handleExpand}
               >
-                <svg slot="leading-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="1em" height="1em" fill="currentColor">
-                  <circle cx="3" cy="8" r="1.5" />
-                  <circle cx="8" cy="8" r="1.5" />
-                  <circle cx="13" cy="8" r="1.5" />
-                </svg>
+                <ds-icon slot="leading-icon" name="ellipsis" inline></ds-icon>
               </ds-button>
             </li>
           `);
@@ -192,6 +225,18 @@ export class DsBreadcrumb extends LitElement {
     // Focus moves to the first revealed link.
     const revealed = this.renderRoot.querySelector<HTMLElement>('ds-link[data-index="1"]');
     revealed?.focus();
+  }
+
+  private applyOverrides(): void {
+    for (const binding of Object.keys(HOOKS) as BreadcrumbOverridableBinding[]) {
+      const ref = this.overrides?.[binding];
+      const hook = HOOKS[binding];
+      if (ref === undefined) {
+        this.style.removeProperty(hook);
+      } else {
+        this.style.setProperty(hook, cssVar(ref));
+      }
+    }
   }
 }
 

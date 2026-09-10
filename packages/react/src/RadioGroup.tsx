@@ -7,9 +7,11 @@ import {
   useState,
   type ChangeEvent,
   type ComponentPropsWithoutRef,
+  type CSSProperties,
   type FocusEvent,
   type MouseEvent,
 } from 'react';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text } from './Text';
 import { useFormContext } from './FormContext';
 import './RadioGroup.css';
@@ -18,10 +20,59 @@ export type RadioGroupOrientation = 'vertical' | 'horizontal';
 /** One option. `value` is a short identifier (letters, digits, dashes) — it becomes part of an element id. */
 export type RadioGroupOption = { value: string; label: string; description?: string; disabled?: boolean };
 
-/** copy.required — `{label}` is replaced by the legend. */
-const REQUIRED_MESSAGE = '{label} is required.';
-/** copy.requiredIndicator */
-const REQUIRED_INDICATOR = ' (required)';
+/** copy.* — used verbatim; `{label}` is replaced by the legend. */
+const COPY = {
+  required: '{label} is required.',
+  invalid: '{label} is not valid.',
+  requiredIndicator: ' (required)',
+};
+
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type RadioGroupOverridableBinding =
+  | 'controlBorderWidth'
+  | 'controlBorderInvalid'
+  | 'controlSize'
+  | 'controlRadius'
+  | 'optionGap'
+  | 'listGap'
+  | 'partGap'
+  | 'legendSize'
+  | 'legendWeight'
+  | 'labelSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'fontFamily'
+  | 'lineHeight'
+  | 'disabledOpacity'
+  | 'transition';
+
+const OVERRIDE_HOOK: Record<RadioGroupOverridableBinding, string> = {
+  controlBorderWidth: '--ds-radio-group-control-border-width',
+  controlBorderInvalid: '--ds-radio-group-control-border-invalid',
+  controlSize: '--ds-radio-group-control-size',
+  controlRadius: '--ds-radio-group-control-radius',
+  optionGap: '--ds-radio-group-option-gap',
+  listGap: '--ds-radio-group-list-gap',
+  partGap: '--ds-radio-group-part-gap',
+  legendSize: '--ds-radio-group-legend-size',
+  legendWeight: '--ds-radio-group-legend-weight',
+  labelSize: '--ds-radio-group-label-size',
+  labelWeight: '--ds-radio-group-label-weight',
+  helperSize: '--ds-radio-group-helper-size',
+  fontFamily: '--ds-radio-group-font-family', // literal-ok: CSS custom-property hook name, not a font stack
+  lineHeight: '--ds-radio-group-line-height',
+  disabledOpacity: '--ds-radio-group-disabled-opacity',
+  transition: '--ds-radio-group-transition',
+};
+
+function overridesToStyle(overrides: Partial<Record<RadioGroupOverridableBinding, TokenRef>>): CSSProperties {
+  const style: Record<string, string> = {};
+  for (const binding of Object.keys(overrides) as RadioGroupOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+  }
+  return style as CSSProperties;
+}
 
 export interface RadioGroupProps
   extends Omit<
@@ -50,6 +101,8 @@ export interface RadioGroupProps
   description?: string;
   /** The group's error message. Setting it marks the group invalid. */
   error?: string;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<RadioGroupOverridableBinding, TokenRef>>;
   /** Fired when the selection changes, with the new option value. */
   onChange?: (value: string, event: ChangeEvent<HTMLInputElement>) => void;
 }
@@ -77,10 +130,12 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
     disabled = false,
     description,
     error,
+    overrides,
     onChange,
     onBlur,
     id: idProp,
     className,
+    style,
     ...rest
   },
   ref,
@@ -125,8 +180,8 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
           selected: current,
         } = latest.current;
         if (errorProp !== undefined) return errorProp;
-        if (isRequired && current === undefined) return REQUIRED_MESSAGE.replace('{label}', currentLabel);
-        if (isInvalidProp) return `${currentLabel} is not valid.`;
+        if (isRequired && current === undefined) return COPY.required.replace('{label}', currentLabel);
+        if (isInvalidProp) return COPY.invalid.replace('{label}', currentLabel);
         return null;
       },
       // Tab lands on the selected radio, or the first enabled one when nothing is selected.
@@ -178,12 +233,17 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
     .filter(Boolean)
     .join(' ');
 
+  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+
   return (
     <fieldset
       {...rest}
       ref={fieldsetRef}
       id={id}
+      data-ds="RadioGroup"
       className={classes}
+      style={mergedStyle}
       aria-describedby={describedBy || undefined}
       aria-invalid={isInvalid ? 'true' : undefined}
       aria-required={required ? 'true' : undefined}
@@ -194,12 +254,19 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
         {label}
         {required ? (
           <Text element="span" size="sm" tone="muted" weight="regular" className="ds-radio-group__required">
-            {REQUIRED_INDICATOR}
+            {COPY.requiredIndicator}
           </Text>
         ) : null}
       </legend>
       {description ? (
-        <Text element="p" id={descriptionId} size="sm" tone="muted" className="ds-radio-group__description">
+        <Text
+          element="p"
+          id={descriptionId}
+          data-part="description"
+          size="sm"
+          tone="muted"
+          className="ds-radio-group__description"
+        >
           {description}
         </Text>
       ) : null}
@@ -220,6 +287,7 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
                   type="radio"
                   name={name}
                   value={option.value}
+                  data-part="radio"
                   checked={isControlled ? value === option.value : undefined}
                   defaultChecked={isControlled ? undefined : defaultValue === option.value}
                   className="ds-radio-group__control"
@@ -230,7 +298,7 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
                   onClick={handleClick}
                   onChange={handleChange(option)}
                 />
-                <label htmlFor={optionId} className="ds-radio-group__label">
+                <label htmlFor={optionId} data-part="radioLabel" className="ds-radio-group__label">
                   {option.label}
                 </label>
               </div>
@@ -238,6 +306,7 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
                 <Text
                   element="p"
                   id={optionDescriptionId}
+                  data-part="radioDescription"
                   size="sm"
                   tone="muted"
                   className="ds-radio-group__option-description"
@@ -250,7 +319,15 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
         })}
       </div>
       {resolvedError ? (
-        <Text element="p" id={errorId} role="alert" size="sm" tone="danger" className="ds-radio-group__error">
+        <Text
+          element="p"
+          id={errorId}
+          role="alert"
+          data-part="errorMessage"
+          size="sm"
+          tone="danger"
+          className="ds-radio-group__error"
+        >
           {resolvedError}
         </Text>
       ) : null}

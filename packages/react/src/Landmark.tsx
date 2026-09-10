@@ -115,12 +115,13 @@ export const Landmark = forwardRef<HTMLElement, LandmarkProps>(function Landmark
 
   // createElement with an explicit HTMLElement type: JSX on a union of tag names would demand a
   // ref that satisfies every element type at once (HTMLElement & HTMLDivElement & HTMLFormElement).
-  return createElement<HTMLAttributes<HTMLElement>, HTMLElement>(
+  return createElement<HTMLAttributes<HTMLElement> & { 'data-ds': string }, HTMLElement>(
     tagName,
     {
       ...rest,
       ref,
       className: classes,
+      'data-ds': 'Landmark',
       role: needsExplicitRole ? role : undefined,
       'aria-label': label,
     },

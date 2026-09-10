@@ -7,8 +7,10 @@ import {
   type CSSProperties,
   type MouseEvent,
 } from 'react';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Link } from './Link';
 import { Button } from './Button';
+import { Icon } from './Icon';
 import './Breadcrumb.css';
 
 export type BreadcrumbItem = { label: string; href?: string };
@@ -20,6 +22,26 @@ const EXPAND_LABEL = 'Show all pages';
 /** With `collapse`, trails longer than this show the first item, an ellipsis, and the last two. */
 const COLLAPSE_ABOVE = 4;
 
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type BreadcrumbOverridableBinding = 'gap' | 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight';
+
+const OVERRIDE_HOOK: Record<BreadcrumbOverridableBinding, string> = {
+  gap: '--ds-breadcrumb-gap',
+  fontFamily: '--ds-breadcrumb-font-family', // literal-ok: CSS custom-property hook name, not a font stack
+  fontSize: '--ds-breadcrumb-font-size',
+  fontWeight: '--ds-breadcrumb-font-weight',
+  lineHeight: '--ds-breadcrumb-line-height',
+};
+
+function overridesToStyle(overrides: Partial<Record<BreadcrumbOverridableBinding, TokenRef>>): CSSProperties {
+  const style: Record<string, string> = {};
+  for (const binding of Object.keys(overrides) as BreadcrumbOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+  }
+  return style as CSSProperties;
+}
+
 export interface BreadcrumbProps extends Omit<ComponentPropsWithoutRef<'nav'>, 'children' | 'aria-label'> {
   /** The trail from root to current page, in order. An ancestor without `href` renders as plain text; the last is the current page. */
   items: BreadcrumbItem[];
@@ -27,6 +49,8 @@ export interface BreadcrumbProps extends Omit<ComponentPropsWithoutRef<'nav'>, '
   label?: string;
   /** When there are more than four items, show the first, an ellipsis, and the last two; the ellipsis reveals the rest. */
   collapse?: boolean;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<BreadcrumbOverridableBinding, TokenRef>>;
   /** Fired when a non-current item is activated, with the item, its index and the click event; call `event.preventDefault()` to route client-side. */
   onNavigate?: (item: BreadcrumbItem, index: number, event: MouseEvent<HTMLAnchorElement>) => void;
 }
@@ -40,7 +64,7 @@ export interface BreadcrumbProps extends Omit<ComponentPropsWithoutRef<'nav'>, '
  * ancestors and jumping to any of them. Place it above the page title, at the top of `main`.
  */
 export const Breadcrumb = forwardRef<HTMLElement, BreadcrumbProps>(function Breadcrumb(
-  { items, label = 'Breadcrumb', collapse = true, onNavigate, className, style, ...rest },
+  { items, label = 'Breadcrumb', collapse = true, overrides, onNavigate, className, style, ...rest },
   ref,
 ) {
   const [expanded, setExpanded] = useState(false);
@@ -73,8 +97,8 @@ export const Breadcrumb = forwardRef<HTMLElement, BreadcrumbProps>(function Brea
   const renderItem = (item: BreadcrumbItem, index: number) => {
     if (index === lastIndex) {
       return (
-        <li key={index} className="ds-breadcrumb__item">
-          <span className="ds-breadcrumb__current" aria-current="page">
+        <li key={index} className="ds-breadcrumb__item" data-part="item">
+          <span className="ds-breadcrumb__current" data-part="current" aria-current="page">
             {item.label}
           </span>
         </li>
@@ -83,18 +107,19 @@ export const Breadcrumb = forwardRef<HTMLElement, BreadcrumbProps>(function Brea
     if (item.href === undefined) {
       // An ancestor without a destination is not rendered as a link (an empty href is a placeholder, not a link).
       return (
-        <li key={index} className="ds-breadcrumb__item">
+        <li key={index} className="ds-breadcrumb__item" data-part="item">
           <span className="ds-breadcrumb__text">{item.label}</span>
         </li>
       );
     }
     return (
-      <li key={index} className="ds-breadcrumb__item">
+      <li key={index} className="ds-breadcrumb__item" data-part="item">
         <Link
           ref={setLinkRef(index)}
           href={item.href}
           label={item.label}
           tone="default"
+          data-part="link"
           onClick={(event) => onNavigate?.(item, index, event)}
         />
       </li>
@@ -104,7 +129,7 @@ export const Breadcrumb = forwardRef<HTMLElement, BreadcrumbProps>(function Brea
   const list = collapsed
     ? [
         ...items.slice(0, hiddenStart).map(renderItem),
-        <li key="ellipsis" className="ds-breadcrumb__item">
+        <li key="ellipsis" className="ds-breadcrumb__item" data-part="item">
           <Button
             className="ds-breadcrumb__expand"
             variant="ghost"
@@ -112,13 +137,7 @@ export const Breadcrumb = forwardRef<HTMLElement, BreadcrumbProps>(function Brea
             iconOnly
             label={EXPAND_LABEL}
             onClick={handleExpand}
-            leadingIcon={
-              <svg width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <circle cx="3" cy="8" r="1.25" />
-                <circle cx="8" cy="8" r="1.25" />
-                <circle cx="13" cy="8" r="1.25" />
-              </svg>
-            }
+            leadingIcon={<Icon name="ellipsis" inline />}
           />
         </li>,
         ...items.slice(hiddenEnd).map((item, offset) => renderItem(item, hiddenEnd + offset)),
@@ -126,11 +145,18 @@ export const Breadcrumb = forwardRef<HTMLElement, BreadcrumbProps>(function Brea
     : items.map(renderItem);
 
   const classes = ['ds-breadcrumb', className ?? null].filter(Boolean).join(' ');
-  const separatorStyle = { ...style, '--ds-breadcrumb-separator': `'${SEPARATOR}'` } as CSSProperties;
+  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const mergedStyle = {
+    ...overrideStyle,
+    ...style,
+    '--ds-breadcrumb-separator': `'${SEPARATOR}'`,
+  } as CSSProperties;
 
   return (
-    <nav {...rest} ref={ref} className={classes} style={separatorStyle} aria-label={label}>
-      <ol className="ds-breadcrumb__list">{list}</ol>
+    <nav {...rest} ref={ref} data-ds="Breadcrumb" data-part="nav" className={classes} style={mergedStyle} aria-label={label}>
+      <ol className="ds-breadcrumb__list" data-part="list">
+        {list}
+      </ol>
     </nav>
   );
 });

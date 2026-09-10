@@ -1,10 +1,32 @@
 import * as React from 'react';
-import { AccessibilityInfo, Platform, Pressable, Text as RNText, View, findNodeHandle } from 'react-native';
-import type { PressableStateCallbackType, TextStyle, ViewStyle } from 'react-native';
+import { Animated, AccessibilityInfo, Platform, Pressable, View, findNodeHandle } from 'react-native';
+import type { PressableStateCallbackType, ViewStyle } from 'react-native';
+import { resolveToken } from '@design-schema/tokens';
+import type { TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
+import { Icon } from './Icon';
 import { Text } from './Text';
-import { toFontWeight, toLineHeight, useTheme } from './theme';
+import { toEasing, useReducedMotion, useTheme } from './theme';
+
+/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+export type CheckboxOverridableBinding =
+  | 'controlBackground'
+  | 'controlBorderWidth'
+  | 'indicatorStroke'
+  | 'pressedOverlay'
+  | 'controlBorderInvalid'
+  | 'controlSize'
+  | 'controlRadius'
+  | 'gap'
+  | 'partGap'
+  | 'labelSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'fontFamily'
+  | 'lineHeight'
+  | 'disabledOpacity'
+  | 'transition';
 
 export interface CheckboxProps {
   /** Visible label. Tapping it toggles the control. Also the `accessibilityLabel`. */
@@ -29,12 +51,15 @@ export interface CheckboxProps {
   description?: string;
   /** The error message. Setting it marks the control invalid. Say what to do ("Accept the terms to continue"). */
   error?: string;
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  overrides?: Partial<Record<CheckboxOverridableBinding, TokenRef>>;
   /** Fired when the checked state changes, with the new boolean. */
   onChange?: (checked: boolean) => void;
 }
 
 const COPY = {
   required: (label: string): string => `${label} is required.`,
+  invalid: (label: string): string => `${label} is not valid.`,
   requiredIndicator: ' (required)',
 } as const;
 
@@ -51,13 +76,16 @@ const COPY = {
  * There is no checkbox in core React Native. Renders a `Pressable` with
  * `accessibilityRole="checkbox"`, `accessibilityLabel`, `accessibilityHint` and
  * `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`,
- * containing a `View` drawn with the control tokens and a `Text` label; the whole row
- * is the hit area and never drops below the comfortable target. Inside a Form the
- * control registers by `name` and contributes `value` when checked, nothing when
- * not; a `required` box that is unchecked fails submit with `copy.required`
- * (precedence: `error`, then `required`; `invalid` only marks the border). Inside a
- * Form, `validate: blur` means "on change" — there is no useful blur moment. Errors
- * are announced as in Input.
+ * containing a drawn control (the `check`/`dash` `Icon`, since native has no
+ * `currentColor`) and a `Text` label; the whole row is the hit area and never drops
+ * below the comfortable target. The fill, border and indicator cross-fade between
+ * unchecked and checked/indeterminate over `transition` with `motion.easing.standard`
+ * (skipped under reduced motion); the pressed state shows the selected fill at
+ * `pressedOverlay` instantly. Inside a Form the control registers by `name` and
+ * contributes `value` when checked, nothing when not; validation precedence is
+ * `error`, then `required` (`copy.required`), then `invalid` (`copy.invalid`), same
+ * as Input. Inside a Form, `validate: blur` means "on change" — there is no useful
+ * blur moment. Errors are announced as in Input.
  */
 export function Checkbox({
   label,
@@ -71,10 +99,12 @@ export function Checkbox({
   invalid = false,
   description,
   error,
+  overrides,
   onChange,
 }: CheckboxProps): React.JSX.Element {
-  const { tokens } = useTheme();
+  const { tokens: t } = useTheme();
   const form = useFormContext();
+  const reducedMotion = useReducedMotion();
   const pressableRef = React.useRef<View>(null);
   const [internalChecked, setInternalChecked] = React.useState<boolean>(defaultChecked);
   const [focused, setFocused] = React.useState(false);
@@ -88,15 +118,19 @@ export function Checkbox({
 
   const validateValue = React.useCallback(
     (candidate: boolean): string | null => {
+      // Precedence: `error` prop, then `required`, then `invalid`.
       if (error !== undefined && error !== '') {
         return error;
       }
       if (required && !candidate) {
         return COPY.required(label);
       }
+      if (invalid) {
+        return COPY.invalid(label);
+      }
       return null;
     },
-    [error, required, label],
+    [error, required, invalid, label],
   );
 
   const latest = React.useRef({ isChecked, value, validateValue });
@@ -147,74 +181,76 @@ export function Checkbox({
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
   const filled = isChecked || indeterminate;
-  const indicatorSize = tokens.space5 - 2 * tokens.space1;
+
+  const controlBackground = overrides?.controlBackground ? (resolveToken(t, overrides.controlBackground) as string) : t.colorControlBackground;
+  const controlBorderWidth = overrides?.controlBorderWidth ? (resolveToken(t, overrides.controlBorderWidth) as number) : t.borderWidthThin;
+  const pressedOverlay = overrides?.pressedOverlay ? (resolveToken(t, overrides.pressedOverlay) as number) : t.opacityDisabled;
+  const controlBorderInvalid = overrides?.controlBorderInvalid ? (resolveToken(t, overrides.controlBorderInvalid) as string) : t.colorBorderDanger;
+  const controlSize = overrides?.controlSize ? (resolveToken(t, overrides.controlSize) as number) : t.space5;
+  const controlRadius = overrides?.controlRadius ? (resolveToken(t, overrides.controlRadius) as number) : t.radiusSm;
+  const gap = overrides?.gap ? (resolveToken(t, overrides.gap) as number) : t.space2;
+  const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
+  const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
+  const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
+
+  // Fill, border and indicator cross-fade together between unchecked and
+  // checked/indeterminate; the pressed overlay below is instant, not part of this.
+  const fillAnim = React.useRef(new Animated.Value(filled ? 1 : 0)).current;
+  React.useEffect(() => {
+    const toValue = filled ? 1 : 0;
+    if (reducedMotion) {
+      fillAnim.setValue(toValue);
+      return;
+    }
+    Animated.timing(fillAnim, {
+      toValue,
+      duration: transitionDuration,
+      easing: toEasing(t.motionEasingStandard),
+      useNativeDriver: false,
+    }).start();
+  }, [filled, reducedMotion, fillAnim, transitionDuration, t.motionEasingStandard]);
+
+  const animatedBackground = fillAnim.interpolate({ inputRange: [0, 1], outputRange: [controlBackground, t.colorControlSelectedBackground] });
+  const animatedBorderColor = fillAnim.interpolate({ inputRange: [0, 1], outputRange: [t.colorControlBorder, t.colorControlSelectedBackground] });
 
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: tokens.space2,
-    minHeight: tokens.sizeTargetComfortable,
-    paddingVertical: tokens.space1,
-    opacity: isDisabled ? tokens.opacityDisabled : 1,
+    gap,
+    minHeight: t.sizeTargetComfortable,
+    paddingVertical: t.space1,
+    opacity: isDisabled ? disabledOpacity : 1,
   };
 
-  const lineHeight = toLineHeight(tokens.fontSizeMd, tokens.fontLineHeightNormal);
-
-  // The box sits in a fixed-height cell equal to the label's line height so the two
-  // align on the first line even when the label wraps.
-  const boxCellStyle: ViewStyle = {
-    height: lineHeight,
-    justifyContent: 'center',
-  };
-
-  const boxStyle = ({ pressed }: PressableStateCallbackType): ViewStyle => ({
-    width: tokens.space5,
-    height: tokens.space5,
-    borderRadius: tokens.radiusSm,
-    borderWidth: focused ? tokens.borderWidthFocus : tokens.borderWidthThin,
-    borderColor: focused
-      ? tokens.colorBorderFocus
-      : isInvalid
-        ? tokens.colorBorderDanger
-        : filled
-          ? tokens.colorControlSelectedBackground
-          : tokens.colorControlBorder,
-    // pressedOverlay: while pressed the box shows the selected fill at opacity.disabled.
-    backgroundColor:
-      filled || (pressed && !isDisabled) ? tokens.colorControlSelectedBackground : tokens.colorControlBackground,
-    opacity: pressed && !isDisabled ? tokens.opacityDisabled : 1,
+  const boxStyle = ({ pressed }: PressableStateCallbackType): Animated.WithAnimatedObject<ViewStyle> => ({
+    width: controlSize,
+    height: controlSize,
+    borderRadius: controlRadius,
+    borderWidth: focused ? t.borderWidthFocus : controlBorderWidth,
+    borderColor: focused ? t.colorBorderFocus : isInvalid ? controlBorderInvalid : animatedBorderColor,
+    backgroundColor: pressed && !isDisabled ? t.colorControlSelectedBackground : animatedBackground,
+    opacity: pressed && !isDisabled ? pressedOverlay : 1,
     alignItems: 'center',
     justifyContent: 'center',
   });
 
-  const checkStyle: TextStyle = {
-    color: tokens.colorControlSelectedForeground,
-    fontSize: indicatorSize,
-    lineHeight: indicatorSize,
-    fontWeight: toFontWeight(tokens.fontWeightBold),
-    includeFontPadding: false,
-  };
-
-  // indicatorStroke: the dash is a bar of the stroke thickness; the check mark is a
-  // glyph whose weight approximates it.
-  const dashStyle: ViewStyle = {
-    width: indicatorSize,
-    height: tokens.borderWidthFocus,
-    backgroundColor: tokens.colorControlSelectedForeground,
-  };
+  const indicatorStyle: Animated.WithAnimatedObject<ViewStyle> = { opacity: fillAnim };
 
   const textColumnStyle: ViewStyle = {
     flex: 1,
     flexDirection: 'column',
-    gap: tokens.space1,
+    gap: partGap,
   };
 
   const errorStyle: ViewStyle = {
-    marginTop: tokens.space1,
+    marginTop: partGap,
   };
 
+  const typographyOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
+  const helperOverrides = { ...typographyOverrides, fontSize: overrides?.helperSize };
+
   return (
-    <View>
+    <View testID="Checkbox">
       <Pressable
         ref={pressableRef}
         accessibilityRole="checkbox"
@@ -228,21 +264,22 @@ export function Checkbox({
       >
         {(state) => (
           <>
-            <View style={boxCellStyle}>
-              <View style={boxStyle(state)} accessibilityElementsHidden importantForAccessibility="no">
-                {indeterminate ? (
-                  <View style={dashStyle} />
-                ) : isChecked ? (
-                  <RNText allowFontScaling={false} style={checkStyle}>
-                    ✓
-                  </RNText>
-                ) : null}
-              </View>
-            </View>
+            <Animated.View style={boxStyle(state)} accessibilityElementsHidden importantForAccessibility="no">
+              <Animated.View style={indicatorStyle}>
+                <Icon
+                  name={indeterminate ? 'dash' : 'check'}
+                  size="xs"
+                  color={t.colorControlSelectedForeground}
+                  overrides={{ strokeWidth: overrides?.indicatorStroke }}
+                />
+              </Animated.View>
+            </Animated.View>
             <View style={textColumnStyle}>
-              <Text>{visibleLabel}</Text>
+              <Text overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}>
+                {visibleLabel}
+              </Text>
               {description !== undefined ? (
-                <Text size="sm" tone="muted">
+                <Text size="sm" tone="muted" overrides={helperOverrides}>
                   {description}
                 </Text>
               ) : null}
@@ -252,7 +289,7 @@ export function Checkbox({
       </Pressable>
       {displayedError !== undefined ? (
         <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} style={errorStyle}>
-          <Text size="sm" tone="danger">
+          <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
           </Text>
         </View>

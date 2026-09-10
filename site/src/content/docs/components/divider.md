@@ -17,7 +17,7 @@ component:
       description: Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height.
     label:
       type: string
-      description: 'Optional text in the middle of a horizontal divider ("or", "Earlier today"). Turns the divider from decorative into a labelled separator.'
+      description: 'Optional text in the middle of a horizontal divider ("or", "Earlier today"). Turns the divider from decorative into a labelled separator (`semantic` is implied). Ignored on a vertical divider, with a development warning: a vertical line has no room for centered text.'
     semantic:
       type: boolean
       default: false
@@ -33,7 +33,7 @@ component:
     thickness: { token: border.width.thin }
     spacing: { token: 'layout.gap.{spacing}' }
     labelColor: { token: color.foreground.muted }
-    labelSize: { token: font.size.sm }
+    labelSize: { token: font.size.sm, description: 'Passed to the composed Text as its `fontSize` override, along with `fontFamily`; Divider does not style the Text itself.' }
     labelGap: { token: layout.gap.normal, description: Gap between the label and the lines on each side. }
     fontFamily: { token: font.family.body }
   a11y:

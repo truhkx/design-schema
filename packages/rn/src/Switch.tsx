@@ -1,12 +1,30 @@
 import * as React from 'react';
 import { AccessibilityInfo, Pressable, Switch as RNSwitch, View, findNodeHandle } from 'react-native';
 import type { ViewStyle } from 'react-native';
+import { resolveToken } from '@design-schema/tokens';
+import type { TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Text } from './Text';
 import { useTheme } from './theme';
 
 export type SwitchLabelPosition = 'start' | 'end';
+
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. `trackWidth`, `trackHeight`, `thumbSize`, `thumbInset`, `radius`
+ * and `transition` are OS-controlled by the native `Switch` on React Native and are
+ * excluded here since an override on them would be a silent no-op.
+ */
+export type SwitchOverridableBinding =
+  | 'gap'
+  | 'partGap'
+  | 'labelSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'fontFamily'
+  | 'lineHeight'
+  | 'disabledOpacity';
 
 export interface SwitchProps {
   /** Visible label naming the thing being turned on or off. Also the accessible name. */
@@ -23,6 +41,8 @@ export interface SwitchProps {
   description?: string;
   /** Where the label sits relative to the track. `start` (label, then switch at the row end) is the settings-list convention; `end` matches Checkbox. */
   labelPosition?: SwitchLabelPosition;
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  overrides?: Partial<Record<SwitchOverridableBinding, TokenRef>>;
   /** Fired when the state changes, with the new boolean (`events.onChange` → `onValueChange` on React Native, mirroring the native Switch). The change is already in effect; there is nothing to submit. */
   onValueChange?: (checked: boolean) => void;
 }
@@ -55,6 +75,7 @@ export function Switch({
   disabled = false,
   description,
   labelPosition = 'start',
+  overrides,
   onValueChange,
 }: SwitchProps): React.JSX.Element {
   const { tokens } = useTheme();
@@ -101,19 +122,23 @@ export function Switch({
     onValueChange?.(next);
   };
 
+  const gap = overrides?.gap ? (resolveToken(tokens, overrides.gap) as number) : tokens.space3;
+  const partGap = overrides?.partGap ? (resolveToken(tokens, overrides.partGap) as number) : tokens.space1;
+  const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(tokens, overrides.disabledOpacity) as number) : tokens.opacityDisabled;
+
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: tokens.space3,
+    gap,
     minHeight: tokens.sizeTargetComfortable,
     paddingVertical: tokens.space1,
-    opacity: isDisabled ? tokens.opacityDisabled : 1,
+    opacity: isDisabled ? disabledOpacity : 1,
   };
 
   const textColumnStyle: ViewStyle = {
     flex: 1,
     flexDirection: 'column',
-    gap: tokens.space1,
+    gap: partGap,
   };
 
   // The native Switch exposes no focus events, so the focus ring around the track
@@ -123,11 +148,14 @@ export function Switch({
     borderRadius: tokens.radiusFull,
   };
 
+  const typographyOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
+  const helperOverrides = { ...typographyOverrides, fontSize: overrides?.helperSize };
+
   const labelColumn = (
     <View style={textColumnStyle}>
-      <Text>{label}</Text>
+      <Text overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}>{label}</Text>
       {description !== undefined ? (
-        <Text size="sm" tone="muted">
+        <Text size="sm" tone="muted" overrides={helperOverrides}>
           {description}
         </Text>
       ) : null}
@@ -135,7 +163,7 @@ export function Switch({
   );
 
   return (
-    <Pressable accessible={false} onPress={() => setValue(!isChecked)} style={rowStyle}>
+    <Pressable testID="Switch" accessible={false} onPress={() => setValue(!isChecked)} style={rowStyle}>
       {labelPosition === 'start' ? labelColumn : null}
       <View style={trackFrameStyle}>
         <RNSwitch

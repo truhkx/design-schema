@@ -65,6 +65,7 @@ export function Landmark({ role, label, children }: LandmarkProps): React.JSX.El
 
   return (
     <View
+      testID="Landmark"
       role={nativeRole}
       accessibilityRole={legacyRole}
       accessibilityLabel={LABELLED_ROLES.has(role) ? label : undefined}

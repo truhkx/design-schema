@@ -1,5 +1,7 @@
-import { forwardRef, useImperativeHandle, useRef, type ComponentPropsWithoutRef, type ReactNode } from 'react';
+import { forwardRef, useImperativeHandle, useRef, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from 'react';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
+import { Icon } from './Icon';
 import './Alert.css';
 
 export type AlertTone = 'info' | 'success' | 'warning' | 'danger';
@@ -8,13 +10,51 @@ export type AlertLive = 'status' | 'alert' | 'off';
 /** copy.dismissLabel */
 const DISMISS_LABEL = 'Dismiss';
 
-/** Leading icon by tone: info circle, check circle, warning triangle, error octagon. Decorative. */
-const ICON_PATH: Record<AlertTone, string> = {
-  info: 'M8 1.5a6.5 6.5 0 110 13 6.5 6.5 0 010-13zM8 7v4M8 5v.5',
-  success: 'M8 1.5a6.5 6.5 0 110 13 6.5 6.5 0 010-13zM5 8l2 2 4-4',
-  warning: 'M8 2l6.5 11.5h-13L8 2zM8 6.5v3M8 11v.5',
-  danger: 'M5.3 1.5h5.4l3.8 3.8v5.4l-3.8 3.8H5.3L1.5 10.7V5.3l3.8-3.8zM8 5v3.5M8 11v.5',
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type AlertOverridableBinding =
+  | 'border'
+  | 'borderWidth'
+  | 'radius'
+  | 'padding'
+  | 'gap'
+  | 'partGap'
+  | 'iconSize'
+  | 'headingWeight'
+  | 'fontFamily'
+  | 'fontSize'
+  | 'lineHeight'
+  | 'dismissMargin';
+
+const OVERRIDE_HOOK: Record<AlertOverridableBinding, string> = {
+  border: '--ds-alert-border',
+  borderWidth: '--ds-alert-border-width',
+  radius: '--ds-alert-radius',
+  padding: '--ds-alert-padding',
+  gap: '--ds-alert-gap',
+  partGap: '--ds-alert-part-gap',
+  iconSize: '--ds-alert-icon-size',
+  headingWeight: '--ds-alert-heading-weight',
+  fontFamily: '--ds-alert-font-family', // literal-ok: CSS custom-property hook name, not a font stack
+  fontSize: '--ds-alert-font-size',
+  lineHeight: '--ds-alert-line-height',
+  dismissMargin: '--ds-alert-dismiss-margin',
 };
+
+/** `iconSize` also drives the composed Icon's own `size` override, since Icon owns its own sizing hook. */
+function overridesToStyle(overrides: Partial<Record<AlertOverridableBinding, TokenRef>>): {
+  rootStyle: CSSProperties;
+  iconSizeRef?: TokenRef;
+} {
+  const style: Record<string, string> = {};
+  let iconSizeRef: TokenRef | undefined;
+  for (const binding of Object.keys(overrides) as AlertOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (!ref) continue;
+    style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    if (binding === 'iconSize') iconSizeRef = ref;
+  }
+  return { rootStyle: style as CSSProperties, iconSizeRef };
+}
 
 const FOCUSABLE =
   'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
@@ -43,6 +83,8 @@ export interface AlertProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   dismissible?: boolean;
   /** Fired when the user activates the dismiss button. The consumer removes the alert. */
   onDismiss?: () => void;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<AlertOverridableBinding, TokenRef>>;
 }
 
 /**
@@ -57,7 +99,7 @@ export interface AlertProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
  * problems undismissable.
  */
 export const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
-  { tone = 'info', heading, children, live = 'status', dismissible = false, onDismiss, className, ...rest },
+  { tone = 'info', heading, children, live = 'status', dismissible = false, onDismiss, overrides, className, style, ...rest },
   ref,
 ) {
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -72,31 +114,34 @@ export const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
 
   const classes = ['ds-alert', `ds-alert--${tone}`, className ?? null].filter(Boolean).join(' ');
 
+  const { rootStyle, iconSizeRef } = overrides ? overridesToStyle(overrides) : { rootStyle: undefined, iconSizeRef: undefined };
+  const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
+
   return (
-    <div {...rest} ref={rootRef} className={classes} role={live === 'off' ? undefined : live}>
-      <span className="ds-alert__icon" aria-hidden="true">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" focusable="false">
-          <path d={ICON_PATH[tone]} />
-        </svg>
+    <div {...rest} ref={rootRef} data-ds="Alert" data-part="container" className={classes} style={mergedStyle} role={live === 'off' ? undefined : live}>
+      <span className="ds-alert__icon" data-part="icon" aria-hidden="true">
+        <Icon
+          name={tone}
+          size="lg"
+          overrides={{
+            color: `color.status.${tone}.icon` as TokenRef,
+            ...(iconSizeRef ? { size: iconSizeRef } : null),
+          }}
+        />
       </span>
       <div className="ds-alert__content">
-        {heading ? <p className="ds-alert__heading">{heading}</p> : null}
-        <div className="ds-alert__body">{children}</div>
+        {heading ? (
+          <p className="ds-alert__heading" data-part="heading">
+            {heading}
+          </p>
+        ) : null}
+        <div className="ds-alert__body" data-part="body">
+          {children}
+        </div>
       </div>
       {dismissible ? (
-        <span className="ds-alert__dismiss">
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            label={DISMISS_LABEL}
-            onClick={handleDismiss}
-            leadingIcon={
-              <svg width="1em" height="1em" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M3 3l10 10M13 3L3 13" />
-              </svg>
-            }
-          />
+        <span className="ds-alert__dismiss" data-part="dismissButton">
+          <Button variant="ghost" size="sm" iconOnly label={DISMISS_LABEL} onClick={handleDismiss} leadingIcon={<Icon name="close" inline />} />
         </span>
       ) : null}
     </div>

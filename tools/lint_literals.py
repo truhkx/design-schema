@@ -33,7 +33,9 @@ RULES = [
     ("rgb/hsl/oklch color", re.compile(r"\b(?:rgba?|hsla?|oklch|oklab|color-mix)\(")),
     ("pixel literal", re.compile(r"(?<![\w.-])-?\d+(?:\.\d+)?px\b")),
     ("duration literal", re.compile(r"(?<![\w.-])\d+(?:\.\d+)?m?s\b")),
-    ("font stack literal", re.compile(r"font-family\s*:(?!\s*(?:var\(|inherit))[^;]+;|fontFamily\s*:\s*['\"]")),
+    # A quoted value that names a custom property (`'--ds-text-font-family'`, the override-hook lookup tables) or
+    # a var() call is a token reference, not a font stack.
+    ("font stack literal", re.compile(r"font-family\s*:(?!\s*(?:var\(|inherit))[^;]+;|fontFamily\s*:\s*['\"](?!--|var\()")),
     ("named color", re.compile(r"(?<![\w-])(?:white|black|red|blue|green|gray|grey|silver|orange|yellow)(?![\w-])")),
 ]
 # Numbers that look like sizes in RN style objects: `width: 20,` `padding: 8` — but not 0/1/-1, indices, or opacity.

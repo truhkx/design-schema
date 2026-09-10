@@ -80,6 +80,11 @@ class TestFontStack:
         f = scan(tmp_path, "const s = { fontFamily: 'Inter' };", name="Widget.tsx", rn=True)
         assert "font stack literal" in kinds(f)
 
+    @pytest.mark.parametrize("value", ["'--ds-text-font-family'", '"--ds-heading-font-family"', "'var(--font-family-body)'"])
+    def test_a_custom_property_name_in_a_lookup_table_is_not_a_font_stack(self, tmp_path, value):
+        # Override-hook tables map bindings to their hook names: `fontFamily: '--ds-text-font-family'`.
+        assert scan(tmp_path, f"const HOOKS = {{ fontFamily: {value} }};", name="Widget.tsx") == []
+
 
 class TestNamedColor:
     def test_a_named_css_color_is_a_finding(self, tmp_path):

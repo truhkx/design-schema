@@ -6,14 +6,53 @@ import {
   useRef,
   useState,
   type ComponentPropsWithoutRef,
+  type CSSProperties,
   type ElementType,
   type MouseEvent,
   type ReactNode,
 } from 'react';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Disclosure.css';
 
 /** Accepts the schema's string values and their numeric equivalents. */
 export type DisclosureHeadingLevel = '2' | '3' | '4' | '5' | '6' | 2 | 3 | 4 | 5 | 6;
+
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type DisclosureOverridableBinding =
+  | 'triggerPaddingBlock'
+  | 'triggerPaddingInline'
+  | 'triggerGap'
+  | 'triggerFontFamily'
+  | 'triggerFontSize'
+  | 'triggerFontWeight'
+  | 'triggerRadius'
+  | 'panelPaddingBlock'
+  | 'panelPaddingInline'
+  | 'disabledOpacity'
+  | 'transition';
+
+const OVERRIDE_HOOK: Record<DisclosureOverridableBinding, string> = {
+  triggerPaddingBlock: '--ds-disclosure-trigger-padding-block',
+  triggerPaddingInline: '--ds-disclosure-trigger-padding-inline',
+  triggerGap: '--ds-disclosure-trigger-gap',
+  triggerFontFamily: '--ds-disclosure-trigger-font-family', // literal-ok: CSS custom-property hook name, not a font stack
+  triggerFontSize: '--ds-disclosure-trigger-font-size',
+  triggerFontWeight: '--ds-disclosure-trigger-font-weight',
+  triggerRadius: '--ds-disclosure-trigger-radius',
+  panelPaddingBlock: '--ds-disclosure-panel-padding-block',
+  panelPaddingInline: '--ds-disclosure-panel-padding-inline',
+  disabledOpacity: '--ds-disclosure-disabled-opacity',
+  transition: '--ds-disclosure-transition',
+};
+
+function overridesToStyle(overrides: Partial<Record<DisclosureOverridableBinding, TokenRef>>): CSSProperties {
+  const style: Record<string, string> = {};
+  for (const binding of Object.keys(overrides) as DisclosureOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+  }
+  return style as CSSProperties;
+}
 
 export interface DisclosureProps
   extends Omit<
@@ -34,6 +73,8 @@ export interface DisclosureProps
   keepMounted?: boolean;
   /** When set, the trigger is wrapped in a heading of this level so the disclosure appears in the document outline. */
   headingLevel?: DisclosureHeadingLevel;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<DisclosureOverridableBinding, TokenRef>>;
   /** Fired after the state changes, with the new boolean `open`. */
   onToggle?: (open: boolean) => void;
 }
@@ -57,9 +98,11 @@ export const Disclosure = forwardRef<HTMLButtonElement, DisclosureProps>(functio
     disabled = false,
     keepMounted = false,
     headingLevel,
+    overrides,
     onToggle,
     id: idProp,
     className,
+    style,
     ...rest
   },
   ref,
@@ -99,6 +142,9 @@ export const Disclosure = forwardRef<HTMLButtonElement, DisclosureProps>(functio
 
   const classes = ['ds-disclosure', isOpen ? 'ds-disclosure--open' : null, className ?? null].filter(Boolean).join(' ');
 
+  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+
   const trigger = (
     <button
       {...rest}
@@ -111,7 +157,7 @@ export const Disclosure = forwardRef<HTMLButtonElement, DisclosureProps>(functio
       aria-disabled={disabled ? 'true' : undefined}
       onClick={handleClick}
     >
-      <span className="ds-disclosure__icon" aria-hidden="true">
+      <span className="ds-disclosure__icon" data-part="triggerIcon" aria-hidden="true">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" focusable="false">
           <path d="M6 3l5 5-5 5" />
         </svg>
@@ -124,12 +170,13 @@ export const Disclosure = forwardRef<HTMLButtonElement, DisclosureProps>(functio
   const Heading = headingLevel !== undefined ? (`h${headingLevel}` as ElementType) : null;
 
   return (
-    <div className={classes}>
+    <div className={classes} data-ds="Disclosure" style={mergedStyle}>
       {Heading ? <Heading className="ds-disclosure__heading">{trigger}</Heading> : trigger}
       {panelExists ? (
         <div
           id={panelId}
           className="ds-disclosure__panel"
+          data-part="panel"
           hidden={!isOpen}
           onFocus={() => {
             focusWithinPanel.current = true;

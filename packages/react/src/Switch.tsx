@@ -7,13 +7,58 @@ import {
   useState,
   type ChangeEvent,
   type ComponentPropsWithoutRef,
+  type CSSProperties,
   type MouseEvent,
 } from 'react';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text } from './Text';
 import { useFormContext } from './FormContext';
 import './Switch.css';
 
 export type SwitchLabelPosition = 'start' | 'end';
+
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type SwitchOverridableBinding =
+  | 'trackWidth'
+  | 'trackHeight'
+  | 'thumbSize'
+  | 'thumbInset'
+  | 'radius'
+  | 'gap'
+  | 'partGap'
+  | 'labelSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'fontFamily'
+  | 'lineHeight'
+  | 'disabledOpacity'
+  | 'transition';
+
+const OVERRIDE_HOOK: Record<SwitchOverridableBinding, string> = {
+  trackWidth: '--ds-switch-track-width',
+  trackHeight: '--ds-switch-track-height',
+  thumbSize: '--ds-switch-thumb-size',
+  thumbInset: '--ds-switch-thumb-inset',
+  radius: '--ds-switch-radius',
+  gap: '--ds-switch-gap',
+  partGap: '--ds-switch-part-gap',
+  labelSize: '--ds-switch-label-size',
+  labelWeight: '--ds-switch-label-weight',
+  helperSize: '--ds-switch-helper-size',
+  fontFamily: '--ds-switch-font-family', // literal-ok: CSS custom-property hook name, not a font stack
+  lineHeight: '--ds-switch-line-height',
+  disabledOpacity: '--ds-switch-disabled-opacity',
+  transition: '--ds-switch-transition',
+};
+
+function overridesToStyle(overrides: Partial<Record<SwitchOverridableBinding, TokenRef>>): CSSProperties {
+  const style: Record<string, string> = {};
+  for (const binding of Object.keys(overrides) as SwitchOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+  }
+  return style as CSSProperties;
+}
 
 export interface SwitchProps
   extends Omit<
@@ -44,6 +89,8 @@ export interface SwitchProps
   description?: string;
   /** Where the label sits relative to the track. `start` is the settings-list convention; `end` matches Checkbox. */
   labelPosition?: SwitchLabelPosition;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<SwitchOverridableBinding, TokenRef>>;
   /** Fired when the state changes, with the new boolean. The change is already in effect; there is nothing to submit. */
   onChange?: (checked: boolean, event: ChangeEvent<HTMLInputElement>) => void;
 }
@@ -66,10 +113,12 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
     disabled = false,
     description,
     labelPosition = 'start',
+    overrides,
     onChange,
     onClick,
     id: idProp,
     className,
+    style,
     ...rest
   },
   ref,
@@ -139,8 +188,11 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
     .filter(Boolean)
     .join(' ');
 
+  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+
   return (
-    <div className={classes}>
+    <div className={classes} data-ds="Switch" style={mergedStyle}>
       <div className="ds-switch__text">
         <label htmlFor={id} className="ds-switch__label">
           {label}
@@ -149,6 +201,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
           <Text
             element="p"
             id={descriptionId}
+            data-part="description"
             size="sm"
             tone="muted"
             className="ds-switch__description"

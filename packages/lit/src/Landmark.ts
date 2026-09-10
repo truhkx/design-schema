@@ -64,6 +64,7 @@ export class DsLandmark extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.setAttribute('data-ds', 'Landmark');
     // A plain block, without `display: contents` (which drops semantics in some browsers).
     if (this.style.display === '') {
       this.style.display = 'block';

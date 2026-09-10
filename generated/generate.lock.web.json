@@ -1,8 +1,25 @@
 {
   "Alert.web": {
-    "hash": "3c6562c3880637ef",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "096cd2f11373c3be",
+    "lastAttemptHash": "096cd2f11373c3be",
+    "generatedAt": "2026-09-10T05:54:52+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.0462,
+    "files": [
+      "packages/react/src/Alert.css",
+      "packages/react/src/Alert.tsx"
+    ],
+    "gaps": 3,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "AlertDialog.web": {
     "hash": "e564390686bc35b0",
@@ -50,9 +67,27 @@
     }
   },
   "Breadcrumb.web": {
-    "hash": "e20df351ed4ca178",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "b26de1f2b2cc5d53",
+    "lastAttemptHash": "b26de1f2b2cc5d53",
+    "generatedAt": "2026-09-10T05:58:59+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.5422,
+    "files": [
+      "packages/react/src/Breadcrumb.css",
+      "packages/react/src/Breadcrumb.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Button.web": {
     "hash": "b97a625455344842",
@@ -101,9 +136,26 @@
     }
   },
   "Checkbox.web": {
-    "hash": "380550e72767d826",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "0047d2b46382ce3b",
+    "lastAttemptHash": "0047d2b46382ce3b",
+    "generatedAt": "2026-09-10T05:41:34+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.7837,
+    "files": [
+      "packages/react/src/Checkbox.css",
+      "packages/react/src/Checkbox.tsx"
+    ],
+    "gaps": 3,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Container.web": {
     "hash": "0fdf6b7a9ccdeb76",
@@ -152,9 +204,27 @@
     }
   },
   "Disclosure.web": {
-    "hash": "bbd92afb903a4b6d",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "3f5a9cc152eeb095",
+    "lastAttemptHash": "3f5a9cc152eeb095",
+    "generatedAt": "2026-09-10T05:48:58+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.6118,
+    "files": [
+      "packages/react/src/Disclosure.css",
+      "packages/react/src/Disclosure.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Divider.web": {
     "hash": "2105a078868776a4",
@@ -300,9 +370,25 @@
     }
   },
   "Landmark.web": {
-    "hash": "d3ca1e6a732159f4",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "b8248e9916431bc9",
+    "lastAttemptHash": "b8248e9916431bc9",
+    "generatedAt": "2026-09-10T05:56:35+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.3136,
+    "files": [
+      "packages/react/src/Landmark.tsx"
+    ],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Link.web": {
     "hash": "4ad533c56ad841ab",
@@ -351,14 +437,51 @@
     }
   },
   "Meter.web": {
-    "hash": "ed3fae9e86eb76ad",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "f1f5e0824eff962b",
+    "lastAttemptHash": "f1f5e0824eff962b",
+    "generatedAt": "2026-09-10T06:02:26+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.6882,
+    "files": [
+      "packages/react/src/Meter.css",
+      "packages/react/src/Meter.stories.tsx",
+      "packages/react/src/Meter.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "RadioGroup.web": {
-    "hash": "083b4b40c7c7c7e3",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "1d46283b3340d19c",
+    "lastAttemptHash": "1d46283b3340d19c",
+    "generatedAt": "2026-09-10T05:46:22+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.5537,
+    "files": [
+      "packages/react/src/RadioGroup.css",
+      "packages/react/src/RadioGroup.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 3,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Stack.web": {
     "hash": "395ec760b1de6f6c",
@@ -395,9 +518,27 @@
     }
   },
   "Switch.web": {
-    "hash": "01c2cc65d41986ce",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "de1b72c4d4fb9f1b",
+    "lastAttemptHash": "de1b72c4d4fb9f1b",
+    "generatedAt": "2026-09-10T05:44:03+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.5321,
+    "files": [
+      "packages/react/src/Switch.css",
+      "packages/react/src/Switch.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Text.web": {
     "hash": "342c9b77de6cc168",

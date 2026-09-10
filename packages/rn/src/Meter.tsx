@@ -1,10 +1,24 @@
 import * as React from 'react';
 import { Animated, Text as RNText, View } from 'react-native';
 import type { LayoutChangeEvent, TextStyle, ViewStyle } from 'react-native';
+import { resolveToken } from '@design-schema/tokens';
+import type { TokenRef } from '@design-schema/tokens';
 import { toEasing, toFontWeight, toLineHeight, useReducedMotion, useTheme } from './theme';
 import type { Tokens } from './theme';
 
 export type MeterTone = 'info' | 'success' | 'warning' | 'danger';
+
+/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+export type MeterOverridableBinding =
+  | 'trackHeight'
+  | 'radius'
+  | 'labelSize'
+  | 'labelWeight'
+  | 'valueSize'
+  | 'fontFamily'
+  | 'lineHeight'
+  | 'partGap'
+  | 'transition';
 
 export interface MeterProps {
   /** The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. */
@@ -21,6 +35,8 @@ export interface MeterProps {
   tone?: MeterTone;
   /** Hides the visible value text. The accessible value is always exposed. */
   hideValue?: boolean;
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  overrides?: Partial<Record<MeterOverridableBinding, TokenRef>>;
 }
 
 const FILL_TOKEN = {
@@ -59,6 +75,7 @@ export function Meter({
   valueText,
   tone = 'info',
   hideValue = false,
+  overrides,
 }: MeterProps): React.JSX.Element {
   const { tokens } = useTheme();
   const reducedMotion = useReducedMotion();
@@ -75,6 +92,16 @@ export function Meter({
   const fraction = validRange ? (clamped - min) / (max - min) : 0;
   const percent = Math.round(fraction * 100);
   const displayedValue = valueText ?? `${percent}%`;
+
+  const trackHeight = overrides?.trackHeight ? (resolveToken(tokens, overrides.trackHeight) as number) : tokens.space2;
+  const radius = overrides?.radius ? (resolveToken(tokens, overrides.radius) as number) : tokens.radiusFull;
+  const labelSize = overrides?.labelSize ? (resolveToken(tokens, overrides.labelSize) as number) : tokens.fontSizeSm;
+  const labelWeight = overrides?.labelWeight ? (resolveToken(tokens, overrides.labelWeight) as number) : tokens.fontWeightMedium;
+  const valueSize = overrides?.valueSize ? (resolveToken(tokens, overrides.valueSize) as number) : tokens.fontSizeSm;
+  const fontFamily = overrides?.fontFamily ? (resolveToken(tokens, overrides.fontFamily) as string) : tokens.fontFamilyBody;
+  const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(tokens, overrides.lineHeight) as number) : tokens.fontLineHeightNormal;
+  const partGap = overrides?.partGap ? (resolveToken(tokens, overrides.partGap) as number) : tokens.space1;
+  const transitionDuration = overrides?.transition ? (resolveToken(tokens, overrides.transition) as number) : tokens.motionDurationBase;
 
   // The fill is animated on `width` in pixels (measured from the track) rather than
   // a percentage string, which `Animated` cannot interpolate on every platform.
@@ -94,12 +121,12 @@ export function Meter({
     }
     Animated.timing(fillWidth, {
       toValue,
-      duration: tokens.motionDurationBase,
+      duration: transitionDuration,
       easing: toEasing(tokens.motionEasingStandard),
       // Layout properties cannot use the native driver.
       useNativeDriver: false,
     }).start();
-  }, [fraction, trackWidth, reducedMotion, fillWidth, tokens.motionDurationBase, tokens.motionEasingStandard]);
+  }, [fraction, trackWidth, reducedMotion, fillWidth, transitionDuration, tokens.motionEasingStandard]);
 
   const handleTrackLayout = (event: LayoutChangeEvent): void => {
     const { width } = event.nativeEvent.layout;
@@ -108,7 +135,7 @@ export function Meter({
 
   const containerStyle: ViewStyle = {
     flexDirection: 'column',
-    gap: tokens.space1,
+    gap: partGap,
   };
 
   const labelRowStyle: ViewStyle = {
@@ -119,32 +146,32 @@ export function Meter({
   };
 
   const labelStyle: TextStyle = {
-    fontFamily: tokens.fontFamilyBody,
-    fontSize: tokens.fontSizeSm,
-    fontWeight: toFontWeight(tokens.fontWeightMedium),
-    lineHeight: toLineHeight(tokens.fontSizeSm, tokens.fontLineHeightNormal),
+    fontFamily,
+    fontSize: labelSize,
+    fontWeight: toFontWeight(labelWeight),
+    lineHeight: toLineHeight(labelSize, lineHeightMultiplier),
     color: tokens.colorForeground,
     flexShrink: 1,
   };
 
   const valueStyle: TextStyle = {
-    fontFamily: tokens.fontFamilyBody,
-    fontSize: tokens.fontSizeSm,
+    fontFamily,
+    fontSize: valueSize,
     fontWeight: toFontWeight(tokens.fontWeightRegular),
-    lineHeight: toLineHeight(tokens.fontSizeSm, tokens.fontLineHeightNormal),
+    lineHeight: toLineHeight(valueSize, lineHeightMultiplier),
     color: tokens.colorForegroundMuted,
   };
 
   const trackStyle: ViewStyle = {
-    height: tokens.space2,
-    borderRadius: tokens.radiusFull,
+    height: trackHeight,
+    borderRadius: radius,
     backgroundColor: tokens.colorBackgroundStrong,
     overflow: 'hidden',
   };
 
   const fillStyle: Animated.WithAnimatedObject<ViewStyle> = {
-    height: tokens.space2,
-    borderRadius: tokens.radiusFull,
+    height: trackHeight,
+    borderRadius: radius,
     backgroundColor: tokens[FILL_TOKEN[tone]],
     width: fillWidth,
     // Start edge follows the writing direction under I18nManager because the fill
@@ -154,6 +181,7 @@ export function Meter({
 
   return (
     <View
+      testID="Meter"
       // One accessibility element: the label and value are announced together and
       // the visible label row is not read a second time.
       accessible

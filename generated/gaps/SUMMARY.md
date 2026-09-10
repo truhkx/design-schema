@@ -1,6 +1,6 @@
 # Gap digest — phase Core
 
-Generated 2026-09-10T01:30 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T01:31 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## AlertDialog
 
@@ -372,6 +372,13 @@ Doc: `site/src/content/docs/components/dialog.md`
 
 Doc: `site/src/content/docs/components/divider.md`
 
+### 2026-09-10 01:31 — lit round 1
+
+- **DOC** Divider: schema says label is 'optional text in the middle of a horizontal divider' but doesn't forbid it on a vertical divider or define layout for that case; I render label between two line segments in a flex column for vertical too, same as horizontal, rather than rejecting the combination. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the `semantic` prop and `label` both drive the same role/aria-orientation exposure (guidance text says a labelled divider 'becomes semantic'); I implemented `effectiveSemantic = semantic || Boolean(label)` since the schema gives no separate visual/AT toggle for a labelled-but-not-announced divider. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: labelSize/fontFamily overrides are wired into the composed `<ds-text>` by targeting its own public override hooks (`--ds-text-font-size`, `--ds-text-font-family`) from a `.label` class rule in Divider's shadow styles, rather than passing Text's `overrides` property object, since that avoids fighting Lit's property/attribute timing and stays within Text's documented CSS-variable contract; labelColor is left to Text's own locked `tone="muted"` default since it's excluded from Divider's overridable set. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: no keyboard model, form-field interface, or events apply to this component (purely presentational/APG separator), so none were implemented — confirming there was nothing ambiguous there, just absent by design. → `site/src/content/docs/components/divider.md`
+
 ### 2026-09-10 01:30 — web round 1
 
 - **DOC** Divider: label is documented as text for a horizontal divider only ("Optional text in the middle of a horizontal divider"). When orientation is vertical and label is set, I render a plain vertical line (no label text, since there's no described layout for a vertical labelled divider) but still treat it as semantic (role=separator, aria-orientation=vertical) since a label was explicitly given — the doc doesn't cover this combination. → `site/src/content/docs/components/divider.md`
@@ -706,7 +713,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 302 · CODE: 22 · TOOLING: 2 · NOISE: 8
+DOC: 306 · CODE: 22 · TOOLING: 2 · NOISE: 8
 
 ## Gates to fix
 

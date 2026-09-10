@@ -1,13 +1,31 @@
 import * as React from 'react';
 import { AccessibilityInfo, Platform, Text as RNText, View } from 'react-native';
 import type { TextStyle, ViewStyle } from 'react-native';
+import { resolveToken } from '@design-schema/tokens';
+import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
+import { Icon } from './Icon';
 import { Text } from './Text';
 import { toFontWeight, toLineHeight, useTheme } from './theme';
 import type { Tokens } from './theme';
 
 export type AlertTone = 'info' | 'success' | 'warning' | 'danger';
 export type AlertLive = 'status' | 'alert' | 'off';
+
+/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+export type AlertOverridableBinding =
+  | 'border'
+  | 'borderWidth'
+  | 'radius'
+  | 'padding'
+  | 'gap'
+  | 'partGap'
+  | 'iconSize'
+  | 'headingWeight'
+  | 'fontFamily'
+  | 'fontSize'
+  | 'lineHeight'
+  | 'dismissMargin';
 
 export interface AlertProps {
   /** What kind of message this is. Sets the colors and the icon, which together convey the tone without relying on color. */
@@ -20,6 +38,8 @@ export interface AlertProps {
   live?: AlertLive;
   /** Shows a dismiss button at the end of the alert. Activating it fires `onDismiss`; the consumer removes the alert. */
   dismissible?: boolean;
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  overrides?: Partial<Record<AlertOverridableBinding, TokenRef>>;
   /** Fired when the user activates the dismiss button. The consumer removes the alert. */
   onDismiss?: () => void;
 }
@@ -27,9 +47,6 @@ export interface AlertProps {
 const COPY = {
   dismissLabel: 'Dismiss',
 } as const;
-
-/** Decorative glyph passed to the dismiss Button as `leadingIcon`. */
-const DISMISS_GLYPH = '×';
 
 const TONE_TOKENS = {
   info: {
@@ -58,14 +75,6 @@ const TONE_TOKENS = {
   },
 } as const satisfies Record<AlertTone, Record<'background' | 'foreground' | 'border' | 'icon', keyof Tokens>>;
 
-/** Decorative glyphs standing in for the info circle, check circle, warning triangle and error octagon. */
-const TONE_GLYPH: Record<AlertTone, string> = {
-  info: 'ⓘ',
-  success: '✓',
-  warning: '▲',
-  danger: '⨂',
-};
-
 /**
  * Alert — the system speaking to the user inside the page: "this saved", "this
  * failed", "this is about to expire". It stays until dealt with or dismissed.
@@ -83,11 +92,12 @@ const TONE_GLYPH: Record<AlertTone, string> = {
  * the heading alone) so the whole message is one announcement. iOS ignores live
  * regions, so with `live !== 'off'` the heading and body are passed to
  * `AccessibilityInfo.announceForAccessibility` on mount and whenever they change.
- * Colors come from the `color.status.{tone}.*` tokens; the icon is decorative. The
- * dismiss button is the system `Button` (`ghost`, `sm`, `iconOnly`, labelled
- * `copy.dismissLabel`, with a × glyph as `leadingIcon`), pulled into the corner by
- * `dismissMargin`; it fires `onDismiss` only and the consumer removes the alert.
- * Moving focus to the next element before removal is not possible on native.
+ * Colors come from the `color.status.{tone}.*` tokens; the leading glyph is the
+ * system `Icon` (`info`/`success`/`warning`/`danger`, decorative). The dismiss
+ * button is the system `Button` (`ghost`, `sm`, `iconOnly`, labelled
+ * `copy.dismissLabel`, with `Icon name="close"` as `leadingIcon`), pulled into the
+ * corner by `dismissMargin`; it fires `onDismiss` only and the consumer removes the
+ * alert. Moving focus to the next element before removal is not possible on native.
  */
 export function Alert({
   tone = 'info',
@@ -95,14 +105,26 @@ export function Alert({
   children,
   live = 'status',
   dismissible = false,
+  overrides,
   onDismiss,
 }: AlertProps): React.JSX.Element {
-  const { tokens } = useTheme();
+  const { tokens: t } = useTheme();
   const colors = TONE_TOKENS[tone];
-  const background = tokens[colors.background];
-  const foreground = tokens[colors.foreground];
-  const border = tokens[colors.border];
-  const icon = tokens[colors.icon];
+  const background = t[colors.background];
+  const foreground = t[colors.foreground];
+  const icon = t[colors.icon];
+
+  const border = overrides?.border ? (resolveToken(t, overrides.border) as string) : t[colors.border];
+  const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
+  const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
+  const padding = overrides?.padding ? (resolveToken(t, overrides.padding) as number) : t.spaceMd;
+  const gap = overrides?.gap ? (resolveToken(t, overrides.gap) as number) : t.space3;
+  const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
+  const headingWeight = overrides?.headingWeight ? (resolveToken(t, overrides.headingWeight) as number) : t.fontWeightSemibold;
+  const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
+  const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t.fontSizeMd;
+  const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
+  const dismissMargin = overrides?.dismissMargin ? (resolveToken(t, overrides.dismissMargin) as number) : t.space1;
 
   const bodyText = typeof children === 'string' ? children : undefined;
   const announcement = [heading, bodyText]
@@ -120,69 +142,60 @@ export function Alert({
   const containerStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: tokens.space3,
-    padding: tokens.spaceMd,
-    borderWidth: tokens.borderWidthThin,
+    gap,
+    padding,
+    borderWidth,
     borderColor: border,
-    borderRadius: tokens.radiusMd,
+    borderRadius: radius,
     backgroundColor: background,
   };
 
-  const lineHeight = toLineHeight(tokens.fontSizeMd, tokens.fontLineHeightNormal);
+  const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
 
   const iconCellStyle: ViewStyle = {
     height: lineHeight,
     justifyContent: 'center',
   };
 
-  const iconStyle: TextStyle = {
-    fontFamily: tokens.fontFamilyBody,
-    fontSize: tokens.fontSizeLg,
-    lineHeight: tokens.fontSizeLg,
-    color: icon,
-    includeFontPadding: false,
-  };
-
   const contentStyle: ViewStyle = {
     flex: 1,
     flexDirection: 'column',
-    gap: tokens.space1,
+    gap: partGap,
   };
 
   const headingStyle: TextStyle = {
-    fontFamily: tokens.fontFamilyBody,
-    fontSize: tokens.fontSizeMd,
-    fontWeight: toFontWeight(tokens.fontWeightSemibold),
+    fontFamily,
+    fontSize,
+    fontWeight: toFontWeight(headingWeight),
     lineHeight,
     color: foreground,
   };
+
+  const bodyOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
 
   // dismissMargin: a negative block/inline-end margin so the Button's target sits
   // in the corner without enlarging the padding. The Button keeps its own colors,
   // radius and focus ring; only the glyph it is handed is styled here.
   const dismissStyle: ViewStyle = {
-    marginTop: -tokens.space1,
-    marginRight: -tokens.space1,
-  };
-  const dismissGlyphStyle: TextStyle = {
-    fontFamily: tokens.fontFamilyBody,
-    fontSize: tokens.fontSizeLg,
-    lineHeight: tokens.fontSizeLg,
-    color: tokens.colorActionGhostForeground,
-    includeFontPadding: false,
+    marginTop: -dismissMargin,
+    marginRight: -dismissMargin,
   };
 
   return (
     <View
+      testID="Alert"
       accessibilityRole={live === 'alert' ? 'alert' : undefined}
       accessibilityLiveRegion={live === 'alert' ? 'assertive' : live === 'status' ? 'polite' : undefined}
       accessibilityLabel={announcement !== '' ? announcement : undefined}
       style={containerStyle}
     >
       <View style={iconCellStyle} accessibilityElementsHidden importantForAccessibility="no">
-        <RNText allowFontScaling={false} style={iconStyle}>
-          {TONE_GLYPH[tone]}
-        </RNText>
+        <Icon
+          name={tone}
+          size="lg"
+          color={icon}
+          overrides={overrides?.iconSize ? { size: overrides.iconSize } : undefined}
+        />
       </View>
       <View style={contentStyle}>
         {heading !== undefined ? (
@@ -190,7 +203,7 @@ export function Alert({
             {heading}
           </RNText>
         ) : null}
-        {typeof children === 'string' ? <Text>{children}</Text> : children}
+        {typeof children === 'string' ? <Text overrides={bodyOverrides}>{children}</Text> : children}
       </View>
       {dismissible ? (
         <View style={dismissStyle}>
@@ -199,11 +212,7 @@ export function Alert({
             variant="ghost"
             size="sm"
             iconOnly
-            leadingIcon={
-              <RNText allowFontScaling={false} style={dismissGlyphStyle}>
-                {DISMISS_GLYPH}
-              </RNText>
-            }
+            leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
             onPress={onDismiss}
           />
         </View>

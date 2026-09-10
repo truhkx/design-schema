@@ -1,14 +1,35 @@
 /* Switch — styled only through Design Schema token custom properties. */
 
-/* minTarget: the whole row toggles. The row is full width. */
 .ds-switch {
+  --ds-switch-track-off: var(--color-control-track-off);
+  --ds-switch-track-on: var(--color-control-selected-background);
+  --ds-switch-thumb: var(--color-control-selected-foreground);
+  --ds-switch-track-width: var(--space-10);
+  --ds-switch-track-height: var(--space-6);
+  --ds-switch-thumb-size: var(--space-5);
+  --ds-switch-thumb-inset: var(--space-1);
+  --ds-switch-radius: var(--radius-full);
+  --ds-switch-gap: var(--space-3);
+  --ds-switch-part-gap: var(--space-1);
+  --ds-switch-label-color: var(--color-foreground);
+  --ds-switch-label-size: var(--font-size-md);
+  --ds-switch-label-weight: var(--font-weight-regular);
+  --ds-switch-helper-size: var(--font-size-sm);
+  --ds-switch-description-text: var(--color-foreground-muted);
+  --ds-switch-font-family: var(--font-family-body);
+  --ds-switch-line-height: var(--font-line-height-normal);
+  --ds-switch-focus-ring: var(--color-border-focus);
+  --ds-switch-focus-ring-width: var(--border-width-focus);
+  --ds-switch-min-target: var(--size-target-comfortable);
+  --ds-switch-disabled-opacity: var(--opacity-disabled);
+  --ds-switch-transition: var(--motion-duration-fast);
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--ds-switch-gap);
   inline-size: 100%;
-  min-block-size: var(--size-target-comfortable);
-  font-family: var(--font-family-body);
-  line-height: var(--font-line-height-normal);
+  min-block-size: var(--ds-switch-min-target);
+  font-family: var(--ds-switch-font-family);
+  line-height: var(--ds-switch-line-height);
 }
 
 /* labelPosition changes flex order only: `start` puts the label first and the track at the row end. */
@@ -23,28 +44,26 @@
 .ds-switch__text {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--ds-switch-part-gap);
   min-inline-size: 0;
 }
 
 .ds-switch__label {
   cursor: pointer;
-  color: var(--color-foreground);
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-regular);
+  color: var(--ds-switch-label-color);
+  font-size: var(--ds-switch-label-size);
+  font-weight: var(--ds-switch-label-weight);
 }
 
 .ds-switch__description {
   margin: 0;
   cursor: pointer;
+  font-size: var(--ds-switch-helper-size);
+  color: var(--ds-switch-description-text);
 }
 
 /* track: a native input sized trackWidth × trackHeight, drawn with the control tokens. */
 .ds-switch__control {
-  --ds-switch-track-width: var(--space-10);
-  --ds-switch-track-height: var(--space-6);
-  --ds-switch-thumb-size: var(--space-5);
-  --ds-switch-thumb-inset: var(--space-1);
   box-sizing: border-box;
   position: relative;
   flex: 0 0 auto;
@@ -53,8 +72,8 @@
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-full);
-  background-color: var(--color-control-track-off);
+  border-radius: var(--ds-switch-radius);
+  background-color: var(--ds-switch-track-off);
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
@@ -68,13 +87,13 @@
   inset-inline-start: var(--ds-switch-thumb-inset);
   inline-size: var(--ds-switch-thumb-size);
   block-size: var(--ds-switch-thumb-size);
-  border-radius: var(--radius-full);
-  background-color: var(--color-control-selected-foreground);
+  border-radius: var(--ds-switch-radius);
+  background-color: var(--ds-switch-thumb);
 }
 
 /* trackOn */
 .ds-switch__control:checked {
-  background-color: var(--color-control-selected-background);
+  background-color: var(--ds-switch-track-on);
 }
 
 .ds-switch__control:checked::before {
@@ -91,8 +110,8 @@
 
 /* focus-visible: drawn around the track, offset by focusRingWidth like the other controls. Never removed. */
 .ds-switch__control:focus-visible {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
+  outline: var(--ds-switch-focus-ring-width) solid var(--ds-switch-focus-ring);
+  outline-offset: var(--ds-switch-focus-ring-width);
 }
 
 /* disabled: stays focusable and readable; visually dimmed. */
@@ -100,15 +119,15 @@
 .ds-switch--disabled .ds-switch__label,
 .ds-switch--disabled .ds-switch__description {
   cursor: not-allowed;
-  opacity: var(--opacity-disabled);
+  opacity: var(--ds-switch-disabled-opacity);
 }
 
-/* transition: thumb travel and track color; travel is instant under reduced motion. */
+/* transition: thumb travel and track color, with motion.easing.standard; instant under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-switch__control {
-    transition: background-color var(--motion-duration-fast) var(--motion-easing-standard);
+    transition: background-color var(--ds-switch-transition) var(--motion-easing-standard);
   }
   .ds-switch__control::before {
-    transition: transform var(--motion-duration-fast) var(--motion-easing-standard);
+    transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
   }
 }

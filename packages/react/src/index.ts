@@ -47,28 +47,33 @@ export { Link } from './Link';
 export type { LinkProps, LinkTone, LinkOverridableBinding } from './Link';
 
 export { Checkbox } from './Checkbox';
-export type { CheckboxProps } from './Checkbox';
+export type { CheckboxProps, CheckboxOverridableBinding } from './Checkbox';
 
 export { Switch } from './Switch';
-export type { SwitchProps, SwitchLabelPosition } from './Switch';
+export type { SwitchProps, SwitchLabelPosition, SwitchOverridableBinding } from './Switch';
 
 export { RadioGroup } from './RadioGroup';
-export type { RadioGroupProps, RadioGroupOption, RadioGroupOrientation } from './RadioGroup';
+export type {
+  RadioGroupProps,
+  RadioGroupOption,
+  RadioGroupOrientation,
+  RadioGroupOverridableBinding,
+} from './RadioGroup';
 
 export { Disclosure } from './Disclosure';
-export type { DisclosureProps, DisclosureHeadingLevel } from './Disclosure';
+export type { DisclosureProps, DisclosureHeadingLevel, DisclosureOverridableBinding } from './Disclosure';
 
 export { Alert } from './Alert';
-export type { AlertProps, AlertTone, AlertLive } from './Alert';
+export type { AlertProps, AlertTone, AlertLive, AlertOverridableBinding } from './Alert';
 
 export { Landmark } from './Landmark';
 export type { LandmarkProps, LandmarkRole, LandmarkElement } from './Landmark';
 
 export { Breadcrumb } from './Breadcrumb';
-export type { BreadcrumbProps, BreadcrumbItem } from './Breadcrumb';
+export type { BreadcrumbProps, BreadcrumbItem, BreadcrumbOverridableBinding } from './Breadcrumb';
 
 export { Meter } from './Meter';
-export type { MeterProps, MeterTone } from './Meter';
+export type { MeterProps, MeterTone, MeterOverridableBinding } from './Meter';
 
 export { Icon } from './Icon';
 export type { IconProps, IconName, IconSize, IconOverridableBinding } from './Icon';

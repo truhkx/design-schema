@@ -28,7 +28,7 @@ Write `packages/rn/src/{{NAME}}.tsx` exporting a typed React Native function com
 - Transitions use the component's own `transition` binding (its token and description), with `motion.easing.standard`; `motion.duration.fast` is only the default when a component has no `transition` binding.
 - Development-only warnings the docs ask for use the platform convention: `process.env.NODE_ENV !== 'production'` (React), `import.meta.env.DEV` (Lit), `__DEV__` (React Native).
 - Stories are named after the prop and value in PascalCase (`ToneInfo`, `RoleBanner`); demo stories are titled `Demo/<Name>/<Platform>`.
-- Icons: there is no Icon component yet. Draw the shapes the docs name as decorative 1em inline SVG (web/Lit) or Views/glyphs (RN), hidden from assistive technology, and pass them to Button through `leadingIcon`.
+- Icons: use the system `Icon` component for every glyph the docs name (`<Icon name="external" inline />`, `<ds-icon name="close">`, `<Icon name="check" color={…} />`); never draw an inline SVG or a Unicode glyph by hand. Decorative icons take no label; a glyph that carries meaning gets one.
 - Stories: Storybook 8 CSF3 with `@storybook/react`, run under react-native-web; title `'<Name>/React Native'`; one story per enum value plus Default; wrap in `ThemeProvider`.
 
 ## Component schema

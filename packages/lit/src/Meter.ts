@@ -2,8 +2,33 @@ import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { styleMap } from 'lit/directives/style-map.js';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 
 export type MeterTone = 'info' | 'success' | 'warning' | 'danger';
+
+/** Overridable style hooks; see the `overrides` property. `track`, `fill`, `labelColor` and `valueColor` are locked and excluded. */
+export type MeterOverridableBinding =
+  | 'trackHeight'
+  | 'radius'
+  | 'labelSize'
+  | 'labelWeight'
+  | 'valueSize'
+  | 'fontFamily'
+  | 'lineHeight'
+  | 'partGap'
+  | 'transition';
+
+const HOOKS: Record<MeterOverridableBinding, string> = {
+  trackHeight: '--ds-meter-track-height',
+  radius: '--ds-meter-radius',
+  labelSize: '--ds-meter-label-size',
+  labelWeight: '--ds-meter-label-weight',
+  valueSize: '--ds-meter-value-size',
+  fontFamily: `--ds-meter-font-family`,
+  lineHeight: '--ds-meter-line-height',
+  partGap: '--ds-meter-part-gap',
+  transition: '--ds-meter-transition',
+};
 
 /**
  * `<ds-meter>` — Meter (category: data, APG pattern: meter).
@@ -34,7 +59,16 @@ export class DsMeter extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      font-family: var(--font-family-body);
+      font-family: var(--ds-meter-font-family);
+      --ds-meter-track-height: var(--space-2);
+      --ds-meter-radius: var(--radius-full);
+      --ds-meter-label-size: var(--font-size-sm);
+      --ds-meter-label-weight: var(--font-weight-medium);
+      --ds-meter-value-size: var(--font-size-sm);
+      --ds-meter-font-family: var(--font-family-body);
+      --ds-meter-line-height: var(--font-line-height-normal);
+      --ds-meter-part-gap: var(--space-1);
+      --ds-meter-transition: var(--motion-duration-base);
     }
 
     :host([hidden]) {
@@ -44,7 +78,7 @@ export class DsMeter extends LitElement {
     .container {
       display: flex;
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--ds-meter-part-gap);
     }
 
     .row {
@@ -52,34 +86,36 @@ export class DsMeter extends LitElement {
       align-items: baseline;
       justify-content: space-between;
       gap: var(--space-2);
-      line-height: var(--font-line-height-normal);
+      line-height: var(--ds-meter-line-height);
     }
 
+    /* labelColor: color.foreground, locked */
     .label {
-      font-size: var(--font-size-sm);
-      font-weight: var(--font-weight-medium);
+      font-size: var(--ds-meter-label-size);
+      font-weight: var(--ds-meter-label-weight);
       color: var(--color-foreground);
     }
 
+    /* valueColor: color.foreground.muted, locked */
     .value {
-      font-size: var(--font-size-sm);
+      font-size: var(--ds-meter-value-size);
       color: var(--color-foreground-muted);
       text-align: end;
     }
 
-    /* track: color.background.strong, trackHeight, radius.full, clipping the fill */
+    /* track: color.background.strong, locked; trackHeight, radius clip the fill */
     .track {
       overflow: hidden;
-      block-size: var(--space-2);
-      border-radius: var(--radius-full);
+      block-size: var(--ds-meter-track-height);
+      border-radius: var(--ds-meter-radius);
       background: var(--color-background-strong);
     }
 
-    /* fill: color.status.{tone}.icon */
+    /* fill: color.status.{tone}.icon, locked */
     .fill {
       block-size: 100%;
       inline-size: 0;
-      border-radius: var(--radius-full);
+      border-radius: var(--ds-meter-radius);
       background: var(--color-status-info-icon);
     }
     :host([tone='info']) .fill {
@@ -97,7 +133,7 @@ export class DsMeter extends LitElement {
 
     @media (prefers-reduced-motion: no-preference) {
       .fill {
-        transition: inline-size var(--motion-duration-base) var(--motion-easing-standard);
+        transition: inline-size var(--ds-meter-transition) var(--motion-easing-standard);
       }
     }
   `;
@@ -123,6 +159,14 @@ export class DsMeter extends LitElement {
   /** Hides the visible value text. The accessible value is always exposed. */
   @property({ type: Boolean, reflect: true, attribute: 'hide-value' }) hideValue = false;
 
+  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings (track, fill, labelColor, valueColor) are ignored. */
+  @property({ attribute: false }) overrides?: Partial<Record<MeterOverridableBinding, TokenRef>>;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'Meter');
+  }
+
   /** `value` clamped to the range (the accessible value). Non-finite values and `max <= min` resolve to `min`. */
   get clampedValue(): number {
     const min = Number(this.min);
@@ -147,6 +191,9 @@ export class DsMeter extends LitElement {
   protected override willUpdate(changed: PropertyValues): void {
     if ((changed.has('min') || changed.has('max')) && import.meta.env.DEV && !(Number(this.max) > Number(this.min))) {
       console.warn(`<ds-meter> needs max (${this.max}) greater than min (${this.min}).`, this);
+    }
+    if (changed.has('overrides')) {
+      this.applyOverrides();
     }
   }
 
@@ -174,6 +221,18 @@ export class DsMeter extends LitElement {
         </div>
       </div>
     `;
+  }
+
+  private applyOverrides(): void {
+    for (const binding of Object.keys(HOOKS) as MeterOverridableBinding[]) {
+      const ref = this.overrides?.[binding];
+      const hook = HOOKS[binding];
+      if (ref === undefined) {
+        this.style.removeProperty(hook);
+      } else {
+        this.style.setProperty(hook, cssVar(ref));
+      }
+    }
   }
 }
 

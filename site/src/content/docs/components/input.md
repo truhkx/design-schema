@@ -85,14 +85,14 @@ component:
     helperSize: { token: font.size.sm, description: Description and error text size. }
     lineHeight: { token: font.lineHeight.normal }
     minTarget: { token: size.target.comfortable }
-    focusRingWidth: { token: border.width.focus, description: 'Replaces borderWidth when focused; padding shrinks by the difference so the field does not shift.' }
-    disabledOpacity: { token: opacity.disabled }
+    focusRingWidth: { token: border.width.focus, description: 'Replaces borderWidth when focused (the field''s border IS its focus ring — no outline); when the field is both invalid and focused the danger color stays and only the width changes, so the error is never hidden by focus. Padding shrinks by the difference so the field does not shift.' }
+    disabledOpacity: { token: opacity.disabled, description: 'Applied to the whole field group (label, description, field, error), as Button dims the whole control.' }
   copy:
     required: '{label} is required.'
     invalid: '{label} is not valid.'
     requiredIndicator: ' (required)'
   a11y:
-    role: textbox
+    role: textbox  # the default; `type` search/number/password keep their native semantics (searchbox, spinbutton, none) — never force role=textbox over them
     requires: [label-association, error-identification, focus-visible, keyboard-operable, target-44px, contrast-aa]
     contrast:
       - { foreground: color.foreground, background: color.background, level: AA }

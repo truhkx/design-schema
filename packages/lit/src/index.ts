@@ -88,32 +88,33 @@ export { DsLink } from './Link.js';
 export type { LinkTone, LinkOverridableBinding } from './Link.js';
 
 export { DsCheckbox } from './Checkbox.js';
-export type { CheckboxChangeDetail } from './Checkbox.js';
+export type { CheckboxChangeDetail, CheckboxOverridableBinding } from './Checkbox.js';
 
 export { DsSwitch } from './Switch.js';
-export type { SwitchLabelPosition, SwitchChangeDetail } from './Switch.js';
+export type { SwitchLabelPosition, SwitchChangeDetail, SwitchOverridableBinding } from './Switch.js';
 
 export { DsRadioGroup } from './RadioGroup.js';
 export type {
   RadioGroupOrientation,
   RadioGroupOption,
   RadioGroupChangeDetail,
+  RadioGroupOverridableBinding,
 } from './RadioGroup.js';
 
 export { DsDisclosure } from './Disclosure.js';
-export type { DisclosureHeadingLevel, DisclosureToggleDetail } from './Disclosure.js';
+export type { DisclosureHeadingLevel, DisclosureToggleDetail, DisclosureOverridableBinding } from './Disclosure.js';
 
 export { DsAlert } from './Alert.js';
-export type { AlertTone, AlertLive, AlertDismissDetail } from './Alert.js';
+export type { AlertTone, AlertLive, AlertDismissDetail, AlertOverridableBinding } from './Alert.js';
 
 export { DsLandmark } from './Landmark.js';
 export type { LandmarkRole } from './Landmark.js';
 
 export { DsBreadcrumb } from './Breadcrumb.js';
-export type { BreadcrumbItem, BreadcrumbNavigateDetail } from './Breadcrumb.js';
+export type { BreadcrumbItem, BreadcrumbNavigateDetail, BreadcrumbOverridableBinding } from './Breadcrumb.js';
 
 export { DsMeter } from './Meter.js';
-export type { MeterTone } from './Meter.js';
+export type { MeterTone, MeterOverridableBinding } from './Meter.js';
 
 export { DsIcon } from './Icon.js';
 export type { IconName, IconSize, IconOverridableBinding } from './Icon.js';

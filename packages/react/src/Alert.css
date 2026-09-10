@@ -1,67 +1,70 @@
 /* Alert — styled only through Design Schema token custom properties. */
 
 .ds-alert {
+  --ds-alert-background: var(--color-status-info-background);
+  --ds-alert-foreground: var(--color-status-info-foreground);
+  --ds-alert-body-color: var(--color-foreground);
+  --ds-alert-border: var(--color-status-info-border);
+  --ds-alert-border-width: var(--border-width-thin);
+  --ds-alert-radius: var(--radius-md);
+  --ds-alert-padding: var(--space-md);
+  --ds-alert-gap: var(--space-3);
+  --ds-alert-part-gap: var(--space-1);
+  --ds-alert-icon-size: var(--font-size-lg);
+  --ds-alert-heading-weight: var(--font-weight-semibold);
+  --ds-alert-font-family: var(--font-family-body);
+  --ds-alert-font-size: var(--font-size-md);
+  --ds-alert-line-height: var(--font-line-height-normal);
+  --ds-alert-dismiss-margin: var(--space-1);
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-md);
-  border: var(--border-width-thin) solid var(--ds-alert-border);
-  border-radius: var(--radius-md);
+  gap: var(--ds-alert-gap);
+  padding: var(--ds-alert-padding);
+  border: var(--ds-alert-border-width) solid var(--ds-alert-border);
+  border-radius: var(--ds-alert-radius);
   background-color: var(--ds-alert-background);
-  color: var(--color-foreground);
-  font-family: var(--font-family-body);
-  font-size: var(--font-size-md);
-  line-height: var(--font-line-height-normal);
+  color: var(--ds-alert-body-color);
+  font-family: var(--ds-alert-font-family);
+  font-size: var(--ds-alert-font-size);
+  line-height: var(--ds-alert-line-height);
 }
 
-/* tone → color.status.{tone}.* */
+/* tone → color.status.{tone}.* (background/foreground/icon locked; border overridable) */
 .ds-alert--info {
   --ds-alert-background: var(--color-status-info-background);
   --ds-alert-foreground: var(--color-status-info-foreground);
   --ds-alert-border: var(--color-status-info-border);
-  --ds-alert-icon: var(--color-status-info-icon);
 }
 .ds-alert--success {
   --ds-alert-background: var(--color-status-success-background);
   --ds-alert-foreground: var(--color-status-success-foreground);
   --ds-alert-border: var(--color-status-success-border);
-  --ds-alert-icon: var(--color-status-success-icon);
 }
 .ds-alert--warning {
   --ds-alert-background: var(--color-status-warning-background);
   --ds-alert-foreground: var(--color-status-warning-foreground);
   --ds-alert-border: var(--color-status-warning-border);
-  --ds-alert-icon: var(--color-status-warning-icon);
 }
 .ds-alert--danger {
   --ds-alert-background: var(--color-status-danger-background);
   --ds-alert-foreground: var(--color-status-danger-foreground);
   --ds-alert-border: var(--color-status-danger-border);
-  --ds-alert-icon: var(--color-status-danger-icon);
 }
 
-/* icon: decorative, iconSize, aligned to the first line of text. */
+/* icon: decorative, iconSize, aligned to the first line of text. The Icon itself carries color.status.{tone}.icon via its own `overrides`. */
 .ds-alert__icon {
   display: inline-flex;
   flex: 0 0 auto;
-  inline-size: var(--font-size-lg);
-  block-size: var(--font-size-lg);
-  margin-block-start: calc((var(--font-size-md) * var(--font-line-height-normal) - var(--font-size-lg)) / 2);
-  color: var(--ds-alert-icon);
+  margin-block-start: calc((var(--ds-alert-font-size) * var(--ds-alert-line-height) - var(--ds-alert-icon-size)) / 2);
   line-height: 0;
-}
-
-.ds-alert__icon svg {
-  inline-size: 100%;
-  block-size: 100%;
 }
 
 .ds-alert__content {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--ds-alert-part-gap);
   min-inline-size: 0;
 }
 
@@ -69,12 +72,12 @@
 .ds-alert__heading {
   margin: 0;
   color: var(--ds-alert-foreground);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--ds-alert-heading-weight);
 }
 
 /* bodyColor: the page foreground, so long messages read as text. */
 .ds-alert__body {
-  color: var(--color-foreground);
+  color: var(--ds-alert-body-color);
 }
 
 .ds-alert__body > :first-child {
@@ -89,6 +92,6 @@
 .ds-alert__dismiss {
   display: inline-flex;
   flex: 0 0 auto;
-  margin-block: calc(-1 * var(--space-1));
-  margin-inline-end: calc(-1 * var(--space-1));
+  margin-block: calc(-1 * var(--ds-alert-dismiss-margin));
+  margin-inline-end: calc(-1 * var(--ds-alert-dismiss-margin));
 }

@@ -1,10 +1,27 @@
 import * as React from 'react';
 import { Animated, Platform, Pressable, Text as RNText, View } from 'react-native';
 import type { PressableStateCallbackType, TextStyle, ViewStyle } from 'react-native';
+import { resolveToken } from '@design-schema/tokens';
+import type { TokenRef } from '@design-schema/tokens';
+import { Icon } from './Icon';
 import { toEasing, toFontWeight, toLineHeight, useReducedMotion, useTheme } from './theme';
 
 /** Heading level for the trigger. The schema declares the values as strings; numbers are accepted for ergonomics. */
 export type DisclosureHeadingLevel = '2' | '3' | '4' | '5' | '6' | 2 | 3 | 4 | 5 | 6;
+
+/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+export type DisclosureOverridableBinding =
+  | 'triggerPaddingBlock'
+  | 'triggerPaddingInline'
+  | 'triggerGap'
+  | 'triggerFontFamily'
+  | 'triggerFontSize'
+  | 'triggerFontWeight'
+  | 'triggerRadius'
+  | 'panelPaddingBlock'
+  | 'panelPaddingInline'
+  | 'disabledOpacity'
+  | 'transition';
 
 export interface DisclosureProps {
   /** The trigger's label. Also the trigger's accessible name. Says what will be revealed. */
@@ -27,6 +44,8 @@ export interface DisclosureProps {
   headingLevel?: DisclosureHeadingLevel;
   /** Fired after the state changes, with the new boolean `open`. */
   onToggle?: (open: boolean) => void;
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  overrides?: Partial<Record<DisclosureOverridableBinding, TokenRef>>;
 }
 
 /** Chevron rotation in degrees: pointing right when closed, down when open. */
@@ -62,6 +81,7 @@ export function Disclosure({
   keepMounted = false,
   headingLevel,
   onToggle,
+  overrides,
 }: DisclosureProps): React.JSX.Element {
   const { tokens } = useTheme();
   const reducedMotion = useReducedMotion();
@@ -69,6 +89,38 @@ export function Disclosure({
   const [focused, setFocused] = React.useState(false);
   const isOpen = open ?? internalOpen;
   const rotation = React.useRef(new Animated.Value(isOpen ? 1 : 0)).current;
+
+  const triggerPaddingBlock = overrides?.triggerPaddingBlock
+    ? (resolveToken(tokens, overrides.triggerPaddingBlock) as number)
+    : tokens.spaceSm;
+  const triggerPaddingInline = overrides?.triggerPaddingInline
+    ? (resolveToken(tokens, overrides.triggerPaddingInline) as number)
+    : tokens.spaceSm;
+  const triggerGap = overrides?.triggerGap ? (resolveToken(tokens, overrides.triggerGap) as number) : tokens.space2;
+  const triggerFontFamily = overrides?.triggerFontFamily
+    ? (resolveToken(tokens, overrides.triggerFontFamily) as string)
+    : tokens.fontFamilyBody;
+  const triggerFontSize = overrides?.triggerFontSize
+    ? (resolveToken(tokens, overrides.triggerFontSize) as number)
+    : tokens.fontSizeMd;
+  const triggerFontWeight = overrides?.triggerFontWeight
+    ? (resolveToken(tokens, overrides.triggerFontWeight) as number)
+    : tokens.fontWeightMedium;
+  const triggerRadius = overrides?.triggerRadius
+    ? (resolveToken(tokens, overrides.triggerRadius) as number)
+    : tokens.radiusMd;
+  const panelPaddingBlock = overrides?.panelPaddingBlock
+    ? (resolveToken(tokens, overrides.panelPaddingBlock) as number)
+    : tokens.spaceSm;
+  const panelPaddingInline = overrides?.panelPaddingInline
+    ? (resolveToken(tokens, overrides.panelPaddingInline) as number)
+    : tokens.spaceSm;
+  const disabledOpacity = overrides?.disabledOpacity
+    ? (resolveToken(tokens, overrides.disabledOpacity) as number)
+    : tokens.opacityDisabled;
+  const transitionDuration = overrides?.transition
+    ? (resolveToken(tokens, overrides.transition) as number)
+    : tokens.motionDurationBase;
 
   React.useEffect(() => {
     const toValue = isOpen ? 1 : 0;
@@ -78,12 +130,12 @@ export function Disclosure({
     }
     Animated.timing(rotation, {
       toValue,
-      duration: tokens.motionDurationBase,
+      duration: transitionDuration,
       easing: toEasing(tokens.motionEasingStandard),
       // react-native-web has no native animated module.
       useNativeDriver: Platform.OS !== 'web',
     }).start();
-  }, [isOpen, reducedMotion, rotation, tokens.motionDurationBase, tokens.motionEasingStandard]);
+  }, [isOpen, reducedMotion, rotation, transitionDuration, tokens.motionEasingStandard]);
 
   const handlePress = (): void => {
     if (disabled) {
@@ -100,59 +152,45 @@ export function Disclosure({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: tokens.space2,
+    gap: triggerGap,
     minHeight: tokens.sizeTargetMin,
     minWidth: tokens.sizeTargetMin,
-    paddingVertical: tokens.spaceSm,
-    paddingHorizontal: tokens.spaceSm,
-    borderRadius: tokens.radiusMd,
+    paddingVertical: triggerPaddingBlock,
+    paddingHorizontal: triggerPaddingInline,
+    borderRadius: triggerRadius,
     backgroundColor: pressed && !disabled ? tokens.colorBackgroundSubtle : 'transparent',
     borderWidth: tokens.borderWidthFocus,
     borderColor: focused ? tokens.colorBorderFocus : 'transparent',
-    opacity: disabled ? tokens.opacityDisabled : 1,
+    opacity: disabled ? disabledOpacity : 1,
   });
 
   const summaryStyle: TextStyle = {
-    fontFamily: tokens.fontFamilyBody,
-    fontSize: tokens.fontSizeMd,
-    fontWeight: toFontWeight(tokens.fontWeightMedium),
-    lineHeight: toLineHeight(tokens.fontSizeMd, tokens.fontLineHeightNormal),
+    fontFamily: triggerFontFamily,
+    fontSize: triggerFontSize,
+    fontWeight: toFontWeight(triggerFontWeight),
+    lineHeight: toLineHeight(triggerFontSize, tokens.fontLineHeightNormal),
     color: tokens.colorForeground,
     flexShrink: 1,
   };
 
-  // The chevron is 1em: a square of the font size holding a rotated, two-sided
-  // bordered box whose visible corner points right at rest.
-  const chevronBox = tokens.fontSizeMd;
-  const chevronArm = Math.round(chevronBox / 2);
+  // The chevron is 1em, rendered as `chevron-right` and rotated 90deg open, which
+  // matches the `chevron-down` glyph's path exactly.
   const chevronFrameStyle: Animated.WithAnimatedObject<ViewStyle> = {
-    width: chevronBox,
-    height: chevronBox,
-    alignItems: 'center',
-    justifyContent: 'center',
     transform: [
       {
         rotate: rotation.interpolate({ inputRange: [0, 1], outputRange: [CHEVRON_CLOSED, CHEVRON_OPEN] }),
       },
     ],
   };
-  const chevronShapeStyle: ViewStyle = {
-    width: chevronArm,
-    height: chevronArm,
-    borderTopWidth: tokens.borderWidthFocus,
-    borderRightWidth: tokens.borderWidthFocus,
-    borderColor: tokens.colorForegroundMuted,
-    transform: [{ rotate: '45deg' }, { translateX: -Math.round(chevronArm / 4) }],
-  };
 
   const panelStyle: ViewStyle = {
-    paddingVertical: tokens.spaceSm,
-    paddingHorizontal: tokens.spaceSm,
+    paddingVertical: panelPaddingBlock,
+    paddingHorizontal: panelPaddingInline,
     display: isOpen ? 'flex' : 'none',
   };
 
   return (
-    <View>
+    <View testID="Disclosure">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={summary}
@@ -162,8 +200,13 @@ export function Disclosure({
         onBlur={() => setFocused(false)}
         style={triggerStyle}
       >
-        <Animated.View style={chevronFrameStyle} accessibilityElementsHidden importantForAccessibility="no">
-          <View style={chevronShapeStyle} />
+        <Animated.View style={chevronFrameStyle}>
+          <Icon
+            name="chevron-right"
+            size="md"
+            color={tokens.colorForegroundMuted}
+            overrides={overrides?.triggerFontSize ? { size: overrides.triggerFontSize } : undefined}
+          />
         </Animated.View>
         <RNText
           accessibilityRole={headingLevel !== undefined ? 'header' : undefined}

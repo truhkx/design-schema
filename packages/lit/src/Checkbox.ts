@@ -1,7 +1,8 @@
-import { LitElement, css, html, nothing } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 
 /** Detail carried by the `change` CustomEvent. */
 export interface CheckboxChangeDetail {
@@ -12,6 +13,44 @@ export interface CheckboxChangeDetail {
 const COPY_REQUIRED = (label: string): string => `${label} is required.`;
 /** copy.requiredIndicator */
 const COPY_REQUIRED_INDICATOR = ' (required)';
+
+/** Overridable style hooks; see the `overrides` property. `controlBorder`, `controlSelectedBackground`, `indicator`, `labelColor`, `descriptionText`, `errorText`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
+export type CheckboxOverridableBinding =
+  | 'controlBackground'
+  | 'controlBorderWidth'
+  | 'indicatorStroke'
+  | 'pressedOverlay'
+  | 'controlBorderInvalid'
+  | 'controlSize'
+  | 'controlRadius'
+  | 'gap'
+  | 'partGap'
+  | 'labelSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'fontFamily'
+  | 'lineHeight'
+  | 'disabledOpacity'
+  | 'transition';
+
+const HOOKS: Record<CheckboxOverridableBinding, string> = {
+  controlBackground: '--ds-checkbox-control-background',
+  controlBorderWidth: '--ds-checkbox-control-border-width',
+  indicatorStroke: '--ds-checkbox-indicator-stroke',
+  pressedOverlay: '--ds-checkbox-pressed-overlay',
+  controlBorderInvalid: '--ds-checkbox-control-border-invalid',
+  controlSize: '--ds-checkbox-control-size',
+  controlRadius: '--ds-checkbox-control-radius',
+  gap: '--ds-checkbox-gap',
+  partGap: '--ds-checkbox-part-gap',
+  labelSize: '--ds-checkbox-label-size',
+  labelWeight: '--ds-checkbox-label-weight',
+  helperSize: '--ds-checkbox-helper-size',
+  fontFamily: `--ds-checkbox-font-family`,
+  lineHeight: '--ds-checkbox-line-height',
+  disabledOpacity: '--ds-checkbox-disabled-opacity',
+  transition: '--ds-checkbox-transition',
+};
 
 /**
  * `<ds-checkbox>` — Checkbox (category: input, APG pattern: checkbox).
@@ -53,7 +92,23 @@ export class DsCheckbox extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      font-family: var(--font-family-body);
+      font-family: var(--ds-checkbox-font-family);
+      --ds-checkbox-control-background: var(--color-control-background);
+      --ds-checkbox-control-border-width: var(--border-width-thin);
+      --ds-checkbox-indicator-stroke: var(--border-width-focus);
+      --ds-checkbox-pressed-overlay: var(--opacity-disabled);
+      --ds-checkbox-control-border-invalid: var(--color-border-danger);
+      --ds-checkbox-control-size: var(--space-5);
+      --ds-checkbox-control-radius: var(--radius-sm);
+      --ds-checkbox-gap: var(--space-2);
+      --ds-checkbox-part-gap: var(--space-1);
+      --ds-checkbox-label-size: var(--font-size-md);
+      --ds-checkbox-label-weight: var(--font-weight-regular);
+      --ds-checkbox-helper-size: var(--font-size-sm);
+      --ds-checkbox-font-family: var(--font-family-body);
+      --ds-checkbox-line-height: var(--font-line-height-normal);
+      --ds-checkbox-disabled-opacity: var(--opacity-disabled);
+      --ds-checkbox-transition: var(--motion-duration-fast);
     }
 
     :host([hidden]) {
@@ -64,7 +119,7 @@ export class DsCheckbox extends LitElement {
     .row {
       display: flex;
       align-items: flex-start;
-      gap: var(--space-2);
+      gap: var(--ds-checkbox-gap);
       min-block-size: var(--size-target-comfortable);
       cursor: pointer;
     }
@@ -73,30 +128,34 @@ export class DsCheckbox extends LitElement {
       position: relative;
       flex: none;
       box-sizing: border-box;
-      inline-size: var(--space-5);
-      block-size: var(--space-5);
+      inline-size: var(--ds-checkbox-control-size);
+      block-size: var(--ds-checkbox-control-size);
       margin: 0;
       /* Center the control on the first line of the label. */
-      margin-block-start: calc((var(--font-size-md) * var(--font-line-height-normal) - var(--space-5)) / 2);
-      border: var(--border-width-thin) solid var(--color-control-border);
-      border-radius: var(--radius-sm);
-      background: var(--color-control-background);
+      margin-block-start: calc(
+        (var(--ds-checkbox-label-size) * var(--ds-checkbox-line-height) - var(--ds-checkbox-control-size)) / 2
+      );
+      border-width: var(--ds-checkbox-control-border-width);
+      border-style: solid;
+      border-color: var(--color-control-border);
+      border-radius: var(--ds-checkbox-control-radius);
+      background: var(--ds-checkbox-control-background);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
       transition:
-        background-color var(--motion-duration-fast) var(--motion-easing-standard),
-        border-color var(--motion-duration-fast) var(--motion-easing-standard);
+        background-color var(--ds-checkbox-transition) var(--motion-easing-standard),
+        border-color var(--ds-checkbox-transition) var(--motion-easing-standard);
     }
 
-    /* pressedOverlay: while pressed, the box shows controlSelectedBackground at opacity.disabled */
+    /* pressedOverlay: while pressed, the box shows controlSelectedBackground at this opacity */
     .control:active:not(:checked):not(:indeterminate)::before {
       content: '';
       position: absolute;
       inset: 0;
       border-radius: inherit;
       background: var(--color-control-selected-background);
-      opacity: var(--opacity-disabled);
+      opacity: var(--ds-checkbox-pressed-overlay);
     }
     :host([disabled]) .control:active::before {
       content: none;
@@ -110,7 +169,7 @@ export class DsCheckbox extends LitElement {
       margin: auto;
       box-sizing: border-box;
       opacity: 0;
-      transition: opacity var(--motion-duration-fast) var(--motion-easing-standard);
+      transition: opacity var(--ds-checkbox-transition) var(--motion-easing-standard);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -128,25 +187,25 @@ export class DsCheckbox extends LitElement {
     }
 
     .control:checked::after {
-      inline-size: calc((var(--space-5) - 2 * var(--space-1)) * 0.5);
-      block-size: calc(var(--space-5) - 2 * var(--space-1));
+      inline-size: calc((var(--ds-checkbox-control-size) - 2 * var(--space-1)) * 0.5);
+      block-size: calc(var(--ds-checkbox-control-size) - 2 * var(--space-1));
       margin-block-start: calc(var(--space-1) * -0.5);
-      border-inline-end: var(--border-width-focus) solid var(--color-control-selected-foreground);
-      border-block-end: var(--border-width-focus) solid var(--color-control-selected-foreground);
+      border-inline-end: var(--ds-checkbox-indicator-stroke) solid var(--color-control-selected-foreground);
+      border-block-end: var(--ds-checkbox-indicator-stroke) solid var(--color-control-selected-foreground);
       transform: rotate(45deg) scale(0.8);
       opacity: 1;
     }
 
     .control:indeterminate::after {
-      inline-size: calc(var(--space-5) - 2 * var(--space-1));
-      block-size: var(--border-width-focus);
+      inline-size: calc(var(--ds-checkbox-control-size) - 2 * var(--space-1));
+      block-size: var(--ds-checkbox-indicator-stroke);
       background: var(--color-control-selected-foreground);
       opacity: 1;
     }
 
     /* controlBorderInvalid */
     :host([invalid]) .control {
-      border-color: var(--color-border-danger);
+      border-color: var(--ds-checkbox-control-border-invalid);
     }
 
     .control:focus-visible {
@@ -154,9 +213,9 @@ export class DsCheckbox extends LitElement {
       outline-offset: var(--border-width-focus);
     }
 
-    /* disabled: stays focusable; dimmed with opacity.disabled */
+    /* disabled: stays focusable; dimmed with disabledOpacity */
     :host([disabled]) .row {
-      opacity: var(--opacity-disabled);
+      opacity: var(--ds-checkbox-disabled-opacity);
       cursor: not-allowed;
     }
     :host([disabled]) .control {
@@ -166,14 +225,14 @@ export class DsCheckbox extends LitElement {
     .text {
       display: flex;
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--ds-checkbox-part-gap);
       min-inline-size: 0;
     }
 
     .label {
-      font-size: var(--font-size-md);
-      font-weight: var(--font-weight-regular);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-checkbox-label-size);
+      font-weight: var(--ds-checkbox-label-weight);
+      line-height: var(--ds-checkbox-line-height);
       color: var(--color-foreground);
       cursor: pointer;
     }
@@ -184,14 +243,14 @@ export class DsCheckbox extends LitElement {
 
     .description {
       margin: 0;
-      font-size: var(--font-size-sm);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-checkbox-helper-size);
+      line-height: var(--ds-checkbox-line-height);
       color: var(--color-foreground-muted);
     }
 
     .error {
-      font-size: var(--font-size-sm);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-checkbox-helper-size);
+      line-height: var(--ds-checkbox-line-height);
       color: var(--color-foreground-danger);
     }
     .error:empty {
@@ -229,6 +288,9 @@ export class DsCheckbox extends LitElement {
   /** Marks the control as failing validation. Usually set by the Form; can be set directly. */
   @property({ type: Boolean, reflect: true }) invalid = false;
 
+  /** Per-instance style overrides: `{ controlRadius: 'radius.sm' }`. Locked bindings are ignored. */
+  @property({ attribute: false }) overrides?: Partial<Record<CheckboxOverridableBinding, TokenRef>>;
+
   private errorValue?: string;
 
   /** The error message. Setting it implies `invalid`. Say what to do. */
@@ -257,6 +319,11 @@ export class DsCheckbox extends LitElement {
   constructor() {
     super();
     this.internals = this.attachInternals();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'Checkbox');
   }
 
   /** Whether the control is currently checked. */
@@ -309,9 +376,12 @@ export class DsCheckbox extends LitElement {
     }
   }
 
-  protected override willUpdate(): void {
+  protected override willUpdate(changed: PropertyValues): void {
     if (!this.hasUpdated) {
       this.internalChecked = this.defaultChecked;
+    }
+    if (changed.has('overrides')) {
+      this.applyOverrides();
     }
   }
 
@@ -429,6 +499,18 @@ export class DsCheckbox extends LitElement {
       this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor);
     } else {
       this.internals.setValidity({});
+    }
+  }
+
+  private applyOverrides(): void {
+    for (const binding of Object.keys(HOOKS) as CheckboxOverridableBinding[]) {
+      const ref = this.overrides?.[binding];
+      const hook = HOOKS[binding];
+      if (ref === undefined) {
+        this.style.removeProperty(hook);
+      } else {
+        this.style.setProperty(hook, cssVar(ref));
+      }
     }
   }
 }

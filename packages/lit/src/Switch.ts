@@ -1,7 +1,8 @@
-import { LitElement, css, html, nothing } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 
 export type SwitchLabelPosition = 'start' | 'end';
 
@@ -9,6 +10,40 @@ export type SwitchLabelPosition = 'start' | 'end';
 export interface SwitchChangeDetail {
   checked: boolean;
 }
+
+/** Overridable style hooks; see the `overrides` property. `trackOff`, `trackOn`, `thumb`, `labelColor`, `descriptionText`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
+export type SwitchOverridableBinding =
+  | 'trackWidth'
+  | 'trackHeight'
+  | 'thumbSize'
+  | 'thumbInset'
+  | 'radius'
+  | 'gap'
+  | 'partGap'
+  | 'labelSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'fontFamily'
+  | 'lineHeight'
+  | 'disabledOpacity'
+  | 'transition';
+
+const HOOKS: Record<SwitchOverridableBinding, string> = {
+  trackWidth: '--ds-switch-track-width',
+  trackHeight: '--ds-switch-track-height',
+  thumbSize: '--ds-switch-thumb-size',
+  thumbInset: '--ds-switch-thumb-inset',
+  radius: '--ds-switch-radius',
+  gap: '--ds-switch-gap',
+  partGap: '--ds-switch-part-gap',
+  labelSize: '--ds-switch-label-size',
+  labelWeight: '--ds-switch-label-weight',
+  helperSize: '--ds-switch-helper-size',
+  fontFamily: `--ds-switch-font-family`,
+  lineHeight: '--ds-switch-line-height',
+  disabledOpacity: '--ds-switch-disabled-opacity',
+  transition: '--ds-switch-transition',
+};
 
 /**
  * `<ds-switch>` — Switch (category: input, APG pattern: switch).
@@ -48,7 +83,21 @@ export class DsSwitch extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      font-family: var(--font-family-body);
+      font-family: var(--ds-switch-font-family);
+      --ds-switch-track-width: var(--space-10);
+      --ds-switch-track-height: var(--space-6);
+      --ds-switch-thumb-size: var(--space-5);
+      --ds-switch-thumb-inset: var(--space-1);
+      --ds-switch-radius: var(--radius-full);
+      --ds-switch-gap: var(--space-3);
+      --ds-switch-part-gap: var(--space-1);
+      --ds-switch-label-size: var(--font-size-md);
+      --ds-switch-label-weight: var(--font-weight-regular);
+      --ds-switch-helper-size: var(--font-size-sm);
+      --ds-switch-font-family: var(--font-family-body);
+      --ds-switch-line-height: var(--font-line-height-normal);
+      --ds-switch-disabled-opacity: var(--opacity-disabled);
+      --ds-switch-transition: var(--motion-duration-fast);
     }
 
     :host([hidden]) {
@@ -59,7 +108,7 @@ export class DsSwitch extends LitElement {
     .row {
       display: flex;
       align-items: flex-start;
-      gap: var(--space-3);
+      gap: var(--ds-switch-gap);
       min-block-size: var(--size-target-comfortable);
       cursor: pointer;
     }
@@ -79,46 +128,52 @@ export class DsSwitch extends LitElement {
       order: 1;
     }
 
-    /* track: trackWidth × trackHeight, radius.full */
+    /* track: trackWidth × trackHeight, radius */
     .control {
       position: relative;
       flex: none;
       box-sizing: border-box;
-      inline-size: var(--space-10);
-      block-size: var(--space-6);
+      inline-size: var(--ds-switch-track-width);
+      block-size: var(--ds-switch-track-height);
       margin: 0;
       /* Center the track on the first line of the label. */
-      margin-block-start: calc((var(--font-size-md) * var(--font-line-height-normal) - var(--space-6)) / 2);
+      margin-block-start: calc(
+        (var(--ds-switch-label-size) * var(--ds-switch-line-height) - var(--ds-switch-track-height)) / 2
+      );
       border: 0;
-      border-radius: var(--radius-full);
+      border-radius: var(--ds-switch-radius);
       background: var(--color-control-track-off);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
-      transition: background-color var(--motion-duration-fast) var(--motion-easing-standard);
+      transition: background-color var(--ds-switch-transition) var(--motion-easing-standard);
     }
 
     /* thumb: thumbSize, inset by thumbInset, travels trackWidth − thumbSize − 2 × thumbInset */
     .control::after {
       content: '';
       position: absolute;
-      inset-block-start: calc((var(--space-6) - var(--space-5)) / 2);
-      inset-inline-start: var(--space-1);
-      inline-size: var(--space-5);
-      block-size: var(--space-5);
-      border-radius: var(--radius-full);
+      inset-block-start: calc((var(--ds-switch-track-height) - var(--ds-switch-thumb-size)) / 2);
+      inset-inline-start: var(--ds-switch-thumb-inset);
+      inline-size: var(--ds-switch-thumb-size);
+      block-size: var(--ds-switch-thumb-size);
+      border-radius: var(--ds-switch-radius);
       background: var(--color-control-selected-foreground);
-      transition: transform var(--motion-duration-fast) var(--motion-easing-standard);
+      transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
     }
 
     .control:checked {
       background: var(--color-control-selected-background);
     }
     .control:checked::after {
-      transform: translateX(calc(var(--space-10) - var(--space-5) - 2 * var(--space-1)));
+      transform: translateX(
+        calc(var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset))
+      );
     }
     :host(:dir(rtl)) .control:checked::after {
-      transform: translateX(calc(-1 * (var(--space-10) - var(--space-5) - 2 * var(--space-1))));
+      transform: translateX(
+        calc(-1 * (var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset)))
+      );
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -135,7 +190,7 @@ export class DsSwitch extends LitElement {
     }
 
     :host([disabled]) .row {
-      opacity: var(--opacity-disabled);
+      opacity: var(--ds-switch-disabled-opacity);
       cursor: not-allowed;
     }
     :host([disabled]) .control {
@@ -145,22 +200,22 @@ export class DsSwitch extends LitElement {
     .text {
       display: flex;
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--ds-switch-part-gap);
       min-inline-size: 0;
     }
 
     .label {
-      font-size: var(--font-size-md);
-      font-weight: var(--font-weight-regular);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-switch-label-size);
+      font-weight: var(--ds-switch-label-weight);
+      line-height: var(--ds-switch-line-height);
       color: var(--color-foreground);
       cursor: pointer;
     }
 
     .description {
       margin: 0;
-      font-size: var(--font-size-sm);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-switch-helper-size);
+      line-height: var(--ds-switch-line-height);
       color: var(--color-foreground-muted);
     }
   `;
@@ -186,6 +241,9 @@ export class DsSwitch extends LitElement {
   /** Where the label sits relative to the track. `start` is the settings-list convention. */
   @property({ reflect: true, attribute: 'label-position' }) labelPosition: SwitchLabelPosition = 'start';
 
+  /** Per-instance style overrides: `{ trackWidth: 'space.12' }`. Locked bindings are ignored. */
+  @property({ attribute: false }) overrides?: Partial<Record<SwitchOverridableBinding, TokenRef>>;
+
   /** Uncontrolled checked state (seeded from `defaultChecked`). */
   @state() private internalChecked = false;
 
@@ -199,6 +257,11 @@ export class DsSwitch extends LitElement {
   constructor() {
     super();
     this.internals = this.attachInternals();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'Switch');
   }
 
   /** Whether the switch is currently on. */
@@ -243,9 +306,12 @@ export class DsSwitch extends LitElement {
     }
   }
 
-  protected override willUpdate(): void {
+  protected override willUpdate(changed: PropertyValues<this>): void {
     if (!this.hasUpdated) {
       this.internalChecked = this.defaultChecked;
+    }
+    if (changed.has('overrides')) {
+      this.applyOverrides();
     }
   }
 
@@ -331,6 +397,18 @@ export class DsSwitch extends LitElement {
       return;
     }
     this.internals.setFormValue(this.currentChecked ? 'on' : null);
+  }
+
+  private applyOverrides(): void {
+    for (const binding of Object.keys(HOOKS) as SwitchOverridableBinding[]) {
+      const ref = this.overrides?.[binding];
+      const hook = HOOKS[binding];
+      if (ref === undefined) {
+        this.style.removeProperty(hook);
+      } else {
+        this.style.setProperty(hook, cssVar(ref));
+      }
+    }
   }
 }
 

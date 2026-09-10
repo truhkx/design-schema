@@ -1,7 +1,8 @@
-import { LitElement, css, html, nothing } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 
 export type RadioGroupOrientation = 'vertical' | 'horizontal';
 
@@ -22,6 +23,44 @@ export interface RadioGroupChangeDetail {
 const COPY_REQUIRED = (label: string): string => `${label} is required.`;
 /** copy.requiredIndicator */
 const COPY_REQUIRED_INDICATOR = ' (required)';
+
+/** Overridable style hooks; see the `overrides` property. `controlBackground`, `controlBorder`, `controlSelectedBackground`, `indicator`, `legendColor`, `labelColor`, `descriptionText`, `errorText`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
+export type RadioGroupOverridableBinding =
+  | 'controlBorderWidth'
+  | 'controlBorderInvalid'
+  | 'controlSize'
+  | 'controlRadius'
+  | 'optionGap'
+  | 'listGap'
+  | 'partGap'
+  | 'legendSize'
+  | 'legendWeight'
+  | 'labelSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'fontFamily'
+  | 'lineHeight'
+  | 'disabledOpacity'
+  | 'transition';
+
+const HOOKS: Record<RadioGroupOverridableBinding, string> = {
+  controlBorderWidth: '--ds-radio-group-control-border-width',
+  controlBorderInvalid: '--ds-radio-group-control-border-invalid',
+  controlSize: '--ds-radio-group-control-size',
+  controlRadius: '--ds-radio-group-control-radius',
+  optionGap: '--ds-radio-group-option-gap',
+  listGap: '--ds-radio-group-list-gap',
+  partGap: '--ds-radio-group-part-gap',
+  legendSize: '--ds-radio-group-legend-size',
+  legendWeight: '--ds-radio-group-legend-weight',
+  labelSize: '--ds-radio-group-label-size',
+  labelWeight: '--ds-radio-group-label-weight',
+  helperSize: '--ds-radio-group-helper-size',
+  fontFamily: '--ds-radio-group-font-family', // literal-ok: CSS custom-property name, not a font stack
+  lineHeight: '--ds-radio-group-line-height',
+  disabledOpacity: '--ds-radio-group-disabled-opacity',
+  transition: '--ds-radio-group-transition',
+};
 
 /**
  * `<ds-radio-group>` — RadioGroup (category: input, APG pattern: radio).
@@ -67,7 +106,23 @@ export class DsRadioGroup extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      font-family: var(--font-family-body);
+      font-family: var(--ds-radio-group-font-family);
+      --ds-radio-group-control-border-width: var(--border-width-thin);
+      --ds-radio-group-control-border-invalid: var(--color-border-danger);
+      --ds-radio-group-control-size: var(--space-5);
+      --ds-radio-group-control-radius: var(--radius-full);
+      --ds-radio-group-option-gap: var(--space-2);
+      --ds-radio-group-list-gap: var(--space-2);
+      --ds-radio-group-part-gap: var(--space-1);
+      --ds-radio-group-legend-size: var(--font-size-md);
+      --ds-radio-group-legend-weight: var(--font-weight-medium);
+      --ds-radio-group-label-size: var(--font-size-md);
+      --ds-radio-group-label-weight: var(--font-weight-regular);
+      --ds-radio-group-helper-size: var(--font-size-sm);
+      --ds-radio-group-font-family: var(--font-family-body);
+      --ds-radio-group-line-height: var(--font-line-height-normal);
+      --ds-radio-group-disabled-opacity: var(--opacity-disabled);
+      --ds-radio-group-transition: var(--motion-duration-fast);
     }
 
     :host([hidden]) {
@@ -77,7 +132,7 @@ export class DsRadioGroup extends LitElement {
     fieldset {
       display: flex;
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--ds-radio-group-part-gap);
       min-inline-size: 0;
       margin: 0;
       padding: 0;
@@ -86,23 +141,23 @@ export class DsRadioGroup extends LitElement {
 
     /* A <legend> does not take part in the fieldset's flex gap, so partGap below it is a margin. */
     legend {
-      margin-block-end: var(--space-1);
+      margin-block-end: var(--ds-radio-group-part-gap);
       padding: 0;
-      font-size: var(--font-size-md);
-      font-weight: var(--font-weight-medium);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-radio-group-legend-size);
+      font-weight: var(--ds-radio-group-legend-weight);
+      line-height: var(--ds-radio-group-line-height);
       color: var(--color-foreground);
     }
 
     .required {
-      font-weight: var(--font-weight-regular);
+      font-weight: var(--ds-radio-group-label-weight);
       color: var(--color-foreground-muted);
     }
 
     .description {
       margin: 0;
-      font-size: var(--font-size-sm);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-radio-group-helper-size);
+      line-height: var(--ds-radio-group-line-height);
       color: var(--color-foreground-muted);
     }
 
@@ -110,20 +165,20 @@ export class DsRadioGroup extends LitElement {
     .list {
       display: flex;
       flex-direction: column;
-      gap: var(--space-2);
+      gap: var(--ds-radio-group-list-gap);
     }
     :host([orientation='horizontal']) .list {
       flex-direction: row;
       flex-wrap: wrap;
       column-gap: var(--space-4);
-      row-gap: var(--space-2);
+      row-gap: var(--ds-radio-group-list-gap);
     }
 
     /* minTarget: each option row is the hit area */
     .option {
       display: flex;
       align-items: flex-start;
-      gap: var(--space-2);
+      gap: var(--ds-radio-group-option-gap);
       min-block-size: var(--size-target-comfortable);
       cursor: pointer;
     }
@@ -132,17 +187,22 @@ export class DsRadioGroup extends LitElement {
       position: relative;
       flex: none;
       box-sizing: border-box;
-      inline-size: var(--space-5);
-      block-size: var(--space-5);
+      inline-size: var(--ds-radio-group-control-size);
+      block-size: var(--ds-radio-group-control-size);
       margin: 0;
-      margin-block-start: calc((var(--font-size-md) * var(--font-line-height-normal) - var(--space-5)) / 2);
-      border: var(--border-width-thin) solid var(--color-control-border);
-      border-radius: var(--radius-full);
+      margin-block-start: calc(
+        (var(--ds-radio-group-label-size) * var(--ds-radio-group-line-height) - var(--ds-radio-group-control-size)) /
+          2
+      );
+      border-width: var(--ds-radio-group-control-border-width);
+      border-style: solid;
+      border-color: var(--color-control-border);
+      border-radius: var(--ds-radio-group-control-radius);
       background: var(--color-control-background);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
-      transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
+      transition: border-color var(--ds-radio-group-transition) var(--motion-easing-standard);
     }
 
     /* indicator: the centre dot, controlSize minus 2 × space.1 in diameter */
@@ -151,12 +211,16 @@ export class DsRadioGroup extends LitElement {
       position: absolute;
       inset: 0;
       margin: auto;
-      inline-size: calc(var(--space-5) - 2 * var(--space-1) - 2 * var(--border-width-thin));
-      block-size: calc(var(--space-5) - 2 * var(--space-1) - 2 * var(--border-width-thin));
+      inline-size: calc(
+        var(--ds-radio-group-control-size) - 2 * var(--space-1) - 2 * var(--ds-radio-group-control-border-width)
+      );
+      block-size: calc(
+        var(--ds-radio-group-control-size) - 2 * var(--space-1) - 2 * var(--ds-radio-group-control-border-width)
+      );
       border-radius: var(--radius-full);
       background: var(--color-control-selected-background);
       transform: scale(0);
-      transition: transform var(--motion-duration-fast) var(--motion-easing-standard);
+      transition: transform var(--ds-radio-group-transition) var(--motion-easing-standard);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -175,7 +239,7 @@ export class DsRadioGroup extends LitElement {
     }
 
     :host([invalid]) .radio {
-      border-color: var(--color-border-danger);
+      border-color: var(--ds-radio-group-control-border-invalid);
     }
 
     .radio:focus-visible {
@@ -185,7 +249,7 @@ export class DsRadioGroup extends LitElement {
 
     :host([disabled]) .option,
     .option.is-disabled {
-      opacity: var(--opacity-disabled);
+      opacity: var(--ds-radio-group-disabled-opacity);
       cursor: not-allowed;
     }
     :host([disabled]) .radio,
@@ -196,21 +260,21 @@ export class DsRadioGroup extends LitElement {
     .text {
       display: flex;
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--ds-radio-group-part-gap);
       min-inline-size: 0;
     }
 
     .label {
-      font-size: var(--font-size-md);
-      font-weight: var(--font-weight-regular);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-radio-group-label-size);
+      font-weight: var(--ds-radio-group-label-weight);
+      line-height: var(--ds-radio-group-line-height);
       color: var(--color-foreground);
       cursor: pointer;
     }
 
     .error {
-      font-size: var(--font-size-sm);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-radio-group-helper-size);
+      line-height: var(--ds-radio-group-line-height);
       color: var(--color-foreground-danger);
     }
     .error:empty {
@@ -248,6 +312,9 @@ export class DsRadioGroup extends LitElement {
   /** Marks the group as failing validation. Usually set by the Form; can be set directly. */
   @property({ type: Boolean, reflect: true }) invalid = false;
 
+  /** Per-instance style overrides: `{ controlRadius: 'radius.sm' }`. Locked bindings are ignored. */
+  @property({ attribute: false }) overrides?: Partial<Record<RadioGroupOverridableBinding, TokenRef>>;
+
   private errorValue?: string;
 
   /** The group's error message. Setting it implies `invalid`. */
@@ -274,6 +341,11 @@ export class DsRadioGroup extends LitElement {
   constructor() {
     super();
     this.internals = this.attachInternals();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'RadioGroup');
   }
 
   /** The currently selected option value, or `null` when nothing is selected (no key in the Form). */
@@ -320,9 +392,12 @@ export class DsRadioGroup extends LitElement {
     }
   }
 
-  protected override willUpdate(): void {
+  protected override willUpdate(changed: PropertyValues): void {
     if (!this.hasUpdated) {
       this.internalValue = this.defaultValue;
+    }
+    if (changed.has('overrides')) {
+      this.applyOverrides();
     }
   }
 
@@ -471,6 +546,18 @@ export class DsRadioGroup extends LitElement {
       this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor);
     } else {
       this.internals.setValidity({});
+    }
+  }
+
+  private applyOverrides(): void {
+    for (const binding of Object.keys(HOOKS) as RadioGroupOverridableBinding[]) {
+      const ref = this.overrides?.[binding];
+      const hook = HOOKS[binding];
+      if (ref === undefined) {
+        this.style.removeProperty(hook);
+      } else {
+        this.style.setProperty(hook, cssVar(ref));
+      }
     }
   }
 }

@@ -1,12 +1,36 @@
 import * as React from 'react';
-import { AccessibilityInfo, Platform, Pressable, View, findNodeHandle } from 'react-native';
+import { AccessibilityInfo, Animated, Platform, Pressable, View, findNodeHandle } from 'react-native';
 import type { ViewStyle } from 'react-native';
+import { resolveToken } from '@design-schema/tokens';
+import type { TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Text } from './Text';
-import { toLineHeight, useTheme } from './theme';
+import { toEasing, useReducedMotion, useTheme } from './theme';
 
 export type RadioGroupOrientation = 'vertical' | 'horizontal';
+
+/** One option. `value` is a short identifier (letters, digits, dashes). */
+export type RadioGroupOption = { value: string; label: string; description?: string; disabled?: boolean };
+
+/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+export type RadioGroupOverridableBinding =
+  | 'controlBorderWidth'
+  | 'controlBorderInvalid'
+  | 'controlSize'
+  | 'controlRadius'
+  | 'optionGap'
+  | 'listGap'
+  | 'partGap'
+  | 'legendSize'
+  | 'legendWeight'
+  | 'labelSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'fontFamily'
+  | 'lineHeight'
+  | 'disabledOpacity'
+  | 'transition';
 
 export interface RadioGroupProps {
   /** The group's legend — the question the options answer. Always visible. Also the group's `accessibilityLabel`. */
@@ -14,7 +38,7 @@ export interface RadioGroupProps {
   /** Field name used by the enclosing Form. */
   name: string;
   /** The options in display order. Two to about seven; more than that is a Select (planned). */
-  options: { value: string; label: string; description?: string; disabled?: boolean }[];
+  options: RadioGroupOption[];
   /** Controlled selected value. Omit for an uncontrolled group. */
   value?: string;
   /** Initial selection for an uncontrolled group. Omit to start with nothing selected. */
@@ -31,15 +55,15 @@ export interface RadioGroupProps {
   description?: string;
   /** The group's error message. Setting it marks the group invalid. */
   error?: string;
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  overrides?: Partial<Record<RadioGroupOverridableBinding, TokenRef>>;
   /** Fired when the selection changes, with the new option value. */
   onChange?: (value: string) => void;
 }
 
-/** One option of a RadioGroup — the element type of the schema's `options` shape. */
-export type RadioOption = RadioGroupProps['options'][number];
-
 const COPY = {
   required: (label: string): string => `${label} is required.`,
+  invalid: (label: string): string => `${label} is not valid.`,
   requiredIndicator: ' (required)',
 } as const;
 
@@ -58,13 +82,17 @@ const COPY = {
  * option with `accessibilityRole="radio"`, `accessibilityLabel` (label plus
  * description) and `accessibilityState={{ checked, disabled }}`. There is no roving
  * tabindex or arrow movement on native — every radio is its own focus stop, which is
- * the platform convention. Individually disabled options are natively disabled and
- * skipped; a fully `disabled` group stays reachable but inert. Inside a Form the
- * group registers by `name` and contributes the selected value (no key when nothing
- * is selected); `required` with nothing selected fails submit with `copy.required`
- * (precedence: `error`, then `required`; `invalid` only marks the controls) and
- * focus moves to the first enabled radio. `validate: blur` runs on change, since a
- * group-level blur does not exist on native. The group error is announced as in Input.
+ * the platform convention. Individually disabled options stay focus stops (native
+ * `disabled` is reserved for `Switch`) but are guarded against press and dimmed;
+ * a fully `disabled` group stays reachable but inert. The selected border and dot
+ * cross-fade in over `transition` with `motion.easing.standard` (skipped under
+ * reduced motion); the fill never changes, only the border and dot. Inside a Form
+ * the group registers by `name` and contributes the selected value (no key when
+ * nothing is selected); validation precedence is `error`, then `required`
+ * (`copy.required`), then `invalid` (`copy.invalid`), same as Input, and focus moves
+ * to the first enabled radio on a failed submit. `validate: blur` runs on change,
+ * since a group-level blur does not exist on native. The group error is announced
+ * as in Input.
  */
 export function RadioGroup({
   label,
@@ -78,10 +106,12 @@ export function RadioGroup({
   disabled = false,
   description,
   error,
+  overrides,
   onChange,
 }: RadioGroupProps): React.JSX.Element {
-  const { tokens } = useTheme();
+  const { tokens: t } = useTheme();
   const form = useFormContext();
+  const reducedMotion = useReducedMotion();
   const groupRef = React.useRef<View>(null);
   const firstEnabledRef = React.useRef<View>(null);
   const [internalValue, setInternalValue] = React.useState<string | undefined>(defaultValue);
@@ -96,15 +126,19 @@ export function RadioGroup({
 
   const validateValue = React.useCallback(
     (candidate: string | undefined): string | null => {
+      // Precedence: `error` prop, then `required`, then `invalid` — same order as Input.
       if (error !== undefined && error !== '') {
         return error;
       }
       if (required && candidate === undefined) {
         return COPY.required(label);
       }
+      if (invalid) {
+        return COPY.invalid(label);
+      }
       return null;
     },
-    [error, required, label],
+    [error, required, invalid, label],
   );
 
   const latest = React.useRef({ currentValue, validateValue });
@@ -156,76 +190,122 @@ export function RadioGroup({
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
   const firstEnabledValue = options.find((option) => option.disabled !== true)?.value;
-  const dotSize = tokens.space5 - 2 * tokens.space1;
-  const lineHeight = toLineHeight(tokens.fontSizeMd, tokens.fontLineHeightNormal);
+
+  const controlBorderWidth = overrides?.controlBorderWidth ? (resolveToken(t, overrides.controlBorderWidth) as number) : t.borderWidthThin;
+  const controlBorderInvalid = overrides?.controlBorderInvalid ? (resolveToken(t, overrides.controlBorderInvalid) as string) : t.colorBorderDanger;
+  const controlSize = overrides?.controlSize ? (resolveToken(t, overrides.controlSize) as number) : t.space5;
+  const controlRadius = overrides?.controlRadius ? (resolveToken(t, overrides.controlRadius) as number) : t.radiusFull;
+  const optionGap = overrides?.optionGap ? (resolveToken(t, overrides.optionGap) as number) : t.space2;
+  const listGap = overrides?.listGap ? (resolveToken(t, overrides.listGap) as number) : t.space2;
+  const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
+  const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
+  const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
+
+  // The centre dot is controlSize minus 2 × space.1 in diameter — a fixed relationship, not overridable.
+  const dotSize = controlSize - 2 * t.space1;
+
+  // One cross-fade per option, keyed by value; the fill never changes, only the border and dot.
+  const fillAnimsRef = React.useRef<Map<string, Animated.Value>>(new Map());
+  const getFillAnim = (optionValue: string, selected: boolean): Animated.Value => {
+    let anim = fillAnimsRef.current.get(optionValue);
+    if (anim === undefined) {
+      anim = new Animated.Value(selected ? 1 : 0);
+      fillAnimsRef.current.set(optionValue, anim);
+    }
+    return anim;
+  };
+
+  const optionValues = React.useMemo(() => options.map((option) => option.value), [options]);
+
+  React.useEffect(() => {
+    optionValues.forEach((optionValue) => {
+      const selected = optionValue === currentValue;
+      const anim = getFillAnim(optionValue, selected);
+      const toValue = selected ? 1 : 0;
+      if (reducedMotion) {
+        anim.setValue(toValue);
+        return;
+      }
+      Animated.timing(anim, {
+        toValue,
+        duration: transitionDuration,
+        easing: toEasing(t.motionEasingStandard),
+        useNativeDriver: false,
+      }).start();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentValue, optionValues, reducedMotion, transitionDuration, t.motionEasingStandard]);
 
   const groupStyle: ViewStyle = {
     flexDirection: 'column',
-    gap: tokens.space1,
-    opacity: isDisabled ? tokens.opacityDisabled : 1,
+    gap: partGap,
+    opacity: isDisabled ? disabledOpacity : 1,
   };
 
   const listStyle: ViewStyle = {
     flexDirection: orientation === 'horizontal' ? 'row' : 'column',
     flexWrap: orientation === 'horizontal' ? 'wrap' : 'nowrap',
-    gap: tokens.space2,
+    gap: listGap,
   };
 
   const optionStyle = (optionDisabled: boolean): ViewStyle => ({
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: tokens.space2,
-    minHeight: tokens.sizeTargetComfortable,
-    paddingVertical: tokens.space1,
-    opacity: optionDisabled && !isDisabled ? tokens.opacityDisabled : 1,
+    gap: optionGap,
+    minHeight: t.sizeTargetComfortable,
+    paddingVertical: t.space1,
+    opacity: optionDisabled && !isDisabled ? disabledOpacity : 1,
   });
 
-  const controlCellStyle: ViewStyle = {
-    height: lineHeight,
-    justifyContent: 'center',
-  };
-
-  const controlStyle = (selected: boolean, focused: boolean): ViewStyle => ({
-    width: tokens.space5,
-    height: tokens.space5,
-    borderRadius: tokens.radiusFull,
-    borderWidth: focused ? tokens.borderWidthFocus : tokens.borderWidthThin,
+  const controlStyle = (anim: Animated.Value, focused: boolean): Animated.WithAnimatedObject<ViewStyle> => ({
+    width: controlSize,
+    height: controlSize,
+    borderRadius: controlRadius,
+    borderWidth: focused ? t.borderWidthFocus : controlBorderWidth,
     borderColor: focused
-      ? tokens.colorBorderFocus
+      ? t.colorBorderFocus
       : isInvalid
-        ? tokens.colorBorderDanger
-        : selected
-          ? tokens.colorControlSelectedBackground
-          : tokens.colorControlBorder,
-    backgroundColor: tokens.colorControlBackground,
+        ? controlBorderInvalid
+        : anim.interpolate({ inputRange: [0, 1], outputRange: [t.colorControlBorder, t.colorControlSelectedBackground] }),
+    backgroundColor: t.colorControlBackground,
     alignItems: 'center',
     justifyContent: 'center',
   });
 
-  const dotStyle: ViewStyle = {
+  const dotStyle = (anim: Animated.Value): Animated.WithAnimatedObject<ViewStyle> => ({
     width: dotSize,
     height: dotSize,
-    borderRadius: tokens.radiusFull,
-    backgroundColor: tokens.colorControlSelectedBackground,
-  };
+    borderRadius: controlRadius,
+    backgroundColor: t.colorControlSelectedBackground,
+    opacity: anim,
+  });
 
   const textColumnStyle: ViewStyle = {
     flexShrink: 1,
     flexDirection: 'column',
-    gap: tokens.space1,
+    gap: t.space1,
   };
+
+  const typographyOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
+  const legendOverrides = { ...typographyOverrides, fontSize: overrides?.legendSize, fontWeight: overrides?.legendWeight };
+  const labelOverrides = { ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight };
+  const helperOverrides = { ...typographyOverrides, fontSize: overrides?.helperSize };
 
   return (
     <View
+      testID="RadioGroup"
       ref={groupRef}
       accessibilityRole="radiogroup"
       accessibilityLabel={visibleLabel}
       accessibilityHint={description}
+      accessibilityState={{ disabled: isDisabled }}
       style={groupStyle}
     >
-      <Text weight="medium">{visibleLabel}</Text>
+      <Text weight="medium" overrides={legendOverrides}>
+        {visibleLabel}
+      </Text>
       {description !== undefined ? (
-        <Text size="sm" tone="muted">
+        <Text size="sm" tone="muted" overrides={helperOverrides}>
           {description}
         </Text>
       ) : null}
@@ -234,8 +314,8 @@ export function RadioGroup({
           const selected = option.value === currentValue;
           const optionDisabled = isDisabled || option.disabled === true;
           const focused = focusedValue === option.value;
-          const optionName =
-            option.description !== undefined ? `${option.label}. ${option.description}` : option.label;
+          const anim = getFillAnim(option.value, selected);
+          const optionName = option.description !== undefined ? `${option.label}. ${option.description}` : option.label;
           return (
             <Pressable
               key={option.value}
@@ -243,9 +323,6 @@ export function RadioGroup({
               accessibilityRole="radio"
               accessibilityLabel={optionName}
               accessibilityState={{ checked: selected, disabled: optionDisabled }}
-              // Individually disabled options are natively disabled (not focus stops),
-              // a deliberate exception; a fully disabled group stays focusable but inert.
-              disabled={option.disabled === true}
               onPress={() => {
                 if (!optionDisabled) {
                   select(option.value);
@@ -255,15 +332,13 @@ export function RadioGroup({
               onBlur={() => setFocusedValue((prev) => (prev === option.value ? null : prev))}
               style={optionStyle(optionDisabled)}
             >
-              <View style={controlCellStyle}>
-                <View style={controlStyle(selected, focused)} accessibilityElementsHidden importantForAccessibility="no">
-                  {selected ? <View style={dotStyle} /> : null}
-                </View>
-              </View>
+              <Animated.View style={controlStyle(anim, focused)} accessibilityElementsHidden importantForAccessibility="no">
+                <Animated.View style={dotStyle(anim)} />
+              </Animated.View>
               <View style={textColumnStyle}>
-                <Text>{option.label}</Text>
+                <Text overrides={labelOverrides}>{option.label}</Text>
                 {option.description !== undefined ? (
-                  <Text size="sm" tone="muted">
+                  <Text size="sm" tone="muted" overrides={helperOverrides}>
                     {option.description}
                   </Text>
                 ) : null}
@@ -274,7 +349,7 @@ export function RadioGroup({
       </View>
       {displayedError !== undefined ? (
         <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
-          <Text size="sm" tone="danger">
+          <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
           </Text>
         </View>

@@ -1,6 +1,8 @@
-import { LitElement, css, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Button.js';
+import './Icon.js';
 
 export type AlertTone = 'info' | 'success' | 'warning' | 'danger';
 export type AlertLive = 'status' | 'alert' | 'off';
@@ -11,20 +13,34 @@ export type AlertDismissDetail = void;
 /** copy.dismissLabel */
 const COPY_DISMISS_LABEL = 'Dismiss';
 
-/** Leading icon by tone: info circle, check circle, warning triangle, error octagon. */
-const ICONS: Record<AlertTone, TemplateResult> = {
-  info: html`<path
-    d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1Zm0 1.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM8.75 7v4.5h-1.5V7h1.5ZM8 4.25a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Z"
-  />`,
-  success: html`<path
-    d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1Zm0 1.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Zm2.72 3.22 1.06 1.06L7 11.56 4.22 8.78l1.06-1.06L7 9.44l3.72-3.72Z"
-  />`,
-  warning: html`<path
-    d="M8 1.5 15.25 14H.75L8 1.5Zm0 3L3.35 12.5h9.3L8 4.5Zm.75 2.5v3.5h-1.5V7h1.5ZM8 11.05a.85.85 0 1 1 0 1.7.85.85 0 0 1 0-1.7Z"
-  />`,
-  danger: html`<path
-    d="M5.05 1h5.9L15 5.05v5.9L10.95 15h-5.9L1 10.95v-5.9L5.05 1Zm.62 1.5L2.5 5.67v4.66l3.17 3.17h4.66l3.17-3.17V5.67L10.33 2.5H5.67ZM8.75 4.5V9h-1.5V4.5h1.5ZM8 10.1a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Z"
-  />`,
+/** Overridable style hooks; see the `overrides` property. `background`, `foreground`, `bodyColor` and `icon` are locked and excluded. */
+export type AlertOverridableBinding =
+  | 'border'
+  | 'borderWidth'
+  | 'radius'
+  | 'padding'
+  | 'gap'
+  | 'partGap'
+  | 'iconSize'
+  | 'headingWeight'
+  | 'fontFamily'
+  | 'fontSize'
+  | 'lineHeight'
+  | 'dismissMargin';
+
+const HOOKS: Record<AlertOverridableBinding, string> = {
+  border: '--ds-alert-border',
+  borderWidth: '--ds-alert-border-width',
+  radius: '--ds-alert-radius',
+  padding: '--ds-alert-padding',
+  gap: '--ds-alert-gap',
+  partGap: '--ds-alert-part-gap',
+  iconSize: '--ds-alert-icon-size',
+  headingWeight: '--ds-alert-heading-weight',
+  fontFamily: `--ds-alert-font-family`,
+  fontSize: '--ds-alert-font-size',
+  lineHeight: '--ds-alert-line-height',
+  dismissMargin: '--ds-alert-dismiss-margin',
 };
 
 const FOCUSABLE =
@@ -38,13 +54,14 @@ const FOCUSABLE =
  * The `role` (`status` or `alert`, none when `live` is `off`) is set on the
  * host element via `ElementInternals`, so the live region is the host itself
  * in the light DOM tree where assistive technology expects it. Inside the
- * shadow root: the tone icon, a content column with the heading as a `<p>` in
- * `titleWeight` (not a heading element, so it does not disturb the outline)
- * and the default slot, and, when `dismissible`, a ghost `sm` icon-only
- * `<ds-button>` labelled "Dismiss", used unchanged (no `::part` restyling) and
- * pulled into the corner with `dismissMargin`. Dismissing stops the inner
- * `press`, moves focus onward and dispatches a composed `dismiss` CustomEvent;
- * the consumer removes the element.
+ * shadow root: the tone icon as `<ds-icon name={tone}>`, a content column
+ * with the heading as a `<p>` in `headingWeight` (not a heading element, so
+ * it does not disturb the outline) and the default slot, and, when
+ * `dismissible`, a ghost `sm` icon-only `<ds-button>` labelled "Dismiss" with
+ * a `<ds-icon name="close">` leading icon, used unchanged (no `::part`
+ * restyling) and pulled into the corner with `dismissMargin`. Dismissing
+ * stops the inner `press`, moves focus onward and dispatches a composed
+ * `dismiss` CustomEvent; the consumer removes the element.
  *
  * ## When to use
  *
@@ -59,7 +76,7 @@ const FOCUSABLE =
  * @slot heading - Rich heading content; replaces the `heading` property text.
  * @csspart container - The bordered box (anatomy: container).
  * @csspart icon - The tone icon (anatomy: icon).
- * @csspart heading - The heading paragraph (anatomy: title).
+ * @csspart heading - The heading paragraph (anatomy: heading).
  * @csspart body - The body wrapper (anatomy: body).
  * @csspart dismiss - The dismiss `<ds-button>` (anatomy: dismissButton).
  */
@@ -68,54 +85,76 @@ export class DsAlert extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      font-family: var(--font-family-body);
+      --ds-alert-border-width: var(--border-width-thin);
+      --ds-alert-radius: var(--radius-md);
+      --ds-alert-padding: var(--space-md);
+      --ds-alert-gap: var(--space-3);
+      --ds-alert-part-gap: var(--space-1);
+      --ds-alert-icon-size: var(--font-size-lg);
+      --ds-alert-heading-weight: var(--font-weight-semibold);
+      --ds-alert-font-family: var(--font-family-body);
+      --ds-alert-font-size: var(--font-size-md);
+      --ds-alert-line-height: var(--font-line-height-normal);
+      --ds-alert-dismiss-margin: var(--space-1);
+      font-family: var(--ds-alert-font-family);
     }
 
     :host([hidden]) {
       display: none;
     }
 
+    /* border: color.status.{tone}.border */
+    :host([tone='info']) {
+      --ds-alert-border: var(--color-status-info-border);
+    }
+    :host([tone='success']) {
+      --ds-alert-border: var(--color-status-success-border);
+    }
+    :host([tone='warning']) {
+      --ds-alert-border: var(--color-status-warning-border);
+    }
+    :host([tone='danger']) {
+      --ds-alert-border: var(--color-status-danger-border);
+    }
+
     .container {
       box-sizing: border-box;
       display: flex;
       align-items: flex-start;
-      gap: var(--space-3);
-      padding: var(--space-md);
-      border: var(--border-width-thin) solid var(--color-status-info-border);
-      border-radius: var(--radius-md);
-      font-size: var(--font-size-md);
-      line-height: var(--font-line-height-normal);
+      gap: var(--ds-alert-gap);
+      padding: var(--ds-alert-padding);
+      border: var(--ds-alert-border-width) solid var(--ds-alert-border);
+      border-radius: var(--ds-alert-radius);
+      font-size: var(--ds-alert-font-size);
+      line-height: var(--ds-alert-line-height);
+      /* bodyColor: color.foreground, locked — long messages read as text, not colored emphasis */
       color: var(--color-foreground);
-      background: var(--color-status-info-background);
     }
 
-    /* background / border / foreground / icon: color.status.{tone}.* */
+    /* background: color.status.{tone}.background, locked */
     :host([tone='info']) .container {
-      border-color: var(--color-status-info-border);
       background: var(--color-status-info-background);
     }
     :host([tone='success']) .container {
-      border-color: var(--color-status-success-border);
       background: var(--color-status-success-background);
     }
     :host([tone='warning']) .container {
-      border-color: var(--color-status-warning-border);
       background: var(--color-status-warning-background);
     }
     :host([tone='danger']) .container {
-      border-color: var(--color-status-danger-border);
       background: var(--color-status-danger-background);
     }
 
+    /* iconSize: font.size.lg via the icon's own --ds-icon-size hook */
     .icon {
       flex: none;
-      inline-size: var(--font-size-lg);
-      block-size: var(--font-size-lg);
+      --ds-icon-size: var(--ds-alert-icon-size);
       /* Align with the first line of text. */
-      margin-block-start: calc((var(--font-size-md) * var(--font-line-height-normal) - var(--font-size-lg)) / 2);
-      color: var(--color-status-info-icon);
-      fill: currentColor;
+      margin-block-start: calc(
+        (var(--ds-alert-font-size) * var(--ds-alert-line-height) - var(--ds-alert-icon-size)) / 2
+      );
     }
+    /* icon: color.status.{tone}.icon, locked */
     :host([tone='info']) .icon {
       color: var(--color-status-info-icon);
     }
@@ -133,29 +172,28 @@ export class DsAlert extends LitElement {
       display: flex;
       flex: 1 1 auto;
       flex-direction: column;
-      gap: var(--space-1);
+      gap: var(--ds-alert-part-gap);
       min-inline-size: 0;
     }
 
-    .title {
+    .heading {
       margin: 0;
-      font-weight: var(--font-weight-semibold);
+      font-weight: var(--ds-alert-heading-weight);
+    }
+    /* foreground: color.status.{tone}.foreground, locked */
+    :host([tone='info']) .heading {
       color: var(--color-status-info-foreground);
     }
-    :host([tone='info']) .title {
-      color: var(--color-status-info-foreground);
-    }
-    :host([tone='success']) .title {
+    :host([tone='success']) .heading {
       color: var(--color-status-success-foreground);
     }
-    :host([tone='warning']) .title {
+    :host([tone='warning']) .heading {
       color: var(--color-status-warning-foreground);
     }
-    :host([tone='danger']) .title {
+    :host([tone='danger']) .heading {
       color: var(--color-status-danger-foreground);
     }
 
-    /* bodyColor: the page foreground so long messages read as text */
     .body {
       color: var(--color-foreground);
     }
@@ -163,8 +201,8 @@ export class DsAlert extends LitElement {
     /* dismissMargin: pull the Button into the corner; it keeps its own colors, radius and focus ring */
     .dismiss {
       flex: none;
-      margin-block: calc(-1 * var(--space-1));
-      margin-inline-end: calc(-1 * var(--space-1));
+      margin-block: calc(-1 * var(--ds-alert-dismiss-margin));
+      margin-inline-end: calc(-1 * var(--ds-alert-dismiss-margin));
     }
   `;
 
@@ -180,6 +218,9 @@ export class DsAlert extends LitElement {
   /** Shows a dismiss button at the end of the alert. */
   @property({ type: Boolean, reflect: true }) dismissible = false;
 
+  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings (background, foreground, bodyColor, icon) are ignored. */
+  @property({ attribute: false }) overrides?: Partial<Record<AlertOverridableBinding, TokenRef>>;
+
   private readonly internals: ElementInternals;
 
   constructor() {
@@ -187,10 +228,18 @@ export class DsAlert extends LitElement {
     this.internals = this.attachInternals();
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'Alert');
+  }
+
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('live')) {
       // role="status" implies aria-live="polite" and role="alert" implies assertive.
       this.internals.role = this.live === 'off' ? null : this.live;
+    }
+    if (changed.has('overrides')) {
+      this.applyOverrides();
     }
   }
 
@@ -198,12 +247,10 @@ export class DsAlert extends LitElement {
     const hasHeading = Boolean(this.heading) || this.querySelector('[slot="heading"]') !== null;
     return html`
       <div class="container" part="container">
-        <svg class="icon" part="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">
-          ${ICONS[this.tone] ?? ICONS.info}
-        </svg>
+        <ds-icon class="icon" part="icon" name=${this.tone}></ds-icon>
         <div class="content">
           ${hasHeading
-            ? html`<p class="title" part="heading"><slot name="heading">${this.heading ?? nothing}</slot></p>`
+            ? html`<p class="heading" part="heading"><slot name="heading">${this.heading ?? nothing}</slot></p>`
             : nothing}
           <div class="body" part="body"><slot></slot></div>
         </div>
@@ -218,9 +265,7 @@ export class DsAlert extends LitElement {
                 label=${COPY_DISMISS_LABEL}
                 @press=${this.handleDismiss}
               >
-                <svg slot="leading-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="1em" height="1em" fill="currentColor">
-                  <path d="m4.22 3.16 3.78 3.78 3.78-3.78 1.06 1.06L9.06 8l3.78 3.78-1.06 1.06L8 9.06l-3.78 3.78-1.06-1.06L6.94 8 3.16 4.22l1.06-1.06Z" />
-                </svg>
+                <ds-icon slot="leading-icon" name="close" inline></ds-icon>
               </ds-button>
             `
           : nothing}
@@ -250,6 +295,18 @@ export class DsAlert extends LitElement {
         (this.compareDocumentPosition(candidate) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
     );
     next?.focus();
+  }
+
+  private applyOverrides(): void {
+    for (const binding of Object.keys(HOOKS) as AlertOverridableBinding[]) {
+      const ref = this.overrides?.[binding];
+      const hook = HOOKS[binding];
+      if (ref === undefined) {
+        this.style.removeProperty(hook);
+      } else {
+        this.style.setProperty(hook, cssVar(ref));
+      }
+    }
   }
 }
 

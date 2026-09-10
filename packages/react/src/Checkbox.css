@@ -1,24 +1,48 @@
 /* Checkbox — styled only through Design Schema token custom properties. */
 
 .ds-checkbox {
+  --ds-checkbox-control-background: var(--color-control-background);
+  --ds-checkbox-control-border: var(--color-control-border);
+  --ds-checkbox-control-border-width: var(--border-width-thin);
+  --ds-checkbox-control-selected-background: var(--color-control-selected-background);
+  --ds-checkbox-indicator: var(--color-control-selected-foreground);
+  --ds-checkbox-indicator-stroke: var(--border-width-focus);
+  --ds-checkbox-pressed-overlay: var(--opacity-disabled);
+  --ds-checkbox-control-border-invalid: var(--color-border-danger);
+  --ds-checkbox-control-size: var(--space-5);
+  --ds-checkbox-control-radius: var(--radius-sm);
+  --ds-checkbox-gap: var(--space-2);
+  --ds-checkbox-part-gap: var(--space-1);
+  --ds-checkbox-label-color: var(--color-foreground);
+  --ds-checkbox-label-size: var(--font-size-md);
+  --ds-checkbox-label-weight: var(--font-weight-regular);
+  --ds-checkbox-helper-size: var(--font-size-sm);
+  --ds-checkbox-description-text: var(--color-foreground-muted);
+  --ds-checkbox-error-text: var(--color-foreground-danger);
+  --ds-checkbox-font-family: var(--font-family-body);
+  --ds-checkbox-line-height: var(--font-line-height-normal);
+  --ds-checkbox-focus-ring: var(--color-border-focus);
+  --ds-checkbox-focus-ring-width: var(--border-width-focus);
+  --ds-checkbox-min-target: var(--size-target-comfortable);
+  --ds-checkbox-disabled-opacity: var(--opacity-disabled);
+  --ds-checkbox-transition: var(--motion-duration-fast);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  font-family: var(--font-family-body);
-  line-height: var(--font-line-height-normal);
+  gap: var(--ds-checkbox-part-gap);
+  font-family: var(--ds-checkbox-font-family);
+  line-height: var(--ds-checkbox-line-height);
 }
 
 /* minTarget: the whole row is the hit area. */
 .ds-checkbox__row {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  min-block-size: var(--size-target-comfortable);
+  gap: var(--ds-checkbox-gap);
+  min-block-size: var(--ds-checkbox-min-target);
 }
 
 /* control: a native input drawn with the control tokens, never a hidden input under a fake box. */
 .ds-checkbox__control {
-  --ds-checkbox-control-size: var(--space-5);
   box-sizing: border-box;
   flex: 0 0 auto;
   display: inline-grid;
@@ -27,9 +51,9 @@
   block-size: var(--ds-checkbox-control-size);
   margin: 0;
   padding: 0;
-  border: var(--border-width-thin) solid var(--color-control-border);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-control-background);
+  border: var(--ds-checkbox-control-border-width) solid var(--ds-checkbox-control-border);
+  border-radius: var(--ds-checkbox-control-radius);
+  background-color: var(--ds-checkbox-control-background);
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
@@ -48,13 +72,8 @@
 /* controlSelectedBackground: checked and indeterminate fill; the border takes the same color. */
 .ds-checkbox__control:checked,
 .ds-checkbox__control:indeterminate {
-  border-color: var(--color-control-selected-background);
-  background-color: var(--color-control-selected-background);
-}
-
-/* indicatorStroke: stroke thickness of the check mark and dash. */
-.ds-checkbox__control::before {
-  --ds-checkbox-indicator-stroke: var(--border-width-focus);
+  border-color: var(--ds-checkbox-control-selected-background);
+  background-color: var(--ds-checkbox-control-selected-background);
 }
 
 /* Check mark: two edges of a box rotated 45°, scaled to the indicator area. */
@@ -62,8 +81,8 @@
   inline-size: calc((var(--ds-checkbox-control-size) - 2 * var(--space-1)) * 0.4);
   block-size: calc((var(--ds-checkbox-control-size) - 2 * var(--space-1)) * 0.75);
   margin-block-start: calc(-1 * var(--space-1) / 2);
-  border-inline-end: var(--ds-checkbox-indicator-stroke) solid var(--color-control-selected-foreground);
-  border-block-end: var(--ds-checkbox-indicator-stroke) solid var(--color-control-selected-foreground);
+  border-inline-end: var(--ds-checkbox-indicator-stroke) solid var(--ds-checkbox-indicator);
+  border-block-end: var(--ds-checkbox-indicator-stroke) solid var(--ds-checkbox-indicator);
   transform: rotate(45deg);
   opacity: 1;
 }
@@ -71,63 +90,70 @@
 /* Mixed dash: a bar in the indicator color. */
 .ds-checkbox__control:indeterminate::before {
   block-size: var(--ds-checkbox-indicator-stroke);
-  background-color: var(--color-control-selected-foreground);
+  background-color: var(--ds-checkbox-indicator);
   transform: none;
   opacity: 1;
 }
 
-/* pressedOverlay: while pressed, the box shows the selected fill at disabledOpacity. */
+/* pressedOverlay: while pressed, the box shows the selected fill at this opacity. */
 .ds-checkbox__control:not([aria-disabled='true']):not(:checked):not(:indeterminate):active {
   background-color: color-mix(
     in srgb,
-    var(--color-control-selected-background) calc(var(--opacity-disabled) * 100%),
-    var(--color-control-background)
+    var(--ds-checkbox-control-selected-background) calc(var(--ds-checkbox-pressed-overlay) * 100%),
+    var(--ds-checkbox-control-background)
   );
 }
 
 /* controlBorderInvalid */
 .ds-checkbox__control[aria-invalid='true'] {
-  border-color: var(--color-border-danger);
+  border-color: var(--ds-checkbox-control-border-invalid);
 }
 
 /* focus-visible: never removed, only replaced by the token ring. */
 .ds-checkbox__control:focus-visible {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
+  outline: var(--ds-checkbox-focus-ring-width) solid var(--ds-checkbox-focus-ring);
+  outline-offset: var(--ds-checkbox-focus-ring-width);
 }
 
 /* disabled: stays focusable and readable; visually dimmed. */
 .ds-checkbox--disabled .ds-checkbox__control,
 .ds-checkbox--disabled .ds-checkbox__label {
   cursor: not-allowed;
-  opacity: var(--opacity-disabled);
+  opacity: var(--ds-checkbox-disabled-opacity);
 }
 
 .ds-checkbox__label {
   cursor: pointer;
-  color: var(--color-foreground);
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-regular);
+  color: var(--ds-checkbox-label-color);
+  font-size: var(--ds-checkbox-label-size);
+  font-weight: var(--ds-checkbox-label-weight);
 }
 
 .ds-checkbox__description,
 .ds-checkbox__error {
   margin: 0;
-  padding-inline-start: calc(var(--space-5) + var(--space-2));
+  padding-inline-start: calc(var(--ds-checkbox-control-size) + var(--ds-checkbox-gap));
+  font-size: var(--ds-checkbox-helper-size);
+  line-height: var(--ds-checkbox-line-height);
 }
 
 .ds-checkbox__description {
   cursor: pointer;
+  color: var(--ds-checkbox-description-text);
 }
 
-/* transition: fill and indicator; removed under reduced motion. */
+.ds-checkbox__error {
+  color: var(--ds-checkbox-error-text);
+}
+
+/* transition: fill and indicator, with motion.easing.standard. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-checkbox__control {
     transition:
-      background-color var(--motion-duration-fast) var(--motion-easing-standard),
-      border-color var(--motion-duration-fast) var(--motion-easing-standard);
+      background-color var(--ds-checkbox-transition) var(--motion-easing-standard),
+      border-color var(--ds-checkbox-transition) var(--motion-easing-standard);
   }
   .ds-checkbox__control::before {
-    transition: opacity var(--motion-duration-fast) var(--motion-easing-standard);
+    transition: opacity var(--ds-checkbox-transition) var(--motion-easing-standard);
   }
 }

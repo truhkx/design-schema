@@ -1,12 +1,15 @@
 /* Meter — styled only through Design Schema token custom properties. */
 
 .ds-meter {
+  --ds-meter-track: var(--color-background-strong);
+  --ds-meter-track-height: var(--space-2);
+  --ds-meter-radius: var(--radius-full);
+  --ds-meter-part-gap: var(--space-1);
+  --ds-meter-transition: var(--motion-duration-base);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--ds-meter-part-gap);
   min-inline-size: 0;
-  font-family: var(--font-family-body);
-  line-height: var(--font-line-height-normal);
 }
 
 /* label row: label at the start, value text at the end. */
@@ -17,8 +20,9 @@
   gap: var(--space-2);
 }
 
-.ds-meter__label {
-  color: var(--color-foreground);
+.ds-meter__label,
+.ds-meter__value {
+  min-inline-size: 0;
 }
 
 /* tone → color.status.{tone}.icon: the step guaranteed 3:1 against the page background. */
@@ -31,20 +35,20 @@
 .ds-meter__track {
   overflow: hidden;
   inline-size: 100%;
-  block-size: var(--space-2);
-  border-radius: var(--radius-full);
-  background-color: var(--color-background-strong);
+  block-size: var(--ds-meter-track-height);
+  border-radius: var(--ds-meter-radius);
+  background-color: var(--ds-meter-track);
 }
 
 .ds-meter__fill {
   block-size: 100%;
-  border-radius: var(--radius-full);
+  border-radius: var(--ds-meter-radius);
   background-color: var(--ds-meter-fill);
 }
 
-/* transition: fill width change; instant under reduced motion. */
+/* transition: fill width change, with motion.easing.standard; instant under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-meter__fill {
-    transition: inline-size var(--motion-duration-base) var(--motion-easing-standard);
+    transition: inline-size var(--ds-meter-transition) var(--motion-easing-standard);
   }
 }

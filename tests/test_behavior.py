@@ -193,3 +193,45 @@ class TestShippedDocs:
     ])
     def test_switch_exemplar_tests_exist(self, root, path):
         assert (root / path).exists()
+
+
+class TestAccessibleNameGiven:
+    """has-accessible-name must render with the prop that carries the name when that prop is optional."""
+
+    def test_an_optional_prop_whose_a11y_note_names_the_accessible_name_is_supplied(self, component):
+        component["a11y"]["requires"] = ["accessible-name"]
+        component["props"]["label"]["required"] = False
+        component["props"]["label"]["a11y"] = "The accessible name (aria-label / accessibilityLabel) when there is no visible text."
+        sc = next(s for s in p.derive_behavior(component) if s["name"] == "has-accessible-name")
+        assert sc["given"] == {"label": p.ACCESSIBLE_NAME_PLACEHOLDER}
+
+    def test_a_required_label_needs_no_given(self, component):
+        component["a11y"]["requires"] = ["accessible-name"]
+        assert component["props"]["label"]["required"] is True
+        sc = next(s for s in p.derive_behavior(component) if s["name"] == "has-accessible-name")
+        assert "given" not in sc
+
+    def test_an_intrinsic_name_is_left_alone(self, component):
+        component["a11y"]["requires"] = ["accessible-name"]
+        component["props"] = {"children": {"type": "content", "required": True, "description": "Heading text."}}
+        component["styles"] = {}
+        component["a11y"]["contrast"] = []
+        sc = next(s for s in p.derive_behavior(component) if s["name"] == "has-accessible-name")
+        assert "given" not in sc
+
+    def test_the_a11y_note_wins_over_a_required_title(self, component):
+        component["props"]["title"] = {"type": "string", "required": True, "description": "x"}
+        component["props"]["name"] = {"type": "string", "description": "x", "a11y": "Read as the accessible name."}
+        assert p.accessible_name_prop(component) == "name"
+
+    def test_an_enum_naming_prop_uses_its_first_value(self, component):
+        component["props"]["icon"] = {"type": "enum", "values": ["check", "close"], "description": "x", "a11y": "Announced as the accessible name."}
+        assert p.accessible_name_given(component) == {"icon": "check"}
+
+    def test_the_shipped_icon_doc_gets_a_label(self, root, component_schema):
+        path = p.DOCS / "icon.md"
+        if not path.exists():
+            pytest.skip("no Icon doc")
+        fm, _ = p.split_frontmatter(path.read_text(encoding="utf-8"), path)
+        sc = next(s for s in p.derive_behavior(fm["component"]) if s["name"] == "has-accessible-name")
+        assert sc.get("given", {}).get("label"), "Icon's name comes from its optional label"

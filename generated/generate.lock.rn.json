@@ -1,8 +1,25 @@
 {
   "Alert.rn": {
-    "hash": "fa0d5d58c5159f11",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "c134df494967eb75",
+    "lastAttemptHash": "c134df494967eb75",
+    "generatedAt": "2026-09-10T05:57:07+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.5673,
+    "files": [
+      "packages/rn/src/Alert.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "AlertDialog.rn": {
     "hash": "908bbd685fe9d4da",
@@ -51,9 +68,26 @@
     }
   },
   "Breadcrumb.rn": {
-    "hash": "5edcb34c2693c289",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "d4dbd8d3d83c5b4e",
+    "lastAttemptHash": "d4dbd8d3d83c5b4e",
+    "generatedAt": "2026-09-10T05:59:23+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.4073,
+    "files": [
+      "packages/rn/src/Breadcrumb.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Button.rn": {
     "hash": "85be2e8003523b87",
@@ -102,9 +136,26 @@
     }
   },
   "Checkbox.rn": {
-    "hash": "22909aa95ed22660",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "f6f3d8d0fd971073",
+    "lastAttemptHash": "f6f3d8d0fd971073",
+    "generatedAt": "2026-09-10T05:45:54+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.7266,
+    "files": [
+      "packages/rn/src/Checkbox.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Container.rn": {
     "hash": "774c50391209131f",
@@ -150,9 +201,26 @@
     }
   },
   "Disclosure.rn": {
-    "hash": "9260a2a7ea834121",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "3278ce75a72c1988",
+    "lastAttemptHash": "3278ce75a72c1988",
+    "generatedAt": "2026-09-10T05:55:00+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.8299,
+    "files": [
+      "packages/rn/src/Disclosure.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Divider.rn": {
     "hash": "b6acdff8b2f92663",
@@ -167,6 +235,29 @@
       "packages/rn/src/Divider.tsx"
     ],
     "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Fieldset.rn": {
+    "hash": "1350363fc6c82db9",
+    "lastAttemptHash": "1350363fc6c82db9",
+    "generatedAt": "2026-09-10T06:04:33+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.9594,
+    "files": [
+      "packages/rn/src/Fieldset.stories.tsx",
+      "packages/rn/src/Fieldset.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -290,9 +381,25 @@
     }
   },
   "Landmark.rn": {
-    "hash": "e6cd7eccff2a6162",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "0808a06b50b192bb",
+    "lastAttemptHash": "0808a06b50b192bb",
+    "generatedAt": "2026-09-10T05:57:41+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.1864,
+    "files": [
+      "packages/rn/src/Landmark.tsx"
+    ],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Link.rn": {
     "hash": "ebff217359604a95",
@@ -339,14 +446,48 @@
     }
   },
   "Meter.rn": {
-    "hash": "705a6a2c416f2491",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "21c4c4772ea4e2eb",
+    "lastAttemptHash": "21c4c4772ea4e2eb",
+    "generatedAt": "2026-09-10T06:00:27+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.3528,
+    "files": [
+      "packages/rn/src/Meter.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "RadioGroup.rn": {
-    "hash": "e587ca2c01d0f896",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "38e3e2ad24d8b5e0",
+    "lastAttemptHash": "38e3e2ad24d8b5e0",
+    "generatedAt": "2026-09-10T05:51:24+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.8892,
+    "files": [
+      "packages/rn/src/RadioGroup.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Stack.rn": {
     "hash": "23c147ff3443a6d9",
@@ -382,9 +523,26 @@
     }
   },
   "Switch.rn": {
-    "hash": "750faca0a756a59e",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "fb84b29535076c2f",
+    "lastAttemptHash": "fb84b29535076c2f",
+    "generatedAt": "2026-09-10T05:47:31+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.3962,
+    "files": [
+      "packages/rn/src/Switch.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Text.rn": {
     "hash": "12262b72d4ad775d",

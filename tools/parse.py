@@ -300,6 +300,42 @@ def validate_behavior(component: dict, path: Path) -> None:
                     raise DocError(f"{path.name}: scenario '{name}' then.state invalid: React Native has no invalid accessibility state — narrow platforms to exclude 'rn'")
 
 
+ACCESSIBLE_NAME_HINTS = ("accessible name", "aria-label", "accessibilitylabel", "accessibility label")
+ACCESSIBLE_NAME_PROPS = ("label", "caption", "title")
+ACCESSIBLE_NAME_PLACEHOLDER = "Accessible name"
+
+
+def accessible_name_prop(component: dict) -> str | None:
+    """The prop that gives the component its accessible name: the first whose `a11y` note says so, else a
+    required `label`/`caption`/`title`. None when the name is intrinsic (children, heading text) or absent."""
+    props = component.get("props") or {}
+    for name, prop in props.items():
+        note = str(prop.get("a11y") or "").lower()
+        if any(h in note for h in ACCESSIBLE_NAME_HINTS):
+            return name
+    for name in ACCESSIBLE_NAME_PROPS:
+        if name in props and props[name].get("required"):
+            return name
+    return None
+
+
+def accessible_name_given(component: dict) -> dict | None:
+    """`given` for the derived has-accessible-name scenario: the naming prop with a value when it is optional
+    (Icon's `label`), because the Default story leaves it out and the name would otherwise be empty. A required
+    prop is already set by the story; an intrinsic name needs nothing."""
+    name = accessible_name_prop(component)
+    if name is None:
+        return None
+    prop = component["props"][name]
+    if prop.get("required"):
+        return None
+    if prop.get("type") == "enum" and prop.get("values"):
+        return {name: prop["values"][0]}
+    if prop.get("type") in ("string", "content"):
+        return {name: ACCESSIBLE_NAME_PLACEHOLDER}
+    return None
+
+
 def derive_behavior(component: dict) -> list[dict]:
     """Scenarios the schema already implies, so authors only write what it cannot infer:
     one render per enum value, an accessible-name check, a focusable check for
@@ -321,7 +357,11 @@ def derive_behavior(component: dict) -> list[dict]:
             scenarios.append(sc)
 
     if "accessible-name" in requires:
-        scenarios.append({"name": "has-accessible-name", "then": [{"name": True}], "derived": True})
+        sc = {"name": "has-accessible-name", "then": [{"name": True}], "derived": True}
+        given = accessible_name_given(component)
+        if given:
+            sc["given"] = given
+        scenarios.append(sc)
 
     if "keyboard-operable" in requires:
         scenarios.append({

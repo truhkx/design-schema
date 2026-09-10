@@ -22,6 +22,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 import itertools
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -60,6 +61,19 @@ STATUS_PUBLISHED = {"review", "stable"}
 
 class DocError(Exception):
     pass
+
+
+def write_if_changed(path: Path, text: str) -> bool:
+    """Atomic write that leaves the file untouched when the content is identical, so concurrent generator
+    runs (one per platform) re-parsing the same docs neither race on the file nor bump its mtime.
+    Returns True when the file was (re)written."""
+    if path.exists() and path.read_text(encoding="utf-8") == text:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
+    return True
 
 
 def split_frontmatter(text: str, path: Path) -> tuple[dict, str]:
@@ -401,13 +415,13 @@ def parse_themes() -> tuple[list[dict], list[str]]:
                       .replace("{{TONE}}", ", ".join(t["tone"])).replace("{{NOT}}", t["not"])
                       .replace("{{THEME_YAML}}", yaml.safe_dump({"theme": t}, sort_keys=False).strip())
                       .replace("{{TOKENS_LIGHT}}", tokens_txt).replace("{{GUIDANCE}}", guidance))
-            (OUT / "prompts" / f"theme.{t['id']}.md").write_text(prompt)
+            write_if_changed(OUT / "prompts" / f"theme.{t['id']}.md", prompt)
             themes.append({"id": t["id"], "title": fm.get("title", t["id"]), "description": fm.get("description", ""),
                            "published": t.get("status", "draft") in STATUS_PUBLISHED, "theme": t, "sections": sections,
                            "source": str(path.relative_to(ROOT))})
         except DocError as e:
             errors.append(str(e))
-    (OUT / "themes.json").write_text(json.dumps(themes, indent=2, ensure_ascii=False) + "\n")
+    write_if_changed(OUT / "themes.json", json.dumps(themes, indent=2, ensure_ascii=False) + "\n")
     return themes, errors
 
 
@@ -440,10 +454,10 @@ def main() -> int:
             for platform, notes in c["platforms"].items():
                 if not notes.get("supported", True) or not (TEMPLATES / f"{platform}.md").exists():
                     continue
-                (OUT / "prompts" / f"{c['name']}.{platform}.md").write_text(render_prompt(c, sections, platform, fm_yaml))
+                write_if_changed(OUT / "prompts" / f"{c['name']}.{platform}.md", render_prompt(c, sections, platform, fm_yaml))
         except DocError as e:
             errors.append(str(e))
-    (OUT / "components.json").write_text(json.dumps(components, indent=2, ensure_ascii=False) + "\n")
+    write_if_changed(OUT / "components.json", json.dumps(components, indent=2, ensure_ascii=False) + "\n")
     themes, theme_errors = parse_themes()
     errors += theme_errors
     for e in errors:

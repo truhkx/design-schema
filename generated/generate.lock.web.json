@@ -1,0 +1,246 @@
+{
+  "Alert.web": {
+    "hash": "3c6562c3880637ef",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "AlertDialog.web": {
+    "hash": "e564390686bc35b0",
+    "lastAttemptHash": "e564390686bc35b0",
+    "generatedAt": "2026-09-10T03:29:42+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.2532,
+    "files": [
+      "packages/react/src/AlertDialog.css",
+      "packages/react/src/AlertDialog.stories.tsx",
+      "packages/react/src/AlertDialog.test.tsx",
+      "packages/react/src/AlertDialog.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Box.web": {
+    "hash": "05b40f51e2dc136a",
+    "lastAttemptHash": "05b40f51e2dc136a",
+    "generatedAt": "2026-09-10T02:16:07+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.1611,
+    "files": [
+      "packages/react/src/Box.tsx"
+    ],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Breadcrumb.web": {
+    "hash": "e20df351ed4ca178",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Button.web": {
+    "hash": "ed46506ea967cf9a",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Card.web": {
+    "hash": "c56f5ce5b3f3fb0f",
+    "lastAttemptHash": "c56f5ce5b3f3fb0f",
+    "generatedAt": "2026-09-10T02:19:56+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.3011,
+    "files": [
+      "packages/react/src/Card.css",
+      "packages/react/src/Card.tsx"
+    ],
+    "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Checkbox.web": {
+    "hash": "380550e72767d826",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Container.web": {
+    "hash": "cf93646d52b97178",
+    "lastAttemptHash": "cf93646d52b97178",
+    "generatedAt": "2026-09-10T02:23:56+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.1891,
+    "files": [
+      "packages/react/src/Container.tsx"
+    ],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Dialog.web": {
+    "hash": "f1b23552eb702ad9",
+    "lastAttemptHash": "f1b23552eb702ad9",
+    "generatedAt": "2026-09-10T02:57:18+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 3.1112,
+    "files": [
+      "packages/react/src/Dialog.css",
+      "packages/react/src/Dialog.stories.tsx",
+      "packages/react/src/Dialog.test.tsx",
+      "packages/react/src/Dialog.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Disclosure.web": {
+    "hash": "bbd92afb903a4b6d",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "FocusScope.web": {
+    "hash": "1a63e00d70eec66b",
+    "lastAttemptHash": "1a63e00d70eec66b",
+    "generatedAt": "2026-09-10T02:31:35+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.9395,
+    "files": [
+      "packages/react/src/FocusScope.css",
+      "packages/react/src/FocusScope.stories.tsx",
+      "packages/react/src/FocusScope.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Form.web": {
+    "hash": "5f5f02ba33ffccbe",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Heading.web": {
+    "hash": "792d365154789dd5",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Icon.web": {
+    "hash": "4f664953880eb552",
+    "lastAttemptHash": "4f664953880eb552",
+    "generatedAt": "2026-09-09T22:10:50+00:00",
+    "model": "fable",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 2.7612,
+    "files": [
+      "packages/react/src/Landmark.tsx",
+      "packages/react/demo/Preferences.tsx"
+    ],
+    "gaps": 12,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Input.web": {
+    "hash": "caff4f07ad79dbff",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Landmark.web": {
+    "hash": "d3ca1e6a732159f4",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Link.web": {
+    "hash": "0bc2c4011196e15d",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Menu.web": {
+    "hash": "7ceff7d3bf3b3631",
+    "lastAttemptHash": "7ceff7d3bf3b3631",
+    "generatedAt": "2026-09-10T03:52:53+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.9827,
+    "files": [
+      "packages/react/src/Menu.css",
+      "packages/react/src/Menu.stories.tsx",
+      "packages/react/src/Menu.test.tsx",
+      "packages/react/src/Menu.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Meter.web": {
+    "hash": "ed3fae9e86eb76ad",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "RadioGroup.web": {
+    "hash": "083b4b40c7c7c7e3",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Stack.web": {
+    "hash": "3277f767f428be19",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Switch.web": {
+    "hash": "01c2cc65d41986ce",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Text.web": {
+    "hash": "b464c6c625f79bcf",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  }
+}

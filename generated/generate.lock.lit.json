@@ -1,0 +1,246 @@
+{
+  "Alert.lit": {
+    "hash": "d0cdb2661a2d2940",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "AlertDialog.lit": {
+    "hash": "34e3a4b865d01aa9",
+    "lastAttemptHash": "34e3a4b865d01aa9",
+    "generatedAt": "2026-09-10T03:34:03+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.0142,
+    "files": [
+      "packages/lit/src/AlertDialog.stories.ts",
+      "packages/lit/src/AlertDialog.test.ts",
+      "packages/lit/src/AlertDialog.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Box.lit": {
+    "hash": "9f2cf6b25360fbf6",
+    "lastAttemptHash": "9f2cf6b25360fbf6",
+    "generatedAt": "2026-09-10T02:17:38+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.3136,
+    "files": [
+      "packages/lit/src/Box.ts"
+    ],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Breadcrumb.lit": {
+    "hash": "6d6b61a28592346f",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Button.lit": {
+    "hash": "39bd3fb79222f0bc",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Card.lit": {
+    "hash": "cd7b1ea5b8cfe655",
+    "lastAttemptHash": "cd7b1ea5b8cfe655",
+    "generatedAt": "2026-09-10T02:21:46+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.3815,
+    "files": [
+      "packages/lit/src/Card.stories.ts",
+      "packages/lit/src/Card.ts"
+    ],
+    "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Checkbox.lit": {
+    "hash": "c202e5be6af5ec14",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Container.lit": {
+    "hash": "3916d89a03ee69ee",
+    "lastAttemptHash": "3916d89a03ee69ee",
+    "generatedAt": "2026-09-10T02:24:45+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.2069,
+    "files": [
+      "packages/lit/src/Container.stories.ts",
+      "packages/lit/src/Container.test.ts",
+      "packages/lit/src/Container.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Dialog.lit": {
+    "hash": "327a9cb7e1919aa8",
+    "lastAttemptHash": "327a9cb7e1919aa8",
+    "generatedAt": "2026-09-10T03:11:05+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.5901,
+    "files": [
+      "packages/lit/src/Dialog.stories.ts",
+      "packages/lit/src/Dialog.test.ts",
+      "packages/lit/src/Dialog.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Disclosure.lit": {
+    "hash": "66ee57eb0c5f83eb",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "FocusScope.lit": {
+    "hash": "149a1a306707ab3f",
+    "lastAttemptHash": "149a1a306707ab3f",
+    "generatedAt": "2026-09-10T02:37:44+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.821,
+    "files": [
+      "packages/lit/src/FocusScope.stories.ts",
+      "packages/lit/src/FocusScope.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Form.lit": {
+    "hash": "98a277e171ff02dc",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Heading.lit": {
+    "hash": "413cd6d1cbf66fc3",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Icon.lit": {
+    "hash": "ba00c2bd082d0770",
+    "lastAttemptHash": "ba00c2bd082d0770",
+    "generatedAt": "2026-09-09T22:13:29+00:00",
+    "model": "fable",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.7708,
+    "files": [
+      "packages/lit/src/Icon.ts",
+      "packages/lit/src/Icon.stories.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Input.lit": {
+    "hash": "52f12ce8ac5da6b2",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Landmark.lit": {
+    "hash": "a6d1601a3ea9e3cc",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Link.lit": {
+    "hash": "aa98a2e0c1d63f86",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Menu.lit": {
+    "hash": "1e164b43859e7d87",
+    "lastAttemptHash": "1e164b43859e7d87",
+    "generatedAt": "2026-09-10T04:07:28+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 3.08,
+    "files": [
+      "packages/lit/src/Menu.stories.ts",
+      "packages/lit/src/Menu.test.ts",
+      "packages/lit/src/Menu.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Meter.lit": {
+    "hash": "91c0965d0df5074f",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "RadioGroup.lit": {
+    "hash": "50d0b1cd8ff649e1",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Stack.lit": {
+    "hash": "2acb2c86fd849b6e",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Switch.lit": {
+    "hash": "e97a71a938e5e0ae",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  },
+  "Text.lit": {
+    "hash": "d018932fed9f2910",
+    "adoptedAt": "2026-09-09T21:36:50+00:00",
+    "runner": "adopted"
+  }
+}

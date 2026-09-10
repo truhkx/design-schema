@@ -11,7 +11,7 @@ deterministic gates everywhere else.
 
 How it works
   1. The prompt is generated/prompts/<Name>.<platform>.md (tools/parse.py builds it from the doc).
-     Its sha256 is the identity of the spec. generated/generate.lock.json remembers the hash
+     Its sha256 is the identity of the spec. generated/generate.lock.<platform>.json remembers the hash
      that produced the committed code, so generation only runs when the doc changed.
   2. Round 1: the model gets the prompt plus a short task wrapper (read these files for
      conventions, write these files, report gaps as JSON). Runner `cli` drives Claude Code
@@ -47,7 +47,9 @@ import checks  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 PROMPTS = ROOT / "generated" / "prompts"
-LOCK = ROOT / "generated" / "generate.lock.json"
+LOCK_DIR = ROOT / "generated"
+LEGACY_LOCK = LOCK_DIR / "generate.lock.json"  # the single file used before the per-platform split; migrated on first load
+LOGS = ROOT / "logs"
 GAPS = ROOT / "generated" / "gaps"
 PKG = {"web": "react", "lit": "lit", "rn": "rn"}
 PLATFORM_LABEL = {"web": "React (web)", "lit": "Lit web components", "rn": "React Native"}
@@ -88,12 +90,70 @@ def sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
+def lock_path(platform: str) -> Path:
+    """One lockfile per platform, so three generators (one per platform) never write the same file."""
+    return LOCK_DIR / f"generate.lock.{platform}.json"
+
+
+def _read_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
+def _write_json(path: Path, data: dict) -> None:
+    """Atomic: write beside the target, then replace, so a reader never sees a half-written file."""
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(dict(sorted(data.items())), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def _generator_running() -> bool:
+    """True while another generator run appears to be in progress (tier2.ps1 / regen.ps1 logs without their end marker)."""
+    for log in list(LOGS.glob("tier2.log")) + list(LOGS.glob("regen*.log")):
+        try:
+            text = log.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if "== done ==" not in text and "queue complete" not in text:
+            return True
+    return False
+
+
+def migrate_legacy_lock() -> None:
+    """Split generated/generate.lock.json into the per-platform files. Entries already in a per-platform
+    file win (they were written by the new code). The legacy file is deleted afterwards unless another
+    generator run still appears to be active — an older process would rewrite it at its next save — in
+    which case it is left in place and merged on every load until the run ends."""
+    if not LEGACY_LOCK.exists():
+        return
+    legacy = _read_json(LEGACY_LOCK)
+    for platform in PKG:
+        current = _read_json(lock_path(platform))
+        merged = {**{k: v for k, v in legacy.items() if k.endswith(f".{platform}")}, **current}
+        if merged != current or not lock_path(platform).exists():
+            _write_json(lock_path(platform), merged)
+    if _generator_running():
+        print(f"  note: {LEGACY_LOCK.name} kept — a generator run is still active; it is merged on load and removed on the next run after it finishes")
+        return
+    LEGACY_LOCK.unlink()
+
+
 def load_lock() -> dict:
-    return json.loads(LOCK.read_text(encoding="utf-8")) if LOCK.exists() else {}
+    """The merged view over every platform's lockfile (plus the legacy file while it still exists)."""
+    migrate_legacy_lock()
+    lock: dict = {}
+    if LEGACY_LOCK.exists():
+        lock.update(_read_json(LEGACY_LOCK))
+    for platform in PKG:
+        lock.update(_read_json(lock_path(platform)))
+    return lock
 
 
-def save_lock(lock: dict) -> None:
-    LOCK.write_text(json.dumps(dict(sorted(lock.items())), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+def save_lock(lock: dict, platform: str) -> None:
+    """Write only this platform's entries, merged over what is on disk for it, so concurrent runs of the
+    other platforms are never overwritten and a stale in-memory copy never drops a newer entry."""
+    on_disk = _read_json(lock_path(platform))
+    mine = {k: v for k, v in lock.items() if k.endswith(f".{platform}")}
+    _write_json(lock_path(platform), {**on_disk, **mine})
 
 
 def prompt_path(name: str, platform: str) -> Path:
@@ -341,7 +401,7 @@ def generate_one(name: str, platform: str, args, lock: dict) -> bool:
         "files": files, "gaps": len(all_gaps),
         "gates": {r.name: r.ok for r in results},
     }
-    save_lock(lock)
+    save_lock(lock, platform)
     print(f"  {'✔' if ok else '✖'} {key}: {len(files)} file(s), {len(all_gaps)} gap(s), {round_no} round(s), ${cost:.3f}")
     return ok
 
@@ -380,8 +440,9 @@ def main() -> int:
                 h = sha(prompt_path(n, p).read_text(encoding="utf-8"))
                 lock.setdefault(f"{n}.{p}", {}).update({"hash": h, "adoptedAt": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "runner": "adopted"})
                 n_adopted += 1
-        save_lock(lock)
-        print(f"✔ adopted {n_adopted} target(s) → {LOCK.relative_to(ROOT)}")
+        for platform in PKG:
+            save_lock(lock, platform)
+        print(f"✔ adopted {n_adopted} target(s) → {LOCK_DIR.relative_to(ROOT)}/generate.lock.<platform>.json")
         return 0
 
     platforms = [p.strip() for p in args.platform.split(",") if p.strip()]

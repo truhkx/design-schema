@@ -1,6 +1,6 @@
 # Gap digest — phase Core
 
-Generated 2026-09-10T01:26 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T01:30 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## AlertDialog
 
@@ -372,6 +372,12 @@ Doc: `site/src/content/docs/components/dialog.md`
 
 Doc: `site/src/content/docs/components/divider.md`
 
+### 2026-09-10 01:30 — web round 1
+
+- **DOC** Divider: label is documented as text for a horizontal divider only ("Optional text in the middle of a horizontal divider"). When orientation is vertical and label is set, I render a plain vertical line (no label text, since there's no described layout for a vertical labelled divider) but still treat it as semantic (role=separator, aria-orientation=vertical) since a label was explicitly given — the doc doesn't cover this combination. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: labelSize and fontFamily are listed as overridable bindings using the standard --ds-divider-* CSS hook convention, but the label is rendered via the composed Text component, which already owns fontSize/fontFamily as its own overridable bindings. Rather than adding a parallel --ds-divider-label-size/--ds-divider-font-family hook that no rule would read, I forward overrides.labelSize/overrides.fontFamily into Text's own overrides prop (fontSize/fontFamily). Net effect for consumers is the same (the token applies), but there is no literal --ds-divider-label-size custom property to set from plain CSS as the generic override docs describe — only Text's own --ds-text-font-size hook, reachable by targeting Text's default class from outside, which isn't documented either. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: platform notes describe the vertical line as 'inline-size: var(--border-width-thin)' and the schema's thickness token is named border.width.thin, suggesting a CSS border. I implemented the line (both orientations, and both the plain-<hr> and labelled-<div> forms) as an explicit block-size/inline-size box with background-color instead of a border, so the single thickness/color hook pair works identically across the <hr> and the two line spans in the labelled layout without doubled-border rendering differences. → `site/src/content/docs/components/divider.md`
+
 ### 2026-09-10 01:26 — rn round 1
 
 - **DOC** The RN platform notes state there is no native `separator` accessibility role, so I hide an unlabeled Divider from assistive technology (accessibilityElementsHidden + importantForAccessibility="no") regardless of the `semantic` prop, and only expose content when a `label` is present (read naturally via Text). This means `semantic=true` without a `label` has no observable effect on native — I added a __DEV__ warning for that case since the spec doesn't say whether to warn. → `site/src/content/docs/components/divider.md`
@@ -700,7 +706,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 299 · CODE: 22 · TOOLING: 2 · NOISE: 8
+DOC: 302 · CODE: 22 · TOOLING: 2 · NOISE: 8
 
 ## Gates to fix
 

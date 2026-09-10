@@ -59,6 +59,7 @@ import './Carousel.js';
 import './Table.js';
 import './DataGrid.js';
 import './TreeGrid.js';
+import './Tree.js';
 
 export { DsAccordion } from './Accordion.js';
 export type {
@@ -426,3 +427,14 @@ export type {
   TreeGridExpandDetail,
   TreeGridOverridableBinding,
 } from './TreeGrid.js';
+
+export { DsTree } from './Tree.js';
+export type {
+  TreeNode,
+  TreeSelectable,
+  TreeSelectionChangeDetail,
+  TreeExpandChangeDetail,
+  TreeExpandDetail,
+  TreeActivateDetail,
+  TreeOverridableBinding,
+} from './Tree.js';

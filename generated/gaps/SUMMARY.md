@@ -1,6 +1,6 @@
 # Gap digest — phase Grids
 
-Generated 2026-09-10T14:28 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T14:31 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -1719,6 +1719,18 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 Doc: `site/src/content/docs/components/tree.md`
 
+### 2026-09-10 14:31 — web round 1
+
+- **DOC** Tree: platform notes show `<ul role="tree" data-ds="Tree">` as the root, but `showLabel` needs a heading above the tree; used an outer wrapping `<div data-ds="Tree" data-part="container">` holding the optional Heading plus the ul, matching the 'root carries data-ds' convention and TreeGrid's own wrapper-div precedent rather than putting data-ds on the ul itself. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: a11y line says 'aria-label ... on the tree' unconditionally, but when `showLabel` renders a visible Heading, used `aria-labelledby` pointing to it instead (falling back to `aria-label` when the label is invisible) to avoid the name being announced twice. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: no `headingLevel`-style prop is given for the `showLabel` heading; hardcoded `level={2} size="md"`, the same choice TreeGrid makes for its own caption. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: the `styles` block gives no token for the decorative checkbox glyph's box in `multiple` mode (only `checkboxGap`, the gap beside it); reused the same control tokens Checkbox.tsx itself draws from (`color.control.border`/`background`/`selectedBackground`, `radius.sm`) since none were specified here. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: `IconName` has no folder/file-type glyphs even though the guidance's own example is 'icon consistently per node type (folder/file)'; `TreeNode.icon` is still typed as `IconName` verbatim per the schema shape, but the shared icon set can't express that guidance — stories mostly omit node icons as a result. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: platform notes specify a type-ahead buffer window of 'motion.duration.base × 5', which is a CSS token, not a value usable in a JS `setTimeout`; used a literal 500ms, matching Listbox's own precedent for the same problem. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: 'Ctrl+A selects all visible nodes' was read as the currently flattened, non-disabled, non-placeholder node list at the current expansion state (not every id in the full recursive tree). → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: `selected`/`defaultSelected`/`onSelectionChange` are `string[]` per the schema even under `selectable: single`, so single-select still stores/reports a one-element array rather than a bare string; kept as specified. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: the schema's `keyboard` block has no mouse/pointer rules; added click-to-select/toggle, double-click-to-activate, and a chevron click that toggles expansion without changing selection, since a tree with no pointer behavior would be unusable — this is an inferred addition beyond the literal spec. → `site/src/content/docs/components/tree.md`
+
 ### 2026-09-10 14:28 — rn round 1
 
 - **DOC** No RN element expresses a11y.role 'tree'/'treeitem'/'group'; per the platform notes I used FlatList with accessibilityRole='list' and accessibilityLabel={label}, with per-row accessibilityState/accessibilityActions carrying expanded/selected/checked state instead. → `site/src/content/docs/components/tree.md`
@@ -1781,7 +1793,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 909 · CODE: 39 · TOOLING: 2 · NOISE: 14
+DOC: 918 · CODE: 39 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

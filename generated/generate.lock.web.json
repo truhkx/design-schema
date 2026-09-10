@@ -206,6 +206,30 @@
       "modules": true
     }
   },
+  "Combobox.web": {
+    "hash": "d84b56446df7bb16",
+    "lastAttemptHash": "d84b56446df7bb16",
+    "generatedAt": "2026-09-10T14:13:55+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 3.4272,
+    "files": [
+      "packages/react/src/Combobox.css",
+      "packages/react/src/Combobox.stories.tsx",
+      "packages/react/src/Combobox.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Container.web": {
     "hash": "0fdf6b7a9ccdeb76",
     "lastAttemptHash": "0fdf6b7a9ccdeb76",

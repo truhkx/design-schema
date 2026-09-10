@@ -11,6 +11,7 @@
  * root attributes without extra wiring.
  */
 
+import './Accordion.js';
 import './Button.js';
 import './Heading.js';
 import './Text.js';
@@ -46,6 +47,17 @@ import './Tabs.js';
 import './SegmentedControl.js';
 import './Listbox.js';
 import './Select.js';
+import './Combobox.js';
+
+export { DsAccordion } from './Accordion.js';
+export type {
+  AccordionHeadingLevel,
+  AccordionItem,
+  AccordionOpenChangeReason,
+  AccordionChangeDetail,
+  AccordionOpenChangeDetail,
+  AccordionOverridableBinding,
+} from './Accordion.js';
 
 export { DsButton } from './Button.js';
 export type {
@@ -275,3 +287,13 @@ export type {
   SelectOpenChangeDetail,
   SelectOverridableBinding,
 } from './Select.js';
+
+export { DsCombobox } from './Combobox.js';
+export type {
+  ComboboxFilter,
+  ComboboxValue,
+  ComboboxChangeDetail,
+  ComboboxInputChangeDetail,
+  ComboboxOpenChangeDetail,
+  ComboboxOverridableBinding,
+} from './Combobox.js';

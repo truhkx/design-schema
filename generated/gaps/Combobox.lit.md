@@ -1,0 +1,16 @@
+# Gaps reported while generating Combobox for lit
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-10 10:09 — round 1
+
+- Combobox: the behavior prose says typing 'opens the list with no active option,' but the `filter: none` prop description says typing 'only moves the active option' (a typeahead-like behavior) — implemented the general no-active-option rule for startsWith/contains/async, and a first-match-startsWith typeahead activation (without filtering `options`) only for `filter: none`.
+- Combobox: the dedicated `Alt+ArrowDown` key rule ('opens the list without moving the active option') contradicts the inline mention inside the `Home`/`End` rule's action text ('Alt+ArrowDown/Up jump the list to first/last'). Implemented only the literal, dedicated `Alt+ArrowDown` entry; no `Alt+ArrowUp` handling was added since it has no rule of its own and the keyboard section says to implement exactly what is listed and nothing else.
+- Combobox: `allowCustom`'s prop description says 'Enter or a separator (comma) commits it,' but the `keyboard` block — which the instructions say to implement exactly and nothing else — only lists Enter as a commit key. Implemented Enter only; comma-as-commit was not added.
+- Combobox: `aria-activedescendant` on the `<input>` cannot resolve as a plain id string across the shadow-root boundary between `<ds-combobox>` and the internally-rendered `<ds-listbox>` option elements (two separate shadow trees). Implemented via the cross-root `ariaActiveDescendantElement` IDL reflection where the browser supports it, with the id string set as a best-effort fallback attribute; Select.ts's existing combobox-style trigger has the same architecture and does not set activedescendant at all.
+- Combobox: `DsFormField.currentValue` is typed `string | boolean | null`, but a `multiple` combobox's value is `string[]` — the same caveat Listbox documents for itself; `<ds-form>` does not currently discover `ds-combobox` by tag.
+- Combobox: the ~500ms debounce for the `status` live region is specified only in the Web/React platform notes as `motion.duration.base × 2`; Lit's own platform notes give no value, so a plain (non-token) timing constant was used, following the precedent Listbox sets for its own typeahead-reset timer.
+- Combobox: diacritic-insensitive filtering is called out only in the Web platform notes ('Filtering is case- and diacritic-insensitive'), not in Lit's; implemented case-insensitive matching only.
+- Combobox: 'Clicking the toggle button opens the full list' was interpreted as showing `options` unfiltered by any currently-typed query for that opening (reset on the next keystroke), since the schema does not say what happens to already-typed text at that moment.
+- Combobox: no prop exposes the popup's open/closed boolean state (as with Select and Menu), so the `Keyboard` story opens it imperatively in `play` by clicking the composed toggle button's inner native button, matching the Select generator's precedent.
+- Combobox: what a controlled `inputValue` should become after a commit (Enter, option click, clear) is undocumented — left to the consumer to update from `change`/`input-change`; only the uncontrolled `internalText` is set by the component itself.

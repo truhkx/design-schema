@@ -1,4 +1,27 @@
 {
+  "Accordion.lit": {
+    "hash": "3c8ad8d741a8338e",
+    "lastAttemptHash": "3c8ad8d741a8338e",
+    "generatedAt": "2026-09-10T14:16:20+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.3049,
+    "files": [
+      "packages/lit/src/Accordion.stories.ts",
+      "packages/lit/src/Accordion.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "ActionSheet.lit": {
     "hash": "76526e076e2bfc9a",
     "lastAttemptHash": "76526e076e2bfc9a",
@@ -194,6 +217,29 @@
       "packages/lit/src/index.ts"
     ],
     "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Combobox.lit": {
+    "hash": "63ad1226eb485dd5",
+    "lastAttemptHash": "63ad1226eb485dd5",
+    "generatedAt": "2026-09-10T14:09:17+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.4431,
+    "files": [
+      "packages/lit/src/Combobox.stories.ts",
+      "packages/lit/src/Combobox.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -215,6 +215,7 @@ class TestMain:
         monkeypatch.setattr(p, "TEMPLATES", templates)
         monkeypatch.setattr(p, "ROOT", tmp_path)
         monkeypatch.setattr(p, "EXT_DOCS", tmp_path / "extensions")  # none: the real extensions extend real components
+        monkeypatch.setattr(p, "PATTERN_DOCS", tmp_path / "patterns")  # none: the real pattern names real components
         return docs, out
 
     def test_writes_components_json_and_a_prompt_per_platform(self, sandbox, component):

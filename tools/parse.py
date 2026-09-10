@@ -38,6 +38,7 @@ DOCS = ROOT / "site" / "src" / "content" / "docs" / "components"
 THEME_DOCS = ROOT / "site" / "src" / "content" / "docs" / "themes"
 SCHEMA = ROOT / "schema" / "component.schema.json"
 EXT_DOCS = ROOT / "site" / "src" / "content" / "docs" / "extensions"
+PATTERN_DOCS = ROOT / "site" / "src" / "content" / "docs" / "patterns"
 EXT_SCHEMA = ROOT / "schema" / "extension.schema.json"
 PKG = {"web": "react", "lit": "lit", "rn": "rn"}
 TEMPLATES = ROOT / "prompts" / "templates"
@@ -577,6 +578,169 @@ def write_module_stubs(components: list[dict]) -> int:
     return len(stubs)
 
 
+# ---------------------------------------------------------------- patterns
+# A pattern doc (site/src/content/docs/patterns/<name>.md) is a page made only of system components. It has no
+# `component:` block; its contract is the code block under "## Structure" (a tree of components with props) plus
+# "## Behaviors the page must show". The parser checks every component and prop the tree names against the
+# component schemas and emits one prompt per platform from prompts/templates/pattern-<platform>.md.
+
+PATTERN_HEADINGS = ["Overview", "What the page is", "Structure", "Behaviors the page must show", "Themes and platforms",
+                    "Seams to look for", "Acceptance"]
+PATTERN_REQUIRED = ["Structure", "Behaviors the page must show"]
+FENCE = re.compile(r"```[^\n]*\n(.*?)```", re.S)
+KEYED = re.compile(r'([A-Za-z_][A-Za-z0-9_]*)=("([^"]*)"|[^\s"]+)')
+QUOTED = re.compile(r'"([^"]*)"')
+PARENS = re.compile(r"\(([^)]*)\)")
+CAMEL = re.compile(r"[a-z][A-Z]")
+
+
+def pattern_name(title: str) -> str:
+    """'Settings page' → 'SettingsPage' (the demo file, the story and the target name)."""
+    words = re.findall(r"[A-Za-z0-9]+", title)
+    return "".join(w[:1].upper() + w[1:] for w in words)
+
+
+def kebab(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "-", name).lower()
+
+
+def parse_structure(text: str) -> list[dict]:
+    """The Structure tree, one node per non-empty line: component (first word), `prop=value` props, bare-word
+    flags (a boolean prop, an event, a part or an enum shorthand — validated later), quoted copy, parenthesised
+    or trailing prose as notes, and `prop=value?` open questions. Depth is the indent in two-space steps."""
+    nodes = []
+    for lineno, raw in enumerate(text.splitlines(), 1):
+        if not raw.strip():
+            continue
+        indent = len(raw) - len(raw.lstrip(" "))
+        line = raw.strip()
+        props, questions = {}, {}
+        rest = []
+        pos = 0
+        for m in KEYED.finditer(line):
+            rest.append(line[pos:m.start()])
+            key, value = m.group(1), m.group(3) if m.group(3) is not None else m.group(2)
+            if value.endswith("?"):
+                questions[key] = value[:-1]
+            else:
+                props[key] = value
+            pos = m.end()
+        rest.append(line[pos:])
+        line = " ".join(rest)
+        notes = [n.strip() for n in PARENS.findall(line) if n.strip()]
+        line = PARENS.sub(" ", line)
+        copy = QUOTED.findall(line)
+        head, tail = line, ""
+        if '"' in line:
+            head, tail = line.split('"', 1)
+            tail = QUOTED.sub(" ", '"' + tail).strip()  # prose after the copy, e.g. '→ AlertDialog', 'on successful submit'
+        if tail:
+            notes.append(tail)
+        tokens = head.split()
+        if not tokens:
+            continue
+        nodes.append({"line": lineno, "depth": indent // 2, "component": tokens[0], "props": props, "questions": questions,
+                      "flags": tokens[1:], "copy": copy, "notes": notes})
+    return nodes
+
+
+def resolve_part(name: str, comps: dict[str, dict]) -> tuple[dict | None, str | None]:
+    """`TabPanel` → (Tabs, 'panel'): a component name (or its singular) followed by a capitalised anatomy part."""
+    for cname, c in comps.items():
+        for part in c.get("anatomy") or []:
+            cap = part[:1].upper() + part[1:]
+            if name in (cname + cap, cname.rstrip("s") + cap):
+                return c, part
+    return None, None
+
+
+def validate_structure(nodes: list[dict], comps: dict[str, dict], file: str) -> list[str]:
+    """Every component must exist; every `prop=value` must name a prop or event (enum values checked); a camelCase
+    flag must be a prop or event; other bare words are enum shorthands, parts, or prose. Returns the components
+    used, in order of first use."""
+    used: list[str] = []
+    for n in nodes:
+        name = n["component"]
+        c = comps.get(name)
+        if c is None:
+            c, part = resolve_part(name, comps)
+            if c is None:
+                raise DocError(f"{file}: line {n['line']}: unknown component '{name}'")
+            n["partOf"], n["part"] = c["name"], part
+            continue
+        if name not in used:
+            used.append(name)
+        props = c.get("props") or {}
+        events = c.get("events") or {}
+        anatomy = set(c.get("anatomy") or [])
+        enum_values = {v for pd in props.values() if pd.get("type") == "enum" for v in pd.get("values") or []}
+        for key, value in n["props"].items():
+            if key not in props and key not in events:
+                raise DocError(f"{file}: line {n['line']}: {name} has no prop or event '{key}'")
+            pd = props.get(key)
+            if pd and pd.get("type") == "enum" and str(value) not in pd["values"]:
+                raise DocError(f"{file}: line {n['line']}: {name}.{key}: '{value}' is not one of {pd['values']}")
+        for flag in n["flags"]:
+            if flag in props or flag in events or flag in anatomy or flag in enum_values:
+                continue
+            if CAMEL.search(flag):
+                raise DocError(f"{file}: line {n['line']}: {name} has no prop or event '{flag}'")
+    return used
+
+
+def pattern_components_section(used: list[str], comps: dict[str, dict], platform: str) -> str:
+    lines = ["## Components used", "", f"Every one exists in `packages/{PKG[platform]}/src`; import from there and read a file only when a prop's behaviour is unclear.", ""]
+    for name in used:
+        c = comps[name]
+        notes = (c.get("platforms") or {}).get(platform) or {}
+        where = notes.get("tag") or notes.get("element") or ""
+        lines.append(f"- `{name}` — `packages/{PKG[platform]}/src/{name}.*`" + (f" ({where})" if where else ""))
+    return "\n".join(lines)
+
+
+def parse_patterns(components: list[dict]) -> tuple[list[dict], list[str]]:
+    """Pattern docs → generated/prompts/Pattern.<Name>.<platform>.md per platform that has a pattern template."""
+    patterns, errors = [], []
+    if not PATTERN_DOCS.exists():
+        return patterns, errors
+    comps = {e["component"]["name"]: e["component"] for e in components}
+    for path in sorted(PATTERN_DOCS.glob("*.md")):
+        try:
+            fm, body = split_frontmatter(path.read_text(encoding="utf-8"), path)
+            if "component" in fm or "theme" in fm:
+                raise DocError(f"{path.name}: has a component:/theme: block, so it is not a pattern")
+            sections = split_sections(body, path, PATTERN_HEADINGS, PATTERN_REQUIRED)
+            m = FENCE.search(sections["Structure"])
+            if not m:
+                raise DocError(f"{path.name}: the Structure section has no code block")
+            structure = m.group(1).rstrip()
+            nodes = parse_structure(structure)
+            used = validate_structure(nodes, comps, path.name)
+            title = fm.get("title", path.stem)
+            name = pattern_name(title)
+            behaviors = sections["Behaviors the page must show"]
+            guidance = "\n\n".join(f"## {h}\n\n{sections[h]}" for h in PATTERN_HEADINGS
+                                   if h in sections and h not in ("Structure", "Behaviors the page must show"))
+            written = []
+            for platform in PKG:
+                template_path = TEMPLATES / f"pattern-{platform}.md"
+                if not template_path.exists():
+                    continue
+                prompt = (template_path.read_text(encoding="utf-8")
+                          .replace("{{NAME}}", name).replace("{{TITLE}}", title).replace("{{PLATFORM}}", platform)
+                          .replace("{{KEBAB}}", kebab(name))
+                          .replace("{{COMPONENTS}}", pattern_components_section(used, comps, platform))
+                          .replace("{{STRUCTURE}}", structure).replace("{{BEHAVIORS}}", behaviors).replace("{{GUIDANCE}}", guidance))
+                write_if_changed(OUT / "prompts" / f"Pattern.{name}.{platform}.md", prompt)
+                written.append(platform)
+            patterns.append({"id": path.stem, "name": name, "title": title, "components": used, "platforms": written,
+                             "questions": {n["component"]: n["questions"] for n in nodes if n["questions"]},
+                             "source": str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)})
+        except DocError as e:
+            errors.append(str(e))
+    return patterns, errors
+
+
 def render_prompt(c: dict, sections: dict[str, str], platform: str, fm_yaml: str, extensions: list[dict] | None = None) -> str:
     template = (TEMPLATES / f"{platform}.md").read_text()
     guidance = "\n\n".join(f"## {h}\n\n{sections[h]}" for h in ALLOWED_HEADINGS if h in sections)
@@ -682,11 +846,13 @@ def main() -> int:
             errors += [f"{ext['file']}: extends '{name}', which has no component doc" for ext in exts]
     write_if_changed(OUT / "components.json", json.dumps(components, indent=2, ensure_ascii=False) + "\n")
     write_module_stubs(components)
+    patterns, pattern_errors = parse_patterns(components)
+    errors += pattern_errors
     themes, theme_errors = parse_themes()
     errors += theme_errors
     for e in errors:
         print(f"✖ {e}", file=sys.stderr)
-    print(f"{'✖' if errors else '✔'} {len(components)} component(s), {len(themes)} theme(s) parsed, {len(errors)} error(s) → {OUT.relative_to(ROOT)}/")
+    print(f"{'✖' if errors else '✔'} {len(components)} component(s), {len(themes)} theme(s), {len(patterns)} pattern(s) parsed, {len(errors)} error(s) → {OUT.relative_to(ROOT)}/")
     return 1 if errors else 0
 
 

@@ -165,7 +165,7 @@ def all_targets() -> list[tuple[str, str]]:
     for p in sorted(PROMPTS.glob("*.md")):
         if p.name.startswith("theme."):
             continue
-        name, platform = p.stem.split(".", 1)
+        name, platform = p.stem.rsplit(".", 1)  # `Pattern.<Name>.<platform>` keeps its dot in the name
         if platform in PKG:
             out.append((name, platform))
     return out
@@ -193,13 +193,22 @@ def task_prompt(name: str, platform: str) -> str:
     theme = feel_only(theme)
     digest = (CONVENTIONS / f"{platform}.md").read_text(encoding="utf-8") if (CONVENTIONS / f"{platform}.md").exists() else ""
     exemplar = CONVENTION_FILES[platform][1]
+    if name.startswith("Pattern."):
+        short = name.split(".", 1)[1]
+        task = (f"Then generate the pattern page **{short}** from the specification below into `packages/{PKG[platform]}/demo/` "
+                f"(the page and its `Patterns/{short}` story). Do not touch `src/index.ts`; compose only the package's existing "
+                f"components and never re-implement or restyle them.")
+    else:
+        task = (f"Then generate **{name}** from the specification below. Also add the export(s) to the package's `index.ts` in its "
+                f"existing style. If the spec's Related section names components that exist in the package, compose them; never "
+                f"re-implement or restyle them.")
     return f"""You are the {PLATFORM_LABEL[platform]} generator for the Design Schema repository (cwd is the repo root).
 
 The package conventions are summarised below; follow them exactly. Do not read the whole package — open `{CONVENTION_FILES[platform][0]}` to add the export, and at most one existing component (`{exemplar}` or the one closest to what you are writing) if the digest leaves a detail out.
 
 {digest}
 
-Then generate **{name}** from the specification below. Also add the export(s) to the package's `index.ts` in its existing style. If the spec's Related section names components that exist in the package, compose them; never re-implement or restyle them.
+{task}
 
 {REPORT_INSTRUCTIONS}
 
@@ -464,6 +473,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--platform", default="web,lit,rn", help="comma-separated: web,lit,rn")
     ap.add_argument("--component", help="comma-separated component names (as in the doc frontmatter)")
+    ap.add_argument("--pattern", help="comma-separated pattern names (the doc title without spaces, e.g. SettingsPage); targets Pattern.<Name>.<platform>")
     ap.add_argument("--stale", action="store_true", help="generate every target whose prompt hash changed")
     ap.add_argument("--check", action="store_true", help="list stale targets and exit 1 if any")
     ap.add_argument("--adopt", action="store_true", help="record current prompt hashes for targets whose code already exists (hand-written or generated elsewhere), without calling a model")
@@ -488,8 +498,8 @@ def main() -> int:
     if args.adopt:
         n_adopted = 0
         for n, p in all_targets():
-            src = ROOT / "packages" / PKG[p] / "src"
-            exists = any(src.glob(f"{n}.*"))
+            folder, stem = (ROOT / "packages" / PKG[p] / "demo", n.split(".", 1)[1]) if n.startswith("Pattern.") else (ROOT / "packages" / PKG[p] / "src", n)
+            exists = any(folder.glob(f"{stem}.*"))
             if exists:
                 h = sha(prompt_path(n, p).read_text(encoding="utf-8"))
                 lock.setdefault(f"{n}.{p}", {}).update({"hash": h, "adoptedAt": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "runner": "adopted"})
@@ -505,10 +515,11 @@ def main() -> int:
             sys.exit(f"unknown platform {p}")
     if args.stale:
         targets = [(n, p) for n, p in stale_targets(lock) if p in platforms]
-    elif args.component:
-        targets = [(n.strip(), p) for n in args.component.split(",") for p in platforms]
+    elif args.component or args.pattern:
+        targets = [(n.strip(), p) for n in (args.component or "").split(",") if n.strip() for p in platforms]
+        targets += [(f"Pattern.{n.strip()}", p) for n in (args.pattern or "").split(",") if n.strip() for p in platforms]
     else:
-        ap.error("give --component NAME[,NAME] or --stale or --check")
+        ap.error("give --component NAME[,NAME], --pattern NAME[,NAME], --stale or --check")
     if not targets:
         print("nothing to do")
         return 0

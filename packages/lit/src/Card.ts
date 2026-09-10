@@ -83,7 +83,8 @@ type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[]
  * hit area across the whole card (a class added on `slotchange`, backed by a
  * rule injected into the light tree — see `ensureHitAreaStyle`) and draw the
  * focus ring on the card via `:focus-within`; the card itself is never a
- * second tab stop.
+ * second tab stop. `focusable` cards instead take `tabindex="-1"` (scripted
+ * focus only, e.g. from a Feed) and draw the same ring via `:focus-visible`.
  *
  * ## When to use
  *
@@ -195,6 +196,12 @@ export class DsCard extends LitElement {
       outline-offset: var(--border-width-focus);
     }
 
+    /* focusable: scripted focus only (tabindex="-1"); the card draws its own ring via :focus-visible. */
+    :host(:focus-visible) .surface {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: var(--border-width-focus);
+    }
+
     .body {
       min-inline-size: 0;
     }
@@ -226,6 +233,13 @@ export class DsCard extends LitElement {
    */
   @property({ type: Boolean, reflect: true }) interactive = false;
 
+  /**
+   * The card root takes `tabindex="-1"` so a container (Feed) can move focus
+   * to it by script, and draws its own focus ring when focused that way. Not
+   * a tab stop; not for making cards clickable (`interactive`).
+   */
+  @property({ type: Boolean }) focusable = false;
+
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings (background, focusRing, focusRingWidth) are ignored. */
   @property({ attribute: false }) overrides?: Partial<Record<CardOverridableBinding, TokenRef>>;
 
@@ -245,6 +259,13 @@ export class DsCard extends LitElement {
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) {
       this.applyOverrides();
+    }
+    if (changed.has('focusable')) {
+      if (this.focusable) {
+        this.setAttribute('tabindex', '-1');
+      } else {
+        this.removeAttribute('tabindex');
+      }
     }
   }
 

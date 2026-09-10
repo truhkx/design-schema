@@ -8,3 +8,7 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Divider: the `semantic` prop and `label` both drive the same role/aria-orientation exposure (guidance text says a labelled divider 'becomes semantic'); I implemented `effectiveSemantic = semantic || Boolean(label)` since the schema gives no separate visual/AT toggle for a labelled-but-not-announced divider.
 - Divider: labelSize/fontFamily overrides are wired into the composed `<ds-text>` by targeting its own public override hooks (`--ds-text-font-size`, `--ds-text-font-family`) from a `.label` class rule in Divider's shadow styles, rather than passing Text's `overrides` property object, since that avoids fighting Lit's property/attribute timing and stays within Text's documented CSS-variable contract; labelColor is left to Text's own locked `tone="muted"` default since it's excluded from Divider's overridable set.
 - Divider: no keyboard model, form-field interface, or events apply to this component (purely presentational/APG separator), so none were implemented — confirming there was nothing ambiguous there, just absent by design.
+
+## 2026-09-10 17:29 — round 1
+
+- Divider: doc says label is 'ignored on a vertical divider, with a development warning' but doesn't specify whether that also suppresses the implied `semantic`; I chose to fully ignore the label (no render, no implied semantic) on vertical, only honoring an explicit `semantic` prop there, since the label truly has nowhere to render.

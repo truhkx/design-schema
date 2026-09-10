@@ -78,6 +78,10 @@ export const IconOnly: Story = {
 // notable states
 export const Disabled: Story = { args: { disabled: true } };
 export const Loading: Story = { args: { loading: true } };
+export const Expanded: Story = { args: { expanded: true, label: 'Options', trailingIcon: <GlyphIcon name="chevron-down" /> } };
+export const AccessibleName: Story = {
+  args: { label: 'Amount', accessibleName: 'Sort by Amount, ascending', trailingIcon: <GlyphIcon name="chevron-up" /> },
+};
 
 /** Stands in for a Toast or tooltip-like panel: the surface `inverse` buttons sit on. */
 function InverseSurface({ children }: { children: React.ReactNode }): React.JSX.Element {

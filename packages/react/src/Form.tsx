@@ -59,8 +59,11 @@ export interface FormProps
     ComponentPropsWithoutRef<'form'>,
     'children' | 'name' | 'onSubmit' | 'onInvalid' | 'noValidate' | 'aria-label' | 'aria-labelledby'
   > {
-  /** Fields (Input etc.), layout (Stack), and at least one Button with `type: submit`. */
+  /** Fields (Input etc.) and layout (Stack). The action row goes in `actions`. */
   children: ReactNode;
+  /** The action row: at least one Button with `type: submit`, primary first (Form's action-order
+   * rule). Rendered after the fields with the form gap. */
+  actions: ReactNode;
   /** Identifier for the form, used for analytics and as the base of generated ids. */
   name?: string;
   /** Accessible name for the form landmark, e.g. "Sign in". Required when a page has more than one form and `labelledBy` is not set. */
@@ -99,6 +102,7 @@ function shallowEqual(a: Readonly<FormErrors>, b: Readonly<FormErrors>): boolean
 export const Form = forwardRef<HTMLFormElement, FormProps>(function Form(
   {
     children,
+    actions,
     name,
     label,
     labelledBy,
@@ -226,6 +230,7 @@ export const Form = forwardRef<HTMLFormElement, FormProps>(function Form(
         ref={formRef}
         name={name}
         data-ds="Form"
+        data-part="container"
         className={classes}
         style={mergedStyle}
         noValidate
@@ -262,7 +267,12 @@ export const Form = forwardRef<HTMLFormElement, FormProps>(function Form(
             </ul>
           </div>
         ) : null}
-        {children}
+        <div className="ds-form__fields" data-part="fields">
+          {children}
+        </div>
+        <div className="ds-form__actions" data-part="actions">
+          {actions}
+        </div>
       </form>
     </FormContext.Provider>
   );

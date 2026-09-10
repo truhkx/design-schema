@@ -6,6 +6,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'search' | 'tel' | 'url';
+export type InputSize = 'sm' | 'md';
 
 /** Detail carried by the `change` CustomEvent. */
 export interface InputChangeDetail {
@@ -24,12 +25,15 @@ export type InputOverridableBinding =
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
+  | 'paddingBlockSm'
+  | 'paddingInlineSm'
   | 'partGap'
   | 'fontFamily'
   | 'fontSize'
   | 'labelWeight'
   | 'helperSize'
   | 'lineHeight'
+  | 'minTargetSm'
   | 'disabledOpacity';
 
 const HOOKS: Record<InputOverridableBinding, string> = {
@@ -39,12 +43,15 @@ const HOOKS: Record<InputOverridableBinding, string> = {
   radius: '--ds-input-radius',
   paddingInline: '--ds-input-padding-inline',
   paddingBlock: '--ds-input-padding-block',
+  paddingBlockSm: '--ds-input-padding-block-sm',
+  paddingInlineSm: '--ds-input-padding-inline-sm',
   partGap: '--ds-input-part-gap',
   fontFamily: `--ds-input-font-family`,
   fontSize: '--ds-input-font-size',
   labelWeight: '--ds-input-label-weight',
   helperSize: '--ds-input-helper-size',
   lineHeight: '--ds-input-line-height',
+  minTargetSm: '--ds-input-min-target-sm',
   disabledOpacity: '--ds-input-disabled-opacity',
 };
 
@@ -99,17 +106,38 @@ export class DsInput extends LitElement {
       --ds-input-radius: var(--radius-md);
       --ds-input-padding-inline: var(--space-md);
       --ds-input-padding-block: var(--space-sm);
+      --ds-input-padding-inline-sm: var(--space-2);
+      --ds-input-padding-block-sm: var(--space-1);
       --ds-input-part-gap: var(--space-1);
       --ds-input-font-family: var(--font-family-body);
       --ds-input-font-size: var(--font-size-md);
       --ds-input-label-weight: var(--font-weight-medium);
       --ds-input-helper-size: var(--font-size-sm);
       --ds-input-line-height: var(--font-line-height-normal);
+      --ds-input-min-target-sm: var(--size-target-min);
       --ds-input-disabled-opacity: var(--opacity-disabled);
     }
 
     :host([hidden]) {
       display: none;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* fontSize: font.size.{size} */
+    :host([size='sm']) {
+      --ds-input-font-size: var(--font-size-sm);
     }
 
     .label {
@@ -162,6 +190,13 @@ export class DsInput extends LitElement {
       }
     }
 
+    /* paddingBlockSm / paddingInlineSm / minTargetSm replace the md bindings at size sm */
+    :host([size='sm']) .field {
+      min-block-size: var(--ds-input-min-target-sm);
+      padding-block: var(--ds-input-padding-block-sm);
+      padding-inline: var(--ds-input-padding-inline-sm);
+    }
+
     /* placeholder: color.foreground.muted, locked */
     .field::placeholder {
       color: var(--color-foreground-muted);
@@ -177,6 +212,11 @@ export class DsInput extends LitElement {
       border-width: var(--border-width-focus);
       padding-inline: calc(var(--ds-input-padding-inline) - (var(--border-width-focus) - var(--ds-input-border-width)));
       padding-block: calc(var(--ds-input-padding-block) - (var(--border-width-focus) - var(--ds-input-border-width)));
+    }
+
+    :host([size='sm']) .field:focus-visible {
+      padding-inline: calc(var(--ds-input-padding-inline-sm) - (var(--border-width-focus) - var(--ds-input-border-width)));
+      padding-block: calc(var(--ds-input-padding-block-sm) - (var(--border-width-focus) - var(--ds-input-border-width)));
     }
 
     /* borderInvalid: color.border.danger */
@@ -231,6 +271,17 @@ export class DsInput extends LitElement {
 
   /** Input type. Drives the keyboard on touch platforms and browser validation on web. */
   @property({ reflect: true }) type: InputType = 'text';
+
+  /** Visually hide the label (it remains the accessible name via the native `<label for>`). */
+  @property({ type: Boolean, attribute: 'hide-label' }) hideLabel = false;
+
+  /**
+   * sm swaps paddingBlock/paddingInline/minTarget for their Sm bindings and the
+   * font size to font.size.sm; nothing else changes. Not listed under this
+   * component's `platforms.lit.reflect`, but reflected anyway since the size
+   * variants are expressed as CSS attribute selectors, matching Search's `size`.
+   */
+  @property({ reflect: true }) size: InputSize = 'md';
 
   /** The field must have a value to submit. Shown in the label, not only by color. */
   @property({ type: Boolean, reflect: true }) required = false;
@@ -342,7 +393,10 @@ export class DsInput extends LitElement {
         .join(' ') || undefined;
 
     return html`
-      <label class="label" part="label" for="field"
+      <label
+        class=${classMap({ label: true, 'visually-hidden': this.hideLabel })}
+        part="label"
+        for="field"
         >${this.label}${this.required
           ? html`<span class="required" aria-hidden="true"> (required)</span>`
           : nothing}</label

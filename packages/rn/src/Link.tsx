@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Animated, Linking, Text as RNText } from 'react-native';
-import type { TextStyle } from 'react-native';
+import { Animated, Linking } from 'react-native';
+import type { GestureResponderEvent, TextStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Icon } from './Icon';
@@ -17,15 +17,35 @@ export interface LinkProps {
   href: string;
   /** The link text. Also the accessible name. Says where the link goes, not "click here". */
   label: string;
-  /** Marks a destination outside the product: appends `copy.externalSuffix` to the accessible name, with a decorative trailing icon. Navigation is still `onPress` or `Linking`. */
+  /** Marks a destination outside the product: appends `copy.externalSuffix` to the accessible name, with a decorative trailing icon. `onPress` still fires, but navigation always goes through `Linking`. */
   external?: boolean;
   /** `default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone. */
   tone?: LinkTone;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<LinkOverridableBinding, TokenRef>>;
   /**
+   * Overrides the computed accessible name (`label`, plus `copy.externalSuffix` when
+   * `external`). Set by a wrapping parent such as Tooltip that needs to fold its own
+   * content into this link's name.
+   */
+  accessibilityLabel?: string;
+  /** Forwarded to the native element untouched — set by a wrapping parent such as Tooltip. */
+  accessibilityHint?: string;
+  /** Forwarded to the native element untouched — lets a wrapping parent such as Tooltip attach hover/focus behavior. */
+  onFocus?: (event: unknown) => void;
+  /** Forwarded to the native element untouched — lets a wrapping parent such as Tooltip attach hover/focus behavior. */
+  onBlur?: (event: unknown) => void;
+  /** Forwarded to the native element untouched (react-native-web only — no touch hover). */
+  onHoverIn?: (event: unknown) => void;
+  /** Forwarded to the native element untouched (react-native-web only — no touch hover). */
+  onHoverOut?: (event: unknown) => void;
+  /** Forwarded to the native element untouched — set by a wrapping parent such as Tooltip. */
+  onLongPress?: (event: GestureResponderEvent) => void;
+  /**
    * Fired when the link is activated, with `href`. On native the consumer's handler
    * is the navigation; when no handler is given the system opens the URL with `Linking`.
+   * For `external` links `onPress` fires first but `Linking` always performs the
+   * navigation, since a consumer-side router cannot leave the app.
    */
   onPress?: (href: string) => void;
 }
@@ -46,11 +66,17 @@ export const LINK_EXTERNAL_SUFFIX = COPY.externalSuffix;
  * to trigger an action — that is a `ghost` Button.
  *
  * Renders `Text` with `accessibilityRole="link"` so it flows inline inside a parent
- * `Text`; standalone it is its own line. `accessibilityLabel` is the label plus
- * `copy.externalSuffix` when `external`. Activation calls `onPress(href)` when
- * provided, otherwise `Linking.openURL(href)` — never both. Standalone, the Link
- * sets the body typography via Text's helpers since there is no cascade; nested in
- * a system `Text` (detected through `TextStyleContext`) it inherits.
+ * `Text`; standalone it is its own line. `accessibilityLabel` defaults to the label
+ * plus `copy.externalSuffix` when `external`, or the `accessibilityLabel` prop when
+ * a wrapping parent (Tooltip) sets one. `onPress(href)` fires first when provided;
+ * for a non-`external` link that is the whole navigation, otherwise `Linking.openURL(href)`
+ * performs it. `external` always navigates through `Linking`, since a consumer-side
+ * router cannot leave the app — `onPress` still fires as a notification. `accessibilityHint`,
+ * `onFocus`, `onBlur`, `onHoverIn`, `onHoverOut` and `onLongPress` are forwarded to the
+ * native element untouched, so a wrapping Tooltip can attach to this Link the same way
+ * it attaches to Button and Input. Standalone, the Link sets the body typography via
+ * Text's helpers since there is no cascade; nested in a system `Text` (detected through
+ * `TextStyleContext`) it inherits.
  *
  * There is no hover or visited state on native, so `colorHover` styles the pressed
  * state (`colorVisited` unused) and the color crossfades over `transition` (eased
@@ -74,6 +100,13 @@ export function Link({
   external = false,
   tone = 'default',
   overrides,
+  accessibilityLabel,
+  accessibilityHint,
+  onFocus,
+  onBlur,
+  onHoverIn,
+  onHoverOut,
+  onLongPress,
   onPress,
 }: LinkProps): React.JSX.Element {
   const { tokens: t } = useTheme();
@@ -111,13 +144,19 @@ export function Link({
   const iconColor = tone === 'inherit' ? undefined : pressed ? t.colorLinkHover : t.colorLink;
 
   const handlePress = (): void => {
-    // The consumer's handler is the navigation; only without one does the system open the URL.
-    if (onPress !== undefined) {
-      onPress(href);
-      return;
+    onPress?.(href);
+    // For a non-external link the consumer's handler is the navigation; only without
+    // one does the system open the URL. External always leaves through Linking, since
+    // no consumer-side router can hand off to the system browser.
+    if (external || onPress === undefined) {
+      Linking.openURL(href).catch(() => undefined);
     }
-    Linking.openURL(href).catch(() => undefined);
   };
+
+  // Text's TS types have no onFocus/onBlur/onHoverIn/onHoverOut (those are Pressable-
+  // only in the type declarations, though react-native-web wires them up on Text too),
+  // so the forwarded handlers are passed through an untyped bag rather than JSX props.
+  const forwardedProps: Record<string, unknown> = { onFocus, onBlur, onHoverIn, onHoverOut };
 
   // Standalone, the Link sets the body typography (there is no cascade); nested in
   // a system Text it sets none and inherits the surrounding style.
@@ -139,11 +178,14 @@ export function Link({
     <Animated.Text
       testID="Link"
       accessibilityRole="link"
-      accessibilityLabel={external ? `${label}${COPY.externalSuffix}` : label}
+      accessibilityLabel={accessibilityLabel ?? (external ? `${label}${COPY.externalSuffix}` : label)}
+      accessibilityHint={accessibilityHint}
       allowFontScaling
       onPress={handlePress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
+      onLongPress={onLongPress}
+      {...forwardedProps}
       style={[
         style,
         tone === 'inherit' ? null : { color: animatedColor, textDecorationColor: animatedColor },

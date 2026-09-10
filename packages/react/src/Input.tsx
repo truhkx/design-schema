@@ -14,6 +14,7 @@ import { useFormContext } from './FormContext';
 import './Input.css';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'search' | 'tel' | 'url';
+export type InputSize = 'sm' | 'md';
 
 /** copy.* — used verbatim; `{label}` is replaced by the visible label. */
 const COPY = {
@@ -30,12 +31,15 @@ export type InputOverridableBinding =
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
+  | 'paddingBlockSm'
+  | 'paddingInlineSm'
   | 'partGap'
   | 'fontFamily'
   | 'fontSize'
   | 'labelWeight'
   | 'helperSize'
   | 'lineHeight'
+  | 'minTargetSm'
   | 'disabledOpacity';
 
 const OVERRIDE_HOOK: Record<InputOverridableBinding, string> = {
@@ -45,12 +49,15 @@ const OVERRIDE_HOOK: Record<InputOverridableBinding, string> = {
   radius: '--ds-input-radius',
   paddingInline: '--ds-input-padding-inline',
   paddingBlock: '--ds-input-padding-block',
+  paddingBlockSm: '--ds-input-padding-block-sm',
+  paddingInlineSm: '--ds-input-padding-inline-sm',
   partGap: '--ds-input-part-gap',
   fontFamily: '--ds-input-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-input-font-size',
   labelWeight: '--ds-input-label-weight',
   helperSize: '--ds-input-helper-size',
   lineHeight: '--ds-input-line-height',
+  minTargetSm: '--ds-input-min-target-sm',
   disabledOpacity: '--ds-input-disabled-opacity',
 };
 
@@ -72,6 +79,7 @@ export interface InputProps
     | 'defaultValue'
     | 'placeholder'
     | 'required'
+    | 'size'
     | 'disabled'
     | 'onChange'
     | 'onFocus'
@@ -98,6 +106,12 @@ export interface InputProps
   type?: InputType;
   /** The field must have a value to submit. Shown in the label, not only by color. */
   required?: boolean;
+  /** Visually hide the label (it remains the accessible name). Only for a field whose context
+   * already names it: a DataGrid cell editor, a Search. */
+  hideLabel?: boolean;
+  /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small
+   * type. */
+  size?: InputSize;
   /** Not editable and not submitted. Stays visible and readable. */
   disabled?: boolean;
   /** Marks the field as failing validation. Usually set by the Form; can be set directly. */
@@ -135,6 +149,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     description,
     type = 'text',
     required = false,
+    hideLabel = false,
+    size = 'md',
     disabled = false,
     invalid = false,
     error,
@@ -211,14 +227,22 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
   };
 
-  const classes = ['ds-input', isInvalid ? 'ds-input--invalid' : null, className ?? null].filter(Boolean).join(' ');
+  const classes = [
+    'ds-input',
+    `ds-input--${size}`,
+    isInvalid ? 'ds-input--invalid' : null,
+    className ?? null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const labelClasses = ['ds-input__label', hideLabel ? 'ds-input__visually-hidden' : null].filter(Boolean).join(' ');
 
   const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
   const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
 
   return (
-    <div className={classes} data-ds="Input" style={mergedStyle}>
-      <label className="ds-input__label" htmlFor={id}>
+    <div className={classes} data-ds="Input" data-ds-field style={mergedStyle}>
+      <label className={labelClasses} htmlFor={id}>
         {label}
         {required ? <span className="ds-input__required">{COPY.requiredIndicator}</span> : null}
       </label>

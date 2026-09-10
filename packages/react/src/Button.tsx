@@ -68,6 +68,14 @@ export interface ButtonProps
   /** Prevents activation. The button stays in the tab order and is announced as disabled. */
   disabled?: boolean;
   /**
+   * Overrides the accessible name when it must say more than the visible label ("Sort by
+   * Amount, ascending" on a header that shows "Amount"). The visible label must be the start of
+   * it (WCAG 2.5.3 label-in-name). Maps to aria-label.
+   */
+  accessibleName?: string;
+  /** Text used for this button when a Toolbar collapses it into its overflow Menu. */
+  overflowLabel?: string;
+  /**
    * Hides the visible label and shows only `leadingIcon`. `label` is still required and becomes
    * the accessible name. Padding becomes equal on all sides (`space.sm`).
    */
@@ -114,6 +122,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     trailingIcon,
     type = 'button',
     disabled = false,
+    accessibleName,
+    overflowLabel: _overflowLabel,
     iconOnly = false,
     loading = false,
     inverse = false,
@@ -169,7 +179,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       style={mergedStyle}
       aria-disabled={isDisabled ? 'true' : undefined}
       aria-busy={loading ? 'true' : undefined}
-      aria-label={iconOnly ? label : undefined}
+      aria-label={accessibleName ?? (iconOnly ? label : undefined)}
       onClick={handleClick}
     >
       {loading ? (
@@ -180,7 +190,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         </span>
       ) : null}
       {iconOnly ? null : <span className="ds-button__label">{label}</span>}
-      {trailingIcon !== undefined && trailingIcon !== null ? (
+      {!loading && trailingIcon !== undefined && trailingIcon !== null ? (
         <span className="ds-button__icon" data-part="trailingIcon" aria-hidden="true">
           {trailingIcon}
         </span>

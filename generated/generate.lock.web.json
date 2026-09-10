@@ -165,21 +165,17 @@
     }
   },
   "Button.web": {
-    "hash": "b97a625455344842",
-    "lastAttemptHash": "b97a625455344842",
-    "generatedAt": "2026-09-10T05:06:26+00:00",
+    "hash": "442dc19d7fa73dfa",
+    "lastAttemptHash": "442dc19d7fa73dfa",
+    "generatedAt": "2026-09-10T21:21:53+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.313,
+    "costUsd": 0.6,
     "files": [
-      "packages/react/src/Button.css",
-      "packages/react/src/Button.stories.tsx",
-      "packages/react/src/Button.test.tsx",
-      "packages/react/src/Button.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Button.tsx"
     ],
-    "gaps": 6,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -563,17 +559,16 @@
     }
   },
   "Input.web": {
-    "hash": "ac6ccd0684ad5321",
-    "lastAttemptHash": "ac6ccd0684ad5321",
-    "generatedAt": "2026-09-10T05:16:17+00:00",
+    "hash": "32fe26c4d611b67b",
+    "lastAttemptHash": "32fe26c4d611b67b",
+    "generatedAt": "2026-09-10T21:27:15+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2176,
+    "costUsd": 0.8932,
     "files": [
       "packages/react/src/Input.css",
       "packages/react/src/Input.stories.tsx",
-      "packages/react/src/Input.test.tsx",
       "packages/react/src/Input.tsx",
       "packages/react/src/index.ts"
     ],
@@ -609,19 +604,19 @@
     }
   },
   "Link.web": {
-    "hash": "4ad533c56ad841ab",
-    "lastAttemptHash": "4ad533c56ad841ab",
-    "generatedAt": "2026-09-10T05:10:12+00:00",
+    "hash": "3db44d6bff1e2bba",
+    "lastAttemptHash": "3db44d6bff1e2bba",
+    "generatedAt": "2026-09-10T21:23:31+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8399,
+    "costUsd": 0.5534,
     "files": [
       "packages/react/src/Link.css",
-      "packages/react/src/Link.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Link.stories.tsx",
+      "packages/react/src/Link.tsx"
     ],
-    "gaps": 3,
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,

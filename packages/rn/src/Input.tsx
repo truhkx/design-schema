@@ -11,12 +11,15 @@ import type {
 } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
+import { useFieldsetContext } from './Fieldset';
 import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Text } from './Text';
 import { toLineHeight, useTheme } from './theme';
+import type { Tokens } from './theme';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'search' | 'tel' | 'url';
+export type InputSize = 'sm' | 'md';
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type InputOverridableBinding =
@@ -26,12 +29,15 @@ export type InputOverridableBinding =
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
+  | 'paddingBlockSm'
+  | 'paddingInlineSm'
   | 'partGap'
   | 'fontFamily'
   | 'fontSize'
   | 'labelWeight'
   | 'helperSize'
   | 'lineHeight'
+  | 'minTargetSm'
   | 'disabledOpacity';
 
 export interface InputProps {
@@ -51,6 +57,10 @@ export interface InputProps {
   type?: InputType;
   /** The field must have a value to submit. Shown in the label, not only by color. */
   required?: boolean;
+  /** Visually hide the label (it remains the field's `accessibilityLabel`). Only for a field whose context already names it. */
+  hideLabel?: boolean;
+  /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
+  size?: InputSize;
   /** Not editable and not submitted. Stays visible and readable. */
   disabled?: boolean;
   /** Marks the field as failing validation. Usually set by the Form; can be set directly. */
@@ -90,6 +100,8 @@ const TEXT_CONTENT_TYPE: Record<InputType, TextInputProps['textContentType']> = 
 /** Types whose values must not be auto-capitalized or auto-corrected by the keyboard. */
 const VERBATIM_TYPES: ReadonlySet<InputType> = new Set<InputType>(['email', 'password', 'url']);
 
+const FONT_SIZE_TOKEN = { sm: 'fontSizeSm', md: 'fontSizeMd' } as const satisfies Record<InputSize, keyof Tokens>;
+
 const COPY = {
   required: (label: string): string => `${label} is required.`,
   invalid: (label: string): string => `${label} is not valid.`,
@@ -114,7 +126,11 @@ const COPY = {
  * submits the form. The focus ring replaces the border with `focusRingWidth`
  * (locked to `border.width.focus`) and padding shrinks by the same amount so the
  * field never shifts; `disabled` dims the whole label/description/field/error
- * group with `disabledOpacity` rather than inventing a disabled color.
+ * group with `disabledOpacity` rather than inventing a disabled color. Inside a
+ * Fieldset, the group's `disabled` applies as if set on the field and the legend
+ * prefixes the field's `accessibilityLabel` ("Shipping address, Street"). `size:
+ * sm` swaps `paddingBlock`/`paddingInline`/the target height for their `Sm`
+ * bindings and the field text to `font.size.sm`; nothing else changes.
  */
 export function Input({
   label,
@@ -125,6 +141,8 @@ export function Input({
   description,
   type = 'text',
   required = false,
+  hideLabel = false,
+  size = 'md',
   disabled = false,
   invalid = false,
   error,
@@ -135,12 +153,13 @@ export function Input({
 }: InputProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const form = useFormContext();
+  const fieldset = useFieldsetContext();
   const inputRef = React.useRef<TextInput>(null);
   const [internalValue, setInternalValue] = React.useState<string>(defaultValue ?? '');
   const [focused, setFocused] = React.useState(false);
 
   const currentValue = value ?? internalValue;
-  const isDisabled = disabled || (form?.disabled ?? false);
+  const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
   const formError = form?.errors[name];
   const displayedError = error !== undefined && error !== '' ? error : formError;
   const isInvalid = invalid || displayedError !== undefined;
@@ -243,16 +262,37 @@ export function Input({
   };
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
+  const accessibleLabel = fieldset !== null ? `${fieldset.legend}, ${visibleLabel}` : visibleLabel;
 
   const borderFocusColor = overrides?.borderFocus ? (resolveToken(t, overrides.borderFocus) as string) : t.colorBorderFocus;
   const borderInvalidColor = overrides?.borderInvalid ? (resolveToken(t, overrides.borderInvalid) as string) : t.colorBorderDanger;
   const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
-  const paddingInline = overrides?.paddingInline ? (resolveToken(t, overrides.paddingInline) as number) : t.spaceMd;
-  const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t.spaceSm;
+  const paddingInline =
+    size === 'sm'
+      ? overrides?.paddingInlineSm
+        ? (resolveToken(t, overrides.paddingInlineSm) as number)
+        : t.space2
+      : overrides?.paddingInline
+        ? (resolveToken(t, overrides.paddingInline) as number)
+        : t.spaceMd;
+  const paddingBlock =
+    size === 'sm'
+      ? overrides?.paddingBlockSm
+        ? (resolveToken(t, overrides.paddingBlockSm) as number)
+        : t.space1
+      : overrides?.paddingBlock
+        ? (resolveToken(t, overrides.paddingBlock) as number)
+        : t.spaceSm;
+  const minTarget =
+    size === 'sm'
+      ? overrides?.minTargetSm
+        ? (resolveToken(t, overrides.minTargetSm) as number)
+        : t.sizeTargetMin
+      : t.sizeTargetComfortable;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
-  const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t.fontSizeMd;
+  const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[FONT_SIZE_TOKEN[size]];
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
 
@@ -268,7 +308,7 @@ export function Input({
   };
 
   const fieldStyle: TextStyle = {
-    minHeight: t.sizeTargetComfortable,
+    minHeight: minTarget,
     backgroundColor: t.colorBackground,
     color: t.colorForeground,
     borderWidth: activeBorderWidth,
@@ -285,12 +325,14 @@ export function Input({
 
   return (
     <View style={containerStyle} testID="Input">
-      <Text
-        weight="medium"
-        overrides={{ fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, fontWeight: overrides?.labelWeight, lineHeight: overrides?.lineHeight }}
-      >
-        {visibleLabel}
-      </Text>
+      {hideLabel ? null : (
+        <Text
+          weight="medium"
+          overrides={{ fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, fontWeight: overrides?.labelWeight, lineHeight: overrides?.lineHeight }}
+        >
+          {visibleLabel}
+        </Text>
+      )}
       {description !== undefined ? (
         <Text size="sm" tone="muted" overrides={helperOverrides}>
           {description}
@@ -298,7 +340,7 @@ export function Input({
       ) : null}
       <TextInput
         ref={inputRef}
-        accessibilityLabel={visibleLabel}
+        accessibilityLabel={accessibleLabel}
         accessibilityHint={description}
         accessibilityState={{ disabled: isDisabled }}
         keyboardType={KEYBOARD_TYPE[type]}

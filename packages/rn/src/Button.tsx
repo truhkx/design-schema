@@ -41,6 +41,13 @@ export interface ButtonProps {
   size?: ButtonSize;
   /** `submit` submits the enclosing Form. Everything else is `button`. */
   type?: ButtonType;
+  /**
+   * Set by a parent that the button discloses (Menu, Popover, SidePanel, Disclosure):
+   * reflected to `accessibilityState.expanded`. `undefined` (the default) means this
+   * button does not disclose anything, so `expanded` is omitted from the state object
+   * rather than sent as `false`. Consumers rarely set it directly.
+   */
+  expanded?: boolean;
   /** Prevents activation. The button stays in the accessibility tree and is announced as disabled. */
   disabled?: boolean;
   /** Icon before the label. Decorative — hidden from assistive technology; the label carries the meaning. */
@@ -58,6 +65,17 @@ export interface ButtonProps {
    * read against the inverse surface regardless of the button's own fill.
    */
   inverse?: boolean;
+  /**
+   * Overrides the accessible name when it must say more than the visible label ("Sort
+   * by Amount, ascending" on a header that shows "Amount"). The visible label must be
+   * the start of it (WCAG 2.5.3 label-in-name). Maps to `accessibilityLabel`.
+   */
+  accessibleName?: string;
+  /**
+   * Text used for this button when a Toolbar collapses it into its overflow Menu. Not
+   * rendered by Button itself — read by the collapsing parent.
+   */
+  overflowLabel?: string;
   /** An event name sent to analytics when the button is pressed. Omit for no tracking. */
   track?: string;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
@@ -114,8 +132,10 @@ const FONT_SIZE_TOKEN = {
  * `secondary` for the alternatives beside it, `ghost` for low-emphasis actions in
  * dense UI such as toolbars, and `danger` only for destructive, hard-to-undo actions.
  *
- * Renders a `Pressable` with `accessibilityRole="button"`, `accessibilityLabel` and
- * `accessibilityState={{ disabled, busy }}`. `disabled` is never passed to `Pressable`
+ * Renders a `Pressable` with `accessibilityRole="button"`, `accessibilityLabel`
+ * (`accessibleName` when set, else `label`) and `accessibilityState={{ disabled, busy,
+ * expanded }}` (`expanded` omitted unless a disclosing parent sets it). `disabled` is
+ * never passed to `Pressable`
  * itself — that would drop it from the tab order — so a disabled button stays
  * focusable and is announced as disabled while a press guard blocks `onPress`. There
  * is no hover on touch, so `backgroundHover` animates in for the pressed state instead
@@ -139,12 +159,14 @@ export function Button({
   variant = 'primary',
   size = 'md',
   type = 'button',
+  expanded,
   disabled = false,
   leadingIcon,
   trailingIcon,
   iconOnly = false,
   loading = false,
   inverse = false,
+  accessibleName,
   track,
   overrides,
   onPress,
@@ -315,8 +337,8 @@ export function Button({
     <Pressable
       testID="Button"
       accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      accessibilityLabel={accessibleName ?? label}
+      accessibilityState={expanded === undefined ? { disabled: isDisabled, busy: loading } : { disabled: isDisabled, busy: loading, expanded }}
       hitSlop={hitSlop}
       onPress={handlePress}
       onPressIn={() => setPressedState(true)}

@@ -21,7 +21,7 @@ export { Text } from './Text';
 export type { TextProps, TextSize, TextWeight, TextTone, TextAlign, TextElement, TextOverridableBinding } from './Text';
 
 export { Input } from './Input';
-export type { InputProps, InputType, InputOverridableBinding } from './Input';
+export type { InputProps, InputType, InputSize, InputOverridableBinding } from './Input';
 
 export { Form } from './Form';
 export type { FormProps, FormValues, FormErrors, FormValidateMode, FormFieldValue, FormOverridableBinding } from './Form';

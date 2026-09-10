@@ -97,10 +97,16 @@ export type {
 } from './Text.js';
 
 export { DsInput } from './Input.js';
-export type { InputType, InputChangeDetail, InputOverridableBinding } from './Input.js';
+export type { InputType, InputSize, InputChangeDetail, InputOverridableBinding } from './Input.js';
 
 export { DsForm } from './Form.js';
-export type { FormValidate, FormSubmitDetail, FormInvalidDetail, DsFormField } from './Form.js';
+export type {
+  FormValidate,
+  FormSubmitDetail,
+  FormInvalidDetail,
+  DsFormField,
+  FormOverridableBinding,
+} from './Form.js';
 
 export { DsStack } from './Stack.js';
 export type {

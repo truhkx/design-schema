@@ -1,5 +1,6 @@
 import { forwardRef, type ComponentPropsWithoutRef, type CSSProperties, type MouseEvent } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
+import { Icon } from './Icon';
 import './Link.css';
 
 export type LinkTone = 'default' | 'inherit';
@@ -83,9 +84,7 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
           {/* The suffix is visually hidden text, not aria-label, so the name still starts with the visible label. */}
           <span className="ds-link__external-suffix">{EXTERNAL_SUFFIX}</span>
           <span className="ds-link__external-icon" data-part="externalIcon" aria-hidden="true">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" focusable="false">
-              <path d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" />
-            </svg>
+            <Icon name="external" inline />
           </span>
         </>
       ) : null}

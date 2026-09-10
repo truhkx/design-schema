@@ -113,3 +113,13 @@ export const InteractiveTrue: Story = {
     </div>
   `,
 };
+
+export const FocusableTrue: Story = {
+  render: (args) => html`
+    <div style="inline-size: min(100%, 24rem)">
+      <ds-card heading=${ifDefined(args.heading)} heading-level=${args.headingLevel} inset=${args.inset} surface=${args.surface} focusable>
+        <ds-text>${args.body}</ds-text>
+      </ds-card>
+    </div>
+  `,
+};

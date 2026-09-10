@@ -11,7 +11,7 @@ export { Text, TextStyleContext, toTextAlign } from './Text';
 export type { TextAlign, TextOverridableBinding, TextProps, TextSize, TextStyleContextValue, TextTone, TextWeight } from './Text';
 
 export { Input } from './Input';
-export type { InputOverridableBinding, InputProps, InputType } from './Input';
+export type { InputOverridableBinding, InputProps, InputSize, InputType } from './Input';
 
 export { Form } from './Form';
 export type { FormOverridableBinding, FormProps, FormValidateMode } from './Form';

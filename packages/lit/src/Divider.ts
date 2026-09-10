@@ -109,7 +109,12 @@ export class DsDivider extends LitElement {
   /** Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height. */
   @property({ reflect: true }) orientation: DividerOrientation = 'horizontal';
 
-  /** Optional text in the middle of a horizontal divider ("or", "Earlier today"). Setting it turns the divider semantic. */
+  /**
+   * Optional text in the middle of a horizontal divider ("or", "Earlier
+   * today"). Setting it turns the divider semantic. Ignored on a vertical
+   * divider (a dev warning is logged): a vertical line has no room for
+   * centered text.
+   */
   @property() label?: string;
 
   /** Expose as role="separator" to assistive technology. Leave false for purely visual lines between list rows. */
@@ -140,22 +145,35 @@ export class DsDivider extends LitElement {
     if (changed.has('semantic') || changed.has('label') || changed.has('orientation')) {
       this.syncInternals();
     }
+    if ((changed.has('label') || changed.has('orientation')) && this.label && this.orientation === 'vertical') {
+      if (import.meta.env.DEV) {
+        console.warn(
+          'ds-divider: `label` is ignored on a vertical divider — a vertical line has no room for centered text.',
+        );
+      }
+    }
+  }
+
+  /** `label` has no effect on a vertical divider (no room for centered text). */
+  private get effectiveLabel(): string | undefined {
+    return this.orientation === 'vertical' ? undefined : this.label;
   }
 
   protected override render() {
-    if (!this.label) {
+    const label = this.effectiveLabel;
+    if (!label) {
       return html`<span class="line" part="line"></span>`;
     }
     return html`
       <span class="line" part="line"></span>
-      <ds-text part="label" class="label" element="span" size="sm" tone="muted">${this.label}</ds-text>
+      <ds-text part="label" class="label" element="span" size="sm" tone="muted">${label}</ds-text>
       <span class="line" part="line"></span>
     `;
   }
 
   /** role=separator + aria-orientation when semantic or labelled; aria-hidden otherwise. */
   private syncInternals(): void {
-    const semantic = this.semantic || Boolean(this.label);
+    const semantic = this.semantic || Boolean(this.effectiveLabel);
     this.internals.role = semantic ? 'separator' : null;
     this.internals.ariaOrientation = semantic ? this.orientation : null;
     this.internals.ariaHidden = semantic ? null : 'true';

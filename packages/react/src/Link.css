@@ -57,17 +57,8 @@
 
 /* externalIconGap: gap before the icon, which is 1em of the surrounding font size (no size token by design). */
 .ds-link__external-icon {
-  display: inline-block;
-  inline-size: 1em;
-  block-size: 1em;
+  display: inline;
   margin-inline-start: var(--ds-link-external-icon-gap);
-  vertical-align: -0.125em;
-  line-height: 0;
-}
-
-.ds-link__external-icon svg {
-  inline-size: 100%;
-  block-size: 100%;
 }
 
 /* copy.externalSuffix: in the accessible name, not on screen. The standard clip pattern; 1px is sanctioned here. */

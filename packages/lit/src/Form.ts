@@ -61,9 +61,10 @@ type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[]
  * `<ds-form>` — Form (category: container).
  *
  * `<ds-form name="sign-in" label="Sign in">` wraps a native `<form novalidate>`
- * in its shadow root, but form ownership is DOM-tree based, so the slotted
- * fields it renders through the default `<slot>` are not owned by it. Instead
- * it collects light-DOM `ds-input`, `ds-checkbox`, `ds-switch` and
+ * in its shadow root, with a default slot for fields (Input etc. and layout
+ * like Stack) and a named `actions` slot for the action row, but form
+ * ownership is DOM-tree based, so the slotted fields are not owned by it.
+ * Instead it collects light-DOM `ds-input`, `ds-checkbox`, `ds-switch` and
  * `ds-radio-group` descendants that have a `name` and implement `DsFormField`
  * (skipping any inside a closed `ds-disclosure` without `keep-mounted`),
  * submits on a composed `press` from a `ds-button[type=submit]` and on Enter
@@ -85,10 +86,12 @@ type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[]
  *
  * @fires submit - Fired when every field is valid, with `{ values }` (keyed by each field's `name`) in `detail`.
  * @fires invalid - Fired when submission is blocked by validation, with `{ errors }` in `detail`.
- * @slot - Fields (Input etc.), layout (Stack), and at least one Button with `type: submit`.
+ * @slot - Fields (Input etc.) and layout (Stack) (anatomy: fields).
+ * @slot actions - The action row: at least one Button with `type: submit`, primary first (anatomy: actions).
  * @csspart container - The native `<form>` (anatomy: container).
  * @csspart errorSummary - The focusable error summary region, shown after a failed submission (anatomy: errorSummary).
- * @csspart fields - The default slot wrapping fields and actions (anatomy: fields, actions).
+ * @csspart fields - The default slot wrapping fields (anatomy: fields).
+ * @csspart actions - The named `actions` slot, rendered after the fields with the form gap (anatomy: actions).
  */
 @customElement('ds-form')
 export class DsForm extends LitElement {
@@ -277,6 +280,7 @@ export class DsForm extends LitElement {
             `
           : nothing}
         <slot part="fields"></slot>
+        <slot name="actions" part="actions"></slot>
       </form>
     `;
   }

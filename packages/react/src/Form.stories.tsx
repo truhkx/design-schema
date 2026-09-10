@@ -16,10 +16,13 @@ const fields = (
       autocomplete="current-password"
       description="At least 8 characters."
     />
-    <Stack direction="horizontal" gap="tight" align="start">
-      <Button label="Sign in" type="submit" />
-      <Button label="Cancel" variant="secondary" />
-    </Stack>
+  </Stack>
+);
+
+const actions = (
+  <Stack direction="horizontal" gap="tight" align="start">
+    <Button label="Sign in" type="submit" />
+    <Button label="Cancel" variant="secondary" />
   </Stack>
 );
 
@@ -33,6 +36,7 @@ const meta = {
     disabled: false,
     errorSummary: true,
     children: fields,
+    actions,
   },
   argTypes: {
     onSubmit: { action: 'onSubmit' },

@@ -47,3 +47,8 @@ export const WithError: Story = {
   args: { type: 'email', defaultValue: 'name@', error: 'Enter an email address like name@example.com.' },
 };
 export const Controlled: Story = { args: { value: 'name@example.com' } };
+export const HideLabel: Story = { args: { hideLabel: true, placeholder: 'Search projects' } };
+
+/* size */
+export const SizeSm: Story = { args: { size: 'sm' } };
+export const SizeMd: Story = { args: { size: 'md' } };

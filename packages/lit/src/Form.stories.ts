@@ -26,10 +26,13 @@ const fields = html`
       autocomplete="current-password"
       description="At least 8 characters."
     ></ds-input>
-    <ds-stack direction="horizontal" gap="tight" align="start">
-      <ds-button label="Sign in" type="submit"></ds-button>
-      <ds-button label="Cancel" variant="secondary"></ds-button>
-    </ds-stack>
+  </ds-stack>
+`;
+
+const actions = html`
+  <ds-stack slot="actions" direction="horizontal" gap="tight" align="start">
+    <ds-button label="Sign in" type="submit"></ds-button>
+    <ds-button label="Cancel" variant="secondary"></ds-button>
   </ds-stack>
 `;
 
@@ -60,6 +63,7 @@ const meta: Meta<FormArgs> = {
       ?error-summary=${args.errorSummary}
     >
       ${fields}
+      ${actions}
     </ds-form>
   `,
 };

@@ -10,6 +10,14 @@
   inline-size: 100%;
 }
 
+/* fields / actions: transparent wrappers that expose the anatomy hooks without
+   affecting the flex layout — each field and the actions row remain siblings
+   spaced by --ds-form-gap. */
+.ds-form__fields,
+.ds-form__actions {
+  display: contents;
+}
+
 /* errorSummary: a focusable alert region that links to each invalid field. Text and background are locked. */
 .ds-form__error-summary {
   --ds-form-error-summary-border: var(--color-border-danger);

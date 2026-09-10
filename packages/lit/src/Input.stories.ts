@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Input.js';
-import type { InputType } from './Input.js';
+import type { InputSize, InputType } from './Input.js';
 
 interface InputArgs {
   label: string;
@@ -12,7 +12,9 @@ interface InputArgs {
   placeholder?: string;
   description?: string;
   type: InputType;
+  size: InputSize;
   required: boolean;
+  hideLabel: boolean;
   disabled: boolean;
   invalid: boolean;
   error?: string;
@@ -27,7 +29,9 @@ const meta: Meta<InputArgs> = {
   },
   argTypes: {
     type: { control: 'select', options: ['text', 'email', 'password', 'number', 'search', 'tel', 'url'] },
+    size: { control: 'select', options: ['sm', 'md'] },
     required: { control: 'boolean' },
+    hideLabel: { control: 'boolean' },
     disabled: { control: 'boolean' },
     invalid: { control: 'boolean' },
   },
@@ -35,7 +39,9 @@ const meta: Meta<InputArgs> = {
     label: 'Email address',
     name: 'email',
     type: 'text',
+    size: 'md',
     required: false,
+    hideLabel: false,
     disabled: false,
     invalid: false,
     description: undefined,
@@ -48,6 +54,7 @@ const meta: Meta<InputArgs> = {
       label=${args.label}
       name=${args.name}
       type=${args.type}
+      size=${args.size}
       value=${ifDefined(args.value)}
       default-value=${ifDefined(args.defaultValue)}
       placeholder=${ifDefined(args.placeholder)}
@@ -55,6 +62,7 @@ const meta: Meta<InputArgs> = {
       error=${ifDefined(args.error)}
       autocomplete=${ifDefined(args.autocomplete)}
       ?required=${args.required}
+      ?hide-label=${args.hideLabel}
       ?disabled=${args.disabled}
       ?invalid=${args.invalid}
     ></ds-input>
@@ -77,11 +85,16 @@ export const TypeSearch: Story = { args: { type: 'search', label: 'Search', name
 export const TypeTel: Story = { args: { type: 'tel', label: 'Phone number', name: 'tel', autocomplete: 'tel' } };
 export const TypeUrl: Story = { args: { type: 'url', label: 'Website', name: 'url', autocomplete: 'url' } };
 
+/* size */
+export const SizeSm: Story = { args: { size: 'sm' } };
+export const SizeMd: Story = { args: { size: 'md' } };
+
 /* states */
 export const WithDescription: Story = {
   args: { type: 'email', description: 'Use the email you signed up with.', autocomplete: 'email' },
 };
 export const Required: Story = { args: { required: true } };
+export const HideLabel: Story = { args: { hideLabel: true, placeholder: 'Search projects', type: 'search' } };
 export const Disabled: Story = { args: { disabled: true, defaultValue: 'name@example.com' } };
 export const Invalid: Story = { args: { invalid: true } };
 export const WithError: Story = {

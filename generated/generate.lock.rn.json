@@ -383,6 +383,29 @@
       "modules": true
     }
   },
+  "Feed.rn": {
+    "hash": "0918e1a17be4c8f0",
+    "lastAttemptHash": "0918e1a17be4c8f0",
+    "generatedAt": "2026-09-10T20:48:40+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.7349,
+    "files": [
+      "packages/rn/src/Feed.stories.tsx",
+      "packages/rn/src/Feed.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Fieldset.rn": {
     "hash": "1350363fc6c82db9",
     "lastAttemptHash": "1350363fc6c82db9",

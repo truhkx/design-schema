@@ -245,3 +245,6 @@ export type { TreeNode, TreeOverridableBinding, TreeProps, TreeSelectable } from
 
 export { Splitter } from './Splitter';
 export type { SplitterOrientation, SplitterOverridableBinding, SplitterProps, SplitterStackBelow } from './Splitter';
+
+export { Feed } from './Feed';
+export type { FeedHeadingLevel, FeedItem, FeedOverridableBinding, FeedProps } from './Feed';

@@ -1,6 +1,6 @@
 # Gap digest — phase final
 
-Generated 2026-09-10T19:16 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T19:26 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -1084,6 +1084,14 @@ Doc: `site/src/content/docs/components/divider.md`
 
 Doc: `site/src/content/docs/components/feed.md`
 
+### 2026-09-10 19:25 — web round 1
+
+- **DOC** Feed: `newItemsOffset` is padding-block-start on the sticky button row rather than a margin, per the spacing rule (no margins between siblings) — the doc's own note confirms this choice. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the spec gives `loadingInset` and `endMessageInset` the same token (`layout.inset.md`) but separate overridable bindings; a prior pass had collapsed them into one shared CSS hook, silently making `endMessageInset` a no-op override — split into `--ds-feed-loading-inset` and `--ds-feed-end-message-inset` so both bindings are independently overridable as the schema requires. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: 'once on mount when items is empty and not loading' (fires onLoadMore for an empty feed's first page) was missing from a prior pass — no IntersectionObserver target exists with zero articles, so this is a plain mount effect guarded by a ref so it fires once per empty-to-populated transition, not on every render. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: no `copy.*` string covers relative timestamps ('3 min ago'); used `Intl.RelativeTimeFormat` (locale 'en') rather than inventing English copy, matching the interval boundaries the schema names (minute/hour/day/week) — same choice as the existing Lit generation. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `aria-setsize` while `hasMore` is `-1` per the platform notes; the visually-hidden `copy.position` span is rendered only once the total is known (`hasMore` false), which the schema states explicitly. → `site/src/content/docs/components/feed.md`
+
 ### 2026-09-10 19:15 — lit round 1
 
 - **DOC** Feed: FeedItem's `content`/`actions` are typed `unknown` per lit notes ("any lit-html renderable") rather than a stricter TemplateResult union — the doc gives no exact type, so `unknown` was kept as the existing stand-in for ReactNode. → `site/src/content/docs/components/feed.md`
@@ -1852,6 +1860,15 @@ Doc: `site/src/content/docs/components/radiogroup.md`
 
 Doc: `site/src/content/docs/components/search.md`
 
+### 2026-09-10 19:25 — rn round 1
+
+- **DOC** Search: `name`/`action` are web-only concepts (URL query key / GET navigation target). RN has no navigable form, so both are accepted for API parity but have no runtime effect; a __DEV__ warning fires if `action` is set. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the web keyboard model has ArrowDown/ArrowUp move a highlight through suggestions while focus stays in the input (aria-activedescendant). Listbox's rows are touch Pressables with no key-event API on native, so arrow-key highlighting has no native equivalent — the same acknowledged limit Combobox/Listbox already document. Suggestion selection is touch-only; Enter always submits the typed query, never a highlighted row. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the schema never defines an explicit open/closed state for RN's inline (non-overlay) suggestions rendering — only that suggestions 'render below the field in a View'. I inferred suggestions show while the field is focused and `suggestions` is set, and close on blur or on Escape (matching Combobox's own focus/open model), since rendering them unconditionally whenever `suggestions` is set would leave them visible even when the field isn't in use. → `site/src/content/docs/components/search.md`
+- **DOC** Search: `copy.loading` ('Loading suggestions') must appear verbatim, but Listbox's own `loading` prop always shows its internal 'Loading…' text regardless of `emptyMessage`. Worked around by never forwarding `loading` to Listbox — passing empty `options` and `emptyMessage={copy.loading}` instead — so the verbatim copy renders. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the web platform notes hide the submit button when `action` is absent, but the schema's general Behavior section states 'The submit button is always rendered.' Followed the latter for RN, since `action`/navigation isn't a native concept and Enter alone may not be reachable from an on-screen keyboard. → `site/src/content/docs/components/search.md`
+- **DOC** Search: no style binding governs the leading/glyph icon's size scaling with the `size` prop; chose `sm` at `md` and `md` at `lg` as a proportional visual judgment call. → `site/src/content/docs/components/search.md`
+
 ### 2026-09-10 19:03 — web round 1
 
 - **DOC** Search: `action`-driven submission is implemented as fully JS-controlled navigation (`window.location.assign` with `URLSearchParams`) rather than a native `<form method="get" action>` submission, so Enter, the submit button, and choosing a suggestion all share one trimmed-query/empty-guard path (`trySubmit`/`submitQuery`). → `site/src/content/docs/components/search.md`
@@ -2087,6 +2104,10 @@ Doc: `site/src/content/docs/components/slider.md`
 
 Doc: `site/src/content/docs/components/splitter.md`
 
+### 2026-09-10 19:24 — web round 1
+
+- **DOC** Splitter: platform notes say the separator 'is not rendered' below stackBelow, but the existing implementation keeps it in the DOM with role="presentation" and display:none rather than omitting the node — kept as-is since it's already inert to AT and pointer input and all behavior scenarios pass. → `site/src/content/docs/components/splitter.md`
+
 ### 2026-09-10 19:11 — lit round 1
 
 - **DOC** Splitter: the `transition` style binding's doc says it covers 'Collapse and restore, and the separator color' but the implementation only transitions the separator's background color — `--ds-splitter-primary-size` drives `grid-template-columns` and changes instantly on collapse/restore since animating a custom-property-valued grid track needs a global `@property` registration (`syntax: '<percentage>'`), which has inconsistent support when declared inside a shadow-root-adopted stylesheet; left unanimated rather than risk a silently-broken transition. → `site/src/content/docs/components/splitter.md`
@@ -2167,6 +2188,16 @@ Doc: `site/src/content/docs/components/stack.md`
 ## Stepper
 
 Doc: `site/src/content/docs/components/stepper.md`
+
+### 2026-09-10 19:18 — rn round 1
+
+- **DOC** Stepper: schema has one `transition` binding but four discrete indicator states (complete/current/upcoming/error) plus a connector; animating all of it unambiguously wasn't specified, so only the connector cross-fades between `connector` and `connectorComplete` over `transition` — the indicator itself switches instantly, same as this package's other multi-state (not binary) indicators. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: when a step's explicit `status: 'error'` overrides the position that equals `current`, the doc doesn't say whether accessibility 'selected' state and the compact single-label reveal should follow the id match or the derived status. Chose id match (`step.id === current`) for `accessibilityState.selected`/compact-reveal, and the derived `status` for indicator color/icon and the status word (so 'has an error' wins over 'current step' in that edge case). → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: automatic `compact` on narrow viewports reuses `layout.maxWidth.prose` per the platform notes, but the exact comparison (`<` vs `<=`) isn't specified; used `windowWidth < t.layoutMaxWidthProse`, matching Table/Tabs/Menu/Select's existing pattern in this package. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: horizontal connector placement is approximated with a fixed `marginTop` (indicatorSize/2 - connectorWidth/2) since the connector is a decorative sibling, not a measured/absolute-positioned element; there's no CSS-cascade equivalent on native to align it exactly with the indicator's center for arbitrary label heights. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: `stepHover` ('hover and press background of a navigable step') is applied only on Pressable's `pressed` state — there is no native hover, same acknowledged limit as Button/Tabs in this package. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the schema's anatomy lists `description` generally (not orientation-scoped), so it renders under the label in both `horizontal` (non-compact) and `vertical`, even though the guidance prose frames descriptions as mainly a vertical-stepper concern. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: `copy.stepOf`/`copy.stepLabel` use `{n}`/`{total}`/`{label}` placeholder syntax in the doc; implemented as small formatting functions rather than literal template substitution, matching this package's existing convention for parameterized copy (e.g. RadioGroup's `COPY.required`). → `site/src/content/docs/components/stepper.md`
 
 ### 2026-09-10 19:01 — web round 1
 
@@ -2533,6 +2564,12 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 Doc: `site/src/content/docs/components/tree.md`
 
+### 2026-09-10 19:22 — web round 1
+
+- **DOC** Tree: platform notes show `<ul role="tree">` as the root, but `showLabel` needs a heading above the tree; used an outer wrapping `<div data-ds="Tree" data-part="container">` holding the optional Heading plus the `<ul>`, matching the 'root carries data-ds' convention and TreeGrid's own wrapper-div precedent rather than putting data-ds on the `<ul>` itself. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: `labelSelectedWeight` is described as forwarded to 'the label Text' as `overrides.fontWeight`, but nodes with `href` render their label as a `Link`, which has no font-weight prop or overridable `fontWeight` binding at all; a selected href node's label therefore cannot pick up the weight change (non-href labels do, via `Text`'s `weight`/`overrides.fontWeight`). Left unstyled for the Link case rather than restyling it via className, per the 'never restyle a child' composition rule — Link's schema would need to grow a weight/emphasis lever to close this. → `site/src/content/docs/components/tree.md`
+- NOISE: 3 repeated or empty line(s) collapsed
+
 ### 2026-09-10 19:10 — lit round 1
 
 - **DOC** Tree: schema names both a `label` and a `link` anatomy part but never distinguishes when each applies; inferred that `label` is the ds-text-rendered node label (no `href`) and `link` is the ds-link-rendered one (`href` set), and split the previously-shared `part="label"` accordingly. → `site/src/content/docs/components/tree.md`
@@ -2576,6 +2613,19 @@ Doc: `site/src/content/docs/components/tree.md`
 ## TreeGrid
 
 Doc: `site/src/content/docs/components/treegrid.md`
+
+### 2026-09-10 19:17 — web round 1
+
+- **DOC** copy.level and copy.childCount have no described use on web (aria-level/aria-setsize/aria-posinset already carry that information natively; only RN composes an accessibilityLabel from them) — defined but unused here. → `site/src/content/docs/components/treegrid.md`
+- **DOC** copy.expandAll/copy.collapseAll have no corresponding anatomy part on web (no expand-all control listed) — defined but unused. → `site/src/content/docs/components/treegrid.md`
+- **DOC** Schema gives TreeGrid selectable/selectChildren/onSelectionChange but no controlled `selected` prop (unlike DataGrid) — selection implemented as internal state only. → `site/src/content/docs/components/treegrid.md`
+- **DOC** Schema gives TreeGrid `sort` but no `defaultSort` (unlike DataGrid) — implemented as fully controlled. → `site/src/content/docs/components/treegrid.md`
+- **DOC** guideLine styling draws one continuous vertical segment per ancestor depth for every descendant row (indent guides) rather than elbow connectors terminating at a subtree's last child — spec says a guide runs 'under each open parent' without specifying termination/branching. → `site/src/content/docs/components/treegrid.md`
+- **DOC** DataGridColumn's `pinned`/`resizable` fields are accepted via the reused DataGridColumn[] shape but not implemented (no sticky pinned columns, no resizing) — schema only calls out sort as reused DataGrid behavior. → `site/src/content/docs/components/treegrid.md`
+- **DOC** Parent/descendant/sibling lookups (selectChildren cascade, ArrowLeft-to-parent, `*` expand-siblings) walk the full `data` tree per call (O(n)) rather than a precomputed id map; only row rendering/virtualization is optimized for scale. → `site/src/content/docs/components/treegrid.md`
+- **DOC** Header is always sticky; DataGrid exposes a `stickyHeader` toggle but TreeGrid's schema has no such prop, so it's hard-coded on. → `site/src/content/docs/components/treegrid.md`
+- **DOC** Shift+Space row-range selection does not cascade into descendants even when selectChildren is true (only visible rows in range are selected) — spec doesn't define range-select + cascade interaction. → `site/src/content/docs/components/treegrid.md`
+- NOISE: 1 repeated or empty line(s) collapsed
 
 ### 2026-09-10 19:03 — lit round 1
 
@@ -2632,7 +2682,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 1328 · CODE: 79 · TOOLING: 2 · NOISE: 22
+DOC: 1358 · CODE: 79 · TOOLING: 2 · NOISE: 26
 
 ## Gates to fix
 

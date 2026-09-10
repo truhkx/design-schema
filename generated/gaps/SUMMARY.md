@@ -1,6 +1,6 @@
 # Gap digest — phase final
 
-Generated 2026-09-10T16:49 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T16:53 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -775,6 +775,17 @@ Doc: `site/src/content/docs/components/divider.md`
 ## Feed
 
 Doc: `site/src/content/docs/components/feed.md`
+
+### 2026-09-10 16:52 — web round 1
+
+- **DOC** Anatomy declares a distinct `articleHeader` part, but composing Card means the heading row is entirely Card's own internal `header` part (heading text only, no room for a timestamp); Feed exposes its own `articleBody` and `articleActions` wrapper divs with those data-part hooks, but has no `articleHeader` hook of its own — mirrors the same gap already reported for the Lit generation. → `site/src/content/docs/components/feed.md`
+- **DOC** copy.position ('{index} of {total}') is rendered as a visually-hidden span reinforcing aria-posinset/aria-setsize, but only when `hasMore` is false (total/setsize known); when `hasMore` is true, aria-setsize is -1 and the position text is omitted rather than showing '{index} of -1'. Not specified either way in the doc. → `site/src/content/docs/components/feed.md`
+- **DOC** No copy.* token covers relative-time text ('3 min ago'). Used `Intl.RelativeTimeFormat('en', { numeric: 'auto' })` (matching the sibling Lit generation's locale choice) instead of inventing English strings, since the rule against un-tokenized user-facing text has no alternative here. → `site/src/content/docs/components/feed.md`
+- **DOC** Card's root always sets `data-part="surface"` (hardcoded after its own prop spread) and has no focus-visible treatment for a non-interactive root that becomes programmatically focusable. Feed's own declared `focusRing`/`focusRingWidth` bindings are applied via a CSS selector reaching into the composed Card (`[data-ds="Card"]:focus-visible`), since inline styles can't express pseudo-classes — flagged as a place Card's schema might grow a 'focusable' variant rather than Feed reaching in. → `site/src/content/docs/components/feed.md`
+- **DOC** newItemsOffset ('space above the new-items button when it appears') is implemented as padding-block-start on the button's own sticky wrapper rather than a margin, since the button is always the first child (no prior sibling to space against) and the styling rules forbid margins between siblings. → `site/src/content/docs/components/feed.md`
+- **DOC** Ctrl+End when `hasMore` only fires `onLoadMore` and does not move focus ('first triggers a load so the end is real'); the doc doesn't say whether the user must press Ctrl+End again once loading finishes and `hasMore` becomes false — implemented as 'press again after it loads', matching the Lit generation. → `site/src/content/docs/components/feed.md`
+- **DOC** With zero items there is no article to attach the load-more IntersectionObserver to, so an empty feed with `hasMore: true` never self-triggers its first load — the caller must fetch the first page independently (before rendering Feed, or via its own effect). Not specified in the doc. → `site/src/content/docs/components/feed.md`
+- **DOC** endMessage has no declared inset/padding binding of its own, so the `loadingInset` hook is reused for both the loading indicator's and the end message's surrounding padding — matches the sibling React Native generation's same choice absent a dedicated token. → `site/src/content/docs/components/feed.md`
 
 ### 2026-09-10 16:48 — rn round 1
 
@@ -1865,7 +1876,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 964 · CODE: 39 · TOOLING: 2 · NOISE: 14
+DOC: 972 · CODE: 39 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

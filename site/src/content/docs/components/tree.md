@@ -6,11 +6,15 @@ component:
   category: navigation
   status: review
   apg: treeview
-  anatomy: [container, node, nodeRow, expandButton, indent, icon, label, badge, group]
+  anatomy: [container, heading, node, nodeRow, expandButton, indent, icon, label, link, badge, checkbox, group, emptyState]
   composition:
+    heading: Heading
     expandButton: Button
     icon: Icon
     label: Text
+    link: Link
+    badge: Text
+    emptyState: Text
   props:
     label:
       type: string
@@ -20,12 +24,17 @@ component:
     showLabel:
       type: boolean
       default: false
-      description: Show the label as a heading above the tree.
+      description: Show the label as a Heading above the tree (then the tree is aria-labelledby it instead of aria-label).
+    headingLevel:
+      type: enum
+      values: ['2', '3', '4']
+      default: '2'
+      description: Heading level of the visible label in the page outline; its size is headingSize regardless.
     nodes:
       type: array
       required: true
       shape: 'TreeNode[] where TreeNode = { id: string; label: string; icon?: IconName; badge?: string; disabled?: boolean; href?: string; children?: TreeNode[] | "lazy" }'
-      description: 'The hierarchy. `href` makes a node a Link (navigation trees); `badge` is a short trailing count or status; `children: "lazy"` loads on first expand through `onExpand`.'
+      description: 'The hierarchy. `href` makes a node''s label a Link (navigation trees); `icon` is an Icon glyph (`folder` and `file` exist for the usual case); `badge` is a short trailing count or status; `children: "lazy"` loads on first expand through `onExpand`.'
     expanded:
       type: array
       shape: 'string[]'
@@ -42,7 +51,7 @@ component:
     selected:
       type: array
       shape: 'string[]'
-      description: Controlled selected ids.
+      description: Controlled selected ids. Always an array, even in `single` mode (zero or one element).
     defaultSelected:
       type: array
       shape: 'string[]'
@@ -76,16 +85,16 @@ component:
     - { keys: [Tab], action: 'Moves into the tree (to the selected node, else the first) and out of it — one tab stop.', from: any, expect: manual }
     - { keys: [ArrowDown], action: Next visible node., from: first, expect: focus-next }
     - { keys: [ArrowUp], action: Previous visible node., from: last, expect: focus-prev }
-    - { keys: [ArrowRight], action: 'On a closed parent: opens it. On an open parent: moves to its first child. On a leaf: nothing.', from: inside, expect: manual }
+    - { keys: [ArrowRight], action: 'On a closed parent: opens it. On an open parent: moves to its first enabled child (disabled nodes are skipped). On a leaf: nothing.', from: inside, expect: manual }
     - { keys: [ArrowLeft], action: 'On an open parent: closes it. Otherwise: moves to the parent.', from: inside, expect: manual }
     - { keys: [Home], action: First node., from: last, expect: focus-first }
     - { keys: [End], action: Last visible node., from: first, expect: focus-last }
     - { keys: [Enter], action: 'Activates the node (onActivate, or follows href); with `selectable: single`, also selects it.', from: inside, expect: manual }
     - { keys: [' '], action: 'Selects (single) or toggles selection (multiple) of the focused node.', when: selectable, from: inside, expect: manual }
     - { keys: ['*'], action: Opens every sibling of the focused node., from: inside, expect: manual }
-    - { keys: [Shift+ArrowDown, Shift+ArrowUp], action: Extends selection to the next / previous node., when: multiple, from: inside, expect: manual }
-    - { keys: [Ctrl+A], action: Selects all visible nodes., when: multiple, from: inside, expect: manual }
-    - { keys: [a-z], action: 'Type-ahead: moves to the next visible node whose label starts with the typed characters.', from: inside, expect: manual }
+    - { keys: [Shift+ArrowDown, Shift+ArrowUp], action: 'Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range).', when: multiple, from: inside, expect: manual }
+    - { keys: [Ctrl+A], action: 'Selects every visible, enabled node at the current expansion state; bound by key code KeyA.', when: multiple, from: inside, expect: manual }
+    - { keys: [a-z], action: 'Type-ahead: moves to the next visible node whose label starts with the typed characters; the buffer clears after 500 ms (literal-ok, as Listbox).', from: inside, expect: manual }
   styles:
     indent: { token: space.5, description: Per level on the node row. }
     rowHeight: { token: size.target.min }
@@ -97,14 +106,21 @@ component:
     rowSelectedBorder: { token: color.control.selectedBackground, description: 'Start-edge bar on the selected node, as Table and DataGrid.' }
     rowSelectedBorderWidth: { token: border.width.focus }
     labelColor: { token: color.foreground }
-    labelSelectedWeight: { token: font.weight.medium }
+    labelSelectedWeight: { token: font.weight.medium, description: 'Forwarded to the label Text as `overrides.fontWeight` when selected.' }
+    headingSize: { token: font.size.md, description: 'The visible label Heading; forwarded as `overrides.fontSize`.' }
     iconColor: { token: color.foreground.muted }
     badgeColor: { token: color.foreground.muted }
-    badgeSize: { token: font.size.xs }
+    badgeSize: { token: font.size.xs, description: 'Forwarded to the badge Text as `overrides.fontSize`.' }
     expandButtonSize: { token: size.target.min }
     guideLine: { token: color.border }
     guideLineWidth: { token: border.width.thin }
     checkboxGap: { token: layout.gap.tight, description: Between the checkbox and the label in multiple mode. }
+    checkboxSize: { token: space.4, description: 'The drawn checkbox glyph in multiple mode (the treeitem is the control; no Checkbox component).' }
+    checkboxBorder: { token: color.control.border }
+    checkboxBackground: { token: color.control.background }
+    checkboxSelected: { token: color.control.selectedBackground, description: 'Fill when checked or indeterminate.' }
+    checkboxMark: { token: color.control.selectedForeground, description: 'The check or dash Icon on the fill.' }
+    checkboxRadius: { token: radius.sm }
     fontFamily: { token: font.family.body }
     fontSize: { token: font.size.sm }
     lineHeight: { token: font.lineHeight.normal }
@@ -128,19 +144,21 @@ component:
       - { foreground: color.foreground, background: color.background.strong, level: AA }
       - { foreground: color.foreground.muted, background: color.background.strong, level: AA }
       - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }
+      - { foreground: color.control.border, background: color.background, level: AA, large: true }
+      - { foreground: color.control.selectedForeground, background: color.control.selectedBackground, level: AA }
   platforms:
     web:
-      element: ul
+      element: div
       attributes: [role=tree, role=treeitem, role=group, aria-expanded, aria-selected, aria-checked, aria-level, aria-setsize, aria-posinset, aria-multiselectable, aria-label, tabindex, aria-activedescendant]
-      notes: 'A <ul role="tree" aria-label aria-multiselectable> of <li role="treeitem" aria-level aria-setsize aria-posinset aria-expanded (parents only) aria-selected|aria-checked> whose children are in a nested <ul role="group">. Roving tabindex on the treeitems (one tab stop; the item, not the row div, is focused). The expand chevron is a Button with aria-hidden and tabindex=-1 — ArrowLeft/Right are the keyboard path. Nodes with href render the label as a Link inside the treeitem; Enter activates it. Multiple mode uses aria-checked with an indeterminate value for cascading parents and a Checkbox glyph (not the Checkbox component: the treeitem itself is the control). Type-ahead buffers keys for motion.duration.base × 5.'
+      notes: 'A <div data-ds="Tree" data-part="container"> holding the Heading when showLabel and the <ul role="tree" aria-labelledby={headingId} | aria-label aria-multiselectable> of <li role="treeitem" aria-level aria-setsize aria-posinset aria-expanded (parents only) aria-selected|aria-checked> whose children are in a nested <ul role="group">. Roving tabindex on the treeitems (one tab stop; the item, not the row div, is focused). The expand chevron is a Button with aria-hidden and tabindex=-1 — ArrowLeft/Right are the keyboard path. Nodes with href render the label as a Link inside the treeitem; Enter activates it. Multiple mode uses aria-checked with an indeterminate value for cascading parents and a Checkbox glyph (not the Checkbox component: the treeitem itself is the control). Type-ahead buffers keys for 500 ms. Pointer: click on a node focuses it and does what Space does (select in single, toggle in multiple); double-click does what Enter does; click on the chevron toggles expansion and focuses the node without changing selection. Empty `nodes`: the <ul> renders with no items and copy.empty is a Text below it inside the container.'
     lit:
       tag: ds-tree
-      reflect: [selectable, select-children, select-on-focus, show-guides, show-label]
-      notes: '`nodes` as a property rendered in the shadow root; roving tabindex over shadow treeitems; composed events. ds-link is composed for href nodes.'
+      reflect: [selectable, select-children, select-on-focus, hide-guides, show-label, heading-level]
+      notes: '`nodes` as a property rendered in the shadow root; roving tabindex over shadow treeitems; composed events. ds-link is composed for href nodes. `showGuides` defaults true, so its attribute is the negated `hide-guides`. labelSelectedWeight, badgeSize and headingSize reach the composed ds-text / ds-heading through their `overrides` property.'
     rn:
       element: FlatList
       props: [accessibilityRole=list, accessibilityLabel]
-      notes: 'A FlatList over the flattened visible nodes; each row a Pressable with accessibilityRole="button" (or "link" for href), accessibilityState={{ expanded, selected, checked, disabled }}, accessibilityLabel "{label}, level {n}" and accessibilityActions expand/collapse. Multiple mode uses the Checkbox component''s drawn control inside the row. No arrow keys; the expand chevron is a real target.'
+      notes: 'A FlatList over the flattened visible nodes; each row a Pressable with accessibilityRole="button" (or "link" for href), accessibilityState={{ expanded, selected, checked, disabled }}, accessibilityLabel "{label}, level {n}" and accessibilityActions expand/collapse. Multiple mode draws the checkbox glyph (checkbox* bindings, accessibilityState.checked) inside the same Pressable — not the Checkbox component — so the row stays one target and Enter-equivalent activation and href still work: a tap toggles selection, a long press activates. `selectOnFocus` is wired to the Pressable''s onFocus (hardware keyboard and assistive-technology focus). No arrow keys, no type-ahead; the expand chevron is a real target.'
 ---
 
 A tree is a list that knows about nesting. One field per node, arrows to move and open, Enter to act: the shape of a file browser's sidebar, a category picker, a documentation site's navigation. When nodes need several fields, it becomes a TreeGrid.
@@ -155,7 +173,7 @@ Do not use a Tree for one level (a Listbox or a list of Links), for nodes with s
 
 ## Behavior
 
-ArrowUp/Down move through visible nodes; ArrowRight opens a closed parent or steps into an open one; ArrowLeft closes or steps up; `*` opens all siblings; typing jumps by label. Enter activates (navigates for `href`, otherwise `onActivate`) and, in single mode, selects. Space selects or toggles; in multiple mode Shift+arrows extend and Ctrl+A selects all visible. Lazy nodes load on first open with a placeholder child. Disabled nodes are visible, skipped by arrows, not selectable. Selection and expansion are both controlled-or-uncontrolled and reported through events.
+ArrowUp/Down move through visible nodes; ArrowRight opens a closed parent or steps into an open one; ArrowLeft closes or steps up; `*` opens all siblings; typing jumps by label. Enter activates (navigates for `href`, otherwise `onActivate`) and, in single mode, selects. Space selects or toggles; in multiple mode Shift+arrows extend and Ctrl+A selects all visible. Lazy nodes load on first open with a placeholder child. Disabled nodes are visible, skipped by arrows, not selectable. Selection and expansion are both controlled-or-uncontrolled and reported through events; `selected` is always an array. With the pointer, click selects or toggles and focuses, double-click activates, and the chevron only expands. The heading, when shown, is a composed Heading at `headingLevel` sized by headingSize and names the tree.
 
 ## Content guidelines
 
@@ -168,13 +186,13 @@ The tree is a `tree` of `treeitem`s with `group`s for children, each item exposi
 ## Platform notes
 
 ### Web
-Render `<ul role="tree" aria-label aria-multiselectable data-ds="Tree">` with `<li role="treeitem" id aria-level aria-setsize aria-posinset aria-expanded? aria-selected|aria-checked tabIndex={roving}>` containing the row `<div>` (indent as `padding-inline-start`, the chevron `Button` `ghost sm iconOnly aria-hidden tabIndex={-1}`, optional `Icon`, the label `Text` or `Link`, the badge `Text tone="muted" size="xs"`) and, when expanded, `<ul role="group">` of child items. Keydown on the tree implements the table over the flattened visible list; focus moves to the item. Guide lines are a `::before` on groups. Lazy: on first expand fire `onExpand`, render a placeholder item with `copy.loading` and `aria-busy` on the parent.
+Render `<div data-ds="Tree">` holding the optional `Heading level={headingLevel}` and `<ul role="tree" aria-labelledby|aria-label aria-multiselectable>` with `<li role="treeitem" id aria-level aria-setsize aria-posinset aria-expanded? aria-selected|aria-checked tabIndex={roving}>` containing the row `<div>` (indent as `padding-inline-start`, the chevron `Button` `ghost sm iconOnly aria-hidden tabIndex={-1}`, optional `Icon`, the label `Text` or `Link`, the badge `Text tone="muted"` with `overrides.fontSize` from badgeSize, and in multiple mode the drawn checkbox `<span aria-hidden>` from the checkbox* bindings with a `check`/`dash` Icon) and, when expanded, `<ul role="group">` of child items. Keydown on the tree implements the table over the flattened visible list; focus moves to the item. Guide lines are a `::before` on groups, hidden with `showGuides: false`. Lazy: on first expand fire `onExpand`, render a placeholder item with `copy.loading` and `aria-busy` on the parent.
 
 ### Lit
 `<ds-tree label="Folders" .nodes=${nodes} selectable="multiple" select-children></ds-tree>`; shadow tree; composed `selection-change`, `expand-change`, `expand`, `activate`.
 
 ### React Native
-`FlatList` over the flattened visible nodes; rows are `Pressable`s with indent, chevron `Button`, `Icon`, `Text`, badge; `accessibilityState` and `accessibilityActions` as noted; multiple mode draws the Checkbox control inside the row.
+`FlatList` over the flattened visible nodes; rows are `Pressable`s with indent, chevron `Button`, `Icon`, `Text`, badge; `accessibilityState` and `accessibilityActions` as noted; multiple mode draws the checkbox glyph inside the row from the checkbox* bindings (`View` + `Icon`), never the Checkbox component. Groups have no wrapper on native: visible children are flattened into the one list, as TreeGrid.
 
 ## Related
 

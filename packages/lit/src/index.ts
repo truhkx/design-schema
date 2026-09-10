@@ -60,6 +60,8 @@ import './Table.js';
 import './DataGrid.js';
 import './TreeGrid.js';
 import './Tree.js';
+import './Splitter.js';
+import './Feed.js';
 
 export { DsAccordion } from './Accordion.js';
 export type {
@@ -438,3 +440,20 @@ export type {
   TreeActivateDetail,
   TreeOverridableBinding,
 } from './Tree.js';
+
+export { DsSplitter } from './Splitter.js';
+export type {
+  SplitterOrientation,
+  SplitterStackBelow,
+  SplitterSizeChangeDetail,
+  SplitterCollapseChangeDetail,
+  SplitterOverridableBinding,
+} from './Splitter.js';
+
+export { DsFeed } from './Feed.js';
+export type {
+  FeedHeadingLevel,
+  FeedItem,
+  FeedItemVisibleDetail,
+  FeedOverridableBinding,
+} from './Feed.js';

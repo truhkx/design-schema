@@ -1,6 +1,6 @@
 # Gap digest — phase Grids
 
-Generated 2026-09-10T14:31 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T14:34 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -1719,6 +1719,17 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 Doc: `site/src/content/docs/components/tree.md`
 
+### 2026-09-10 14:34 — lit round 1
+
+- **DOC** showGuides defaults to true, but platforms.lit.reflect literally names the attribute 'show-guides'; per this package's own negated-boolean-attribute convention (a true-default boolean can't be a positively-named attribute) I implemented it as 'hide-guides' instead, following the doc's own 'showValue -> hide-value' precedent — this contradicts the schema's literal reflect-list entry. → `site/src/content/docs/components/tree.md`
+- **DOC** labelSelectedWeight and badgeSize are declared overridable, but the composed <ds-text> label/badge expose only fixed enum props (weight, size), not free TokenRef overrides, so Tree's overrides prop can't actually push an arbitrary token into their rendered font-weight/font-size. The CSS custom-property hooks exist on the host (the documented 'escape hatch'), and the correct default appearance is produced via Text's own weight/size props, but the override path is inert until Text.ts gains a matching override binding. → `site/src/content/docs/components/tree.md`
+- **DOC** The multiple-mode 'Checkbox glyph' (doc: 'not the Checkbox component: the treeitem itself is the control') has no dedicated style binding for its box size/border/fill in the schema's styles list. I reused the locked iconColor token for the unchecked border, color.control.selectedBackground (same token as rowSelectedBorder) for the checked fill, and rowRadius for its corner radius. → `site/src/content/docs/components/tree.md`
+- **DOC** Mouse click semantics are unspecified (the doc only defines keyboard behavior and 'double-click' for activate). I chose: single click focuses + selects/toggles per selectable mode (mirroring Enter/Space), double-click activates. → `site/src/content/docs/components/tree.md`
+- **DOC** composition only lists expandButton: Button, icon: Icon, label: Text, omitting Link even though href nodes require composing it (per anatomy/platform notes), and omitting an explicit mapping for the badge anatomy part (rendered with Text, consistent with label). → `site/src/content/docs/components/tree.md`
+- **DOC** The empty state (nodes: [], copy.empty) is rendered as a single <li role="presentation"> inside role="tree" since the ARIA treeview pattern has no defined 'empty' treeitem shape; role=presentation keeps it out of the accessibility tree rather than exposing an invalid owned child. → `site/src/content/docs/components/tree.md`
+- **DOC** ArrowRight into an open parent's 'first child': when the literal first child is disabled, focus lands on the next non-disabled descendant instead (via the disabled-skipping navigable list), since the doc's 'first child' rule and its separate 'disabled nodes ... skipped by arrows' rule aren't reconciled. → `site/src/content/docs/components/tree.md`
+- **DOC** Shift+ArrowDown/Up ('extends selection to the next/previous node') is implemented as adding both the currently-focused and the newly-focused node to the existing selection, not a full anchor-based contiguous range, since the doc doesn't specify exact range semantics beyond that phrase. → `site/src/content/docs/components/tree.md`
+
 ### 2026-09-10 14:31 — web round 1
 
 - **DOC** Tree: platform notes show `<ul role="tree" data-ds="Tree">` as the root, but `showLabel` needs a heading above the tree; used an outer wrapping `<div data-ds="Tree" data-part="container">` holding the optional Heading plus the ul, matching the 'root carries data-ds' convention and TreeGrid's own wrapper-div precedent rather than putting data-ds on the ul itself. → `site/src/content/docs/components/tree.md`
@@ -1793,7 +1804,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 918 · CODE: 39 · TOOLING: 2 · NOISE: 14
+DOC: 926 · CODE: 39 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

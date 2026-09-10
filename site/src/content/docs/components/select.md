@@ -101,6 +101,7 @@ component:
     triggerRadius: { token: radius.md }
     triggerPaddingInline: { token: space.md }
     triggerPaddingBlock: { token: space.sm }
+    triggerPaddingBlockSm: { token: space.1, description: 'Vertical padding of the trigger at size sm.' }
     triggerGap: { token: layout.gap.normal, description: Between value and chevron. }
     valueColor: { token: color.foreground }
     placeholderColor: { token: color.foreground.muted }
@@ -117,9 +118,10 @@ component:
     popupOffset: { token: space.1 }
     layer: { token: layer.dropdown }
     fontFamily: { token: font.family.body }
-    fontSize: { token: font.size.md }
+    fontSize: { token: 'font.size.{size}' }
     lineHeight: { token: font.lineHeight.normal }
     minTarget: { token: size.target.comfortable }
+    minTargetSm: { token: size.target.min, description: 'The trigger height floor at size sm. The popup is unchanged.' }
     focusRingWidth: { token: border.width.focus, description: Replaces the border width when focused; padding shrinks by the difference. }
     disabledOpacity: { token: opacity.disabled }
     enter: { token: motion.duration.fast, description: Popup fade; instant under reduced motion. }

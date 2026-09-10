@@ -1,0 +1,14 @@
+# Gaps reported while generating Splitter for web
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-10 16:37 — round 1
+
+- Splitter: `minSize`'s description references a `collapseThreshold` distinct from `minSize` ("Below collapseThreshold the pane collapses instead"), but no such prop exists in the schema. I treated `minSize` itself as the collapse threshold: with `collapsible`, dragging past `minSize` collapses instead of clamping at it; without `collapsible`, `minSize` is the hard clamp floor as usual.
+- Splitter: the F6 keyboard rule says 'from the separator to the secondary; from a pane to the next' but doesn't fully specify the cycle for all three regions. I implemented a 3-way cycle primaryPane → separator → secondaryPane → primaryPane (wrapping), focusing the first focusable descendant of the target region (or the region itself as a tabIndex=-1 fallback).
+- Splitter: `stackBelow` and the a11y note about 'a phone has no room for two panes side by side' only mention stacking for a horizontal splitter. I made stacking apply only when `orientation === 'horizontal'`; a vertical splitter never stacks regardless of `stackBelow`/container width — not stated explicitly either way.
+- Splitter: no behavior is specified for a pointer drag that starts, or continues, while the pane is already collapsed. I made the separator ignore pointermove entirely while collapsed (only Enter or the collapse button restores it) rather than treating a drag as an implicit restore.
+- Splitter: Home/End/Arrow keys are not specified to have any effect while collapsed. I made them no-ops while collapsed (only Enter toggles), rather than implicitly restoring the pane first.
+- Splitter: `paneMinTarget` ('a pane never shrinks below this on the drag axis before collapsing') is enforced via a CSS `minmax()` floor on the grid track, layered underneath the JS percent clamp (`minSize`/`maxSize`) — so a very narrow container can force the pane visually wider than the requested percent. The collapsed state explicitly drops this floor (grid track literal `0`) so collapse still reaches true zero width, per the web notes' 'inline-size 0'.
+- Splitter: 'the separator becomes inert' when stacked was implemented as `display: none` (plus `role="presentation"`, no `tabIndex`) rather than merely non-interactive-but-visible; the doc doesn't say whether the thin line should stay visible when stacked.
+- Splitter: used a real per-element container query (ResizeObserver on the splitter's own inline size, breakpoint read at runtime from the `layout.maxWidth.*` token) rather than a viewport `matchMedia`, since the doc calls it a 'container query' and nesting is explicitly supported (Splitter-in-a-pane). Guarded for environments without `ResizeObserver` (jsdom), matching the existing Toolbar.tsx pattern.

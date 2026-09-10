@@ -317,3 +317,6 @@ export type {
 
 export { Tree } from './Tree';
 export type { TreeProps, TreeNode, TreeNodeChildren, TreeSelectable, TreeOverridableBinding } from './Tree';
+
+export { Splitter } from './Splitter';
+export type { SplitterProps, SplitterOrientation, SplitterStackBelow, SplitterOverridableBinding } from './Splitter';

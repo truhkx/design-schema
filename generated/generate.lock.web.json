@@ -893,6 +893,31 @@
       "modules": true
     }
   },
+  "Splitter.web": {
+    "hash": "494c17aac8ac08b3",
+    "lastAttemptHash": "494c17aac8ac08b3",
+    "generatedAt": "2026-09-10T20:37:21+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.6342,
+    "files": [
+      "packages/react/src/Splitter.css",
+      "packages/react/src/Splitter.stories.tsx",
+      "packages/react/src/Splitter.test.tsx",
+      "packages/react/src/Splitter.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Stack.web": {
     "hash": "395ec760b1de6f6c",
     "lastAttemptHash": "395ec760b1de6f6c",

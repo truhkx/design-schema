@@ -9,7 +9,7 @@ component:
   props:
     name:
       type: enum
-      values: [check, dash, chevron-right, chevron-down, chevron-up, chevron-left, close, plus, minus, info, success, warning, danger, external, ellipsis, search, arrow-right, arrow-left, calendar, menu, list, grid, play, pause]
+      values: [check, dash, chevron-right, chevron-down, chevron-up, chevron-left, close, plus, minus, info, success, warning, danger, external, ellipsis, search, arrow-right, arrow-left, calendar, menu, list, grid, play, pause, folder, file]
       required: true
       description: 'Which glyph. The set is deliberately small and grows only when a component needs a shape; `info`, `success`, `warning` and `danger` are the four status shapes (circle-i, circle-check, triangle-!, octagon-x) so tone is never carried by color alone.'
     size:
@@ -67,7 +67,7 @@ An Icon renders a single glyph at the requested size and does nothing else: no i
 
 ## Content guidelines
 
-Glyph geometry on the 16×16 grid, for glyphs with no existing path to reuse: `play` is a filled triangle (4,2)→(14,8)→(4,14); `pause` is two filled 3×12 bars at x=3 and x=10 from y=2; `list` is three horizontal lines from x=5 to x=14 at y=4, 8, 12 with a dot at x=2 on each; `grid` is four 5×5 outlined squares at (2,2), (9,2), (2,9), (9,9); `menu` is three horizontal lines from x=2 to x=14 at y=4, 8 and 12 (a line glyph). `calendar` is an outlined rectangle from (2,3) to (14,14) with a header rule at y=6 and two hanger ticks at x=5 and x=11 from y=1 to y=4, drawn as a line glyph. Glyph names describe the shape or the universal meaning, not the use ("chevron-down", "close", "warning"), so the same icon can serve many components. `dash` is the short indeterminate mark (4–12 on the grid) used by Checkbox; `minus` is the full-width line (3–13) that pairs with `plus`. `danger` is an octagon with an ×; Alert's current exclamation octagon changes to it when Alert is regenerated to compose Icon. A `label`, when used, says what the icon means in context ("Warning: over quota"), not what it depicts ("triangle").
+Glyph geometry on the 16×16 grid, for glyphs with no existing path to reuse: `play` is a filled triangle (4,2)→(14,8)→(4,14); `pause` is two filled 3×12 bars at x=3 and x=10 from y=2; `folder` is an outlined shape from (2,4) to (14,13) whose top edge steps up to y=2 between x=2 and x=7 (the tab), a line glyph; `file` is an outlined rectangle from (4,2) to (12,14) with the top-right corner cut by a diagonal from (9,2) to (12,5) and that corner folded (a line from (9,2) down to (9,5) across to (12,5)), a line glyph; `list` is three horizontal lines from x=5 to x=14 at y=4, 8, 12 with a dot at x=2 on each; `grid` is four 5×5 outlined squares at (2,2), (9,2), (2,9), (9,9); `menu` is three horizontal lines from x=2 to x=14 at y=4, 8 and 12 (a line glyph). `calendar` is an outlined rectangle from (2,3) to (14,14) with a header rule at y=6 and two hanger ticks at x=5 and x=11 from y=1 to y=4, drawn as a line glyph. Glyph names describe the shape or the universal meaning, not the use ("chevron-down", "close", "warning"), so the same icon can serve many components. `dash` is the short indeterminate mark (4–12 on the grid) used by Checkbox; `minus` is the full-width line (3–13) that pairs with `plus`. `danger` is an octagon with an ×; Alert's current exclamation octagon changes to it when Alert is regenerated to compose Icon. A `label`, when used, says what the icon means in context ("Warning: over quota"), not what it depicts ("triangle").
 
 ## Accessibility
 

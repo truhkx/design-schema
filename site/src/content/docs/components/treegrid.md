@@ -47,15 +47,27 @@ component:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
       description: Sort applies within each level; siblings are ordered, hierarchy is kept.
+    defaultSort:
+      type: object
+      shape: '{ column: string; direction: "ascending" | "descending" }'
+      description: As DataGrid.
     selectable:
       type: enum
       values: [none, row, cell]
       default: none
       description: 'As DataGrid without `range` (rectangles across levels are not meaningful). `row` selection of a parent does not select its children unless `selectChildren`.'
+    selected:
+      type: array
+      shape: 'string[]'
+      description: As DataGrid.
+    defaultSelected:
+      type: array
+      shape: 'string[]'
+      description: Initially selected row ids.
     selectChildren:
       type: boolean
       default: false
-      description: 'Selecting a parent row selects its descendants; the parent shows indeterminate when only some are selected (a folder picker).'
+      description: 'Toggling a parent row sets or clears its own id and every loaded descendant; a parent''s shown state is derived from its loaded descendants (checked when all, indeterminate when some, else its own id). A `"lazy"` subtree contributes nothing until loaded. Select-all covers every loaded row at every level.'
     editable:
       type: boolean
       default: false
@@ -78,12 +90,19 @@ component:
       type: boolean
       default: true
       description: As DataGrid.
+    stickyHeader:
+      type: boolean
+      default: true
+      description: As DataGrid.
+    emptyMessage:
+      type: string
+      description: As DataGrid.
   events:
     onExpandChange:
-      description: Fired with the new array of expanded ids.
+      description: 'Fired with the new array of expanded ids (the bare array, as Tree; not wrapped in an object).'
       platforms: { web: onExpandChange, lit: expand-change, rn: onExpandChange }
     onExpand:
-      description: 'Fired when a `children: "lazy"` row is expanded for the first time, with its id; the caller loads and replaces `children`.'
+      description: 'Fired with its id (bare string) each time a row whose `children` is still `"lazy"` is expanded, so a failed load can retry; once the caller replaces `children` it never fires again for that row.'
       platforms: { web: onExpand, lit: expand, rn: onExpand }
     onSortChange:
       description: As DataGrid.
@@ -94,6 +113,12 @@ component:
     onCellChange:
       description: As DataGrid.
       platforms: { web: onCellChange, lit: cell-change, rn: onCellChange }
+    onEditStart:
+      description: As DataGrid.
+      platforms: { web: onEditStart, lit: edit-start, rn: onEditStart }
+    onColumnResize:
+      description: As DataGrid.
+      platforms: { web: onColumnResize, lit: column-resize, rn: onColumnResize }
   keyboard:
     - { keys: [Tab], action: 'Enters and leaves the grid — one tab stop, as DataGrid.', from: any, expect: manual }
     - { keys: [ArrowDown, ArrowUp], action: 'Next / previous visible row, same column. Collapsed descendants are skipped because they are not rendered.', from: inside, expect: manual }
@@ -101,13 +126,13 @@ component:
     - { keys: [ArrowLeft], action: 'On a row header of an expanded row: collapses. On a row header of a collapsed or leaf row: moves focus to the parent row''s header. On any other cell: previous cell.', from: inside, expect: manual }
     - { keys: [Home, End], action: 'First / last cell in the row (Ctrl: first / last visible row of the grid).', from: inside, expect: manual }
     - { keys: [Enter], action: 'On a row header: toggles expansion (or activates a control inside it). Elsewhere as DataGrid: sort, edit, activate.', from: inside, expect: manual }
-    - { keys: ['*'], action: Expands every sibling of the focused row., from: inside, expect: manual }
-    - { keys: [F2, Escape, ' ', Ctrl+A], action: As DataGrid., from: inside, expect: manual }
+    - { keys: ['*'], action: 'Expands every row at the focused row''s level under the same parent, the focused row included.', from: inside, expect: manual }
+    - { keys: [F2, Escape, ' ', Ctrl+A, Shift+ArrowLeft, Shift+ArrowRight], action: 'As DataGrid (Shift+Space extends the row selection; with selectChildren each selected parent cascades).', from: inside, expect: manual }
   styles:
     indent: { token: space.5, description: 'Per level, applied as padding-inline-start on the row header. Level 1 has none.' }
-    expandButtonSize: { token: size.target.min }
+    expandButtonSize: { token: size.target.min, description: 'Inline width reserved for the expand control in the row header (the guide lines align to its centre); minTarget is the locked row-height floor.' }
     expandGap: { token: layout.gap.tight, description: 'Between the expand button and the row header text.' }
-    guideLine: { token: color.border, description: 'A vertical guide under each open parent, aligned with its expand button, so deep trees stay legible. Always drawn, at both densities.' }
+    guideLine: { token: color.border, description: 'One vertical line per ancestor level, drawn the full height of every descendant row and aligned with that ancestor''s expand button (indent guides; no elbows, no termination at the last child). Always drawn, at both densities.' }
     guideLineWidth: { token: border.width.thin }
     parentWeight: { token: font.weight.medium, description: 'Row headers of rows with children.' }
     loadingColor: { token: color.foreground.muted, description: 'The lazy-loading placeholder text in a just-expanded row.' }
@@ -123,6 +148,19 @@ component:
     loading: Loading
     expandAll: Expand all
     collapseAll: Collapse all
+    sortAscending: 'Sort by {column}, ascending'
+    sortDescending: 'Sort by {column}, descending'
+    sortedAnnouncement: 'Sorted by {column}, {direction}'
+    selectAll: Select all rows
+    selectRow: 'Select {rowName}'
+    selectedRows: '{count} of {total} rows selected'
+    editing: 'Editing {column}. Enter to save, Escape to cancel.'
+    invalid: '{message}'
+    rowCount: '{count} rows'
+    position: 'Row {row}, {column}'
+    resize: 'Resize {column}'
+    empty: Nothing to show.
+    scrollHint: Scroll sideways to see more columns
   a11y:
     role: treegrid
     requires: [accessible-name, keyboard-operable, arrow-navigation, roving-tabindex, expanded-state, focus-visible, selected-state, live-region, contrast-aa, target-24px, error-identification, escape-dismiss]
@@ -136,12 +174,12 @@ component:
       notes: 'DataGrid''s structure with role="treegrid" on the container and, on every row, aria-level, aria-setsize and aria-posinset (among its siblings), plus aria-expanded on rows that have children (absent on leaves — a leaf must not say "collapsed"). The flattened visible-row list is what gets virtualized and indexed with aria-rowindex, so collapsing removes rows from the list. The expand control is a Button (ghost, sm, iconOnly, chevron-right Icon rotated when expanded) inside the row header cell with tabindex=-1; it is a pointer convenience — ArrowLeft/Right are the keyboard path, and the button has aria-hidden since the row already exposes aria-expanded. Indent as padding on the row header. Lazy children: on first expand set aria-busy on the row and render one placeholder child row with copy.loading until data arrives.'
     lit:
       tag: ds-tree-grid
-      reflect: [selectable, select-children, editable, density, height, loading, hide-caption, show-status-bar]
-      notes: 'Extends the ds-data-grid implementation (shared base class in the package, not a copy). `expanded` as a property; composed `expand-change`, `expand`.'
+      reflect: [selectable, select-children, editable, density, height, loading, hide-caption, no-status-bar, no-sticky-header]
+      notes: 'Its own element following ds-data-grid''s structure, keyboard handling and CSS (a shared base class is a welcome package refactor, not a requirement; the copy strings above are TreeGrid''s own, so nothing is imported from DataGrid). `expanded` and `selected` as properties; composed `expand-change`, `expand` with bare detail values.'
     rn:
       element: FlatList
-      props: [accessibilityRole=grid, accessibilityLabel, getItemLayout]
-      notes: 'DataGrid''s list over the flattened visible rows; each row header cell has accessibilityState={{ expanded }} when it has children, accessibilityLabel "{rowName}, level {n}, {count} items", and its own accessibilityActions expand/collapse. The expand Button is a real touch target (minimum size) since there are no arrow keys.'
+      props: [role=grid, accessibilityLabel, getItemLayout]
+      notes: 'DataGrid''s list over the flattened visible rows (role="grid" via the ARIA-aligned `role` prop, as DataGrid); the root View exposes expandAll/collapseAll accessibility actions named from copy; each row header cell has accessibilityState={{ expanded }} when it has children, accessibilityLabel "{rowName}, level {n}, {count} items", and its own accessibilityActions expand/collapse. The expand Button is a real touch target (minimum size) since there are no arrow keys.'
 ---
 
 A tree grid is a data grid where rows have rows inside them. The hierarchy lives in the row-header column — indent, a chevron, a level announced to screen readers — and everything else is DataGrid: same columns, same cell navigation, same editors. Collapsing a parent removes its descendants from the visible list, which is also the virtualized list, so a hundred thousand leaf rows cost nothing until they are opened.
@@ -156,7 +194,7 @@ Do not use a TreeGrid for a hierarchy with one field per node — a navigation t
 
 ## Behavior
 
-Rows with children show a chevron in the row header; ArrowRight expands, ArrowLeft collapses or moves to the parent, `*` expands all siblings, Enter on the row header toggles. Expanded ids are controlled or uncontrolled; `onExpandChange` reports them. Lazy rows show a loading placeholder child until the caller supplies `children`. Sorting orders siblings within each parent and keeps the tree. Row selection with `selectChildren` cascades down and shows indeterminate parents. Vertical navigation moves through visible rows only; everything else — editing, cell selection, status bar, virtualization, pinned columns — behaves as DataGrid.
+Rows with children show a chevron in the row header; ArrowRight expands, ArrowLeft collapses or moves to the parent, `*` expands all siblings, Enter on the row header toggles. Expanded ids are controlled or uncontrolled; `onExpandChange` reports them. Lazy rows show a loading placeholder child until the caller supplies `children`. Sorting orders siblings within each parent and keeps the tree. Row selection with `selectChildren` cascades down and shows indeterminate parents. Vertical navigation moves through visible rows only; everything else — editing, cell selection, status bar, virtualization, pinned and resizable columns, sticky header, controlled and uncontrolled sort and selection — behaves as DataGrid, and the copy strings for those behaviors are TreeGrid's own (listed above, identical to DataGrid's) so each platform package is self-contained. Descendant, parent and sibling lookups are O(n) walks of `data`; only the visible-row list is optimized. `copy.level` and `copy.childCount` are used only in the native accessibilityLabel (web relies on aria-level/aria-setsize/aria-posinset); `copy.expandAll`/`copy.collapseAll` name the native root's expandAll/collapseAll accessibility actions and have no web control (`*` is the keyboard path).
 
 ## Content guidelines
 

@@ -71,6 +71,15 @@ component:
       type: boolean
       default: false
       description: Must have a value to submit.
+    hideLabel:
+      type: boolean
+      default: false
+      description: 'Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search.'
+    size:
+      type: enum
+      values: [sm, md]
+      default: md
+      description: 'sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type.'
     disabled:
       type: boolean
       default: false
@@ -103,6 +112,8 @@ component:
     radius: { token: radius.md }
     paddingInline: { token: space.md }
     paddingBlock: { token: space.sm }
+    paddingBlockSm: { token: space.1, description: 'Vertical padding at size sm.' }
+    paddingInlineSm: { token: space.2, description: 'Horizontal padding at size sm.' }
     affixColor: { token: color.foreground.muted, description: Prefix and suffix text. }
     affixGap: { token: layout.gap.tight }
     stepperGap: { token: layout.gap.none, description: 'The two stepper Buttons sit flush at the end of the field, separated from the input by a hairline.' }
@@ -113,9 +124,10 @@ component:
     descriptionText: { token: color.foreground.muted }
     errorText: { token: color.foreground.danger }
     fontFamily: { token: font.family.body }
-    fontSize: { token: font.size.md }
+    fontSize: { token: 'font.size.{size}' }
     lineHeight: { token: font.lineHeight.normal }
     minTarget: { token: size.target.comfortable }
+    minTargetSm: { token: size.target.min, description: 'The field height floor at size sm; the stepper buttons become Button size sm.' }
     focusRingWidth: { token: border.width.focus }
     disabledOpacity: { token: opacity.disabled }
   copy:

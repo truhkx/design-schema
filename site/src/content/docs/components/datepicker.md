@@ -70,6 +70,15 @@ component:
       type: boolean
       default: false
       description: Must have a value to submit.
+    hideLabel:
+      type: boolean
+      default: false
+      description: 'Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search.'
+    size:
+      type: enum
+      values: [sm, md]
+      default: md
+      description: 'sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type.'
     disabled:
       type: boolean
       default: false
@@ -108,6 +117,8 @@ component:
     radius: { token: radius.md }
     paddingInline: { token: space.md }
     paddingBlock: { token: space.sm }
+    paddingBlockSm: { token: space.1, description: 'Vertical padding at size sm.' }
+    paddingInlineSm: { token: space.2, description: 'Horizontal padding at size sm.' }
     rangeSeparatorColor: { token: color.foreground.muted, description: 'The en dash between start and end inputs.' }
     calendarSurface: { token: color.overlay.surface, description: 'Realized by the composed Popover''s surface; forwarded as its `overrides.surface`.' }
     calendarInset: { token: layout.inset.md }
@@ -137,6 +148,7 @@ component:
     descriptionText: { token: color.foreground.muted }
     errorText: { token: color.foreground.danger }
     minTarget: { token: size.target.comfortable }
+    minTargetSm: { token: size.target.min, description: 'The field height floor at size sm; the calendar Button becomes size sm. The calendar popup is unchanged.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
     disabledOpacity: { token: opacity.disabled }

@@ -745,6 +745,29 @@
       "modules": true
     }
   },
+  "Splitter.rn": {
+    "hash": "4557be4ba042316e",
+    "lastAttemptHash": "4557be4ba042316e",
+    "generatedAt": "2026-09-10T20:38:53+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.4449,
+    "files": [
+      "packages/rn/src/Splitter.stories.tsx",
+      "packages/rn/src/Splitter.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Stack.rn": {
     "hash": "23c147ff3443a6d9",
     "lastAttemptHash": "23c147ff3443a6d9",

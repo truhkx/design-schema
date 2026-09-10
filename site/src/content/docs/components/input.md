@@ -10,7 +10,7 @@ component:
     label:
       type: string
       required: true
-      description: Visible label. Always rendered; never replaced by a placeholder.
+      description: Visible label (visually hidden with `hideLabel`). Never replaced by a placeholder.
       a11y: Programmatically associated with the field (label/for on web, accessibilityLabel on native).
     name:
       type: string
@@ -39,6 +39,15 @@ component:
       type: boolean
       default: false
       description: The field must have a value to submit. Shown in the label, not only by color.
+    hideLabel:
+      type: boolean
+      default: false
+      description: 'Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search.'
+    size:
+      type: enum
+      values: [sm, md]
+      default: md
+      description: 'sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type.'
     disabled:
       type: boolean
       default: false
@@ -78,13 +87,16 @@ component:
     radius: { token: radius.md }
     paddingInline: { token: space.md }
     paddingBlock: { token: space.sm }
+    paddingBlockSm: { token: space.1, description: 'Vertical padding at size sm.' }
+    paddingInlineSm: { token: space.2, description: 'Horizontal padding at size sm.' }
     partGap: { token: space.1, description: 'Vertical gap between label, description, field, and error.' }
     fontFamily: { token: font.family.body }
-    fontSize: { token: font.size.md }
+    fontSize: { token: 'font.size.{size}' }
     labelWeight: { token: font.weight.medium }
     helperSize: { token: font.size.sm, description: Description and error text size. }
     lineHeight: { token: font.lineHeight.normal }
     minTarget: { token: size.target.comfortable }
+    minTargetSm: { token: size.target.min, description: 'The field height floor at size sm.' }
     focusRingWidth: { token: border.width.focus, description: 'Replaces borderWidth when focused (the field''s border IS its focus ring — no outline); when the field is both invalid and focused the danger color stays and only the width changes, so the error is never hidden by focus. Padding shrinks by the difference so the field does not shift.' }
     disabledOpacity: { token: opacity.disabled, description: 'Applied to the whole field group (label, description, field, error), as Button dims the whole control.' }
   copy:
@@ -126,7 +138,7 @@ Do not use Input for multi-line content (use TextArea, planned), for choosing fr
 
 ## Behavior
 
-The field is uncontrolled unless `value` is provided. `onChange` fires with the string value on every keystroke; `onBlur` is the recommended moment to validate so users are not shouted at mid-word. Setting `error` marks the field invalid, shows the message in the error slot, and announces it. Clearing `error` removes the message and the invalid state. `disabled` fields are visible, readable, focusable (aria-disabled + readOnly on web — never the native disabled attribute), and skipped by the Form; `required` appends `copy.requiredIndicator` to the visible label and sets `aria-required`. Validation precedence: `error` prop, then `required` (renders `copy.required`), then `invalid` (renders `copy.invalid`), then browser/type validity where the platform has it. Inside a Fieldset the field reads `FieldsetContext`: `disabled` from the group applies as if set on the field, and on native the legend prefixes the accessibility label ("Shipping address, Street"). The label is a native `<label for>` (web/Lit) styled from Input's label bindings, not a Text; description and error are Text.
+The field is uncontrolled unless `value` is provided. `onChange` fires with the string value on every keystroke; `onBlur` is the recommended moment to validate so users are not shouted at mid-word. Setting `error` marks the field invalid, shows the message in the error slot, and announces it. Clearing `error` removes the message and the invalid state. `disabled` fields are visible, readable, focusable (aria-disabled + readOnly on web — never the native disabled attribute), and skipped by the Form; `required` appends `copy.requiredIndicator` to the visible label and sets `aria-required`. Validation precedence: `error` prop, then `required` (renders `copy.required`), then `invalid` (renders `copy.invalid`), then browser/type validity where the platform has it. Inside a Fieldset the field reads `FieldsetContext`: `disabled` from the group applies as if set on the field, and on native the legend prefixes the accessibility label ("Shipping address, Street"). The label is a native `<label for>` (web/Lit) styled from Input's label bindings, not a Text; description and error are Text. `hideLabel` keeps the `<label>` in the DOM, visually hidden. `size: sm` swaps paddingBlock/paddingInline/minTarget for their Sm bindings and the type to font.size.sm; nothing else changes.
 
 ## Content guidelines
 

@@ -27,7 +27,8 @@
     "gates:behavior": "node tools/py.mjs tools/behavior_tests.py && pnpm --filter @design-schema/react run test generated/behavior && pnpm --filter @design-schema/lit run test generated/behavior && pnpm --filter @design-schema/rn run test generated/behavior",
     "spec-sheet": "node tools/py.mjs tools/spec_sheet.py",
     "build:packages": "pnpm -r --filter \"@design-schema/*\" run build",
-    "release:check": "pnpm build:packages && pnpm -r --filter \"@design-schema/*\" exec npm pack --dry-run"
+    "release:check": "pnpm build:packages && pnpm -r --filter \"@design-schema/*\" exec npm pack --dry-run",
+    "storybook:device": "pnpm --filter rn-storybook start"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",

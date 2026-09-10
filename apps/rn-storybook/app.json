@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Design Schema Storybook",
+    "slug": "design-schema-storybook",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "platforms": ["ios", "android"],
+    "newArchEnabled": false,
+    "ios": { "supportsTablet": true },
+    "android": { "adaptiveIcon": { "backgroundColor": "#ffffff" } }
+  }
+}

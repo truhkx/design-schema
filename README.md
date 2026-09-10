@@ -51,6 +51,7 @@ pnpm themes       # just the theme derivation + resolve
 pnpm tokens       # build tokens with Style Dictionary
 pnpm docs         # run the docs site locally (http://localhost:4321)
 pnpm storybook    # React (6007) + Lit (6008) + React Native via react-native-web (6009), composed at http://localhost:6006
+pnpm storybook:device # the same React Native stories on a phone (Expo Go) for VoiceOver / TalkBack; see below
 pnpm typecheck    # tsc --noEmit in every package
 pnpm test         # pytest: color math, token resolver, theme derivation, doc parser, behavior scenarios, MCP tools
 pnpm test:packages # the generated components' behavior tests on all three platforms (Lit needs `npx playwright install chromium` once)
@@ -59,6 +60,18 @@ pnpm build        # tokens + parse + static site build
 ```
 
 `pnpm themes` also writes a fallback `packages/tokens/dist/<id>/css/tokens.css`, so the site styles correctly before Style Dictionary has ever run.
+
+## Storybook on a device
+
+`packages/rn` is verified in the browser through react-native-web, which is what the gates use. Screen readers are not: VoiceOver and TalkBack only exist on a phone. `apps/rn-storybook` is an Expo (SDK 51, matching the workspace's React Native 0.74) app running `@storybook/react-native` on the device, over the same story files.
+
+```sh
+pnpm storybook:device        # starts Expo and prints a QR code
+```
+
+Install **Expo Go** on the phone, put it on the same Wi-Fi as this machine, and scan the QR code (Camera on iOS, the Expo Go app on Android). The on-device Storybook opens with the story list at the bottom and an addons panel: Controls, Actions, Backgrounds, and **Theme**, which switches the package `ThemeProvider` between light, dark and system. Turn on VoiceOver (Settings → Accessibility) or TalkBack and swipe through a story.
+
+If the phone cannot reach the machine, start with `pnpm --filter rn-storybook start -- --tunnel`. The story index (`apps/rn-storybook/.storybook/storybook.requires.ts`) is regenerated on start; `pnpm --filter rn-storybook storybook-generate` rebuilds it by hand, and `pnpm --filter rn-storybook typecheck` type-checks the app.
 
 ## Adding a theme
 

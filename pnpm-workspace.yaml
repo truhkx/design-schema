@@ -2,3 +2,4 @@ packages:
   - site
   - packages/*
   - storybook
+  - apps/*

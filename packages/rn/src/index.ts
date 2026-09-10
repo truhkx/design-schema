@@ -269,3 +269,6 @@ export type {
 
 export { Search } from './Search';
 export type { SearchOverridableBinding, SearchProps, SearchSize, SearchSuggestion } from './Search';
+
+export { DatePicker } from './DatePicker';
+export type { DatePickerOverridableBinding, DatePickerProps, DatePickerSize, DatePickerValue } from './DatePicker';

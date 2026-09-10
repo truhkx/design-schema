@@ -315,6 +315,29 @@
       "modules": true
     }
   },
+  "DatePicker.rn": {
+    "hash": "d783df940e50ae53",
+    "lastAttemptHash": "d783df940e50ae53",
+    "generatedAt": "2026-09-10T23:38:24+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 3.1488,
+    "files": [
+      "packages/rn/src/DatePicker.stories.tsx",
+      "packages/rn/src/DatePicker.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 11,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Dialog.rn": {
     "hash": "f430a11cc334941e",
     "lastAttemptHash": "f430a11cc334941e",

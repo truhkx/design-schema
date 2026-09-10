@@ -23,19 +23,18 @@
     }
   },
   "ActionSheet.lit": {
-    "hash": "76526e076e2bfc9a",
-    "lastAttemptHash": "76526e076e2bfc9a",
-    "generatedAt": "2026-09-10T07:26:51+00:00",
+    "hash": "f43fef71cd657208",
+    "lastAttemptHash": "f43fef71cd657208",
+    "generatedAt": "2026-09-10T22:13:43+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.0158,
+    "costUsd": 0.5945,
     "files": [
       "packages/lit/src/ActionSheet.stories.ts",
-      "packages/lit/src/ActionSheet.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/ActionSheet.ts"
     ],
-    "gaps": 5,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -89,19 +88,18 @@
     }
   },
   "BottomSheet.lit": {
-    "hash": "73f0b26218bf2643",
-    "lastAttemptHash": "73f0b26218bf2643",
-    "generatedAt": "2026-09-10T07:14:36+00:00",
+    "hash": "5e2670f7cbb46997",
+    "lastAttemptHash": "5e2670f7cbb46997",
+    "generatedAt": "2026-09-10T22:12:01+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.4977,
+    "costUsd": 1.2174,
     "files": [
       "packages/lit/src/BottomSheet.stories.ts",
-      "packages/lit/src/BottomSheet.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/BottomSheet.ts"
     ],
-    "gaps": 7,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -829,19 +827,19 @@
     }
   },
   "SidePanel.lit": {
-    "hash": "8493c10a69172de7",
-    "lastAttemptHash": "8493c10a69172de7",
-    "generatedAt": "2026-09-10T07:40:20+00:00",
+    "hash": "3b75172c5c061269",
+    "lastAttemptHash": "3b75172c5c061269",
+    "generatedAt": "2026-09-10T22:19:21+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.7798,
+    "costUsd": 1.2549,
     "files": [
       "packages/lit/src/SidePanel.stories.ts",
       "packages/lit/src/SidePanel.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

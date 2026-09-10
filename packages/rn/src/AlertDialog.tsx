@@ -30,6 +30,7 @@ export type AlertDialogOverridableBinding =
   | 'textGap'
   | 'iconGap'
   | 'footerGap'
+  | 'iconSize'
   | 'width'
   | 'layer'
   | 'enter'
@@ -39,7 +40,7 @@ export interface AlertDialogProps {
   /** Controlled visibility, as in Dialog. */
   open: boolean;
   /** The question or statement, as a level-2 Heading and the accessible name ("Delete 3 files?"). */
-  title: string;
+  heading: string;
   /** What will happen and whether it can be undone, in one or two sentences. */
   description: string;
   /** The nature of the decision. Sets the status icon and the confirm button's variant (danger → danger Button; warning and info → primary). */
@@ -93,7 +94,7 @@ const TONE = {
  */
 export function AlertDialog({
   open,
-  title,
+  heading,
   description,
   tone = 'danger',
   confirmLabel,
@@ -127,10 +128,6 @@ export function AlertDialog({
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationBase;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
   const iconColor = t[toneTokens.icon];
-  // overrides.footerGap cannot reach Stack's internal gap (Stack's `gap` is a fixed
-  // `space.*` preset with no override hook), so the footer row always uses the
-  // closest preset to the default token (space.1 = layout.gap.tight) — the same
-  // limit Dialog documents for the same seam.
 
   const focusTitle = React.useCallback(() => {
     const node = titleRef.current ? findNodeHandle(titleRef.current) : null;
@@ -265,19 +262,29 @@ export function AlertDialog({
             <Animated.View
               style={outerSurfaceStyle}
               accessibilityViewIsModal
-              accessibilityLabel={title}
+              accessibilityLabel={heading}
               accessibilityHint={description}
               testID="AlertDialog"
             >
               <View style={innerSurfaceStyle}>
                 <View style={iconRowStyle}>
-                  <Icon name={toneTokens.glyph} size="lg" color={iconColor} />
+                  <Icon
+                    name={toneTokens.glyph}
+                    size="lg"
+                    color={iconColor}
+                    overrides={overrides?.iconSize ? { size: overrides.iconSize } : undefined}
+                  />
                   <View ref={titleRef} style={titleGroupStyle}>
-                    <Heading level={2}>{title}</Heading>
+                    <Heading level={2}>{heading}</Heading>
                     <Text tone="muted">{description}</Text>
                   </View>
                 </View>
-                <Stack direction="horizontal" gap="tight" justify="end">
+                <Stack
+                  direction="horizontal"
+                  gap="tight"
+                  justify="end"
+                  overrides={overrides?.footerGap ? { gap: overrides.footerGap } : undefined}
+                >
                   <Button label={resolvedCancelLabel} variant="secondary" onPress={handleCancelPress} />
                   <Button
                     label={confirmLabel}

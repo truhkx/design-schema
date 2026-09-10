@@ -20,3 +20,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Dialog: scroll-lock has no native equivalent (no page scroll for a modal window to suppress), so it is intentionally not implemented on RN.
 - Dialog: `overrides.footerGap` cannot reach Stack's internal `gap`, since Stack's gap is a fixed space.* preset with no override hook — the override is a no-op for the footer row, same gap the web generator flagged.
 - Dialog: RN's typed accessibilityRole union has no 'dialog' value, so role is conveyed via accessibilityViewIsModal + accessibilityLabel/Hint rather than an explicit role.
+
+## 2026-09-10 18:12 — round 1
+
+- hideHeading: the spec only asks to keep the heading as 'the accessible name' while visually hiding it. On RN the accessible name is already carried by accessibilityLabel={heading} on the modal surface regardless of rendering, so I simply omit the visible Heading node when hideHeading is true rather than using an off-screen/visually-hidden style — there's no visual box left behind and no separate a11y-tree entry to hide.
+- footerGap: the schema says it's 'forwarded to the footer Stack as overrides.gap'. The prior generated code had a comment claiming Stack's gap has 'no override hook' and treated the binding as a no-op, but Stack.tsx already accepts overrides?.gap — I wired overrides.footerGap straight through to the Stack's overrides prop and removed the stale comment. Flagging in case AlertDialog.tsx (same footerGap pattern, out of scope here) still carries the outdated no-op comment/behavior.
+- BottomSheet.tsx:297 calls <Dialog title={title} .../>, which no longer compiles now that the prop is `heading` — tsc confirms this is the only remaining type error in packages/rn. Out of scope for this Dialog-only regen; BottomSheet needs its own pass to rename the forwarded prop (and decide whether to also forward its own hideHeading to Dialog's hideHeading, which the spec implies but BottomSheet's current code explicitly says has 'no Dialog equivalent').
+
+## 2026-09-10 18:13 — round 2
+
+- BottomSheet.tsx (rn): its wide-viewport path composes Dialog and previously forwarded title={title}; updated to heading={title} to match Dialog's schema-mandated prop rename. BottomSheet's own `hideTitle` is still not forwarded to Dialog's `hideHeading` — the existing docstring says 'hideTitle has no Dialog equivalent, so the title always renders in that presentation,' which is no longer strictly true now that Dialog has hideHeading; deciding whether BottomSheet should forward it is a BottomSheet-schema question, out of scope for this Dialog-only fix.

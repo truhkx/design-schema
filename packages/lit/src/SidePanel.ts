@@ -12,6 +12,7 @@ import './FocusScope.js';
 export type SidePanelSide = 'start' | 'end';
 export type SidePanelWidth = 'narrow' | 'default' | 'wide';
 export type SidePanelPersistent = 'never' | 'content' | 'page';
+export type SidePanelLandmark = 'complementary' | 'navigation';
 export type SidePanelOpenChangeReason =
   | 'trigger'
   | 'escape'
@@ -136,7 +137,7 @@ function prefersReducedMotion(): boolean {
  * Above the `persistent` breakpoint (a `matchMedia` listener on the resolved
  * `layout.maxWidth.{content,page}` token) the host switches to `display:
  * block` in the parent grid, the trigger is hidden, and the same header/body/
- * footer render inside a plain `<aside role="complementary">` — no dialog, no
+ * footer render inside a plain `<aside role={landmark}>` — no dialog, no
  * scrim, no trap, part of the page's tab order.
  *
  * ## When to use
@@ -165,7 +166,7 @@ function prefersReducedMotion(): boolean {
  * @csspart surface - The padded surface: the `<dialog>` in overlay mode, the `<aside>` in persistent mode (anatomy: surface).
  * @csspart focus-scope - The focus-trapping wrapper (anatomy: focusScope).
  * @csspart header - The header row (anatomy: header).
- * @csspart title - The `<ds-heading>` (anatomy: title).
+ * @csspart heading - The `<ds-heading>` (anatomy: heading).
  * @csspart body - The `<ds-box>` wrapping the default slot (anatomy: body).
  * @csspart footer - The footer row (anatomy: footer).
  * @csspart close-button - The close `<ds-button>` (anatomy: closeButton).
@@ -334,12 +335,12 @@ export class DsSidePanel extends LitElement {
       min-inline-size: 0;
     }
 
-    .title {
+    .heading {
       min-inline-size: 0;
     }
 
-    /* hideTitle: kept for the accessible name, removed from the visual layout. */
-    .title--hidden {
+    /* hideHeading: kept for the accessible name, removed from the visual layout. */
+    .heading--hidden {
       /* literal-ok: standard visually-hidden clip pattern, exempt from token-only rule */
       position: absolute;
       width: 1px;
@@ -384,7 +385,7 @@ export class DsSidePanel extends LitElement {
   @property() heading!: string;
 
   /** Keep the title for assistive technology but do not render it. The accessible name is required regardless. */
-  @property({ type: Boolean, attribute: 'hide-title' }) hideTitle = false;
+  @property({ type: Boolean, attribute: 'hide-heading' }) hideHeading = false;
 
   /** The edge the panel slides from; `start`/`end` follow the writing direction. */
   @property({ reflect: true }) side: SidePanelSide = 'start';
@@ -395,8 +396,15 @@ export class DsSidePanel extends LitElement {
   /** Above this layout width the panel becomes a fixed sidebar: always visible, no scrim, no trap, no trigger. */
   @property({ reflect: true }) persistent: SidePanelPersistent = 'never';
 
+  /**
+   * The landmark role the panel exposes, in persistent mode and as the shadow
+   * region's role when open. Named `landmark`, not `role` — `Element` already
+   * defines `role` via ARIA reflection.
+   */
+  @property({ attribute: 'landmark' }) landmark: SidePanelLandmark = 'complementary';
+
   /** `false` (default, the disclosure pattern): no trap, focus stays on the trigger. `true`: a modal Dialog at the edge. */
-  @property({ type: Boolean, reflect: true }) modal = false;
+  @property({ type: Boolean }) modal = false;
 
   /**
    * Show the scrim in non-modal mode too (modal always has one). Attribute
@@ -507,7 +515,7 @@ export class DsSidePanel extends LitElement {
     const isOpen = this.currentOpen;
     const isPersistent = this.isPersistent;
     const hasFooter = this.querySelector('[slot="footer"]') !== null;
-    const titleClasses = classMap({ title: true, 'title--hidden': this.hideTitle });
+    const headingClasses = classMap({ heading: true, 'heading--hidden': this.hideHeading });
 
     const content = html`
       <ds-focus-scope
@@ -520,7 +528,7 @@ export class DsSidePanel extends LitElement {
       >
         <div class="header" part="header">
           <div class="heading-row">
-            <ds-heading id="heading" part="title" class=${titleClasses} level="2" size="lg" tabindex="-1"
+            <ds-heading id="heading" part="heading" class=${headingClasses} level="2" size="lg" tabindex="-1"
               >${this.heading}</ds-heading
             >
             ${!isPersistent
@@ -567,12 +575,12 @@ export class DsSidePanel extends LitElement {
           `
         : nothing}
       ${isPersistent
-        ? html`<aside class="surface" part="surface" role="complementary" aria-labelledby="heading">${content}</aside>`
+        ? html`<aside class="surface" part="surface" role=${this.landmark} aria-labelledby="heading">${content}</aside>`
         : html`
             <dialog
               class="surface${this.closing ? ' closing' : ''}"
               part="surface"
-              role=${this.modal ? nothing : 'complementary'}
+              role=${this.modal ? nothing : this.landmark}
               aria-modal=${this.modal ? 'true' : nothing}
               aria-labelledby="heading"
               @cancel=${this.handleCancel}

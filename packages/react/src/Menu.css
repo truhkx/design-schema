@@ -11,6 +11,8 @@
   --ds-menu-radius: var(--radius-md);
   --ds-menu-popup-padding: var(--space-1);
   --ds-menu-popup-offset: var(--space-1);
+  --ds-menu-typeahead-reset: var(--motion-duration-loop);
+  --ds-menu-max-height: var(--layout-max-width-prose);
   --ds-menu-min-width: var(--space-20);
   --ds-menu-item-padding-block: var(--space-sm);
   --ds-menu-item-padding-inline: var(--space-md);
@@ -35,7 +37,8 @@
   /* minWidth: space.20 × 2.5 (≈200px at comfortable density), and at least the trigger's width. */
   min-inline-size: max(calc(var(--ds-menu-min-width) * 2.5), var(--ds-menu-trigger-width, 0px));
   max-inline-size: calc(100vw - 2 * var(--layout-gutter));
-  max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  /* maxHeight: the cap used on wide screens; never exceeds the viewport minus the gutter either. */
+  max-block-size: min(var(--ds-menu-max-height), calc(100vh - 2 * var(--layout-gutter)));
   overflow: auto;
   /* surface: locked — never overridable. */
   background-color: var(--color-overlay-surface);

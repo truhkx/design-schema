@@ -35,6 +35,7 @@ export type AlertDialogOverridableBinding =
   | 'textGap'
   | 'iconGap'
   | 'footerGap'
+  | 'iconSize'
   | 'width'
   | 'layer'
   | 'enter'
@@ -51,19 +52,30 @@ const OVERRIDE_HOOK: Record<AlertDialogOverridableBinding, string> = {
   textGap: '--ds-alert-dialog-text-gap',
   iconGap: '--ds-alert-dialog-icon-gap',
   footerGap: '--ds-alert-dialog-footer-gap',
+  iconSize: '--ds-alert-dialog-icon-size',
   width: '--ds-alert-dialog-width',
   layer: '--ds-alert-dialog-layer',
   enter: '--ds-alert-dialog-enter',
   exit: '--ds-alert-dialog-exit',
 };
 
-function overridesToStyle(overrides: Partial<Record<AlertDialogOverridableBinding, TokenRef>>): CSSProperties {
+/** `iconSize` and `footerGap` also drive the composed Icon's and Stack's own sizing hooks, since each owns its own. */
+function overridesToStyle(overrides: Partial<Record<AlertDialogOverridableBinding, TokenRef>>): {
+  rootStyle: CSSProperties;
+  iconSizeRef?: TokenRef;
+  footerGapRef?: TokenRef;
+} {
   const style: Record<string, string> = {};
+  let iconSizeRef: TokenRef | undefined;
+  let footerGapRef: TokenRef | undefined;
   for (const binding of Object.keys(overrides) as AlertDialogOverridableBinding[]) {
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    if (!ref) continue;
+    style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    if (binding === 'iconSize') iconSizeRef = ref;
+    if (binding === 'footerGap') footerGapRef = ref;
   }
-  return style as CSSProperties;
+  return { rootStyle: style as CSSProperties, iconSizeRef, footerGapRef };
 }
 
 const COPY = { cancelLabel: 'Cancel' };
@@ -91,7 +103,7 @@ export interface AlertDialogProps
   /** Controlled visibility, as in Dialog. */
   open: boolean;
   /** The question or statement, as a level-2 Heading and the accessible name ("Delete 3 files?"). */
-  title: string;
+  heading: string;
   /** What will happen and whether it can be undone, in one or two sentences. Required: a decision without consequences stated is not a decision. */
   description: string;
   /** The nature of the decision. Sets the status icon and the confirm button's variant (danger → danger Button; warning and info → primary). */
@@ -106,6 +118,8 @@ export interface AlertDialogProps
   onConfirm?: () => void;
   /** The user declined, by the cancel button or Escape. Fired with reason `cancel` or `escape`. A scrim click does nothing. */
   onCancel?: (reason: AlertDialogCancelReason) => void;
+  /** Portal target for the dialog's DOM node. Defaults to `document.body`. */
+  container?: HTMLElement;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<AlertDialogOverridableBinding, TokenRef>>;
 }
@@ -128,7 +142,7 @@ export interface AlertDialogProps
 export const AlertDialog = forwardRef<HTMLDialogElement, AlertDialogProps>(function AlertDialog(
   {
     open,
-    title,
+    heading,
     description,
     tone = 'danger',
     confirmLabel,
@@ -136,6 +150,7 @@ export const AlertDialog = forwardRef<HTMLDialogElement, AlertDialogProps>(funct
     confirmDisabled = false,
     onConfirm,
     onCancel,
+    container,
     overrides,
     className,
     style,
@@ -144,7 +159,7 @@ export const AlertDialog = forwardRef<HTMLDialogElement, AlertDialogProps>(funct
   ref,
 ) {
   const generatedId = useId();
-  const titleId = `ds-alert-dialog${generatedId}-title`;
+  const headingId = `ds-alert-dialog${generatedId}-heading`;
   const descriptionId = `ds-alert-dialog${generatedId}-description`;
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
@@ -158,8 +173,8 @@ export const AlertDialog = forwardRef<HTMLDialogElement, AlertDialogProps>(funct
   // Drives the entered/exited CSS state; toggled a frame after mount so the enter transition runs.
   const [visible, setVisible] = useState(false);
 
-  if (isDev && !title) {
-    console.warn('AlertDialog: `title` is required and becomes the accessible name; it must not be empty.');
+  if (isDev && !heading) {
+    console.warn('AlertDialog: `heading` is required and becomes the accessible name; it must not be empty.');
   }
   if (isDev && !description) {
     console.warn('AlertDialog: `description` is required — a decision without stated consequences is not a decision.');
@@ -243,8 +258,10 @@ export const AlertDialog = forwardRef<HTMLDialogElement, AlertDialogProps>(funct
     .filter(Boolean)
     .join(' ');
 
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+  const { rootStyle, iconSizeRef, footerGapRef } = overrides
+    ? overridesToStyle(overrides)
+    : { rootStyle: undefined, iconSizeRef: undefined, footerGapRef: undefined };
+  const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
 
   const node = (
     <dialog
@@ -255,27 +272,38 @@ export const AlertDialog = forwardRef<HTMLDialogElement, AlertDialogProps>(funct
       style={mergedStyle}
       role="alertdialog"
       aria-modal="true"
-      aria-labelledby={titleId}
+      aria-labelledby={headingId}
       aria-describedby={descriptionId}
       onCancel={handleNativeCancel}
     >
-      <FocusScope trapped autoFocus="none" restoreFocus>
+      <FocusScope trapped autoFocus="none" restoreFocus data-part="focusScope">
         <div className="ds-alert-dialog__surface" ref={surfaceRef} data-part="surface">
           <div className="ds-alert-dialog__content">
             <span className="ds-alert-dialog__icon" data-part="icon" aria-hidden="true">
-              <Icon name={tone} size="lg" />
+              <Icon name={tone} size="lg" overrides={iconSizeRef ? { size: iconSizeRef } : undefined} />
             </span>
             <div className="ds-alert-dialog__text">
-              <Heading level={2} id={titleId} className="ds-alert-dialog__title">
-                {title}
+              <Heading level={2} id={headingId} className="ds-alert-dialog__heading" data-part="heading">
+                {heading}
               </Heading>
-              <Text id={descriptionId} tone="muted" size="sm" className="ds-alert-dialog__description">
+              <Text
+                id={descriptionId}
+                tone="muted"
+                size="sm"
+                className="ds-alert-dialog__description"
+                data-part="description"
+              >
                 {description}
               </Text>
             </div>
           </div>
           <div className="ds-alert-dialog__footer" data-part="footer">
-            <Stack direction="horizontal" gap="tight" justify="end">
+            <Stack
+              direction="horizontal"
+              gap="tight"
+              justify="end"
+              overrides={footerGapRef ? { gap: footerGapRef } : undefined}
+            >
               <Button
                 ref={cancelButtonRef}
                 variant="secondary"
@@ -297,5 +325,5 @@ export const AlertDialog = forwardRef<HTMLDialogElement, AlertDialogProps>(funct
     </dialog>
   );
 
-  return createPortal(node, document.body);
+  return createPortal(node, container ?? document.body);
 });

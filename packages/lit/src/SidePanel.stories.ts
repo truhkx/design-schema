@@ -5,15 +5,16 @@ import './Button.js';
 import './Link.js';
 import './Input.js';
 import './Text.js';
-import type { SidePanelSide, SidePanelWidth, SidePanelPersistent } from './SidePanel.js';
+import type { SidePanelSide, SidePanelWidth, SidePanelPersistent, SidePanelLandmark } from './SidePanel.js';
 
 interface SidePanelArgs {
   open: boolean;
   heading: string;
-  hideTitle: boolean;
+  hideHeading: boolean;
   side: SidePanelSide;
   width: SidePanelWidth;
   persistent: SidePanelPersistent;
+  landmark: SidePanelLandmark;
   modal: boolean;
   scrim: boolean;
   dismissible: boolean;
@@ -30,14 +31,16 @@ const meta: Meta<SidePanelArgs> = {
     side: { control: 'select', options: ['start', 'end'] },
     width: { control: 'select', options: ['narrow', 'default', 'wide'] },
     persistent: { control: 'select', options: ['never', 'content', 'page'] },
+    landmark: { control: 'select', options: ['complementary', 'navigation'] },
   },
   args: {
     open: true,
     heading: 'Menu',
-    hideTitle: false,
+    hideHeading: false,
     side: 'start',
     width: 'default',
     persistent: 'never',
+    landmark: 'complementary',
     modal: false,
     scrim: true,
     dismissible: true,
@@ -47,10 +50,11 @@ const meta: Meta<SidePanelArgs> = {
     <ds-side-panel
       ?open=${args.open}
       heading=${args.heading}
-      ?hide-title=${args.hideTitle}
+      ?hide-heading=${args.hideHeading}
       side=${args.side}
       width=${args.width}
       persistent=${args.persistent}
+      landmark=${args.landmark}
       ?modal=${args.modal}
       .scrim=${args.scrim}
       .dismissible=${args.dismissible}
@@ -83,7 +87,11 @@ export const PersistentNever: Story = { args: { persistent: 'never' } };
 export const PersistentContent: Story = { args: { persistent: 'content' } };
 export const PersistentPage: Story = { args: { persistent: 'page' } };
 
-export const HideTitle: Story = { args: { hideTitle: true } };
+export const HideHeading: Story = { args: { hideHeading: true } };
+
+/* role (landmark) */
+export const RoleComplementary: Story = { args: { landmark: 'complementary' } };
+export const RoleNavigation: Story = { args: { landmark: 'navigation' } };
 
 export const Modal: Story = {
   args: { modal: true, heading: 'Your cart' },

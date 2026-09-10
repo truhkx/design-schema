@@ -71,20 +71,20 @@
     }
   },
   "AlertDialog.web": {
-    "hash": "4e0b903ac6e83d6f",
-    "lastAttemptHash": "4e0b903ac6e83d6f",
-    "generatedAt": "2026-09-10T06:44:21+00:00",
+    "hash": "b9635f57873b1a59",
+    "lastAttemptHash": "b9635f57873b1a59",
+    "generatedAt": "2026-09-10T22:14:29+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3413,
+    "costUsd": 1.4089,
     "files": [
       "packages/react/src/AlertDialog.css",
       "packages/react/src/AlertDialog.stories.tsx",
-      "packages/react/src/AlertDialog.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/AlertDialog.test.tsx",
+      "packages/react/src/AlertDialog.tsx"
     ],
-    "gaps": 2,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -353,17 +353,21 @@
     }
   },
   "Dialog.web": {
-    "hash": "871bd175545e7939",
-    "lastAttemptHash": "871bd175545e7939",
-    "generatedAt": "2026-09-10T06:43:09+00:00",
+    "hash": "4b3a45f6b5005b2a",
+    "lastAttemptHash": "4b3a45f6b5005b2a",
+    "generatedAt": "2026-09-10T22:09:23+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.6023,
+    "rounds": 2,
+    "costUsd": 1.2453,
     "files": [
+      "packages/react/src/BottomSheet.tsx",
+      "packages/react/src/Dialog.css",
+      "packages/react/src/Dialog.stories.tsx",
+      "packages/react/src/Dialog.test.tsx",
       "packages/react/src/Dialog.tsx"
     ],
-    "gaps": 6,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,

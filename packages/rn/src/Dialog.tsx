@@ -39,6 +39,7 @@ export type DialogOverridableBinding =
   | 'partGap'
   | 'headerGap'
   | 'footerGap'
+  | 'descriptionGap'
   | 'widthSm'
   | 'layer'
   | 'enter'
@@ -48,13 +49,15 @@ export interface DialogProps {
   /** Controlled visibility. The consumer owns it; the dialog requests changes through `onClose`. */
   open: boolean;
   /** The dialog's title, rendered as a level-2 Heading and used as the accessible name. Says what the task is ("Rename project"). */
-  title: string;
+  heading: string;
   /** One sentence under the title explaining the task or consequence. Becomes the accessible description. */
   description?: string;
   /** The body — a Form, Text, or controls. Scrolls inside the surface when taller than the viewport; header and footer stay put. */
   children: React.ReactNode;
   /** The action row. Primary action first, then one secondary; follows Form's action-order rule. A dialog with no footer must be dismissable from its body. */
   footer?: React.ReactNode;
+  /** Visually hide the heading while it remains the accessible name (BottomSheet forwards its own hideHeading here above the breakpoint). */
+  hideHeading?: boolean;
   /** Surface width on wide viewports. Full-width below the content measure on every size. */
   size?: DialogSize;
   /** Escape, the close button and a scrim click all request close. Set `false` for a dialog that must be answered (then provide the answers in the footer); Escape still fires `onClose` with reason `escape` so the consumer can decide. */
@@ -93,19 +96,22 @@ const COPY = {
  * under reduced motion). `onRequestClose` (the Android back gesture) always reports
  * `onClose('escape')`, even when `dismissible` is `false` — the consumer decides,
  * because a keyboard/switch-access user must always have a reported way out. The
- * `size` widths and `enter`/`exit` durations are the same tokens as web; `widthSm`
- * is the only overridable width, per the schema. Scroll-lock has no native
- * equivalent — there is no page scroll for a modal window to suppress — so it is
- * not implemented; the acknowledged limit is `initialFocus` targeting a wrapping
- * `View` rather than the first real focusable descendant, the same limit `FocusScope`
- * documents for itself.
+ * accessible name comes from `accessibilityLabel={heading}` on the modal surface
+ * regardless of `hideHeading`, so hiding the heading only removes its visible
+ * `Heading`, never the announced name. The `size` widths and `enter`/`exit`
+ * durations are the same tokens as web; `widthSm` is the only overridable width, per
+ * the schema. Scroll-lock has no native equivalent — there is no page scroll for a
+ * modal window to suppress — so it is not implemented; the acknowledged limit is
+ * `initialFocus` targeting a wrapping `View` rather than the first real focusable
+ * descendant, the same limit `FocusScope` documents for itself.
  */
 export function Dialog({
   open,
-  title,
+  heading,
   description,
   children,
   footer,
+  hideHeading = false,
   size = 'md',
   dismissible = true,
   initialFocus = 'first',
@@ -132,6 +138,9 @@ export function Dialog({
   const inset = overrides?.inset ? (resolveToken(t, overrides.inset) as number) : t.layoutInsetLg;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.layoutGapLoose;
   const headerGap = overrides?.headerGap ? (resolveToken(t, overrides.headerGap) as number) : t.layoutGapNormal;
+  const descriptionGap = overrides?.descriptionGap
+    ? (resolveToken(t, overrides.descriptionGap) as number)
+    : t.layoutGapTight;
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerDialog;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationBase;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
@@ -142,10 +151,6 @@ export function Dialog({
     md: t.layoutMaxWidthContent * 0.75, // literal-ok: 3/4 of the content token per spec, not a design literal
     lg: t.layoutMaxWidthContent,
   };
-  // `overrides.footerGap` cannot reach Stack's internal gap: Stack's `gap` is a fixed
-  // `space.*` preset with no override hook, so the footer row always uses the closest
-  // preset to the default token (`space.1` = `layout.gap.tight`) and the override is a
-  // no-op — the same gap the web generator flagged for this component.
 
   const focusInitial = React.useCallback(() => {
     const targetRef = initialFocus === 'title' ? titleGroupRef : initialFocus === 'close' ? closeButtonRef : bodyRef;
@@ -276,7 +281,7 @@ export function Dialog({
 
   const titleGroupStyle: ViewStyle = {
     flexShrink: 1,
-    gap: t.layoutGapTight, // not named by any binding; matches Card's header-gap precedent
+    gap: descriptionGap,
   };
 
   const bodyFlexStyle: ViewStyle = { flexShrink: 1 };
@@ -308,14 +313,14 @@ export function Dialog({
             <Animated.View
               style={outerSurfaceStyle}
               accessibilityViewIsModal
-              accessibilityLabel={title}
+              accessibilityLabel={heading}
               accessibilityHint={description}
               testID="Dialog"
             >
               <View style={innerSurfaceStyle}>
                 <View style={headerStyle} testID="Dialog.header">
                   <View ref={titleGroupRef} style={titleGroupStyle}>
-                    <Heading level={2}>{title}</Heading>
+                    {!hideHeading ? <Heading level={2}>{heading}</Heading> : null}
                     {description !== undefined ? <Text tone="muted">{description}</Text> : null}
                   </View>
                   <View ref={closeButtonRef}>
@@ -345,7 +350,12 @@ export function Dialog({
                 </KeyboardAvoidingView>
                 {footer !== undefined ? (
                   <View style={footerStyle} testID="Dialog.footer">
-                    <Stack direction="horizontal" gap="tight" justify="end">
+                    <Stack
+                      direction="horizontal"
+                      gap="tight"
+                      justify="end"
+                      overrides={overrides?.footerGap ? { gap: overrides.footerGap } : undefined}
+                    >
                       {footer}
                     </Stack>
                   </View>

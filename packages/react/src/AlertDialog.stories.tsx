@@ -11,7 +11,7 @@ function AlertDialogHarness({ onConfirm, onCancel, ...rest }: Partial<AlertDialo
     <>
       <Button label="Delete files" variant="danger" onClick={() => setOpen(true)} />
       <AlertDialog
-        title="Delete 3 files?"
+        heading="Delete 3 files?"
         description="They will be removed from all shared folders. This cannot be undone."
         confirmLabel="Delete files"
         {...rest}
@@ -34,7 +34,7 @@ const meta = {
   component: AlertDialog,
   args: {
     open: false,
-    title: 'Delete 3 files?',
+    heading: 'Delete 3 files?',
     description: 'They will be removed from all shared folders. This cannot be undone.',
     tone: 'danger',
     confirmLabel: 'Delete files',
@@ -54,7 +54,7 @@ export const ToneDanger: Story = { args: { tone: 'danger' } };
 export const ToneWarning: Story = {
   args: {
     tone: 'warning',
-    title: 'Discard unsaved changes?',
+    heading: 'Discard unsaved changes?',
     description: 'Your edits since the last save will be lost.',
     confirmLabel: 'Discard changes',
   },
@@ -62,7 +62,7 @@ export const ToneWarning: Story = {
 export const ToneInfo: Story = {
   args: {
     tone: 'info',
-    title: 'Leave this page?',
+    heading: 'Leave this page?',
     description: 'Filters you set here will not be kept.',
     confirmLabel: 'Leave page',
   },
@@ -72,7 +72,7 @@ export const ToneInfo: Story = {
 export const CustomCancelLabel: Story = {
   args: {
     tone: 'warning',
-    title: 'Discard unsaved changes?',
+    heading: 'Discard unsaved changes?',
     description: 'Your edits since the last save will be lost.',
     confirmLabel: 'Discard changes',
     cancelLabel: 'Keep editing',
@@ -81,7 +81,7 @@ export const CustomCancelLabel: Story = {
 
 export const ConfirmDisabled: Story = {
   args: {
-    title: 'Delete your account?',
+    heading: 'Delete your account?',
     description: 'Type the account name below to confirm. This cannot be undone.',
     confirmLabel: 'Delete account',
     confirmDisabled: true,

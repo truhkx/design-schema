@@ -20,3 +20,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - AlertDialog: icon size for the tone glyph isn't specified; chose size="lg" since the a11y.contrast entry for the icon marks large: true.
 - AlertDialog: composition lists focusScope: FocusScope but names no component for the icon+text wrapper or outer surface/scrim; rendered as plain Views, matching Dialog's precedent.
 - AlertDialog: initial focus targets a wrapping View around the title rather than the Heading's own Text node (Heading doesn't forward refs) — same native limit Dialog documents for initialFocus="title".
+
+## 2026-09-10 18:14 — round 1
+
+- AlertDialog: the existing implementation used a prop named `title` instead of the schema's `heading`; renamed the prop (and stories/test args) to `heading` to match the schema and the sibling components' convention (Dialog, Alert) of avoiding `title` since it collides with a native HTML/RN attribute name.
+- AlertDialog: `iconSize` is listed as overridable in the schema but was missing from `AlertDialogOverridableBinding` and never forwarded to the tone Icon; added it and wired it through `Icon`'s `overrides.size`, following the exact pattern Alert.tsx uses for its own `iconSize` binding.
+- AlertDialog: `footerGap` was declared in the overridable-binding type but a comment claimed Stack had 'no override hook' and the override was silently dropped; Stack does accept `overrides.gap` (used by Dialog.tsx for the same seam), so wired `overrides?.footerGap` through to the footer Stack's `overrides` prop and removed the inaccurate comment.

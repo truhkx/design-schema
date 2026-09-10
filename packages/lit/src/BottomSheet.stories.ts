@@ -10,10 +10,10 @@ import type { BottomSheetHeight } from './BottomSheet.js';
 interface BottomSheetArgs {
   open: boolean;
   heading: string;
-  hideTitle: boolean;
+  hideHeading: boolean;
   height: BottomSheetHeight;
   dismissible: boolean;
-  draggable: boolean;
+  dragToDismiss: boolean;
 }
 
 const meta: Meta<BottomSheetArgs> = {
@@ -28,19 +28,19 @@ const meta: Meta<BottomSheetArgs> = {
   args: {
     open: true,
     heading: 'Filters',
-    hideTitle: false,
+    hideHeading: false,
     height: 'content',
     dismissible: true,
-    draggable: true,
+    dragToDismiss: true,
   },
   render: (args) => html`
     <ds-bottom-sheet
       ?open=${args.open}
       heading=${args.heading}
-      ?hide-title=${args.hideTitle}
+      ?hide-heading=${args.hideHeading}
       height=${args.height}
-      ?dismissible=${args.dismissible}
-      ?draggable=${args.draggable}
+      ?no-dismiss=${!args.dismissible}
+      ?drag-to-dismiss=${args.dragToDismiss}
     >
       <ds-text>Narrow results by price, distance and rating.</ds-text>
       <ds-button slot="footer" variant="primary" size="sm" label="Apply filters"></ds-button>
@@ -59,16 +59,16 @@ export const HeightContent: Story = { args: { height: 'content' } };
 export const HeightHalf: Story = { args: { height: 'half' } };
 export const HeightFull: Story = { args: { height: 'full' } };
 
-export const HideTitle: Story = {
-  args: { hideTitle: true, heading: 'Share' },
+export const HideHeading: Story = {
+  args: { hideHeading: true, heading: 'Share' },
   render: (args) => html`
     <ds-bottom-sheet
       ?open=${args.open}
       heading=${args.heading}
-      ?hide-title=${args.hideTitle}
+      ?hide-heading=${args.hideHeading}
       height=${args.height}
-      ?dismissible=${args.dismissible}
-      ?draggable=${args.draggable}
+      ?no-dismiss=${!args.dismissible}
+      ?drag-to-dismiss=${args.dragToDismiss}
     >
       <ds-text>Share this listing with a link.</ds-text>
     </ds-bottom-sheet>
@@ -82,8 +82,8 @@ export const DismissibleFalse: Story = {
       ?open=${args.open}
       heading=${args.heading}
       height=${args.height}
-      ?dismissible=${args.dismissible}
-      ?draggable=${args.draggable}
+      ?no-dismiss=${!args.dismissible}
+      ?drag-to-dismiss=${args.dragToDismiss}
     >
       <ds-text>You must choose an option below to continue.</ds-text>
       <ds-button slot="footer" variant="primary" size="sm" label="Continue"></ds-button>
@@ -91,7 +91,7 @@ export const DismissibleFalse: Story = {
   `,
 };
 
-export const DraggableFalse: Story = { args: { draggable: false } };
+export const DragToDismissFalse: Story = { args: { dragToDismiss: false } };
 
 export const NoFooter: Story = {
   render: (args) => html`

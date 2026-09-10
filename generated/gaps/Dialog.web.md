@@ -29,3 +29,7 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - BottomSheet.tsx composes Dialog for its wide-viewport form and passed the now-removed `title` prop; updated that call site to `heading={title} hideHeading={hideTitle}` (BottomSheet's own prop names are unchanged) so the package still typechecks. This is a minimal consequential fix, not a full BottomSheet regeneration — worth confirming against BottomSheet's own spec pass.
 - Dialog.test.tsx (out of this generator's output scope) still sets a `title` field that no longer exists on DialogProps; it passes today only because the Default story's args already default `heading` to the same string. Left untouched for the separate test-regeneration pass, but it needs updating to use `heading`.
 - Spec doesn't say whether the heading stays focusable via `initialFocus: 'title'` when `hideHeading` is true; kept it focusable (tabIndex={-1}) since visually-hidden elements elsewhere in the package remain focusable/announced, and nothing in the spec suggests removing that path.
+
+## 2026-09-10 18:09 — round 2
+
+- Dialog.test.tsx used the pre-rename `title` prop (extra unused field plus a `screen.getByRole` name lookup); it's part of the typecheck gate even though it wasn't listed as generator output, so updated both spots to `heading` to match DialogProps.

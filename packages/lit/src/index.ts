@@ -265,6 +265,7 @@ export type {
   SidePanelSide,
   SidePanelWidth,
   SidePanelPersistent,
+  SidePanelLandmark,
   SidePanelOpenChangeReason,
   SidePanelOpenChangeDetail,
   SidePanelOverridableBinding,

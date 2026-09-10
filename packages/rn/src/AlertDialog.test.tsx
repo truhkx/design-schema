@@ -48,6 +48,6 @@ describe('AlertDialog', () => {
   /* derived: a11y.requires */
   it('has-accessible-name', () => {
     const d = setup();
-    expect(screen.getByLabelText(d.props.title)).toBeTruthy();
+    expect(screen.getByLabelText(d.props.heading)).toBeTruthy();
   });
 });

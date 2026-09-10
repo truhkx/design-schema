@@ -13,7 +13,7 @@ const meta: Meta<typeof Dialog> = {
   decorators: [withTheme()],
   args: {
     open: true,
-    title: 'Rename project',
+    heading: 'Rename project',
     description: 'This changes the name everywhere it appears.',
     children: <Text>The project name is visible to everyone with access.</Text>,
     footer: (
@@ -48,6 +48,8 @@ export const InitialFocusClose: Story = { args: { initialFocus: 'close' } };
 export const NoDescription: Story = { args: { description: undefined } };
 
 export const NoFooter: Story = { args: { footer: undefined } };
+
+export const HideHeading: Story = { args: { hideHeading: true } };
 
 export const NotDismissible: Story = {
   args: {

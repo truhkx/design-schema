@@ -11,6 +11,7 @@
   --ds-alert-dialog-text-gap: var(--layout-gap-tight);
   --ds-alert-dialog-icon-gap: var(--layout-gap-normal);
   --ds-alert-dialog-footer-gap: var(--layout-gap-tight);
+  --ds-alert-dialog-icon-size: var(--font-size-lg);
   --ds-alert-dialog-width: var(--layout-max-width-prose);
   --ds-alert-dialog-layer: var(--layer-dialog);
   --ds-alert-dialog-enter: var(--motion-duration-base);
@@ -72,6 +73,7 @@
   gap: var(--ds-alert-dialog-icon-gap);
 }
 
+/* iconSize: the Icon itself carries font.size.lg via its own `overrides`; this hook only documents the default. */
 .ds-alert-dialog__icon {
   flex: 0 0 auto;
   display: inline-flex;
@@ -95,7 +97,7 @@
   flex: 0 0 auto;
 }
 
-/* footerGap → layout.gap.tight, applied through the composed Stack's own gap scale (closest preset). */
+/* footerGap → layout.gap.tight; the composed Stack carries the override via its own `overrides.gap`. */
 
 @media (prefers-reduced-motion: reduce) {
   .ds-alert-dialog__surface {

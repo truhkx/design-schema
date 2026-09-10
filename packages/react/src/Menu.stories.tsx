@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { Menu, type MenuItem } from './Menu';
 
@@ -58,4 +59,20 @@ export const IconOnlyOverflow: Story = {
 /** Open/present with its trigger and more than three focusable items, for the keyboard gate. */
 export const Keyboard: Story = {
   args: { open: true },
+};
+
+/** `anchor` positions the popup on an arbitrary element instead of rendering a trigger — used by a context menu. */
+export const AnchorPositioned: Story = {
+  render: (args) => {
+    const anchor = useRef<HTMLDivElement>(null);
+    return (
+      <div
+        ref={anchor}
+        style={{ display: 'inline-block', padding: '2rem', border: '1px dashed currentColor' }}
+      >
+        Right-click target (anchor)
+        <Menu {...args} anchor={anchor} open />
+      </div>
+    );
+  },
 };

@@ -9,6 +9,7 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -20,6 +21,10 @@ export type MenuTriggerVariant = 'ghost' | 'secondary' | 'primary';
 export type MenuTriggerIcon = 'ellipsis' | 'chevron-down' | 'none';
 export type MenuPlacement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 export type MenuItemTone = 'default' | 'danger';
+/** Why the menu opened or closed; `action` fires before `onAction`. `controlled` is never emitted
+ * by this component — it names the case where the parent flips `open` itself, outside any of the
+ * other reasons, and is documented for consumers who forward the reason elsewhere. */
+export type MenuOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'action' | 'controlled';
 
 /** A single actionable row. */
 export type MenuAction = {
@@ -44,6 +49,8 @@ export type MenuOverridableBinding =
   | 'radius'
   | 'popupPadding'
   | 'popupOffset'
+  | 'typeaheadReset'
+  | 'maxHeight'
   | 'minWidth'
   | 'itemPaddingBlock'
   | 'itemPaddingInline'
@@ -67,6 +74,8 @@ const OVERRIDE_HOOK: Record<MenuOverridableBinding, string> = {
   radius: '--ds-menu-radius',
   popupPadding: '--ds-menu-popup-padding',
   popupOffset: '--ds-menu-popup-offset',
+  typeaheadReset: '--ds-menu-typeahead-reset',
+  maxHeight: '--ds-menu-max-height',
   minWidth: '--ds-menu-min-width',
   itemPaddingBlock: '--ds-menu-item-padding-block',
   itemPaddingInline: '--ds-menu-item-padding-inline',
@@ -102,6 +111,14 @@ function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
     ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
     : false;
+}
+
+/** Reads a resolved CSS `<time>` custom property (e.g. `"800ms"`, `"0.8s"`) as a millisecond number. */
+function cssTimeToMs(value: string): number {
+  const trimmed = value.trim();
+  if (trimmed.endsWith('ms')) return parseFloat(trimmed);
+  if (trimmed.endsWith('s')) return parseFloat(trimmed) * 1000;
+  return parseFloat(trimmed) || 0;
 }
 
 function flattenActions(items: MenuItem[]): MenuAction[] {
@@ -200,12 +217,23 @@ export interface MenuProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   iconOnly?: boolean;
   /** Preferred position of the popup relative to the trigger; flips automatically when it would overflow the viewport. */
   placement?: MenuPlacement;
-  /** Controlled open state. Omit for an uncontrolled menu. */
+  /** Controlled open state (the parent flips it from onOpenChange). Omit for an uncontrolled menu. */
   open?: boolean;
+  /**
+   * Position the popup relative to this element instead of rendering a trigger; the trigger part
+   * is omitted and `open` must be controlled. Used by ActionSheet above its breakpoint and by
+   * context menus.
+   */
+  anchor?: RefObject<HTMLElement>;
   /** An item was chosen; receives its `id`. The menu closes itself first. */
   onAction?: (id: string) => void;
-  /** Fired when the menu opens or closes, with the new boolean. */
-  onOpenChange?: (open: boolean) => void;
+  /**
+   * Fired when the menu opens or closes, with `{ open, reason }` — reason: `trigger`, `escape`,
+   * `outside`, `action` (an item was chosen; fired before onAction), `controlled`.
+   */
+  onOpenChange?: (state: { open: boolean; reason: MenuOpenChangeReason }) => void;
+  /** Portal target for the popup's DOM node. Defaults to `document.body`. */
+  container?: HTMLElement;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<MenuOverridableBinding, TokenRef>>;
 }
@@ -229,8 +257,10 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     iconOnly = false,
     placement = 'bottom-start',
     open: openProp,
+    anchor,
     onAction,
     onOpenChange,
+    container,
     overrides,
     className,
     style,
@@ -246,6 +276,9 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   const popupRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
   const pendingFocusRef = useRef<'first' | 'last'>('first');
+  // The element focus returns to on close: the trigger, or (in `anchor` mode) whatever was
+  // focused when the menu opened — captured fresh each open, since there is no persistent trigger.
+  const openerRef = useRef<HTMLElement | null>(null);
   const typeaheadRef = useRef<{ buffer: string; timer: ReturnType<typeof setTimeout> | null }>({
     buffer: '',
     timer: null,
@@ -266,22 +299,25 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   if (isDev && !label) {
     console.warn('Menu: `label` is required and becomes the trigger label and the menu’s accessible name.');
   }
+  if (isDev && anchor && !isControlled) {
+    console.warn('Menu: `anchor` positions the popup instead of rendering a trigger, so `open` must be controlled.');
+  }
 
-  const changeOpen = (value: boolean) => {
+  const changeOpen = (value: boolean, reason: MenuOpenChangeReason) => {
     if (!isControlled) setInternalOpen(value);
-    onOpenChange?.(value);
+    onOpenChange?.({ open: value, reason });
   };
 
-  const openMenu = (focusTarget: 'first' | 'last') => {
+  const openMenu = (focusTarget: 'first' | 'last', reason: MenuOpenChangeReason) => {
     if (open) return;
     pendingFocusRef.current = focusTarget;
-    changeOpen(true);
+    changeOpen(true, reason);
   };
 
-  const closeMenu = (focusTrigger = false) => {
+  const closeMenu = (reason: MenuOpenChangeReason, focusOpener = false) => {
     if (!open) return;
-    if (focusTrigger) triggerRef.current?.focus();
-    changeOpen(false);
+    if (focusOpener) openerRef.current?.focus();
+    changeOpen(false, reason);
   };
 
   const setItemRef = (id: string) => (element: HTMLDivElement | null) => {
@@ -296,7 +332,7 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
 
   const activateAction = (action: MenuAction) => {
     if (action.disabled) return;
-    closeMenu(true);
+    closeMenu('action', true);
     onAction?.(action.id);
   };
 
@@ -304,16 +340,19 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   useLayoutEffect(() => {
     if (!open) {
       setEntered(false);
+      openerRef.current = null;
       return undefined;
     }
-    const trigger = triggerRef.current;
+    const anchorElement = anchor?.current ?? triggerRef.current;
     const popup = popupRef.current;
-    if (!trigger || !popup) return undefined;
+    if (!anchorElement || !popup) return undefined;
+
+    openerRef.current = triggerRef.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
 
     const reposition = () => {
-      const triggerRect = trigger.getBoundingClientRect();
+      const anchorRect = anchorElement.getBoundingClientRect();
       const popupRect = popup.getBoundingClientRect();
-      const result = computePosition(triggerRect, popupRect, latest.current.placement);
+      const result = computePosition(anchorRect, popupRect, latest.current.placement);
       setPopupStyle(result.style);
       setVertical(result.vertical);
     };
@@ -338,17 +377,18 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
       window.removeEventListener('scroll', reposition, true);
       window.removeEventListener('resize', reposition);
     };
-  }, [open]);
+  }, [open, anchor]);
 
   // A pointer click outside, or the window losing focus, closes.
   useEffect(() => {
     if (!open) return undefined;
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as Node;
-      if (popupRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
-      closeMenu();
+      const anchorElement = anchor?.current ?? triggerRef.current;
+      if (popupRef.current?.contains(target) || anchorElement?.contains(target)) return;
+      closeMenu('outside');
     };
-    const handleWindowBlur = () => closeMenu();
+    const handleWindowBlur = () => closeMenu('outside');
     document.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('blur', handleWindowBlur);
     return () => {
@@ -359,18 +399,18 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   }, [open]);
 
   const handleTriggerClick = () => {
-    if (open) closeMenu();
-    else openMenu('first');
+    if (open) closeMenu('trigger');
+    else openMenu('first', 'trigger');
   };
 
   const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     if (open) return;
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      openMenu('first');
+      openMenu('first', 'trigger');
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      openMenu('last');
+      openMenu('last', 'trigger');
     }
   };
 
@@ -378,9 +418,13 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     const state = typeaheadRef.current;
     if (state.timer) clearTimeout(state.timer);
     state.buffer += char.toLowerCase();
+    // typeaheadReset: how long typed characters accumulate before the buffer clears.
+    const resetMs = popupRef.current
+      ? cssTimeToMs(getComputedStyle(popupRef.current).getPropertyValue('--ds-menu-typeahead-reset') || '800ms')
+      : 800;
     state.timer = setTimeout(() => {
       state.buffer = '';
-    }, 500);
+    }, resetMs);
 
     const startIndex = currentIndex === -1 ? 0 : currentIndex;
     for (let offset = 1; offset <= enabled.length; offset++) {
@@ -435,13 +479,15 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
         break;
       case 'Escape':
         event.preventDefault();
-        closeMenu(true);
+        closeMenu('escape', true);
         break;
-      case 'Tab':
+      case 'Tab': {
         event.preventDefault();
-        focusAdjacent(triggerRef.current as HTMLElement, popupRef.current, event.shiftKey ? -1 : 1);
-        closeMenu();
+        const anchorElement = (triggerRef.current ?? openerRef.current) as HTMLElement;
+        if (anchorElement) focusAdjacent(anchorElement, popupRef.current, event.shiftKey ? -1 : 1);
+        closeMenu('outside');
         break;
+      }
       default:
         if (event.key.length === 1 && /^[a-z]$/i.test(event.key) && !event.metaKey && !event.ctrlKey && !event.altKey) {
           handleTypeahead(event.key, enabled, currentIndex);
@@ -527,20 +573,22 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
 
   return (
     <div {...rest} ref={ref} data-ds="Menu" className={classes} style={style}>
-      <Button
-        ref={triggerRef}
-        id={triggerId}
-        type="button"
-        variant={triggerVariant}
-        iconOnly={iconOnly}
-        label={label}
-        aria-haspopup="menu"
-        aria-expanded={open ? 'true' : 'false'}
-        aria-controls={open ? listId : undefined}
-        trailingIcon={triggerIcon !== 'none' ? <Icon name={triggerIcon} inline /> : undefined}
-        onClick={handleTriggerClick}
-        onKeyDown={handleTriggerKeyDown}
-      />
+      {anchor ? null : (
+        <Button
+          ref={triggerRef}
+          id={triggerId}
+          type="button"
+          variant={triggerVariant}
+          iconOnly={iconOnly}
+          label={label}
+          aria-haspopup="menu"
+          aria-expanded={open ? 'true' : 'false'}
+          aria-controls={open ? listId : undefined}
+          trailingIcon={triggerIcon !== 'none' ? <Icon name={triggerIcon} inline /> : undefined}
+          onClick={handleTriggerClick}
+          onKeyDown={handleTriggerKeyDown}
+        />
+      )}
       {open
         ? createPortal(
             <div
@@ -548,7 +596,8 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
               role="menu"
               id={listId}
               tabIndex={-1}
-              aria-labelledby={triggerId}
+              aria-labelledby={anchor ? undefined : triggerId}
+              aria-label={anchor ? label : undefined}
               data-part="popup"
               data-vertical={vertical}
               className={popupClasses}
@@ -557,7 +606,7 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
             >
               {items.map((item, index) => renderNode(item, String(index)))}
             </div>,
-            document.body,
+            container ?? document.body,
           )
         : null}
     </div>

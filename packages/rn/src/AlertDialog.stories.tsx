@@ -12,7 +12,7 @@ const meta: Meta<typeof AlertDialog> = {
   decorators: [withTheme()],
   args: {
     open: true,
-    title: 'Delete 3 files?',
+    heading: 'Delete 3 files?',
     description: 'They will be removed from all shared folders. This cannot be undone.',
     tone: 'danger',
     confirmLabel: 'Delete files',
@@ -31,7 +31,7 @@ export const ToneDanger: Story = { args: { tone: 'danger', confirmLabel: 'Delete
 export const ToneWarning: Story = {
   args: {
     tone: 'warning',
-    title: 'Leave without saving?',
+    heading: 'Leave without saving?',
     description: 'Your changes will be lost. This cannot be undone.',
     confirmLabel: 'Leave page',
   },
@@ -39,7 +39,7 @@ export const ToneWarning: Story = {
 export const ToneInfo: Story = {
   args: {
     tone: 'info',
-    title: 'Switch workspaces?',
+    heading: 'Switch workspaces?',
     description: 'You will be moved to the Marketing workspace.',
     confirmLabel: 'Switch workspace',
   },
@@ -49,7 +49,7 @@ export const ToneInfo: Story = {
 export const CustomCancelLabel: Story = {
   args: {
     tone: 'warning',
-    title: 'Leave without saving?',
+    heading: 'Leave without saving?',
     description: 'Your changes will be lost. This cannot be undone.',
     confirmLabel: 'Leave page',
     cancelLabel: 'Keep editing',

@@ -9,6 +9,7 @@ interface ActionSheetArgs {
   heading?: string;
   actions: ActionSheetAction[];
   cancelLabel?: string;
+  dismissible: boolean;
 }
 
 const DEFAULT_ACTIONS: ActionSheetAction[] = [
@@ -35,6 +36,7 @@ const meta: Meta<ActionSheetArgs> = {
     open: true,
     heading: 'Photo.jpg',
     actions: DEFAULT_ACTIONS,
+    dismissible: true,
   },
   render: (args) => html`
     <ds-action-sheet
@@ -42,6 +44,7 @@ const meta: Meta<ActionSheetArgs> = {
       heading=${ifDefined(args.heading)}
       .actions=${args.actions}
       cancel-label=${ifDefined(args.cancelLabel)}
+      ?no-dismiss=${!args.dismissible}
     ></ds-action-sheet>
   `,
 };
@@ -61,6 +64,10 @@ export const WithDisabledAction: Story = {
 
 export const CustomCancelLabel: Story = {
   args: { cancelLabel: 'Never mind' },
+};
+
+export const DismissibleFalse: Story = {
+  args: { dismissible: false },
 };
 
 /**

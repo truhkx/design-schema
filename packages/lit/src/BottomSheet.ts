@@ -55,6 +55,16 @@ const HOOKS: Record<BottomSheetOverridableBinding, string> = {
 /** copy.closeLabel */
 const COPY_CLOSE_LABEL = 'Close';
 
+/** Negates a boolean attribute: `no-dismiss` present means `dismissible` is `false`. */
+const NEGATED_BOOLEAN_CONVERTER = {
+  fromAttribute(value: string | null): boolean {
+    return value === null;
+  },
+  toAttribute(value: boolean): string | null {
+    return value ? null : '';
+  },
+};
+
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
@@ -146,7 +156,7 @@ function prefersReducedMotion(): boolean {
  * @csspart focus-scope - The focus-trapping wrapper (anatomy: focusScope).
  * @csspart handle - The decorative drag handle (anatomy: handle).
  * @csspart header - The header row (anatomy: header).
- * @csspart title - The `<ds-heading>` (anatomy: title).
+ * @csspart heading - The `<ds-heading>` (anatomy: heading).
  * @csspart body - The body wrapper (anatomy: body).
  * @csspart footer - The footer row (anatomy: footer).
  * @csspart close-button - The close `<ds-button>` (anatomy: closeButton).
@@ -283,12 +293,12 @@ export class DsBottomSheet extends LitElement {
       min-inline-size: 0;
     }
 
-    .title {
+    .heading {
       min-inline-size: 0;
     }
 
-    /* hideTitle: kept for the accessible name, removed from the visual layout. */
-    .title--hidden {
+    /* hideHeading: kept for the accessible name, removed from the visual layout. */
+    .heading--hidden {
       /* literal-ok: standard visually-hidden clip pattern, exempt from token-only rule */
       position: absolute;
       width: 1px;
@@ -328,17 +338,27 @@ export class DsBottomSheet extends LitElement {
    */
   @property() heading!: string;
 
-  /** Keep the title for assistive technology but do not render it. The accessible name is required regardless. */
-  @property({ type: Boolean, attribute: 'hide-title' }) hideTitle = false;
+  /** Keep the heading for assistive technology but do not render it. The accessible name is required regardless. */
+  @property({ type: Boolean, attribute: 'hide-heading' }) hideHeading = false;
 
   /** `content` sizes to the body up to 90% of the viewport; `half` is a fixed half-height; `full` is near-full-screen. */
   @property({ reflect: true }) height: BottomSheetHeight = 'content';
 
-  /** Escape, the close button, a scrim tap and the drag gesture all request close. Escape still reports when false. */
-  @property({ type: Boolean, reflect: true }) dismissible = true;
+  /**
+   * Escape, the close button, a scrim tap and the drag gesture all request close. `false` for a
+   * sheet that must be answered from its footer actions; Escape still reports. Attribute is the
+   * negation, `no-dismiss`, because a boolean attribute cannot express `false` for a prop that
+   * defaults `true` (see Dialog).
+   */
+  @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  dismissible = true;
 
-  /** Drag the handle (or header) downward to dismiss. Purely additive: the close button and Escape always exist. */
-  @property({ type: Boolean, reflect: true }) draggable = true;
+  /**
+   * Drag the handle (or header) downward to dismiss. Purely additive: the close button and
+   * Escape always exist. `platforms.lit.reflect` lists this attribute in its direct (non-negated)
+   * form, unlike `dismissible`'s `no-dismiss` — kept literal per the doc; see the generation gap notes.
+   */
+  @property({ type: Boolean, attribute: 'drag-to-dismiss', reflect: true }) dragToDismiss = true;
 
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings (surface, handle, focusRing, focusRingWidth) are ignored. Only applied below the wide-viewport breakpoint; above it the sheet renders as Dialog and uses Dialog's own overrides contract. */
   @property({ attribute: false }) overrides?: Partial<Record<BottomSheetOverridableBinding, TokenRef>>;
@@ -412,7 +432,14 @@ export class DsBottomSheet extends LitElement {
 
   private renderAsDialog() {
     return html`
-      <ds-dialog ?open=${this.open} heading=${this.heading} size="md" ?dismissible=${this.dismissible}>
+      <ds-dialog
+        ?open=${this.open}
+        heading=${this.heading}
+        size="md"
+        .dismissible=${this.dismissible}
+        .hideHeading=${this.hideHeading}
+        .overrides=${this.dialogOverrides()}
+      >
         <slot></slot>
         <slot name="footer" slot="footer"></slot>
       </ds-dialog>
@@ -421,7 +448,7 @@ export class DsBottomSheet extends LitElement {
 
   private renderAsSheet() {
     const hasFooter = this.querySelector('[slot="footer"]') !== null;
-    const titleClasses = classMap({ title: true, 'title--hidden': this.hideTitle });
+    const headingClasses = classMap({ heading: true, 'heading--hidden': this.hideHeading });
 
     return html`
       <dialog
@@ -450,7 +477,7 @@ export class DsBottomSheet extends LitElement {
             >
               <span class="handle" part="handle" aria-hidden="true"></span>
               <div class="heading-row">
-                <ds-heading id="heading" part="title" class=${titleClasses} level="2" size="lg" tabindex="-1"
+                <ds-heading id="heading" part="heading" class=${headingClasses} level="2" size="lg" tabindex="-1"
                   >${this.heading}</ds-heading
                 >
                 <ds-button
@@ -485,6 +512,15 @@ export class DsBottomSheet extends LitElement {
   private bodyOverrides() {
     const inset = this.overrides?.inset;
     return inset ? { paddingBlock: inset, paddingInline: inset } : undefined;
+  }
+
+  /** Forwards the sheet-and-Dialog-shared bindings to `<ds-dialog>` in the wide presentation; sheet-only bindings (handle, edge radius, drag) have no Dialog equivalent. */
+  private dialogOverrides(): Partial<Record<DialogOverridableBinding, TokenRef>> | undefined {
+    const { inset, radius, partGap, footerGap } = this.overrides ?? {};
+    if (inset === undefined && radius === undefined && partGap === undefined && footerGap === undefined) {
+      return undefined;
+    }
+    return { inset, radius, partGap, footerGap };
   }
 
   private readonly handleCancel = (event: Event): void => {
@@ -522,7 +558,7 @@ export class DsBottomSheet extends LitElement {
   };
 
   private readonly handleHeaderPointerDown = (event: PointerEvent): void => {
-    if (!this.draggable) {
+    if (!this.dragToDismiss) {
       return;
     }
     if ((event.target as HTMLElement).closest('.close')) {

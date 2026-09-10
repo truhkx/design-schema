@@ -82,6 +82,16 @@ const COPY_CANCEL_LABEL = 'Cancel';
 /** copy.defaultLabel */
 const COPY_DEFAULT_LABEL = 'Actions';
 
+/** Negates a boolean attribute: `no-dismiss` present means `dismissible` is `false`. */
+const NEGATED_BOOLEAN_CONVERTER = {
+  fromAttribute(value: string | null): boolean {
+    return value === null;
+  },
+  toAttribute(value: boolean): string | null {
+    return value ? null : '';
+  },
+};
+
 /** How many `<ds-action-sheet>` instances (in their bottom-edge presentation) hold the body-scroll lock. */
 let openSheetCount = 0;
 
@@ -360,6 +370,14 @@ export class DsActionSheet extends LitElement {
   /** Label of the explicit cancel row on phones. Defaults to `copy.cancelLabel`. */
   @property({ attribute: 'cancel-label' }) cancelLabel?: string;
 
+  /**
+   * Escape, the scrim, the cancel row and the drag all request close; Escape still reports
+   * through `close` when `false`, as in Dialog and BottomSheet. Attribute is the negation,
+   * `no-dismiss`, because a boolean attribute cannot express `false` for a prop that defaults `true`.
+   */
+  @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  dismissible = true;
+
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
   @property({ attribute: false }) overrides?: Partial<Record<ActionSheetOverridableBinding, TokenRef>>;
 
@@ -614,7 +632,7 @@ export class DsActionSheet extends LitElement {
   };
 
   private readonly handleDialogClick = (event: MouseEvent): void => {
-    if (event.target !== this.dialogEl) {
+    if (!this.dismissible || event.target !== this.dialogEl) {
       return;
     }
     this.dispatchClose('scrim');
@@ -623,6 +641,9 @@ export class DsActionSheet extends LitElement {
   private readonly handleCancelPress = (event: Event): void => {
     // Keep the button's `press` inside the sheet; consumers listen for `close`.
     event.stopPropagation();
+    if (!this.dismissible) {
+      return;
+    }
     this.dispatchClose('cancel');
   };
 
@@ -686,7 +707,7 @@ export class DsActionSheet extends LitElement {
     surface.style.transition = prefersReducedMotion() ? 'none' : '';
     surface.style.transform = '';
 
-    if (pastThreshold) {
+    if (pastThreshold && this.dismissible) {
       this.dispatchClose('drag');
     }
   };

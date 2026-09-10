@@ -14,7 +14,7 @@ function setup(given: Partial<AlertDialogProps> = {}) {
   const props = {
     ...meta.args,
     open: true,
-    title: 'Delete 3 files?',
+    heading: 'Delete 3 files?',
     description: 'They will be removed from all shared folders. This cannot be undone.',
     confirmLabel: 'Delete files',
     onConfirm,
@@ -57,7 +57,7 @@ describe('AlertDialog', () => {
   /* derived: a11y.requires */
   it('has-accessible-name', () => {
     const d = setup();
-    expect(screen.getByRole('heading', { level: 2, name: d.props.title })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: d.props.heading })).toBeInTheDocument();
     expect(d.dialog()).toHaveAttribute('aria-labelledby');
   });
 

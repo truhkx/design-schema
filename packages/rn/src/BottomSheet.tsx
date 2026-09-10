@@ -294,7 +294,7 @@ export function BottomSheet({
         ) as Partial<Record<DialogOverridableBinding, TokenRef>>)
       : undefined;
     return (
-      <Dialog open={open} title={title} size="md" dismissible={dismissible} footer={footer} onClose={onClose} overrides={dialogOverrides}>
+      <Dialog open={open} heading={title} size="md" dismissible={dismissible} footer={footer} onClose={onClose} overrides={dialogOverrides}>
         {children}
       </Dialog>
     );

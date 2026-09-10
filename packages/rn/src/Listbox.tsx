@@ -69,6 +69,33 @@ export interface ListboxProps {
   selectionFollowsFocus?: boolean;
   /** At least one option must be selected to submit when inside a Form. */
   required?: boolean;
+  /**
+   * Marks the list invalid. Usually set by the Form. No dedicated border token exists
+   * for this component (unlike Input/Select's own bordered fields), so this only feeds
+   * the `error` → `required` → `invalid` message precedence; it has no visual
+   * treatment of its own.
+   */
+  invalid?: boolean;
+  /** Error message rendered below the list. Setting it implies `invalid`. */
+  error?: string;
+  /**
+   * The list lives inside a popup (Select, Combobox) that owns the border, surface
+   * and radius; the list draws none of its own.
+   */
+  embedded?: boolean;
+  /**
+   * The option that is active when the list first renders. Defaults to the first
+   * selected option, else the first enabled option. Pre-highlights that row's active
+   * background; native has no single tab stop to move real accessibility focus onto
+   * ahead of the user reaching it, so this is visual only — see the generation gap
+   * notes.
+   */
+  defaultActiveValue?: string;
+  /**
+   * Options are being fetched (async Combobox); shows `copy.loading` in place of the
+   * empty message and marks the list `accessibilityState.busy`.
+   */
+  loading?: boolean;
   /** The whole list is inert but readable. */
   disabled?: boolean;
   /** Field name for Form collection. Multiple values are collected as an array. */
@@ -88,7 +115,12 @@ export interface ListboxProps {
 const COPY = {
   empty: 'No options',
   required: (label: string): string => `${label} is required.`,
+  // Not in the schema's copy block, which names `copy.invalid` without defining it.
+  // Matches the wording Input and Select use for the same prop. See the generation
+  // gap notes.
+  invalid: (label: string): string => `${label} is not valid.`,
   selectedCount: (count: number): string => `${count} selected`,
+  loading: 'Loading…',
 } as const;
 
 type ListboxRow = { kind: 'group'; key: string; label: string } | { kind: 'option'; key: string; option: ListboxOption };
@@ -153,7 +185,16 @@ function flattenOptions(items: ListboxItem[]): ListboxOption[] {
  * the list registers by `name` (when given) and contributes the selected value, or
  * the array for `multiple` (`undefined`, i.e. no key, when nothing is selected);
  * `required` fails with `copy.required` when nothing is selected, and focus on a
- * failed submit moves to the list itself.
+ * failed submit moves to the list itself. `error` (or a Form-derived error) takes
+ * precedence over `required`, which takes precedence over the boolean-only `invalid`
+ * flag (no dedicated border token exists for this component, so `invalid` alone has
+ * no visual treatment). `embedded` drops the list's own border, surface and radius
+ * for use inside a popup that already draws them (Select, Combobox). `loading` shows
+ * `copy.loading` in place of the empty message and marks the list
+ * `accessibilityState.busy`. `defaultActiveValue` (falling back to the first selected
+ * option, else the first enabled one) only pre-highlights that row's active
+ * background on mount — native has no single tab stop to move real accessibility
+ * focus onto ahead of the user reaching it.
  */
 export function Listbox({
   label,
@@ -163,6 +204,11 @@ export function Listbox({
   defaultValue,
   selectionFollowsFocus = true,
   required = false,
+  invalid = false,
+  error,
+  embedded = false,
+  defaultActiveValue,
+  loading = false,
   disabled = false,
   name,
   emptyMessage,
@@ -175,7 +221,23 @@ export function Listbox({
   const form = useFormContext();
   const listRef = React.useRef<FlatList<ListboxRow>>(null);
   const [internalValue, setInternalValue] = React.useState<ListboxValue | undefined>(defaultValue);
-  const [focusedValue, setFocusedValue] = React.useState<string | null>(null);
+  const [focusedValue, setFocusedValue] = React.useState<string | null>(() => {
+    if (defaultActiveValue !== undefined) {
+      return defaultActiveValue;
+    }
+    const initialValue = value ?? defaultValue;
+    const initiallySelected = multiple
+      ? Array.isArray(initialValue) && initialValue.length > 0
+        ? initialValue[0]
+        : undefined
+      : typeof initialValue === 'string'
+        ? initialValue
+        : undefined;
+    if (initiallySelected !== undefined) {
+      return initiallySelected;
+    }
+    return flattenOptions(options).find((option) => option.disabled !== true)?.value ?? null;
+  });
   const [rowHeight, setRowHeight] = React.useState<number | null>(null);
 
   const isControlled = value !== undefined;
@@ -190,7 +252,8 @@ export function Listbox({
   const selectedValues: string[] = multiple && Array.isArray(currentValue) ? currentValue : [];
   const selectedValue: string | undefined = !multiple && typeof currentValue === 'string' ? currentValue : undefined;
 
-  const displayedError = name !== undefined ? form?.errors[name] : undefined;
+  const formError = name !== undefined ? form?.errors[name] : undefined;
+  const displayedError = error !== undefined && error !== '' ? error : formError;
   const summarised = form !== null && form.errorSummary;
 
   React.useEffect(() => {
@@ -201,13 +264,22 @@ export function Listbox({
 
   const validateValue = React.useCallback(
     (candidate: ListboxValue | undefined): string | null => {
-      if (!required) {
-        return null;
+      // Precedence: `error` prop, then `required`, then `invalid`.
+      if (error !== undefined && error !== '') {
+        return error;
       }
-      const empty = multiple ? !Array.isArray(candidate) || candidate.length === 0 : candidate === undefined;
-      return empty ? COPY.required(label) : null;
+      if (required) {
+        const empty = multiple ? !Array.isArray(candidate) || candidate.length === 0 : candidate === undefined;
+        if (empty) {
+          return COPY.required(label);
+        }
+      }
+      if (invalid) {
+        return COPY.invalid(label);
+      }
+      return null;
     },
-    [required, multiple, label],
+    [required, multiple, label, error, invalid],
   );
 
   const latest = React.useRef({ currentValue, validateValue });
@@ -312,7 +384,7 @@ export function Listbox({
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
 
-  const emptyText = emptyMessage ?? COPY.empty;
+  const placeholderText = loading ? COPY.loading : (emptyMessage ?? COPY.empty);
   const rowCount = maxVisible === 'all' ? null : Number(maxVisible);
   const maxHeight = rowCount !== null && rowHeight !== null ? rowCount * rowHeight : undefined;
 
@@ -323,10 +395,14 @@ export function Listbox({
   };
 
   const containerStyle: ViewStyle = {
-    borderWidth,
-    borderColor: border,
-    borderRadius: radius,
-    backgroundColor: t.colorBackground,
+    ...(embedded
+      ? null
+      : {
+          borderWidth,
+          borderColor: border,
+          borderRadius: radius,
+          backgroundColor: t.colorBackground,
+        }),
     opacity: isDisabled ? disabledOpacity : 1,
     overflow: 'hidden',
   };
@@ -450,7 +526,7 @@ export function Listbox({
           style={listStyle}
           accessibilityRole="list"
           accessibilityLabel={label}
-          accessibilityState={{ disabled: isDisabled }}
+          accessibilityState={{ disabled: isDisabled, busy: loading }}
           accessibilityValue={multiple && selectedValues.length > 0 ? { text: COPY.selectedCount(selectedValues.length) } : undefined}
           testID="Listbox.list"
         />
@@ -458,12 +534,13 @@ export function Listbox({
         <View
           accessible
           accessibilityRole="list"
-          accessibilityLabel={`${label}. ${emptyText}`}
+          accessibilityLabel={`${label}. ${placeholderText}`}
+          accessibilityState={{ busy: loading }}
           style={emptyRowStyle}
           testID="Listbox.emptyState"
         >
           <Text tone="muted" overrides={typographyOverrides}>
-            {emptyText}
+            {placeholderText}
           </Text>
         </View>
       )}

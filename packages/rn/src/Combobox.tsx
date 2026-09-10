@@ -696,6 +696,7 @@ export function Combobox({
       multiple={multiple}
       value={currentValue}
       disabled={isDisabled}
+      embedded
       emptyMessage={emptyMessage}
       onChange={handleListboxChange}
       overrides={listboxOverrides}

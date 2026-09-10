@@ -1,19 +1,18 @@
 {
   "Accordion.web": {
-    "hash": "eecb47fc65ba5bd6",
-    "lastAttemptHash": "eecb47fc65ba5bd6",
-    "generatedAt": "2026-09-10T14:22:24+00:00",
+    "hash": "871a7f0fb1198aad",
+    "lastAttemptHash": "871a7f0fb1198aad",
+    "generatedAt": "2026-09-10T22:43:45+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3804,
+    "costUsd": 0.4085,
     "files": [
       "packages/react/src/Accordion.css",
       "packages/react/src/Accordion.stories.tsx",
-      "packages/react/src/Accordion.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Accordion.tsx"
     ],
-    "gaps": 5,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -258,18 +257,17 @@
     }
   },
   "Combobox.web": {
-    "hash": "d84b56446df7bb16",
-    "lastAttemptHash": "d84b56446df7bb16",
-    "generatedAt": "2026-09-10T14:13:55+00:00",
+    "hash": "3d33b265093131e2",
+    "lastAttemptHash": "3d33b265093131e2",
+    "generatedAt": "2026-09-10T22:42:04+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.4272,
+    "costUsd": 0.5498,
     "files": [
       "packages/react/src/Combobox.css",
       "packages/react/src/Combobox.stories.tsx",
-      "packages/react/src/Combobox.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Combobox.tsx"
     ],
     "gaps": 8,
     "gates": {
@@ -844,20 +842,20 @@
     }
   },
   "Select.web": {
-    "hash": "4964560cde53d02e",
-    "lastAttemptHash": "4964560cde53d02e",
-    "generatedAt": "2026-09-10T13:59:08+00:00",
+    "hash": "e577df66f0de4b70",
+    "lastAttemptHash": "e577df66f0de4b70",
+    "generatedAt": "2026-09-10T22:40:36+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.6225,
+    "costUsd": 2.2716,
     "files": [
       "packages/react/src/Select.css",
       "packages/react/src/Select.stories.tsx",
       "packages/react/src/Select.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -581,20 +581,20 @@
     }
   },
   "Listbox.rn": {
-    "hash": "1a4295736d57eff7",
-    "lastAttemptHash": "1a4295736d57eff7",
-    "generatedAt": "2026-09-10T13:41:17+00:00",
+    "hash": "f1b1a5b93296eab1",
+    "lastAttemptHash": "f1b1a5b93296eab1",
+    "generatedAt": "2026-09-10T22:41:30+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.993,
+    "costUsd": 1.7431,
     "files": [
-      "packages/rn/src/FormContext.ts",
+      "packages/rn/src/Combobox.tsx",
       "packages/rn/src/Listbox.stories.tsx",
       "packages/rn/src/Listbox.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Select.tsx"
     ],
-    "gaps": 9,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -203,7 +203,7 @@ export { Listbox } from './Listbox';
 export type { ListboxProps, ListboxOption, ListboxValue, ListboxMaxVisible, ListboxOverridableBinding } from './Listbox';
 
 export { Select } from './Select';
-export type { SelectProps, SelectValue, SelectNative, SelectOverridableBinding } from './Select';
+export type { SelectProps, SelectValue, SelectNative, SelectSize, SelectOverridableBinding } from './Select';
 
 export { Combobox } from './Combobox';
 export type { ComboboxProps, ComboboxValue, ComboboxFilter, ComboboxOverridableBinding } from './Combobox';

@@ -665,13 +665,13 @@
     }
   },
   "NumberInput.lit": {
-    "hash": "8d61f438c6e2ea24",
-    "lastAttemptHash": "8d61f438c6e2ea24",
-    "generatedAt": "2026-09-10T15:05:10+00:00",
+    "hash": "cb7a510102a9e4b0",
+    "lastAttemptHash": "cb7a510102a9e4b0",
+    "generatedAt": "2026-09-10T22:41:58+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.5176,
+    "costUsd": 0.3947,
     "files": [
       "packages/lit/src/NumberInput.stories.ts",
       "packages/lit/src/NumberInput.ts",
@@ -848,19 +848,18 @@
     }
   },
   "Slider.lit": {
-    "hash": "28f8485b4f7e482a",
-    "lastAttemptHash": "28f8485b4f7e482a",
-    "generatedAt": "2026-09-10T14:51:30+00:00",
+    "hash": "4a9b570683a66fe1",
+    "lastAttemptHash": "4a9b570683a66fe1",
+    "generatedAt": "2026-09-10T22:40:34+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.0052,
+    "costUsd": 0.7984,
     "files": [
       "packages/lit/src/Slider.stories.ts",
-      "packages/lit/src/Slider.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Slider.ts"
     ],
-    "gaps": 9,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

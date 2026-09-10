@@ -10,6 +10,8 @@ interface SliderArgs {
   min: number;
   max: number;
   step: number;
+  snapToMarks: boolean;
+  required: boolean;
   value?: SliderValue;
   defaultValue?: SliderValue;
   range: boolean;
@@ -36,6 +38,8 @@ const meta: Meta<SliderArgs> = {
     showValue: { control: 'select', options: ['always', 'hover', 'never'] },
     range: { control: 'boolean' },
     disabled: { control: 'boolean' },
+    snapToMarks: { control: 'boolean' },
+    required: { control: 'boolean' },
   },
   args: {
     label: 'Volume',
@@ -43,6 +47,8 @@ const meta: Meta<SliderArgs> = {
     min: 0,
     max: 100,
     step: 1,
+    snapToMarks: false,
+    required: false,
     value: undefined,
     defaultValue: undefined,
     range: false,
@@ -60,6 +66,8 @@ const meta: Meta<SliderArgs> = {
         min=${args.min}
         max=${args.max}
         step=${args.step}
+        ?snapToMarks=${args.snapToMarks}
+        ?required=${args.required}
         .value=${args.value}
         .defaultValue=${args.defaultValue}
         ?range=${args.range}
@@ -113,6 +121,23 @@ export const WithDescription: Story = {
 };
 
 export const Disabled: Story = { args: { disabled: true, defaultValue: 60 } };
+
+export const Required: Story = { args: { required: true } };
+
+export const SnapToMarksStory: Story = {
+  name: 'SnapToMarks',
+  args: {
+    label: 'Price range',
+    name: 'price',
+    min: 0,
+    max: 500,
+    step: 10,
+    defaultValue: [100, 350],
+    range: true,
+    marks: PRICE_MARKS,
+    snapToMarks: true,
+  },
+};
 
 export const ErrorState: Story = {
   args: { error: 'Fix this before continuing.', defaultValue: 10 },

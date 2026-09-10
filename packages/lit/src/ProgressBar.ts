@@ -210,8 +210,8 @@ export class DsProgressBar extends LitElement {
   /** End of the range. */
   @property({ type: Number }) max = 100;
 
-  /** Renders the value text ("42%", "3 of 12 files"). Defaults to a percentage of `max`. */
-  @property({ attribute: false }) formatValue?: (value: number, max: number) => string;
+  /** Renders the value text ("42%", "3 of 12 files"). Defaults to a percentage of the range. */
+  @property({ attribute: false }) formatValue?: (value: number, min: number, max: number) => string;
 
   /** Show the value text beside the label. Ignored when indeterminate. Exposed as the negated `hide-value` attribute (a boolean attribute cannot express `false` for a prop that defaults `true`). */
   @property({ attribute: 'hide-value', converter: NEGATED_BOOLEAN_CONVERTER })
@@ -276,14 +276,12 @@ export class DsProgressBar extends LitElement {
     return ((this.clampedValue - min) / (max - min)) * 100;
   }
 
-  /** The formatted value text, from `formatValue` or the default percentage of `max`. */
+  /** The formatted value text, from `formatValue` or the default percentage of the range. */
   get displayText(): string {
-    const max = Number(this.max);
     if (this.formatValue) {
-      return this.formatValue(this.clampedValue, max);
+      return this.formatValue(this.clampedValue, Number(this.min), Number(this.max));
     }
-    const ratio = max !== 0 ? this.clampedValue / max : 0;
-    return `${Math.round(ratio * 100)}%`;
+    return `${Math.round(this.percent)}%`;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -325,7 +323,7 @@ export class DsProgressBar extends LitElement {
             style=${indeterminate ? nothing : styleMap({ inlineSize: `${this.percent}%` })}
           ></div>
         </div>
-        <div class="visually-hidden" aria-live="polite">${this.liveMessage}</div>
+        <div class="visually-hidden" role="status" aria-live="polite">${this.liveMessage}</div>
       </div>
     `;
   }

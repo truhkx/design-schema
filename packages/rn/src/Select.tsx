@@ -23,12 +23,16 @@ import { Listbox } from './Listbox';
 import type { ListboxGroup, ListboxItem, ListboxOption, ListboxValue } from './Listbox';
 import { Text } from './Text';
 import { toEasing, useReducedMotion, useTheme } from './theme';
+import type { Tokens } from './theme';
 
 /** Which picker surface to use. See `Select`'s doc for how each maps on this platform. */
 export type SelectNative = 'auto' | 'always' | 'never';
 
 /** The selection: a value, or with `multiple` an array of values. */
 export type SelectValue = ListboxValue;
+
+/** `sm` for pickers inside toolbars and calendar headers. */
+export type SelectSize = 'sm' | 'md';
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type SelectOverridableBinding =
@@ -38,6 +42,7 @@ export type SelectOverridableBinding =
   | 'triggerRadius'
   | 'triggerPaddingInline'
   | 'triggerPaddingBlock'
+  | 'triggerPaddingBlockSm'
   | 'triggerGap'
   | 'partGap'
   | 'labelWeight'
@@ -51,6 +56,7 @@ export type SelectOverridableBinding =
   | 'fontFamily'
   | 'fontSize'
   | 'lineHeight'
+  | 'minTargetSm'
   | 'disabledOpacity'
   | 'enter';
 
@@ -67,6 +73,12 @@ export interface SelectProps {
   defaultValue?: SelectValue;
   /** Text shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. */
   placeholder?: string;
+  /** Visually hide the label (it remains the accessible name), for compact pickers such as DatePicker's month and year. */
+  hideLabel?: boolean;
+  /** `sm` for pickers inside toolbars and calendar headers. */
+  size?: SelectSize;
+  /** Controlled popup state, for programmatic opening and for stories and tests. Omit for the trigger-driven default. */
+  open?: boolean;
   /** Pick any number. The trigger shows `copy.selectedCount` (or the labels when two or fewer); the popup stays open while toggling. */
   multiple?: boolean;
   /** Helper text under the label. Also the trigger's `accessibilityHint`. */
@@ -103,6 +115,8 @@ const COPY = {
   // label and none was given. See the generation gap notes.
   done: 'Done',
 } as const;
+
+const FONT_SIZE_TOKEN = { sm: 'fontSizeSm', md: 'fontSizeMd' } as const satisfies Record<SelectSize, keyof Tokens>;
 
 function isGroup(item: ListboxItem): item is ListboxGroup {
   return 'group' in item;
@@ -161,6 +175,9 @@ export function Select({
   value,
   defaultValue,
   placeholder,
+  hideLabel = false,
+  size = 'md',
+  open: openProp,
   multiple = false,
   description,
   required = false,
@@ -180,7 +197,7 @@ export function Select({
   const triggerRef = React.useRef<View>(null);
   const [internalValue, setInternalValue] = React.useState<SelectValue | undefined>(defaultValue);
   const [focused, setFocused] = React.useState(false);
-  const [open, setOpen] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
   const [popupMounted, setPopupMounted] = React.useState(false);
   const [triggerRect, setTriggerRect] = React.useState<Rect | null>(null);
   const [popupHeight, setPopupHeight] = React.useState<number | null>(null);
@@ -188,6 +205,8 @@ export function Select({
 
   const isControlled = value !== undefined;
   const currentValue = isControlled ? value : internalValue;
+  const isOpenControlled = openProp !== undefined;
+  const open = isOpenControlled ? openProp : internalOpen;
   const isDisabled = disabled || (form?.disabled ?? false);
   const formError = form?.errors[name];
   const displayedError = error !== undefined && error !== '' ? error : formError;
@@ -269,7 +288,9 @@ export function Select({
   }, [displayedError, summarised]);
 
   const changeOpen = (next: boolean): void => {
-    setOpen(next);
+    if (!isOpenControlled) {
+      setInternalOpen(next);
+    }
     onOpenChange?.(next);
   };
 
@@ -376,9 +397,14 @@ export function Select({
   const triggerPaddingInline = overrides?.triggerPaddingInline
     ? (resolveToken(t, overrides.triggerPaddingInline) as number)
     : t.spaceMd;
-  const triggerPaddingBlock = overrides?.triggerPaddingBlock
-    ? (resolveToken(t, overrides.triggerPaddingBlock) as number)
-    : t.spaceSm;
+  const triggerPaddingBlock =
+    size === 'sm'
+      ? overrides?.triggerPaddingBlockSm
+        ? (resolveToken(t, overrides.triggerPaddingBlockSm) as number)
+        : t.space1
+      : overrides?.triggerPaddingBlock
+        ? (resolveToken(t, overrides.triggerPaddingBlock) as number)
+        : t.spaceSm;
   const triggerGap = overrides?.triggerGap ? (resolveToken(t, overrides.triggerGap) as number) : t.layoutGapNormal;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
   const labelWeight = overrides?.labelWeight ? (resolveToken(t, overrides.labelWeight) as number) : t.fontWeightMedium;
@@ -388,6 +414,13 @@ export function Select({
   const popupRadius = overrides?.popupRadius ? (resolveToken(t, overrides.popupRadius) as number) : t.radiusMd;
   const popupOffset = overrides?.popupOffset ? (resolveToken(t, overrides.popupOffset) as number) : t.space1;
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerDropdown;
+  const minTarget =
+    size === 'sm'
+      ? overrides?.minTargetSm
+        ? (resolveToken(t, overrides.minTargetSm) as number)
+        : t.sizeTargetMin
+      : t.sizeTargetComfortable;
+  const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[FONT_SIZE_TOKEN[size]];
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
@@ -451,6 +484,7 @@ export function Select({
       multiple={multiple}
       value={currentValue}
       disabled={isDisabled}
+      embedded
       onChange={handleListboxChange}
       overrides={listboxOverrides}
     />

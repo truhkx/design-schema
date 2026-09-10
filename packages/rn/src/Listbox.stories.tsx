@@ -84,9 +84,19 @@ export const OptionDisabled: Story = {
 
 export const Required: Story = { args: { defaultValue: undefined, required: true, name: 'assignee' } };
 
+export const Invalid: Story = { args: { invalid: true } };
+
+export const ErrorMessage: Story = { args: { error: 'Choose an assignee before continuing.' } };
+
 export const Disabled: Story = { args: { disabled: true } };
 
 export const Empty: Story = { args: { options: [], emptyMessage: 'No matching people' } };
+
+export const Loading: Story = { args: { options: [], loading: true } };
+
+export const Embedded: Story = { args: { embedded: true } };
+
+export const DefaultActiveValue: Story = { args: { defaultValue: undefined, defaultActiveValue: 'jo' } };
 
 /** At least three focusable rows, for the axe gate and manual keyboard checks on react-native-web. */
 export const Keyboard: Story = {

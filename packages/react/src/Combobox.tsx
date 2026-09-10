@@ -897,6 +897,7 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
                 value={selected}
                 selectionFollowsFocus={false}
                 disabled={isDisabled}
+                loading={isLoading}
                 emptyMessage={isLoading ? COPY.loading : COPY.empty}
                 onChange={handleListboxChange}
                 onActiveChange={setActiveValue}

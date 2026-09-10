@@ -27,6 +27,10 @@ export interface SliderChangeDetail {
 const COPY_MINIMUM = (label: string): string => `${label} minimum`;
 /** copy.maximumLabel */
 const COPY_MAXIMUM = (label: string): string => `${label} maximum`;
+/** copy.required */
+const COPY_REQUIRED = (label: string): string => `${label} is required.`;
+/** copy.invalid */
+const COPY_INVALID = (label: string): string => `${label} is not valid.`;
 
 /** Keys handled by the keyboard model; used to know when a held key's `keyup` should end the interaction. */
 const NAV_KEYS = new Set(['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End']);
@@ -335,6 +339,12 @@ export class DsSlider extends LitElement {
   /** Arrow-key increment and snapping granularity. */
   @property({ type: Number }) step = 1;
 
+  /** With `marks`, snap drag and click to the marks instead of `step` (keys still move by step, PageUp/Down by mark). */
+  @property({ type: Boolean }) snapToMarks = false;
+
+  /** Must have a value other than the default to submit. */
+  @property({ type: Boolean }) required = false;
+
   /** Controlled value; for a range, `[min, max]`. Omit for an uncontrolled slider. */
   @property({ attribute: false }) value?: SliderValue;
 
@@ -564,6 +574,7 @@ export class DsSlider extends LitElement {
         aria-labelledby=${labelledBy}
         aria-orientation="horizontal"
         aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
+        aria-required=${ifDefined(this.required ? 'true' : undefined)}
         style=${styleMap({ insetInlineStart: `${percent}%` })}
         @keydown=${(event: KeyboardEvent) => this.handleThumbKeydown(event, index)}
         @keyup=${(event: KeyboardEvent) => this.handleThumbKeyup(event, index)}
@@ -645,7 +656,19 @@ export class DsSlider extends LitElement {
     const clamped = Math.min(1, Math.max(0, ratio));
     const min = Number(this.min);
     const max = Number(this.max);
-    return this.snap(min + clamped * (max - min));
+    const raw = min + clamped * (max - min);
+    if (this.snapToMarks && this.marks.length > 0) {
+      return this.snapToNearestMark(raw);
+    }
+    return this.snap(raw);
+  }
+
+  /** Nearest `marks` value to `value`, used for drag/click when `snapToMarks` is set. */
+  private snapToNearestMark(value: number): number {
+    return this.marks.reduce(
+      (nearest, mark) => (Math.abs(mark.value - value) < Math.abs(nearest - value) ? mark.value : nearest),
+      this.marks[0].value,
+    );
   }
 
   private nearestIndex(clientX: number): number {
@@ -859,10 +882,26 @@ export class DsSlider extends LitElement {
     if (this.error) {
       this.internals.setValidity({ customError: true }, this.error, anchor);
     } else if (this.invalid) {
-      this.internals.setValidity({ customError: true }, `${this.label} is invalid`, anchor);
+      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), anchor);
+    } else if (this.required && this.isAtDefault) {
+      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor);
     } else {
       this.internals.setValidity({});
     }
+  }
+
+  /** Whether the current value is still the untouched default, for `required`. */
+  private get isAtDefault(): boolean {
+    const initial =
+      this.defaultValue !== undefined
+        ? this.defaultValue
+        : this.range
+          ? [Number(this.min), Number(this.max)]
+          : Number(this.min);
+    const current = this.currentValue;
+    return Array.isArray(initial) && Array.isArray(current)
+      ? initial[0] === current[0] && initial[1] === current[1]
+      : initial === current;
   }
 
   private applyOverrides(): void {

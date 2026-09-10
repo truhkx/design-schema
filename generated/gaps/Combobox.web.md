@@ -12,3 +12,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Combobox: chip label truncation ('~20 chars, ellipsis') is implemented via CSS `overflow`/`text-overflow: ellipsis` with no fixed character or width cap (none of the listed style bindings provide one), so truncation only kicks in once flex-wrap/shrink constrains a chip's width, not at a fixed 20-character point.
 - Combobox: the custom-entry dedup check (suppressing `copy.addCustom` when typed text already matches an existing option) compares the trimmed, normalized text against both option `value` and `label`; the spec doesn't specify which field(s) to compare against.
 - Combobox: initial `inputValue` text for an uncontrolled single-select with a `defaultValue`/`value` is derived by looking up the label from `options`; the schema doesn't say whether the input should show the label on mount versus staying empty until interaction.
+
+## 2026-09-10 18:41 — round 1
+
+- Combobox: keyboard spec is internally contradictory between the Home/End entry's prose ('Alt+ArrowDown/Up jump to first/last') and the dedicated Alt+ArrowDown entry ('opens without moving active option'); implemented the dedicated entry literally, no Alt+ArrowUp binding and no jump-to-first/last.
+- Combobox: 'keydown forwarded to the Listbox handler so DOM focus never leaves the input' has no supporting Listbox API for external control; implemented by dispatching a native bubbling KeyboardEvent at the mounted Listbox DOM node (queued until mount).
+- Combobox: 'opens with no active option' after each filtering keystroke is enforced by remounting the Listbox via a `key` bump per keystroke (skipped for filter:none, which never filters).
+- Combobox: for filter:none, spec says typing should typeahead-jump the active option; not implemented — typing under filter:none only opens the list, ArrowDown/ArrowUp still move it.
+- Combobox: 'toggle button opens the full list' implemented as a one-shot bypass of the typed-text filter rather than clearing the typed text, since the spec doesn't say the toggle clears input.
+- Combobox: chip label truncation (~20 chars) implemented via CSS ellipsis with no fixed character/width cap, since no style binding defines one.
+- Combobox: custom-entry dedup compares normalized typed text against both option value and label; spec doesn't specify which field(s).
+- Combobox: initial input text for an uncontrolled single-select with defaultValue/value is derived from the matching option's label; the schema doesn't say whether the input should show the label on mount vs. staying empty.

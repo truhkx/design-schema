@@ -609,7 +609,7 @@ export const Select = forwardRef<HTMLButtonElement | HTMLSelectElement, SelectPr
     };
 
     return (
-      <div data-ds="Select" data-part="root" className={classes} style={mergedStyle}>
+      <div data-ds="Select" data-ds-field data-part="root" className={classes} style={mergedStyle}>
         {labelNode}
         {descriptionNode}
         <span className="ds-select__native-wrap">
@@ -650,7 +650,7 @@ export const Select = forwardRef<HTMLButtonElement | HTMLSelectElement, SelectPr
   const popupClasses = ['ds-select__popup', entered ? 'ds-select__popup--entered' : null].filter(Boolean).join(' ');
 
   return (
-    <div data-ds="Select" data-part="root" className={classes} style={mergedStyle}>
+    <div data-ds="Select" data-ds-field data-part="root" className={classes} style={mergedStyle}>
       {labelNode}
       {descriptionNode}
       <button

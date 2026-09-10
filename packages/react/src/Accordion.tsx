@@ -63,9 +63,24 @@ const DEFAULT_DIVIDER_OVERRIDES: Partial<Record<DividerOverridableBinding, Token
   thickness: 'border.width.thin',
 };
 
+/* Only declared when the bundler defines it; never assumed. */
+declare const process: { env: Record<string, string | undefined> } | undefined;
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+
 function toIdArray(value: string | string[] | undefined): string[] | undefined {
   if (value === undefined) return undefined;
   return Array.isArray(value) ? value : [value];
+}
+
+/** `exclusive` allows at most one open id; several passed via `value`/`defaultValue` keeps the first and warns about the rest. */
+function resolveExclusiveIds(ids: string[], exclusive: boolean, source: 'value' | 'defaultValue'): string[] {
+  if (!exclusive || ids.length <= 1) return ids;
+  if (isDev) {
+    console.warn(
+      `Accordion: \`exclusive\` allows one open section, but \`${source}\` had ${ids.length}: ${ids.join(', ')}. Opening "${ids[0]}"; the rest are ignored.`,
+    );
+  }
+  return ids.slice(0, 1);
 }
 
 function firstEnabledIndex(items: AccordionItem[]): number {
@@ -143,11 +158,10 @@ export const Accordion = forwardRef<HTMLDivElement, AccordionProps>(function Acc
   };
 
   const isControlled = value !== undefined;
-  const [internalOpenIds, setInternalOpenIds] = useState<string[]>(() => {
-    const initial = toIdArray(defaultValue) ?? [];
-    return exclusive ? initial.slice(0, 1) : initial;
-  });
-  const openIds = isControlled ? toIdArray(value) ?? [] : internalOpenIds;
+  const [internalOpenIds, setInternalOpenIds] = useState<string[]>(() =>
+    resolveExclusiveIds(toIdArray(defaultValue) ?? [], exclusive, 'defaultValue'),
+  );
+  const openIds = isControlled ? resolveExclusiveIds(toIdArray(value) ?? [], exclusive, 'value') : internalOpenIds;
 
   // Distinguishes a `value` change that echoes our own onChange from one the consumer made on
   // their own, so `onOpenChange` reports `controlled` only for the latter.

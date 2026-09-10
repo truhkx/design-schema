@@ -80,6 +80,8 @@ const COPY_INVALID = (label: string): string => `${label} must be a number.`;
 const COPY_OUT_OF_RANGE = (label: string, min: number, max: number): string => `${label} must be between ${min} and ${max}.`;
 /** copy.requiredIndicator */
 const COPY_REQUIRED_INDICATOR = ' (required)';
+/** copy.currencyMissing */
+const COPY_CURRENCY_MISSING = 'format "currency" needs a currency code.';
 
 /** Keys handled by the keyboard model, all acting on the first (only) tab stop, the input itself. */
 const STEP_KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown']);
@@ -888,7 +890,7 @@ export class DsNumberInput extends LitElement {
       console.warn(`<ds-number-input> needs max (${this.max}) greater than or equal to min (${this.min}).`, this);
     }
     if (changed.has('format') && this.format === 'currency' && !this.currency) {
-      console.warn('<ds-number-input format="currency"> should set `currency` (e.g. "USD"); defaulting to USD.', this);
+      console.warn(`<ds-number-input> ${COPY_CURRENCY_MISSING} Defaulting to USD.`, this);
     }
     if (changed.has('format') && this.format === 'unit' && !this.unit) {
       console.warn('<ds-number-input format="unit"> requires `unit` to format with Intl; it will show as plain.', this);

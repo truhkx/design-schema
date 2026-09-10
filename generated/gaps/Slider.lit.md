@@ -13,3 +13,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Slider: the bubble's corner radius (`radius.sm`) has no declared style binding in the schema (only `bubbleSurface`/`bubbleText` are defined) — used a fixed, non-overridable `--radius-sm` purely for shape, matching Tooltip's popup shape.
 - Slider: pointer-drag value math (`positionToValue`) is LTR-only (`clientX - rect.left`), matching the pattern of other components in this package that don't special-case `:dir(rtl)` for pointer math (only Switch handles RTL, purely via a CSS transform on a discrete thumb, not continuous drag).
 - Slider: the package-wide testability rule requires a `Keyboard` story with 'at least three focusable children' — Slider's `range` mode tops out at two thumbs (its whole APG model), so the `Keyboard` story renders the range+marks configuration with two thumbs; a third focusable child isn't structurally possible for this component.
+
+## 2026-09-10 18:40 — round 1
+
+- Slider: platforms.web.attributes doesn't list aria-required, but copy.required implies a required state must be identified — added aria-required on each thumb to match the pattern used by other required form fields (Input, RadioGroup) in this package.
+- Slider: 'must have a value other than the default to submit' doesn't define what 'the default' is when defaultValue is unset — chose the same fallback the value prop itself documents (min, or [min, max]) so required and value share one notion of default.
+- Slider: platforms.lit.reflect lists only range/disabled/show-value, so required and snapToMarks are plain (non-reflected) boolean properties, consistent with the explicit list rather than the broader convention some other fields use.

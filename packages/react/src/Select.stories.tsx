@@ -74,17 +74,19 @@ export const InvalidWithError: Story = {
 
 export const DefaultValue: Story = { args: { defaultValue: 'fr' } };
 
+export const HideLabel: Story = { args: { hideLabel: true } };
+
 /**
- * Open/present with its trigger, for the keyboard gate. Select's popup composes Listbox, which —
- * per the WAI-ARIA listbox pattern — exposes exactly one focusable node for the whole option list
- * (aria-activedescendant, not per-option tab stops), so three separately-focusable children cannot
- * exist inside a single open Select. Three trigger instances stand in instead, matching the same
- * structural workaround already used by Tooltip.stories.tsx.
+ * Open/present with its trigger, for the keyboard gate. The first Select renders with `open`, so
+ * the popup and its composed (embedded) Listbox are present; per the WAI-ARIA listbox pattern the
+ * Listbox exposes exactly one focusable node for the whole option list (aria-activedescendant, not
+ * per-option tab stops), so two further closed triggers stand alongside it to reach three
+ * focusable children without adding any decorator-only focusable element.
  */
 export const Keyboard: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-      <Select label="Country" name="country-a" options={COUNTRIES} />
+      <Select label="Country" name="country-a" options={COUNTRIES} open />
       <Select label="Role" name="role-b" options={ROLES} />
       <Select label="Export to" name="export-c" options={COUNTRIES} />
     </div>

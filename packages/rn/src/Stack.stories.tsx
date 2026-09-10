@@ -9,19 +9,19 @@ const meta: Meta<typeof Stack> = {
   component: Stack,
   decorators: [withTheme()],
   args: {
+    children: (
+      <>
+        <Button label="Save changes" />
+        <Button label="Cancel" variant="secondary" />
+        <Button label="Forgot password?" variant="ghost" />
+      </>
+    ),
     direction: 'vertical',
     gap: 'normal',
     align: 'stretch',
     justify: 'start',
     wrap: false,
   },
-  render: (args) => (
-    <Stack {...args}>
-      <Button label="Save changes" />
-      <Button label="Cancel" variant="secondary" />
-      <Button label="Forgot password?" variant="ghost" />
-    </Stack>
-  ),
 };
 
 export default meta;
@@ -55,4 +55,4 @@ export const JustifyBetween: Story = { args: { direction: 'horizontal', align: '
 
 // notable states
 export const Wrap: Story = { args: { direction: 'horizontal', wrap: true, align: 'start' } };
-export const WithOverrides: Story = { args: { gap: 'normal', overrides: { gap: 'space.lg' } } };
+export const WithOverrides: Story = { args: { overrides: { gap: 'space.lg' } } };

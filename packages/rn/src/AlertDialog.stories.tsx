@@ -70,7 +70,7 @@ export const Keyboard: Story = {
     function Open(): React.JSX.Element {
       const [open, setOpen] = React.useState(true);
       return (
-        <Stack gap="4" align="start">
+        <Stack gap="loose" align="start">
           <Button label="Delete files" variant="danger" onPress={() => setOpen(true)} />
           <Input label="Project name" name="name" defaultValue="Marketing site" />
           <Input label="Description" name="description" />

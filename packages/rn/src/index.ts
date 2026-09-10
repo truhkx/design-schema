@@ -19,7 +19,7 @@ export { FormContext, useFormContext } from './FormContext';
 export type { FormContextValue, FormFieldHandle, FormFieldValue, FormValues } from './FormContext';
 
 export { Stack } from './Stack';
-export type { StackAlign, StackDirection, StackGap, StackJustify, StackProps } from './Stack';
+export type { StackAlign, StackDirection, StackGap, StackJustify, StackOverridableBinding, StackProps } from './Stack';
 
 export { Box } from './Box';
 export type { BoxInset, BoxOverridableBinding, BoxProps, BoxRadius, BoxSurface } from './Box';

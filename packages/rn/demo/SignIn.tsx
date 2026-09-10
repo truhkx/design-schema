@@ -32,8 +32,8 @@ export function SignIn({ onSubmit, onForgotPassword, submitting = false }: SignI
 
   return (
     <View style={screenStyle}>
-      <Stack gap="6">
-        <Stack gap="1">
+      <Stack gap="section">
+        <Stack gap="tight">
           <Heading level={1} size="2xl">
             Sign in
           </Heading>
@@ -42,7 +42,7 @@ export function SignIn({ onSubmit, onForgotPassword, submitting = false }: SignI
         <Form name="sign-in" label="Sign in" disabled={submitting} onSubmit={onSubmit}>
           <Input label="Email address" name="email" type="email" required placeholder="name@example.com" />
           <Input label="Password" name="password" type="password" required />
-          <Stack gap="2" align="start">
+          <Stack gap="normal" align="start">
             <Button label="Sign in" type="submit" loading={submitting} />
             <Button label="Forgot password?" variant="ghost" onPress={onForgotPassword} />
           </Stack>

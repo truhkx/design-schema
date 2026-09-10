@@ -73,7 +73,7 @@ export const Keyboard: Story = {
     function Open(): React.JSX.Element {
       const [open, setOpen] = React.useState(true);
       return (
-        <Stack gap="4" align="start">
+        <Stack gap="loose" align="start">
           <Button label="Open dialog" onPress={() => setOpen(true)} />
           <Dialog
             {...args}
@@ -86,7 +86,7 @@ export const Keyboard: Story = {
               </>
             }
           >
-            <Stack gap="4">
+            <Stack gap="loose">
               <Input label="Project name" name="name" defaultValue="Marketing site" />
               <Input label="Description" name="description" />
             </Stack>

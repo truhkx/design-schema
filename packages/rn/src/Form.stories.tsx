@@ -21,7 +21,7 @@ const meta: Meta<typeof Form> = {
     <Form {...args}>
       <Input label="Full name" name="name" required />
       <Input label="Email address" name="email" type="email" required description="Use the email you signed up with." />
-      <Stack direction="horizontal" gap="2" align="start">
+      <Stack direction="horizontal" gap="normal" align="start">
         <Button label="Save changes" type="submit" />
         <Button label="Cancel" variant="secondary" />
       </Stack>

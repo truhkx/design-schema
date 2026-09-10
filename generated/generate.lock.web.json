@@ -28,14 +28,15 @@
     }
   },
   "Box.web": {
-    "hash": "05b40f51e2dc136a",
-    "lastAttemptHash": "05b40f51e2dc136a",
-    "generatedAt": "2026-09-10T02:16:07+00:00",
+    "hash": "5f50b1b77224334a",
+    "lastAttemptHash": "5f50b1b77224334a",
+    "generatedAt": "2026-09-10T04:52:57+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.1611,
+    "costUsd": 0.6158,
     "files": [
+      "packages/react/src/Box.css",
       "packages/react/src/Box.tsx"
     ],
     "gaps": 1,
@@ -43,7 +44,9 @@
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Breadcrumb.web": {
@@ -252,9 +255,38 @@
     "runner": "adopted"
   },
   "Stack.web": {
-    "hash": "3277f767f428be19",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "395ec760b1de6f6c",
+    "lastAttemptHash": "395ec760b1de6f6c",
+    "generatedAt": "2026-09-10T04:49:51+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.1159,
+    "files": [
+      "packages/react/demo/Preferences.tsx",
+      "packages/react/demo/SignIn.tsx",
+      "packages/react/src/AlertDialog.tsx",
+      "packages/react/src/Card.stories.tsx",
+      "packages/react/src/Dialog.stories.tsx",
+      "packages/react/src/Dialog.tsx",
+      "packages/react/src/Disclosure.stories.tsx",
+      "packages/react/src/Form.stories.tsx",
+      "packages/react/src/Landmark.stories.tsx",
+      "packages/react/src/Stack.css",
+      "packages/react/src/Stack.stories.tsx",
+      "packages/react/src/Stack.test.tsx",
+      "packages/react/src/Stack.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Switch.web": {
     "hash": "01c2cc65d41986ce",

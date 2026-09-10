@@ -345,7 +345,7 @@ export function Dialog({
                 </KeyboardAvoidingView>
                 {footer !== undefined ? (
                   <View style={footerStyle} testID="Dialog.footer">
-                    <Stack direction="horizontal" gap="1" justify="end">
+                    <Stack direction="horizontal" gap="tight" justify="end">
                       {footer}
                     </Stack>
                   </View>

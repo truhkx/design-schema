@@ -1,6 +1,6 @@
-# Gap digest — phase Overlays
+# Gap digest — phase Primitives
 
-Generated 2026-09-10T00:23 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T00:49 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## AlertDialog
 
@@ -36,6 +36,11 @@ Doc: `site/src/content/docs/components/alertdialog.md`
 ## Box
 
 Doc: `site/src/content/docs/components/box.md`
+
+### 2026-09-10 00:49 — lit round 1
+
+- **DOC** Box: `element` prop has no visible effect on the shadow DOM (per platform notes, only sets a role for sectioning values via ElementInternals) — kept `div`/`section` role-less as the spec directs, but a11y.role: none combined with sectioning `element` values creates an implicit contradiction (top-level a11y says role: none, platform notes say sectioning values do set a role); chose platform notes since they're more specific. → `site/src/content/docs/components/box.md`
+- **DOC** Box: spec doesn't say whether `insetBlock`/`insetInline` should fall back to `inset` when unset or be fully independent optional attributes; implemented as optional (undefined) reflected attributes so CSS cascade order (inset rule before axis-override rule) does the `inset` fallback naturally — no explicit default given for insetBlock/insetInline in schema. → `site/src/content/docs/components/box.md`
 
 ### 2026-09-09 22:18 — rn round 1
 
@@ -335,9 +340,59 @@ Doc: `site/src/content/docs/components/focusscope.md`
 - **DOC** The wrapper renders as a plain display:block div (matching Landmark's unstyled-wrapper pattern) rather than display:contents, because `autoFocus: 'container'` requires the div itself to be focusable via tabindex, which display:contents defeats in most browsers. This means FocusScope always inserts one extra box into the DOM/layout that a zero-footprint wrapper would avoid. → `site/src/content/docs/components/focusscope.md`
 - **DOC** No explicit visibility (display:none/offsetParent) filtering in the focusable walker beyond aria-hidden/inert/disabled/tabindex<0 — the schema doesn't call it out, so hidden-but-attached elements with a positive tabindex would be treated as focusable. → `site/src/content/docs/components/focusscope.md`
 
+## Heading
+
+Doc: `site/src/content/docs/components/heading.md`
+
+### 2026-09-10 00:47 — rn round 1
+
+- **DOC** Heading: no Heading.test.tsx existed for the 16 behavior scenarios; added one mirroring Text.test.tsx's setup()-from-Default-story-args pattern since the spec doesn't specify a different fixture strategy. → `site/src/content/docs/components/heading.md`
+- **CODE** Heading: spec doesn't specify RN's marginBlockEnd style property name; used RN's `marginBottom` (the only equivalent RN TextStyle offers) to realize the `space.sm` margin-block-end token, same choice the pre-existing file had made.
+- **CODE** Heading: overrides prop, HeadingOverridableBinding type, and root testID="Heading" were listed as required package conventions but missing from the pre-existing Heading.tsx/index.ts; added them without changing any other existing behavior.
+
+### 2026-09-10 00:45 — lit round 2
+
+- **DOC** Heading: no new gaps — the `literals` gate flagged `fontFamily: '--ds-heading-font-family'` as a font-stack literal because its regex matches any `fontFamily: <quote>` regardless of content; switched that one HOOKS entry to a template literal (backtick), matching the existing workaround already used in Text.ts for the same false positive. → `site/src/content/docs/components/heading.md`
+
+### 2026-09-10 00:45 — lit round 1
+
+- **DOC** Heading: the schema gives `size` no default and no per-level mapping table in `styles.fontSize` (just `font.size.{size}`); the platform notes and guidance supply the level→size defaults (1→4xl … 6→md) verbatim, so I kept the existing file's approach of setting the `--ds-heading-font-size` hook from `level` first and letting an explicit `size` attribute override it — an explicit size always wins. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: `color` is locked per the styles block, so it has no `--ds-heading-color` override hook (consistent with Card's locked `background`) — `.heading` reads `var(--color-foreground-strong)` directly with a comment noting it's excluded from `overrides`. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the guidance's Lit platform note says to use `part="heading"` for `::part` restyling, but the generation rules forbid exposing `::part` for styling and mandate the `overrides` property/hook mechanism instead; I followed the stricter package convention (hooks + `overrides`) and kept `part="heading"` only as the anatomy/testability hook, not a supported restyling surface. → `site/src/content/docs/components/heading.md`
+
+### 2026-09-10 00:44 — web round 1
+
+- **DOC** Heading: spec's Output section only asked for Heading.tsx + stories, but the Behavior scenarios section explicitly says to emit one test per scenario, and every sibling component in the current rollout (Text, Card, Box, Switch, Container) has a matching .test.tsx — added Heading.test.tsx on that basis rather than skip it. → `site/src/content/docs/components/heading.md`
+- **CODE** Heading: pre-existing implementation predated the overrides/testability-hook conventions (no data-ds, no CSS custom-property hooks, no overrides prop, no test file). Brought it in line with current conventions rather than treating it as net-new: added overrides for fontFamily/fontWeight/fontSize/lineHeight/marginBlockEnd (color stays locked but still gets a hook, matching Card's pattern for locked bindings), and added Heading.test.tsx mirroring Text.test.tsx's per-scenario structure since the doc's Behavior scenarios section wasn't previously covered by a test file for this component.
+
 ## Icon
 
 Doc: `site/src/content/docs/components/icon.md`
+
+### 2026-09-10 00:44 — rn round 2
+
+- **DOC** Icon: the `Color` story previously hardcoded a hex literal (`#1a5fd6`) to demonstrate the RN-only `color` prop, which the `literals` gate correctly rejects (tokens only, no hex). Fixed by following the existing `Text.stories.tsx` `ToneOnAction` pattern: a small wrapper component that calls `useTheme()` at render time and passes a real resolved token (`tokens.colorStatusDangerIcon`) into `color`, standing in for a parent component (e.g. Alert) passing its own resolved foreground color — since `color` takes a literal resolved color string, not a token ref, there was no way to satisfy the gate with a static `args` object. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-10 00:43 — rn round 1
+
+- **DOC** Icon: the schema's `platforms.rn.notes` (decision 2026-09-10) says the RN paths table must be 'byte-identical to the web table', but web's Icon.tsx has no `calendar` entry even though `calendar` is in the shared enum — no reference path exists on any platform yet. I invented a 16-grid line-glyph calendar (body rect + two hanger ticks + header divider) in packages/rn/src/paths.ts; web/Lit will draw a different shape unless regenerated from this same data, breaking the 'visually neutral swap' goal until then. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: `color`/size inheritance when `inline` is nested inside a system `Text` can't be implemented as literally as the doc implies. `TextNestingContext` (packages/rn/src/Text.tsx) is a plain boolean — it signals nesting but carries no font-size or color value — and Icon now renders `Svg`/`Path` (not `Text`), so there is no native Text-in-Text cascade to ride the way the retired Unicode-glyph implementation did. I fall back to `font.size.md`/`color.foreground` for inline icons whether or not they're nested in Text, same as the non-nested inline case. A true fix would mean threading the resolved size/color through `TextNestingContext` (or a new context) in Text.tsx, which is out of scope for this generation. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: `platforms.rn.props` lists only width/height/viewBox/fill/stroke/accessibility*, omitting `strokeWidth`, `fillRule`, `vectorEffect`, and `testID` even though the `styles.strokeWidth` binding, the filled-glyph fillRule note, and the package's testability-hook rule all require them. Treated the detailed prose notes as authoritative over the abbreviated props list and included all four. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the `has-accessible-name` scenario has no `given` block, but Icon's default (from Icon.stories.tsx `Default`/`meta.args`) has no `label` and is therefore decorative with no accessible name — the generic derived scenario assumes a component always exposes one. Wrote the test with an explicit `label` (`'Warning: over quota'`, matching the existing `Label` story) instead of default args, since testing the true default would assert the opposite of the scenario's name. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: `react-native-svg` was already listed as a peer/dev dependency in packages/rn/package.json before this generation (no package.json change needed), even though the existing packages/rn/src/Icon.tsx being replaced still used a Unicode-glyph fallback with no SVG — the dependency addition and the component's actual adoption of it appear to have landed separately. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-10 00:39 — lit round 1
+
+- **DOC** Icon: the schema's Overrides section lists `color` as overridable defaulting to `color.foreground`, but the component's own styles.color description says the default is `currentColor`/inherit (so a Button/Link/Alert colors the icon for free) and `color.foreground` is only the eventual fallback once inheritance resolves to the root. Implemented `color: var(--ds-icon-color, inherit)` (hook unset by default, so ambient inheritance wins) rather than defaulting the hook to `var(--color-foreground)`, which would have broken composition inside colored ancestors. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: `name` was previously missing the `calendar` enum value and its glyph (present in this schema's `name.values` and behavior scenarios but absent from the existing implementation) — added a simple line-glyph calendar (body + two top tabs + header rule) on the 16×16 grid; no reference design was given for its exact strokes. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: scenario `has-accessible-name` has no `given`, but the Default story's args are decorative (`label: undefined`), so asserting an accessible name against the defaults would fail. Set `label: 'Warning: over quota'` (the Labelled story's value) explicitly in the test to exercise the a11y.requires mechanism instead. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the general package convention requires `data-ds="<Name>"` and an `overrides` property/hooks on every component touched; the existing Icon.ts predated that convention (no `data-ds`, no CSS custom-property hooks, no `overrides`). Added `data-ds="Icon"`, hooks `--ds-icon-size`/`--ds-icon-color`/`--ds-icon-stroke-width`, and the `overrides` property/`IconOverridableBinding` type to bring it in line — this touches more of the file than the schema diff alone (just `calendar`) would require. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-10 00:37 — web round 1
+
+- **DOC** Icon.tsx/css/stories.tsx pre-existed but lacked `calendar` (added to the enum after this generation was authored), the `data-ds="Icon"` testability hook, and the `overrides` contract; I brought them in line with the current schema/conventions rather than treating the files as already-generated. → `site/src/content/docs/components/icon.md`
+- **DOC** calendar has no path data in any existing component to reuse (unlike chevrons/close/external/ellipsis, which came from Disclosure/Link/Breadcrumb/Alert) — drew a plain outlined rectangle with a header rule and two top tabs on the 16x16 grid as a new line glyph. → `site/src/content/docs/components/icon.md`
+- **DOC** The override contract says overrides change values, never presence, and apply only where the binding is in effect: `inline` sets `font-size: inherit` directly rather than reading `--ds-icon-size`, so an `overrides.size` entry is a documented no-op while `inline` is true — chose to leave the hook set for consistency rather than deleting it in that case. → `site/src/content/docs/components/icon.md`
 
 ### 2026-09-09 18:17 — rn round 2
 
@@ -431,9 +486,61 @@ Doc: `site/src/content/docs/components/menu.md`
 - **DOC** Menu: the single `itemGap` token is reused both for spacing between rows/groups in the list and for the internal icon–label–shortcut gap inside one item, since the schema defines only one gap binding for the whole item anatomy. → `site/src/content/docs/components/menu.md`
 - **DOC** Menu: `minWidth`'s '× 2.5' multiplier (space.20 → ~200px) is applied at the CSS use-site via `calc(var(--ds-menu-min-width) * 2.5)` so a per-instance override still scales proportionally, per the schema's 'the generator multiplies' note. → `site/src/content/docs/components/menu.md`
 
+## Stack
+
+Doc: `site/src/content/docs/components/stack.md`
+
+### 2026-09-10 00:48 — lit round 1
+
+- **DOC** Stack: the anatomy list is just `container`, and the schema doesn't say what carries that part when `element` is `div` — kept the existing convention (matching Container) where the host itself is the implicit container and only the `section`/`nav`/`ul`/`ol` wrapper elements carry `part="container"`. → `site/src/content/docs/components/stack.md`
+- **CODE** Stack: pre-existing Stack.ts used the old raw spacing scale ('0'..'12') for `gap` instead of the schema's `layout.gap.*` enum (none/tight/normal/loose/section); rewrote the enum, CSS hooks, and stories/tests to match the schema, since the old version predates this generation pass.
+
+### 2026-09-10 00:47 — web round 1
+
+- **DOC** Stack: the schema changes `gap` from the old raw spacing scale ('0'-'12') to a layout-rhythm enum (none/tight/normal/loose/section mapping to layout.gap.*), a breaking prop-type change. I updated only Stack itself per scope, but this leaves stale literal gap values ('0'-'6') in other already-generated files that consume Stack — packages/react/src/AlertDialog.tsx, Card.stories.tsx, Dialog.tsx, Dialog.stories.tsx, Disclosure.stories.tsx, Form.stories.tsx, Landmark.stories.tsx, and demo/Preferences.tsx, demo/SignIn.tsx — which now fail typecheck against StackGap and need fixing in those components' own regeneration passes. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: spec's 'Overridable: gap' section doesn't specify whether a Storybook story should demonstrate `overrides`; I omitted one since sibling layout components (Box, Container) that also support overrides don't have an Overrides story either, for consistency. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: added Stack.test.tsx (not explicitly requested by this job but required by the behavior-scenarios rollout already applied to Switch/Box/Card/Container) covering all 21 scenarios verbatim as render-only assertions, matching the Box.test.tsx pattern. → `site/src/content/docs/components/stack.md`
+
+## Text
+
+Doc: `site/src/content/docs/components/text.md`
+
+### 2026-09-10 00:46 — rn round 1
+
+- **DOC** Text (rn): platforms.rn.props lists only numberOfLines/ellipsizeMode/allowFontScaling, not overrides — added overrides?: Partial<Record<TextOverridableBinding, TokenRef>> anyway per the general Overrides contract (fontFamily, fontSize, fontWeight, lineHeight, color), matching how Box/Card/Container/Dialog implement it despite the same omission in their platform notes. → `site/src/content/docs/components/text.md`
+- **TOOLING** Text (rn): could not run the test suite in this session (jest invocation via Bash/PowerShell was blocked pending approval) — Text.test.tsx is unverified by an actual test run, though it follows Box.test.tsx's established pattern exactly.
+
+### 2026-09-10 00:42 — web round 2
+
+- **DOC** Text: `element` is narrowed to p|span per the current spec (labels/legends now belong to Input/Fieldset), but Checkbox, Switch, and RadioGroup still relied on `<Text element="label"/"legend" htmlFor=...>` for native label association — kept the Text spec authoritative and switched those three consumers to native `<label>`/`<legend>` elements (their existing `__label`/`__legend` CSS already carries font-size/weight/color independent of Text's classes, so styling is unchanged), rather than reintroducing label/legend into TextElement. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the `literals` gate's font-stack regex (`fontFamily\s*:\s*['"]`) matches the `fontFamily` key in the override-hook lookup table even though its value is a CSS custom-property name (`--ds-text-font-family`), not a literal font stack; marked that line `literal-ok` rather than renaming the binding key away from the schema's `fontFamily` term. → `site/src/content/docs/components/text.md`
+
+### 2026-09-10 00:42 — lit round 1
+
+- **DOC** (model did not return the JSON report block) → `site/src/content/docs/components/text.md`
+
+### 2026-09-10 00:40 — web round 1
+
+- **DOC** Text: the existing committed Text.tsx predated the current package conventions (no data-ds hook, no overrides/CSS-hook system, element enum still included label/legend/htmlFor from an older schema version). Regenerated it to match the current schema (element: p|span only — labels/legends are now owned by Input/Fieldset per the schema note) and the current Card/Box/Container convention: root data-ds="Text", TextOverridableBinding (fontFamily, fontSize, fontWeight, lineHeight, color) with --ds-text-* CSS custom-property hooks, and an overrides prop using cssVar/TokenRef from @design-schema/tokens. → `site/src/content/docs/components/text.md`
+- **DOC** Text: no Text.test.tsx existed; added one modeled on Card.test.tsx (meta.args + scenario `given`, one it() per behavior scenario) since the repo's other recently-touched components (Switch, Box, Card, Container) all ship this file alongside the component. → `site/src/content/docs/components/text.md`
+
+## Tooltip
+
+Doc: `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-10 00:34 — web round 1
+
+- **DOC** Tooltip: composition maps the `text` anatomy part to Text, but Text's `tone` enum has no value for the locked `color.inverse.foreground` token — using it would force restyling a child (forbidden), so the text renders as a plain `<span data-part="text">` instead. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: `delay: default` is documented as only 'roughly 600ms' (motion.duration.base × 3) with no exact number, and the toolbar 'warm' effect names no duration at all; hardcoded DEFAULT_DELAY_MS=600 and reused it for the warm window since nothing else is given. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: WCAG 1.4.13 'hoverable' requires the pointer be able to cross the `offset` gap onto the popup without it hiding, but no grace period is specified; added an internal 100ms close-grace timer (not a token, not configurable). → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: `children` is typed `ReactElement` rather than `ReactNode` (unlike other `content`-typed props) because exactly one element must be cloned to attach aria-describedby/labelledby and hover/focus handlers; if that child already carries its own `ref`, cloning replaces it since there's no ref-merge helper in the package for an arbitrary external ref. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the doc calls a non-focusable child 'an error' but there is no runtime way to verify focusability of an arbitrary passed element; only a dev warning fires when `children` isn't exactly one element. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: `start`/`end` placement is treated as logical (inline-start/inline-end, flipping physical side by `getComputedStyle(trigger).direction`) since the doc doesn't say how placement interacts with RTL. → `site/src/content/docs/components/tooltip.md`
+- **CODE** Tooltip: the canonical generated gate test (generated/behavior/Tooltip.web.test.tsx) calls `getByRole('tooltip')` on an unconditioned render with no hover/focus, expecting the popup to always be in the DOM — this contradicts the documented hover/focus-triggered visibility. The already-merged Menu component fails the identical `getByRole('menu')` check for the same reason, so this looks like a pre-existing tools/behavior_tests.py limitation for hover/click-revealed overlays, not something introduced here.
+
 ## Totals
 
-DOC: 189 · CODE: 13 · TOOLING: 1 · NOISE: 8
+DOC: 226 · CODE: 18 · TOOLING: 2 · NOISE: 8
 
 ## Gates to fix
 

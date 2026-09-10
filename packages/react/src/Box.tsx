@@ -90,9 +90,9 @@ export const Box = forwardRef<HTMLElement, BoxProps>(function Box(
     `ds-box--inset-${inset}`,
     insetBlock ? `ds-box--inset-block-${insetBlock}` : null,
     insetInline ? `ds-box--inset-inline-${insetInline}` : null,
-    `ds-box--surface-${surface}`,
+    surface !== 'none' ? `ds-box--surface-${surface}` : null,
     border ? 'ds-box--border' : null,
-    `ds-box--radius-${radius}`,
+    radius !== 'none' ? `ds-box--radius-${radius}` : null,
     className ?? null,
   ]
     .filter(Boolean)

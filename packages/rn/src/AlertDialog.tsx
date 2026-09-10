@@ -277,7 +277,7 @@ export function AlertDialog({
                     <Text tone="muted">{description}</Text>
                   </View>
                 </View>
-                <Stack direction="horizontal" gap="1" justify="end">
+                <Stack direction="horizontal" gap="tight" justify="end">
                   <Button label={resolvedCancelLabel} variant="secondary" onPress={handleCancelPress} />
                   <Button
                     label={confirmLabel}

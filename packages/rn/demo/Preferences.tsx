@@ -82,8 +82,8 @@ export function Preferences({
   return (
     <View style={screenStyle}>
       <Landmark role="main">
-        <Stack gap="6">
-          <Stack gap="2">
+        <Stack gap="section">
+          <Stack gap="normal">
             <Breadcrumb
               items={[{ label: 'Settings', href: '/settings' }, { label: 'Notifications' }]}
               onNavigate={(item) => {
@@ -112,7 +112,7 @@ export function Preferences({
               ]}
               required
             />
-            <Stack gap="0">
+            <Stack gap="none">
               <Checkbox label="Mentions" name="mentions" defaultChecked={mentions} description="When someone @-mentions you." />
               <Checkbox label="Comments on your work" name="comments" defaultChecked={comments} />
             </Stack>
@@ -133,7 +133,7 @@ export function Preferences({
             <Disclosure summary="Advanced options" keepMounted>
               <Checkbox label="Include activity from archived projects" name="includeArchived" />
             </Disclosure>
-            <Stack direction="horizontal" gap="2" align="center">
+            <Stack direction="horizontal" gap="normal" align="center">
               <Button label="Save" type="submit" loading={submitting} />
               <Button label="Cancel" variant="secondary" onPress={onCancel} />
             </Stack>

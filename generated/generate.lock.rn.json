@@ -250,9 +250,37 @@
     "runner": "adopted"
   },
   "Stack.rn": {
-    "hash": "b1ca740ad10a1b0c",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "23c147ff3443a6d9",
+    "lastAttemptHash": "23c147ff3443a6d9",
+    "generatedAt": "2026-09-10T04:52:40+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.7623,
+    "files": [
+      "packages/rn/demo/Preferences.tsx",
+      "packages/rn/demo/ProfileSettings.tsx",
+      "packages/rn/demo/SignIn.tsx",
+      "packages/rn/src/AlertDialog.stories.tsx",
+      "packages/rn/src/AlertDialog.tsx",
+      "packages/rn/src/Dialog.stories.tsx",
+      "packages/rn/src/Dialog.tsx",
+      "packages/rn/src/FocusScope.stories.tsx",
+      "packages/rn/src/Form.stories.tsx",
+      "packages/rn/src/Stack.stories.tsx",
+      "packages/rn/src/Stack.test.tsx",
+      "packages/rn/src/Stack.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Switch.rn": {
     "hash": "750faca0a756a59e",

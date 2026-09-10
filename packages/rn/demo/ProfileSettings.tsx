@@ -47,8 +47,8 @@ export function ProfileSettings({
 
   return (
     <View style={screenStyle}>
-      <Stack gap="6">
-        <Stack gap="1">
+      <Stack gap="section">
+        <Stack gap="tight">
           <Heading level={1} size="2xl">
             Profile settings
           </Heading>
@@ -71,7 +71,7 @@ export function ProfileSettings({
             placeholder="name@example.com"
             required
           />
-          <Stack direction="horizontal" gap="2" align="center">
+          <Stack direction="horizontal" gap="normal" align="center">
             <Button label="Save changes" type="submit" loading={submitting} />
             <Button label="Cancel" variant="secondary" onPress={onCancel} />
           </Stack>

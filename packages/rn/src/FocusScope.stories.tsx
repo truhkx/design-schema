@@ -12,12 +12,12 @@ import { withTheme } from './decorators';
 function FocusScopeDemo(props: FocusScopeProps): React.JSX.Element {
   const [open, setOpen] = React.useState(false);
   return (
-    <Stack gap="4" align="start">
+    <Stack gap="loose" align="start">
       <Button label="Open panel" onPress={() => setOpen(true)} />
       {open ? (
         <FocusScope {...props}>
           <View>
-            <Stack gap="2" align="start">
+            <Stack gap="normal" align="start">
               <Text>Panel content</Text>
               <Button label="First action" />
               <Button label="Second action" />
@@ -66,12 +66,12 @@ export const Keyboard: Story = {
     function Open(): React.JSX.Element {
       const [open, setOpen] = React.useState(true);
       return (
-        <Stack gap="4" align="start">
+        <Stack gap="loose" align="start">
           <Button label="Open panel" onPress={() => setOpen(true)} />
           {open ? (
             <FocusScope trapped autoFocus="first" restoreFocus active>
               <View>
-                <Stack gap="2" align="start">
+                <Stack gap="normal" align="start">
                   <Button label="First action" />
                   <Button label="Second action" />
                   <Button label="Close" onPress={() => setOpen(false)} />

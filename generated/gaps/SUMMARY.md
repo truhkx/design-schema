@@ -1,6 +1,6 @@
 # Gap digest — phase Focus
 
-Generated 2026-09-10T02:30 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T02:38 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Alert
 
@@ -920,6 +920,16 @@ Doc: `site/src/content/docs/components/text.md`
 
 Doc: `site/src/content/docs/components/toast.md`
 
+### 2026-09-10 02:38 — rn round 1
+
+- **DOC** The schema's `styles` map is one flat list for the component, but on RN a Toast is really two things: a single toast (radius, shadow, paddingBlock, paddingInline, gap, maxWidth, fontFamily, fontSize, lineHeight, enter, exit) and a region a `ToastProvider` renders once (stackGap, regionInset, layer). I split `ToastOverridableBinding` accordingly: `Toast` resolves the first 11 keys and ignores the region-level 3; `ToastProvider` resolves the region-level 3 and ignores the rest. A caller who wants a non-default `layer`/`maxWidth` on a specific queued toast passes it through that toast's own `overrides`, not the provider's. → `site/src/content/docs/components/toast.md`
+- **DOC** `a11y.requires: escape-dismiss` and the F6 focus-navigation keyboard rules describe the web keyboard model and are not implemented on native: there is no hardware-keyboard `keydown`-equivalent API for an arbitrary View, and this package's own `Button` does not expose focus events externally, so a toast has no way to know whether focus is 'inside' it (same acknowledged limit `Tooltip` already documents for its own Escape handling). Dismissal stays reachable via the always-visible dismiss button (forced on for `persistent`) and native `Enter`/activation on that button. → `site/src/content/docs/components/toast.md`
+- **DOC** a11y.role is `status`, but React Native's `accessibilityRole` enum has no `status` value. Mirrored `Alert`'s convention: `accessibilityRole="alert"` only for `danger` (matching the docs' 'danger toasts use alert'), otherwise no role, plus `accessibilityLiveRegion` (`assertive`/`polite`) and one-time `AccessibilityInfo.announceForAccessibility` on iOS. → `site/src/content/docs/components/toast.md`
+- **DOC** The `region` anatomy part exists only inside `ToastProvider` (testID `Toast.region`); a standalone `<Toast>` (used directly in stories/tests per the behavior scenarios) has no region wrapper of its own — there's nothing above it to name `Toast.toast` distinctly from the root `testID="Toast"`, so I did not add a separate part id for the 'toast' anatomy node. → `site/src/content/docs/components/toast.md`
+- **DOC** 'Timers pause on hover and on focus-within' (web keyboard/pointer model) is implemented on native as pause-on-touch only (`onTouchStart`/`onTouchEnd`/`onTouchCancel`), per the platform notes' own reduction ('Timers pause while a toast is being touched'); there's no native hover and no way to detect focus entering the composed Button children from the parent View. → `site/src/content/docs/components/toast.md`
+- **DOC** Added a `__DEV__` warning when `actionLabel` is set or `tone==='danger'` but `duration !== 'persistent'`, since the docs say persistent 'is required' in those cases but the schema doesn't make `duration` computed/derived from them — this is a guardrail, not enforced behavior, so a caller can still override it silently in production. → `site/src/content/docs/components/toast.md`
+- **CODE** 'F6 brings focus to the toast region' has no native equivalent (no F6 key, and native reaches toasts by swiping through the accessibility order per the platform notes) — not implemented, and not treated as a bug since the platform notes explicitly say so.
+
 ### 2026-09-10 02:30 — web round 1
 
 - **DOC** Escape-dismiss has no matching value in the `onDismiss` reason enum (timeout/dismiss-button/action/replaced); mapped Escape to reason 'dismiss-button' as the closest semantic match. → `site/src/content/docs/components/toast.md`
@@ -971,7 +981,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 397 · CODE: 37 · TOOLING: 2 · NOISE: 8
+DOC: 403 · CODE: 38 · TOOLING: 2 · NOISE: 8
 
 ## Gates to fix
 

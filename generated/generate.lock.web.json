@@ -181,26 +181,24 @@
     }
   },
   "Dialog.web": {
-    "hash": "f1b23552eb702ad9",
-    "lastAttemptHash": "f1b23552eb702ad9",
-    "generatedAt": "2026-09-10T02:57:18+00:00",
+    "hash": "871bd175545e7939",
+    "lastAttemptHash": "871bd175545e7939",
+    "generatedAt": "2026-09-10T06:43:09+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.1112,
+    "costUsd": 0.6023,
     "files": [
-      "packages/react/src/Dialog.css",
-      "packages/react/src/Dialog.stories.tsx",
-      "packages/react/src/Dialog.test.tsx",
-      "packages/react/src/Dialog.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Dialog.tsx"
     ],
-    "gaps": 7,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Disclosure.web": {

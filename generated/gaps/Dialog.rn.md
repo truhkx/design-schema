@@ -13,3 +13,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Dialog: the RN platform notes list `accessibilityViewIsModal` as a prop passed to `Modal` itself, but RN's `Modal` doesn't accept that prop — only `View` does. Implemented it on the surface `View` (also documented in the notes prose) and rely on the composed `FocusScope`'s own wrapper `View` (which already sets `accessibilityViewIsModal={trapped && active}`) for the actual inert-background effect, rather than duplicating a Modal-level prop that doesn't exist.
 - Dialog: whether the close button should be visually `disabled` or just a silent no-op when `dismissible=false` isn't specified; chose `disabled` (announced state) over a live-looking dead control, for the same reason Escape must always report — an unresponsive-but-enabled button is a worse a11y outcome than a disabled one.
 - Dialog: `size="md"`'s width (3/4 of `layout.maxWidth.content`) is computed as `t.layoutMaxWidthContent * 0.75` per the spec's own description; not a new token, but not itself independently overridable (only `widthSm` is, per the Overridable list).
+
+## 2026-09-10 02:42 — round 1
+
+- Dialog: RN has no descendant walker for FocusScope, so `initialFocus` is implemented by hand via AccessibilityInfo.setAccessibilityFocus on wrapping Views (title group, close button, body) rather than the first real focusable descendant — same acknowledged limit FocusScope documents for itself.
+- Dialog: scroll-lock has no native equivalent (no page scroll for a modal window to suppress), so it is intentionally not implemented on RN.
+- Dialog: `overrides.footerGap` cannot reach Stack's internal `gap`, since Stack's gap is a fixed space.* preset with no override hook — the override is a no-op for the footer row, same gap the web generator flagged.
+- Dialog: RN's typed accessibilityRole union has no 'dialog' value, so role is conveyed via accessibilityViewIsModal + accessibilityLabel/Hint rather than an explicit role.

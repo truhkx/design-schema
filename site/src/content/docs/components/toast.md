@@ -29,7 +29,7 @@ component:
       type: enum
       values: [short, long, persistent]
       default: short
-      description: '`short` ≈ 5s, `long` ≈ 10s (both computed from motion.duration.loop × 6 / × 12 so themes without motion still get sensible times), `persistent` until dismissed — required when there is an action the user may need time to take, and for danger tone.'
+      description: '`short` ≈ 5s, `long` ≈ 10s (both computed from motion.duration.loop × 6 / × 12 so themes without motion still get sensible times), `persistent` until dismissed. When `action` is set or `tone` is danger the toast is persistent regardless of this prop (a dev warning notes the override). The two durations are computed at region mount from the resolved motion.duration.loop (getComputedStyle on the region on web/Lit; the token value on native), never hardcoded.'
     dismissible:
       type: boolean
       default: true
@@ -42,7 +42,7 @@ component:
       description: The action button was activated. The toast dismisses.
       platforms: { web: onAction, lit: action, rn: onAction }
     onDismiss:
-      description: 'The toast left the screen: reason `timeout`, `dismiss-button`, `action`, or `replaced`.'
+      description: 'The toast left the screen: reason `timeout`, `dismiss-button`, `escape`, `action`, or `replaced` (a replaced or evicted toast leaves immediately, without its exit transition).'
       platforms: { web: onDismiss, lit: dismiss, rn: onDismiss }
   keyboard:
     - { keys: [F6], action: 'Moves focus into the toast region (the first toast''s action or dismiss button) from anywhere; F6 again returns to where focus was.', when: a toast is visible, from: any, expect: focus-first }
@@ -53,7 +53,7 @@ component:
     text: { token: color.inverse.foreground }
     icon: { token: 'color.inverse.status.{tone}', description: '`neutral` renders no icon; the other tones use the status step chosen to read on the inverse surface.' }
     actionColor: { token: color.inverse.link, description: 'The action and dismiss Buttons are rendered with Button''s `inverse` prop (ghost variant), which is how a composite gets an on-inverse child without restyling it.' }
-    dismissColor: { token: color.inverse.foreground }
+    dismissColor: { token: color.inverse.link, description: 'The dismiss and action Buttons are `ghost` + `inverse`, whose text is color.inverse.link; Toast never restyles them.' }
     focusRingInverse: { token: color.inverse.focus, description: 'Focus ring color on the inverse surface, replacing color.border.focus inside the toast.' }
     radius: { token: radius.md }
     shadow: { token: shadow.overlay }
@@ -70,8 +70,6 @@ component:
     layer: { token: layer.toast }
     enter: { token: motion.duration.base, description: Rise and fade; instant under reduced motion. }
     exit: { token: motion.duration.fast }
-    focusRing: { token: color.border.focus }
-    focusRingWidth: { token: border.width.focus }
   copy:
     dismissLabel: Dismiss
     regionLabel: Notifications

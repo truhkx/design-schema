@@ -111,7 +111,7 @@ component:
     rn:
       element: TextInput
       props: [accessibilityLabel, accessibilityHint, accessibilityState, keyboardType, textContentType, secureTextEntry]
-      notes: No label element — the label is rendered as Text and also passed as accessibilityLabel; description as accessibilityHint. `type` maps to keyboardType and textContentType. Errors use accessibilityLiveRegion (Android) / AccessibilityInfo.announceForAccessibility (iOS).
+      notes: 'No label element — the label is rendered as Text and also passed as accessibilityLabel; description as accessibilityHint. `type` maps to keyboardType and textContentType. Errors use accessibilityLiveRegion (Android) / AccessibilityInfo.announceForAccessibility (iOS). Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur` and `onLongPress` to the native element, so Tooltip can attach to it.'
 ---
 
 Input collects a single line of text. It bundles the label, helper text, field, and error message so that the association between them is always correct — the most common accessibility failure in forms is a field whose label or error is only visually nearby.

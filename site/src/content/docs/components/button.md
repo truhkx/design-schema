@@ -94,7 +94,7 @@ component:
     rn:
       element: Pressable
       props: [accessibilityRole=button, accessibilityLabel, accessibilityState, hitSlop]
-      notes: 'No hover state on touch; backgroundHover is applied to the pressed state. `type: submit` calls submit() on the nearest Form context, since there is no native form.'
+      notes: 'No hover state on touch; backgroundHover is applied to the pressed state. `type: submit` calls submit() on the nearest Form context, since there is no native form. Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur` and `onLongPress` to the native element, so Tooltip can attach to it.'
 ---
 
 Buttons let people take actions and make choices with a single tap or click. They communicate what will happen through their label, and their emphasis through their variant.

@@ -23,16 +23,19 @@ component:
       type: enum
       values: [top, bottom, start, end]
       default: top
-      description: Preferred side; flips when it would overflow the viewport.
+      description: 'Preferred side; flips when it would overflow the viewport (on native, measured with measureInWindow like Popover). `start`/`end` are logical and mirror in right-to-left writing.'
     describes:
       type: boolean
       default: true
       description: '`true`: the tooltip is supplementary and becomes the child''s accessible description (aria-describedby). `false`: the tooltip IS the child''s name (an icon-only button whose label equals the tooltip) and is linked as aria-labelledby instead — set this when the child has no visible text and its `label` equals `content`, to avoid announcing it twice.'
+    open:
+      type: boolean
+      description: 'Controlled visibility, for stories and tests only (the Keyboard story renders the tooltip open with it). Product code never sets it: a tooltip is hover and focus driven.'
     delay:
       type: enum
       values: [default, none]
       default: default
-      description: 'Hover delay before showing: `default` uses `motion.duration.base` × 3 (roughly 600ms, so casual mouse movement does not flash tooltips); `none` for toolbars where a sibling tooltip is already open (the generator tracks a shared "warm" state so moving along a toolbar shows tooltips instantly).'
+      description: 'Hover delay before showing: `default` uses `motion.duration.base` × 3 (roughly 600ms, so casual mouse movement does not flash tooltips); `none` for toolbars where a sibling tooltip is already open (a shared "warm" state so moving along a toolbar shows tooltips instantly: after a tooltip hides, siblings show with no delay for one motion.duration.loop; the pointer may cross to the tooltip within one motion.duration.fast before it hides).'
   keyboard:
     - { keys: [Escape], action: Hides the tooltip without moving focus., when: tooltip visible, from: trigger, expect: closes }
   styles:
@@ -59,15 +62,15 @@ component:
     web:
       element: div
       attributes: [role=tooltip, id, aria-describedby, aria-labelledby]
-      notes: 'The child is cloned with aria-describedby (or aria-labelledby) pointing at the tooltip id and with mouseenter/mouseleave/focus/blur handlers merged. The tooltip <div role="tooltip"> is rendered through a portal, position: fixed from the trigger rect, flipped on overflow, on layer.toast. It stays open while the pointer is over the tooltip itself (1.4.13 hoverable) and hides on Escape (dismissable) or when the trigger loses hover and focus. Never shown on touch (no hover); the description is still in the accessibility tree.'
+      notes: 'The child is cloned with aria-describedby (or aria-labelledby) pointing at the tooltip id and with mouseenter/mouseleave/focus/blur handlers merged. The tooltip <div role="tooltip"> is rendered through a portal, position: fixed from the trigger rect, flipped on overflow, on layer.toast. It stays open while the pointer is over the tooltip itself (1.4.13 hoverable) and hides on Escape (dismissable) or when the trigger loses hover and focus. Never shown on touch (no hover); the description is still in the accessibility tree. The description is always in the accessibility tree: `content` is rendered in a visually-hidden element that aria-describedby points at, and the visible popup is a second copy — so the Popover API''s display:none while closed does not remove the description.'
     lit:
       tag: ds-tooltip
       reflect: [placement, describes]
-      notes: 'Wraps the slotted trigger; because aria-describedby cannot cross the shadow boundary, the tooltip element is rendered in the light DOM as a sibling of the trigger (appended to the host, not the shadow root) so the ID reference resolves. Positioning via the Popover API (popover="manual") with a fixed fallback.'
+      notes: 'Wraps the slotted trigger; because aria-describedby cannot cross the shadow boundary, the tooltip element is rendered in the light DOM as a sibling of the trigger (appended to the host, not the shadow root) so the ID reference resolves. Positioning via the Popover API (popover="manual") with a fixed fallback. As on web, aria-describedby targets a visually-hidden copy of the content that is always present; the popover is the visible copy.'
     rn:
       element: View
       props: [accessibilityHint, accessibilityLabel]
-      notes: 'There is no hover on touch, so no tooltip surface is shown by default: `content` becomes the child''s accessibilityHint (or accessibilityLabel when describes=false). On long-press the text is shown in a small transient View above the child for the duration of the press, as a sighted-user aid. On react-native-web, hover and focus behave as on web. This is the acknowledged platform difference; the information is never hover-only anywhere.'
+      notes: 'There is no hover on touch, so no tooltip surface is shown by default: `content` becomes the child''s accessibilityHint (or accessibilityLabel when describes=false). On long-press the text is shown in a small transient View above the child for the duration of the press, as a sighted-user aid. On react-native-web, hover and focus behave as on web. This is the acknowledged platform difference; the information is never hover-only anywhere. The child must accept `accessibilityHint`/`accessibilityLabel` and the `onHoverIn`/`onHoverOut`/`onFocus`/`onBlur`/`onLongPress` handlers Tooltip clones onto it; the system Button, Link and Input forward these to their native element. Placement flips using measureInWindow.'
 ---
 
 A tooltip is the smallest overlay: a label that appears when you point at or focus a control and disappears when you leave. It exists to name icon-only buttons and to add a hint to a control whose label cannot carry everything. It must never be the only home of information a user needs, because a touchscreen user will never see it.
@@ -82,7 +85,7 @@ Do not put essential instructions, error messages or any content the user must r
 
 ## Behavior
 
-The tooltip shows after `delay` when the pointer rests on the trigger, or immediately when the trigger receives keyboard focus, positioned at `placement` (flipped at the viewport edge). It hides when the pointer leaves both trigger and tooltip, when focus leaves the trigger, or on Escape — which hides it without moving focus, so a user can dismiss a tooltip that covers something. Moving the pointer from one warm toolbar item to the next shows the next tooltip with no delay. The tooltip never takes focus and never blocks pointer events on anything but itself.
+The tooltip shows after `delay` when the pointer rests on the trigger, or immediately when the trigger receives focus of any kind (keyboard-origin focus cannot be told apart reliably across composed triggers, and a focused control showing its tooltip is never wrong), positioned at `placement` (flipped at the viewport edge). It hides when the pointer leaves both trigger and tooltip, when focus leaves the trigger, or on Escape — which hides it without moving focus, so a user can dismiss a tooltip that covers something. Moving the pointer from one warm toolbar item to the next shows the next tooltip with no delay. The tooltip never takes focus and never blocks pointer events on anything but itself.
 
 ## Content guidelines
 

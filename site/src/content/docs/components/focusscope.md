@@ -24,6 +24,10 @@ component:
       type: boolean
       default: true
       description: 'On unmount, focus returns to the element that was focused when the scope mounted, or to the next focusable element in the document if that one is gone.'
+    returnFocusTo:
+      type: object
+      shape: 'RefObject<HTMLElement | View>'
+      description: 'Explicit element to restore focus to instead of the recorded opener. Required on native when the opener is not a TextInput (React Native exposes no generic "currently focused element"), so every overlay passes its trigger ref.'
     active:
       type: boolean
       default: true

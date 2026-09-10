@@ -37,6 +37,7 @@ import './Dialog.js';
 import './AlertDialog.js';
 import './Menu.js';
 import './Tooltip.js';
+import './Toast.js';
 
 export { DsButton } from './Button.js';
 export type {
@@ -177,3 +178,16 @@ export type {
 
 export { DsTooltip } from './Tooltip.js';
 export type { TooltipPlacement, TooltipDelay, TooltipOverridableBinding } from './Tooltip.js';
+
+export { DsToast, DsToastRegion, toast } from './Toast.js';
+export type {
+  ToastTone,
+  ToastDuration,
+  ToastDismissReason,
+  ToastActionDetail,
+  ToastDismissDetail,
+  ToastOptions,
+  ToastResult,
+  ToastOverridableBinding,
+  ToastRegionOverridableBinding,
+} from './Toast.js';

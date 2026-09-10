@@ -18,6 +18,7 @@ import { Box } from './Box';
 import { Button } from './Button';
 import { FocusScope } from './FocusScope';
 import { Heading } from './Heading';
+import { Icon } from './Icon';
 import { Stack } from './Stack';
 import { Text } from './Text';
 import './Dialog.css';
@@ -68,13 +69,6 @@ function overridesToStyle(overrides: Partial<Record<DialogOverridableBinding, To
 }
 
 const COPY = { closeLabel: 'Close' };
-
-/** Decorative close glyph, hidden from assistive technology by Button's own icon wrapper. */
-const CLOSE_ICON = (
-  <svg width="1em" height="1em" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" focusable="false">
-    <path d="M3 3l10 10M13 3L3 13" />
-  </svg>
-);
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -315,7 +309,7 @@ export const Dialog = forwardRef<HTMLDialogElement, DialogProps>(function Dialog
               label={COPY.closeLabel}
               className="ds-dialog__close"
               onClick={handleCloseButtonClick}
-              leadingIcon={CLOSE_ICON}
+              leadingIcon={<Icon name="close" inline />}
             />
           </div>
           <Box element="div" inset="lg" overrides={bodyOverrides} className="ds-dialog__body" ref={bodyRef}>

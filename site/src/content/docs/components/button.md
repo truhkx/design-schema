@@ -41,6 +41,12 @@ component:
       type: boolean
       default: false
       description: Prevents activation. The button stays in the tab order and is announced as disabled.
+    accessibleName:
+      type: string
+      description: 'Overrides the accessible name when it must say more than the visible label ("Sort by Amount, ascending" on a header that shows "Amount"). The visible label must be the start of it (WCAG 2.5.3 label-in-name). Maps to aria-label / accessibilityLabel.'
+    overflowLabel:
+      type: string
+      description: 'Text used for this button when a Toolbar collapses it into its overflow Menu. Only Buttons collapse; other controls stay visible.'
     iconOnly:
       type: boolean
       default: false

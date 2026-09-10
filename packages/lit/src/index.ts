@@ -57,6 +57,8 @@ import './DatePicker.js';
 import './Toolbar.js';
 import './Carousel.js';
 import './Table.js';
+import './DataGrid.js';
+import './TreeGrid.js';
 
 export { DsAccordion } from './Accordion.js';
 export type {
@@ -385,3 +387,42 @@ export type {
   TableRowPressDetail,
   TableOverridableBinding,
 } from './Table.js';
+
+export { DsDataGrid } from './DataGrid.js';
+export type {
+  DataGridRow,
+  DataGridColumnAlign,
+  DataGridColumnPinned,
+  DataGridEditorKind,
+  DataGridColumnOption,
+  DataGridColumn,
+  DataGridSortDirection,
+  DataGridSort,
+  DataGridSelectable,
+  DataGridDensity,
+  DataGridHeight,
+  DataGridCellRef,
+  DataGridRangeRef,
+  DataGridSortChangeDetail,
+  DataGridSelectionChangeDetail,
+  DataGridCellChangeDetail,
+  DataGridEditStartDetail,
+  DataGridRangeNeededDetail,
+  DataGridColumnResizeDetail,
+  DataGridOverridableBinding,
+} from './DataGrid.js';
+
+export { DsTreeGrid } from './TreeGrid.js';
+export type {
+  TreeGridRow,
+  TreeGridSelectable,
+  TreeGridDensity,
+  TreeGridHeight,
+  TreeGridSort,
+  TreeGridSortChangeDetail,
+  TreeGridSelectionChangeDetail,
+  TreeGridCellChangeDetail,
+  TreeGridExpandChangeDetail,
+  TreeGridExpandDetail,
+  TreeGridOverridableBinding,
+} from './TreeGrid.js';

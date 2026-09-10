@@ -1,6 +1,6 @@
 # Gap digest — phase Rows
 
-Generated 2026-09-10T13:22 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T13:29 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -1459,6 +1459,18 @@ Doc: `site/src/content/docs/components/test-failures.md`
 
 Doc: `site/src/content/docs/components/table.md`
 
+### 2026-09-10 13:29 — web round 1
+
+- **DOC** anatomy.caption composition names Heading, but props/platform-notes describe a plain `<caption>` with no `headingLevel` prop. Followed the sibling Lit implementation's precedent: caption renders `<Heading level={2} size="md">`, with a fixed, non-configurable level — worth adding a `captionHeadingLevel`-style prop (or dropping the Heading composition) if this is load-bearing for page outlines. → `site/src/content/docs/components/table.md`
+- **DOC** anatomy lists a `footer` part with no prop or content contract in `props`. Added a `footer?: ReactNode` prop (rendered as `<div class="ds-table__footer" data-part="footer">`) for parity with the Lit sibling's `slot="footer"`, but the schema never specifies what belongs there or how it should be styled. → `site/src/content/docs/components/table.md`
+- **DOC** `onRowPress` interactivity: enabled only when `rowHeaderColumn` exists AND has no custom `render` (mirroring the Lit implementation), since a custom render may already contain interactive content (a Link) that a wrapping Button would conflict with. If a consumer passes `onRowPress` with a rendered row-header column, the row silently stays non-interactive rather than erroring — not stated explicitly in the doc. → `site/src/content/docs/components/table.md`
+- **DOC** Row-header text used in `copy.selectRow`/`onRowPress`'s Button label falls back to the raw underlying value (`String(row[key])`) when the row-header column has a custom `render`, since a ReactNode can't be reduced to plain text for an aria-label/Button label. → `site/src/content/docs/components/table.md`
+- **DOC** Sortable header Button's visible label is the full `copy.sortAscending`/`sortDescending` phrase ("Sort by Amount, ascending") rather than the plain column name, since `Button` cannot have a distinct accessible name from its visible text (its `aria-label` prop is not exposed to consumers) and both `sortAscending`/`sortDescending` copy strings had to be used verbatim somewhere. The plain column header text is not shown at all on sortable columns. → `site/src/content/docs/components/table.md`
+- **DOC** `maxHeight: viewport` formula ("viewport height minus the section rhythm") implemented as `calc(100vh - var(--layout-gap-section) * 2)`, matching the sibling Lit component's exact choice; the doc doesn't spell out the multiplier. → `site/src/content/docs/components/table.md`
+- **DOC** Horizontal scroll-step distance for ArrowLeft/ArrowRight in the `scroll` region is a fixed, undocumented `40` (px, unitless in `scrollBy`) — the doc doesn't specify a magnitude, and this was chosen to match the sibling Lit implementation's `SCROLL_STEP_PX`. → `site/src/content/docs/components/table.md`
+- **DOC** The scroll-region edge fade (`scrollFade`) is a static `mask-image` gradient always applied at both edges, rather than dynamically hiding at the very start/end of the scrollable content — a reasonable simplification also present in the Lit sibling. → `site/src/content/docs/components/table.md`
+- **DOC** `stickyColumnShadow` is toggled globally on the scroll region once `scrollLeft > 0`, rather than only while the row-header column is actually still off the left edge (the difference is only observable if the table's total width barely exceeds the viewport). → `site/src/content/docs/components/table.md`
+
 ### 2026-09-10 13:22 — lit round 1
 
 - **DOC** Checkbox has no hidden-label mode, so the selectCell/selectAllCell composition (mandated by the schema) always shows visible 'Select {rowName}'/'Select all rows' text next to every row's checkbox — likely not the intended dense selection-column look. Checkbox's schema would need a label-visibility variant to fix this without restyling the child. → `site/src/content/docs/components/table.md`
@@ -1655,7 +1667,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 819 · CODE: 39 · TOOLING: 2 · NOISE: 14
+DOC: 828 · CODE: 39 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

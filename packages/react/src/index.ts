@@ -274,3 +274,43 @@ export type {
   TableDensity,
   TableOverridableBinding,
 } from './Table';
+
+export { DataGrid } from './DataGrid';
+export type {
+  DataGridProps,
+  DataGridRow,
+  DataGridColumn,
+  DataGridColumnOption,
+  DataGridColumnAlign,
+  DataGridColumnPinned,
+  DataGridEditorKind,
+  DataGridSortState,
+  DataGridSortDirection,
+  DataGridSelectable,
+  DataGridDensity,
+  DataGridHeight,
+  DataGridCellRef,
+  DataGridRangeRef,
+  DataGridSelectionChangeDetail,
+  DataGridCellChangeDetail,
+  DataGridEditStartDetail,
+  DataGridRangeNeededDetail,
+  DataGridColumnResizeDetail,
+  DataGridOverridableBinding,
+} from './DataGrid';
+
+export { TreeGrid } from './TreeGrid';
+export type {
+  TreeGridProps,
+  TreeGridRow,
+  TreeGridChildren,
+  TreeGridSelectable,
+  TreeGridDensity,
+  TreeGridHeight,
+  TreeGridSortState,
+  TreeGridSortDirection,
+  TreeGridCellRef,
+  TreeGridSelectionChangeDetail,
+  TreeGridCellChangeDetail,
+  TreeGridOverridableBinding,
+} from './TreeGrid';

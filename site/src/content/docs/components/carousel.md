@@ -6,7 +6,7 @@ component:
   category: container
   status: review
   apg: carousel
-  anatomy: [region, viewport, track, slide, prevButton, nextButton, picker, pickerItem, playButton, liveRegion]
+  anatomy: [region, viewport, track, slide, controlSurface, prevButton, nextButton, picker, pickerItem, playButton, liveRegion]
   composition:
     prevButton: Button
     nextButton: Button
@@ -36,7 +36,7 @@ component:
     interval:
       type: number
       default: 6000
-      description: Milliseconds between automatic advances. Below 5000 is refused in development.
+      description: Milliseconds between automatic advances; values below 5000 are raised to 5000 on every platform (with a development warning).
     picker:
       type: enum
       values: [dots, tabs, none]
@@ -63,8 +63,8 @@ component:
   styles:
     slideGap: { token: layout.gap.normal }
     controlOffset: { token: space.2, description: Distance of the arrow buttons from the viewport edge when overlaid. }
-    controlBackground: { token: color.overlay.surface, description: 'Arrow buttons overlaid on slides sit on a surface so they stay readable over images.' }
-    controlShadow: { token: shadow.raised }
+    controlBackground: { token: color.overlay.surface, description: 'The `controlSurface` wrapper around each arrow Button (the Button itself is `secondary` and untouched) so they stay readable over images.' }
+    controlShadow: { token: shadow.raised, description: 'On the controlSurface wrapper.' }
     pickerGap: { token: layout.gap.tight }
     pickerOffset: { token: space.3, description: Between the viewport and the picker row. }
     dot: { token: color.border.strong }
@@ -72,7 +72,7 @@ component:
     dotSize: { token: space.2 }
     dotTarget: { token: size.target.min, description: 'Each dot''s hit area; the dot itself is small.' }
     radius: { token: radius.md, description: Applied to the viewport so slide edges match the theme. }
-    transition: { token: motion.duration.base, description: 'Slide movement with motion.easing.standard; an instant swap under reduced motion.' }
+    transition: { token: motion.duration.base, description: 'Dot and tab state changes; slide movement is the browser''s scroll-snap timing (instant under reduced motion).' }
     minTarget: { token: size.target.comfortable }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
@@ -118,7 +118,7 @@ Do not use a Carousel to hide important content behind slide two; if users must 
 
 ## Behavior
 
-Previous and Next move one slide (or one page of `perView`), disabled at the ends unless `loop`. The picker jumps directly. Swipe on touch and horizontal scroll on trackpads work through scroll-snap, and the active index follows what is visible. `autoplay` advances every `interval`, pauses on hover, focus or touch, and stops for good when the user presses pause; it never starts under reduced motion. `onChange` reports each change with its reason so analytics can distinguish user paging from rotation. Hidden slides are inert: their links and buttons are not in the tab order and not announced.
+Previous and Next move one slide (or one page of `perView`), disabled at the ends unless `loop`. The picker jumps directly. Swipe on touch and horizontal scroll on trackpads work through scroll-snap, and the active index follows what is visible. `autoplay` advances every `interval`, pauses on hover, focus or touch, and stops for good when the user presses pause; it never starts under reduced motion. `onChange` reports each change with its reason so analytics can distinguish user paging from rotation. Hidden slides are inert: their links and buttons are not in the tab order and not announced. Previous and Next move by one page — `perView` slides. Hover, focus and touch pause rotation only while they last; the pause button stops it until play is pressed. Without `loop`, autoplay stops at the last slide. `CarouselSlide` takes a `label` (its name in the picker and the announcement) on every platform. Picker items are Carousel's own buttons, not the Button component. Below `layout.maxWidth.prose` `perView` collapses to one. Under reduced motion the play/pause control is not rendered, since rotation can never start.
 
 ## Content guidelines
 

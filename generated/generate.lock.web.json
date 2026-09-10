@@ -302,6 +302,30 @@
       "modules": true
     }
   },
+  "DataGrid.web": {
+    "hash": "3cb46a21aa942fd2",
+    "lastAttemptHash": "3cb46a21aa942fd2",
+    "generatedAt": "2026-09-10T18:12:49+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 4.1319,
+    "files": [
+      "packages/react/src/DataGrid.css",
+      "packages/react/src/DataGrid.stories.tsx",
+      "packages/react/src/DataGrid.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 17,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "DatePicker.web": {
     "hash": "82b8e0d6e69e22bc",
     "lastAttemptHash": "82b8e0d6e69e22bc",
@@ -1091,6 +1115,30 @@
       "packages/react/src/Tooltip.tsx"
     ],
     "gaps": 3,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "TreeGrid.web": {
+    "hash": "56235e918712cc4a",
+    "lastAttemptHash": "56235e918712cc4a",
+    "generatedAt": "2026-09-10T18:22:41+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.6816,
+    "files": [
+      "packages/react/src/TreeGrid.css",
+      "packages/react/src/TreeGrid.stories.tsx",
+      "packages/react/src/TreeGrid.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,

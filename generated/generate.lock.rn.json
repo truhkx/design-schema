@@ -295,6 +295,29 @@
       "modules": true
     }
   },
+  "DataGrid.rn": {
+    "hash": "4886f93b3677a5a8",
+    "lastAttemptHash": "4886f93b3677a5a8",
+    "generatedAt": "2026-09-10T18:05:52+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.837,
+    "files": [
+      "packages/rn/src/DataGrid.stories.tsx",
+      "packages/rn/src/DataGrid.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Dialog.rn": {
     "hash": "f5cfd17faa7bce39",
     "lastAttemptHash": "f5cfd17faa7bce39",
@@ -909,6 +932,52 @@
       "packages/rn/src/index.ts"
     ],
     "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Tree.rn": {
+    "hash": "fc24ba97ed55ce6c",
+    "lastAttemptHash": "fc24ba97ed55ce6c",
+    "generatedAt": "2026-09-10T18:28:23+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.8162,
+    "files": [
+      "packages/rn/src/Tree.stories.tsx",
+      "packages/rn/src/Tree.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "TreeGrid.rn": {
+    "hash": "9a7cc008ff944edb",
+    "lastAttemptHash": "9a7cc008ff944edb",
+    "generatedAt": "2026-09-10T18:17:38+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.4909,
+    "files": [
+      "packages/rn/src/TreeGrid.stories.tsx",
+      "packages/rn/src/TreeGrid.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,

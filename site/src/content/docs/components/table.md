@@ -19,6 +19,14 @@ component:
       required: true
       description: 'What the table lists ("Open invoices"). Rendered as the caption and the accessible name; visually hidden with `hideCaption` when a Heading directly above already says it.'
       a11y: The <caption> (web) / aria-label on the container; never omitted.
+    captionLevel:
+      type: enum
+      values: ['2', '3', '4']
+      default: '2'
+      description: Heading level of the caption in the page outline; its size is captionSize regardless.
+    footer:
+      type: content
+      description: 'Content below the table: a row count, pagination, a total. Rendered in the `footer` part with the table''s font.'
     hideCaption:
       type: boolean
       default: false
@@ -144,6 +152,7 @@ component:
     focusRingWidth: { token: border.width.focus }
     transition: { token: motion.duration.fast, description: 'Hover and sort-arrow changes; sorting itself is instant.' }
   copy:
+    sortToolbarLabel: 'Sort {caption}'
     sortAscending: 'Sort by {column}, ascending'
     sortDescending: 'Sort by {column}, descending'
     sortedAnnouncement: 'Sorted by {column}, {direction}'
@@ -192,7 +201,7 @@ Do not use a Table for layout, for a list with one or two fields (a Stack of Car
 
 ## Behavior
 
-The header row shows column names; sortable ones are Buttons whose activation cycles ascending → descending on that column (and starts ascending on another), announced through a live region, and shown by an arrow Icon plus `aria-sort`. With `selectable`, each row has a Checkbox named from its row header, and `multiple` adds select-all (indeterminate when some are selected); the count is announced. Rows are inert unless they contain interactive content or `onRowPress` is set, in which case the row header becomes the row's Button and hover/press styling applies to the row. Below the prose width the table follows `responsive`: stacked rows keep the column header as a small label before each value and hide `hideBelow` columns; scrolling tables keep every column, fade the edges, keep the row-header column sticky, and let the region be focused and scrolled by keyboard. `stickyHeader` keeps the header in view and casts a shadow only once the body has scrolled under it. Empty data shows `emptyMessage` in a single full-width cell; `loading` sets `aria-busy` and shows the loading text without removing existing rows.
+The header row shows column names; sortable ones are Buttons whose activation cycles ascending → descending on that column (and starts ascending on another), announced through a live region, and shown by an arrow Icon plus `aria-sort`. With `selectable`, each row has a Checkbox named from its row header, and `multiple` adds select-all (indeterminate when some are selected); the count is announced. Rows are inert unless they contain interactive content or `onRowPress` is set, in which case the row header becomes the row's Button and hover/press styling applies to the row. Below the prose width the table follows `responsive`: stacked rows keep the column header as a small label before each value and hide `hideBelow` columns; scrolling tables keep every column, fade the edges, keep the row-header column sticky, and let the region be focused and scrolled by keyboard. `stickyHeader` keeps the header in view and casts a shadow only once the body has scrolled under it. Empty data shows `emptyMessage` in a single full-width cell; `loading` sets `aria-busy` and shows the loading text without removing existing rows. Sort buttons show the column header as their visible label and carry the sort phrase as `accessibleName`. `onRowPress` applies only when the row-header column has no custom `render` (a rendered Link would conflict); without an `isRowHeader` column it is a development warning and rows are inert. The selection Checkboxes use `hideLabel` with `copy.selectRow`. In `single` selection, pressing the selected row's checkbox again deselects it. `maxHeight: viewport` is the viewport height minus two `layout.gap.section`. Arrow keys in the scroll region scroll by `space.10`; the region is present whenever `responsive: scroll`, not only below the breakpoint. `copy.rowCount` describes the table and `copy.scrollHint` the scroll region (visually hidden, aria-describedby). On native `abbr` has no effect and `width: auto`/`min` both size to `space.20`.
 
 ## Content guidelines
 

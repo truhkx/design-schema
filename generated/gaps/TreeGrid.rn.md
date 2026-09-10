@@ -1,0 +1,16 @@
+# Gaps reported while generating TreeGrid for rn
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-10 14:17 — round 1
+
+- TreeGrid's schema has no `selected`/controlled-selection prop (unlike DataGrid), so row/cell selection is uncontrolled-only — observable via onSelectionChange but not settable from outside.
+- TreeGrid's schema has no `defaultSort` (unlike DataGrid), so `sort` was treated as fully caller-controlled: the grid re-sorts `data` from whatever `sort` is passed, but never maintains its own sort state; a sortable header click only fires onSortChange.
+- TreeGrid's copy block only defines expand/collapse/level/childCount/loading/expandAll/collapseAll — there is no copy for the status bar (row count, selection count, editing message), the select-column labels (select all / select row), or the empty-state message, all of which DataGrid's own schema defines. Authored parallel English strings matching DataGrid's phrasing since none were given; these are called out in a source comment above the local COPY object.
+- expandAll/collapseAll copy strings have no anatomy part or trigger described anywhere in the schema (no toolbar button, no keyboard binding beyond the web-only `*` for 'siblings of the focused row', which isn't the same scope as 'all'). Exposed them as custom accessibilityActions ('expandAll'/'collapseAll') on the root view as the best available accessible substitute, since native has no `*` key.
+- `column.resizable` was not implemented (no drag handle) because TreeGrid's schema defines no `onColumnResize` event (DataGrid's does) to report the result through; columns render at their fixed `width`/`minWidth`, and a `__DEV__` warning fires if any column sets `resizable`.
+- `expandButtonSize` override cannot resize the composed `Button`'s own internal minimum touch target (Button has no size-override prop, and children may not be restyled per the package rules); the override only changes the layout width reserved around the button, used for guide-line/text alignment.
+- Guide lines are drawn as one segment per open ancestor level per row (mirroring the web implementation's `::before`-per-child-row technique), not as a single line spanning a parent's whole open subtree — FlatList rows are independent list items with nothing to anchor a spanning line to.
+- Per the platform notes ('there are no arrow keys'), ArrowUp/Down/Left/Right/Home/End cell navigation, the `*` expand-siblings shortcut, and Ctrl+A select-all are not implemented on native; touch (expand button, cell tap, select-all checkbox) and accessibility actions/state stand in instead. F2/Escape editor shortcuts only work when a hardware keyboard is attached (react-native-web or an external keyboard), same as DataGrid.
+- `date`-editor columns fall back to the same inline TextInput as `text`/`number` (no package DatePicker to compose), matching DataGrid's own documented gap.
+- Select-all selects every currently loaded row across the whole tree (recursively, regardless of expansion/collapse), and `selectChildren` cascades over a row's already-loaded descendants only (a `children: "lazy"` subtree contributes nothing to the cascade until loaded) — the schema doesn't specify either behavior explicitly.

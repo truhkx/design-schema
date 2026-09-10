@@ -13,6 +13,10 @@ component:
       required: true
       description: Visible label. Clicking or tapping it toggles the control.
       a11y: Programmatically associated with the control (label/for on web, accessibilityLabel on native).
+    hideLabel:
+      type: boolean
+      default: false
+      description: 'Visually hide the label (it remains the accessible name): a selection column in a Table, where the row name is the label.'
     name:
       type: string
       required: true

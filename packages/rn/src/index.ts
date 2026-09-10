@@ -201,3 +201,44 @@ export type {
   TableSort,
   TableSortDirection,
 } from './Table';
+
+export { DataGrid } from './DataGrid';
+export type {
+  DataGridCellChange,
+  DataGridCellSelection,
+  DataGridColumn,
+  DataGridColumnAlign,
+  DataGridColumnOption,
+  DataGridColumnPinned,
+  DataGridColumnResize,
+  DataGridDensity,
+  DataGridEditorKind,
+  DataGridHeight,
+  DataGridOverridableBinding,
+  DataGridProps,
+  DataGridRangeNeeded,
+  DataGridRangeSelection,
+  DataGridRow,
+  DataGridSelectable,
+  DataGridSelection,
+  DataGridSort,
+  DataGridSortDirection,
+} from './DataGrid';
+
+export { TreeGrid } from './TreeGrid';
+export type {
+  TreeGridCellChange,
+  TreeGridCellSelection,
+  TreeGridDensity,
+  TreeGridHeight,
+  TreeGridOverridableBinding,
+  TreeGridProps,
+  TreeGridRow,
+  TreeGridSelectable,
+  TreeGridSelection,
+  TreeGridSort,
+  TreeGridSortDirection,
+} from './TreeGrid';
+
+export { Tree } from './Tree';
+export type { TreeNode, TreeOverridableBinding, TreeProps, TreeSelectable } from './Tree';

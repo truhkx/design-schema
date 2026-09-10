@@ -346,6 +346,8 @@ export const Carousel = forwardRef<HTMLElement, CarouselProps>(function Carousel
 
   const prevDisabled = total === 0 || (!loop && current === 0);
   const nextDisabled = total === 0 || (!loop && current === total - 1);
+  // Rotation can never start under reduced motion, so the play/pause control has nothing to control.
+  const showPlayButton = autoplay && !prefersReducedMotion();
 
   return (
     <section
@@ -361,7 +363,7 @@ export const Carousel = forwardRef<HTMLElement, CarouselProps>(function Carousel
       onFocus={pauseForInteraction}
       onTouchStart={pauseForInteraction}
     >
-      {autoplay ? (
+      {showPlayButton ? (
         <Button
           variant="secondary"
           label={playing ? COPY.pause : COPY.play}

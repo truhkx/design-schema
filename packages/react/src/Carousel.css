@@ -18,6 +18,7 @@
   --ds-carousel-min-target: var(--size-target-comfortable);
   --ds-carousel-focus-ring: var(--color-border-focus);
   --ds-carousel-focus-ring-width: var(--border-width-focus);
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -157,6 +158,14 @@
 .ds-carousel__tab:focus-visible {
   outline: var(--ds-carousel-focus-ring-width) solid var(--ds-carousel-focus-ring);
   outline-offset: var(--ds-carousel-focus-ring-width);
+}
+
+/* `@container` conditions cannot read custom properties, so the breakpoint is duplicated here as
+   a literal; perView collapses to one slide per view below the prose width. */
+@container (max-width: 572px) { /* literal-ok: breakpoint from layout.maxWidth.prose */
+  .ds-carousel__slide {
+    flex-basis: 100%;
+  }
 }
 
 /* visually hidden: clipped to a 1px box. Carries the live-region announcement. */

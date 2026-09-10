@@ -11,3 +11,7 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Splitter: `paneMinTarget` ('a pane never shrinks below this on the drag axis before collapsing') is implemented as a CSS `min-inline-size`/`min-block-size` floor on both panes (lifted only on the primary pane once actually collapsed), rather than a JS pixel-clamp during drag — this is a presentational floor, not a computed collapse trigger (that's `minSize`, per the gap above).
 - Splitter: F6 pane-cycling focus target when a pane has no focusable content — I fall back to focusing the pane wrapper `<div>` itself (given `tabindex="-1"` for this purpose), since the doc doesn't specify a fallback.
 - Splitter: the grip mark's exact geometry (a 'short centered grip mark') isn't dimensioned beyond `gripLength`; I rendered it as a rounded bar matching the separator's thickness for the cross-axis dimension.
+
+## 2026-09-10 19:11 — round 1
+
+- Splitter: the `transition` style binding's doc says it covers 'Collapse and restore, and the separator color' but the implementation only transitions the separator's background color — `--ds-splitter-primary-size` drives `grid-template-columns` and changes instantly on collapse/restore since animating a custom-property-valued grid track needs a global `@property` registration (`syntax: '<percentage>'`), which has inconsistent support when declared inside a shadow-root-adopted stylesheet; left unanimated rather than risk a silently-broken transition.

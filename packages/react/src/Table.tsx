@@ -20,6 +20,7 @@ import { Icon } from './Icon';
 import { Text } from './Text';
 import './Table.css';
 
+export type TableCaptionLevel = '2' | '3' | '4' | 2 | 3 | 4;
 export type TableSelectable = 'none' | 'single' | 'multiple';
 export type TableResponsive = 'stack' | 'scroll';
 export type TableMaxHeight = 'none' | 'viewport';
@@ -203,6 +204,8 @@ function alignClass(column: TableColumn): string | null {
 export interface TableProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
   /** What the table lists ("Open invoices"). Rendered as the `<caption>` and the table's accessible name. */
   caption: string;
+  /** Heading level of the caption in the page outline; its size is `captionSize` regardless. */
+  captionLevel?: TableCaptionLevel;
   /** Visually hide the caption; it remains the accessible name. */
   hideCaption?: boolean;
   /** Column definitions in display order. Exactly one should set `isRowHeader`. */
@@ -262,6 +265,7 @@ export interface TableProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
 export const Table = forwardRef<HTMLDivElement, TableProps>(function Table(
   {
     caption,
+    captionLevel = '2',
     hideCaption = false,
     columns,
     data,
@@ -494,7 +498,7 @@ export const Table = forwardRef<HTMLDivElement, TableProps>(function Table(
       aria-describedby={rowCountId}
     >
       <caption id={captionId} data-part="caption" className={hideCaption ? 'ds-table__visually-hidden' : 'ds-table__caption'}>
-        <Heading level={2} size="md" overrides={captionOverrides}>
+        <Heading level={captionLevel} size="md" overrides={captionOverrides}>
           {caption}
         </Heading>
       </caption>

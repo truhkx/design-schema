@@ -209,21 +209,18 @@
     }
   },
   "Carousel.web": {
-    "hash": "7bf5e21425381f4a",
-    "lastAttemptHash": "7bf5e21425381f4a",
-    "generatedAt": "2026-09-10T17:12:10+00:00",
+    "hash": "847f3964ad2367d0",
+    "lastAttemptHash": "847f3964ad2367d0",
+    "generatedAt": "2026-09-10T23:12:06+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.5202,
+    "costUsd": 0.6858,
     "files": [
       "packages/react/src/Carousel.css",
-      "packages/react/src/Carousel.stories.tsx",
-      "packages/react/src/Carousel.test.tsx",
-      "packages/react/src/Carousel.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Carousel.tsx"
     ],
-    "gaps": 7,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1005,21 +1002,20 @@
     }
   },
   "Table.web": {
-    "hash": "0b144ac553bc9c2a",
-    "lastAttemptHash": "0b144ac553bc9c2a",
-    "generatedAt": "2026-09-10T17:29:57+00:00",
+    "hash": "3bea115951261d94",
+    "lastAttemptHash": "3bea115951261d94",
+    "generatedAt": "2026-09-10T23:13:53+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.8566,
+    "costUsd": 0.5352,
     "files": [
-      "packages/react/src/Table.css",
       "packages/react/src/Table.stories.tsx",
       "packages/react/src/Table.test.tsx",
       "packages/react/src/Table.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,

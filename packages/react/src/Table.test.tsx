@@ -21,6 +21,22 @@ describe('Table', () => {
     expect(container.firstChild).not.toBeNull();
   });
 
+  /* derived: props.captionLevel */
+  it('renders-captionLevel-2', () => {
+    const { container } = setup({ captionLevel: '2' });
+    expect(container.firstChild).not.toBeNull();
+  });
+
+  it('renders-captionLevel-3', () => {
+    const { container } = setup({ captionLevel: '3' });
+    expect(container.firstChild).not.toBeNull();
+  });
+
+  it('renders-captionLevel-4', () => {
+    const { container } = setup({ captionLevel: '4' });
+    expect(container.firstChild).not.toBeNull();
+  });
+
   /* derived: props.selectable */
   it('renders-selectable-none', () => {
     const { container } = setup({ selectable: 'none' });

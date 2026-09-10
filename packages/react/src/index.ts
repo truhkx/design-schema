@@ -266,6 +266,7 @@ export type {
 export { Table } from './Table';
 export type {
   TableProps,
+  TableCaptionLevel,
   TableRow,
   TableColumn,
   TableColumnAlign,

@@ -866,19 +866,19 @@
     }
   },
   "Splitter.lit": {
-    "hash": "ade477a288c7a3f3",
-    "lastAttemptHash": "ade477a288c7a3f3",
-    "generatedAt": "2026-09-10T20:37:13+00:00",
+    "hash": "3e95cc3765e66e9f",
+    "lastAttemptHash": "3e95cc3765e66e9f",
+    "generatedAt": "2026-09-10T23:12:01+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.0551,
+    "costUsd": 0.3767,
     "files": [
       "packages/lit/src/Splitter.stories.ts",
       "packages/lit/src/Splitter.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,

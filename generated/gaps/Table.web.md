@@ -13,3 +13,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Horizontal scroll-step distance for ArrowLeft/ArrowRight in the `scroll` region is a fixed, undocumented `40` (px, unitless in `scrollBy`) — the doc doesn't specify a magnitude, and this was chosen to match the sibling Lit implementation's `SCROLL_STEP_PX`.
 - The scroll-region edge fade (`scrollFade`) is a static `mask-image` gradient always applied at both edges, rather than dynamically hiding at the very start/end of the scrollable content — a reasonable simplification also present in the Lit sibling.
 - `stickyColumnShadow` is toggled globally on the scroll region once `scrollLeft > 0`, rather than only while the row-header column is actually still off the left edge (the difference is only observable if the table's total width barely exceeds the viewport).
+
+## 2026-09-10 19:13 — round 1
+
+- Table: existing generated component was missing the `captionLevel` prop entirely (schema field, its Heading wiring, stories, and the three `renders-captionLevel-*` behavior-scenario tests) despite the schema requiring it and 3 of the 14 behavior scenarios exercising it — added `TableCaptionLevel = '2' | '3' | '4' | 2 | 3 | 4`, wired it to the composed caption Heading's `level` (kept `size="md"` fixed per 'its size is captionSize regardless'), and filled in the missing stories/tests/export.
+- Table: `width: 'min'` and `'fill'` are approximated as `<col style={{ inlineSize: '1%' }}>` / `100%` since the schema gives no concrete sizing rule for these values beyond 'auto sizes to content'; not a token-backed value so left as inline style rather than a class.

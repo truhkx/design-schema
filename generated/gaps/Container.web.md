@@ -34,3 +34,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-09 22:23 — round 1
 
 - Container.tsx, Container.css, Container.stories.tsx, and the index.ts export already existed and matched the spec; the only deviation was a missing data-ds="Container" testability hook on the root element, which I added. No ambiguity in the schema itself required a judgment call.
+
+## 2026-09-10 01:19 — round 1
+
+- Container: default paddingInline hook is only set per gutter modifier class (not on .ds-container base), consistent with other interpolated bindings in the package — chose to leave it unset at base so 'none' truly renders 0 with no fallback token flash.
+- Container: overridable maxWidth hook has no effect for width:full since no modifier class sets it — treated as correct per the spec's 'overrides are no-ops where the binding is not in effect' rule.

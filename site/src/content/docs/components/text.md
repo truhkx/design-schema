@@ -69,7 +69,7 @@ component:
     rn:
       element: Text
       props: [numberOfLines, ellipsizeMode, allowFontScaling]
-      notes: No `element` prop — RN has one Text primitive. `truncate` maps to `numberOfLines={1}`. Keep `allowFontScaling` on so Dynamic Type / font scaling works.
+      notes: 'No `element` prop — RN has one Text primitive. `truncate` maps to `numberOfLines={1}`. Keep `allowFontScaling` on so Dynamic Type / font scaling works. Text provides `TextStyleContext` ({ fontSize, color, nested: true }) to its descendants — the resolved size and color it renders with — so inline children (Icon, Link) can match it; the older boolean `TextNestingContext` is replaced by `nested` on this object.'
 ---
 
 Text is the default way to put words on a screen. Its job is to make sure every piece of copy uses a size from the scale and a color from the semantic set, so typography stays consistent without anyone thinking about it.

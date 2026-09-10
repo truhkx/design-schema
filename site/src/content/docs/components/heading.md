@@ -16,7 +16,7 @@ component:
     size:
       type: enum
       values: [4xl, 3xl, 2xl, xl, lg, md]
-      description: Visual size, independent of level. Defaults to the size that matches the level.
+      description: 'Visual size, independent of level. Defaults per level: 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md.'
     children:
       type: content
       required: true
@@ -32,7 +32,7 @@ component:
     fontSize: { token: 'font.size.{size}' }
     lineHeight: { token: font.lineHeight.tight }
     color: { token: color.foreground.strong }
-    marginBlockEnd: { token: space.sm }
+    marginBlockEnd: { token: space.sm, description: 'Space below the heading (marginBottom on React Native — the one margin the system allows, because a heading owns the gap to its own first paragraph).' }
   a11y:
     role: heading
     requires: [heading-hierarchy, contrast-aaa]
@@ -77,7 +77,7 @@ Headings must reflect the actual structure of the content (WCAG 1.3.1 Info and R
 `level` selects the element. `size` maps to `font.size.*` via a class or inline custom property; the default size per level is 1→4xl, 2→3xl, 3→2xl, 4→xl, 5→lg, 6→md.
 
 ### Lit
-`<ds-heading level="2">` renders `<h2>` inside its shadow root. `level`, `size` and `align` are reflected as attributes. Because the heading lives in a shadow root, use `part="heading"` on the inner element so consumers can restyle it with `::part`.
+`<ds-heading level="2">` renders `<h2>` inside its shadow root. `level`, `size` and `align` are reflected as attributes. Because the heading lives in a shadow root, styling comes through the `--ds-heading-*` hooks and `overrides`, never `::part`; `part="heading"` may remain on the inner element as an anatomy hook only.
 
 ### React Native
 Renders `Text` with `accessibilityRole="header"`. `level` chooses the default size only. iOS VoiceOver exposes the header trait but not a level; Android TalkBack likewise. Do not simulate levels with `accessibilityLabel` prefixes like "Heading level 2" — it is noisy and non-standard.

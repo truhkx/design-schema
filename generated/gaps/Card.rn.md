@@ -31,3 +31,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-09 22:23 — round 1
 
 - Card: spec's borderWidth binding says border is 'Rendered only with surface default', but the interactive Pressable always reserves borderWidth at t.borderWidthFocus (transparent border color when subtle/unfocused) to avoid layout shift when focus toggles — kept this pre-existing, documented interpretation rather than making focus-ring width surface-conditional, since reserving space is necessary to prevent jank and the spec doesn't address focus-ring layout stability.
+
+## 2026-09-10 01:23 — round 1
+
+- Card: schema's platforms.rn.notes says header/footer are 'plain row Views styled from this component's gap bindings, not Stack' while the Guidance/Platform-notes prose says 'header and footer are horizontal Stacks' — the existing implementation follows the schema's own notes (plain Views using layoutGap* tokens directly) since Stack's gap enum only accepts the space.* scale, not Card's own overridable gap bindings.
+- Card: 'interactive' a11y note says the card is 'not focusable' but the implementation makes the Pressable itself the sole focusable/accessible element (with the child Link/Button hidden via accessibilityElementsHidden) — interpreted as 'the card doesn't add a second focus stop beyond its single child target', consistent with the anatomy's intent, not literally non-focusable.
+- Card: no explicit prop for aria-labelledby equivalent since RN has no id/labelledby mechanism — accessibilityLabel is only set on the Pressable in the interactive path (taken from the child's label), not on the plain View wrapper, since a non-interactive article-like grouping has no direct RN analog; the Heading itself remains the discoverable name via accessibilityRole="header".

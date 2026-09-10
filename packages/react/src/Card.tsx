@@ -150,22 +150,33 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
       {...rest}
       ref={ref as Ref<HTMLElement>}
       data-ds="Card"
+      data-part="surface"
       className={classes}
       style={mergedStyle}
       aria-labelledby={headingId}
     >
       {showHeader ? (
-        <div className="ds-card__header">
+        <div className="ds-card__header" data-part="header">
           {heading ? (
             <Heading level={headingLevel as HeadingLevel} id={headingId} className="ds-card__heading">
               {heading}
             </Heading>
           ) : null}
-          {headerActions !== undefined ? <div className="ds-card__header-actions">{headerActions}</div> : null}
+          {headerActions !== undefined ? (
+            <div className="ds-card__header-actions" data-part="headerActions">
+              {headerActions}
+            </div>
+          ) : null}
         </div>
       ) : null}
-      <div className="ds-card__body">{body}</div>
-      {showFooter ? <div className="ds-card__footer">{footer}</div> : null}
+      <div className="ds-card__body" data-part="body">
+        {body}
+      </div>
+      {showFooter ? (
+        <div className="ds-card__footer" data-part="footer">
+          {footer}
+        </div>
+      ) : null}
     </Tag>
   );
 });

@@ -6,13 +6,62 @@ import {
   useRef,
   type ChangeEvent,
   type ComponentPropsWithoutRef,
+  type CSSProperties,
   type FocusEvent,
 } from 'react';
-import { Text } from './Text';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
 import './Input.css';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'search' | 'tel' | 'url';
+
+/** copy.* — used verbatim; `{label}` is replaced by the visible label. */
+const COPY = {
+  required: '{label} is required.',
+  invalid: '{label} is not valid.',
+  requiredIndicator: ' (required)',
+};
+
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type InputOverridableBinding =
+  | 'borderFocus'
+  | 'borderInvalid'
+  | 'borderWidth'
+  | 'radius'
+  | 'paddingInline'
+  | 'paddingBlock'
+  | 'partGap'
+  | 'fontFamily'
+  | 'fontSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'lineHeight'
+  | 'disabledOpacity';
+
+const OVERRIDE_HOOK: Record<InputOverridableBinding, string> = {
+  borderFocus: '--ds-input-border-focus',
+  borderInvalid: '--ds-input-border-invalid',
+  borderWidth: '--ds-input-border-width',
+  radius: '--ds-input-radius',
+  paddingInline: '--ds-input-padding-inline',
+  paddingBlock: '--ds-input-padding-block',
+  partGap: '--ds-input-part-gap',
+  fontFamily: '--ds-input-font-family', // literal-ok: CSS custom-property hook name, not a font stack
+  fontSize: '--ds-input-font-size',
+  labelWeight: '--ds-input-label-weight',
+  helperSize: '--ds-input-helper-size',
+  lineHeight: '--ds-input-line-height',
+  disabledOpacity: '--ds-input-disabled-opacity',
+};
+
+function overridesToStyle(overrides: Partial<Record<InputOverridableBinding, TokenRef>>): CSSProperties {
+  const style: Record<string, string> = {};
+  for (const binding of Object.keys(overrides) as InputOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+  }
+  return style as CSSProperties;
+}
 
 export interface InputProps
   extends Omit<
@@ -57,17 +106,14 @@ export interface InputProps
   error?: string;
   /** HTML autocomplete token (e.g. `email`, `given-name`). Enables WCAG 1.3.5 input-purpose identification. */
   autocomplete?: string;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<InputOverridableBinding, TokenRef>>;
   /** Fired on every value change with the new string value. */
   onChange?: (value: string, event: ChangeEvent<HTMLInputElement>) => void;
   /** Fired when the field receives focus. */
   onFocus?: (event: FocusEvent<HTMLInputElement>) => void;
   /** Fired when the field loses focus. The usual moment to validate. */
   onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
-}
-
-/** Lower-cases the first character so a label reads naturally inside a sentence. */
-function sentenceInline(label: string): string {
-  return label.charAt(0).toLowerCase() + label.slice(1);
 }
 
 /**
@@ -93,11 +139,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     invalid = false,
     error,
     autocomplete,
+    overrides,
     onChange,
     onFocus,
     onBlur,
     id: idProp,
     className,
+    style,
     ...rest
   },
   ref,
@@ -135,11 +183,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         const el = inputRef.current;
         const currentValue = el?.value ?? '';
         if (errorProp !== undefined) return errorProp;
-        if (isRequired && currentValue.trim() === '') return `Enter ${sentenceInline(currentLabel)}.`;
-        if (isInvalidProp) return `${currentLabel} is not valid.`;
+        if (isRequired && currentValue.trim() === '') return COPY.required.replace('{label}', currentLabel);
+        if (isInvalidProp) return COPY.invalid.replace('{label}', currentLabel);
         // Browser type validation (email, url, number…) still runs under novalidate via validity.
         if (el && currentValue !== '' && !el.validity.valid) {
-          return el.validationMessage || `${currentLabel} is not valid.`;
+          return el.validationMessage || COPY.invalid.replace('{label}', currentLabel);
         }
         return null;
       },
@@ -165,22 +213,19 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
   const classes = ['ds-input', isInvalid ? 'ds-input--invalid' : null, className ?? null].filter(Boolean).join(' ');
 
+  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+
   return (
-    <div className={classes}>
+    <div className={classes} data-ds="Input" style={mergedStyle}>
       <label className="ds-input__label" htmlFor={id}>
-        <Text element="span" weight="medium" tone="strong">
-          {label}
-        </Text>
-        {required ? (
-          <Text element="span" size="sm" tone="muted" className="ds-input__required">
-            {' (required)'}
-          </Text>
-        ) : null}
+        {label}
+        {required ? <span className="ds-input__required">{COPY.requiredIndicator}</span> : null}
       </label>
       {description ? (
-        <Text element="p" id={descriptionId} size="sm" tone="muted" className="ds-input__description">
+        <p id={descriptionId} data-part="description" className="ds-input__description">
           {description}
-        </Text>
+        </p>
       ) : null}
       <input
         {...rest}
@@ -203,9 +248,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         onBlur={handleBlur}
       />
       {resolvedError ? (
-        <Text element="p" id={errorId} role="alert" size="sm" tone="danger" className="ds-input__error">
+        <p id={errorId} role="alert" data-part="errorMessage" className="ds-input__error">
           {resolvedError}
-        </Text>
+        </p>
       ) : null}
     </div>
   );

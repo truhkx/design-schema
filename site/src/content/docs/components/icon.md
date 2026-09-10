@@ -30,8 +30,8 @@ component:
       description: 'React Native only: the color the parent passes, because there is no currentColor. Falls back to `color.foreground` when the icon is not nested in a Text (a nested Text glyph inherits its parent''s color and the fallback is not applied).'
       platforms: [rn]
   styles:
-    size: { token: 'font.size.{size}', description: 'The glyph box is a square of 1em; `size` sets that em (font-size on the element), so the box tracks the type scale. With `inline`, font-size is inherited instead. Non-inline icons are display inline-block with vertical-align middle; inline ones sit at vertical-align -0.125em.' }
-    color: { token: color.foreground, description: 'Only when the icon has no colored ancestor: glyphs are drawn in currentColor and inherit the text color, so a Button, Link or Alert colors them for free. On React Native, where there is no currentColor, the parent passes its foreground token explicitly and this is the fallback.' }
+    size: { token: 'font.size.{size}', description: 'The glyph box is a square of 1em; `size` sets that em (font-size on the element), so the box tracks the type scale. With `inline`, font-size is inherited instead and `overrides.size` is a no-op (the hook is still set, for consistency). Non-inline icons are display inline-block with vertical-align middle; inline ones sit at vertical-align -0.125em.' }
+    color: { token: color.foreground, description: 'The default is inherit (currentColor): glyphs take the text color, so a Button, Link or Alert colors them for free, and color.foreground is only what inheritance resolves to at the root. `overrides.color` sets an explicit color. On React Native, where there is no currentColor, the `color` prop (or the parent Text''s TextStyleContext when inline) supplies it and color.foreground is the fallback.' }
     strokeWidth: { token: border.width.focus, description: 'Stroke thickness of line glyphs (check, dash, chevrons, close, plus, minus, external, search, arrows, calendar), in screen pixels at every size (vector-effect non-scaling-stroke), so glyphs stay legible at xs. Filled glyphs (the four status shapes, ellipsis) have no stroke: each is one evenodd path whose inner mark is a hole. All three platforms; on React Native through react-native-svg.' }
   a11y:
     role: img
@@ -47,7 +47,7 @@ component:
       notes: 'Renders the same <svg> in the shadow root with part="glyph"; the host is display: inline-flex (inline-block with vertical-align when `inline`) and :host([hidden]) { display: none }. No delegatesFocus — the icon is never focusable. color inherits through the shadow root, so a ds-icon inside ds-button takes the button foreground. The paths table lives in Icon.ts and is imported by no one else — other components use <ds-icon name>, never the paths.'
     rn:
       element: Svg
-      props: [width, height, viewBox, fill, stroke, accessibilityRole=image, accessibilityLabel, accessibilityElementsHidden, importantForAccessibility]
+      props: [width, height, viewBox, fill, stroke, strokeWidth, fillRule, vectorEffect, testID, accessibilityRole=image, accessibilityLabel, accessibilityElementsHidden, importantForAccessibility]
       notes: 'react-native-svg is the one sanctioned native dependency (decision 2026-09-10): the same 16-grid `paths` table as web renders through <Svg viewBox="0 0 16 16" width={size} height={size} fill="none" stroke={color}> with <Path> children, strokeWidth from border.width.focus scaled to the 16-grid at the rendered size (vectorEffect="non-scaling-stroke" where the platform honors it), filled glyphs with fill={color} stroke="none". `color` is an explicit prop (no currentColor on native) defaulting to color.foreground, and inline icons read the parent Text size through TextNestingContext. Decorative: accessibilityElementsHidden + importantForAccessibility="no"; labelled: accessibilityRole="image" + accessibilityLabel.'
 ---
 
@@ -67,7 +67,7 @@ An Icon renders a single glyph at the requested size and does nothing else: no i
 
 ## Content guidelines
 
-Glyph names describe the shape or the universal meaning, not the use ("chevron-down", "close", "warning"), so the same icon can serve many components. `dash` is the short indeterminate mark (4–12 on the grid) used by Checkbox; `minus` is the full-width line (3–13) that pairs with `plus`. `danger` is an octagon with an ×; Alert's current exclamation octagon changes to it when Alert is regenerated to compose Icon. A `label`, when used, says what the icon means in context ("Warning: over quota"), not what it depicts ("triangle").
+Glyph geometry on the 16×16 grid, for glyphs with no existing path to reuse: `calendar` is an outlined rectangle from (2,3) to (14,14) with a header rule at y=6 and two hanger ticks at x=5 and x=11 from y=1 to y=4, drawn as a line glyph. Glyph names describe the shape or the universal meaning, not the use ("chevron-down", "close", "warning"), so the same icon can serve many components. `dash` is the short indeterminate mark (4–12 on the grid) used by Checkbox; `minus` is the full-width line (3–13) that pairs with `plus`. `danger` is an octagon with an ×; Alert's current exclamation octagon changes to it when Alert is regenerated to compose Icon. A `label`, when used, says what the icon means in context ("Warning: over quota"), not what it depicts ("triangle").
 
 ## Accessibility
 

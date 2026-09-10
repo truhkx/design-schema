@@ -1,12 +1,17 @@
 import * as React from 'react';
-import { AccessibilityInfo, Platform, Pressable, View } from 'react-native';
+import { AccessibilityInfo, Platform, Pressable, View, findNodeHandle } from 'react-native';
 import type { ViewStyle } from 'react-native';
+import { resolveToken } from '@design-schema/tokens';
+import type { TokenRef } from '@design-schema/tokens';
 import { FormContext } from './FormContext';
 import type { FormContextValue, FormFieldHandle, FormValidateMode, FormValues } from './FormContext';
 import { Text } from './Text';
 import { useTheme } from './theme';
 
 export type { FormFieldValue, FormValidateMode, FormValues } from './FormContext';
+
+/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+export type FormOverridableBinding = 'gap' | 'errorSummaryBorder';
 
 export interface FormProps {
   /** Fields (Input etc.), layout (Stack), and at least one Button with `type: submit`. */
@@ -21,6 +26,8 @@ export interface FormProps {
   disabled?: boolean;
   /** When submission fails validation, render a summary of errors above the fields that links to each field. */
   errorSummary?: boolean;
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  overrides?: Partial<Record<FormOverridableBinding, TokenRef>>;
   /**
    * Fired when the form is submitted and every field is valid. Receives the collected
    * values keyed by field name: strings from Input, RadioGroup and checked Checkboxes,
@@ -58,6 +65,7 @@ export function Form({
   validate = 'submit',
   disabled = false,
   errorSummary = true,
+  overrides,
   onSubmit,
   onInvalid,
 }: FormProps): React.JSX.Element {
@@ -66,9 +74,11 @@ export function Form({
   const orderRef = React.useRef<string[]>([]);
   const [order, setOrder] = React.useState<readonly string[]>([]);
   const [errors, setErrors] = React.useState<Readonly<Partial<Record<string, string>>>>({});
+  const [submissionAttempt, setSubmissionAttempt] = React.useState(0);
+  const summaryRef = React.useRef<View>(null);
 
-  const latest = React.useRef({ disabled, onSubmit, onInvalid });
-  latest.current = { disabled, onSubmit, onInvalid };
+  const latest = React.useRef({ disabled, errorSummary, onSubmit, onInvalid });
+  latest.current = { disabled, errorSummary, onSubmit, onInvalid };
 
   const register = React.useCallback((fieldName: string, handle: FormFieldHandle) => {
     handles.current.set(fieldName, handle);
@@ -135,11 +145,27 @@ export function Form({
     setErrors(nextErrors);
     if (firstInvalid !== null) {
       latest.current.onInvalid?.(nextErrors);
-      firstInvalid.focus();
+      if (latest.current.errorSummary) {
+        // Focus moves to the summary once it has rendered — see the effect below.
+        setSubmissionAttempt((attempt) => attempt + 1);
+      } else {
+        firstInvalid.focus();
+      }
       return;
     }
     latest.current.onSubmit?.(values);
   }, []);
+
+  // The summary receives focus after a failed submission, once it has rendered.
+  React.useEffect(() => {
+    if (submissionAttempt === 0) {
+      return;
+    }
+    const node = findNodeHandle(summaryRef.current);
+    if (node !== null) {
+      AccessibilityInfo.setAccessibilityFocus(node);
+    }
+  }, [submissionAttempt]);
 
   const focusField = React.useCallback((fieldName: string) => {
     handles.current.get(fieldName)?.focus();
@@ -178,14 +204,19 @@ export function Form({
     }
   }, [announcement]);
 
+  const gap = overrides?.gap ? (resolveToken(tokens, overrides.gap) as number) : tokens.layoutGapLoose;
+  const errorSummaryBorderColor = overrides?.errorSummaryBorder
+    ? (resolveToken(tokens, overrides.errorSummaryBorder) as string)
+    : tokens.colorBorderDanger;
+
   const containerStyle: ViewStyle = {
     flexDirection: 'column',
-    gap: tokens.spaceLg,
+    gap,
   };
 
   const summaryStyle: ViewStyle = {
     borderWidth: tokens.borderWidthThin,
-    borderColor: tokens.colorBorderDanger,
+    borderColor: errorSummaryBorderColor,
     borderRadius: tokens.radiusMd,
     backgroundColor: tokens.colorBackgroundSubtle,
     paddingHorizontal: tokens.spaceMd,
@@ -200,9 +231,9 @@ export function Form({
 
   return (
     <FormContext.Provider value={contextValue}>
-      <View accessibilityLabel={label} testID={name} style={containerStyle}>
+      <View accessibilityLabel={label} testID="Form" style={containerStyle}>
         {errorSummary && errorEntries.length > 0 ? (
-          <View accessibilityLiveRegion="assertive" style={summaryStyle}>
+          <View ref={summaryRef} accessibilityLiveRegion="assertive" style={summaryStyle}>
             <Text tone="danger" weight="semibold">
               {summaryTitle(errorEntries.length)}
             </Text>

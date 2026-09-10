@@ -1,23 +1,27 @@
 /* Form — styled only through Design Schema token custom properties. */
 
 .ds-form {
+  --ds-form-gap: var(--layout-gap-loose);
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: var(--ds-form-gap);
   margin: 0;
   padding: 0;
   inline-size: 100%;
 }
 
-/* errorSummary: a focusable alert region that links to each invalid field. */
+/* errorSummary: a focusable alert region that links to each invalid field. Text and background are locked. */
 .ds-form__error-summary {
+  --ds-form-error-summary-border: var(--color-border-danger);
+  --ds-form-error-summary-text: var(--color-foreground-danger);
+  --ds-form-error-summary-background: var(--color-background-subtle);
   box-sizing: border-box;
   padding-block: var(--space-md);
   padding-inline: var(--space-md);
-  border: var(--border-width-thin) solid var(--color-border-danger);
+  border: var(--border-width-thin) solid var(--ds-form-error-summary-border);
   border-radius: var(--radius-md);
-  background-color: var(--color-background-subtle);
-  color: var(--color-foreground-danger);
+  background-color: var(--ds-form-error-summary-background);
+  color: var(--ds-form-error-summary-text);
 }
 
 .ds-form__error-summary:focus-visible {
@@ -38,7 +42,7 @@
 }
 
 .ds-form__error-link {
-  color: var(--color-foreground-danger);
+  color: var(--ds-form-error-summary-text);
   text-decoration: underline;
 }
 

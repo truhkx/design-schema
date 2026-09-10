@@ -25,7 +25,6 @@ Write `packages/rn/src/{{NAME}}.tsx` exporting a typed React Native function com
 - Props of type `array`, `object`, or `function` carry a `shape` string in TypeScript notation; use it verbatim as the type. Prop type `content` is `ReactNode` / a slot / `ReactNode` by platform.
 - Interpolated style bindings (`color.status.{tone}.background`) resolve per enum value at render time; never enumerate them by hand where a lookup will do. A resolved path ending in `.default` drops that segment (`color.background.{surface}` with `default` is `color.background`, i.e. `--color-background` / `colorBackground`); an enum value of `none` for a background/border/max-width binding renders nothing rather than a token.
 - Composite components (Breadcrumb, Alert, RadioGroup) reuse the system's existing components (Link, Button, Text) from the same package rather than re-implementing them, and never restyle a child (no class overrides, no `::part`, no style props reaching into it): if a child needs a variation, the child's schema grows.
-- Extensions: schema items marked `source: extensions/...` come from extension docs and are implemented like any other prop, event, binding, copy string, keyboard rule or scenario. Hand-written modules live under `src/custom/`; import them from the path the Extensions section gives and call them exactly where its `wire` sentence says. Never create, edit or copy anything under `src/custom/` — the run fails and the folder is restored if you do.
 - Transitions use the component's own `transition` binding (its token and description), with `motion.easing.standard`; `motion.duration.fast` is only the default when a component has no `transition` binding.
 - Development-only warnings the docs ask for use the platform convention: `process.env.NODE_ENV !== 'production'` (React), `import.meta.env.DEV` (Lit), `__DEV__` (React Native).
 - Stories are named after the prop and value in PascalCase (`ToneInfo`, `RoleBanner`); demo stories are titled `Demo/<Name>/<Platform>`.
@@ -44,6 +43,8 @@ The component accepts `overrides?: Partial<Record<OverridableBinding, TokenRef>>
 
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
+The `platforms.rn.props` list names the native props the schema cares about; `overrides` and `testID` apply to every component regardless of whether that list mentions them.
+
 Overridable: {{OVERRIDABLE}}
 Locked (accessibility-bearing, never overridable): {{LOCKED}}
 
@@ -51,14 +52,6 @@ Locked (accessibility-bearing, never overridable): {{LOCKED}}
 
 ```yaml
 {{PLATFORM_NOTES}}
-```
-
-## Behavior scenarios ({{BEHAVIOR_COUNT}})
-
-Tests follow the scenarios: emit one test per scenario below, named after `name`. After performing `when` (if any), assert exactly the items in `then` — nothing invented, nothing skipped. Scenarios and expectations here are already narrowed to what this platform can express.
-
-```yaml
-{{BEHAVIOR_YAML}}
 ```
 
 ## Guidance

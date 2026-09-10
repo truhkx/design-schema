@@ -1,7 +1,9 @@
-import { LitElement, css, html, nothing } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
+import { classMap } from 'lit/directives/class-map.js';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'search' | 'tel' | 'url';
 
@@ -9,6 +11,42 @@ export type InputType = 'text' | 'email' | 'password' | 'number' | 'search' | 't
 export interface InputChangeDetail {
   value: string;
 }
+
+/**
+ * Overridable style hooks; see the `overrides` property. `background`,
+ * `foreground`, `placeholder`, `border`, `errorText`, `descriptionText`,
+ * `minTarget` and `focusRingWidth` are locked and excluded.
+ */
+export type InputOverridableBinding =
+  | 'borderFocus'
+  | 'borderInvalid'
+  | 'borderWidth'
+  | 'radius'
+  | 'paddingInline'
+  | 'paddingBlock'
+  | 'partGap'
+  | 'fontFamily'
+  | 'fontSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'lineHeight'
+  | 'disabledOpacity';
+
+const HOOKS: Record<InputOverridableBinding, string> = {
+  borderFocus: '--ds-input-border-focus',
+  borderInvalid: '--ds-input-border-invalid',
+  borderWidth: '--ds-input-border-width',
+  radius: '--ds-input-radius',
+  paddingInline: '--ds-input-padding-inline',
+  paddingBlock: '--ds-input-padding-block',
+  partGap: '--ds-input-part-gap',
+  fontFamily: `--ds-input-font-family`,
+  fontSize: '--ds-input-font-size',
+  labelWeight: '--ds-input-label-weight',
+  helperSize: '--ds-input-helper-size',
+  lineHeight: '--ds-input-line-height',
+  disabledOpacity: '--ds-input-disabled-opacity',
+};
 
 /** copy.required */
 const COPY_REQUIRED = (label: string): string => `${label} is required.`;
@@ -55,6 +93,19 @@ export class DsInput extends LitElement {
     :host {
       display: block;
       font-family: var(--font-family-body);
+      --ds-input-border-focus: var(--color-border-focus);
+      --ds-input-border-invalid: var(--color-border-danger);
+      --ds-input-border-width: var(--border-width-thin);
+      --ds-input-radius: var(--radius-md);
+      --ds-input-padding-inline: var(--space-md);
+      --ds-input-padding-block: var(--space-sm);
+      --ds-input-part-gap: var(--space-1);
+      --ds-input-font-family: var(--font-family-body);
+      --ds-input-font-size: var(--font-size-md);
+      --ds-input-label-weight: var(--font-weight-medium);
+      --ds-input-helper-size: var(--font-size-sm);
+      --ds-input-line-height: var(--font-line-height-normal);
+      --ds-input-disabled-opacity: var(--opacity-disabled);
     }
 
     :host([hidden]) {
@@ -63,9 +114,9 @@ export class DsInput extends LitElement {
 
     .label {
       display: block;
-      font-size: var(--font-size-md);
-      font-weight: var(--font-weight-medium);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-input-font-size);
+      font-weight: var(--ds-input-label-weight);
+      line-height: var(--ds-input-line-height);
       color: var(--color-foreground);
     }
 
@@ -74,12 +125,12 @@ export class DsInput extends LitElement {
       color: var(--color-foreground-muted);
     }
 
-    /* descriptionText: color.foreground.muted */
+    /* descriptionText: color.foreground.muted, locked */
     .description {
-      margin-block: var(--space-1) 0;
+      margin-block: var(--ds-input-part-gap) 0;
       margin-inline: 0;
-      font-size: var(--font-size-sm);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-input-helper-size);
+      line-height: var(--ds-input-line-height);
       color: var(--color-foreground-muted);
     }
 
@@ -88,51 +139,72 @@ export class DsInput extends LitElement {
       display: block;
       inline-size: 100%;
       min-block-size: var(--size-target-comfortable);
-      margin-block-start: var(--space-1);
-      padding-block: var(--space-sm);
-      padding-inline: var(--space-md);
-      border: var(--border-width-thin) solid var(--color-border-strong);
-      border-radius: var(--radius-md);
-      font-family: var(--font-family-body);
-      font-size: var(--font-size-md);
-      line-height: var(--font-line-height-normal);
+      margin-block-start: var(--ds-input-part-gap);
+      padding-block: var(--ds-input-padding-block);
+      padding-inline: var(--ds-input-padding-inline);
+      border: var(--ds-input-border-width) solid var(--color-border-strong);
+      border-radius: var(--ds-input-radius);
+      font-family: var(--ds-input-font-family);
+      font-size: var(--ds-input-font-size);
+      line-height: var(--ds-input-line-height);
       color: var(--color-foreground);
       background: var(--color-background);
       appearance: none;
       -webkit-appearance: none;
+      transition:
+        border-color var(--motion-duration-fast) var(--motion-easing-standard),
+        padding var(--motion-duration-fast) var(--motion-easing-standard);
     }
 
-    /* placeholder: color.foreground.muted */
+    @media (prefers-reduced-motion: reduce) {
+      .field {
+        transition: none;
+      }
+    }
+
+    /* placeholder: color.foreground.muted, locked */
     .field::placeholder {
       color: var(--color-foreground-muted);
       opacity: 1;
     }
 
-    /* borderFocus + focus-visible ring */
+    /*
+     * focusRingWidth (locked) replaces borderWidth while focused; padding
+     * shrinks by the difference (border-box sizing) so the field does not shift.
+     */
     .field:focus-visible {
-      border-color: var(--color-border-focus);
-      outline: var(--border-width-focus) solid var(--color-border-focus);
+      border-color: var(--ds-input-border-focus);
+      border-width: var(--border-width-focus);
+      padding-inline: calc(var(--ds-input-padding-inline) - (var(--border-width-focus) - var(--ds-input-border-width)));
+      padding-block: calc(var(--ds-input-padding-block) - (var(--border-width-focus) - var(--ds-input-border-width)));
     }
 
     /* borderInvalid: color.border.danger */
     :host([invalid]) .field {
-      border-color: var(--color-border-danger);
+      border-color: var(--ds-input-border-invalid);
+    }
+    :host([invalid]) .field:focus-visible {
+      border-color: var(--ds-input-border-invalid);
     }
 
-    /* disabledOpacity: opacity.disabled on the control; colors are unchanged */
-    .field:disabled {
-      opacity: var(--opacity-disabled);
+    /*
+     * disabledOpacity: opacity.disabled on the control; colors are unchanged.
+     * Disabled fields stay focusable and readable (aria-disabled + readonly),
+     * never the native disabled attribute, which would drop them from the tab order.
+     */
+    .field.disabled {
+      opacity: var(--ds-input-disabled-opacity);
       cursor: not-allowed;
     }
 
-    /* errorText: color.foreground.danger */
+    /* errorText: color.foreground.danger, locked */
     .error {
-      font-size: var(--font-size-sm);
-      line-height: var(--font-line-height-normal);
+      font-size: var(--ds-input-helper-size);
+      line-height: var(--ds-input-line-height);
       color: var(--color-foreground-danger);
     }
     .error:not(:empty) {
-      margin-block-start: var(--space-1);
+      margin-block-start: var(--ds-input-part-gap);
     }
   `;
 
@@ -187,6 +259,9 @@ export class DsInput extends LitElement {
 
   /** HTML autocomplete token (e.g. `email`, `given-name`). */
   @property() autocomplete?: string;
+
+  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
+  @property({ attribute: false }) overrides?: Partial<Record<InputOverridableBinding, TokenRef>>;
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
   @state() private formDisabled = false;
@@ -244,6 +319,17 @@ export class DsInput extends LitElement {
     }
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'Input');
+  }
+
+  protected override willUpdate(changed: PropertyValues): void {
+    if (changed.has('overrides')) {
+      this.applyOverrides();
+    }
+  }
+
   protected override updated(): void {
     this.syncInternals();
   }
@@ -266,7 +352,7 @@ export class DsInput extends LitElement {
         : nothing}
       <input
         id="field"
-        class="field"
+        class=${classMap({ field: true, disabled: isDisabled })}
         part="field"
         name=${this.name}
         type=${this.type}
@@ -276,7 +362,8 @@ export class DsInput extends LitElement {
         aria-describedby=${ifDefined(describedBy)}
         aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
         aria-required=${ifDefined(this.required ? 'true' : undefined)}
-        ?disabled=${isDisabled}
+        aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
+        ?readonly=${isDisabled}
         @input=${this.handleInput}
       />
       <div id="error" class="error" part="error" role="alert">${this.error ?? ''}</div>
@@ -295,6 +382,18 @@ export class DsInput extends LitElement {
     );
   }
 
+  private applyOverrides(): void {
+    for (const binding of Object.keys(HOOKS) as InputOverridableBinding[]) {
+      const ref = this.overrides?.[binding];
+      const hook = HOOKS[binding];
+      if (ref === undefined) {
+        this.style.removeProperty(hook);
+      } else {
+        this.style.setProperty(hook, cssVar(ref));
+      }
+    }
+  }
+
   /** Mirror value and validity into ElementInternals so an owning native form sees them. */
   private syncInternals(): void {
     const value = this.currentValue;
@@ -302,6 +401,16 @@ export class DsInput extends LitElement {
     if (!anchor) {
       return;
     }
+
+    // Disabled fields are visible and focusable but excluded from submission and
+    // validation, matching a native disabled control, without using the native
+    // `disabled` attribute (which would drop the field from the tab order).
+    if (this.disabled || this.formDisabled) {
+      this.internals.setFormValue(null);
+      this.internals.setValidity({});
+      return;
+    }
+
     this.internals.setFormValue(value);
 
     if (this.error) {

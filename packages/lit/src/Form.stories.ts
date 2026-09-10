@@ -8,12 +8,30 @@ import './Stack.js';
 import type { FormValidate } from './Form.js';
 
 interface FormArgs {
-  name?: string;
+  name: string;
   label?: string;
   validate: FormValidate;
   disabled: boolean;
   errorSummary: boolean;
 }
+
+const fields = html`
+  <ds-stack gap="normal">
+    <ds-input label="Email address" name="email" type="email" required autocomplete="email"></ds-input>
+    <ds-input
+      label="Password"
+      name="password"
+      type="password"
+      required
+      autocomplete="current-password"
+      description="At least 8 characters."
+    ></ds-input>
+    <ds-stack direction="horizontal" gap="tight" align="start">
+      <ds-button label="Sign in" type="submit"></ds-button>
+      <ds-button label="Cancel" variant="secondary"></ds-button>
+    </ds-stack>
+  </ds-stack>
+`;
 
 const meta: Meta<FormArgs> = {
   title: 'Form/Lit',
@@ -27,33 +45,21 @@ const meta: Meta<FormArgs> = {
     errorSummary: { control: 'boolean' },
   },
   args: {
-    name: 'profile',
-    label: 'Profile',
+    name: 'sign-in',
+    label: 'Sign in',
     validate: 'submit',
     disabled: false,
     errorSummary: true,
   },
   render: (args) => html`
     <ds-form
-      name=${ifDefined(args.name)}
+      name=${args.name}
       label=${ifDefined(args.label)}
       validate=${args.validate}
       ?disabled=${args.disabled}
-      .errorSummary=${args.errorSummary}
+      ?error-summary=${args.errorSummary}
     >
-      <ds-input label="Full name" name="name" autocomplete="name" required></ds-input>
-      <ds-input
-        label="Email address"
-        name="email"
-        type="email"
-        autocomplete="email"
-        description="Use the email you signed up with."
-        required
-      ></ds-input>
-      <ds-stack direction="horizontal" gap="2" align="center">
-        <ds-button type="submit" label="Save changes"></ds-button>
-        <ds-button variant="ghost" label="Cancel"></ds-button>
-      </ds-stack>
+      ${fields}
     </ds-form>
   `,
 };
@@ -68,6 +74,6 @@ export const ValidateSubmit: Story = { args: { validate: 'submit' } };
 export const ValidateBlur: Story = { args: { validate: 'blur' } };
 export const ValidateChange: Story = { args: { validate: 'change' } };
 
-/* boolean states */
+/* booleans */
 export const Disabled: Story = { args: { disabled: true } };
 export const WithoutErrorSummary: Story = { args: { errorSummary: false } };

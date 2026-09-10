@@ -27,3 +27,7 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Card: pre-existing implementation reused headerGap for both the header row gap and the headerActions internal gap, silently dropping the actionsGap binding (layout.gap.tight) that the schema lists separately and marks overridable — added --ds-card-actions-gap and wired it to .ds-card__header-actions.
 - Card: pre-existing implementation was missing the data-ds="Card" testability hook on the root element required by the package conventions — added it.
+
+## 2026-09-10 01:21 — round 1
+
+- Card: root and header/headerActions/body/footer parts had no `data-part` hook even though role is `none` (so none of them are locatable by role) and only `heading` matches a string prop; per the package's testability convention I added `data-part="surface"` to the root and `data-part` to header/headerActions/body/footer. No behavior scenario currently exercises these locators (all 11 are bare `renders` checks against `data-ds`), so this is forward-looking compliance with the convention doc rather than something the current gate required.

@@ -9,12 +9,30 @@ import type {
   TextStyle,
   ViewStyle,
 } from 'react-native';
+import { resolveToken } from '@design-schema/tokens';
+import type { TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Text } from './Text';
-import { useTheme } from './theme';
+import { toLineHeight, useTheme } from './theme';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'search' | 'tel' | 'url';
+
+/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+export type InputOverridableBinding =
+  | 'borderFocus'
+  | 'borderInvalid'
+  | 'borderWidth'
+  | 'radius'
+  | 'paddingInline'
+  | 'paddingBlock'
+  | 'partGap'
+  | 'fontFamily'
+  | 'fontSize'
+  | 'labelWeight'
+  | 'helperSize'
+  | 'lineHeight'
+  | 'disabledOpacity';
 
 export interface InputProps {
   /** Visible label. Always rendered; never replaced by a placeholder. Also the field's `accessibilityLabel`. */
@@ -39,6 +57,8 @@ export interface InputProps {
   invalid?: boolean;
   /** The error message. Setting it implies `invalid`. Explain what is wrong and how to fix it. */
   error?: string;
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  overrides?: Partial<Record<InputOverridableBinding, TokenRef>>;
   /** Fired on every value change with the new string value. */
   onChange?: (value: string) => void;
   /** Fired when the field receives focus. */
@@ -70,6 +90,12 @@ const TEXT_CONTENT_TYPE: Record<InputType, TextInputProps['textContentType']> = 
 /** Types whose values must not be auto-capitalized or auto-corrected by the keyboard. */
 const VERBATIM_TYPES: ReadonlySet<InputType> = new Set<InputType>(['email', 'password', 'url']);
 
+const COPY = {
+  required: (label: string): string => `${label} is required.`,
+  invalid: (label: string): string => `${label} is not valid.`,
+  requiredIndicator: ' (required)',
+} as const;
+
 /**
  * Input — collects a single line of text, bundling label, helper text, field and
  * error message so their association is always correct.
@@ -85,7 +111,10 @@ const VERBATIM_TYPES: ReadonlySet<InputType> = new Set<InputType>(['email', 'pas
  * `accessibilityHint`, and `accessibilityState={{ disabled }}`. `type` maps to
  * `keyboardType`, `textContentType` and `secureTextEntry`. Inside a Form the field
  * registers `{ getValue, validate, focus }` by `name`; the last field's return key
- * submits the form.
+ * submits the form. The focus ring replaces the border with `focusRingWidth`
+ * (locked to `border.width.focus`) and padding shrinks by the same amount so the
+ * field never shifts; `disabled` dims the whole label/description/field/error
+ * group with `disabledOpacity` rather than inventing a disabled color.
  */
 export function Input({
   label,
@@ -99,11 +128,12 @@ export function Input({
   disabled = false,
   invalid = false,
   error,
+  overrides,
   onChange,
   onFocus,
   onBlur,
 }: InputProps): React.JSX.Element {
-  const { tokens } = useTheme();
+  const { tokens: t } = useTheme();
   const form = useFormContext();
   const inputRef = React.useRef<TextInput>(null);
   const [internalValue, setInternalValue] = React.useState<string>(defaultValue ?? '');
@@ -123,10 +153,10 @@ export function Input({
         return error;
       }
       if (required && candidate.trim() === '') {
-        return `${label} is required.`;
+        return COPY.required(label);
       }
       if (invalid) {
-        return `${label} is not valid.`;
+        return COPY.invalid(label);
       }
       return null;
     },
@@ -199,8 +229,7 @@ export function Input({
   const position = form === null ? -1 : form.order.indexOf(name);
   const isLast = form !== null && position !== -1 && position === form.order.length - 1;
   const nextName = form !== null && position !== -1 ? form.order[position + 1] : undefined;
-  const returnKeyType: ReturnKeyTypeOptions | undefined =
-    form === null ? undefined : isLast ? 'done' : 'next';
+  const returnKeyType: ReturnKeyTypeOptions | undefined = form === null ? undefined : isLast ? 'done' : 'next';
 
   const handleSubmitEditing = (): void => {
     if (form === null) {
@@ -213,37 +242,57 @@ export function Input({
     }
   };
 
-  const visibleLabel = required ? `${label} (required)` : label;
+  const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
 
-  // The focus ring is drawn by widening the border; padding shrinks by the same amount
-  // so the field never shifts when it gains focus.
-  const borderWidth = focused ? tokens.borderWidthFocus : tokens.borderWidthThin;
-  const inset = tokens.borderWidthFocus - borderWidth;
+  const borderFocusColor = overrides?.borderFocus ? (resolveToken(t, overrides.borderFocus) as string) : t.colorBorderFocus;
+  const borderInvalidColor = overrides?.borderInvalid ? (resolveToken(t, overrides.borderInvalid) as string) : t.colorBorderDanger;
+  const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
+  const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
+  const paddingInline = overrides?.paddingInline ? (resolveToken(t, overrides.paddingInline) as number) : t.spaceMd;
+  const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t.spaceSm;
+  const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
+  const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
+  const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t.fontSizeMd;
+  const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
+  const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
+
+  // The focus ring is drawn by widening the border to the locked `focusRingWidth`;
+  // padding shrinks by the same amount so the field never shifts when it gains focus.
+  const activeBorderWidth = focused ? t.borderWidthFocus : borderWidth;
+  const inset = t.borderWidthFocus - borderWidth;
 
   const containerStyle: ViewStyle = {
     flexDirection: 'column',
-    gap: tokens.space1,
+    gap: partGap,
+    opacity: isDisabled ? disabledOpacity : 1,
   };
 
   const fieldStyle: TextStyle = {
-    minHeight: tokens.sizeTargetComfortable,
-    backgroundColor: tokens.colorBackground,
-    color: tokens.colorForeground,
-    borderWidth,
-    borderColor: focused ? tokens.colorBorderFocus : isInvalid ? tokens.colorBorderDanger : tokens.colorBorderStrong,
-    borderRadius: tokens.radiusMd,
-    paddingHorizontal: tokens.spaceMd + inset,
-    paddingVertical: tokens.spaceSm + inset,
-    fontFamily: tokens.fontFamilyBody,
-    fontSize: tokens.fontSizeMd,
-    opacity: isDisabled ? tokens.opacityDisabled : 1,
+    minHeight: t.sizeTargetComfortable,
+    backgroundColor: t.colorBackground,
+    color: t.colorForeground,
+    borderWidth: activeBorderWidth,
+    borderColor: focused ? borderFocusColor : isInvalid ? borderInvalidColor : t.colorBorderStrong,
+    borderRadius: radius,
+    paddingHorizontal: paddingInline + inset,
+    paddingVertical: paddingBlock + inset,
+    fontFamily,
+    fontSize,
+    lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
   };
 
+  const helperOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.helperSize, lineHeight: overrides?.lineHeight };
+
   return (
-    <View style={containerStyle}>
-      <Text weight="medium">{visibleLabel}</Text>
+    <View style={containerStyle} testID="Input">
+      <Text
+        weight="medium"
+        overrides={{ fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, fontWeight: overrides?.labelWeight, lineHeight: overrides?.lineHeight }}
+      >
+        {visibleLabel}
+      </Text>
       {description !== undefined ? (
-        <Text size="sm" tone="muted">
+        <Text size="sm" tone="muted" overrides={helperOverrides}>
           {description}
         </Text>
       ) : null}
@@ -261,7 +310,7 @@ export function Input({
         editable={!isDisabled}
         value={currentValue}
         placeholder={placeholder}
-        placeholderTextColor={tokens.colorForegroundMuted}
+        placeholderTextColor={t.colorForegroundMuted}
         returnKeyType={returnKeyType}
         blurOnSubmit={isLast}
         onSubmitEditing={handleSubmitEditing}
@@ -272,7 +321,7 @@ export function Input({
       />
       {displayedError !== undefined ? (
         <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
-          <Text size="sm" tone="danger">
+          <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
           </Text>
         </View>

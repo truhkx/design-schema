@@ -8,10 +8,12 @@ import {
   useRef,
   useState,
   type ComponentPropsWithoutRef,
+  type CSSProperties,
   type FormEvent,
   type MouseEvent,
   type ReactNode,
 } from 'react';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import {
   FormContext,
   type FormContextValue,
@@ -29,20 +31,50 @@ export type FormValues = Record<string, Exclude<FormFieldValue, undefined>>;
 /** Error messages keyed by field `name`. */
 export type FormErrors = Record<string, string>;
 
+/** copy.* — used verbatim; `{count}` is replaced by the number of errors. */
+const COPY = {
+  summaryHeading: '{count} problems with this form',
+  summaryHeadingOne: '1 problem with this form',
+};
+
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type FormOverridableBinding = 'gap' | 'errorSummaryBorder';
+
+const OVERRIDE_HOOK: Record<FormOverridableBinding, string> = {
+  gap: '--ds-form-gap',
+  errorSummaryBorder: '--ds-form-error-summary-border',
+};
+
+function overridesToStyle(overrides: Partial<Record<FormOverridableBinding, TokenRef>>): CSSProperties {
+  const style: Record<string, string> = {};
+  for (const binding of Object.keys(overrides) as FormOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+  }
+  return style as CSSProperties;
+}
+
 export interface FormProps
-  extends Omit<ComponentPropsWithoutRef<'form'>, 'children' | 'name' | 'onSubmit' | 'onInvalid' | 'noValidate' | 'aria-label'> {
+  extends Omit<
+    ComponentPropsWithoutRef<'form'>,
+    'children' | 'name' | 'onSubmit' | 'onInvalid' | 'noValidate' | 'aria-label' | 'aria-labelledby'
+  > {
   /** Fields (Input etc.), layout (Stack), and at least one Button with `type: submit`. */
   children: ReactNode;
   /** Identifier for the form, used for analytics and as the base of generated ids. */
   name?: string;
-  /** Accessible name for the form landmark, e.g. "Sign in". Required when a page has more than one form. */
+  /** Accessible name for the form landmark, e.g. "Sign in". Required when a page has more than one form and `labelledBy` is not set. */
   label?: string;
+  /** Id of a visible Heading that names the form. Wins over `label` when both are set. */
+  labelledBy?: string;
   /** When field-level validation runs. `submit` is the least noisy; `blur` is the usual choice for longer forms. */
   validate?: FormValidateMode;
   /** Disables every field and action inside. Use while submitting. */
   disabled?: boolean;
   /** When submission fails validation, render a summary of errors above the fields that links to each field. */
   errorSummary?: boolean;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<FormOverridableBinding, TokenRef>>;
   /** Fired when the form is submitted and every field is valid. Receives the collected values keyed by field name. */
   onSubmit?: (values: FormValues) => void;
   /** Fired when submission is blocked by validation. Receives the errors keyed by field name. */
@@ -69,12 +101,15 @@ export const Form = forwardRef<HTMLFormElement, FormProps>(function Form(
     children,
     name,
     label,
+    labelledBy,
     validate = 'submit',
     disabled = false,
     errorSummary = true,
+    overrides,
     onSubmit,
     onInvalid,
     className,
+    style,
     ...rest
   },
   ref,
@@ -181,21 +216,36 @@ export const Form = forwardRef<HTMLFormElement, FormProps>(function Form(
 
   const classes = ['ds-form', className ?? null].filter(Boolean).join(' ');
 
+  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+
   return (
     <FormContext.Provider value={contextValue}>
       <form
         {...rest}
         ref={formRef}
         name={name}
+        data-ds="Form"
         className={classes}
+        style={mergedStyle}
         noValidate
-        aria-label={label}
+        aria-label={labelledBy ? undefined : label}
+        aria-labelledby={labelledBy}
         onSubmit={handleSubmit}
       >
         {showSummary ? (
-          <div ref={summaryRef} id={summaryId} className="ds-form__error-summary" role="alert" tabIndex={-1}>
+          <div
+            ref={summaryRef}
+            id={summaryId}
+            data-part="errorSummary"
+            className="ds-form__error-summary"
+            role="alert"
+            tabIndex={-1}
+          >
             <Text element="p" weight="semibold" tone="danger" className="ds-form__error-summary-heading">
-              {errorEntries.length === 1 ? '1 problem with this form' : `${errorEntries.length} problems with this form`}
+              {errorEntries.length === 1
+                ? COPY.summaryHeadingOne
+                : COPY.summaryHeading.replace('{count}', String(errorEntries.length))}
             </Text>
             <ul className="ds-form__error-list">
               {errorEntries.map(([fieldName, message]) => {

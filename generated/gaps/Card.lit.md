@@ -28,3 +28,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Card: schema lists `actionsGap` (layout.gap.tight, gap between header-actions controls) as both a style binding and overridable, but the existing implementation omitted it entirely (no hook, no CSS). Added `--ds-card-actions-gap` and styled `slot[name='header-actions']` as `display: flex; gap: var(--ds-card-actions-gap)` so slotted controls in that named slot lay out with the token gap; updated the WithHeaderActions story to include two controls (a Link and a ghost icon Button, per the anatomy note 'at most two') so the gap is visible.
 - Card: spec doesn't say how a slot with multiple assigned elements should get gap applied across the shadow boundary; chose styling the `<slot>` element itself as a flex container (assigned nodes flow as its layout children), consistent with how the rest of the file already avoids `::slotted` for layout.
+
+## 2026-09-10 01:26 — round 1
+
+- Card: spec's Lit notes say the interactive hit-area class is applied via 'a small global rule from the package' but doesn't say where that stylesheet lives given the light-DOM link may be in an arbitrary ancestor tree (page or another shadow root); existing implementation injects a scoped <style> into whichever root the slotted element resolves in (ensureHitAreaStyle), tracked per-root via a WeakSet to avoid duplicate injection.
+- Card: spec doesn't say what happens when zero or more than one interactive child is slotted for `interactive`; existing implementation leaves the card non-interactive (no hit-area class applied) and logs a DEV-only console.warn.
+- Card: header Heading size isn't specified beyond 'so a card heading reads smaller than a page heading' (web notes say size: lg, but existing Lit implementation uses size="md"); kept as previously generated since no reflected size mismatch was flagged elsewhere.

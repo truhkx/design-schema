@@ -1,20 +1,39 @@
 /* Button — styled only through Design Schema token custom properties. */
 
 .ds-button {
+  --ds-button-icon-gap: var(--space-2);
+  --ds-button-padding-inline: var(--space-md);
+  --ds-button-padding-block: var(--space-sm);
+  --ds-button-radius: var(--radius-md);
+  --ds-button-font-family: var(--font-family-body);
+  --ds-button-font-weight: var(--font-weight-medium);
+  --ds-button-font-size: var(--font-size-md);
+  --ds-button-background: var(--color-action-primary-background);
+  --ds-button-background-hover: var(--color-action-primary-background-hover);
+  --ds-button-foreground: var(--color-action-primary-foreground);
+  --ds-button-focus-ring: var(--color-border-focus);
+  --ds-button-focus-ring-width: var(--border-width-focus);
+  --ds-button-inverse-foreground: var(--color-inverse-link);
+  --ds-button-inverse-focus-ring: var(--color-inverse-focus);
+  --ds-button-min-target: var(--size-target-min);
+  --ds-button-disabled-opacity: var(--opacity-disabled);
+  --ds-button-transition: var(--motion-duration-fast);
+  --ds-button-loading-spin: var(--motion-duration-loop);
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-sm);
-  min-inline-size: var(--size-target-min);
-  min-block-size: var(--size-target-min);
-  padding-block: var(--space-sm);
+  gap: var(--ds-button-icon-gap);
+  min-inline-size: var(--ds-button-min-target);
+  min-block-size: var(--ds-button-min-target);
+  padding-inline: var(--ds-button-padding-inline);
+  padding-block: var(--ds-button-padding-block);
   margin: 0;
   border: 0;
-  border-radius: var(--radius-md);
-  font-family: var(--font-family-body);
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-md);
+  border-radius: var(--ds-button-radius);
+  font-family: var(--ds-button-font-family);
+  font-weight: var(--ds-button-font-weight);
+  font-size: var(--ds-button-font-size);
   background-color: var(--ds-button-background);
   color: var(--ds-button-foreground);
   cursor: pointer;
@@ -24,15 +43,7 @@
   appearance: none;
 }
 
-/* size → paddingInline: space.{size} */
-.ds-button--sm { padding-inline: var(--space-sm); }
-.ds-button--md { padding-inline: var(--space-md); }
-.ds-button--lg { padding-inline: var(--space-lg); }
-
-/* Icon-only buttons are square: same padding on every side. */
-.ds-button--icon-only { padding-inline: var(--space-sm); }
-
-/* variant → color.action.{variant}.* */
+/* variant → color.action.{variant}.* (background/foreground locked; backgroundHover overridable) */
 .ds-button--primary {
   --ds-button-background: var(--color-action-primary-background);
   --ds-button-background-hover: var(--color-action-primary-background-hover);
@@ -54,6 +65,23 @@
   --ds-button-foreground: var(--color-action-danger-foreground);
 }
 
+/* size → paddingInline: space.{size}, fontSize: font.size.{size} */
+.ds-button--sm { --ds-button-padding-inline: var(--space-sm); --ds-button-font-size: var(--font-size-sm); }
+.ds-button--md { --ds-button-padding-inline: var(--space-md); --ds-button-font-size: var(--font-size-md); }
+.ds-button--lg { --ds-button-padding-inline: var(--space-lg); --ds-button-font-size: var(--font-size-lg); }
+
+/* iconOnly: equal padding on every side, regardless of size. */
+.ds-button--icon-only { --ds-button-padding-inline: var(--space-sm); }
+
+/* inverse: focus ring always swaps; only ghost's fill is meaningful on an inverse surface. */
+.ds-button--inverse {
+  --ds-button-focus-ring: var(--ds-button-inverse-focus-ring);
+}
+.ds-button--inverse.ds-button--ghost {
+  --ds-button-foreground: var(--ds-button-inverse-foreground);
+  --ds-button-background-hover: color-mix(in srgb, var(--color-inverse-foreground) 16%, transparent);
+}
+
 /* backgroundHover: pointer hover and pressed state, only while activatable. */
 .ds-button:not([aria-disabled='true']):not([aria-busy='true']):hover,
 .ds-button:not([aria-disabled='true']):not([aria-busy='true']):active {
@@ -62,20 +90,19 @@
 
 /* focus-visible: never removed, only replaced by the token ring. */
 .ds-button:focus-visible {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
+  outline: var(--ds-button-focus-ring-width) solid var(--ds-button-focus-ring);
+  outline-offset: var(--ds-button-focus-ring-width);
 }
 
 /* disabled: stays focusable and announced; visually dimmed. */
 .ds-button[aria-disabled='true'] {
   cursor: not-allowed;
-  opacity: var(--opacity-disabled);
+  opacity: var(--ds-button-disabled-opacity);
 }
 
 /* loading: announces busy, ignores activation, keeps its size. */
 .ds-button[aria-busy='true'] {
   cursor: progress;
-  opacity: 0.7;
 }
 
 .ds-button__icon {
@@ -87,4 +114,32 @@
 
 .ds-button__label {
   display: inline-block;
+}
+
+/* loadingSpin: one rotation of the ring spinner; disabled under prefers-reduced-motion. */
+.ds-button__spinner {
+  display: inline-block;
+  inline-size: 1em;
+  block-size: 1em;
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  border: var(--border-width-focus) solid currentColor;
+  border-inline-end-color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ds-button__spinner {
+    animation: ds-button-spin var(--ds-button-loading-spin) linear infinite;
+  }
+
+  /* transition: background/foreground on hover and press, with motion.easing.standard. */
+  .ds-button {
+    transition:
+      background-color var(--ds-button-transition) var(--motion-easing-standard),
+      color var(--ds-button-transition) var(--motion-easing-standard);
+  }
+}
+
+@keyframes ds-button-spin {
+  to { transform: rotate(360deg); }
 }

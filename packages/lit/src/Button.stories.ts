@@ -11,13 +11,15 @@ interface ButtonArgs {
   disabled: boolean;
   iconOnly: boolean;
   loading: boolean;
+  inverse: boolean;
+  track: string;
 }
 
 const meta: Meta<ButtonArgs> = {
   title: 'Button/Lit',
   tags: ['autodocs'],
   parameters: {
-    actions: { handles: ['press'] },
+    actions: { handles: ['press', 'track'] },
   },
   argTypes: {
     variant: { control: 'select', options: ['primary', 'secondary', 'ghost', 'danger'] },
@@ -26,6 +28,8 @@ const meta: Meta<ButtonArgs> = {
     disabled: { control: 'boolean' },
     iconOnly: { control: 'boolean' },
     loading: { control: 'boolean' },
+    inverse: { control: 'boolean' },
+    track: { control: 'text' },
   },
   args: {
     label: 'Save changes',
@@ -35,6 +39,8 @@ const meta: Meta<ButtonArgs> = {
     disabled: false,
     iconOnly: false,
     loading: false,
+    inverse: false,
+    track: '',
   },
   render: (args) => html`
     <ds-button
@@ -42,9 +48,11 @@ const meta: Meta<ButtonArgs> = {
       variant=${args.variant}
       size=${args.size}
       type=${args.type}
+      track=${args.track}
       ?disabled=${args.disabled}
       ?icon-only=${args.iconOnly}
       ?loading=${args.loading}
+      ?inverse=${args.inverse}
     ></ds-button>
   `,
 };
@@ -88,3 +96,18 @@ export const IconOnly: Story = {
     </ds-button>
   `,
 };
+
+/* inverse: rendered on an inverse surface, like a Toast or Tooltip panel */
+export const Inverse: Story = {
+  args: { variant: 'ghost', inverse: true, label: 'Dismiss' },
+  render: (args) => html`
+    <div
+      style="background: var(--color-inverse-surface); padding: var(--space-md); border-radius: var(--radius-md);"
+    >
+      <ds-button label=${args.label} variant=${args.variant} size=${args.size} type=${args.type} ?inverse=${args.inverse}></ds-button>
+    </div>
+  `,
+};
+
+/* track: sends an analytics event on press, then fires `track` */
+export const Tracked: Story = { args: { track: 'signup', label: 'Sign up' } };

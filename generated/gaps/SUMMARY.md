@@ -1,6 +1,6 @@
 # Gap digest — phase Primitives
 
-Generated 2026-09-10T00:52 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T00:54 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## AlertDialog
 

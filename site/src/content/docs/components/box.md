@@ -19,11 +19,11 @@ component:
     insetBlock:
       type: enum
       values: [none, sm, md, lg, xl]
-      description: Vertical padding, overriding `inset` on that axis.
+      description: Vertical padding, overriding `inset` on that axis. Defaults to `inset`.
     insetInline:
       type: enum
       values: [none, sm, md, lg, xl]
-      description: Horizontal padding, overriding `inset` on that axis.
+      description: Horizontal padding, overriding `inset` on that axis. Defaults to `inset`.
     surface:
       type: enum
       values: [none, default, subtle, strong]
@@ -88,7 +88,7 @@ Do not use a Box to add space between two components; put them in a Stack. Do no
 
 ## Behavior
 
-Box renders its children in a block with the requested padding, background, border and radius, and nothing else. It never scrolls, never clips (`radius` does not imply `overflow: hidden`; a child that should be clipped clips itself), and never carries margin. `insetBlock` and `insetInline` override `inset` per axis. `surface: none` sets no background at all, so the parent's shows through.
+Box renders its children in a block with the requested padding, background, border and radius, and nothing else. It adds no role of its own (`a11y.role: none`); when `element` is `section`, `article`, `aside` or `nav`, the native element carries that semantics on web, and Lit sets the matching ElementInternals role. It never scrolls, never clips (`radius` does not imply `overflow: hidden`; a child that should be clipped clips itself), and never carries margin. `insetBlock` and `insetInline` override `inset` per axis. `surface: none` sets no background at all, so the parent's shows through.
 
 ## Content guidelines
 

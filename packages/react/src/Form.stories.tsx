@@ -3,6 +3,7 @@ import { Form } from './Form';
 import { Input } from './Input';
 import { Button } from './Button';
 import { Stack } from './Stack';
+import { Heading } from './Heading';
 
 const fields = (
   <Stack gap="normal">
@@ -52,3 +53,16 @@ export const ValidateChange: Story = { args: { validate: 'change' } };
 /* booleans */
 export const Disabled: Story = { args: { disabled: true } };
 export const WithoutErrorSummary: Story = { args: { errorSummary: false } };
+
+/* labelledBy wins over label when both are set */
+export const LabelledBy: Story = {
+  args: { label: undefined, labelledBy: 'form-labelled-by-heading' },
+  render: (args) => (
+    <Stack gap="normal">
+      <Heading id="form-labelled-by-heading" level="2">
+        Sign in
+      </Heading>
+      <Form {...args} />
+    </Stack>
+  ),
+};

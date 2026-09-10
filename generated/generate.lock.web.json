@@ -55,28 +55,49 @@
     "runner": "adopted"
   },
   "Button.web": {
-    "hash": "ed46506ea967cf9a",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
-  },
-  "Card.web": {
-    "hash": "c56f5ce5b3f3fb0f",
-    "lastAttemptHash": "c56f5ce5b3f3fb0f",
-    "generatedAt": "2026-09-10T02:19:56+00:00",
+    "hash": "b97a625455344842",
+    "lastAttemptHash": "b97a625455344842",
+    "generatedAt": "2026-09-10T05:06:26+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3011,
+    "costUsd": 1.313,
     "files": [
-      "packages/react/src/Card.css",
-      "packages/react/src/Card.tsx"
+      "packages/react/src/Button.css",
+      "packages/react/src/Button.stories.tsx",
+      "packages/react/src/Button.test.tsx",
+      "packages/react/src/Button.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 2,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Card.web": {
+    "hash": "bb732cf9c8f1d166",
+    "lastAttemptHash": "bb732cf9c8f1d166",
+    "generatedAt": "2026-09-10T05:21:45+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.5084,
+    "files": [
+      "packages/react/src/Card.tsx"
+    ],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Checkbox.web": {
@@ -85,22 +106,26 @@
     "runner": "adopted"
   },
   "Container.web": {
-    "hash": "cf93646d52b97178",
-    "lastAttemptHash": "cf93646d52b97178",
-    "generatedAt": "2026-09-10T02:23:56+00:00",
+    "hash": "0fdf6b7a9ccdeb76",
+    "lastAttemptHash": "0fdf6b7a9ccdeb76",
+    "generatedAt": "2026-09-10T05:19:34+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.1891,
+    "costUsd": 0.1983,
     "files": [
+      "packages/react/src/Container.css",
+      "packages/react/src/Container.stories.tsx",
       "packages/react/src/Container.tsx"
     ],
-    "gaps": 1,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Dialog.web": {
@@ -154,9 +179,28 @@
     }
   },
   "Form.web": {
-    "hash": "5f5f02ba33ffccbe",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "a6a39c6bc644b363",
+    "lastAttemptHash": "a6a39c6bc644b363",
+    "generatedAt": "2026-09-10T05:18:58+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.6249,
+    "files": [
+      "packages/react/src/Form.css",
+      "packages/react/src/Form.stories.tsx",
+      "packages/react/src/Form.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Heading.web": {
     "hash": "93845edd55993b24",
@@ -207,9 +251,29 @@
     }
   },
   "Input.web": {
-    "hash": "caff4f07ad79dbff",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "ac6ccd0684ad5321",
+    "lastAttemptHash": "ac6ccd0684ad5321",
+    "generatedAt": "2026-09-10T05:16:17+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.2176,
+    "files": [
+      "packages/react/src/Input.css",
+      "packages/react/src/Input.stories.tsx",
+      "packages/react/src/Input.test.tsx",
+      "packages/react/src/Input.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Landmark.web": {
     "hash": "d3ca1e6a732159f4",
@@ -217,9 +281,27 @@
     "runner": "adopted"
   },
   "Link.web": {
-    "hash": "0bc2c4011196e15d",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "4ad533c56ad841ab",
+    "lastAttemptHash": "4ad533c56ad841ab",
+    "generatedAt": "2026-09-10T05:10:12+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.8399,
+    "files": [
+      "packages/react/src/Link.css",
+      "packages/react/src/Link.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 3,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Menu.web": {
     "hash": "7ceff7d3bf3b3631",

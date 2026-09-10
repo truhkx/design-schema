@@ -1,11 +1,22 @@
-import { LitElement, css, html, nothing } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 
 export type LinkTone = 'default' | 'inherit';
 
 /** copy.externalSuffix — appended to the accessible name of an external link. */
 const EXTERNAL_SUFFIX = ' (opens in new tab)';
+
+/** Overridable style hooks; see the `overrides` property. `color`, `colorHover`, `colorVisited`, `focusRing`, `focusRingWidth` and `focusRingRadius` are locked and excluded. */
+export type LinkOverridableBinding = 'underlineThickness' | 'underlineOffset' | 'externalIconGap' | 'transition';
+
+const HOOKS: Record<LinkOverridableBinding, string> = {
+  underlineThickness: '--ds-link-underline-thickness',
+  underlineOffset: '--ds-link-underline-offset',
+  externalIconGap: '--ds-link-external-icon-gap',
+  transition: '--ds-link-transition',
+};
 
 /**
  * `<ds-link>` — Link (category: navigation, APG pattern: link).
@@ -37,6 +48,10 @@ export class DsLink extends LitElement {
   static override styles = css`
     :host {
       display: inline;
+      --ds-link-underline-thickness: var(--border-width-thin);
+      --ds-link-underline-offset: var(--space-1);
+      --ds-link-external-icon-gap: var(--space-1);
+      --ds-link-transition: var(--motion-duration-fast);
     }
 
     :host([hidden]) {
@@ -48,11 +63,11 @@ export class DsLink extends LitElement {
       font: inherit;
       color: var(--color-link);
       text-decoration-line: underline;
-      text-decoration-thickness: var(--border-width-thin);
-      text-underline-offset: var(--space-1);
+      text-decoration-thickness: var(--ds-link-underline-thickness);
+      text-underline-offset: var(--ds-link-underline-offset);
       border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: color var(--motion-duration-fast) var(--motion-easing-standard);
+      transition: color var(--ds-link-transition) var(--motion-easing-standard);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -90,7 +105,7 @@ export class DsLink extends LitElement {
       display: inline-block;
       inline-size: 1em;
       block-size: 1em;
-      margin-inline-start: var(--space-1);
+      margin-inline-start: var(--ds-link-external-icon-gap);
       vertical-align: -0.125em;
       fill: currentColor;
     }
@@ -124,6 +139,20 @@ export class DsLink extends LitElement {
   /** Downloads the resource instead of navigating. */
   @property({ type: Boolean }) download = false;
 
+  /** Per-instance style overrides: `{ underlineOffset: 'space.2' }`. Locked bindings are ignored. */
+  @property({ attribute: false }) overrides?: Partial<Record<LinkOverridableBinding, TokenRef>>;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'Link');
+  }
+
+  protected override willUpdate(changed: PropertyValues): void {
+    if (changed.has('overrides')) {
+      this.applyOverrides();
+    }
+  }
+
   protected override render() {
     return html`
       <a
@@ -149,6 +178,18 @@ export class DsLink extends LitElement {
           : nothing}
       </a>
     `;
+  }
+
+  private applyOverrides(): void {
+    for (const binding of Object.keys(HOOKS) as LinkOverridableBinding[]) {
+      const ref = this.overrides?.[binding];
+      const hook = HOOKS[binding];
+      if (ref === undefined) {
+        this.style.removeProperty(hook);
+      } else {
+        this.style.setProperty(hook, cssVar(ref));
+      }
+    }
   }
 }
 

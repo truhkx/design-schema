@@ -36,7 +36,14 @@ import './AlertDialog.js';
 import './Menu.js';
 
 export { DsButton } from './Button.js';
-export type { ButtonVariant, ButtonSize, ButtonType, ButtonPressDetail } from './Button.js';
+export type {
+  ButtonVariant,
+  ButtonSize,
+  ButtonType,
+  ButtonPressDetail,
+  ButtonTrackDetail,
+  ButtonOverridableBinding,
+} from './Button.js';
 
 export { DsHeading } from './Heading.js';
 export type { HeadingLevel, HeadingSize, HeadingAlign, HeadingOverridableBinding } from './Heading.js';
@@ -52,7 +59,7 @@ export type {
 } from './Text.js';
 
 export { DsInput } from './Input.js';
-export type { InputType, InputChangeDetail } from './Input.js';
+export type { InputType, InputChangeDetail, InputOverridableBinding } from './Input.js';
 
 export { DsForm } from './Form.js';
 export type { FormValidate, FormSubmitDetail, FormInvalidDetail, DsFormField } from './Form.js';
@@ -77,7 +84,7 @@ export type {
 } from './Box.js';
 
 export { DsLink } from './Link.js';
-export type { LinkTone } from './Link.js';
+export type { LinkTone, LinkOverridableBinding } from './Link.js';
 
 export { DsCheckbox } from './Checkbox.js';
 export type { CheckboxChangeDetail } from './Checkbox.js';

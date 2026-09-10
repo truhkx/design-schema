@@ -12,7 +12,7 @@
  */
 
 export { Button } from './Button';
-export type { ButtonProps, ButtonVariant, ButtonSize, ButtonType } from './Button';
+export type { ButtonProps, ButtonVariant, ButtonSize, ButtonType, ButtonOverridableBinding } from './Button';
 
 export { Heading } from './Heading';
 export type { HeadingProps, HeadingLevel, HeadingSize, HeadingAlign, HeadingOverridableBinding } from './Heading';
@@ -21,10 +21,10 @@ export { Text } from './Text';
 export type { TextProps, TextSize, TextWeight, TextTone, TextAlign, TextElement, TextOverridableBinding } from './Text';
 
 export { Input } from './Input';
-export type { InputProps, InputType } from './Input';
+export type { InputProps, InputType, InputOverridableBinding } from './Input';
 
 export { Form } from './Form';
-export type { FormProps, FormValues, FormErrors, FormValidateMode, FormFieldValue } from './Form';
+export type { FormProps, FormValues, FormErrors, FormValidateMode, FormFieldValue, FormOverridableBinding } from './Form';
 
 export { FormContext, useFormContext } from './FormContext';
 export type { FormContextValue, FormFieldRegistration } from './FormContext';
@@ -44,7 +44,7 @@ export { Box } from './Box';
 export type { BoxProps, BoxInset, BoxSurface, BoxRadius, BoxElement, BoxOverridableBinding } from './Box';
 
 export { Link } from './Link';
-export type { LinkProps, LinkTone } from './Link';
+export type { LinkProps, LinkTone, LinkOverridableBinding } from './Link';
 
 export { Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';
@@ -116,3 +116,6 @@ export type {
 
 export { Tooltip } from './Tooltip';
 export type { TooltipProps, TooltipPlacement, TooltipDelay, TooltipOverridableBinding } from './Tooltip';
+
+export { Divider } from './Divider';
+export type { DividerProps, DividerOrientation, DividerSpacing, DividerOverridableBinding } from './Divider';

@@ -43,7 +43,7 @@ component:
       description: Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an `li`.
       platforms: [web, lit]
   styles:
-    gap: { token: 'layout.gap.{gap}' }
+    gap: { token: 'layout.gap.{gap}', description: '`gap: none` renders no gap and makes `overrides.gap` a no-op, per the presence rule.' }
   a11y:
     role: none
     requires: []

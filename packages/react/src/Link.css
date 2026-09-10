@@ -1,13 +1,21 @@
 /* Link — styled only through Design Schema token custom properties. */
 
 .ds-link {
+  --ds-link-underline-thickness: var(--border-width-thin);
+  --ds-link-underline-offset: var(--space-1);
+  --ds-link-external-icon-gap: var(--space-1);
+  --ds-link-focus-ring: var(--color-border-focus);
+  --ds-link-focus-ring-width: var(--border-width-focus);
+  --ds-link-focus-ring-radius: var(--radius-sm);
+  --ds-link-transition: var(--motion-duration-fast);
+
   display: inline;
   color: var(--ds-link-color);
   font: inherit;
   text-decoration: underline;
-  text-decoration-thickness: var(--border-width-thin);
-  text-underline-offset: var(--space-1);
-  border-radius: var(--radius-sm);
+  text-decoration-thickness: var(--ds-link-underline-thickness);
+  text-underline-offset: var(--ds-link-underline-offset);
+  border-radius: var(--ds-link-focus-ring-radius);
   cursor: pointer;
 }
 
@@ -34,25 +42,25 @@
   color: var(--ds-link-color-hover);
 }
 
-/* focus-visible: the ring follows the text box, not the line box. Never removed. */
+/* focus-visible (locked): the ring follows the text box, not the line box. Never removed. */
 .ds-link:focus-visible {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
+  outline: var(--ds-link-focus-ring-width) solid var(--ds-link-focus-ring);
+  outline-offset: var(--ds-link-focus-ring-width);
 }
 
-/* transition: color on hover; removed under reduced motion. */
+/* transition: color on hover, with motion.easing.standard; removed under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-link {
-    transition: color var(--motion-duration-fast) var(--motion-easing-standard);
+    transition: color var(--ds-link-transition) var(--motion-easing-standard);
   }
 }
 
-/* externalIcon: 1em of the surrounding font size (no size token by design). */
+/* externalIconGap: gap before the icon, which is 1em of the surrounding font size (no size token by design). */
 .ds-link__external-icon {
   display: inline-block;
   inline-size: 1em;
   block-size: 1em;
-  margin-inline-start: var(--space-1);
+  margin-inline-start: var(--ds-link-external-icon-gap);
   vertical-align: -0.125em;
   line-height: 0;
 }

@@ -1,10 +1,30 @@
-import { forwardRef, type ComponentPropsWithoutRef, type MouseEvent } from 'react';
+import { forwardRef, type ComponentPropsWithoutRef, type CSSProperties, type MouseEvent } from 'react';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Link.css';
 
 export type LinkTone = 'default' | 'inherit';
 
 /** copy.externalSuffix — appended to the accessible name of an external link. */
 const EXTERNAL_SUFFIX = ' (opens in new tab)';
+
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type LinkOverridableBinding = 'underlineThickness' | 'underlineOffset' | 'externalIconGap' | 'transition';
+
+const OVERRIDE_HOOK: Record<LinkOverridableBinding, string> = {
+  underlineThickness: '--ds-link-underline-thickness',
+  underlineOffset: '--ds-link-underline-offset',
+  externalIconGap: '--ds-link-external-icon-gap',
+  transition: '--ds-link-transition',
+};
+
+function overridesToStyle(overrides: Partial<Record<LinkOverridableBinding, TokenRef>>): CSSProperties {
+  const style: Record<string, string> = {};
+  for (const binding of Object.keys(overrides) as LinkOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+  }
+  return style as CSSProperties;
+}
 
 export interface LinkProps
   extends Omit<ComponentPropsWithoutRef<'a'>, 'href' | 'children' | 'target' | 'rel' | 'download' | 'aria-label' | 'onClick'> {
@@ -18,6 +38,8 @@ export interface LinkProps
   tone?: LinkTone;
   /** Downloads the resource instead of navigating. Web only. */
   download?: boolean;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<LinkOverridableBinding, TokenRef>>;
   /** Fired when the link is activated. The default navigation still happens unless the consumer prevents it. */
   onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }
@@ -32,19 +54,24 @@ export interface LinkProps
  * the product, so people are warned before they lose their place.
  */
 export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
-  { href, label, external = false, tone = 'default', download = false, onClick, className, ...rest },
+  { href, label, external = false, tone = 'default', download = false, overrides, onClick, className, style, ...rest },
   ref,
 ) {
   const classes = ['ds-link', `ds-link--tone-${tone}`, external ? 'ds-link--external' : null, className ?? null]
     .filter(Boolean)
     .join(' ');
 
+  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+
   return (
     <a
       {...rest}
       ref={ref}
       href={href}
+      data-ds="Link"
       className={classes}
+      style={mergedStyle}
       target={external ? '_blank' : undefined}
       rel={external ? 'noopener noreferrer' : undefined}
       download={download ? true : undefined}
@@ -55,7 +82,7 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
         <>
           {/* The suffix is visually hidden text, not aria-label, so the name still starts with the visible label. */}
           <span className="ds-link__external-suffix">{EXTERNAL_SUFFIX}</span>
-          <span className="ds-link__external-icon" aria-hidden="true">
+          <span className="ds-link__external-icon" data-part="externalIcon" aria-hidden="true">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" focusable="false">
               <path d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" />
             </svg>

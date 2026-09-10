@@ -1,10 +1,55 @@
-import { forwardRef, type ComponentPropsWithoutRef, type MouseEvent, type ReactNode } from 'react';
+import {
+  forwardRef,
+  type ComponentPropsWithoutRef,
+  type CSSProperties,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
+import { trackPress } from './custom/analytics';
 import './Button.css';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 export type ButtonType = 'button' | 'submit';
+
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type ButtonOverridableBinding =
+  | 'backgroundHover'
+  | 'iconGap'
+  | 'paddingInline'
+  | 'paddingBlock'
+  | 'radius'
+  | 'fontFamily'
+  | 'fontWeight'
+  | 'fontSize'
+  | 'disabledOpacity'
+  | 'transition'
+  | 'loadingSpin';
+
+const OVERRIDE_HOOK: Record<ButtonOverridableBinding, string> = {
+  backgroundHover: '--ds-button-background-hover',
+  iconGap: '--ds-button-icon-gap',
+  paddingInline: '--ds-button-padding-inline',
+  paddingBlock: '--ds-button-padding-block',
+  radius: '--ds-button-radius',
+  fontFamily: '--ds-button-font-family', // literal-ok: CSS custom-property hook name, not a font stack
+  fontWeight: '--ds-button-font-weight',
+  fontSize: '--ds-button-font-size',
+  disabledOpacity: '--ds-button-disabled-opacity',
+  transition: '--ds-button-transition',
+  loadingSpin: '--ds-button-loading-spin',
+};
+
+function overridesToStyle(overrides: Partial<Record<ButtonOverridableBinding, TokenRef>>): CSSProperties {
+  const style: Record<string, string> = {};
+  for (const binding of Object.keys(overrides) as ButtonOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+  }
+  return style as CSSProperties;
+}
 
 export interface ButtonProps
   extends Omit<ComponentPropsWithoutRef<'button'>, 'type' | 'disabled' | 'children' | 'aria-label'> {
@@ -12,22 +57,41 @@ export interface ButtonProps
   label: string;
   /** Visual emphasis. One primary button per view. */
   variant?: ButtonVariant;
-  /** Controls padding and font size. Touch targets never drop below the minimum regardless of size. */
+  /** Controls horizontal padding and font size. Touch targets never drop below the minimum regardless of size. */
   size?: ButtonSize;
+  /** Icon before the label. Decorative — hidden from assistive technology; the label carries the meaning. */
+  leadingIcon?: ReactNode;
+  /** Icon after the label. Decorative, like leadingIcon. */
+  trailingIcon?: ReactNode;
   /** `submit` submits the enclosing Form. Everything else is `button`. */
   type?: ButtonType;
   /** Prevents activation. The button stays in the tab order and is announced as disabled. */
   disabled?: boolean;
-  /** Hides the visible label and shows only the icon. `label` is still required and becomes the accessible name. */
+  /**
+   * Hides the visible label and shows only `leadingIcon`. `label` is still required and becomes
+   * the accessible name. Padding becomes equal on all sides (`space.sm`).
+   */
   iconOnly?: boolean;
-  /** Shows progress and blocks repeat activation while an action is pending. */
+  /**
+   * Replaces the icon slot with a 1em ring spinner in `currentColor`, keeps the label space so
+   * layout does not shift, and blocks repeat activation while an action is pending.
+   */
   loading?: boolean;
-  /** Anatomy slot: icon rendered before the label. */
-  leadingIcon?: ReactNode;
-  /** Anatomy slot: icon rendered after the label. */
-  trailingIcon?: ReactNode;
+  /**
+   * The button sits on an inverse surface (Toast, Tooltip-like panels): `ghost` text uses
+   * color.inverse.link and hover uses a translucent inverse foreground; the focus ring uses
+   * color.inverse.focus. Only `ghost` is meaningful on inverse surfaces; other variants keep
+   * their own fills.
+   */
+  inverse?: boolean;
+  /** An event name sent to analytics when the button is pressed. Omit for no tracking. */
+  track?: string;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<ButtonOverridableBinding, TokenRef>>;
   /** Fired when the button is activated by pointer, keyboard (Enter/Space), or assistive technology. */
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
+  /** Fired after onPress with the `track` name and the button's label. */
+  onTrack?: (name: string, label: string) => void;
 }
 
 /**
@@ -46,14 +110,19 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     label,
     variant = 'primary',
     size = 'md',
+    leadingIcon,
+    trailingIcon,
     type = 'button',
     disabled = false,
     iconOnly = false,
     loading = false,
-    leadingIcon,
-    trailingIcon,
+    inverse = false,
+    track,
+    overrides,
     onClick,
+    onTrack,
     className,
+    style,
     ...rest
   },
   ref,
@@ -70,6 +139,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       return;
     }
     onClick?.(event);
+    if (track) {
+      trackPress(track, label);
+      onTrack?.(track, label);
+    }
   };
 
   const classes = [
@@ -77,30 +150,38 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     `ds-button--${variant}`,
     `ds-button--${size}`,
     iconOnly ? 'ds-button--icon-only' : null,
+    inverse ? 'ds-button--inverse' : null,
     className ?? null,
   ]
     .filter(Boolean)
     .join(' ');
+
+  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
 
   return (
     <button
       {...rest}
       ref={ref}
       type={type}
+      data-ds="Button"
       className={classes}
+      style={mergedStyle}
       aria-disabled={isDisabled ? 'true' : undefined}
       aria-busy={loading ? 'true' : undefined}
       aria-label={iconOnly ? label : undefined}
       onClick={handleClick}
     >
-      {leadingIcon !== undefined && leadingIcon !== null ? (
-        <span className="ds-button__icon" aria-hidden="true">
+      {loading ? (
+        <span className="ds-button__spinner" data-part="leadingIcon" aria-hidden="true" />
+      ) : leadingIcon !== undefined && leadingIcon !== null ? (
+        <span className="ds-button__icon" data-part="leadingIcon" aria-hidden="true">
           {leadingIcon}
         </span>
       ) : null}
       {iconOnly ? null : <span className="ds-button__label">{label}</span>}
       {trailingIcon !== undefined && trailingIcon !== null ? (
-        <span className="ds-button__icon" aria-hidden="true">
+        <span className="ds-button__icon" data-part="trailingIcon" aria-hidden="true">
           {trailingIcon}
         </span>
       ) : null}

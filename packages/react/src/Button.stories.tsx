@@ -12,9 +12,11 @@ const meta = {
     disabled: false,
     iconOnly: false,
     loading: false,
+    inverse: false,
   },
   argTypes: {
     onClick: { action: 'onClick' },
+    onTrack: { action: 'onTrack' },
   },
 } satisfies Meta<typeof Button>;
 
@@ -38,7 +40,7 @@ export const SizeLg: Story = { args: { size: 'lg' } };
 export const TypeButton: Story = { args: { type: 'button' } };
 export const TypeSubmit: Story = { args: { type: 'submit', label: 'Sign in' } };
 
-/* booleans */
+/* notable states */
 export const Disabled: Story = { args: { disabled: true } };
 export const Loading: Story = { args: { loading: true, label: 'Saving' } };
 export const IconOnly: Story = {
@@ -52,4 +54,20 @@ export const IconOnly: Story = {
       </svg>
     ),
   },
+};
+
+export const Inverse: Story = {
+  args: { variant: 'ghost', inverse: true, label: 'Undo' },
+  parameters: { backgrounds: { default: 'dark' } },
+  decorators: [
+    (Story) => (
+      <div style={{ background: 'var(--color-inverse-surface)', padding: 'var(--space-lg)' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const Tracked: Story = {
+  args: { track: 'signup', label: 'Sign up' },
 };

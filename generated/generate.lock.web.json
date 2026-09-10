@@ -1,4 +1,28 @@
 {
+  "Accordion.web": {
+    "hash": "eecb47fc65ba5bd6",
+    "lastAttemptHash": "eecb47fc65ba5bd6",
+    "generatedAt": "2026-09-10T14:22:24+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.3804,
+    "files": [
+      "packages/react/src/Accordion.css",
+      "packages/react/src/Accordion.stories.tsx",
+      "packages/react/src/Accordion.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "ActionSheet.web": {
     "hash": "299e943664f0ef49",
     "lastAttemptHash": "299e943664f0ef49",

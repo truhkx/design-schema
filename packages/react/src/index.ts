@@ -202,3 +202,13 @@ export type { SelectProps, SelectValue, SelectNative, SelectOverridableBinding }
 
 export { Combobox } from './Combobox';
 export type { ComboboxProps, ComboboxValue, ComboboxFilter, ComboboxOverridableBinding } from './Combobox';
+
+export { Accordion } from './Accordion';
+export type {
+  AccordionProps,
+  AccordionItem,
+  AccordionHeadingLevel,
+  AccordionOpenChangeReason,
+  AccordionOpenChangeDetail,
+  AccordionOverridableBinding,
+} from './Accordion';

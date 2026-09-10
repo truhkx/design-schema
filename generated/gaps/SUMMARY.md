@@ -1,10 +1,18 @@
 # Gap digest — phase Selection
 
-Generated 2026-09-10T10:03 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T10:16 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
 Doc: `site/src/content/docs/components/accordion.md`
+
+### 2026-09-10 10:16 — lit round 1
+
+- **DOC** Accordion: the `items[].content: ReactNode` shape doesn't map to Lit; per the doc's own note ('content is the panel body — a slot per item on Lit') I dropped `content` from the Lit `AccordionItem` interface entirely and instead document that each item's panel content is a light-DOM child slotted by the item's `id` (e.g. `<div slot="faq-1">…</div>`). → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: `open-change`'s `reason` enum includes `keyboard` (distinct from `trigger`), but the only signal Accordion receives is Disclosure's `toggle` CustomEvent (`{ open }`), which doesn't distinguish a keyboard-activated click from a pointer click. I always report `reason: 'trigger'` for toggles that originate from a disclosure's own trigger and never emit `keyboard`; producing it would require Disclosure to forward the activation method in its own event detail. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: `divided` defaults to `true` and is a plain (non-negated) reflected boolean attribute, per the schema's explicit `platforms.lit.reflect: [exclusive, divided, heading-level]` list, which names it `divided` rather than a negated form. This follows the precedent already in this package (`Toast`/`BottomSheet`'s `dismissible`, also true-default and reflected as-is) rather than the general package-conventions rule that would rename true-default booleans to a negated attribute (e.g. `no-divide`) — I judged the schema's explicit reflect name and existing precedent as more authoritative than the generic rule for this one prop. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: nothing in the schema states how `value`/`defaultValue`/`items[].id` identify a slotted `<ds-disclosure>` — I used the light-DOM element's standard `id` attribute (also used as the generated element's `id` in `items` mode), since Disclosure has no other identifying prop. Consumers must give every `<ds-disclosure>` child a unique `id` for controlled state, events and keyboard nav to work; I added a dev-mode warning for a missing one. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: when `exclusive` and no section is open, `toValue()`/the controlled `value` type collapse to `''` (empty string) rather than `undefined`, since the doc types `value` as `string | string[]` with no explicit 'none open' representation under the single-string (exclusive) case — flagging the choice since a consumer expecting `undefined` for 'nothing open' would need to check for `''` instead. → `site/src/content/docs/components/accordion.md`
 
 ### 2026-09-10 10:03 — rn round 1
 
@@ -405,6 +413,30 @@ Doc: `site/src/content/docs/components/checkbox.md`
 ## Combobox
 
 Doc: `site/src/content/docs/components/combobox.md`
+
+### 2026-09-10 10:13 — web round 1
+
+- **DOC** Combobox: keyboard spec is internally contradictory — the Home/End entry's action text says 'Alt+ArrowDown/Up jump the list to first/last', but there's also a dedicated Alt+ArrowDown entry saying it 'opens the list without moving the active option'. Implemented the dedicated entry literally (Alt+ArrowDown just opens); did not implement an Alt+ArrowUp binding or a jump-to-first/last behavior for either, since no rule unambiguously specifies it. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: 'keydown on the input is forwarded to the Listbox handler so DOM focus never leaves the input' is not literally achievable with Listbox's public API (no controllable active-option prop). Implemented it via dispatching a native, bubbling KeyboardEvent at the mounted Listbox root's DOM node (queued until mount if the popup just opened) — this drives Listbox's own internal active/selection logic exactly as a real keydown would, without moving DOM focus. Verified via type-check only, not manually in a browser. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: 'opens the list with no active option' after each filtering keystroke is enforced by remounting the Listbox (via a `key` bump) on every keystroke for `filter` in startsWith/contains/async, since Listbox has no external reset hook for its internal active-option state. Skipped for `filter: none` (nothing is being filtered, so nothing to reset). → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: for `filter: none`, the spec says typing should 'only move the active option' (a typeahead-style jump-to-match). Not implemented — typing under `filter: none` currently only opens the list and does not relocate the active option; only ArrowDown/ArrowUp move it. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: 'Clicking the toggle button opens the full list' is implemented as bypassing the current typed-text filter for that one open (a `forceFullList` flag, cleared on the next keystroke) rather than clearing the typed text itself, since the spec doesn't say the toggle should also clear input text. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: chip label truncation ('~20 chars, ellipsis') is implemented via CSS `overflow`/`text-overflow: ellipsis` with no fixed character or width cap (none of the listed style bindings provide one), so truncation only kicks in once flex-wrap/shrink constrains a chip's width, not at a fixed 20-character point. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the custom-entry dedup check (suppressing `copy.addCustom` when typed text already matches an existing option) compares the trimmed, normalized text against both option `value` and `label`; the spec doesn't specify which field(s) to compare against. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: initial `inputValue` text for an uncontrolled single-select with a `defaultValue`/`value` is derived by looking up the label from `options`; the schema doesn't say whether the input should show the label on mount versus staying empty until interaction. → `site/src/content/docs/components/combobox.md`
+
+### 2026-09-10 10:09 — lit round 1
+
+- **DOC** Combobox: the behavior prose says typing 'opens the list with no active option,' but the `filter: none` prop description says typing 'only moves the active option' (a typeahead-like behavior) — implemented the general no-active-option rule for startsWith/contains/async, and a first-match-startsWith typeahead activation (without filtering `options`) only for `filter: none`. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the dedicated `Alt+ArrowDown` key rule ('opens the list without moving the active option') contradicts the inline mention inside the `Home`/`End` rule's action text ('Alt+ArrowDown/Up jump the list to first/last'). Implemented only the literal, dedicated `Alt+ArrowDown` entry; no `Alt+ArrowUp` handling was added since it has no rule of its own and the keyboard section says to implement exactly what is listed and nothing else. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `allowCustom`'s prop description says 'Enter or a separator (comma) commits it,' but the `keyboard` block — which the instructions say to implement exactly and nothing else — only lists Enter as a commit key. Implemented Enter only; comma-as-commit was not added. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `aria-activedescendant` on the `<input>` cannot resolve as a plain id string across the shadow-root boundary between `<ds-combobox>` and the internally-rendered `<ds-listbox>` option elements (two separate shadow trees). Implemented via the cross-root `ariaActiveDescendantElement` IDL reflection where the browser supports it, with the id string set as a best-effort fallback attribute; Select.ts's existing combobox-style trigger has the same architecture and does not set activedescendant at all. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `DsFormField.currentValue` is typed `string | boolean | null`, but a `multiple` combobox's value is `string[]` — the same caveat Listbox documents for itself; `<ds-form>` does not currently discover `ds-combobox` by tag. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the ~500ms debounce for the `status` live region is specified only in the Web/React platform notes as `motion.duration.base × 2`; Lit's own platform notes give no value, so a plain (non-token) timing constant was used, following the precedent Listbox sets for its own typeahead-reset timer. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: diacritic-insensitive filtering is called out only in the Web platform notes ('Filtering is case- and diacritic-insensitive'), not in Lit's; implemented case-insensitive matching only. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: 'Clicking the toggle button opens the full list' was interpreted as showing `options` unfiltered by any currently-typed query for that opening (reset on the next keystroke), since the schema does not say what happens to already-typed text at that moment. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: no prop exposes the popup's open/closed boolean state (as with Select and Menu), so the `Keyboard` story opens it imperatively in `play` by clicking the composed toggle button's inner native button, matching the Select generator's precedent. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: what a controlled `inputValue` should become after a commit (Enter, option click, clear) is undocumented — left to the consumer to update from `change`/`input-change`; only the uncontrolled `internalText` is set by the component itself. → `site/src/content/docs/components/combobox.md`
 
 ### 2026-09-10 10:00 — rn round 1
 
@@ -1354,7 +1386,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 627 · CODE: 38 · TOOLING: 2 · NOISE: 14
+DOC: 650 · CODE: 38 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

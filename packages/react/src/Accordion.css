@@ -1,0 +1,18 @@
+/* Accordion — styled only through Design Schema token custom properties. */
+
+.ds-accordion {
+  --ds-accordion-item-gap: var(--layout-gap-none);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-accordion-item-gap);
+  min-inline-size: 0;
+}
+
+/* minTarget: locked — never overridable. Disclosure's own default (size.target.min) is smaller
+   than the comfortable target an accordion-style trigger needs, so it is raised on every composed
+   Disclosure trigger through Disclosure's own sanctioned hook. focusRing and focusRingWidth are
+   locked too, but Disclosure's own defaults already match the accordion's tokens, so nothing to
+   force there. */
+.ds-accordion .ds-disclosure {
+  --ds-disclosure-min-target: var(--size-target-comfortable);
+}

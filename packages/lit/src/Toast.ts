@@ -700,27 +700,26 @@ function ensureRegion(): DsToastRegion {
 /**
  * Shows a toast, since a notification is an event, not a place in the tree.
  * Returns a promise that resolves once the toast leaves the screen (see
- * `ToastResult.reason`). Showing a toast with the same `id` as one already
- * visible replaces it (`reason: 'replaced'` for the old one) instead of
- * stacking; more than `MAX_TOASTS` visible evicts the oldest the same way.
+ * `ToastResult.reason`). Showing a toast with the same `toastId` as one
+ * already visible replaces it (`reason: 'replaced'` for the old one) instead
+ * of stacking; more than `MAX_TOASTS` visible evicts the oldest the same way.
  */
 export function toast(options: ToastOptions): Promise<ToastResult> {
   const region = ensureRegion();
 
-  if (options.id !== undefined) {
-    const existing = region.querySelector<DsToast>(`ds-toast#${CSS.escape(options.id)}`);
+  const current = Array.from(region.querySelectorAll('ds-toast')) as DsToast[];
+
+  if (options.toastId !== undefined) {
+    const existing = current.find((el) => el.toastId === options.toastId);
     existing?.requestDismiss('replaced');
   }
 
-  const current = Array.from(region.querySelectorAll('ds-toast')) as DsToast[];
   if (current.length >= MAX_TOASTS) {
     current[0]?.requestDismiss('replaced');
   }
 
   const el = document.createElement('ds-toast') as DsToast;
-  if (options.id !== undefined) {
-    el.id = options.id;
-  }
+  el.toastId = options.toastId;
   el.message = options.message;
   el.tone = options.tone ?? 'neutral';
   el.duration = options.duration ?? 'short';

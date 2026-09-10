@@ -1033,20 +1033,18 @@
     }
   },
   "Toast.lit": {
-    "hash": "015946f521c5d334",
-    "lastAttemptHash": "015946f521c5d334",
-    "generatedAt": "2026-09-10T06:43:11+00:00",
+    "hash": "7fc68d0cb2477ee0",
+    "lastAttemptHash": "7fc68d0cb2477ee0",
+    "generatedAt": "2026-09-10T21:55:33+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.4096,
+    "costUsd": 0.842,
     "files": [
       "packages/lit/src/Toast.stories.ts",
-      "packages/lit/src/Toast.test.ts",
-      "packages/lit/src/Toast.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Toast.ts"
     ],
-    "gaps": 9,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

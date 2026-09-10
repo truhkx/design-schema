@@ -53,6 +53,7 @@ import './NumberInput.js';
 import './ProgressBar.js';
 import './Stepper.js';
 import './Search.js';
+import './DatePicker.js';
 
 export { DsAccordion } from './Accordion.js';
 export type {
@@ -337,3 +338,11 @@ export type {
   SearchClearDetail,
   SearchOverridableBinding,
 } from './Search.js';
+
+export { DsDatePicker } from './DatePicker.js';
+export type {
+  DatePickerValue,
+  DatePickerChangeDetail,
+  DatePickerOpenChangeDetail,
+  DatePickerOverridableBinding,
+} from './DatePicker.js';

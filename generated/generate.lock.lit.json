@@ -272,6 +272,29 @@
       "modules": true
     }
   },
+  "DatePicker.lit": {
+    "hash": "96da04f9dcd5cd64",
+    "lastAttemptHash": "96da04f9dcd5cd64",
+    "generatedAt": "2026-09-10T15:52:59+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.9786,
+    "files": [
+      "packages/lit/src/DatePicker.stories.ts",
+      "packages/lit/src/DatePicker.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 10,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Dialog.lit": {
     "hash": "a557079485ca5e88",
     "lastAttemptHash": "a557079485ca5e88",

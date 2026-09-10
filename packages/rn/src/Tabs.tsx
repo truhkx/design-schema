@@ -151,6 +151,11 @@ export function Tabs({
           console.warn(`Tabs: no TabPanel with id "${tab.id}" matching tabs[].id.`);
         }
       });
+      panelsById.forEach((_panel, id) => {
+        if (!tabs.some((tab) => tab.id === id)) {
+          console.warn(`Tabs: TabPanel id "${id}" has no matching entry in tabs[].`);
+        }
+      });
     }
   }, [tabs, panelsById]);
 
@@ -507,7 +512,7 @@ function TabButton({ tab, selected, fill, styleTokens: s, onSelect, onMeasured }
       testID="Tabs.tab"
     >
       {tab.icon !== undefined ? (
-        <View accessibilityElementsHidden importantForAccessibility="no">
+        <View testID="Tabs.tabIcon" accessibilityElementsHidden importantForAccessibility="no">
           <Icon name={tab.icon} size="sm" color={foreground} />
         </View>
       ) : null}
@@ -515,7 +520,7 @@ function TabButton({ tab, selected, fill, styleTokens: s, onSelect, onMeasured }
         {tab.label}
       </RNText>
       {tab.badge !== undefined ? (
-        <RNText style={badgeStyle} accessibilityElementsHidden importantForAccessibility="no">
+        <RNText testID="Tabs.tabBadge" style={badgeStyle} accessibilityElementsHidden importantForAccessibility="no">
           {tab.badge}
         </RNText>
       ) : null}

@@ -44,6 +44,10 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+/* size */
+export const SizeSm: Story = { args: { size: 'sm' } };
+export const SizeMd: Story = { args: { size: 'md' } };
+
 /* native */
 export const NativeAuto: Story = { args: { native: 'auto' } };
 export const NativeAlways: Story = { args: { native: 'always' } };

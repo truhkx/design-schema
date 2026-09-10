@@ -24,6 +24,7 @@ import './Select.css';
 
 export type SelectValue = string | string[];
 export type SelectNative = 'auto' | 'always' | 'never';
+export type SelectSize = 'sm' | 'md';
 
 /** copy.* — used verbatim; `{label}` is replaced by the visible label, `{count}` by the selection count. */
 const COPY = {
@@ -46,6 +47,7 @@ export type SelectOverridableBinding =
   | 'triggerRadius'
   | 'triggerPaddingInline'
   | 'triggerPaddingBlock'
+  | 'triggerPaddingBlockSm'
   | 'triggerGap'
   | 'partGap'
   | 'labelWeight'
@@ -59,6 +61,7 @@ export type SelectOverridableBinding =
   | 'fontFamily'
   | 'fontSize'
   | 'lineHeight'
+  | 'minTargetSm'
   | 'disabledOpacity'
   | 'enter';
 
@@ -69,21 +72,20 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<SelectOverridableBinding, string>> = {
   triggerRadius: '--ds-select-trigger-radius',
   triggerPaddingInline: '--ds-select-trigger-padding-inline',
   triggerPaddingBlock: '--ds-select-trigger-padding-block',
+  triggerPaddingBlockSm: '--ds-select-trigger-padding-block-sm',
   triggerGap: '--ds-select-trigger-gap',
   partGap: '--ds-select-part-gap',
   fontFamily: '--ds-select-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-select-font-size',
   lineHeight: '--ds-select-line-height',
+  minTargetSm: '--ds-select-min-target-sm',
   disabledOpacity: '--ds-select-disabled-opacity',
 };
 
 /**
  * The popup is portaled, so its own bindings are set on the popup node itself, not inherited from
- * the root. `popupBorder`/`popupRadius`/`popupSurface` are all read by the nested Listbox too (via
- * the sanctioned CSS custom-property escape hatch in Select.css), since Listbox's own equivalent
- * `surface` binding is locked and forwarding `border`/`radius` through its `overrides` prop instead
- * would desync the wrapper's shadow-clipping radius from the visible box whenever only one path
- * were overridden.
+ * the root. The composed Listbox renders `embedded` (it draws no surface/border/radius of its
+ * own), so `popupSurface`/`popupBorder`/`popupRadius` are drawn by this wrapper alone.
  */
 const POPUP_OVERRIDE_HOOK: Partial<Record<SelectOverridableBinding, string>> = {
   popupSurface: '--ds-select-popup-surface',
@@ -251,6 +253,16 @@ export interface SelectProps
   defaultValue?: SelectValue;
   /** Text shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. Not a substitute for the label. */
   placeholder?: string;
+  /** Visually hide the label (it remains the accessible name), for compact pickers such as
+   * DatePicker's month and year. */
+  hideLabel?: boolean;
+  /** sm for pickers inside toolbars and calendar headers. */
+  size?: SelectSize;
+  /**
+   * Controlled popup state, for programmatic opening and for stories and tests (the Keyboard
+   * story renders it open). Omit for the trigger-driven default.
+   */
+  open?: boolean;
   /**
    * Pick any number. The trigger shows `copy.selectedCount` (or the labels when two or fewer);
    * the popup stays open while toggling and closes on Escape or outside click.
@@ -300,6 +312,9 @@ export const Select = forwardRef<HTMLButtonElement | HTMLSelectElement, SelectPr
     value,
     defaultValue,
     placeholder,
+    hideLabel = false,
+    size = 'md',
+    open: openProp,
     multiple = false,
     description,
     required = false,
@@ -344,7 +359,9 @@ export const Select = forwardRef<HTMLButtonElement | HTMLSelectElement, SelectPr
   const [internalValue, setInternalValue] = useState<SelectValue | undefined>(defaultValue ?? (multiple ? [] : undefined));
   const selected = isControlled ? value : internalValue;
 
-  const [open, setOpen] = useState(false);
+  const isOpenControlled = openProp !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isOpenControlled ? openProp : internalOpen;
   const [activeValue, setActiveValue] = useState<string | null>(null);
   const [popupStyle, setPopupStyle] = useState<CSSProperties>();
   const [vertical, setVertical] = useState<'top' | 'bottom'>('bottom');
@@ -402,7 +419,7 @@ export const Select = forwardRef<HTMLButtonElement | HTMLSelectElement, SelectPr
   };
 
   const changeOpen = (next: boolean) => {
-    setOpen(next);
+    if (!isOpenControlled) setInternalOpen(next);
     onOpenChange?.(next);
   };
 
@@ -521,6 +538,7 @@ export const Select = forwardRef<HTMLButtonElement | HTMLSelectElement, SelectPr
 
   const classes = [
     'ds-select',
+    `ds-select--${size}`,
     isInvalid ? 'ds-select--invalid' : null,
     isDisabled ? 'ds-select--disabled' : null,
     className ?? null,
@@ -530,8 +548,10 @@ export const Select = forwardRef<HTMLButtonElement | HTMLSelectElement, SelectPr
 
   const describedBy = [description ? descriptionId : null, resolvedError ? errorId : null].filter(Boolean).join(' ');
 
+  const labelClasses = ['ds-select__label', hideLabel ? 'ds-select__visually-hidden' : null].filter(Boolean).join(' ');
+
   const labelNode = (
-    <label htmlFor={id} id={labelId} className="ds-select__label" data-part="label">
+    <label htmlFor={id} id={labelId} className={labelClasses} data-part="label">
       <Text
         element="span"
         weight="medium"
@@ -690,6 +710,8 @@ export const Select = forwardRef<HTMLButtonElement | HTMLSelectElement, SelectPr
                 multiple={multiple}
                 value={selected}
                 selectionFollowsFocus={false}
+                embedded
+                defaultActiveValue={typeof selected === 'string' ? selected || undefined : toArray(selected)[0]}
                 disabled={isDisabled}
                 onChange={handleListboxChange}
                 onActiveChange={setActiveValue}

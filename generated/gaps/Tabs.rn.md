@@ -11,3 +11,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tabs: the web note 'the selected tab scrolled into view' is approximated on native by measuring each tab's onLayout rect and calling ScrollView.scrollTo to bring it into the visible viewport (nearest-edge, not centered) — a reasonable native analogue, not dictated by the schema.
 - Tabs: badge text is merged into the tab's accessibilityLabel ("Label, badge") and the visual badge Text is hidden from assistive technology to avoid double-announcement, since the schema doesn't specify how a badge should be exposed to screen readers.
 - Tabs: exported `TabPanel` is a plain identity wrapper (`{children}`) that `Tabs` locates via `React.Children` + `child.type === TabPanel`, matching the doc's 'wrapped in the exported TabPanel with a matching id' — this runtime-introspection pattern is new to the rn package (no prior composite component parses its `children` this way) since Tabs is the first component whose panels come through slotted children rather than a data array.
+
+## 2026-09-10 18:32 — round 1
+
+- Tabs: `activation` (automatic/manual) has no native equivalent since Pressable exposes no key-event API — every tab is its own accessibility stop and touch always selects immediately, so the prop is accepted/typed for parity but has no observable effect on RN; documented in the component doc comment rather than reported as a fresh gap since the spec's own platform notes anticipate this.
+- Tabs: the keyboard table's Tab-into-panel and arrow/Home/End movement are web-only per the spec's own 'keyboard rules describe the web keyboard model' clause; no native substitute exists beyond making the panel itself a normal focusable region, so nothing further was implemented.

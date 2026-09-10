@@ -132,6 +132,16 @@ export interface ListboxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'chi
   selectionFollowsFocus?: boolean;
   /** At least one option must be selected to submit when inside a Form. */
   required?: boolean;
+  /** Marks the list invalid (aria-invalid). */
+  invalid?: boolean;
+  /** Error message rendered below the list and linked by aria-describedby; implies invalid. */
+  error?: string;
+  /** The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; the list draws none of its own. */
+  embedded?: boolean;
+  /** The option that is active when the list first receives focus. Defaults to the first selected, else the first enabled option. */
+  defaultActiveValue?: string;
+  /** Options are being fetched (async Combobox); the list shows `copy.loading` in place of the empty message and is aria-busy. */
+  loading?: boolean;
   /** The whole list is inert but readable. */
   disabled?: boolean;
   /** Field name for Form collection. Multiple values are collected as an array. */
@@ -169,6 +179,11 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
     defaultValue,
     selectionFollowsFocus = true,
     required = false,
+    invalid = false,
+    error,
+    embedded = false,
+    defaultActiveValue,
+    loading = false,
     disabled = false,
     name,
     emptyMessage,
@@ -177,6 +192,7 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
     onChange,
     onActiveChange,
     onBlur,
+    onFocus,
     id: idProp,
     className,
     style,
@@ -206,7 +222,9 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
   const [activeValue, setActiveValueState] = useState<string | null>(null);
 
   const isDisabled = disabled || (form?.disabled ?? false);
-  const resolvedError = name ? form?.errors[name] : undefined;
+  const formError = name ? form?.errors[name] : undefined;
+  const displayError = error ?? formError;
+  const isInvalid = invalid || Boolean(displayError);
 
   const rows = useMemo(() => flattenRows(options), [options]);
   const enabledRows = useMemo(() => rows.filter((row) => !row.disabled), [rows]);
@@ -378,6 +396,16 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
     if (form && name && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
   };
 
+  const handleFocus = (event: FocusEvent<HTMLDivElement>) => {
+    onFocus?.(event);
+    if (activeValue !== null) return;
+    const selectedRow = enabledRows.find((row) => isSelected(row.value));
+    const preferred = defaultActiveValue && enabledRows.some((row) => row.value === defaultActiveValue)
+      ? defaultActiveValue
+      : (selectedRow ?? enabledRows[0])?.value;
+    if (preferred) setActiveValue(preferred);
+  };
+
   const handleRowPointerMove = (row: ListboxRow) => {
     if (isDisabled || row.disabled || row.value === activeValue) return;
     setActiveValue(row.value);
@@ -482,7 +510,14 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
     return renderRow(node);
   };
 
-  const classes = ['ds-listbox', isDisabled ? 'ds-listbox--disabled' : null, className ?? null].filter(Boolean).join(' ');
+  const classes = [
+    'ds-listbox',
+    isDisabled ? 'ds-listbox--disabled' : null,
+    embedded ? 'ds-listbox--embedded' : null,
+    className ?? null,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
   const heightStyle: CSSProperties | undefined = maxHeight ? { maxBlockSize: maxHeight } : undefined;
@@ -504,22 +539,27 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
       aria-labelledby={labelledBy}
       aria-multiselectable={multiple ? 'true' : undefined}
       aria-activedescendant={activeValue ? `${id}-option-${activeValue}` : undefined}
+      aria-invalid={isInvalid ? 'true' : undefined}
+      aria-required={required ? 'true' : undefined}
+      aria-busy={loading ? 'true' : undefined}
+      aria-describedby={displayError ? errorId : undefined}
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}
+      onFocus={handleFocus}
     >
       {rows.length === 0 ? (
         <div className="ds-listbox__empty" data-part="emptyState">
           <Text tone="muted" size="sm">
-            {emptyMessage ?? COPY.empty}
+            {loading ? COPY.loading : (emptyMessage ?? COPY.empty)}
           </Text>
         </div>
       ) : (
         options.map((node, index) => renderNode(node, String(index)))
       )}
-      {resolvedError ? (
+      {displayError ? (
         <div className="ds-listbox__error" data-part="errorMessage">
           <Text element="span" id={errorId} role="alert" size="sm" tone="danger">
-            {resolvedError}
+            {displayError}
           </Text>
         </div>
       ) : null}

@@ -63,6 +63,14 @@
   cursor: not-allowed;
 }
 
+/* embedded: the popup that hosts the list owns border, surface and radius; overrides for
+   border/borderWidth/radius are no-ops here since the shorthand below ignores their hooks. */
+.ds-listbox--embedded {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+}
+
 .ds-listbox__group {
   display: flex;
   flex-direction: column;

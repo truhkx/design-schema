@@ -9,6 +9,7 @@
   --ds-select-trigger-radius: var(--radius-md);
   --ds-select-trigger-padding-inline: var(--space-md);
   --ds-select-trigger-padding-block: var(--space-sm);
+  --ds-select-trigger-padding-block-sm: var(--space-1);
   --ds-select-trigger-gap: var(--layout-gap-normal);
   --ds-select-value-color: var(--color-foreground);
   --ds-select-placeholder-color: var(--color-foreground-muted);
@@ -22,6 +23,7 @@
   --ds-select-font-size: var(--font-size-md);
   --ds-select-line-height: var(--font-line-height-normal);
   --ds-select-min-target: var(--size-target-comfortable);
+  --ds-select-min-target-sm: var(--size-target-min);
   --ds-select-focus-ring-width: var(--border-width-focus);
   --ds-select-disabled-opacity: var(--opacity-disabled);
   display: flex;
@@ -31,9 +33,29 @@
   font-family: var(--ds-select-font-family);
 }
 
+/* size: sm swaps paddingBlock/minTarget for their Sm bindings and fontSize to sm. */
+.ds-select--sm {
+  --ds-select-trigger-padding-block: var(--ds-select-trigger-padding-block-sm);
+  --ds-select-min-target: var(--ds-select-min-target-sm);
+  --ds-select-font-size: var(--font-size-sm);
+}
+
 .ds-select__label {
   display: inline-block;
   cursor: default;
+}
+
+/* visually hidden: clipped to a 1px box, off the normal flow — the standard sanctioned pixel literals */
+.ds-select__visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .ds-select__required {
@@ -147,6 +169,8 @@
   min-inline-size: var(--ds-select-trigger-width, 0px);
   max-inline-size: calc(100vw - 2 * var(--layout-gutter));
   max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  background-color: var(--ds-select-popup-surface);
+  border: var(--border-width-thin) solid var(--ds-select-popup-border);
   border-radius: var(--ds-select-popup-radius);
   box-shadow: var(--ds-select-popup-shadow);
   z-index: var(--ds-select-layer);
@@ -159,14 +183,9 @@
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* popupSurface/popupBorder/popupRadius are drawn by the nested Listbox's own root, not this
-   wrapper; forwarded via the sanctioned CSS custom-property escape hatch (Listbox's `surface` is
-   locked, and mirroring `border`/`radius` here — rather than through Listbox's own overridable
-   props — keeps them in sync with this wrapper's shadow-clipping radius from one source). */
+/* The composed Listbox renders `embedded`, so it draws no surface/border/radius of its own —
+   this wrapper owns them. */
 .ds-select__popup > .ds-listbox {
-  --ds-listbox-surface: var(--ds-select-popup-surface);
-  --ds-listbox-border: var(--ds-select-popup-border);
-  --ds-listbox-radius: var(--ds-select-popup-radius);
   min-inline-size: 100%;
 }
 

@@ -38,6 +38,7 @@ export type SelectOverridableBinding =
   | 'triggerRadius'
   | 'triggerPaddingInline'
   | 'triggerPaddingBlock'
+  | 'triggerPaddingBlockSm'
   | 'triggerGap'
   | 'partGap'
   | 'labelWeight'
@@ -51,6 +52,7 @@ export type SelectOverridableBinding =
   | 'fontFamily'
   | 'fontSize'
   | 'lineHeight'
+  | 'minTargetSm'
   | 'disabledOpacity'
   | 'enter';
 
@@ -61,6 +63,7 @@ const HOOKS: Record<SelectOverridableBinding, string> = {
   triggerRadius: '--ds-select-trigger-radius',
   triggerPaddingInline: '--ds-select-trigger-padding-inline',
   triggerPaddingBlock: '--ds-select-trigger-padding-block',
+  triggerPaddingBlockSm: '--ds-select-trigger-padding-block-sm',
   triggerGap: '--ds-select-trigger-gap',
   partGap: '--ds-select-part-gap',
   labelWeight: '--ds-select-label-weight',
@@ -74,6 +77,7 @@ const HOOKS: Record<SelectOverridableBinding, string> = {
   fontFamily: '--ds-select-font-family', // literal-ok: CSS custom-property name, not a font stack
   fontSize: '--ds-select-font-size',
   lineHeight: '--ds-select-line-height',
+  minTargetSm: '--ds-select-min-target-sm',
   disabledOpacity: '--ds-select-disabled-opacity',
   enter: '--ds-select-enter',
 };
@@ -172,6 +176,7 @@ export class DsSelect extends LitElement {
       --ds-select-trigger-radius: var(--radius-md);
       --ds-select-trigger-padding-inline: var(--space-md);
       --ds-select-trigger-padding-block: var(--space-sm);
+      --ds-select-trigger-padding-block-sm: var(--space-1);
       --ds-select-trigger-gap: var(--layout-gap-normal);
       --ds-select-part-gap: var(--space-1);
       --ds-select-label-weight: var(--font-weight-medium);
@@ -185,12 +190,31 @@ export class DsSelect extends LitElement {
       --ds-select-font-family: var(--font-family-body);
       --ds-select-font-size: var(--font-size-md);
       --ds-select-line-height: var(--font-line-height-normal);
+      --ds-select-min-target-sm: var(--size-target-min);
       --ds-select-disabled-opacity: var(--opacity-disabled);
       --ds-select-enter: var(--motion-duration-fast);
     }
 
     :host([hidden]) {
       display: none;
+    }
+
+    /* fontSize: font.size.{size} */
+    :host([size='sm']) {
+      --ds-select-font-size: var(--font-size-sm);
+    }
+
+    .visually-hidden {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
     }
 
     .label {
@@ -238,6 +262,12 @@ export class DsSelect extends LitElement {
       }
     }
 
+    /* triggerPaddingBlockSm / minTargetSm replace the md bindings at size sm */
+    :host([size='sm']) .trigger {
+      min-block-size: var(--ds-select-min-target-sm);
+      padding-block: var(--ds-select-trigger-padding-block-sm);
+    }
+
     /*
      * focusRingWidth (locked) replaces triggerBorderWidth while focused; padding
      * shrinks by the difference (border-box sizing) so the trigger does not shift.
@@ -250,6 +280,12 @@ export class DsSelect extends LitElement {
       );
       padding-block: calc(
         var(--ds-select-trigger-padding-block) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
+      );
+    }
+
+    :host([size='sm']) .trigger:focus-visible {
+      padding-block: calc(
+        var(--ds-select-trigger-padding-block-sm) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
       );
     }
 
@@ -346,6 +382,11 @@ export class DsSelect extends LitElement {
       -webkit-appearance: none;
     }
 
+    :host([size='sm']) .native-select {
+      min-block-size: var(--ds-select-min-target-sm);
+      padding-block: var(--ds-select-trigger-padding-block-sm);
+    }
+
     .native-select:focus-visible {
       border-color: var(--color-border-focus);
       border-width: var(--border-width-focus);
@@ -388,6 +429,15 @@ export class DsSelect extends LitElement {
 
   /** Shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. Not a substitute for `label`. */
   @property() placeholder?: string;
+
+  /** Visually hide the label (it remains the accessible name), for compact pickers such as DatePicker's month and year. */
+  @property({ type: Boolean, attribute: 'hide-label' }) hideLabel = false;
+
+  /** sm for pickers inside toolbars and calendar headers. Not listed under this component's `platforms.lit.reflect`, but the fontSize/triggerPaddingBlockSm/minTargetSm bindings resolve per value and need an attribute selector, matching Button/Input's reflected `size` in this package — see the generator's gap notes. */
+  @property({ reflect: true }) size: SelectSize = 'md';
+
+  /** Controlled popup state, for programmatic opening and for stories and tests. Omit for the trigger-driven default. */
+  @property({ type: Boolean, reflect: true }) open?: boolean;
 
   /** Pick any number. The trigger shows the count (or the labels when two or fewer); the popup stays open while toggling. */
   @property({ type: Boolean, reflect: true }) multiple = false;
@@ -434,8 +484,8 @@ export class DsSelect extends LitElement {
   /** Uncontrolled value (seeded from `defaultValue`). */
   @state() private internalValue?: SelectValue;
 
-  /** Whether the popup is open. Not exposed as a property — see the generator's gap notes. */
-  @state() private isOpen = false;
+  /** Uncontrolled popup open state, used when `open` is omitted. */
+  @state() private internalOpen = false;
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
   @state() private formDisabled = false;
@@ -462,6 +512,11 @@ export class DsSelect extends LitElement {
 
   private get isDisabled(): boolean {
     return this.disabled || this.formDisabled;
+  }
+
+  /** Whether the popup is currently open, controlled or not. */
+  get currentOpen(): boolean {
+    return this.open ?? this.internalOpen;
   }
 
   /** The current selection: a value, an array (`multiple`), or `null` when nothing is selected (no key in the Form). */
@@ -557,9 +612,10 @@ export class DsSelect extends LitElement {
 
   protected override updated(): void {
     this.syncInternals();
-    if (this.isOpen !== this.wasOpen) {
-      this.wasOpen = this.isOpen;
-      if (this.isOpen) {
+    const isOpen = this.currentOpen;
+    if (isOpen !== this.wasOpen) {
+      this.wasOpen = isOpen;
+      if (isOpen) {
         this.handleOpened();
       } else {
         this.handleClosed();
@@ -589,8 +645,10 @@ export class DsSelect extends LitElement {
             : COPY_SELECTED_COUNT(labels.length)
           : labels[0];
 
+    const isOpen = this.currentOpen;
+
     return html`
-      <ds-text id="label" part="label" class="label" element="p" weight="medium"
+      <ds-text id="label" part="label" class=${classMap({ label: true, 'visually-hidden': this.hideLabel })} element="p" weight="medium"
         >${this.label}${this.required
           ? html`<span aria-hidden="true">${COPY_REQUIRED_INDICATOR}</span>`
           : nothing}</ds-text
@@ -607,9 +665,9 @@ export class DsSelect extends LitElement {
         type="button"
         role="combobox"
         aria-haspopup="listbox"
-        aria-expanded=${this.isOpen ? 'true' : 'false'}
+        aria-expanded=${isOpen ? 'true' : 'false'}
         aria-controls="popup"
-        aria-labelledby="label value"
+        aria-labelledby="label"
         aria-describedby=${ifDefined(describedBy)}
         aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
         aria-required=${ifDefined(this.required ? 'true' : undefined)}
@@ -620,14 +678,14 @@ export class DsSelect extends LitElement {
         <span id="value" part="value" class=${classMap({ value: true, placeholder: labels.length === 0 })}
           >${triggerText}</span
         >
-        <ds-icon part="chevron" class=${classMap({ chevron: true, 'is-open': this.isOpen })} name="chevron-down"></ds-icon>
+        <ds-icon part="chevron" class=${classMap({ chevron: true, 'is-open': isOpen })} name="chevron-down"></ds-icon>
       </button>
       <div
         id="popup"
         class="popup"
         part="popup"
         popover=${this.popoverSupported ? 'manual' : nothing}
-        ?hidden=${this.popoverSupported ? false : !this.isOpen}
+        ?hidden=${this.popoverSupported ? false : !isOpen}
       >
         <ds-listbox
           id="listbox"
@@ -647,7 +705,7 @@ export class DsSelect extends LitElement {
 
   private renderNative(isDisabled: boolean, describedBy: string | undefined) {
     return html`
-      <ds-text id="label" part="label" class="label" element="p" weight="medium"
+      <ds-text id="label" part="label" class=${classMap({ label: true, 'visually-hidden': this.hideLabel })} element="p" weight="medium"
         >${this.label}${this.required
           ? html`<span aria-hidden="true">${COPY_REQUIRED_INDICATOR}</span>`
           : nothing}</ds-text
@@ -695,7 +753,7 @@ export class DsSelect extends LitElement {
     if (this.isDisabled) {
       return;
     }
-    if (this.isOpen) {
+    if (this.currentOpen) {
       this.closePopup(false);
     } else {
       this.openPopup();
@@ -708,7 +766,7 @@ export class DsSelect extends LitElement {
     }
     const key = event.key;
 
-    if (!this.isOpen) {
+    if (!this.currentOpen) {
       if (key === 'Enter' || key === ' ' || key === 'ArrowDown' || key === 'ArrowUp') {
         event.preventDefault();
         this.openPopup();
@@ -732,7 +790,7 @@ export class DsSelect extends LitElement {
           }
         }
         this.hidePopupImmediately();
-        this.isOpen = false;
+        this.setOpen(false);
         break;
       }
       case 'Enter':
@@ -769,7 +827,7 @@ export class DsSelect extends LitElement {
   };
 
   private readonly handleReposition = (): void => {
-    if (this.isOpen) {
+    if (this.currentOpen) {
       this.updatePosition();
     }
   };
@@ -787,19 +845,28 @@ export class DsSelect extends LitElement {
   }
 
   private openPopup(): void {
-    if (this.isOpen || this.isDisabled) {
+    if (this.currentOpen || this.isDisabled) {
       return;
     }
-    this.isOpen = true;
+    this.setOpen(true);
   }
 
   private closePopup(restoreFocus: boolean): void {
-    if (!this.isOpen) {
+    if (!this.currentOpen) {
       return;
     }
-    this.isOpen = false;
+    this.setOpen(false);
     if (restoreFocus) {
       this.triggerEl?.focus();
+    }
+  }
+
+  /** Writes to `open` when controlled, else to `internalOpen`. */
+  private setOpen(next: boolean): void {
+    if (this.open !== undefined) {
+      this.open = next;
+    } else {
+      this.internalOpen = next;
     }
   }
 

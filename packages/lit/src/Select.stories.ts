@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Select.js';
-import type { SelectNative, SelectValue } from './Select.js';
+import type { SelectNative, SelectSize, SelectValue } from './Select.js';
 import type { ListboxOption } from './Listbox.js';
 
 interface SelectArgs {
@@ -12,6 +12,9 @@ interface SelectArgs {
   value?: SelectValue;
   defaultValue?: SelectValue;
   placeholder?: string;
+  hideLabel: boolean;
+  size: SelectSize;
+  open?: boolean;
   multiple: boolean;
   description?: string;
   required: boolean;
@@ -61,6 +64,8 @@ const meta: Meta<SelectArgs> = {
   },
   argTypes: {
     native: { control: 'select', options: ['auto', 'always', 'never'] },
+    size: { control: 'select', options: ['sm', 'md'] },
+    hideLabel: { control: 'boolean' },
     multiple: { control: 'boolean' },
     required: { control: 'boolean' },
     disabled: { control: 'boolean' },
@@ -73,6 +78,9 @@ const meta: Meta<SelectArgs> = {
     value: undefined,
     defaultValue: undefined,
     placeholder: undefined,
+    hideLabel: false,
+    size: 'md',
+    open: undefined,
     multiple: false,
     description: undefined,
     required: false,
@@ -89,6 +97,9 @@ const meta: Meta<SelectArgs> = {
       .value=${args.value}
       .defaultValue=${args.defaultValue}
       placeholder=${ifDefined(args.placeholder)}
+      ?hide-label=${args.hideLabel}
+      size=${args.size}
+      ?open=${args.open}
       ?multiple=${args.multiple}
       description=${ifDefined(args.description)}
       ?required=${args.required}
@@ -110,7 +121,14 @@ export const NativeAuto: Story = { args: { native: 'auto' } };
 export const NativeAlways: Story = { args: { native: 'always', defaultValue: 'ca' } };
 export const NativeNever: Story = { args: { native: 'never' } };
 
+/* size */
+export const SizeSm: Story = { args: { size: 'sm' } };
+export const SizeMd: Story = { args: { size: 'md' } };
+
 /* boolean states */
+export const HideLabelTrue: Story = {
+  args: { hideLabel: true, defaultValue: 'us' },
+};
 export const MultipleTrue: Story = {
   args: { multiple: true, options: ROLE_OPTIONS, label: 'Roles', name: 'roles', defaultValue: ['editor'] },
 };
@@ -145,18 +163,12 @@ export const ErrorIdentified: Story = {
 };
 
 /**
- * Renders open with its trigger and at least three options so the keyboard
- * gate can verify Enter/Space/arrow-to-open, arrow navigation, Home/End,
- * typeahead, Enter to commit, Escape and Tab. Unlike Menu, real DOM focus
- * stays on the trigger the whole time — the popup opens via `play` clicking
- * the trigger, since (unlike Menu/Popover/Dialog) this component's schema
- * has no controlled `open` prop to set declaratively.
+ * Renders open (via the controlled `open` prop) with its trigger and at
+ * least three options so the keyboard gate can verify Enter/Space/arrow-to-
+ * open, arrow navigation, Home/End, typeahead, Enter to commit, Escape and
+ * Tab. Unlike the option list, real DOM focus stays on the trigger the whole
+ * time the popup is open.
  */
 export const Keyboard: Story = {
-  args: { options: COUNTRY_OPTIONS },
-  play: async ({ canvasElement }) => {
-    const select = canvasElement.querySelector('ds-select');
-    const trigger = select?.shadowRoot?.querySelector<HTMLButtonElement>('#trigger');
-    trigger?.click();
-  },
+  args: { options: COUNTRY_OPTIONS, open: true },
 };

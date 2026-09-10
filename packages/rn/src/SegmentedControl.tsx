@@ -22,6 +22,9 @@ export type SegmentedControlOverridableBinding =
   | 'segmentPaddingInline'
   | 'segmentPaddingBlock'
   | 'segmentGap'
+  | 'segmentSpacing'
+  | 'selectedWeight'
+  | 'paddingBlockSm'
   | 'fontFamily'
   | 'fontSize'
   | 'fontWeight'
@@ -119,13 +122,15 @@ export function SegmentedControl({
   const segmentPaddingInline = overrides?.segmentPaddingInline
     ? (resolveToken(t, overrides.segmentPaddingInline) as number)
     : t.spaceMd;
-  const segmentPaddingBlock = overrides?.segmentPaddingBlock
-    ? (resolveToken(t, overrides.segmentPaddingBlock) as number)
-    : t.space1;
+  const paddingBlockMd = overrides?.segmentPaddingBlock ? (resolveToken(t, overrides.segmentPaddingBlock) as number) : t.space1;
+  const paddingBlockSm = overrides?.paddingBlockSm ? (resolveToken(t, overrides.paddingBlockSm) as number) : t.space1;
+  const segmentPaddingBlock = size === 'sm' ? paddingBlockSm : paddingBlockMd;
   const segmentGap = overrides?.segmentGap ? (resolveToken(t, overrides.segmentGap) as number) : t.layoutGapTight;
+  const segmentSpacing = overrides?.segmentSpacing ? (resolveToken(t, overrides.segmentSpacing) as number) : t.space0;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[FONT_SIZE_TOKEN[size]];
   const fontWeight = overrides?.fontWeight ? (resolveToken(t, overrides.fontWeight) as number) : t.fontWeightMedium;
+  const selectedWeight = overrides?.selectedWeight ? (resolveToken(t, overrides.selectedWeight) as number) : t.fontWeightSemibold;
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
@@ -134,7 +139,7 @@ export function SegmentedControl({
   const segmentColor = t.colorForegroundMuted;
   const segmentSelectedColor = t.colorForegroundStrong;
   const segmentSelectedBackground = t.colorBackground;
-  const minTarget = t.sizeTargetMin;
+  const minTarget = t.sizeTargetComfortable;
   const focusRingColor = t.colorBorderFocus;
   const focusRingWidth = t.borderWidthFocus;
 
@@ -204,6 +209,7 @@ export function SegmentedControl({
     alignItems: 'stretch',
     alignSelf: fill ? 'stretch' : 'flex-start',
     position: 'relative',
+    gap: segmentSpacing,
     backgroundColor: groupBackground,
     borderRadius: groupRadius,
     padding: groupPadding,
@@ -232,6 +238,7 @@ export function SegmentedControl({
     fontFamily,
     fontSize,
     fontWeight,
+    selectedWeight,
     lineHeightMultiplier,
     color: segmentColor,
     selectedColor: segmentSelectedColor,
@@ -267,6 +274,7 @@ interface SegmentStyleTokens {
   fontFamily: string;
   fontSize: number;
   fontWeight: number;
+  selectedWeight: number;
   lineHeightMultiplier: number;
   color: string;
   selectedColor: string;
@@ -307,7 +315,7 @@ function Segment({ option, selected, iconOnly, fill, styleTokens: s, onSelect, o
   const labelStyle: TextStyle = {
     fontFamily: s.fontFamily,
     fontSize: s.fontSize,
-    fontWeight: toFontWeight(s.fontWeight),
+    fontWeight: toFontWeight(selected ? s.selectedWeight : s.fontWeight),
     lineHeight: toLineHeight(s.fontSize, s.lineHeightMultiplier),
     color: foreground,
   };

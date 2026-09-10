@@ -694,19 +694,17 @@
     }
   },
   "SegmentedControl.rn": {
-    "hash": "530a37c1154bf24d",
-    "lastAttemptHash": "530a37c1154bf24d",
-    "generatedAt": "2026-09-10T13:31:46+00:00",
+    "hash": "632b5530b9be4d7d",
+    "lastAttemptHash": "632b5530b9be4d7d",
+    "generatedAt": "2026-09-10T22:35:46+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0097,
+    "costUsd": 0.8223,
     "files": [
-      "packages/rn/src/SegmentedControl.stories.tsx",
-      "packages/rn/src/SegmentedControl.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/SegmentedControl.tsx"
     ],
-    "gaps": 4,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -851,19 +849,17 @@
     }
   },
   "Tabs.rn": {
-    "hash": "d558f36137c3e048",
-    "lastAttemptHash": "d558f36137c3e048",
-    "generatedAt": "2026-09-10T13:25:53+00:00",
+    "hash": "b93a03378c287b3f",
+    "lastAttemptHash": "b93a03378c287b3f",
+    "generatedAt": "2026-09-10T22:32:49+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3779,
+    "costUsd": 0.2951,
     "files": [
-      "packages/rn/src/Tabs.stories.tsx",
-      "packages/rn/src/Tabs.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Tabs.tsx"
     ],
-    "gaps": 7,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,

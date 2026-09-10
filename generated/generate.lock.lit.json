@@ -1,18 +1,18 @@
 {
   "Accordion.lit": {
-    "hash": "3c8ad8d741a8338e",
-    "lastAttemptHash": "3c8ad8d741a8338e",
-    "generatedAt": "2026-09-10T14:16:20+00:00",
+    "hash": "9e447ebc4b1fd032",
+    "lastAttemptHash": "9e447ebc4b1fd032",
+    "generatedAt": "2026-09-10T22:37:00+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3049,
+    "costUsd": 0.2895,
     "files": [
       "packages/lit/src/Accordion.stories.ts",
       "packages/lit/src/Accordion.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -245,19 +245,19 @@
     }
   },
   "Combobox.lit": {
-    "hash": "63ad1226eb485dd5",
-    "lastAttemptHash": "63ad1226eb485dd5",
-    "generatedAt": "2026-09-10T14:09:17+00:00",
+    "hash": "a8eef054a8d7a615",
+    "lastAttemptHash": "a8eef054a8d7a615",
+    "generatedAt": "2026-09-10T22:36:21+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.4431,
+    "costUsd": 0.3935,
     "files": [
       "packages/lit/src/Combobox.stories.ts",
       "packages/lit/src/Combobox.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -802,19 +802,19 @@
     }
   },
   "Select.lit": {
-    "hash": "eb642ca226a8142c",
-    "lastAttemptHash": "eb642ca226a8142c",
-    "generatedAt": "2026-09-10T13:56:37+00:00",
+    "hash": "ca83e3f866461880",
+    "lastAttemptHash": "ca83e3f866461880",
+    "generatedAt": "2026-09-10T22:35:41+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.3164,
+    "costUsd": 2.4833,
     "files": [
       "packages/lit/src/Select.stories.ts",
       "packages/lit/src/Select.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

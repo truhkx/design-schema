@@ -304,6 +304,7 @@ export type {
 export { DsSelect } from './Select.js';
 export type {
   SelectNative,
+  SelectSize,
   SelectValue,
   SelectChangeDetail,
   SelectOpenChangeDetail,

@@ -6,7 +6,7 @@ component:
   category: input
   status: review
   apg: slider-multithumb
-  anatomy: [label, track, fill, thumb, valueText, tickMarks, description, errorMessage]
+  anatomy: [label, track, fill, thumb, valueText, bubble, tickMarks, description, errorMessage]
   composition:
     label: Text
     description: Text
@@ -32,7 +32,19 @@ component:
     step:
       type: number
       default: 1
-      description: Arrow-key increment and snapping granularity.
+      description: Arrow-key increment and snapping granularity for drag, click and keys.
+    snapToMarks:
+      type: boolean
+      default: false
+      description: 'With `marks`, snap drag and click to the marks instead of `step` (keys still move by step, PageUp/Down by mark).'
+    required:
+      type: boolean
+      default: false
+      description: Must have a value other than the default to submit (`copy.required`).
+    invalid:
+      type: boolean
+      default: false
+      description: Marks the slider invalid (`copy.invalid` when no `error`).
     value:
       type: number
       description: Controlled value; for a range, a two-number array.
@@ -101,6 +113,7 @@ component:
     valueSize: { token: font.size.sm }
     bubbleSurface: { token: color.inverse.surface, description: 'The hover/drag value bubble uses the inverse surface, like Tooltip.' }
     bubbleText: { token: color.inverse.foreground }
+    bubbleRadius: { token: radius.sm, description: 'The bubble is its own part (not the valueText Text): an inverse-surface pill above the active thumb.' }
     labelWeight: { token: font.weight.medium }
     partGap: { token: space.1 }
     trackPaddingBlock: { token: space.3, description: 'Vertical space around the track so the thumb and its halo have room and the touch target reaches the comfortable size.' }
@@ -117,6 +130,9 @@ component:
   copy:
     minimumLabel: '{label} minimum'
     maximumLabel: '{label} maximum'
+    rangeText: '{low} – {high}'
+    required: '{label} is required.'
+    invalid: '{label} is not valid.'
   a11y:
     role: slider
     requires: [accessible-name, label-association, keyboard-operable, focus-visible, contrast-aa, target-44px, gesture-alternative, error-identification, reduced-motion]
@@ -128,7 +144,7 @@ component:
   platforms:
     web:
       element: div
-      attributes: [role=slider, tabindex=0, aria-valuenow, aria-valuemin, aria-valuemax, aria-valuetext, aria-labelledby, aria-orientation, aria-disabled]
+      attributes: [role=slider, tabindex=0, aria-valuenow, aria-valuemin, aria-valuemax, aria-valuetext, aria-labelledby, aria-describedby, aria-orientation, aria-disabled]
       notes: 'Custom thumbs (<div role="slider" tabindex="0">) on a track rather than <input type="range">, because a range slider needs two thumbs on one track and the native element cannot be themed consistently. Pointer Events with setPointerCapture on the track and thumbs; the track click moves the nearest thumb. aria-valuetext from formatValue. A hidden <input name> (two for a range) carries the value for native forms.'
     lit:
       tag: ds-slider
@@ -152,7 +168,7 @@ Do not use a Slider for a value that must be exact or is usually typed (quantity
 
 ## Behavior
 
-Dragging a thumb, or clicking the track, sets the value snapped to `step` (or to marks); arrow keys move by `step`, PageUp/Down by ten steps, Home/End to the bounds. `onChange` fires continuously; `onChangeEnd` once per interaction. In a `range`, each thumb is its own tab stop, the thumbs cannot cross (the lower is clamped to the upper and vice versa), and the value is `[min, max]`. The value text shows per `showValue`; the drag bubble follows the active thumb. `disabled` sliders are readable and focusable but inert.
+Dragging a thumb, or clicking the track, sets the value snapped to `step` (or to marks); arrow keys move by `step`, PageUp/Down by ten steps, Home/End to the bounds. `onChange` fires continuously; `onChangeEnd` once per interaction. In a `range`, each thumb is its own tab stop, the thumbs cannot cross (the lower is clamped to the upper and vice versa), and the value is `[min, max]`. The value text shows per `showValue`; the drag bubble follows the active thumb. `disabled` sliders are readable and focusable but inert. A range's beside-label text is `copy.rangeText`; each thumb's `aria-valuemin`/`aria-valuemax` reflect the live constraint from the other thumb. Pointer math is logical (mirrored in right-to-left). The Keyboard story renders the range form (two thumbs are the whole model; the three-focusable rule does not apply). The Form value is a number, or `[low, high]` for a range.
 
 ## Content guidelines
 

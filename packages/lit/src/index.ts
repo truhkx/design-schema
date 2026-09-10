@@ -54,6 +54,8 @@ import './ProgressBar.js';
 import './Stepper.js';
 import './Search.js';
 import './DatePicker.js';
+import './Toolbar.js';
+import './Carousel.js';
 
 export { DsAccordion } from './Accordion.js';
 export type {
@@ -346,3 +348,20 @@ export type {
   DatePickerOpenChangeDetail,
   DatePickerOverridableBinding,
 } from './DatePicker.js';
+
+export { DsToolbar, DsToolbarGroup } from './Toolbar.js';
+export type {
+  ToolbarOrientation,
+  ToolbarOverflow,
+  ToolbarSize,
+  ToolbarDensity,
+  ToolbarOverridableBinding,
+} from './Toolbar.js';
+
+export { DsCarousel, DsCarouselSlide } from './Carousel.js';
+export type {
+  CarouselPicker,
+  CarouselChangeReason,
+  CarouselChangeDetail,
+  CarouselOverridableBinding,
+} from './Carousel.js';

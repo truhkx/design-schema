@@ -38,6 +38,15 @@ component:
     placeholder:
       type: string
       description: Text shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. Not a substitute for the label.
+    hideLabel:
+      type: boolean
+      default: false
+      description: Visually hide the label (it remains the accessible name), for compact pickers such as DatePicker's month and year.
+    size:
+      type: enum
+      values: [sm, md]
+      default: md
+      description: 'sm for pickers inside toolbars and calendar headers.'
     open:
       type: boolean
       description: 'Controlled popup state, for programmatic opening and for stories and tests (the Keyboard story renders it open). Omit for the trigger-driven default.'

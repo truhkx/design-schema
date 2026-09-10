@@ -1,0 +1,108 @@
+/* Toolbar — styled only through Design Schema token custom properties. */
+
+.ds-toolbar {
+  --ds-toolbar-background: var(--color-background-subtle);
+  --ds-toolbar-border: var(--color-border);
+  --ds-toolbar-border-width: var(--border-width-thin);
+  --ds-toolbar-radius: var(--radius-md);
+  --ds-toolbar-padding-inline: var(--space-2);
+  --ds-toolbar-padding-block: var(--space-1);
+  --ds-toolbar-item-gap: var(--layout-gap-normal);
+  --ds-toolbar-item-gap-compact: var(--layout-gap-tight);
+  --ds-toolbar-group-gap: var(--layout-gap-normal);
+  --ds-toolbar-separator-length: var(--space-5);
+  --ds-toolbar-fade-width: var(--space-6);
+  /* Locked (accessibility-bearing): declared for consumers who set the hook directly from their
+     own CSS, but no selector below reads it — every focusable element in a Toolbar belongs to a
+     composed child (Button, SegmentedControl, Menu, ...) that already owns its own focus ring. */
+  --ds-toolbar-focus-ring: var(--color-border-focus);
+  --ds-toolbar-focus-ring-width: var(--border-width-focus);
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-toolbar-group-gap);
+  min-inline-size: 0;
+  padding-inline: var(--ds-toolbar-padding-inline);
+  padding-block: var(--ds-toolbar-padding-block);
+  background-color: var(--ds-toolbar-background);
+  border: var(--ds-toolbar-border-width) solid var(--ds-toolbar-border);
+  border-radius: var(--ds-toolbar-radius);
+}
+
+.ds-toolbar--vertical {
+  flex-direction: column;
+  align-items: stretch;
+  inline-size: fit-content;
+}
+
+.ds-toolbar--overflow-wrap {
+  flex-wrap: wrap;
+}
+
+.ds-toolbar--overflow-menu {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.ds-toolbar--overflow-scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* mask-image stops are alpha (black=opaque, transparent=none), not a design color. */
+  mask-image: linear-gradient(to right, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stop */
+  -webkit-mask-image: linear-gradient(to right, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stop */
+}
+
+.ds-toolbar--overflow-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.ds-toolbar--vertical.ds-toolbar--overflow-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  mask-image: linear-gradient(to bottom, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stop */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stop */
+}
+
+.ds-toolbar__group {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-toolbar-item-gap);
+  min-inline-size: 0;
+}
+
+.ds-toolbar--vertical .ds-toolbar__group {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ds-toolbar--density-compact .ds-toolbar__group {
+  gap: var(--ds-toolbar-item-gap-compact);
+}
+
+/* separator: shorter than the toolbar's own cross-size, unlike a standalone Divider's stretch. */
+.ds-toolbar__separator {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+  justify-content: center;
+  block-size: var(--ds-toolbar-separator-length);
+}
+
+.ds-toolbar--vertical .ds-toolbar__separator {
+  inline-size: var(--ds-toolbar-separator-length);
+  block-size: auto;
+}
+
+.ds-toolbar__item {
+  display: flex;
+  align-items: center;
+  min-inline-size: 0;
+  flex: 0 0 auto;
+}
+
+.ds-toolbar__more {
+  flex: 0 0 auto;
+}

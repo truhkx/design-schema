@@ -6,13 +6,14 @@ component:
   category: input
   status: review
   apg: combobox
-  anatomy: [form, label, field, icon, input, clearButton, submitButton, suggestions]
+  anatomy: [landmark, form, label, field, icon, input, clearButton, submitButton, suggestions]
   composition:
     label: Text
     icon: Icon
     clearButton: Button
     submitButton: Button
     suggestions: Listbox
+    landmark: Landmark
   props:
     label:
       type: string
@@ -93,6 +94,11 @@ component:
     fontSize: { token: 'font.size.{size}' }
     lineHeight: { token: font.lineHeight.normal }
     suggestionsOffset: { token: space.1 }
+    popupSurface: { token: color.overlay.surface }
+    popupBorder: { token: color.border }
+    popupRadius: { token: radius.md }
+    popupShadow: { token: shadow.overlay }
+    partGap: { token: space.1, description: 'Between the visible label and the field.' }
     minTarget: { token: size.target.comfortable }
     focusRingWidth: { token: border.width.focus }
     disabledOpacity: { token: opacity.disabled }
@@ -136,7 +142,7 @@ Do not use Search for a field that takes a specific value (an order number: Inpu
 
 ## Behavior
 
-Typing fires `onChange`; the clear button appears when there is text and empties the field, returns focus to it and fires `onClear`. Enter or the submit button fires `onSubmit` with the trimmed query (and navigates to `action` on web when set). With suggestions, ArrowDown opens the list and moves the highlight while focus stays in the input; Enter submits the highlighted suggestion's value; Escape closes the list first, then clears. `loading` shows nothing visually until suggestions arrive but is announced. The field never submits an empty query.
+Typing fires `onChange`; the clear button appears when there is text and empties the field, returns focus to it and fires `onClear`. Enter or the submit button fires `onSubmit` with the trimmed query (and navigates to `action` on web when set). With suggestions, ArrowDown opens the list and moves the highlight while focus stays in the input; Enter submits the highlighted suggestion's value; Escape closes the list first, then clears. `loading` shows nothing visually until suggestions arrive but is announced. The field never submits an empty query. Choosing a suggestion fills the query with its `label` (the display text). With `action`, submission is a native GET form submit (Enter, the submit button and a chosen suggestion all submit the same form), never a scripted navigation. The submit button is always rendered. Suggestions mode starts when the `suggestions` prop is set at all (an empty array shows the empty/loading row). `onClear` fires for the clear button and for an Escape that empties the field. ArrowUp with no highlight is a no-op. The landmark is the composed Landmark (`search`) named by `label`; the popup bindings style the wrapper and the Listbox is `embedded`.
 
 ## Content guidelines
 

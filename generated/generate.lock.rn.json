@@ -206,6 +206,29 @@
       "modules": true
     }
   },
+  "Carousel.rn": {
+    "hash": "5810f50a726effb6",
+    "lastAttemptHash": "5810f50a726effb6",
+    "generatedAt": "2026-09-10T17:01:04+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.5223,
+    "files": [
+      "packages/rn/src/Carousel.stories.tsx",
+      "packages/rn/src/Carousel.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Checkbox.rn": {
     "hash": "f6f3d8d0fd971073",
     "lastAttemptHash": "f6f3d8d0fd971073",
@@ -754,6 +777,30 @@
       "modules": true
     }
   },
+  "Table.rn": {
+    "hash": "24751731e2358050",
+    "lastAttemptHash": "24751731e2358050",
+    "generatedAt": "2026-09-10T17:15:57+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 3.2545,
+    "files": [
+      "packages/rn/src/Table.stories.tsx",
+      "packages/rn/src/Table.test.tsx",
+      "packages/rn/src/Table.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 12,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Tabs.rn": {
     "hash": "d558f36137c3e048",
     "lastAttemptHash": "d558f36137c3e048",
@@ -815,6 +862,29 @@
       "packages/rn/src/index.ts"
     ],
     "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Toolbar.rn": {
+    "hash": "107b53d385bc2e53",
+    "lastAttemptHash": "107b53d385bc2e53",
+    "generatedAt": "2026-09-10T16:47:04+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.9037,
+    "files": [
+      "packages/rn/src/Toolbar.stories.tsx",
+      "packages/rn/src/Toolbar.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,

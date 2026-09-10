@@ -1,6 +1,6 @@
 # Gap digest — phase Numeric
 
-Generated 2026-09-10T11:48 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T11:53 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -552,6 +552,19 @@ Doc: `site/src/content/docs/components/container.md`
 ## DatePicker
 
 Doc: `site/src/content/docs/components/datepicker.md`
+
+### 2026-09-10 11:52 — lit round 1
+
+- **DOC** DatePicker: no yearSelect range is specified. Used min/max's year when given, else currentYear-100..currentYear+10 — arbitrary and should be documented. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: monthSelect/yearSelect compose ds-select per the schema, whose own `label` is always visibly rendered (no visually-hidden mode), so the header shows stacked 'Month'/'Year' text above each compact select rather than the compact 'Select size=sm' header the web platform notes describe; ds-select also has no `size` prop yet. monthTitleSize/monthTitleWeight are applied as inherited CSS on the ds-select host, but ds-select's own `.trigger` sets an explicit font-size/weight internally, so the override likely has no visible effect — there's no token-forwarding path into a composed Select's own text size. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: typed text that parses to a real calendar date is always committed, even outside min/max — only tooEarly/tooLate flag it via ElementInternals validity (not shown inline unless `error` is set), mirroring Input's own type=email precedence. Typed text is never checked against `isDateDisabled` (no copy string exists for that case), so a disabled day typed directly commits without a validity error. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: validity precedence (error > invalid > required > format-invalid > tooEarly > tooLate > rangeOrder) is inferred — the doc only says 'follows Input's precedence plus tooEarly, tooLate and rangeOrder' without stating where those three slot in. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: Today's and Clear's exact behavior in `range` mode is unspecified beyond 'act immediately'. Implemented Today as equivalent to clicking today's cell (sets start, or completes/restarts the range) and Clear as wiping both ends while keeping the calendar open and moving the view to today — a restart mid-pick (clicking/Today-ing before an existing start with an already-complete range) also fires `change` with `undefined` since the value is momentarily incomplete. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: reopening the calendar (from the button or ArrowDown) always focuses the *start* (or end, for the ArrowDown-in-the-end-input case) — the spec's 'focus on the selected day' doesn't disambiguate which end of a range to anchor to when both inputs could apply. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: Tab is only handled as native browser tab order through the composed `<ds-popover>`'s own focus/tab-out behavior (which closes and returns focus to the trigger on a plain Tab past the last focusable), since the schema's 'Tab cycles within the calendar' doesn't specify whether Tab should wrap/trap or fall through — reused Popover's existing, documented tab-out convention rather than inventing a new one. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `<ds-form>`'s FIELD_SELECTOR only lists `ds-input, ds-checkbox, ds-switch, ds-radio-group` (the same gap already exists for ds-select/ds-combobox/ds-number-input/ds-search), so `<ds-date-picker>` implements the `DsFormField` shape (name/label/required/disabled/error/currentValue/focus/checkValidity/validationMessage) but won't be auto-collected by `<ds-form>` yet. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the `transition` token's description calls for 'a short cross-fade' on month change; implemented instead as a plain color/border transition on day-cell interaction states (hover/selection), since a real content cross-fade needs extra choreography (fade-out/swap/fade-in) beyond a CSS transition on an unchanged DOM node — this is a scaled-back interpretation, not the described cross-fade. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the `{min}`/`{max}` placeholders in `copy.tooEarly`/`copy.tooLate` are rendered as the raw ISO string rather than a localized date, since the schema doesn't specify a format for them. → `site/src/content/docs/components/datepicker.md`
 
 ### 2026-09-10 11:48 — web round 1
 
@@ -1536,7 +1549,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 739 · CODE: 39 · TOOLING: 2 · NOISE: 14
+DOC: 749 · CODE: 39 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

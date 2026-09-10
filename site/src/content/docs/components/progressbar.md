@@ -29,7 +29,7 @@ component:
       description: End of the range.
     formatValue:
       type: function
-      shape: '(value: number, max: number) => string'
+      shape: '(value: number, min: number, max: number) => string'
       description: Renders the value text ("42%", "3 of 12 files"). Defaults to a percentage.
     showValue:
       type: boolean
@@ -107,7 +107,7 @@ Do not use it for a measured quantity (Meter), for a value the user sets (Slider
 
 ## Behavior
 
-The fill width follows `value` as a fraction of the range, animated over `transition`. Indeterminate bars sweep continuously and expose `aria-busy`. When `value` reaches `max` the bar stays full and, if `announce` is not `none`, `copy.complete` is announced once; milestones announce at 25/50/75/100. Changing `tone` to `success` or `danger` recolors the fill only — the containing view is responsible for the text that says the task finished or failed. The bar itself is never focusable.
+The fill width follows `value` as a fraction of the range, animated over `transition`. Indeterminate bars sweep continuously and expose `aria-busy`. When `value` reaches `max` the bar stays full and, if `announce` is not `none`, `copy.complete` is announced once; milestones announce at 25/50/75/100. Changing `tone` to `success` or `danger` recolors the fill only — the containing view is responsible for the text that says the task finished or failed. The bar itself is never focusable. `copy.indeterminate` is announced once each time the bar becomes indeterminate. Milestone and completion announcements reset when the value moves backward (a retried task announces its milestones again). The live region is `role="status"` (plain attributes on Lit, not ElementInternals) and is not an anatomy part.
 
 ## Content guidelines
 

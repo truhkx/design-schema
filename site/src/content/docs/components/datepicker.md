@@ -6,7 +6,7 @@ component:
   category: input
   status: review
   apg: dialog-modal
-  anatomy: [label, description, field, input, calendarButton, popover, header, prevMonthButton, nextMonthButton, monthSelect, yearSelect, grid, weekdayHeader, day, footer, todayButton, clearButton, errorMessage]
+  anatomy: [label, description, field, input, calendarButton, popover, header, prevMonthButton, nextMonthButton, monthSelect, yearSelect, grid, weekdayHeader, weekNumber, day, footer, todayButton, clearButton, errorMessage]
   composition:
     label: Text
     description: Text
@@ -36,6 +36,9 @@ component:
       type: string
       shape: 'string | { start: string; end: string }'
       description: Initial value.
+    open:
+      type: boolean
+      description: 'Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default.'
     range:
       type: boolean
       default: false
@@ -106,7 +109,7 @@ component:
     paddingInline: { token: space.md }
     paddingBlock: { token: space.sm }
     rangeSeparatorColor: { token: color.foreground.muted, description: 'The en dash between start and end inputs.' }
-    calendarSurface: { token: color.overlay.surface }
+    calendarSurface: { token: color.overlay.surface, description: 'Realized by the composed Popover''s surface; forwarded as its `overrides.surface`.' }
     calendarInset: { token: layout.inset.md }
     calendarGap: { token: layout.gap.normal, description: 'Between header, grid and footer.' }
     daySize: { token: size.target.comfortable, description: 'Every day cell is a comfortable square target.' }
@@ -122,8 +125,10 @@ component:
     weekdayColor: { token: color.foreground.muted }
     weekdaySize: { token: font.size.xs }
     weekdayWeight: { token: font.weight.medium }
-    monthTitleSize: { token: font.size.md }
-    monthTitleWeight: { token: font.weight.semibold }
+    monthTitleSize: { token: font.size.md, description: 'Forwarded to the month and year Selects as `overrides.fontSize`.' }
+    monthTitleWeight: { token: font.weight.semibold, description: 'Forwarded to the Selects as `overrides.fontWeight`.' }
+    partGap: { token: space.1, description: 'Between label, description, field and error.' }
+    fieldGap: { token: space.2, description: 'Between the input(s) and the calendar button in the field row.' }
     dayFontSize: { token: font.size.sm }
     fontFamily: { token: font.family.body }
     lineHeight: { token: font.lineHeight.normal }
@@ -135,7 +140,7 @@ component:
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
     disabledOpacity: { token: opacity.disabled }
-    transition: { token: motion.duration.fast, description: 'Month change: a short cross-fade; instant under reduced motion.' }
+    transition: { token: motion.duration.fast, description: 'Day-cell hover and selection states; a month change is instant. Instant under reduced motion.' }
   copy:
     open: Choose date
     openRange: Choose dates
@@ -197,7 +202,7 @@ Do not use it for a date-and-time (a DateTimePicker is planned; until then, pair
 
 ## Behavior
 
-Typing parses the locale pattern leniently (separators optional, two-digit years refused) and fires `onChange` once the date is complete and valid; the calendar, when open, follows the typed date. The calendar opens from its button or ArrowDown in the input on the selected month (or today's), with focus on the selected day (or today). Arrow keys move by day and week, PageUp/Down by month (with Shift, by year), Home/End to the week's ends; moving past the month's edge turns the page. Enter or click selects: for a single date it closes and returns focus to the calendar button; for a range the first pick sets the start (clearing any old range), the second sets the end and closes, and picking before the start restarts. Today and Clear act immediately. Escape closes without changes. Validation follows Input's precedence plus `tooEarly`, `tooLate` and `rangeOrder`.
+Typing parses the locale pattern leniently (separators optional, two-digit years refused) and fires `onChange` once the date is complete and valid; the calendar, when open, follows the typed date. The calendar opens from its button or ArrowDown in the input on the selected month (or today's), with focus on the selected day (or today). Arrow keys move by day and week, PageUp/Down by month (with Shift, by year), Home/End to the week's ends; moving past the month's edge turns the page. Enter or click selects: for a single date it closes and returns focus to the calendar button; for a range the first pick sets the start (clearing any old range), the second sets the end and closes, and picking before the start restarts. Today and Clear act immediately. Escape closes without changes. Validation follows Input's precedence plus `tooEarly`, `tooLate` and `rangeOrder`. The month and year Selects are `hideLabel` and `size: sm`. The year Select spans the `min`/`max` years when given, else the current year − 100 to + 10. `onChange` fires only for a complete value (a date, or both ends of a range) and on Clear; a partial range or partial typed date changes nothing. In a range, Today acts like clicking today's cell and Clear wipes both ends; reopening focuses the start date's cell (the end's when opened from the end input). Validation order: `error`, `invalid`, `required`, unparseable (`copy.invalid`), `tooEarly`, `tooLate`, `rangeOrder`; the `{min}`/`{max}` placeholders are formatted with the locale, not ISO. A range registers two Form fields, `name` and `name-end`. The label is a native `<label for>`. The week-number column shows the ISO week of the row's first visible day.
 
 ## Content guidelines
 

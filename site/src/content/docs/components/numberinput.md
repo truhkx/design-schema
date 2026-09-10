@@ -8,7 +8,6 @@ component:
   apg: spinbutton
   anatomy: [label, description, field, input, decrementButton, incrementButton, prefix, suffix, errorMessage]
   composition:
-    label: Text
     description: Text
     decrementButton: Button
     incrementButton: Button
@@ -52,16 +51,16 @@ component:
     unit:
       type: string
       description: 'Intl unit identifier for `format: unit` (e.g. kilogram, hour), or a literal shown as `suffix`.'
-    prefix:
+    leadingText:
       type: string
-      description: Static text before the value inside the field ("$"), when `format` cannot express it.
-    suffix:
+      description: 'Static text before the value inside the field ("$"), when `format` cannot express it. (Not `prefix`: that name is a native Element member.)'
+    trailingText:
       type: string
-      description: Static text after the value inside the field ("kg", "%").
-    showSteppers:
+      description: 'Static text after the value inside the field ("kg", "%"). Also the literal shown when `unit` is not a valid Intl unit.'
+    hideSteppers:
       type: boolean
-      default: true
-      description: Show the increment/decrement buttons. Arrow keys work regardless.
+      default: false
+      description: Hide the increment/decrement buttons. Arrow keys work regardless.
     placeholder:
       type: string
       description: Example value shown while empty.
@@ -125,6 +124,7 @@ component:
     required: '{label} is required.'
     invalid: '{label} must be a number.'
     outOfRange: '{label} must be between {min} and {max}.'
+    currencyMissing: 'format "currency" needs a currency code.'
     requiredIndicator: ' (required)'
   a11y:
     role: spinbutton
@@ -161,7 +161,7 @@ Do not use it for numbers that are really identifiers — phone numbers, postal 
 
 ## Behavior
 
-Typing accepts digits, a leading minus, and the locale's or a period decimal separator; other characters are ignored rather than rejected loudly. `onChange` fires with the parsed number as it becomes valid. On blur or Enter the value is rounded to `precision`, clamped to `min`/`max`, and re-formatted. ArrowUp/Down step; PageUp/Down step by ten; Home/End go to the bounds when defined. The steppers repeat while held and disable at the bounds. Empty is a valid state (undefined) unless `required`. Validation precedence is Input's, plus `copy.outOfRange` for a clamped value when the field is `required` and the user typed out of range (the field clamps and reports, rather than silently changing the number).
+Typing accepts digits, a leading minus, and the locale's or a period decimal separator; other characters are ignored rather than rejected loudly. `onChange` fires with the parsed number as it becomes valid. On blur or Enter the value is rounded to `precision`, clamped to `min`/`max`, and re-formatted. ArrowUp/Down step; PageUp/Down step by ten; Home/End go to the bounds when defined. The steppers repeat while held and disable at the bounds. Empty is a valid state (undefined) unless `required`. Validation precedence is Input's, plus `copy.outOfRange` for a clamped value when the field is `required` and the user typed out of range (the field clamps and reports, rather than silently changing the number). `percent` stores the number as typed (25, not 0.25) and divides by 100 only for display. `format: currency` without `currency` is a development warning and falls back to USD. From an empty field, ArrowUp/increment goes to `min ?? 0` and ArrowDown/decrement to `max ?? 0`. `copy.outOfRange` is reported whenever a blur-time clamp changed what was typed, `required` or not. Hold-to-repeat timings are read from the resolved theme at pointerdown (`motion.duration.base` delay, `motion.duration.fast` interval), never hardcoded. The label is a native `<label for>` (web/Lit) styled from this component's label bindings, not a Text. The Form value is a number.
 
 ## Content guidelines
 

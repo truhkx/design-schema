@@ -208,6 +208,31 @@
       "modules": true
     }
   },
+  "Carousel.web": {
+    "hash": "7bf5e21425381f4a",
+    "lastAttemptHash": "7bf5e21425381f4a",
+    "generatedAt": "2026-09-10T17:12:10+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 3.5202,
+    "files": [
+      "packages/react/src/Carousel.css",
+      "packages/react/src/Carousel.stories.tsx",
+      "packages/react/src/Carousel.test.tsx",
+      "packages/react/src/Carousel.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Checkbox.web": {
     "hash": "0047d2b46382ce3b",
     "lastAttemptHash": "0047d2b46382ce3b",
@@ -993,6 +1018,31 @@
       "packages/react/src/index.ts"
     ],
     "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Toolbar.web": {
+    "hash": "1e1976b0589e49b7",
+    "lastAttemptHash": "1e1976b0589e49b7",
+    "generatedAt": "2026-09-10T16:56:34+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 3.1039,
+    "files": [
+      "packages/react/src/Toolbar.css",
+      "packages/react/src/Toolbar.stories.tsx",
+      "packages/react/src/Toolbar.test.tsx",
+      "packages/react/src/Toolbar.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,

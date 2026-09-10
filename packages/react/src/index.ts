@@ -237,3 +237,23 @@ export type { SearchProps, SearchSuggestion, SearchSize, SearchOverridableBindin
 
 export { DatePicker } from './DatePicker';
 export type { DatePickerProps, DatePickerValue, DatePickerRangeValue, DatePickerOverridableBinding } from './DatePicker';
+
+export { Toolbar, ToolbarGroup } from './Toolbar';
+export type {
+  ToolbarProps,
+  ToolbarGroupProps,
+  ToolbarOrientation,
+  ToolbarOverflow,
+  ToolbarSize,
+  ToolbarDensity,
+  ToolbarOverridableBinding,
+} from './Toolbar';
+
+export { Carousel, CarouselSlide } from './Carousel';
+export type {
+  CarouselProps,
+  CarouselSlideProps,
+  CarouselPicker,
+  CarouselChangeReason,
+  CarouselOverridableBinding,
+} from './Carousel';

@@ -204,6 +204,29 @@
       "modules": true
     }
   },
+  "Carousel.lit": {
+    "hash": "8cdde6597be513e3",
+    "lastAttemptHash": "8cdde6597be513e3",
+    "generatedAt": "2026-09-10T17:06:48+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.7494,
+    "files": [
+      "packages/lit/src/Carousel.stories.ts",
+      "packages/lit/src/Carousel.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Checkbox.lit": {
     "hash": "9529fbd8fc16fcd3",
     "lastAttemptHash": "9529fbd8fc16fcd3",
@@ -938,6 +961,29 @@
       "packages/lit/src/Toast.stories.ts",
       "packages/lit/src/Toast.test.ts",
       "packages/lit/src/Toast.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Toolbar.lit": {
+    "hash": "eeb1ca151b3a3054",
+    "lastAttemptHash": "eeb1ca151b3a3054",
+    "generatedAt": "2026-09-10T16:53:42+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.1149,
+    "files": [
+      "packages/lit/src/Toolbar.stories.ts",
+      "packages/lit/src/Toolbar.ts",
       "packages/lit/src/index.ts"
     ],
     "gaps": 9,

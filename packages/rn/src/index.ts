@@ -178,3 +178,26 @@ export type {
 
 export { Slider } from './Slider';
 export type { SliderMark, SliderOverridableBinding, SliderProps, SliderShowValue, SliderValue } from './Slider';
+
+export { Toolbar } from './Toolbar';
+export type { ToolbarDensity, ToolbarOrientation, ToolbarOverflow, ToolbarOverridableBinding, ToolbarProps, ToolbarSize } from './Toolbar';
+
+export { Carousel, CarouselSlide } from './Carousel';
+export type { CarouselChangeReason, CarouselOverridableBinding, CarouselPicker, CarouselProps, CarouselSlideProps } from './Carousel';
+
+export { Table } from './Table';
+export type {
+  TableColumn,
+  TableColumnAlign,
+  TableColumnWidth,
+  TableDensity,
+  TableHideBelow,
+  TableMaxHeight,
+  TableOverridableBinding,
+  TableProps,
+  TableResponsive,
+  TableRow,
+  TableSelectable,
+  TableSort,
+  TableSortDirection,
+} from './Table';

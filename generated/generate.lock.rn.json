@@ -27,23 +27,27 @@
     }
   },
   "Box.rn": {
-    "hash": "44fa4497b2dba865",
-    "lastAttemptHash": "44fa4497b2dba865",
-    "generatedAt": "2026-09-10T02:18:50+00:00",
+    "hash": "275d7374a4302925",
+    "lastAttemptHash": "275d7374a4302925",
+    "generatedAt": "2026-09-10T04:54:00+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2415,
+    "costUsd": 0.3026,
     "files": [
       "packages/rn/src/Box.stories.tsx",
-      "packages/rn/src/Box.tsx"
+      "packages/rn/src/Box.test.tsx",
+      "packages/rn/src/Box.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 1,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Breadcrumb.rn": {

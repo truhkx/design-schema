@@ -1,6 +1,6 @@
 # Gap digest — phase Primitives
 
-Generated 2026-09-10T00:49 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T00:52 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## AlertDialog
 
@@ -36,6 +36,10 @@ Doc: `site/src/content/docs/components/alertdialog.md`
 ## Box
 
 Doc: `site/src/content/docs/components/box.md`
+
+### 2026-09-10 00:52 — web round 1
+
+- **DOC** Box: the doc's override contract says surface:none/border:false/radius:none make the matching overrides no-ops; the existing implementation already achieved this for border (border-width stays a literal 0 outside the .ds-box--border class) but not for surface/radius (background-color/border-radius read var(--ds-box-background)/var(--ds-box-radius) unconditionally, so an inline override could re-enable a background or corner radius even when surface/radius said 'none'). Fixed by making those two properties literal in the base rule and only applying the hook inside the non-'none' modifier classes, mirroring the border pattern already in the file. → `site/src/content/docs/components/box.md`
 
 ### 2026-09-10 00:49 — lit round 1
 
@@ -490,6 +494,23 @@ Doc: `site/src/content/docs/components/menu.md`
 
 Doc: `site/src/content/docs/components/stack.md`
 
+### 2026-09-10 00:52 — rn round 2
+
+- **DOC** Stack: Round 1's spec-correct rewrite of `gap` from the raw spacing scale ('0'..'12') to the semantic layout-rhythm enum (none/tight/normal/loose/section) broke nine consumers still on the old numeric values, which the typecheck gate caught. Fixed the consumers rather than weakening Stack's type, mapping each usage by matching pixel value where an old spacing-scale token equals a new layout-gap token exactly (space0=layoutGapNone=0, space1=layoutGapTight=4, space2=layoutGapNormal=8, space4=layoutGapLoose=16) and by semantic role for the one value with no exact match: '6' (space6=24px) was always used as the outermost Stack wrapping a whole screen's major sections, so it became 'section' (32px) per the spec's own definition ('section between page sections') even though it's not the closest pixel match to loose (16px). → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: no spec guidance on how a spacing-scale-to-rhythm-enum migration should be handled for existing call sites; treated it as this job's responsibility since the gate blocks the whole package build, but flagging that other in-flight component jobs (AlertDialog, Dialog, FocusScope, Form, and the three demo screens) had their Stack usages touched as a side effect and may want to double-check the chosen gap value reads correctly in their own visual review. → `site/src/content/docs/components/stack.md`
+
+### 2026-09-10 00:50 — rn round 1
+
+- **DOC** Stack: the existing Stack.tsx predated this spec's rewrite of `gap` from a raw spacing-scale enum ('0'..'12') to the semantic layout-rhythm enum (none/tight/normal/loose/section). Regenerated it against `layout.gap.*` tokens (layoutGapNone/Tight/Normal/Loose/Section) per the spec's explicit contrast with 'the raw spacing scale'. This breaks type-checking in consumers still passing old numeric gap values (AlertDialog.tsx, AlertDialog.stories.tsx, Dialog.tsx, Dialog.stories.tsx, FocusScope.stories.tsx, Form.stories.tsx, and demo/Preferences.tsx, demo/ProfileSettings.tsx, demo/SignIn.tsx) — out of scope for this Stack-only job; those components need their own regeneration pass to adopt the new gap enum. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: overrides contract lists only `gap` as overridable with no presence-toggle prop (unlike Box's surface/border/radius), so the override is applied unconditionally regardless of the `gap` value (including `gap: none`) rather than gated behind another prop. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: spec gives no `testID` guidance beyond the general package convention; added `testID="Stack"` on the root View per the package-wide testability-hook rule, matching Box/Card/Container. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: no story previously existed for overrides or wrap as 'notable states'; added `Wrap` and `WithOverrides` stories (using `space.lg` as an example override token) since the spec requires overrides support but the scenario list only covers the enum props. → `site/src/content/docs/components/stack.md`
+
+### 2026-09-10 00:49 — web round 2
+
+- **DOC** Stack: the round-1 gap enum migration (raw spacing scale → none/tight/normal/loose/section) broke typecheck in 9 consumer files that still passed old numeric gap strings. Fixed by remapping each literal to the closest enum value using the spec's own semantics ('tight for related controls, normal for fields in a form, loose for groups, section between page sections') rather than raw px proximity, since several old values (e.g. '6' at 24px) sit exactly between two presets and the semantic role of the Stack (button row vs. form fields vs. top-level page regions) was the deciding factor. Button/action rows → tight; form-field stacks → normal; zero-gap lists (checkbox group, disclosure accordion) → none; top-level region groupings (Preferences/SignIn outer stacks, Landmark page-skeleton story) → section. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: no gap value existed for the old '3'/'8'/'10'/'12' raw-scale usages in this pass — none of the touched consumer files used those, so no mapping decision was needed for them, but any future file using those raw values will need the same semantic (not just nearest-px) judgment call. → `site/src/content/docs/components/stack.md`
+
 ### 2026-09-10 00:48 — lit round 1
 
 - **DOC** Stack: the anatomy list is just `container`, and the schema doesn't say what carries that part when `element` is `div` — kept the existing convention (matching Container) where the host itself is the implicit container and only the `section`/`nav`/`ul`/`ol` wrapper elements carry `part="container"`. → `site/src/content/docs/components/stack.md`
@@ -540,7 +561,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 226 · CODE: 18 · TOOLING: 2 · NOISE: 8
+DOC: 235 · CODE: 18 · TOOLING: 2 · NOISE: 8
 
 ## Gates to fix
 

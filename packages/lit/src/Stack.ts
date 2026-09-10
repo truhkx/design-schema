@@ -161,7 +161,7 @@ export class DsStack extends LitElement {
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (changed.has('overrides')) {
+    if (changed.has('overrides') || changed.has('gap')) {
       this.applyOverrides();
     }
   }
@@ -221,7 +221,8 @@ export class DsStack extends LitElement {
     for (const binding of Object.keys(HOOKS) as StackOverridableBinding[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
-      if (ref === undefined) {
+      /* gap: none has no gap to override — presence rule. */
+      if (ref === undefined || (binding === 'gap' && this.gap === 'none')) {
         this.style.removeProperty(hook);
       } else {
         this.style.setProperty(hook, cssVar(ref));

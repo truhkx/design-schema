@@ -55,11 +55,20 @@ const TONE_TOKEN = {
 } as const satisfies Record<TextTone, keyof Tokens>;
 
 /**
- * `true` for anything rendered inside a system `Text`. Inline components such as
- * Link read it to inherit the surrounding typography instead of setting their own,
- * since React Native has no cascade to detect nesting otherwise.
+ * The resolved size and color a system `Text` is rendering with, plus whether
+ * anything is nested inside one at all. Inline components such as Icon and Link
+ * read this to match the surrounding typography instead of falling back to a
+ * default, since React Native has no cascade to inherit it from otherwise.
  */
-export const TextNestingContext = React.createContext<boolean>(false);
+export interface TextStyleContextValue {
+  fontSize: number;
+  color: string;
+  nested: boolean;
+}
+
+const DEFAULT_TEXT_STYLE_CONTEXT: TextStyleContextValue = { fontSize: 0, color: '', nested: false };
+
+export const TextStyleContext = React.createContext<TextStyleContextValue>(DEFAULT_TEXT_STYLE_CONTEXT);
 
 /** Resolves `start`/`end` against the current writing direction, since RN's `textAlign` has no logical values. */
 export function toTextAlign(align: TextAlign): TextStyle['textAlign'] {

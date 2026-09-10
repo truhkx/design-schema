@@ -6,12 +6,14 @@ component:
   category: container
   status: review
   apg: feed
-  anatomy: [container, article, articleHeader, articleBody, articleActions, loadingIndicator, endMessage, newItemsButton, emptyState]
+  anatomy: [container, article, timestamp, articleBody, articleActions, loadingIndicator, endMessage, newItemsButton, emptyState]
   composition:
     article: Card
+    timestamp: Text
     newItemsButton: Button
     loadingIndicator: ProgressBar
     emptyState: Text
+    endMessage: Text
   props:
     label:
       type: string
@@ -22,11 +24,11 @@ component:
       type: array
       required: true
       shape: 'FeedItem[] where FeedItem = { id: string; heading: string; timestamp: string; content: ReactNode; actions?: ReactNode; unread?: boolean }'
-      description: 'Articles, newest first. `heading` names the article (a Heading inside the Card); `timestamp` is ISO and rendered relative ("3 min ago") with the absolute time as its title; `unread` marks items the user has not seen.'
+      description: 'Articles, newest first. `heading` names the article (a Heading inside the Card); `timestamp` is ISO and rendered relative from the copy strings (`justNow` under a minute, `minutesAgo` under an hour, `hoursAgo` under a day, `daysAgo` under seven days, else the absolute date from Intl.DateTimeFormat in the user''s locale) with the absolute time as its title on web (native shows the relative string only); `unread` marks items the user has not seen.'
     hasMore:
       type: boolean
       default: false
-      description: More items exist beyond the last; the feed asks for them with `onLoadMore` as the end approaches.
+      description: 'More items exist beyond the last; the feed asks for them with `onLoadMore` as the end approaches, and once on mount when `items` is empty and not `loading` (so an empty feed fetches its first page itself).'
     loading:
       type: boolean
       default: false
@@ -41,7 +43,7 @@ component:
       description: Heading level for article headings, matching the page outline.
     endMessage:
       type: string
-      description: 'Shown after the last item when `hasMore` is false. Defaults to `copy.end`.'
+      description: 'Shown after the last item when `hasMore` is false (and `items` is not empty). Defaults to `copy.end`.'
   events:
     onLoadMore:
       description: 'Fired when the last rendered article is within one screen of view (or on End / Ctrl+End with `hasMore`).'
@@ -56,8 +58,8 @@ component:
     - { keys: [Tab], action: 'Moves through interactive content inside the current article and on to the next article''s content in reading order; articles themselves are focusable so the feed commands below work.', from: any, expect: focus-next }
     - { keys: [PageDown], action: 'Moves focus to the next article (the APG feed command).', from: inside, expect: manual }
     - { keys: [PageUp], action: Moves focus to the previous article., from: inside, expect: manual }
-    - { keys: [Ctrl+End], action: 'Moves focus to the first element after the feed; with `hasMore`, first triggers a load so the end is real.', from: inside, expect: manual }
-    - { keys: [Ctrl+Home], action: 'Moves focus to the first element before the feed (or to the new-items button when shown).', from: inside, expect: manual }
+    - { keys: [Ctrl+End], action: 'Moves focus to the first focusable element after the feed in the document; with `hasMore`, instead triggers a load (press again once it has loaded and `hasMore` is false).', from: inside, expect: manual }
+    - { keys: [Ctrl+Home], action: 'Moves focus to the new-items button when shown, else to the last focusable element before the feed in the document.', from: inside, expect: manual }
   styles:
     itemGap: { token: layout.gap.normal }
     articleInset: { token: layout.inset.md, description: Passed to each Card as its inset. }
@@ -65,8 +67,9 @@ component:
     unreadBorderWidth: { token: border.width.focus }
     timestampColor: { token: color.foreground.muted }
     timestampSize: { token: font.size.xs }
-    newItemsOffset: { token: space.3, description: Space above the new-items button when it appears. }
-    loadingInset: { token: layout.inset.md }
+    newItemsOffset: { token: space.3, description: 'Padding-block-start of the sticky new-items row (it is the first child, so padding, not a margin).' }
+    loadingInset: { token: layout.inset.md, description: 'Padding around the loading indicator.' }
+    endMessageInset: { token: layout.inset.md, description: 'Padding around the end message.' }
     endMessageColor: { token: color.foreground.muted }
     endMessageSize: { token: font.size.sm }
     fontFamily: { token: font.family.body }
@@ -79,6 +82,10 @@ component:
     unread: unread
     position: '{index} of {total}'
     empty: Nothing here yet.
+    justNow: just now
+    minutesAgo: '{n} min ago'
+    hoursAgo: '{n} hr ago'
+    daysAgo: '{n} d ago'
   a11y:
     role: feed
     requires: [accessible-name, heading-hierarchy, keyboard-operable, focus-visible, contrast-aa, live-region, reduced-motion]
@@ -90,15 +97,15 @@ component:
     web:
       element: div
       attributes: [role=feed, aria-label, aria-busy, role=article, aria-labelledby, aria-describedby, aria-posinset, aria-setsize, tabindex=-1]
-      notes: 'A <div role="feed" aria-label aria-busy> of Cards rendered as <article role="article" tabindex="-1" aria-labelledby={headingId} aria-describedby={timestampId} aria-posinset aria-setsize={total or -1 when hasMore}>. Articles are focusable (tabindex -1) so PageUp/PageDown and screen-reader browse mode land on them; the feed handles those keys when focus is within an article. An IntersectionObserver on the last article triggers onLoadMore with rootMargin of one viewport; another at 50% visibility for a second drives onItemVisible. New items are never inserted at the top automatically: the newItemsButton (Button secondary, sm) is sticky at the top and its press prepends and moves focus to the first new article. The loading indicator is an indeterminate ProgressBar with label copy.loading, aria-busy on the feed while loading. Under reduced motion no scroll animation.'
+      notes: 'A <div role="feed" aria-label aria-busy> of Cards (`focusable`, so each is an <article tabindex="-1"> that draws its own ring) given role="article" aria-describedby={timestampId} aria-posinset aria-setsize={total or -1 when hasMore} through rest props; Card labels itself by its heading. copy.position is a visually-hidden span rendered only when the total is known (hasMore false). The heading row is Card''s own header; Feed''s articleBody holds the timestamp then the content, articleActions the footer row. Articles are focusable so PageUp/PageDown and screen-reader browse mode land on them; the feed handles those keys when focus is within an article. An IntersectionObserver on the last article triggers onLoadMore with rootMargin of one viewport; another at 50% visibility for a second drives onItemVisible. New items are never inserted at the top automatically: the newItemsButton (Button secondary, sm) is sticky at the top and its press prepends and moves focus to the first new article. The loading indicator is an indeterminate ProgressBar with label copy.loading, aria-busy on the feed while loading. Under reduced motion no scroll animation.'
     lit:
       tag: ds-feed
       reflect: [has-more, loading, heading-level, new-items-count]
-      notes: '`items` as a property; articles rendered in the shadow root as <ds-card> with slotted content templates; composed `load-more`, `show-new`, `item-visible`.'
+      notes: '`items` as a property (`content` and `actions` typed as any lit-html renderable); articles rendered in the shadow root as <ds-card focusable> with slotted content templates; Card labels itself. Ctrl+Home/End walk the document for focusables (shadow-piercing, as FocusScope). Composed `load-more`, `show-new`, `item-visible`.'
     rn:
       element: FlatList
       props: [accessibilityRole=list, accessibilityLabel, onEndReached, onEndReachedThreshold, onViewableItemsChanged, ListFooterComponent, maintainVisibleContentPosition]
-      notes: 'A FlatList newest-first with onEndReached (threshold 1 screen) for onLoadMore, ListFooterComponent for the loading indicator / end message, maintainVisibleContentPosition so prepending via onShowNew does not jump, and the new-items Button rendered above the list. Each article is a Card with accessible={true} and an accessibilityLabel from heading + relative time + unread. onViewableItemsChanged with 50% for one second drives onItemVisible.'
+      notes: 'A FlatList newest-first with onEndReached (threshold 1 screen) for onLoadMore, ListFooterComponent for the loading indicator / end message, maintainVisibleContentPosition so prepending via onShowNew does not jump, and the new-items Button rendered above the list. Articles are Cards left un-collapsed (no `accessible` on the Card: collapsing would hide the action Buttons and Links from focus), with visually-hidden Text runs for copy.unread and, when the total is known, copy.position after the heading. There is no hardware-keyboard feed model on native (no Page or Ctrl keys); screen readers use their own browse gestures. The absolute time is not exposed on native. onViewableItemsChanged with 50% for one second drives onItemVisible.'
 ---
 
 A feed is a list that never quite ends: it grows as you reach the bottom, and newer things arrive at the top. The APG feed pattern exists because this breaks the assumptions of screen readers (content appears while you are reading) and keyboards (Tab through a hundred cards is not navigation), so the feed gives them article-level movement and control over when new items appear.
@@ -113,7 +120,7 @@ Do not use a Feed for a finite list that fits on a page (a Stack of Cards), for 
 
 ## Behavior
 
-Items render newest first; when the last is within a screen of view and `hasMore`, `onLoadMore` fires and a loading indicator appears; when `hasMore` is false the end message shows. PageDown/PageUp move focus between articles, Ctrl+Home/End leave the feed at either end (End loads first if there is more). New items are announced by the button count, prepended only on request, and focus moves to the first new one. Unread items show a start-edge bar and an "unread" word for assistive technology; `onItemVisible` lets the caller clear it.
+Items render newest first; when the last is within a screen of view and `hasMore`, `onLoadMore` fires and a loading indicator appears; when `hasMore` is false the end message shows. PageDown/PageUp move focus between articles, Ctrl+Home/End leave the feed at either end (End loads instead if there is more; press again after). While `loading` with no items the loading indicator shows, not `copy.empty`. New items are announced by the button count, prepended only on request, and focus moves to the first new one. Unread items show a start-edge bar and an "unread" word for assistive technology; `onItemVisible` lets the caller clear it.
 
 ## Content guidelines
 
@@ -126,7 +133,7 @@ The container is a `feed` with a name and `aria-busy` while loading (APG feed; W
 ## Platform notes
 
 ### Web
-Render `<div role="feed" aria-label aria-busy data-ds="Feed">` with the sticky `newItemsButton` when `newItemsCount > 0`, then a `Card` per item rendered as `<article role="article" tabIndex={-1} aria-labelledby aria-describedby aria-posinset aria-setsize>` containing `Heading level={headingLevel}`, a `<time dateTime title>` `Text tone="muted" size="xs"`, the content, and an actions row (`Stack` horizontal, `gap: tight`); a visually-hidden `Text` "unread" and the `unreadBorder` bar when `unread`. Keydown on the feed implements the table when the event target is inside an article. `IntersectionObserver`s for load-more (`rootMargin: '100% 0px'`) and visibility (`threshold: 0.5`, one-second timer). Footer: indeterminate `ProgressBar label={copy.loading} hideLabel` while `loading`, else the end message when `!hasMore`.
+Render `<div role="feed" aria-label aria-busy data-ds="Feed">` with the sticky `newItemsButton` when `newItemsCount > 0`, then a `Card focusable heading headingLevel role="article" aria-describedby aria-posinset aria-setsize` per item (Card renders the `<article>`, its heading and the ring) whose body holds a `<time dateTime title>` `Text tone="muted" size="xs"`, the content, and an actions row (`Stack` horizontal, `gap: tight`); a visually-hidden `Text` "unread" and the `unreadBorder` bar when `unread`. Keydown on the feed implements the table when the event target is inside an article. `IntersectionObserver`s for load-more (`rootMargin: '100% 0px'`) and visibility (`threshold: 0.5`, one-second timer). Footer: indeterminate `ProgressBar label={copy.loading} hideLabel` inside `loadingInset` while `loading`, else the end message `Text` inside `endMessageInset` when `!hasMore`. On mount with no items, `hasMore` and not `loading`, fire `onLoadMore` once (there is no last article to observe).
 
 ### Lit
 `<ds-feed label="Activity" .items=${items} has-more @load-more=${load}></ds-feed>`; shadow articles as `ds-card`; composed events.

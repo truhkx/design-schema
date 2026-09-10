@@ -128,6 +128,41 @@ describe('ds-icon', () => {
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
+  it('renders-name-menu', async () => {
+    const { el } = await setup({ name: 'menu' });
+    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  });
+
+  it('renders-name-list', async () => {
+    const { el } = await setup({ name: 'list' });
+    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  });
+
+  it('renders-name-grid', async () => {
+    const { el } = await setup({ name: 'grid' });
+    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  });
+
+  it('renders-name-play', async () => {
+    const { el } = await setup({ name: 'play' });
+    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  });
+
+  it('renders-name-pause', async () => {
+    const { el } = await setup({ name: 'pause' });
+    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  });
+
+  it('renders-name-folder', async () => {
+    const { el } = await setup({ name: 'folder' });
+    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  });
+
+  it('renders-name-file', async () => {
+    const { el } = await setup({ name: 'file' });
+    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  });
+
   /* derived: props.size */
   it('renders-size-xs', async () => {
     const { el } = await setup({ size: 'xs' });

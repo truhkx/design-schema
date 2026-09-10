@@ -17,7 +17,14 @@ export type IconName =
   | 'search'
   | 'arrow-right'
   | 'arrow-left'
-  | 'calendar';
+  | 'calendar'
+  | 'menu'
+  | 'list'
+  | 'grid'
+  | 'play'
+  | 'pause'
+  | 'folder'
+  | 'file';
 
 /** One glyph: an SVG path `d` on the shared 16×16 grid. Line glyphs stroke; `filled` glyphs fill (fillRule evenodd) and draw no stroke. */
 export interface IconGlyph {
@@ -28,10 +35,11 @@ export interface IconGlyph {
 /**
  * Glyphs drawn on a 16×16 grid, keyed by `name` — the same grid and `d` data as the
  * web/Lit `paths` table, so swapping platforms stays visually neutral. Line glyphs
- * (check, dash, chevrons, close, plus, minus, external, search, arrows, calendar)
- * inherit the root `<Svg>`'s `fill="none" stroke={color}`. Filled glyphs (the four
- * status shapes and ellipsis) set `fill={color} stroke="none"`; the status shapes
- * are single `fillRule="evenodd"` paths whose inner mark (i, check, !, x) is a hole.
+ * (check, dash, chevrons, close, plus, minus, external, search, arrows, calendar,
+ * menu, list, grid, folder, file) inherit the root `<Svg>`'s `fill="none"
+ * stroke={color}`. Filled glyphs (the four status shapes, ellipsis, play, pause) set
+ * `fill={color} stroke="none"`; the status shapes are single `fillRule="evenodd"`
+ * paths whose inner mark (i, check, !, x) is a hole.
  *
  * Icon renders `<Icon name>`; nothing else should import this table.
  */
@@ -77,4 +85,13 @@ export const paths: Record<IconName, IconGlyph> = {
   calendar: {
     d: 'M2 6h12M5 1.5v3M11 1.5v3M3 3h10a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z',
   },
+  /* No web/Lit reference existed for this glyph at generation time either; see the gap note in Icon.tsx. */
+  menu: { d: 'M2 4h12M2 8h12M2 12h12' },
+  /* Dots drawn as zero-length, round-capped strokes so they render on the same stroke-only path as the lines. */
+  list: { d: 'M5 4h9M5 8h9M5 12h9M2 4h.01M2 8h.01M2 12h.01' },
+  grid: { d: 'M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z' },
+  play: { filled: true, d: 'M4 2l10 6-10 6z' },
+  pause: { filled: true, d: 'M3 2h3v12H3zM10 2h3v12H10z' },
+  folder: { d: 'M2 13V2h5v2h7v9z' },
+  file: { d: 'M4 2h5l3 3v9H4zM9 2v3h3' },
 };

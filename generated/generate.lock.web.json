@@ -515,20 +515,19 @@
     }
   },
   "Heading.web": {
-    "hash": "93845edd55993b24",
-    "lastAttemptHash": "93845edd55993b24",
-    "generatedAt": "2026-09-10T04:44:53+00:00",
+    "hash": "5deebd559e09a36c",
+    "lastAttemptHash": "5deebd559e09a36c",
+    "generatedAt": "2026-09-10T21:14:28+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 0.6025,
+    "rounds": 1,
+    "costUsd": 0.1868,
     "files": [
       "packages/react/src/Heading.css",
-      "packages/react/src/Heading.test.tsx",
-      "packages/react/src/Heading.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Heading.stories.tsx",
+      "packages/react/src/Heading.tsx"
     ],
-    "gaps": 2,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -539,20 +538,19 @@
     }
   },
   "Icon.web": {
-    "hash": "1a5e93fe91ceb56c",
-    "lastAttemptHash": "1a5e93fe91ceb56c",
-    "generatedAt": "2026-09-10T04:38:03+00:00",
+    "hash": "472ebff36ada6dd0",
+    "lastAttemptHash": "472ebff36ada6dd0",
+    "generatedAt": "2026-09-10T21:12:56+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5677,
+    "costUsd": 0.6299,
     "files": [
       "packages/react/src/Icon.css",
       "packages/react/src/Icon.stories.tsx",
-      "packages/react/src/Icon.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Icon.tsx"
     ],
-    "gaps": 3,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1074,24 +1072,20 @@
     }
   },
   "Text.web": {
-    "hash": "342c9b77de6cc168",
-    "lastAttemptHash": "342c9b77de6cc168",
-    "generatedAt": "2026-09-10T04:42:25+00:00",
+    "hash": "e050d5b7ab03d6bb",
+    "lastAttemptHash": "e050d5b7ab03d6bb",
+    "generatedAt": "2026-09-10T21:13:54+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.3693,
+    "rounds": 1,
+    "costUsd": 0.2374,
     "files": [
-      "packages/react/src/Checkbox.tsx",
-      "packages/react/src/RadioGroup.tsx",
-      "packages/react/src/Switch.tsx",
       "packages/react/src/Text.css",
       "packages/react/src/Text.stories.tsx",
-      "packages/react/src/Text.test.tsx",
       "packages/react/src/Text.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,

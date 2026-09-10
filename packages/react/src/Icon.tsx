@@ -21,7 +21,14 @@ export type IconName =
   | 'search'
   | 'arrow-right'
   | 'arrow-left'
-  | 'calendar';
+  | 'calendar'
+  | 'menu'
+  | 'list'
+  | 'grid'
+  | 'play'
+  | 'pause'
+  | 'folder'
+  | 'file';
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
@@ -42,14 +49,18 @@ function overridesToStyle(overrides: Partial<Record<IconOverridableBinding, Toke
   return style as CSSProperties;
 }
 
+declare const process: { env: Record<string, string | undefined> } | undefined;
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+
 /**
  * Glyphs drawn on a 16×16 grid, keyed by `name`.
  *
- * Line glyphs (check, dash, chevrons, close, plus, minus, external, search, arrows, calendar) are
- * bare `<path>`s and inherit the root `<svg>`'s `fill="none" stroke="currentColor"`. Filled glyphs
- * (the four status shapes and ellipsis) set `fill="currentColor" stroke="none"` on themselves;
- * the status shapes are single `fill-rule="evenodd"` paths whose inner mark (i, check, !, x) is a
- * hole, so they read on any surface without a second color.
+ * Line glyphs (check, dash, chevrons, close, plus, minus, external, search, arrows, calendar,
+ * menu, list, grid, folder, file) are bare `<path>`/`<rect>` shapes and inherit the root
+ * `<svg>`'s `fill="none" stroke="currentColor"`. Filled glyphs (the four status shapes, ellipsis,
+ * play, pause) set `fill="currentColor" stroke="none"` on themselves; the status shapes are
+ * single `fill-rule="evenodd"` paths whose inner mark (i, check, !, x) is a hole, so they read on
+ * any surface without a second color. `list`'s bullet dots are filled the same way.
  *
  * Other components render `<Icon name>`; nothing else should import this table.
  */
@@ -111,6 +122,34 @@ export const paths: Record<IconName, ReactNode> = {
   'arrow-right': <path d="M3 8h10M9 4l4 4-4 4" />,
   'arrow-left': <path d="M13 8H3M7 4L3 8l4 4" />,
   calendar: <path d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3" />,
+  menu: <path d="M2 4h12M2 8h12M2 12h12" />,
+  list: (
+    <>
+      <path d="M5 4h9M5 8h9M5 12h9" />
+      <g fill="currentColor" stroke="none">
+        <circle cx="2" cy="4" r="1" />
+        <circle cx="2" cy="8" r="1" />
+        <circle cx="2" cy="12" r="1" />
+      </g>
+    </>
+  ),
+  grid: (
+    <g>
+      <rect x="2" y="2" width="5" height="5" />
+      <rect x="9" y="2" width="5" height="5" />
+      <rect x="2" y="9" width="5" height="5" />
+      <rect x="9" y="9" width="5" height="5" />
+    </g>
+  ),
+  play: <path fill="currentColor" stroke="none" d="M4 2L14 8L4 14Z" />,
+  pause: (
+    <g fill="currentColor" stroke="none">
+      <rect x="3" y="2" width="3" height="12" />
+      <rect x="10" y="2" width="3" height="12" />
+    </g>
+  ),
+  folder: <path d="M2 13L2 2L7 2L7 4L14 4L14 13Z" />,
+  file: <path d="M4 2H9L12 5V14H4Z M9 2V5H12" />,
 };
 
 export interface IconProps
@@ -160,6 +199,12 @@ export const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon(
   ref,
 ) {
   const labelled = label !== undefined && label !== '';
+  const glyph = paths[name];
+
+  if (isDev && !glyph) {
+    // eslint-disable-next-line no-console
+    console.warn(`Icon: unknown name "${name}"`);
+  }
 
   const classes = ['ds-icon', inline ? 'ds-icon--inline' : `ds-icon--${size}`, className ?? null]
     .filter(Boolean)
@@ -187,7 +232,7 @@ export const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon(
       aria-label={labelled ? label : undefined}
       aria-hidden={labelled ? undefined : 'true'}
     >
-      {paths[name]}
+      {glyph}
     </svg>
   );
 });

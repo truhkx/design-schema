@@ -497,21 +497,19 @@
     }
   },
   "Icon.rn": {
-    "hash": "73fd287fcb536c6f",
-    "lastAttemptHash": "73fd287fcb536c6f",
-    "generatedAt": "2026-09-10T04:44:19+00:00",
+    "hash": "77056bdec1445d9d",
+    "lastAttemptHash": "77056bdec1445d9d",
+    "generatedAt": "2026-09-10T21:12:40+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.1228,
+    "rounds": 1,
+    "costUsd": 0.6436,
     "files": [
       "packages/rn/src/Icon.stories.tsx",
       "packages/rn/src/Icon.test.tsx",
-      "packages/rn/src/Icon.tsx",
-      "packages/rn/src/index.ts",
       "packages/rn/src/paths.ts"
     ],
-    "gaps": 6,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

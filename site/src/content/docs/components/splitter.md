@@ -38,7 +38,7 @@ component:
     minSize:
       type: number
       default: 10
-      description: Smallest primary size, percent. Below `collapseThreshold` the pane collapses instead.
+      description: 'Smallest primary size, percent. With `collapsible`, dragging or stepping below it collapses the pane instead of clamping; otherwise it is the hard floor.'
     maxSize:
       type: number
       default: 90
@@ -54,20 +54,24 @@ component:
     collapsed:
       type: boolean
       description: Controlled collapsed state.
+    defaultCollapsed:
+      type: boolean
+      default: false
+      description: Initial collapsed state when uncontrolled.
     persistKey:
       type: string
-      description: 'When set, the size is remembered per user under this key (localStorage / AsyncStorage) so a sidebar stays where it was left.'
+      description: 'When set, the size and collapsed state are remembered per user under this key so a sidebar stays where it was left: localStorage on web and Lit (in try/catch); on native a module-level memory map (no storage dependency is allowed), which survives remounts but not a restart.'
     stackBelow:
       type: enum
       values: [prose, content, never]
       default: prose
-      description: 'Below this layout width a horizontal splitter stacks its panes and the separator becomes inert (a phone has no room for two panes side by side).'
+      description: 'Below this width of the splitter''s own box (a container query, not the viewport, so nested splitters work) a horizontal splitter stacks its panes and the separator is not rendered. A vertical splitter never stacks. All three values apply on every platform (`content` = layout.maxWidth.content, `never` = no stacking).'
   events:
     onSizeChange:
       description: Fired continuously while dragging and on each key press, with the primary size in percent.
       platforms: { web: onSizeChange, lit: size-change, rn: onSizeChange }
     onSizeChangeEnd:
-      description: Fired once when a drag ends, with the final size.
+      description: 'Fired with the final size once when a drag ends and after each key press (a key press is a complete interaction), so a caller can persist on it.'
       platforms: { web: onSizeChangeEnd, lit: size-change-end, rn: onSizeChangeEnd }
     onCollapseChange:
       description: Fired when the primary pane collapses or restores.
@@ -78,18 +82,18 @@ component:
     - { keys: [ArrowLeft, ArrowUp], action: Shrinks the primary pane by `step`., from: first, expect: manual }
     - { keys: [Home], action: Sets the primary pane to `minSize`., from: first, expect: manual }
     - { keys: [End], action: Sets the primary pane to `maxSize`., from: first, expect: manual }
-    - { keys: [Enter], action: 'Collapses the primary pane, or restores it to its previous size.', when: collapsible, from: first, expect: manual }
-    - { keys: [F6], action: 'Moves focus to the next pane (from the separator to the secondary; from a pane to the next), the APG convenience for cycling panes.', from: any, expect: manual }
+    - { keys: [Enter], action: 'Collapses the primary pane, or restores it to its previous size. While collapsed, arrows, Home, End and pointer drag do nothing; only Enter or the collapse button restores.', when: collapsible, from: first, expect: manual }
+    - { keys: [F6], action: 'Cycles focus primary pane → separator → secondary pane → primary pane (wrapping), landing on the region''s first focusable descendant or, when it has none, on the pane wrapper itself (tabindex -1). The APG convenience for cycling panes; not available on native.', from: any, expect: manual }
   styles:
     separatorSize: { token: space.1, description: 'The visible line. The grab area is wider: `handleSize` centered on it.' }
     separatorColor: { token: color.border }
-    separatorHover: { token: color.border.strong }
+    separatorHover: { token: color.border.strong, description: 'Pointer hover; unused on native.' }
     separatorActive: { token: color.control.selectedBackground, description: 'While dragging or focused.' }
-    handleSize: { token: space.3, description: 'Pointer grab area, centered on the separator and overlapping both panes so the panes'' content keeps the full width.' }
-    grip: { token: color.border.strong, description: 'A short centered grip mark on the separator, so the divider reads as draggable.' }
+    handleSize: { token: space.3, description: 'Pointer grab area, centered on the separator and overlapping both panes so the panes'' content keeps the full width. The effective hit area is max(handleSize, minTarget), so the locked floor cannot be overridden away.' }
+    grip: { token: color.border.strong, description: 'A short centered grip mark on the separator, so the divider reads as draggable: a rounded bar of gripLength along the separator and separatorSize across it.' }
     gripLength: { token: space.6 }
-    collapseButtonOffset: { token: space.2 }
-    paneMinTarget: { token: size.target.comfortable, description: 'A pane never shrinks below this on the drag axis before collapsing, so its scrollbar and content stay usable.' }
+    collapseButtonOffset: { token: space.2, description: 'Distance of the collapse Button from the separator''s start edge along the separator (top of a vertical separator, inline-start of a horizontal one); the button is centered across the separator and overlaps both panes.' }
+    paneMinTarget: { token: size.target.comfortable, description: 'A pane never shrinks below this on the drag axis before collapsing, so its scrollbar and content stay usable: a CSS minmax() floor on both grid tracks beneath the percent clamp (a very narrow container can therefore show the pane wider than its percent). Dropped for the primary track while collapsed so collapse reaches zero.' }
     minTarget: { token: size.target.min, description: 'Separator hit area along the drag axis.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
@@ -108,7 +112,7 @@ component:
     web:
       element: div
       attributes: [role=separator, tabindex=0, aria-orientation, aria-valuenow, aria-valuemin, aria-valuemax, aria-valuetext, aria-label, aria-controls]
-      notes: 'A container with CSS grid (grid-template-columns: var(--ds-splitter-primary-size) auto 1fr, or rows when vertical) whose primary size is a custom property in percent; the separator is <div role="separator" tabindex="0" aria-orientation aria-valuenow aria-valuemin aria-valuemax aria-valuetext aria-label aria-controls={primaryId}> (aria-orientation is the separator''s own: vertical for a horizontal splitter). Pointer Events with setPointerCapture on the separator; the grab area is a wider ::before. A resizable separator is a focusable widget per ARIA (a static separator would not have tabindex). Collapse: the primary pane gets inert and inline-size 0; the collapse Button (ghost, sm, iconOnly, chevron Icon) sits on the separator. Below the stackBelow width a container query switches to a single column, the separator loses tabindex and role becomes "presentation", and both panes render in full. persistKey reads/writes localStorage inside try/catch.'
+      notes: 'A container with CSS grid (grid-template-columns: var(--ds-splitter-primary-size) auto 1fr, or rows when vertical) whose primary size is a custom property in percent; the separator is <div role="separator" tabindex="0" aria-orientation aria-valuenow aria-valuemin aria-valuemax aria-valuetext aria-label aria-controls={primaryId}> (aria-orientation is the separator''s own: vertical for a horizontal splitter). Pointer Events with setPointerCapture on the separator; the grab area is a wider ::before. A resizable separator is a focusable widget per ARIA (a static separator would not have tabindex). Collapse: the primary pane gets inert and inline-size 0; the collapse Button (ghost, sm, iconOnly, chevron Icon) sits on the separator. Below the stackBelow width a container query switches to a single column, the separator is not rendered, and both panes render in full. persistKey reads/writes localStorage inside try/catch.'
     lit:
       tag: ds-splitter
       reflect: [orientation, collapsible, collapsed, stack-below]
@@ -116,7 +120,7 @@ component:
     rn:
       element: View
       props: [accessibilityRole=adjustable, accessibilityLabel, accessibilityValue, accessibilityActions]
-      notes: 'Tablets and react-native-web only; on phones (width below the prose max) the panes always stack and the separator is not rendered. The separator is a View with a PanResponder and accessibilityRole="adjustable", accessibilityValue={{ min, max, now, text }}, accessibilityActions increment/decrement mapped to step — the gesture alternative. persistKey uses AsyncStorage when available, else memory.'
+      notes: 'Tablets and react-native-web only; below the stackBelow width the panes always stack and the separator is not rendered. The separator is a plain View with a PanResponder (as Slider''s thumb — panHandlers on a Pressable fight its own responder), so it cannot show a keyboard focus ring itself (a known platform limit; the composed collapse Button has full focus treatment). accessibilityRole="adjustable", accessibilityValue={{ min, max, now, text }}, accessibilityActions increment/decrement (step), setMinimum/setMaximum (Home/End) and activate (Enter: collapse/restore) — the gesture alternative. F6 has no native equivalent. persistKey is a module-level memory map.'
 ---
 
 A splitter gives the user control of a layout decision the designer could not make for everyone: how wide the sidebar is, how tall the preview is. It is a separator the keyboard can move, a pane that can collapse, and a memory of where it was left.
@@ -131,7 +135,7 @@ Do not use a Splitter on phone-width layouts — it stacks below `stackBelow`, a
 
 ## Behavior
 
-Dragging the separator resizes the primary pane within `minSize`–`maxSize`; arrow keys move it by `step`, Home/End to the bounds. With `collapsible`, dragging past the minimum, Enter, or the collapse button collapses the primary pane to nothing (its content becomes inert) and Enter or the button restores the previous size. `onSizeChange` fires continuously, `onSizeChangeEnd` once. F6 cycles focus between panes. Below `stackBelow` the panes stack in source order at full width and the separator is inert. With `persistKey` the last size and collapsed state are restored on mount.
+Dragging the separator resizes the primary pane within `minSize`–`maxSize`; arrow keys move it by `step`, Home/End to the bounds. With `collapsible`, dragging past `minSize`, Enter, or the collapse button collapses the primary pane to nothing (its content becomes inert) and Enter or the button restores the previous size; while collapsed the separator ignores drag and every key but Enter. `collapsed` is controlled or starts from `defaultCollapsed`. `onSizeChange` fires continuously, `onSizeChangeEnd` once per drag or key press. F6 cycles primary → separator → secondary. Below `stackBelow` (measured on the splitter's own width with a ResizeObserver, the breakpoint read from the built token JSON, `literal-ok`) a horizontal splitter stacks its panes in source order at full width and does not render the separator; a vertical one never stacks. With `persistKey` the last size and collapsed state are restored on mount.
 
 ## Content guidelines
 
@@ -144,7 +148,7 @@ The separator is a focusable `separator` with `aria-orientation`, `aria-valuenow
 ## Platform notes
 
 ### Web
-Render `<div data-ds="Splitter" class="ds-splitter--{orientation}" style="--ds-splitter-primary-size: {size}%">` as a grid of primary pane `<div id>`, separator, secondary pane. Separator: `<div role="separator" tabindex="0" aria-orientation={horizontal ? 'vertical' : 'horizontal'} aria-valuenow aria-valuemin aria-valuemax aria-valuetext={copy.sizeText} aria-label aria-controls>` with a `::before` grab area of `handleSize` and a centered grip; `pointerdown` captures and `pointermove` maps the pointer to percent, clamped, snapping to collapse past `minSize` when `collapsible`; keydown per the table; `collapseButton` positioned on the separator. Container query on the container for `stackBelow` (`literal-ok: breakpoint from layout.maxWidth.*`). Reduced motion removes the collapse transition. `persistKey` → `localStorage` in try/catch.
+Render `<div data-ds="Splitter" class="ds-splitter--{orientation}" style="--ds-splitter-primary-size: {size}%">` as a grid of primary pane `<div id>`, separator, secondary pane. Separator: `<div role="separator" tabindex="0" aria-orientation={horizontal ? 'vertical' : 'horizontal'} aria-valuenow aria-valuemin aria-valuemax aria-valuetext={copy.sizeText} aria-label aria-controls>` with a `::before` grab area of `handleSize` and a centered grip; `pointerdown` captures and `pointermove` maps the pointer to percent, clamped, snapping to collapse past `minSize` when `collapsible`; keydown per the table; `collapseButton` positioned on the separator. Container query on the container for `stackBelow` via `ResizeObserver` on the splitter's own inline size (`literal-ok: breakpoint from layout.maxWidth.*`; guarded when `ResizeObserver` is absent, as Toolbar); when stacked the separator and collapse Button are not rendered. Reduced motion removes the collapse transition. `persistKey` → `localStorage` in try/catch.
 
 ### Lit
 `<ds-splitter label="Sidebar width" collapsible persist-key="app-sidebar"><nav slot="primary">…</nav><main slot="secondary">…</main></ds-splitter>`; shadow separator; host custom property; composed events.

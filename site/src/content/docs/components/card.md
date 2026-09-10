@@ -40,6 +40,11 @@ component:
       default: false
       description: 'The whole card is one link or button target. Requires exactly one interactive child (a Link or Button) whose action the card extends to its full area; the card itself is not focusable.'
       a11y: The card never becomes a second focus stop; its single child link or button is the target, and the card enlarges the hit area only (pseudo-element on web, wrapping Pressable on native).
+    focusable:
+      type: boolean
+      default: false
+      description: 'The card root takes tabindex=-1 so a container (Feed) can move focus to it by script, and draws its own focus ring when focused that way. Not a tab stop; not for making cards clickable (`interactive`).'
+      a11y: 'Only scripted focus (PageUp/PageDown in a Feed) lands here; the ring is drawn on the card via :focus-visible.'
   styles:
     paddingBlock: { token: 'layout.inset.{inset}' }
     paddingInline: { token: 'layout.inset.{inset}' }
@@ -89,7 +94,7 @@ Do not put a card inside a card. Do not use Cards to separate sections of a form
 
 ## Behavior
 
-The header renders when `heading` or `headerActions` is present, the footer when `footer` is present; body always. Header, body and footer are separated by `partGap`, and the card pads all of it by `inset`. `surface: default` draws a border, `subtle` does not. An `interactive` card grows its single child link or button's hit area to the whole card, shows `hoverBackground` on pointer hover, and draws the focus ring around the card when that child is focused — but adds no focus stop of its own.
+The header renders when `heading` or `headerActions` is present, the footer when `footer` is present; body always. Header, body and footer are separated by `partGap`, and the card pads all of it by `inset`. `surface: default` draws a border, `subtle` does not. An `interactive` card grows its single child link or button's hit area to the whole card, shows `hoverBackground` on pointer hover, and draws the focus ring around the card when that child is focused — but adds no focus stop of its own. A `focusable` card carries `tabIndex={-1}` on its root and draws the same ring on its own `:focus-visible`; aria attributes passed through `...rest` (role, aria-posinset, aria-setsize, aria-describedby) land on the root, which is how Feed makes a Card an article.
 
 ## Content guidelines
 

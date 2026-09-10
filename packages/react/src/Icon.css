@@ -18,7 +18,8 @@
 }
 
 /* Stroke thickness stays the token width on screen at every rendered size. */
-.ds-icon path {
+.ds-icon path,
+.ds-icon rect {
   vector-effect: non-scaling-stroke;
 }
 

@@ -22,7 +22,14 @@ export type IconName =
   | 'search'
   | 'arrow-right'
   | 'arrow-left'
-  | 'calendar';
+  | 'calendar'
+  | 'menu'
+  | 'list'
+  | 'grid'
+  | 'play'
+  | 'pause'
+  | 'folder'
+  | 'file';
 
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -82,6 +89,29 @@ const GLYPHS: Record<IconName, TemplateResult> = {
   calendar: html`<path
     d="M3 3.5h10a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1ZM2 6.5h12M5 2v3M11 2v3"
   />`,
+  menu: html`<path d="M2 4h12M2 8h12M2 12h12" />`,
+  list: html`<path d="M5 4h9M5 8h9M5 12h9" /><circle class="filled" cx="2" cy="4" r="1" /><circle
+      class="filled"
+      cx="2"
+      cy="8"
+      r="1"
+    /><circle class="filled" cx="2" cy="12" r="1" />`,
+  grid: html`<rect x="2" y="2" width="5" height="5" /><rect x="9" y="2" width="5" height="5" /><rect
+      x="2"
+      y="9"
+      width="5"
+      height="5"
+    /><rect x="9" y="9" width="5" height="5" />`,
+  play: html`<path class="filled" d="M4 2 14 8 4 14Z" />`,
+  pause: html`<rect class="filled" x="3" y="2" width="3" height="12" /><rect
+      class="filled"
+      x="10"
+      y="2"
+      width="3"
+      height="12"
+    />`,
+  folder: html`<path d="M2 2h5v2h7v9h-12v-11Z" />`,
+  file: html`<path d="M4 2h5l3 3v9h-8Z" /><path d="M9 2v3h3" />`,
 };
 
 /**

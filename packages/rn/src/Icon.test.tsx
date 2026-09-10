@@ -126,6 +126,44 @@ describe('Icon', () => {
     expect(s.toJSON()).not.toBeNull();
   });
 
+  /* the doc header claims 33 scenarios but its embedded yaml lists only 26, stopping
+     at "calendar"; these 7 follow the same derived pattern for the remaining `name`
+     enum values — see the gap note in the generation report */
+  it('renders-name-menu', () => {
+    const s = setup({ name: 'menu' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  it('renders-name-list', () => {
+    const s = setup({ name: 'list' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  it('renders-name-grid', () => {
+    const s = setup({ name: 'grid' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  it('renders-name-play', () => {
+    const s = setup({ name: 'play' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  it('renders-name-pause', () => {
+    const s = setup({ name: 'pause' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  it('renders-name-folder', () => {
+    const s = setup({ name: 'folder' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  it('renders-name-file', () => {
+    const s = setup({ name: 'file' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
   /* derived: props.size */
   it('renders-size-xs', () => {
     const s = setup({ size: 'xs' });

@@ -37,6 +37,13 @@ export const NameSearch: Story = { args: { name: 'search' } };
 export const NameArrowRight: Story = { args: { name: 'arrow-right' } };
 export const NameArrowLeft: Story = { args: { name: 'arrow-left' } };
 export const NameCalendar: Story = { args: { name: 'calendar' } };
+export const NameMenu: Story = { args: { name: 'menu' } };
+export const NameList: Story = { args: { name: 'list' } };
+export const NameGrid: Story = { args: { name: 'grid' } };
+export const NamePlay: Story = { args: { name: 'play' } };
+export const NamePause: Story = { args: { name: 'pause' } };
+export const NameFolder: Story = { args: { name: 'folder' } };
+export const NameFile: Story = { args: { name: 'file' } };
 
 /* size */
 export const SizeXs: Story = { args: { size: 'xs' } };

@@ -250,6 +250,30 @@
       "modules": true
     }
   },
+  "Fieldset.web": {
+    "hash": "ad8ffe63de0f5c3f",
+    "lastAttemptHash": "ad8ffe63de0f5c3f",
+    "generatedAt": "2026-09-10T06:07:49+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.0884,
+    "files": [
+      "packages/react/src/Fieldset.css",
+      "packages/react/src/Fieldset.stories.tsx",
+      "packages/react/src/Fieldset.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "FocusScope.web": {
     "hash": "1a63e00d70eec66b",
     "lastAttemptHash": "1a63e00d70eec66b",

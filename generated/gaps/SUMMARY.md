@@ -1,6 +1,6 @@
 # Gap digest — phase Controls
 
-Generated 2026-09-10T02:04 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T02:07 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Alert
 
@@ -484,6 +484,14 @@ Doc: `site/src/content/docs/components/divider.md`
 
 Doc: `site/src/content/docs/components/fieldset.md`
 
+### 2026-09-10 02:07 — lit round 1
+
+- **DOC** Fieldset: composition maps legend/description to Text and fields to Stack, but every existing Lit field composite (RadioGroup, Checkbox, Input) renders raw <legend>/<p> styled to the same tokens instead of instantiating ds-text, and the platform notes require fields to stay in the light DOM (ruling out wrapping them in a shadow ds-stack). Followed that precedent: raw elements for legend/description, and a plain flex '.fields' wrapper (gap from fieldsGap) around the default <slot> instead of a shadow <ds-stack>. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the schema has no `required` prop, only a copy.requiredIndicator and the behavior note 'appended to the legend when every field inside is required'. Implemented as a computed getter that queries slotted ds-input/ds-checkbox/ds-switch/ds-radio-group and checks their `required` property at render time; it only recomputes on property changes and on the default slot's `slotchange`, not on ad-hoc mutation of a field's `required` property after connection (mirrors the same limitation ds-form's disabled-sync already accepts). → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: `disabled` propagation targets ds-input, ds-checkbox, ds-switch and ds-radio-group (same set ds-form uses for its own fields), since the spec says 'every field inside' without enumerating tags; nested ds-fieldset was not included as a target since the spec doesn't mention fieldset-in-fieldset (and Related explicitly says RadioGroup already is a fieldset, implying no nesting). → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: added `aria-disabled` on the shadow `<fieldset>` when `disabled` is set, matching the React/Web platform note ('disabled uses aria-disabled on the fieldset') even though the lit platform note doesn't repeat it and a11y.requires doesn't list a disabled-state item — kept for parity with Checkbox/RadioGroup's own aria-disabled pattern on their controls. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the error region is always rendered (empty when unset, hidden via `.error:empty`) rather than conditionally, matching Checkbox/RadioGroup's pattern so a role=alert element persists in the DOM for screen readers to announce a later change — the schema doesn't specify which approach to use. → `site/src/content/docs/components/fieldset.md`
+
 ### 2026-09-10 02:04 — rn round 1
 
 - **DOC** Fieldset: schema's `requiredIndicator` rule ('appended when every field inside is required') requires introspecting children — implemented via React.Children.toArray + checking props.required on direct element children only; nested wrappers (e.g. a consumer-supplied Stack around fields) won't be seen. → `site/src/content/docs/components/fieldset.md`
@@ -896,7 +904,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 357 · CODE: 37 · TOOLING: 2 · NOISE: 8
+DOC: 362 · CODE: 37 · TOOLING: 2 · NOISE: 8
 
 ## Gates to fix
 

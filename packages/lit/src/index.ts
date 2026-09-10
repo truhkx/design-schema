@@ -41,6 +41,7 @@ import './Toast.js';
 import './Popover.js';
 import './BottomSheet.js';
 import './ActionSheet.js';
+import './SidePanel.js';
 
 export { DsButton } from './Button.js';
 export type {
@@ -221,3 +222,13 @@ export type {
   ActionSheetCloseDetail,
   ActionSheetOverridableBinding,
 } from './ActionSheet.js';
+
+export { DsSidePanel } from './SidePanel.js';
+export type {
+  SidePanelSide,
+  SidePanelWidth,
+  SidePanelPersistent,
+  SidePanelOpenChangeReason,
+  SidePanelOpenChangeDetail,
+  SidePanelOverridableBinding,
+} from './SidePanel.js';

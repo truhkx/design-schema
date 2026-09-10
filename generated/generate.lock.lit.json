@@ -1,4 +1,27 @@
 {
+  "ActionSheet.lit": {
+    "hash": "76526e076e2bfc9a",
+    "lastAttemptHash": "76526e076e2bfc9a",
+    "generatedAt": "2026-09-10T07:26:51+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.0158,
+    "files": [
+      "packages/lit/src/ActionSheet.stories.ts",
+      "packages/lit/src/ActionSheet.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Alert.lit": {
     "hash": "c39b881d506fe498",
     "lastAttemptHash": "c39b881d506fe498",
@@ -530,6 +553,29 @@
       "packages/lit/src/index.ts"
     ],
     "gaps": 3,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "SidePanel.lit": {
+    "hash": "8493c10a69172de7",
+    "lastAttemptHash": "8493c10a69172de7",
+    "generatedAt": "2026-09-10T07:40:20+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.7798,
+    "files": [
+      "packages/lit/src/SidePanel.stories.ts",
+      "packages/lit/src/SidePanel.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -435,8 +435,11 @@ export class DsActionSheet extends LitElement {
       return nothing;
     }
     const rect = this.anchorRect;
+    // `pointer-events: none` is deliberately omitted: it is an inherited CSS property, so setting it
+    // here would inherit into ds-menu's own shadow-DOM popup (a sibling of the invisible trigger,
+    // for CSS-inheritance purposes a descendant of this host) and make the whole popup unclickable.
     const anchorStyle = rect
-      ? `position:fixed;top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;height:${rect.height}px;opacity:0;pointer-events:none;`
+      ? `position:fixed;top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;height:${rect.height}px;opacity:0;`
       : '';
     return html`
       <ds-menu

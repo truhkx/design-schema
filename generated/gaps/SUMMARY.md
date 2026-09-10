@@ -1,6 +1,6 @@
 # Gap digest — phase Overlays
 
-Generated 2026-09-10T03:17 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T03:25 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## ActionSheet
 
@@ -993,6 +993,16 @@ Doc: `site/src/content/docs/components/radiogroup.md`
 
 Doc: `site/src/content/docs/components/sidepanel.md`
 
+### 2026-09-10 03:25 — web round 1
+
+- **DOC** SidePanel: `trigger` is typed `content` in the schema, but showing/hiding it requires cloning a single element to attach aria-expanded/aria-controls/onClick — typed it as `ReactElement` (matching this package's existing Popover convention) rather than a generic ReactNode. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the web platform notes describe an `as: nav` switch 'through the Landmark component' for the body-is-navigation case, but the component's own prop table has no `as` prop and Landmark isn't in the composition map. Always render a plain `<aside>`; did not invent an `as` prop. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: `copy.openLabel` ('Open menu') has no render site in the component itself since `trigger` is fully consumer-supplied content with its own label — used it as the default trigger's label in the stories instead. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the notes describe toggling the native `hidden` attribute on the panel once the exit transition ends; instead followed this package's established BottomSheet/Popover pattern of conditionally mounting/unmounting the panel, which gives the same accessibility-tree result but not the literal mechanism described. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: no anatomy part corresponds to BottomSheet's drag 'handle'. Implemented swipeable's drag-to-dismiss on the header (excluding the close button) as the closest non-interactive surface — the schema doesn't say what part should carry the gesture. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: `dismissible: false` doc text ('only the trigger and footer actions close it') has no stated Escape exception, unlike BottomSheet's explicit 'Escape still reports' carve-out — interpreted this as Escape and the close button both being fully gated by `dismissible`, intentionally differing from BottomSheet's precedent. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: added a `container?: HTMLElement` portal-target prop; it isn't in the component's own schema prop list but matches the existing convention on every other portal-based overlay in this package (Popover, BottomSheet). → `site/src/content/docs/components/sidepanel.md`
+
 ### 2026-09-10 03:17 — rn round 1
 
 - **DOC** SidePanel: copy.openLabel ('Open menu') has no described consumption point — the trigger is entirely caller-supplied content, not a built-in button the component renders. I use it as a fallback accessibilityLabel on the cloned trigger only when the trigger element has no string `label` prop of its own, so the toggle always has an accessible name of last resort; the schema doesn't confirm this is the intended use. → `site/src/content/docs/components/sidepanel.md`
@@ -1162,7 +1172,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 510 · CODE: 38 · TOOLING: 2 · NOISE: 14
+DOC: 517 · CODE: 38 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

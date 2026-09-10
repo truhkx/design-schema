@@ -1141,20 +1141,20 @@
     }
   },
   "Tree.web": {
-    "hash": "69d0c064145acf38",
-    "lastAttemptHash": "69d0c064145acf38",
-    "generatedAt": "2026-09-10T18:31:49+00:00",
+    "hash": "0f211159b236e4d7",
+    "lastAttemptHash": "0f211159b236e4d7",
+    "generatedAt": "2026-09-10T23:23:03+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.619,
+    "costUsd": 1.7537,
     "files": [
       "packages/react/src/Tree.css",
       "packages/react/src/Tree.stories.tsx",
       "packages/react/src/Tree.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1165,13 +1165,13 @@
     }
   },
   "TreeGrid.web": {
-    "hash": "56235e918712cc4a",
-    "lastAttemptHash": "56235e918712cc4a",
-    "generatedAt": "2026-09-10T18:22:41+00:00",
+    "hash": "9e7e66b19e3f4f04",
+    "lastAttemptHash": "9e7e66b19e3f4f04",
+    "generatedAt": "2026-09-10T23:17:34+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.6816,
+    "costUsd": 0.4456,
     "files": [
       "packages/react/src/TreeGrid.css",
       "packages/react/src/TreeGrid.stories.tsx",

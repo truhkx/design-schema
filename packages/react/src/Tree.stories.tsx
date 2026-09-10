@@ -5,22 +5,24 @@ const NODES: TreeNode[] = [
   {
     id: 'inbox',
     label: 'Inbox',
+    icon: 'folder',
     badge: '12',
     children: [
-      { id: 'inbox-updates', label: 'Updates' },
-      { id: 'inbox-forums', label: 'Forums' },
+      { id: 'inbox-updates', label: 'Updates', icon: 'file' },
+      { id: 'inbox-forums', label: 'Forums', icon: 'file' },
     ],
   },
   {
     id: 'projects',
     label: 'Projects',
+    icon: 'folder',
     children: [
-      { id: 'projects-design-schema', label: 'Design Schema' },
-      { id: 'projects-archive', label: 'Archive', disabled: true },
+      { id: 'projects-design-schema', label: 'Design Schema', icon: 'file' },
+      { id: 'projects-archive', label: 'Archive', icon: 'file', disabled: true },
     ],
   },
-  { id: 'starred', label: 'Starred', badge: '3' },
-  { id: 'docs', label: 'Documentation', href: '/docs' },
+  { id: 'starred', label: 'Starred', icon: 'folder', badge: '3' },
+  { id: 'docs', label: 'Documentation', icon: 'file', href: '/docs' },
 ];
 
 const LAZY_NODES: TreeNode[] = [
@@ -48,6 +50,11 @@ export const Default: Story = {};
 export const SelectableNone: Story = { args: { selectable: 'none' } };
 export const SelectableSingle: Story = { args: { selectable: 'single', defaultSelected: ['starred'] } };
 export const SelectableMultiple: Story = { args: { selectable: 'multiple', defaultSelected: ['starred', 'inbox-updates'] } };
+
+/* headingLevel (visible only with showLabel) */
+export const HeadingLevel2: Story = { args: { showLabel: true, headingLevel: '2' } };
+export const HeadingLevel3: Story = { args: { showLabel: true, headingLevel: '3' } };
+export const HeadingLevel4: Story = { args: { showLabel: true, headingLevel: '4' } };
 
 /* notable states */
 export const ShowLabel: Story = { args: { showLabel: true } };

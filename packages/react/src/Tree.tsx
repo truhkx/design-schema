@@ -13,13 +13,16 @@ import {
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
-import { Heading } from './Heading';
+import { Heading, type HeadingOverridableBinding } from './Heading';
 import { Icon, type IconName } from './Icon';
 import { Link } from './Link';
-import { Text } from './Text';
+import { Text, type TextOverridableBinding } from './Text';
 import './Tree.css';
 
 export type TreeSelectable = 'none' | 'single' | 'multiple';
+
+/** Heading level of the visible label. Accepts the schema's string values and their numeric equivalents. */
+export type TreeHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
 
 /** A node's children: a loaded subtree, `"lazy"` (loaded on first expand through `onExpand`), or absent (a leaf). */
 export type TreeNodeChildren = TreeNode[] | 'lazy';
@@ -44,7 +47,12 @@ const COPY = {
   empty: 'Nothing here.',
 };
 
-/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+/**
+ * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
+ * this list. `headingSize` and `badgeSize` are forwarded to the composed `Heading` and badge
+ * `Text`'s own `overrides` (as `fontSize`), and `labelSelectedWeight` to the label `Text`'s own
+ * `overrides` (as `fontWeight`), since those components already own those bindings.
+ */
 export type TreeOverridableBinding =
   | 'indent'
   | 'rowHeight'
@@ -54,18 +62,22 @@ export type TreeOverridableBinding =
   | 'rowHover'
   | 'rowSelectedBorderWidth'
   | 'labelSelectedWeight'
+  | 'headingSize'
   | 'badgeSize'
   | 'expandButtonSize'
   | 'guideLine'
   | 'guideLineWidth'
   | 'checkboxGap'
+  | 'checkboxSize'
+  | 'checkboxBackground'
+  | 'checkboxRadius'
   | 'fontFamily'
   | 'fontSize'
   | 'lineHeight'
   | 'disabledOpacity'
   | 'transition';
 
-const OVERRIDE_HOOK: Record<TreeOverridableBinding, string> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<TreeOverridableBinding, string>> = {
   indent: '--ds-tree-indent',
   rowHeight: '--ds-tree-row-height',
   rowPaddingInline: '--ds-tree-row-padding-inline',
@@ -73,12 +85,13 @@ const OVERRIDE_HOOK: Record<TreeOverridableBinding, string> = {
   rowGap: '--ds-tree-row-gap',
   rowHover: '--ds-tree-row-hover',
   rowSelectedBorderWidth: '--ds-tree-row-selected-border-width',
-  labelSelectedWeight: '--ds-tree-label-selected-weight',
-  badgeSize: '--ds-tree-badge-size',
   expandButtonSize: '--ds-tree-expand-button-size',
   guideLine: '--ds-tree-guide-line',
   guideLineWidth: '--ds-tree-guide-line-width',
   checkboxGap: '--ds-tree-checkbox-gap',
+  checkboxSize: '--ds-tree-checkbox-size',
+  checkboxBackground: '--ds-tree-checkbox-background',
+  checkboxRadius: '--ds-tree-checkbox-radius',
   fontFamily: '--ds-tree-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-tree-font-size',
   lineHeight: '--ds-tree-line-height',
@@ -86,13 +99,31 @@ const OVERRIDE_HOOK: Record<TreeOverridableBinding, string> = {
   transition: '--ds-tree-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<TreeOverridableBinding, TokenRef>>): CSSProperties {
-  const style: Record<string, string> = {};
+function overridesToStyle(overrides: Partial<Record<TreeOverridableBinding, TokenRef>>): {
+  rootStyle: CSSProperties;
+  headingOverrides: Partial<Record<HeadingOverridableBinding, TokenRef>>;
+  badgeOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+} {
+  const rootStyle: Record<string, string> = {};
+  const headingOverrides: Partial<Record<HeadingOverridableBinding, TokenRef>> = {};
+  const badgeOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
   for (const binding of Object.keys(overrides) as TreeOverridableBinding[]) {
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    if (!ref) continue;
+    const hook = ROOT_OVERRIDE_HOOK[binding];
+    if (hook) {
+      rootStyle[hook] = cssVar(ref);
+    } else if (binding === 'headingSize') {
+      headingOverrides.fontSize = ref;
+    } else if (binding === 'badgeSize') {
+      badgeOverrides.fontSize = ref;
+    } else if (binding === 'labelSelectedWeight') {
+      labelOverrides.fontWeight = ref;
+    }
   }
-  return style as CSSProperties;
+  return { rootStyle: rootStyle as CSSProperties, headingOverrides, badgeOverrides, labelOverrides };
 }
 
 function interpolate(template: string, values: Record<string, string | number>): string {
@@ -188,6 +219,8 @@ export interface TreeProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   label: string;
   /** Show the label as a heading above the tree. */
   showLabel?: boolean;
+  /** Heading level of the visible label in the page outline; its size is `headingSize` regardless. */
+  headingLevel?: TreeHeadingLevel;
   /** The hierarchy. `href` makes a node a Link (navigation trees); `badge` is a short trailing count
    * or status; `children: "lazy"` loads on first expand through `onExpand`. */
   nodes: TreeNode[];
@@ -236,6 +269,7 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
   {
     label,
     showLabel = false,
+    headingLevel = '2',
     nodes,
     expanded,
     defaultExpanded,
@@ -494,6 +528,10 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
     activateNode(v);
   };
 
+  const { rootStyle, headingOverrides, badgeOverrides, labelOverrides } = overrides
+    ? overridesToStyle(overrides)
+    : { rootStyle: undefined, headingOverrides: {}, badgeOverrides: {}, labelOverrides: {} };
+
   const renderNode = (node: TreeNode, level: number, posinset: number, setsize: number, parentId: string | null): ReactNode => {
     const hasChildren = nodeHasChildren(node);
     const v: VisibleNode = { id: node.id, node, level, posinset, setsize, hasChildren, parentId };
@@ -506,7 +544,6 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
     const rowClasses = ['ds-tree__row', isRowSelected ? 'ds-tree__row--selected' : null, node.disabled ? 'ds-tree__row--disabled' : null]
       .filter(Boolean)
       .join(' ');
-    const labelClasses = ['ds-tree__label', isRowSelected ? 'ds-tree__label--selected' : null].filter(Boolean).join(' ');
 
     return (
       <li
@@ -582,24 +619,40 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
             </span>
           ) : null}
           {node.href ? (
+            // labelSelectedWeight has no effect here: Link exposes no font-weight prop or override
+            // (see gaps) so a selected href node's label cannot pick up the weight change.
             <Link
               ref={setAnchorRef(node.id)}
               href={node.href}
               label={node.label}
               tabIndex={-1}
-              className={labelClasses}
+              className="ds-tree__label"
               data-part="label"
               onClick={(event) => {
                 if (node.disabled) event.preventDefault();
               }}
             />
           ) : (
-            <Text element="span" size="sm" className={labelClasses} data-part="label">
+            <Text
+              element="span"
+              size="sm"
+              weight={isRowSelected ? 'medium' : undefined}
+              className="ds-tree__label"
+              data-part="label"
+              overrides={isRowSelected && Object.keys(labelOverrides).length ? labelOverrides : undefined}
+            >
               {node.label}
             </Text>
           )}
           {node.badge ? (
-            <Text element="span" size="xs" tone="muted" className="ds-tree__badge" data-part="badge">
+            <Text
+              element="span"
+              size="xs"
+              tone="muted"
+              className="ds-tree__badge"
+              data-part="badge"
+              overrides={Object.keys(badgeOverrides).length ? badgeOverrides : undefined}
+            >
               {node.badge}
             </Text>
           ) : null}
@@ -626,13 +679,18 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
   };
 
   const classes = ['ds-tree', className ?? null].filter(Boolean).join(' ');
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+  const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
 
   return (
     <div {...rest} ref={rootRef} data-ds="Tree" data-part="container" className={classes} style={mergedStyle}>
       {showLabel ? (
-        <Heading id={labelId} level={2} size="md" className="ds-tree__heading">
+        <Heading
+          id={labelId}
+          level={headingLevel}
+          size="md"
+          className="ds-tree__heading"
+          overrides={Object.keys(headingOverrides).length ? headingOverrides : undefined}
+        >
           {label}
         </Heading>
       ) : null}

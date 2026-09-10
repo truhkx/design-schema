@@ -256,3 +256,13 @@ export type { FeedHeadingLevel, FeedItem, FeedOverridableBinding, FeedProps } fr
 
 export { ProgressBar } from './ProgressBar';
 export type { ProgressBarAnnounce, ProgressBarOverridableBinding, ProgressBarProps, ProgressBarTone } from './ProgressBar';
+
+export { Stepper } from './Stepper';
+export type {
+  StepperNavigable,
+  StepperOrientation,
+  StepperOverridableBinding,
+  StepperProps,
+  StepperStep,
+  StepperStepStatus,
+} from './Stepper';

@@ -872,6 +872,29 @@
       "modules": true
     }
   },
+  "Stepper.rn": {
+    "hash": "e4b0e245650fa658",
+    "lastAttemptHash": "e4b0e245650fa658",
+    "generatedAt": "2026-09-10T23:18:04+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.8913,
+    "files": [
+      "packages/rn/src/Stepper.stories.tsx",
+      "packages/rn/src/Stepper.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Switch.rn": {
     "hash": "b051b6baea0580fc",
     "lastAttemptHash": "b051b6baea0580fc",

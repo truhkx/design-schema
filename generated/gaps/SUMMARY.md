@@ -1,6 +1,6 @@
-# Gap digest — phase Primitives
+# Gap digest — phase Core
 
-Generated 2026-09-10T00:54 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T01:26 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## AlertDialog
 
@@ -107,9 +107,56 @@ Doc: `site/src/content/docs/components/box.md`
 - **DOC** Box: 'surface: none renders nothing rather than a token' was implemented by simply not setting the `--ds-box-background` custom property for that modifier (falling back to the CSS `var(..., transparent)` default) rather than omitting a background-color declaration entirely — functionally equivalent but worth flagging as an interpretation. → `site/src/content/docs/components/box.md`
 - **DOC** Box: the spec's Related section names Card and Container, neither of which exists in the package yet, so Box does not compose with them (nothing to compose with). → `site/src/content/docs/components/box.md`
 
+## Button
+
+Doc: `site/src/content/docs/components/button.md`
+
+### 2026-09-10 01:12 — rn round 1
+
+- **DOC** Button: the existing Button.tsx/stories predated the current schema (no `inverse`, `track`/`onTrack`, or `overrides`, and it passed `disabled` straight to `Pressable`, which removes it from the tab order — contradicting the package convention and the a11y guidance that disabled buttons stay focusable). Rewrote it in full against the current schema rather than patching around the stale version. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `inverse` — the spec says ghost's hover 'uses a translucent inverse foreground' but defines no token for that translucent color (only the locked `inverseForeground`/`inverseFocusRing` bindings). Kept the normal `backgroundHover` token for the pressed state on ghost+inverse rather than inventing an untokenized alpha value. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the spec's inverse paragraph doesn't say whether the focus-ring swap to `color.inverse.focus` applies to every variant or only `ghost`. Chose 'every variant when `inverse` is true', since the ring must read against the inverse surface regardless of the button's own fill. → `site/src/content/docs/components/button.md`
+- **DOC** Button: 'loading … replaces the icon slot' doesn't say whether that means only `leadingIcon` or both icon slots. Chose: the spinner always occupies the leading slot (also covering `iconOnly`, whose sole visible glyph is `leadingIcon`), and `trailingIcon` is hidden while loading; the label itself stays visible throughout since only the icon is described as being replaced. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `fontSize` was previously hard-coded to `fontSizeMd` regardless of `size`, not following the schema's `font.size.{size}` interpolation. Fixed to map sm/md/lg to fontSizeSm/Md/Lg. → `site/src/content/docs/components/button.md`
+- **DOC** Button: schema ties a `transition` binding specifically to hover/press and marks it overridable, so implemented an actual `Animated` background-color transition (using `motionDurationFast`/`motion.easing.standard`, skipped under reduced motion) instead of the instant swap used elsewhere in the package (e.g. Link's pressed-color change), since Button's own schema calls this out where Link's does not. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `loadingSpin` has no described visual (only 'one rotation'); built a custom 1em bordered-ring spinner (foreground-colored, one edge transparent) driven by that duration, replacing the previous `ActivityIndicator`, since a native `ActivityIndicator`'s spin rate can't be bound to a token. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `onTrack` payload shape isn't spelled out beyond the behavior scenario's `{ name, label }`; defined and exported `ButtonTrackEvent { name: string; label: string }` for it. → `site/src/content/docs/components/button.md`
+
+### 2026-09-10 01:08 — lit round 1
+
+- **DOC** Button: `inverse` is a boolean prop but is not listed under platforms.lit.reflect (which only lists variant, size, type, disabled, icon-only, loading). Reflected it anyway (type: Boolean, reflect: true) since CSS attribute selectors are the only way to style it from the shadow stylesheet and every other boolean on this component is reflected — treating the omission as an oversight in the reflect list rather than an intentional exclusion. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the `inverse` description says ghost hover 'uses a translucent inverse foreground' but names no specific token/opacity for it. Used `color-mix(in srgb, var(--color-inverse-foreground) 12%, transparent)` (matches the codebase's existing color-mix-of-tokens exemption pattern) since no `backgroundHover`-style binding exists for the inverse case. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `track`'s CustomEvent detail order relative to `press` — spec says trackPress/onTrack fire 'after onPress'; implemented as press dispatch, then (if track set) trackPress() call, then track dispatch, all synchronously within the same click handler. → `site/src/content/docs/components/button.md`
+- **CODE** Button: renamed the container part from the pre-existing `part="button"` to `part="container"` to match the anatomy name literally (consistent with Card/Heading/etc. convention) — confirmed correct since tools/behavior_tests.py's auto-generated harness queries `[part="container"]`.
+
+### 2026-09-10 01:06 — web round 1
+
+- **DOC** Button: the schema's existing Button.tsx/css/stories predated the current spec (no overrides, no inverse, no track/onTrack, no data-ds/data-part, no loading spinner) — fully regenerated to match; flagging in case the old file was mid-migration for a reason not visible in the schema. → `site/src/content/docs/components/button.md`
+- **DOC** Button loading: 'Replaces the icon slot with a 1em ring spinner' is singular and ambiguous about leadingIcon vs trailingIcon vs both — chose to replace only leadingIcon's slot (or show the spinner there even with no leadingIcon set) and leave trailingIcon rendering unchanged during loading. → `site/src/content/docs/components/button.md`
+- **DOC** Button loadingSpin/spinner stroke width has no token binding in the schema — used border.width.focus for the ring thickness as the closest existing border-width token; no dedicated 'stroke width' token exists. → `site/src/content/docs/components/button.md`
+- **DOC** Button inverse+ghost backgroundHover: schema says 'hover uses a translucent inverse foreground' but gives no token/opacity value — used color-mix(in srgb, var(--color-inverse-foreground) 16%, transparent), the sanctioned color-mix literal exception; the 16% figure is a guess with no token backing it. → `site/src/content/docs/components/button.md`
+- **DOC** Button inverse focus ring: schema names color.inverse.focus for 'the focus ring' under `inverse` generally (not scoped to ghost like background/foreground), so it's swapped for all variants when inverse is true, not just ghost — flagging since the paragraph's phrasing is slightly ambiguous about scope. → `site/src/content/docs/components/button.md`
+- **DOC** Added Button.test.tsx covering all 13 behavior scenarios (rollout target-by-target per repo convention seen in Card/Switch/etc.) even though the Output section only explicitly named .tsx and .stories.tsx — the Behavior scenarios section's 'emit one test per scenario' instruction and existing sibling components' *.test.tsx made this seem in-scope. → `site/src/content/docs/components/button.md`
+
 ## Card
 
 Doc: `site/src/content/docs/components/card.md`
+
+### 2026-09-10 01:26 — lit round 1
+
+- **DOC** Card: spec's Lit notes say the interactive hit-area class is applied via 'a small global rule from the package' but doesn't say where that stylesheet lives given the light-DOM link may be in an arbitrary ancestor tree (page or another shadow root); existing implementation injects a scoped <style> into whichever root the slotted element resolves in (ensureHitAreaStyle), tracked per-root via a WeakSet to avoid duplicate injection. → `site/src/content/docs/components/card.md`
+- **DOC** Card: spec doesn't say what happens when zero or more than one interactive child is slotted for `interactive`; existing implementation leaves the card non-interactive (no hit-area class applied) and logs a DEV-only console.warn. → `site/src/content/docs/components/card.md`
+- **DOC** Card: header Heading size isn't specified beyond 'so a card heading reads smaller than a page heading' (web notes say size: lg, but existing Lit implementation uses size="md"); kept as previously generated since no reflected size mismatch was flagged elsewhere. → `site/src/content/docs/components/card.md`
+
+### 2026-09-10 01:23 — rn round 1
+
+- **DOC** Card: schema's platforms.rn.notes says header/footer are 'plain row Views styled from this component's gap bindings, not Stack' while the Guidance/Platform-notes prose says 'header and footer are horizontal Stacks' — the existing implementation follows the schema's own notes (plain Views using layoutGap* tokens directly) since Stack's gap enum only accepts the space.* scale, not Card's own overridable gap bindings. → `site/src/content/docs/components/card.md`
+- **DOC** Card: 'interactive' a11y note says the card is 'not focusable' but the implementation makes the Pressable itself the sole focusable/accessible element (with the child Link/Button hidden via accessibilityElementsHidden) — interpreted as 'the card doesn't add a second focus stop beyond its single child target', consistent with the anatomy's intent, not literally non-focusable. → `site/src/content/docs/components/card.md`
+- **DOC** Card: no explicit prop for aria-labelledby equivalent since RN has no id/labelledby mechanism — accessibilityLabel is only set on the Pressable in the interactive path (taken from the child's label), not on the plain View wrapper, since a non-interactive article-like grouping has no direct RN analog; the Heading itself remains the discoverable name via accessibilityRole="header". → `site/src/content/docs/components/card.md`
+
+### 2026-09-10 01:21 — web round 1
+
+- **DOC** Card: root and header/headerActions/body/footer parts had no `data-part` hook even though role is `none` (so none of them are locatable by role) and only `heading` matches a string prop; per the package's testability convention I added `data-part="surface"` to the root and `data-part` to header/headerActions/body/footer. No behavior scenario currently exercises these locators (all 11 are bare `renders` checks against `data-ds`), so this is forward-looking compliance with the convention doc rather than something the current gate required. → `site/src/content/docs/components/card.md`
 
 ### 2026-09-09 22:23 — rn round 1
 
@@ -197,6 +244,11 @@ Doc: `site/src/content/docs/components/card.md`
 ## Container
 
 Doc: `site/src/content/docs/components/container.md`
+
+### 2026-09-10 01:19 — web round 1
+
+- **DOC** Container: default paddingInline hook is only set per gutter modifier class (not on .ds-container base), consistent with other interpolated bindings in the package — chose to leave it unset at base so 'none' truly renders 0 with no fallback token flash. → `site/src/content/docs/components/container.md`
+- **DOC** Container: overridable maxWidth hook has no effect for width:full since no modifier class sets it — treated as correct per the spec's 'overrides are no-ops where the binding is not in effect' rule. → `site/src/content/docs/components/container.md`
 
 ### 2026-09-09 22:24 — lit round 1
 
@@ -316,6 +368,17 @@ Doc: `site/src/content/docs/components/dialog.md`
 - **DOC** Dialog: jsdom (used by the `tests` gate) implements the `open` IDL property on `HTMLDialogElement` but not `showModal()`/`close()` or the `cancel` event. The component calls the real methods via optional chaining (so nothing throws) and also assigns `dialog.open = true/false` as a fallback so the element isn't hidden by the UA `dialog:not([open])` rule under engines that lack `showModal()`; this assignment is a no-op in real browsers since `showModal()`/`close()` already reflect `open` themselves. → `site/src/content/docs/components/dialog.md`
 - **DOC** Dialog: `container` (portal target) isn't in the schema's `props` table but is implied by the keyboard/overlay rule ("a `container` prop may override" the portal target) and needed for testability/embedding; added it as an optional prop defaulting to `document.body`. → `site/src/content/docs/components/dialog.md`
 
+## Divider
+
+Doc: `site/src/content/docs/components/divider.md`
+
+### 2026-09-10 01:26 — rn round 1
+
+- **DOC** The RN platform notes state there is no native `separator` accessibility role, so I hide an unlabeled Divider from assistive technology (accessibilityElementsHidden + importantForAccessibility="no") regardless of the `semantic` prop, and only expose content when a `label` is present (read naturally via Text). This means `semantic=true` without a `label` has no observable effect on native — I added a __DEV__ warning for that case since the spec doesn't say whether to warn. → `site/src/content/docs/components/divider.md`
+- **DOC** The schema doesn't say what happens when `orientation="vertical"` and `label` is set together. Docs only describe the label+line layout for horizontal dividers, and a 1px-wide vertical column has no room for centered text, so I ignore `label` on vertical dividers (render a plain line) rather than rotating the label layout. → `site/src/content/docs/components/divider.md`
+- **DOC** `spacing` schema says overrides 'change values, never presence' — treated `spacing: "none"` (the default) as the 'off' state, so `overrides.spacing` is a no-op unless a non-none spacing value is also selected, matching how Box treats radius: none. → `site/src/content/docs/components/divider.md`
+- **DOC** labelSize/fontFamily overrides are passed straight through as TokenRefs to the composed `Text`'s own `overrides` prop (which resolves them itself) rather than resolving them a second time in Divider — avoids double token resolution but relies on Text's override keys (`fontSize`, `fontFamily`) matching Divider's binding names one-for-one. → `site/src/content/docs/components/divider.md`
+
 ## FocusScope
 
 Doc: `site/src/content/docs/components/focusscope.md`
@@ -343,6 +406,31 @@ Doc: `site/src/content/docs/components/focusscope.md`
 - **DOC** The sentinel focus redirect direction (start→first, end→last) is my interpretation of 'catch focus arriving from the browser chrome' as distinct from Tab-key wrap-around (already handled by the keydown handler at real edges). A focus-trap library reading the wrap semantics into the sentinels themselves would redirect the opposite way; behavior is unverified against a reference implementation. → `site/src/content/docs/components/focusscope.md`
 - **DOC** The wrapper renders as a plain display:block div (matching Landmark's unstyled-wrapper pattern) rather than display:contents, because `autoFocus: 'container'` requires the div itself to be focusable via tabindex, which display:contents defeats in most browsers. This means FocusScope always inserts one extra box into the DOM/layout that a zero-footprint wrapper would avoid. → `site/src/content/docs/components/focusscope.md`
 - **DOC** No explicit visibility (display:none/offsetParent) filtering in the focusable walker beyond aria-hidden/inert/disabled/tabindex<0 — the schema doesn't call it out, so hidden-but-attached elements with a positive tabindex would be treated as focusable. → `site/src/content/docs/components/focusscope.md`
+
+## Form
+
+Doc: `site/src/content/docs/components/form.md`
+
+### 2026-09-10 01:24 — lit round 1
+
+- **DOC** Form: anatomy lists separate 'fields' and 'actions' parts, but `children` is a single content prop with no dedicated actions slot — implemented one `part="fields"` slot covering both fields and actions; there is no distinct DOM node for 'actions'. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the DsFormField interface (per doc) declares `error`/`validationMessage` as required strings, but the already-existing `ds-switch` (a field type Form must collect) has neither property since a switch never validates — kept the interface as documented and read both defensively (`?? ''`) at runtime via `as unknown as DsFormField` casts, since Switch can never satisfy the interface structurally. → `site/src/content/docs/components/form.md`
+- **DOC** Form: 'blur' validation for ds-radio-group ('validates when focus leaves the whole group') isn't spelled out mechanically — implemented by comparing a focusout event's `relatedTarget === target`, since composed-event retargeting collapses both to the `ds-radio-group` host when focus moves between its own radios, but stays distinct when focus truly leaves the group; this is my interpretation, not something stated in the docs. → `site/src/content/docs/components/form.md`
+- **DOC** Form: nothing requires a consumer's field to carry an `id`, but the error summary must link to one — used `name` as documented ('the base of generated ids') to auto-assign `${idBase}-${field.name}` to any field missing an id at submit time. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the 'control-is-focusable' scenario (derived, lit/web) doesn't fit cleanly — Form is a container of externally-slotted fields, not a single control, so its own shadow root has no focusable element unless the error summary is showing; relied on the browser's `delegatesFocus` fallback (focuses the host itself when no inner focusable target exists) to satisfy `el.focus()` moving `document.activeElement`. → `site/src/content/docs/components/form.md`
+- **CODE** Form: `labelledBy` (aria-labelledby across the shadow boundary) is wired through the newer `ElementInternals.ariaLabelledByElements`, feature-detected exactly like `Card.ts` already does — Chromium only today; there is no fallback for engines lacking it, so `labelledBy` currently has no effect there (same pre-existing gap as Card).
+
+### 2026-09-10 01:22 — rn round 1
+
+- **DOC** Form: the shared FormFieldHandle contract (register/getValue/validate/focus) used by Input/Checkbox/Switch/RadioGroup carries no field label, so the RN error-summary link's accessibilityLabel is just the error text, not "Label: error text" per the content guideline — matching web/Lit would require extending that shared handle across all field components, out of scope for a Form-only pass. → `site/src/content/docs/components/form.md`
+- **DOC** Form: `name` has no functional use on RN (no DOM ids; focus is ref-based) — kept purely for prop parity with web/Lit's 'base of generated ids' description. → `site/src/content/docs/components/form.md`
+
+### 2026-09-10 01:18 — web round 1
+
+- **DOC** Form: the existing implementation predated the overrides contract, `labelledBy` prop, and `data-ds` testability hook — added `overrides?: Partial<Record<'gap' | 'errorSummaryBorder', TokenRef>>` with `--ds-form-gap`/`--ds-form-error-summary-border` hooks (plus locked hooks `--ds-form-error-summary-text`/`-background` for consistency with the Card/Input pattern, not overridable), added `labelledBy` (web platform) rendering `aria-labelledby` and suppressing `aria-label` when both are set, and added `data-ds="Form"` and `data-part="errorSummary"`. → `site/src/content/docs/components/form.md`
+- **DOC** Form: replaced inline summary heading text with `COPY.summaryHeading`/`summaryHeadingOne` constants per the copy-verbatim convention; behavior is unchanged. → `site/src/content/docs/components/form.md`
+- **DOC** Form: gap token was hard-coded as `--space-lg` instead of the `layout.gap.loose` preset (`--layout-gap-loose`, matching Stack/Card's `gap` token resolution) — fixed. → `site/src/content/docs/components/form.md`
+- **DOC** Form: anatomy parts `fields` and `actions` have no dedicated wrapper elements since they are opaque `children` content (Stack-composed by the consumer), so no `data-part` was added for them — only `errorSummary` is a Form-owned element. → `site/src/content/docs/components/form.md`
 
 ## Heading
 
@@ -450,6 +538,57 @@ Doc: `site/src/content/docs/components/icon.md`
 - **DOC** Icon: label='' is treated as no label (decorative). The doc should say whether an empty string is an error or decorative. → `site/src/content/docs/components/icon.md`
 - **DOC** Icon: no explicit glyph geometry is given. I reused the existing Disclosure/Link/Breadcrumb/Alert paths for chevrons, external, ellipsis and close so the planned swap is visually neutral; the other shapes are my own drawings on the 16-grid and may need design review. → `site/src/content/docs/components/icon.md`
 - **TOOLING** Icon: type-check could not be run (no node_modules in the workspace); the files were reviewed by hand against @types/react SVG typings.
+
+## Input
+
+Doc: `site/src/content/docs/components/input.md`
+
+### 2026-09-10 01:18 — rn round 1
+
+- **DOC** Input: the schema's Overrides contract (borderFocus, borderInvalid, borderWidth, radius, paddingInline, paddingBlock, partGap, fontFamily, fontSize, labelWeight, helperSize, lineHeight, disabledOpacity) was missing from the existing implementation — added it, resolving values locally for the field's own View/TextInput styles and forwarding the same raw TokenRef for fontFamily/fontSize/labelWeight/lineHeight/helperSize through to the composed Text label/description/error via Text's own `overrides` prop rather than resolving twice. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the spec doesn't say whether `disabledOpacity` dims only the field or the whole label/description/field/error group; the prose rule '`disabled` uses `opacity.disabled` on the whole element' (and Button's precedent of dimming the entire control) led me to apply it to the outer container rather than just the TextInput. → `site/src/content/docs/components/input.md`
+- **DOC** Input: `fontSize`/`fontFamily`/`lineHeight` are single bindings with no separate label-vs-field size in the schema; I applied them uniformly to the label and field (both default font.size.md) and let `helperSize` cover description/error (font.size.sm), since that's the only split the schema names. → `site/src/content/docs/components/input.md`
+- **DOC** Input: added the `testID="Input"` root hook per the package's testability convention; the existing file predated that convention and lacked it. → `site/src/content/docs/components/input.md`
+
+### 2026-09-10 01:16 — web round 1
+
+- **DOC** Input: the schema's Overrides section makes labelWeight/helperSize/lineHeight/fontFamily/descriptionText/errorText bindings that Input itself owns, but the general composition rule says to render label/description/error via the shared Text component, which doesn't expose per-instance CSS hooks for those bindings. Rendered label/description/error as plain elements styled by Input's own --ds-input-* custom properties instead (matching Button's own precedent of a plain <span> for its label, not Text), so the override contract actually works. → `site/src/content/docs/components/input.md`
+- **DOC** Input: focusRingWidth's description ('replaces borderWidth when focused; padding shrinks by the difference') conflicts with the general :focus-visible outline convention used by other components. Implemented it literally as written for this component: border thickens/recolors on focus with compensating padding via calc(), no separate outline layer. → `site/src/content/docs/components/input.md`
+- **DOC** Input: a11y.role is declared as a single 'textbox' for all `type` values, but native ARIA mapping differs per type (search -> searchbox, number -> spinbutton, password -> no role). Left `type` to drive real browser semantics rather than forcing role='textbox' everywhere, since overriding the native role would fight the platform. → `site/src/content/docs/components/input.md`
+- **DOC** Input: disabled styling only lists a `disabledOpacity` binding (no separate disabled background/foreground tokens), so disabled dims the field via opacity alone rather than swapping to a muted background/foreground as the file previously did. → `site/src/content/docs/components/input.md`
+- **DOC** Input: added a companion Input.test.tsx (one test per behavior scenario, Button.test.tsx-style) since the Behavior scenarios section asked for scenario-derived tests even though the Output section only named Input.tsx and Input.stories.tsx. → `site/src/content/docs/components/input.md`
+
+### 2026-09-10 01:14 — lit round 1
+
+- **DOC** Input: existing Input.ts had no overrides contract (no data-ds attribute, no --ds-input-* CSS hooks, no `overrides` property). Added the full contract for the 13 overridable bindings, matching Button.ts's pattern, since the spec's 'Overrides' section applies to every component. → `site/src/content/docs/components/input.md`
+- **DOC** Input: `focusRingWidth` (locked) says it 'replaces borderWidth when focused; padding shrinks by the difference so the field does not shift' — implemented as border-width swap + calc() padding compensation on `.field:focus-visible`, replacing the previous outline-based focus ring, since the outline approach didn't match that description. → `site/src/content/docs/components/input.md`
+- **DOC** Input: precedence between borderInvalid and borderFocus when a field is both invalid and focused isn't specified. Chose to keep the invalid (danger) border color visible even while focused, so the error state stays communicated during editing; a focus-visible outline/ring is not used here so this is purely a border-color choice. → `site/src/content/docs/components/input.md`
+- **CODE** Input: the Behavior guidance says disabled fields must be 'focusable (aria-disabled + readOnly on web — never the native disabled attribute)', but the pre-existing implementation used the native `disabled` attribute on the inner `<input>`, which removes it from the tab order. Fixed to use `aria-disabled` + `readonly` + a `.disabled` class for styling, and excluded disabled fields from ElementInternals form submission/validation manually (since native `disabled` no longer does that for us).
+
+## Link
+
+Doc: `site/src/content/docs/components/link.md`
+
+### 2026-09-10 01:15 — rn round 1
+
+- **DOC** Link (rn): the existing implementation predated the current overrides/testID conventions — added testID="Link" and an overrides prop, since the spec says overrides/testID apply regardless of whether platforms.rn.props lists them. → `site/src/content/docs/components/link.md`
+- **DOC** Link (rn): of the four overridable bindings (underlineThickness, underlineOffset, externalIconGap, transition), only `transition` has any effect on native — RN Text can't set decoration thickness/offset, and nested Text ignores margins so the external-icon gap is a hardcoded single space, not a token. Narrowed LinkOverridableBinding to 'transition' only rather than including no-op bindings. → `site/src/content/docs/components/link.md`
+- **DOC** Link (rn): implemented the `transition` binding as a real color crossfade (Animated.Value interpolating colorLink -> colorLinkHover on press, eased with motion.easing.standard, skipped under reduced motion), matching Button's pattern, since the previous version swapped colors instantly and the schema explicitly names a transition binding for hover/press color. → `site/src/content/docs/components/link.md`
+- **DOC** Link (rn): replaced the ad-hoc Unicode '↗' glyph with the package's own <Icon name="external" inline> component, since Icon's own docs/stories name 'the external mark on a Link' as its intended use and the package rule says never to re-implement a shape a shared component already provides. Trade-off: Icon's inline mode always renders at font.size.md (an already-documented Icon limitation) rather than truly inheriting the surrounding Text's font size the way the old raw-glyph-in-Text did, so the icon can look mis-sized when a Link sits inside a Text of a non-md size. → `site/src/content/docs/components/link.md`
+- **DOC** Link (rn): Icon has no animated-color support, so unlike the label's crossfade, the external icon's color still swaps instantly between colorLink/colorLinkHover on press. → `site/src/content/docs/components/link.md`
+- **DOC** Link (rn): for tone="inherit" combined with external=true, the icon color falls back to Icon's own default (color.foreground) since there is no currentColor to inherit on native — the spec doesn't address this combination explicitly. → `site/src/content/docs/components/link.md`
+
+### 2026-09-10 01:10 — lit round 1
+
+- **DOC** Link.ts/.stories.ts pre-existed from an earlier pass and were already spec-complete except for the overrides contract (hooks, `overrides` property, `data-ds`) and the `LinkOverridableBinding` type export, which I added; no ambiguity in the schema itself. → `site/src/content/docs/components/link.md`
+- **DOC** download: not in `platforms.lit.reflect`, so left unreflected (a plain non-reflected boolean attribute) even though `external` and `tone` are reflected — the spec only lists the latter two under `reflect`. → `site/src/content/docs/components/link.md`
+- **DOC** has-accessible-name scenario doesn't specify whether the external suffix is included in the assertion; used the plain `label` for the default (non-external) case, matching the scenario's default `given` (no `external: true`). → `site/src/content/docs/components/link.md`
+
+### 2026-09-10 01:10 — web round 1
+
+- **DOC** Link: the package now has an Icon component with a documented 'external' glyph, but the schema instructions for this pass say 'there is no Icon component yet' and to draw an inline SVG. Kept the hand-drawn inline SVG (identical path data to Icon's 'external' glyph) instead of switching to <Icon>, because Icon.css hard-resets --ds-icon-color to color.foreground on the icon element itself, which would break the currentColor inheritance Link relies on for tone/hover/visited color changes on the external icon. Flagging in case Icon should later be fixed to accept ambient currentColor so composite components can use it directly. → `site/src/content/docs/components/link.md`
+- **DOC** Link.stories.tsx was already complete (Default, both tone values, external, download, inline-in-text) and needed no changes. → `site/src/content/docs/components/link.md`
+- **CODE** Link: pre-existing Link.tsx/.css predated the data-ds/data-part/overrides conventions now used by newer components (Button, Icon, etc.) — added data-ds="Link" on the root, data-part="externalIcon" on the decorative icon span, and a LinkOverridableBinding overrides mechanism (underlineThickness, underlineOffset, externalIconGap, transition hooked as --ds-link-*), leaving color/colorHover/colorVisited/focusRing/focusRingWidth/focusRingRadius locked as the schema specifies. No spec ambiguity here, just bringing the file current.
 
 ## Menu
 
@@ -561,7 +700,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 235 · CODE: 18 · TOOLING: 2 · NOISE: 8
+DOC: 299 · CODE: 22 · TOOLING: 2 · NOISE: 8
 
 ## Gates to fix
 

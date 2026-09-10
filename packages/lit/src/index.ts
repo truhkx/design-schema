@@ -30,6 +30,7 @@ import './Meter.js';
 import './Icon.js';
 import './Card.js';
 import './Container.js';
+import './Divider.js';
 import './FocusScope.js';
 import './Dialog.js';
 import './AlertDialog.js';
@@ -128,6 +129,9 @@ export type {
   ContainerElement,
   ContainerOverridableBinding,
 } from './Container.js';
+
+export { DsDivider } from './Divider.js';
+export type { DividerOrientation, DividerSpacing, DividerOverridableBinding } from './Divider.js';
 
 export { DsFocusScope } from './FocusScope.js';
 export type { FocusScopeAutoFocus, FocusScopeEscapeAttemptDetail } from './FocusScope.js';

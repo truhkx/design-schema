@@ -4,7 +4,7 @@ import type { TextStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Icon } from './Icon';
-import { TextNestingContext } from './Text';
+import { TextStyleContext } from './Text';
 import { toEasing, toFontWeight, toLineHeight, useReducedMotion, useTheme } from './theme';
 
 export type LinkTone = 'default' | 'inherit';
@@ -50,7 +50,7 @@ export const LINK_EXTERNAL_SUFFIX = COPY.externalSuffix;
  * `copy.externalSuffix` when `external`. Activation calls `onPress(href)` when
  * provided, otherwise `Linking.openURL(href)` — never both. Standalone, the Link
  * sets the body typography via Text's helpers since there is no cascade; nested in
- * a system `Text` (detected through `TextNestingContext`) it inherits.
+ * a system `Text` (detected through `TextStyleContext`) it inherits.
  *
  * There is no hover or visited state on native, so `colorHover` styles the pressed
  * state (`colorVisited` unused) and the color crossfades over `transition` (eased
@@ -77,7 +77,7 @@ export function Link({
   onPress,
 }: LinkProps): React.JSX.Element {
   const { tokens: t } = useTheme();
-  const nested = React.useContext(TextNestingContext);
+  const { nested } = React.useContext(TextStyleContext);
   const reducedMotion = useReducedMotion();
   const [pressed, setPressed] = React.useState(false);
 

@@ -6,18 +6,20 @@
   margin: 0;
   padding: 0;
   min-inline-size: 0;
-  gap: var(--ds-stack-gap);
+  /* literal here, not var(--ds-stack-gap): the hook is only read by the value classes below,
+     so overrides.gap is a no-op while gap: none, per the presence rule. */
+  gap: 0;
 }
 
 .ds-stack--vertical { flex-direction: column; }
 .ds-stack--horizontal { flex-direction: row; }
 
-/* gap → layout.gap.{gap} */
-.ds-stack--gap-none { --ds-stack-gap: var(--layout-gap-none); }
-.ds-stack--gap-tight { --ds-stack-gap: var(--layout-gap-tight); }
-.ds-stack--gap-normal { --ds-stack-gap: var(--layout-gap-normal); }
-.ds-stack--gap-loose { --ds-stack-gap: var(--layout-gap-loose); }
-.ds-stack--gap-section { --ds-stack-gap: var(--layout-gap-section); }
+/* gap → layout.gap.{gap}; `none` renders no gap and makes overrides.gap a no-op. */
+.ds-stack--gap-none { gap: 0; }
+.ds-stack--gap-tight { --ds-stack-gap: var(--layout-gap-tight); gap: var(--ds-stack-gap); }
+.ds-stack--gap-normal { --ds-stack-gap: var(--layout-gap-normal); gap: var(--ds-stack-gap); }
+.ds-stack--gap-loose { --ds-stack-gap: var(--layout-gap-loose); gap: var(--ds-stack-gap); }
+.ds-stack--gap-section { --ds-stack-gap: var(--layout-gap-section); gap: var(--ds-stack-gap); }
 
 .ds-stack--align-start { align-items: flex-start; }
 .ds-stack--align-center { align-items: center; }

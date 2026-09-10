@@ -7,8 +7,8 @@ export type { ButtonOverridableBinding, ButtonProps, ButtonSize, ButtonTrackEven
 export { Heading } from './Heading';
 export type { HeadingLevel, HeadingOverridableBinding, HeadingProps, HeadingSize } from './Heading';
 
-export { Text, TextNestingContext, toTextAlign } from './Text';
-export type { TextAlign, TextOverridableBinding, TextProps, TextSize, TextTone, TextWeight } from './Text';
+export { Text, TextStyleContext, toTextAlign } from './Text';
+export type { TextAlign, TextOverridableBinding, TextProps, TextSize, TextStyleContextValue, TextTone, TextWeight } from './Text';
 
 export { Input } from './Input';
 export type { InputOverridableBinding, InputProps, InputType } from './Input';

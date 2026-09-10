@@ -2,6 +2,7 @@ import * as React from 'react';
 import Svg, { Path } from 'react-native-svg';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
+import { TextStyleContext } from './Text';
 import { useTheme } from './theme';
 import type { Tokens } from './theme';
 import { paths } from './paths';
@@ -64,14 +65,10 @@ const SIZE_TOKEN = {
  * status shapes and `ellipsis` fill instead, with no stroke.
  *
  * There is no `currentColor` on native, so `color` is an explicit prop that falls
- * back to `color.foreground`. `TextNestingContext` (used by `Text`/`Link` to detect
- * nesting) only reports *whether* something sits inside a system `Text`, not that
- * Text's resolved size or color, so an SVG element has no value to actually inherit
- * — unlike the retired Unicode-glyph implementation, which rendered a bare `Text`
- * and let React Native's native Text-in-Text cascade carry size and color for free.
- * An inline Icon therefore always falls back to `font.size.md` / `color.foreground`,
- * same as a standalone inline icon, whether or not it sits inside a `Text`.
- * Acknowledged platform limit; see the generation gap notes.
+ * back to `color.foreground` — except when `inline` and nested inside a system
+ * `Text`, where it falls back to that Text's own resolved size and color via
+ * `TextStyleContext` instead, so the glyph matches its surrounding copy exactly
+ * (`size`, `md` default, and `color.foreground` still apply standalone).
  *
  * `size` is ignored (a no-op) while `inline` is set, since size then comes from the
  * text context instead. `strokeWidth` is a no-op on the four filled glyphs, which
@@ -81,19 +78,27 @@ const SIZE_TOKEN = {
  */
 export function Icon({ name, size = 'md', inline = false, label, color, overrides }: IconProps): React.JSX.Element {
   const { tokens: t } = useTheme();
+  const textStyle = React.useContext(TextStyleContext);
 
   const decorative = label === undefined || label === '';
 
   // `size` only governs the box when not inline: the override is a no-op there,
   // matching "overrides change values, never presence."
   const dimension = inline
-    ? t.fontSizeMd
+    ? textStyle.nested
+      ? textStyle.fontSize
+      : t.fontSizeMd
     : overrides?.size
       ? (resolveToken(t, overrides.size) as number)
       : t[SIZE_TOKEN[size]];
 
   const resolvedColor =
-    color ?? (overrides?.color ? (resolveToken(t, overrides.color) as string) : t.colorForeground);
+    color ??
+    (overrides?.color
+      ? (resolveToken(t, overrides.color) as string)
+      : inline && textStyle.nested
+        ? textStyle.color
+        : t.colorForeground);
 
   const glyph = paths[name];
 

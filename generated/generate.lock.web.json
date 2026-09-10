@@ -942,30 +942,19 @@
     }
   },
   "Stack.web": {
-    "hash": "395ec760b1de6f6c",
-    "lastAttemptHash": "395ec760b1de6f6c",
-    "generatedAt": "2026-09-10T04:49:51+00:00",
+    "hash": "703c13a97536740e",
+    "lastAttemptHash": "703c13a97536740e",
+    "generatedAt": "2026-09-10T21:15:58+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.1159,
+    "rounds": 1,
+    "costUsd": 0.328,
     "files": [
-      "packages/react/demo/Preferences.tsx",
-      "packages/react/demo/SignIn.tsx",
-      "packages/react/src/AlertDialog.tsx",
-      "packages/react/src/Card.stories.tsx",
-      "packages/react/src/Dialog.stories.tsx",
-      "packages/react/src/Dialog.tsx",
-      "packages/react/src/Disclosure.stories.tsx",
-      "packages/react/src/Form.stories.tsx",
-      "packages/react/src/Landmark.stories.tsx",
       "packages/react/src/Stack.css",
       "packages/react/src/Stack.stories.tsx",
-      "packages/react/src/Stack.test.tsx",
-      "packages/react/src/Stack.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Stack.tsx"
     ],
-    "gaps": 5,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,

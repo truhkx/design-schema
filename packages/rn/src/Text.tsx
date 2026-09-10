@@ -93,7 +93,9 @@ export function toTextAlign(align: TextAlign): TextStyle['textAlign'] {
  *
  * Renders React Native `Text`. `truncate` maps to `numberOfLines={1}` with
  * `ellipsizeMode="tail"`; `allowFontScaling` stays on so Dynamic Type / font
- * scaling applies. There is no `element` prop on native.
+ * scaling applies. There is no `element` prop on native. Provides
+ * `TextStyleContext` with the resolved `fontSize`/`color` so inline children
+ * (Icon, Link) can match this Text instead of falling back to a default.
  */
 export function Text({
   children,
@@ -106,8 +108,10 @@ export function Text({
 }: TextProps): React.JSX.Element {
   const { tokens: t } = useTheme();
 
+  const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[SIZE_TOKEN[size]];
+  const color = overrides?.color ? (resolveToken(t, overrides.color) as string) : t[TONE_TOKEN[tone]];
+
   const style = React.useMemo<TextStyle>(() => {
-    const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[SIZE_TOKEN[size]];
     const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
     const fontWeight = overrides?.fontWeight ? (resolveToken(t, overrides.fontWeight) as number) : t[WEIGHT_TOKEN[weight]];
 
@@ -116,10 +120,15 @@ export function Text({
       fontSize,
       fontWeight: toFontWeight(fontWeight),
       lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
-      color: overrides?.color ? (resolveToken(t, overrides.color) as string) : t[TONE_TOKEN[tone]],
+      color,
       textAlign: toTextAlign(align),
     };
-  }, [t, size, weight, tone, align, overrides]);
+  }, [t, weight, align, overrides, fontSize, color]);
+
+  const contextValue = React.useMemo<TextStyleContextValue>(
+    () => ({ fontSize, color, nested: true }),
+    [fontSize, color],
+  );
 
   return (
     <RNText
@@ -129,7 +138,7 @@ export function Text({
       ellipsizeMode={truncate ? 'tail' : undefined}
       style={style}
     >
-      <TextNestingContext.Provider value={true}>{children}</TextNestingContext.Provider>
+      <TextStyleContext.Provider value={contextValue}>{children}</TextStyleContext.Provider>
     </RNText>
   );
 }

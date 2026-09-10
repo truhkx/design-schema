@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './Button.js';
+import './Icon.js';
 import type { ButtonSize, ButtonType, ButtonVariant } from './Button.js';
 
 interface ButtonArgs {
@@ -92,7 +93,7 @@ export const IconOnly: Story = {
       ?icon-only=${args.iconOnly}
       ?loading=${args.loading}
     >
-      <span slot="leading-icon" aria-hidden="true">&#x2715;</span>
+      <ds-icon slot="leading-icon" name="close"></ds-icon>
     </ds-button>
   `,
 };
@@ -111,3 +112,31 @@ export const Inverse: Story = {
 
 /* track: sends an analytics event on press, then fires `track` */
 export const Tracked: Story = { args: { track: 'signup', label: 'Sign up' } };
+
+/* accessibleName: overrides the accessible name; the visible label is its start */
+export const AccessibleName: Story = {
+  args: { label: 'Amount' },
+  render: (args) => html`
+    <ds-button
+      label=${args.label}
+      variant=${args.variant}
+      size=${args.size}
+      type=${args.type}
+      accessible-name="Sort by Amount, ascending"
+    ></ds-button>
+  `,
+};
+
+/* expanded: set by a disclosing parent (Menu, Popover, SidePanel, Disclosure) */
+export const Expanded: Story = {
+  args: { label: 'Options', variant: 'secondary' },
+  render: (args) => html`
+    <ds-button
+      label=${args.label}
+      variant=${args.variant}
+      size=${args.size}
+      type=${args.type}
+      .expanded=${true}
+    ></ds-button>
+  `,
+};

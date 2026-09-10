@@ -158,20 +158,18 @@
     }
   },
   "Button.lit": {
-    "hash": "9724471e422c91e3",
-    "lastAttemptHash": "9724471e422c91e3",
-    "generatedAt": "2026-09-10T05:08:24+00:00",
+    "hash": "063e79f3a95ab002",
+    "lastAttemptHash": "063e79f3a95ab002",
+    "generatedAt": "2026-09-10T21:17:08+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.6905,
+    "costUsd": 0.8001,
     "files": [
       "packages/lit/src/Button.stories.ts",
-      "packages/lit/src/Button.test.ts",
-      "packages/lit/src/Button.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Button.ts"
     ],
-    "gaps": 4,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -30,7 +30,8 @@ export type ButtonOverridableBinding =
   | 'fontSize'
   | 'disabledOpacity'
   | 'transition'
-  | 'loadingSpin';
+  | 'loadingSpin'
+  | 'spinnerStroke';
 
 const HOOKS: Record<ButtonOverridableBinding, string> = {
   backgroundHover: '--ds-button-background-hover',
@@ -44,6 +45,7 @@ const HOOKS: Record<ButtonOverridableBinding, string> = {
   disabledOpacity: '--ds-button-disabled-opacity',
   transition: '--ds-button-transition',
   loadingSpin: '--ds-button-loading-spin',
+  spinnerStroke: '--ds-button-spinner-stroke',
 };
 
 /**
@@ -100,6 +102,7 @@ export class DsButton extends LitElement {
       --ds-button-disabled-opacity: var(--opacity-disabled);
       --ds-button-transition: var(--motion-duration-fast);
       --ds-button-loading-spin: var(--motion-duration-loop);
+      --ds-button-spinner-stroke: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -249,7 +252,7 @@ export class DsButton extends LitElement {
       box-sizing: border-box;
       inline-size: 1em;
       block-size: 1em;
-      border: var(--border-width-focus) solid currentColor;
+      border: var(--ds-button-spinner-stroke) solid currentColor;
       border-inline-end-color: transparent;
       border-radius: var(--radius-full);
       animation: ds-button-spin var(--ds-button-loading-spin) linear infinite;
@@ -278,6 +281,14 @@ export class DsButton extends LitElement {
   /** `submit` submits the enclosing Form. Everything else is `button`. */
   @property({ reflect: true }) type: ButtonType = 'button';
 
+  /**
+   * Set by a parent that the button discloses (Menu, Popover, SidePanel,
+   * Disclosure): reflected to the inner button's `aria-expanded`. `undefined`
+   * (the default) means this button does not disclose anything, so no
+   * `aria-expanded` is rendered. Consumers rarely set it directly.
+   */
+  @property({ type: Boolean, attribute: false }) expanded?: boolean;
+
   /** Prevents activation. The button stays in the tab order and is announced as disabled. */
   @property({ type: Boolean, reflect: true }) disabled = false;
 
@@ -289,6 +300,16 @@ export class DsButton extends LitElement {
 
   /** The button sits on an inverse surface (Toast, Tooltip-like panels). Only meaningful on `ghost`. */
   @property({ type: Boolean, reflect: true }) inverse = false;
+
+  /**
+   * Overrides the accessible name when it must say more than the visible label
+   * ("Sort by Amount, ascending" on a header that shows "Amount"). The visible
+   * label must be the start of it. Maps to `aria-label`.
+   */
+  @property({ attribute: 'accessible-name' }) accessibleName?: string;
+
+  /** Text used for this button when a Toolbar collapses it into its overflow Menu. */
+  @property({ attribute: 'overflow-label' }) overflowLabel?: string;
 
   /** Analytics event name sent on press. Omit for no tracking. */
   @property() track?: string;
@@ -315,7 +336,8 @@ export class DsButton extends LitElement {
         type=${this.type}
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
         aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
-        aria-label=${ifDefined(this.iconOnly ? this.label : undefined)}
+        aria-expanded=${ifDefined(this.expanded === undefined ? undefined : String(this.expanded))}
+        aria-label=${ifDefined(this.accessibleName ?? (this.iconOnly ? this.label : undefined))}
         @click=${this.handleClick}
       >
         <span class="content">

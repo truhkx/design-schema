@@ -24,3 +24,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-09 22:18 — round 1
 
 - Box: file already existed with the override-precedence bug (background/radius overrides applied even when surface:none/radius:none disabled those bindings); fixed to match the explicit 'overrides never restore presence' rule, and updated WithOverrides story (was demoing a no-op override) to set surface:subtle/radius:sm so both overrides visibly take effect.
+
+## 2026-09-10 17:17 — round 1
+
+- Box: no a11y.requires and role: none, so RN has nothing to implement beyond the View styling — no ambiguity.
+- Box: spec doesn't say whether border color is itself overridable separately from borderWidth; treated `border` override binding as the border color (colorBorder) and `borderWidth` as the width, consistent with the styles block listing both `border` (color.border) and `borderWidth` (border.width.thin) as separate overridable bindings.

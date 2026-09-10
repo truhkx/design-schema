@@ -4,7 +4,7 @@ node_modules/
 # Build outputs: everything below is recreated by `pnpm check`, `pnpm tokens`, `pnpm build` or a gate.
 site/dist/
 site/.astro/
-packages/tokens/dist/
+packages/*/dist/
 site/src/content/docs/foundations/spec-sheet.md
 generated/components.json
 generated/themes.json

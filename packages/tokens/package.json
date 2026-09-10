@@ -1,11 +1,18 @@
 {
   "name": "@design-schema/tokens",
   "version": "0.0.1",
-  "private": true,
-  "type": "module",
   "description": "Built design tokens, one entry per theme, mode and platform. Generated into dist/ by `pnpm themes` (Python fallback) or `pnpm tokens` (Style Dictionary).",
-  "files": [
-    "dist"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/<owner>/design-schema.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "sideEffects": [
+    "*.css"
   ],
   "exports": {
     ".": {
@@ -49,6 +56,28 @@
       "default": "./dist/warm-friendly/rn/tokens.dark.js"
     },
     "./warm-friendly/json/light": "./dist/warm-friendly/json/tokens.light.json",
-    "./warm-friendly/json/dark": "./dist/warm-friendly/json/tokens.dark.json"
-  }
+    "./warm-friendly/json/dark": "./dist/warm-friendly/json/tokens.dark.json",
+    "./warm-sleek/css": "./dist/warm-sleek/css/tokens.css",
+    "./warm-sleek/light": {
+      "types": "./dist/warm-sleek/js/tokens.light.d.ts",
+      "default": "./dist/warm-sleek/js/tokens.light.js"
+    },
+    "./warm-sleek/dark": {
+      "types": "./dist/warm-sleek/js/tokens.dark.d.ts",
+      "default": "./dist/warm-sleek/js/tokens.dark.js"
+    },
+    "./warm-sleek/rn/light": {
+      "types": "./dist/warm-sleek/rn/tokens.light.d.ts",
+      "default": "./dist/warm-sleek/rn/tokens.light.js"
+    },
+    "./warm-sleek/rn/dark": {
+      "types": "./dist/warm-sleek/rn/tokens.dark.d.ts",
+      "default": "./dist/warm-sleek/rn/tokens.dark.js"
+    },
+    "./warm-sleek/json/light": "./dist/warm-sleek/json/tokens.light.json",
+    "./warm-sleek/json/dark": "./dist/warm-sleek/json/tokens.dark.json"
+  },
+  "files": [
+    "dist"
+  ]
 }

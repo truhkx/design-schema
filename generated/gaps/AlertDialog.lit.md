@@ -1,0 +1,12 @@
+# Gaps reported while generating AlertDialog for lit
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-09 23:33 — round 1
+
+- Schema prop `title` collides with the native `HTMLElement.title` tooltip attribute; followed Dialog's precedent and named the property/attribute `heading` instead, per the package convention that forbids shadowing native members.
+- platforms.lit.notes says both `confirm` and `cancel` dispatch with 'detail { reason }', but the events schema only defines a `reason` on onCancel ('cancel'|'escape'); onConfirm has no described payload. Implemented `confirm` with no detail (void) and only `cancel` carries `{ reason }`.
+- No button variant is specified for Cancel in the schema or the Lit platform notes (only the confirm button's variant is derived from tone). Inferred `variant="secondary"` by analogy with the RN notes ('secondary for cancel; danger or primary for confirm by tone').
+- Footer button alignment (`justify`) isn't specified for Lit; the Web platform notes describe 'Cancel then Confirm in DOM order... visually the primary sits at the end via justify: end'. Applied the same `justify="end"` on the Lit `<ds-stack>` footer for visual parity.
+- The generic Lit convention asks every keyboard-block component's `Keyboard` story to render 'at least three focusable children', but AlertDialog has no slots and always renders exactly two buttons (Cancel, Confirm) inside its shadow DOM — there is no schema-sanctioned way to add a third. The Keyboard story renders the trigger plus the two buttons only.
+- No `dismissible`/close-button/scrim-click affordances exist for AlertDialog per spec ('no close button... scrim click does nothing'), so unlike Dialog there is no native `close` event listener or `closingProgrammatically` bookkeeping — the only way the shadow `<dialog>` closes is our own exit-animation call to `.close()`, which simplifies the lifecycle versus Dialog.ts.

@@ -1,4 +1,5 @@
-import { forwardRef, type ComponentPropsWithoutRef, type ReactNode } from 'react';
+import { forwardRef, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from 'react';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Icon.css';
 
 export type IconName =
@@ -19,14 +20,33 @@ export type IconName =
   | 'ellipsis'
   | 'search'
   | 'arrow-right'
-  | 'arrow-left';
+  | 'arrow-left'
+  | 'calendar';
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type IconOverridableBinding = 'size' | 'color' | 'strokeWidth';
+
+const OVERRIDE_HOOK: Record<IconOverridableBinding, string> = {
+  size: '--ds-icon-size',
+  color: '--ds-icon-color',
+  strokeWidth: '--ds-icon-stroke-width',
+};
+
+function overridesToStyle(overrides: Partial<Record<IconOverridableBinding, TokenRef>>): CSSProperties {
+  const style: Record<string, string> = {};
+  for (const binding of Object.keys(overrides) as IconOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+  }
+  return style as CSSProperties;
+}
 
 /**
  * Glyphs drawn on a 16×16 grid, keyed by `name`.
  *
- * Line glyphs (check, dash, chevrons, close, plus, minus, external, search, arrows) are bare
- * `<path>`s and inherit the root `<svg>`'s `fill="none" stroke="currentColor"`. Filled glyphs
+ * Line glyphs (check, dash, chevrons, close, plus, minus, external, search, arrows, calendar) are
+ * bare `<path>`s and inherit the root `<svg>`'s `fill="none" stroke="currentColor"`. Filled glyphs
  * (the four status shapes and ellipsis) set `fill="currentColor" stroke="none"` on themselves;
  * the status shapes are single `fill-rule="evenodd"` paths whose inner mark (i, check, !, x) is a
  * hole, so they read on any surface without a second color.
@@ -90,6 +110,7 @@ export const paths: Record<IconName, ReactNode> = {
   search: <path d="M7 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9zM10.3 10.3L14 14" />,
   'arrow-right': <path d="M3 8h10M9 4l4 4-4 4" />,
   'arrow-left': <path d="M13 8H3M7 4L3 8l4 4" />,
+  calendar: <path d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3" />,
 };
 
 export interface IconProps
@@ -116,6 +137,8 @@ export interface IconProps
    * text and should have no label.
    */
   label?: string;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<IconOverridableBinding, TokenRef>>;
 }
 
 /**
@@ -133,7 +156,7 @@ export interface IconProps
  * width as their stroke.
  */
 export const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon(
-  { name, size = 'md', inline = false, label, className, ...rest },
+  { name, size = 'md', inline = false, label, overrides, className, style, ...rest },
   ref,
 ) {
   const labelled = label !== undefined && label !== '';
@@ -142,11 +165,16 @@ export const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon(
     .filter(Boolean)
     .join(' ');
 
+  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+
   return (
     <svg
       {...rest}
       ref={ref}
+      data-ds="Icon"
       className={classes}
+      style={mergedStyle}
       viewBox="0 0 16 16"
       width="1em"
       height="1em"

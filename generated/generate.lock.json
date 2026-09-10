@@ -14,6 +14,73 @@
     "adoptedAt": "2026-09-09T21:36:50+00:00",
     "runner": "adopted"
   },
+  "AlertDialog.lit": {
+    "hash": "34e3a4b865d01aa9",
+    "lastAttemptHash": "34e3a4b865d01aa9",
+    "generatedAt": "2026-09-10T03:34:03+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.0142,
+    "files": [
+      "packages/lit/src/AlertDialog.stories.ts",
+      "packages/lit/src/AlertDialog.test.ts",
+      "packages/lit/src/AlertDialog.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "AlertDialog.rn": {
+    "hash": "908bbd685fe9d4da",
+    "lastAttemptHash": "908bbd685fe9d4da",
+    "generatedAt": "2026-09-10T03:37:51+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.9477,
+    "files": [
+      "packages/rn/src/AlertDialog.stories.tsx",
+      "packages/rn/src/AlertDialog.test.tsx",
+      "packages/rn/src/AlertDialog.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "AlertDialog.web": {
+    "hash": "e564390686bc35b0",
+    "lastAttemptHash": "e564390686bc35b0",
+    "generatedAt": "2026-09-10T03:29:42+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.2532,
+    "files": [
+      "packages/react/src/AlertDialog.css",
+      "packages/react/src/AlertDialog.stories.tsx",
+      "packages/react/src/AlertDialog.test.tsx",
+      "packages/react/src/AlertDialog.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
   "Box.lit": {
     "hash": "9f2cf6b25360fbf6",
     "lastAttemptHash": "9f2cf6b25360fbf6",
@@ -231,6 +298,50 @@
       "packages/react/src/Container.tsx"
     ],
     "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Dialog.lit": {
+    "hash": "327a9cb7e1919aa8",
+    "lastAttemptHash": "327a9cb7e1919aa8",
+    "generatedAt": "2026-09-10T03:11:05+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.5901,
+    "files": [
+      "packages/lit/src/Dialog.stories.ts",
+      "packages/lit/src/Dialog.test.ts",
+      "packages/lit/src/Dialog.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Dialog.rn": {
+    "hash": "c0c19a16b6970a99",
+    "lastAttemptHash": "c0c19a16b6970a99",
+    "generatedAt": "2026-09-10T03:23:54+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.7049,
+    "files": [
+      "packages/rn/src/Dialog.stories.tsx",
+      "packages/rn/src/Dialog.test.tsx",
+      "packages/rn/src/Dialog.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -478,6 +589,73 @@
     "adoptedAt": "2026-09-09T21:36:50+00:00",
     "runner": "adopted"
   },
+  "Menu.lit": {
+    "hash": "1e164b43859e7d87",
+    "lastAttemptHash": "1e164b43859e7d87",
+    "generatedAt": "2026-09-10T04:07:28+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 3.08,
+    "files": [
+      "packages/lit/src/Menu.stories.ts",
+      "packages/lit/src/Menu.test.ts",
+      "packages/lit/src/Menu.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Menu.rn": {
+    "hash": "3971462bf5516a8f",
+    "lastAttemptHash": "3971462bf5516a8f",
+    "generatedAt": "2026-09-10T04:21:26+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 3.0607,
+    "files": [
+      "packages/rn/src/Menu.stories.tsx",
+      "packages/rn/src/Menu.test.tsx",
+      "packages/rn/src/Menu.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
+  "Menu.web": {
+    "hash": "7ceff7d3bf3b3631",
+    "lastAttemptHash": "7ceff7d3bf3b3631",
+    "generatedAt": "2026-09-10T03:52:53+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.9827,
+    "files": [
+      "packages/react/src/Menu.css",
+      "packages/react/src/Menu.stories.tsx",
+      "packages/react/src/Menu.test.tsx",
+      "packages/react/src/Menu.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
+  },
   "Meter.lit": {
     "hash": "91c0965d0df5074f",
     "adoptedAt": "2026-09-09T21:36:50+00:00",
@@ -552,5 +730,27 @@
     "hash": "b464c6c625f79bcf",
     "adoptedAt": "2026-09-09T21:36:50+00:00",
     "runner": "adopted"
+  },
+  "Tooltip.web": {
+    "hash": "68bb45f6a672f4ac",
+    "lastAttemptHash": "68bb45f6a672f4ac",
+    "generatedAt": "2026-09-10T04:34:08+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.7701,
+    "files": [
+      "packages/react/src/Tooltip.css",
+      "packages/react/src/Tooltip.stories.tsx",
+      "packages/react/src/Tooltip.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
   }
 }

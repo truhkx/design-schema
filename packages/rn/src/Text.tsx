@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { I18nManager, Text as RNText } from 'react-native';
 import type { TextStyle } from 'react-native';
+import { resolveToken } from '@design-schema/tokens';
+import type { TokenRef } from '@design-schema/tokens';
 import { toFontWeight, toLineHeight, useTheme } from './theme';
 import type { Tokens } from './theme';
 
@@ -8,6 +10,9 @@ export type TextSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type TextWeight = 'regular' | 'medium' | 'semibold' | 'bold';
 export type TextTone = 'default' | 'strong' | 'muted' | 'danger' | 'onAction';
 export type TextAlign = 'start' | 'center' | 'end';
+
+/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+export type TextOverridableBinding = 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight' | 'color';
 
 export interface TextProps {
   /** The text content. Inline formatting (nested Text) is allowed; block elements are not. */
@@ -22,6 +27,8 @@ export interface TextProps {
   align?: TextAlign;
   /** Clip to one line with an ellipsis. Screen readers still read the full text. */
   truncate?: boolean;
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  overrides?: Partial<Record<TextOverridableBinding, TokenRef>>;
 }
 
 const SIZE_TOKEN = {
@@ -86,21 +93,28 @@ export function Text({
   tone = 'default',
   align = 'start',
   truncate = false,
+  overrides,
 }: TextProps): React.JSX.Element {
-  const { tokens } = useTheme();
-  const fontSize = tokens[SIZE_TOKEN[size]];
+  const { tokens: t } = useTheme();
 
-  const style: TextStyle = {
-    fontFamily: tokens.fontFamilyBody,
-    fontSize,
-    fontWeight: toFontWeight(tokens[WEIGHT_TOKEN[weight]]),
-    lineHeight: toLineHeight(fontSize, tokens.fontLineHeightNormal),
-    color: tokens[TONE_TOKEN[tone]],
-    textAlign: toTextAlign(align),
-  };
+  const style = React.useMemo<TextStyle>(() => {
+    const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[SIZE_TOKEN[size]];
+    const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
+    const fontWeight = overrides?.fontWeight ? (resolveToken(t, overrides.fontWeight) as number) : t[WEIGHT_TOKEN[weight]];
+
+    return {
+      fontFamily: overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody,
+      fontSize,
+      fontWeight: toFontWeight(fontWeight),
+      lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
+      color: overrides?.color ? (resolveToken(t, overrides.color) as string) : t[TONE_TOKEN[tone]],
+      textAlign: toTextAlign(align),
+    };
+  }, [t, size, weight, tone, align, overrides]);
 
   return (
     <RNText
+      testID="Text"
       allowFontScaling
       numberOfLines={truncate ? 1 : undefined}
       ellipsizeMode={truncate ? 'tail' : undefined}

@@ -55,8 +55,8 @@ export function Preferences({ onSubmit, onInvalid, onCancel, onDismissAlert, sto
 
   return (
     <Landmark role="main">
-      <Stack gap="6" align="stretch">
-        <Stack gap="2">
+      <Stack gap="section" align="stretch">
+        <Stack gap="tight">
           <Breadcrumb
             items={[
               { label: 'Settings', href: '/settings' },
@@ -74,10 +74,10 @@ export function Preferences({ onSubmit, onInvalid, onCancel, onDismissAlert, sto
         </Alert>
 
         <Form name="preferences" label="Notification preferences" validate="submit" onSubmit={handleSubmit} onInvalid={onInvalid}>
-          <Stack gap="5">
+          <Stack gap="normal">
             <RadioGroup label="Email digest" name="digest" options={DIGEST_OPTIONS} defaultValue="weekly" required />
 
-            <Stack gap="0">
+            <Stack gap="none">
               <Checkbox
                 label="Mentions"
                 name="mentions"
@@ -111,7 +111,7 @@ export function Preferences({ onSubmit, onInvalid, onCancel, onDismissAlert, sto
               />
             </Disclosure>
 
-            <Stack direction="horizontal" gap="2" align="center" wrap>
+            <Stack direction="horizontal" gap="tight" align="center" wrap>
               <Button label="Save" type="submit" variant="primary" />
               <Button label="Cancel" variant="secondary" onClick={onCancel} />
             </Stack>

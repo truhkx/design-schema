@@ -323,7 +323,7 @@ export const Dialog = forwardRef<HTMLDialogElement, DialogProps>(function Dialog
           </Box>
           {footer !== undefined ? (
             <div className="ds-dialog__footer">
-              <Stack direction="horizontal" gap="1" justify="end">
+              <Stack direction="horizontal" gap="tight" justify="end">
                 {footer}
               </Stack>
             </div>

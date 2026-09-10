@@ -22,6 +22,7 @@ export default defineConfig({
         { label: 'Themes', autogenerate: { directory: 'themes' } },
         { label: 'Foundations', autogenerate: { directory: 'foundations' } },
         { label: 'Components', autogenerate: { directory: 'components' } },
+        { label: 'Patterns', autogenerate: { directory: 'patterns' } },
         { label: 'Guides', autogenerate: { directory: 'guides' } },
       ],
     }),

@@ -3,29 +3,34 @@
 .ds-text {
   margin: 0;
   padding: 0;
-  font-family: var(--font-family-body);
-  line-height: var(--font-line-height-normal);
+  --ds-text-font-family: var(--font-family-body);
+  --ds-text-line-height: var(--font-line-height-normal);
+  font-family: var(--ds-text-font-family);
+  font-size: var(--ds-text-font-size);
+  font-weight: var(--ds-text-font-weight);
+  line-height: var(--ds-text-line-height);
+  color: var(--ds-text-color);
 }
 
 /* size → font.size.{size} */
-.ds-text--size-xs { font-size: var(--font-size-xs); }
-.ds-text--size-sm { font-size: var(--font-size-sm); }
-.ds-text--size-md { font-size: var(--font-size-md); }
-.ds-text--size-lg { font-size: var(--font-size-lg); }
-.ds-text--size-xl { font-size: var(--font-size-xl); }
+.ds-text--size-xs { --ds-text-font-size: var(--font-size-xs); }
+.ds-text--size-sm { --ds-text-font-size: var(--font-size-sm); }
+.ds-text--size-md { --ds-text-font-size: var(--font-size-md); }
+.ds-text--size-lg { --ds-text-font-size: var(--font-size-lg); }
+.ds-text--size-xl { --ds-text-font-size: var(--font-size-xl); }
 
 /* weight → font.weight.{weight} */
-.ds-text--weight-regular { font-weight: var(--font-weight-regular); }
-.ds-text--weight-medium { font-weight: var(--font-weight-medium); }
-.ds-text--weight-semibold { font-weight: var(--font-weight-semibold); }
-.ds-text--weight-bold { font-weight: var(--font-weight-bold); }
+.ds-text--weight-regular { --ds-text-font-weight: var(--font-weight-regular); }
+.ds-text--weight-medium { --ds-text-font-weight: var(--font-weight-medium); }
+.ds-text--weight-semibold { --ds-text-font-weight: var(--font-weight-semibold); }
+.ds-text--weight-bold { --ds-text-font-weight: var(--font-weight-bold); }
 
 /* tone → color.foreground.{tone} */
-.ds-text--tone-default { color: var(--color-foreground); }
-.ds-text--tone-strong { color: var(--color-foreground-strong); }
-.ds-text--tone-muted { color: var(--color-foreground-muted); }
-.ds-text--tone-danger { color: var(--color-foreground-danger); }
-.ds-text--tone-on-action { color: var(--color-foreground-on-action); }
+.ds-text--tone-default { --ds-text-color: var(--color-foreground); }
+.ds-text--tone-strong { --ds-text-color: var(--color-foreground-strong); }
+.ds-text--tone-muted { --ds-text-color: var(--color-foreground-muted); }
+.ds-text--tone-danger { --ds-text-color: var(--color-foreground-danger); }
+.ds-text--tone-on-action { --ds-text-color: var(--color-foreground-on-action); }
 
 .ds-text--align-start { text-align: start; }
 .ds-text--align-center { text-align: center; }

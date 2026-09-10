@@ -15,10 +15,10 @@ export { Button } from './Button';
 export type { ButtonProps, ButtonVariant, ButtonSize, ButtonType } from './Button';
 
 export { Heading } from './Heading';
-export type { HeadingProps, HeadingLevel, HeadingSize, HeadingAlign } from './Heading';
+export type { HeadingProps, HeadingLevel, HeadingSize, HeadingAlign, HeadingOverridableBinding } from './Heading';
 
 export { Text } from './Text';
-export type { TextProps, TextSize, TextWeight, TextTone, TextAlign, TextElement } from './Text';
+export type { TextProps, TextSize, TextWeight, TextTone, TextAlign, TextElement, TextOverridableBinding } from './Text';
 
 export { Input } from './Input';
 export type { InputProps, InputType } from './Input';
@@ -30,7 +30,15 @@ export { FormContext, useFormContext } from './FormContext';
 export type { FormContextValue, FormFieldRegistration } from './FormContext';
 
 export { Stack } from './Stack';
-export type { StackProps, StackDirection, StackGap, StackAlign, StackJustify, StackElement } from './Stack';
+export type {
+  StackProps,
+  StackDirection,
+  StackGap,
+  StackAlign,
+  StackJustify,
+  StackElement,
+  StackOverridableBinding,
+} from './Stack';
 
 export { Box } from './Box';
 export type { BoxProps, BoxInset, BoxSurface, BoxRadius, BoxElement, BoxOverridableBinding } from './Box';
@@ -63,7 +71,7 @@ export { Meter } from './Meter';
 export type { MeterProps, MeterTone } from './Meter';
 
 export { Icon } from './Icon';
-export type { IconProps, IconName, IconSize } from './Icon';
+export type { IconProps, IconName, IconSize, IconOverridableBinding } from './Icon';
 
 export { Card } from './Card';
 export type { CardProps, CardHeadingLevel, CardInset, CardSurface, CardOverridableBinding } from './Card';
@@ -83,3 +91,28 @@ export type { FocusScopeProps, FocusScopeAutoFocus, FocusScopeEscapeDirection } 
 
 export { Dialog } from './Dialog';
 export type { DialogProps, DialogSize, DialogInitialFocus, DialogCloseReason, DialogOverridableBinding } from './Dialog';
+
+export { AlertDialog } from './AlertDialog';
+export type {
+  AlertDialogProps,
+  AlertDialogTone,
+  AlertDialogCancelReason,
+  AlertDialogOverridableBinding,
+} from './AlertDialog';
+
+export { Menu } from './Menu';
+export type {
+  MenuProps,
+  MenuItem,
+  MenuAction,
+  MenuGroup,
+  MenuSeparator,
+  MenuTriggerVariant,
+  MenuTriggerIcon,
+  MenuPlacement,
+  MenuItemTone,
+  MenuOverridableBinding,
+} from './Menu';
+
+export { Tooltip } from './Tooltip';
+export type { TooltipProps, TooltipPlacement, TooltipDelay, TooltipOverridableBinding } from './Tooltip';

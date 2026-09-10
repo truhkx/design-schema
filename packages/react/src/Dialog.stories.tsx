@@ -39,7 +39,7 @@ function DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogPro
 }
 
 const defaultBody = (
-  <Stack gap="2">
+  <Stack gap="normal">
     <Input label="Project name" name="projectName" defaultValue="Q3 roadmap" />
   </Stack>
 );
@@ -101,7 +101,7 @@ export const Keyboard: Story = {
   args: { open: true },
   render: (args) => (
     <DialogHarness {...args}>
-      <Stack gap="2">
+      <Stack gap="normal">
         <Input label="Project name" name="projectName" defaultValue="Q3 roadmap" />
         <Input label="Slug" name="slug" defaultValue="q3-roadmap" />
       </Stack>

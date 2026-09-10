@@ -5,13 +5,15 @@
  * `color` is only the fallback for an icon with no colored ancestor.
  */
 .ds-icon {
+  --ds-icon-color: var(--color-foreground);
+  --ds-icon-stroke-width: var(--border-width-focus);
   box-sizing: content-box;
   display: inline-block;
   flex-shrink: 0;
   vertical-align: middle;
-  color: var(--color-foreground);
+  color: var(--ds-icon-color);
   /* strokeWidth: border.width.focus — line glyphs use the focus-ring width so they stay legible at xs. */
-  stroke-width: var(--border-width-focus);
+  stroke-width: var(--ds-icon-stroke-width);
   overflow: visible;
 }
 
@@ -21,13 +23,13 @@
 }
 
 /* size → font.size.{size}: width and height. */
-.ds-icon--xs { font-size: var(--font-size-xs); }
-.ds-icon--sm { font-size: var(--font-size-sm); }
-.ds-icon--md { font-size: var(--font-size-md); }
-.ds-icon--lg { font-size: var(--font-size-lg); }
-.ds-icon--xl { font-size: var(--font-size-xl); }
+.ds-icon--xs { --ds-icon-size: var(--font-size-xs); font-size: var(--ds-icon-size); }
+.ds-icon--sm { --ds-icon-size: var(--font-size-sm); font-size: var(--ds-icon-size); }
+.ds-icon--md { --ds-icon-size: var(--font-size-md); font-size: var(--ds-icon-size); }
+.ds-icon--lg { --ds-icon-size: var(--font-size-lg); font-size: var(--ds-icon-size); }
+.ds-icon--xl { --ds-icon-size: var(--font-size-xl); font-size: var(--ds-icon-size); }
 
-/* inline: 1em of the surrounding text, sitting on its baseline. */
+/* inline: 1em of the surrounding text, sitting on its baseline. The size override has no effect here. */
 .ds-icon--inline {
   font-size: inherit;
   vertical-align: -0.125em;

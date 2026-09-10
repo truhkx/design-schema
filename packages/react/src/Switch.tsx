@@ -142,9 +142,9 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
   return (
     <div className={classes}>
       <div className="ds-switch__text">
-        <Text element="label" htmlFor={id} className="ds-switch__label">
+        <label htmlFor={id} className="ds-switch__label">
           {label}
-        </Text>
+        </label>
         {description ? (
           <Text
             element="p"

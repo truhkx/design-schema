@@ -5,7 +5,7 @@ import { Button } from './Button';
 import { Stack } from './Stack';
 
 const fields = (
-  <Stack gap="4">
+  <Stack gap="normal">
     <Input label="Email address" name="email" type="email" required autocomplete="email" />
     <Input
       label="Password"
@@ -15,7 +15,7 @@ const fields = (
       autocomplete="current-password"
       description="At least 8 characters."
     />
-    <Stack direction="horizontal" gap="2" align="start">
+    <Stack direction="horizontal" gap="tight" align="start">
       <Button label="Sign in" type="submit" />
       <Button label="Cancel" variant="secondary" />
     </Stack>

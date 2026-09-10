@@ -22,7 +22,7 @@ const meta: Meta<TextArgs> = {
     tone: { control: 'select', options: ['default', 'strong', 'muted', 'danger', 'onAction'] },
     align: { control: 'select', options: ['start', 'center', 'end'] },
     truncate: { control: 'boolean' },
-    element: { control: 'select', options: ['p', 'span', 'label', 'legend'] },
+    element: { control: 'select', options: ['p', 'span'] },
   },
   args: {
     size: 'md',
@@ -88,8 +88,6 @@ export const AlignEnd: Story = { args: { align: 'end' } };
 /* element */
 export const ElementP: Story = { args: { element: 'p' } };
 export const ElementSpan: Story = { args: { element: 'span' } };
-export const ElementLabel: Story = { args: { element: 'label', text: 'Email address' } };
-export const ElementLegend: Story = { args: { element: 'legend', text: 'Notification preferences' } };
 
 /* truncate */
 export const Truncate: Story = {

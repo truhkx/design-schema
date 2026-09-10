@@ -10,7 +10,7 @@ const meta: Meta<typeof Stack> = {
   decorators: [withTheme()],
   args: {
     direction: 'vertical',
-    gap: '4',
+    gap: 'normal',
     align: 'stretch',
     justify: 'start',
     wrap: false,
@@ -35,16 +35,11 @@ export const DirectionVertical: Story = { args: { direction: 'vertical' } };
 export const DirectionHorizontal: Story = { args: { direction: 'horizontal', align: 'start' } };
 
 // gap
-export const Gap0: Story = { args: { gap: '0' } };
-export const Gap1: Story = { args: { gap: '1' } };
-export const Gap2: Story = { args: { gap: '2' } };
-export const Gap3: Story = { args: { gap: '3' } };
-export const Gap4: Story = { args: { gap: '4' } };
-export const Gap5: Story = { args: { gap: '5' } };
-export const Gap6: Story = { args: { gap: '6' } };
-export const Gap8: Story = { args: { gap: '8' } };
-export const Gap10: Story = { args: { gap: '10' } };
-export const Gap12: Story = { args: { gap: '12' } };
+export const GapNone: Story = { args: { gap: 'none' } };
+export const GapTight: Story = { args: { gap: 'tight' } };
+export const GapNormal: Story = { args: { gap: 'normal' } };
+export const GapLoose: Story = { args: { gap: 'loose' } };
+export const GapSection: Story = { args: { gap: 'section' } };
 
 // align (cross axis)
 export const AlignStart: Story = { args: { align: 'start' } };
@@ -57,3 +52,7 @@ export const JustifyStart: Story = { args: { direction: 'horizontal', align: 'st
 export const JustifyCenter: Story = { args: { direction: 'horizontal', align: 'start', justify: 'center' } };
 export const JustifyEnd: Story = { args: { direction: 'horizontal', align: 'start', justify: 'end' } };
 export const JustifyBetween: Story = { args: { direction: 'horizontal', align: 'start', justify: 'between' } };
+
+// notable states
+export const Wrap: Story = { args: { direction: 'horizontal', wrap: true, align: 'start' } };
+export const WithOverrides: Story = { args: { gap: 'normal', overrides: { gap: 'space.lg' } } };

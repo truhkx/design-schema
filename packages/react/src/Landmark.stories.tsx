@@ -46,7 +46,7 @@ export const AsDiv: Story = { args: { role: 'banner', as: 'div', label: 'Promoti
 /* a page skeleton: one of each, with two labelled navigations. */
 export const PageSkeleton: Story = {
   render: () => (
-    <Stack gap="4">
+    <Stack gap="section">
       <Landmark role="banner">
         <Landmark role="navigation" label="Main">
           <Text>Main navigation</Text>

@@ -156,28 +156,51 @@
     "runner": "adopted"
   },
   "Heading.web": {
-    "hash": "792d365154789dd5",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
-  },
-  "Icon.web": {
-    "hash": "4f664953880eb552",
-    "lastAttemptHash": "4f664953880eb552",
-    "generatedAt": "2026-09-09T22:10:50+00:00",
-    "model": "fable",
+    "hash": "93845edd55993b24",
+    "lastAttemptHash": "93845edd55993b24",
+    "generatedAt": "2026-09-10T04:44:53+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 2,
-    "costUsd": 2.7612,
+    "costUsd": 0.6025,
     "files": [
-      "packages/react/src/Landmark.tsx",
-      "packages/react/demo/Preferences.tsx"
+      "packages/react/src/Heading.css",
+      "packages/react/src/Heading.test.tsx",
+      "packages/react/src/Heading.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 12,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Icon.web": {
+    "hash": "1a5e93fe91ceb56c",
+    "lastAttemptHash": "1a5e93fe91ceb56c",
+    "generatedAt": "2026-09-10T04:38:03+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.5677,
+    "files": [
+      "packages/react/src/Icon.css",
+      "packages/react/src/Icon.stories.tsx",
+      "packages/react/src/Icon.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 3,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Input.web": {
@@ -239,8 +262,53 @@
     "runner": "adopted"
   },
   "Text.web": {
-    "hash": "b464c6c625f79bcf",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "342c9b77de6cc168",
+    "lastAttemptHash": "342c9b77de6cc168",
+    "generatedAt": "2026-09-10T04:42:25+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.3693,
+    "files": [
+      "packages/react/src/Checkbox.tsx",
+      "packages/react/src/RadioGroup.tsx",
+      "packages/react/src/Switch.tsx",
+      "packages/react/src/Text.css",
+      "packages/react/src/Text.stories.tsx",
+      "packages/react/src/Text.test.tsx",
+      "packages/react/src/Text.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Tooltip.web": {
+    "hash": "68bb45f6a672f4ac",
+    "lastAttemptHash": "68bb45f6a672f4ac",
+    "generatedAt": "2026-09-10T04:34:08+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.7701,
+    "files": [
+      "packages/react/src/Tooltip.css",
+      "packages/react/src/Tooltip.stories.tsx",
+      "packages/react/src/Tooltip.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true
+    }
   }
 }

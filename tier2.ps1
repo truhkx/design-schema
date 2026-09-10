@@ -39,7 +39,14 @@ $batches = @(
   @{ name = "Table";      components = "Table" },
   @{ name = "DataGrid";   components = "DataGrid" },
   @{ name = "Hierarchy";  components = "Tree,TreeGrid" },
-  @{ name = "Streams";    components = "Splitter,Feed" }
+  @{ name = "Streams";    components = "Splitter,Feed" },
+  # Tier 0/1 refresh (decision 2026-09-10): regenerate for override hooks, Icon (react-native-svg), data-ds/testID.
+  # Icon goes first because Tier 1 composes it; Stack was refreshed at the top of Tier 3.
+  @{ name = "Icon";       components = "Icon" },
+  @{ name = "Core";       components = "Button,Heading,Text" },
+  @{ name = "Fields";     components = "Input,Form" },
+  @{ name = "Toggles";    components = "Link,Checkbox,Switch,RadioGroup" },
+  @{ name = "Tier1";      components = "Disclosure,Alert,Landmark,Breadcrumb,Meter" }
 )
 
 $extra = ""

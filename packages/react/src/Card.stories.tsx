@@ -6,7 +6,7 @@ import { Button } from './Button';
 import { Link } from './Link';
 
 const body = (
-  <Stack gap="2">
+  <Stack gap="tight">
     <Text element="p">Unlimited projects, priority support and advanced analytics for growing teams.</Text>
     <Text element="p" tone="muted" size="sm">
       $24/month, billed annually.

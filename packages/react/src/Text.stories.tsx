@@ -57,17 +57,6 @@ export const AlignEnd: Story = { args: { align: 'end' } };
 /* element */
 export const ElementP: Story = { args: { element: 'p' } };
 export const ElementSpan: Story = { args: { element: 'span' } };
-export const ElementLabel: Story = { args: { element: 'label', children: 'Email address' } };
-export const ElementLegend: Story = {
-  args: { element: 'legend', children: 'Contact details' },
-  decorators: [
-    (Story) => (
-      <fieldset>
-        <Story />
-      </fieldset>
-    ),
-  ],
-};
 
 /* truncate */
 export const Truncate: Story = {

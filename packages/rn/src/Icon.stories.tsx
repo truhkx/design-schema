@@ -1,8 +1,10 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { Icon } from './Icon';
+import type { IconProps } from './Icon';
 import { Text } from './Text';
 import { withTheme } from './decorators';
+import { useTheme } from './theme';
 
 const meta: Meta<typeof Icon> = {
   title: 'Icon/React Native',
@@ -40,6 +42,7 @@ export const NameEllipsis: Story = { args: { name: 'ellipsis' } };
 export const NameSearch: Story = { args: { name: 'search' } };
 export const NameArrowRight: Story = { args: { name: 'arrow-right' } };
 export const NameArrowLeft: Story = { args: { name: 'arrow-left' } };
+export const NameCalendar: Story = { args: { name: 'calendar' } };
 
 // size
 export const SizeXs: Story = { args: { size: 'xs' } };
@@ -60,3 +63,22 @@ export const Inline: Story = {
 
 // label — meaningful icon, exposed as an image with this name
 export const Label: Story = { args: { name: 'warning', label: 'Warning: over quota' } };
+
+/** Stands in for a parent (an Alert, say) passing its own resolved color — there is no `currentColor` on native. */
+function WithParentColor(props: IconProps): React.JSX.Element {
+  const { tokens } = useTheme();
+  return <Icon {...props} color={tokens.colorStatusDangerIcon} />;
+}
+// color — React Native only: the parent's foreground token, since there is no currentColor
+export const Color: Story = {
+  args: { name: 'external' },
+  render: (args) => <WithParentColor {...args} />,
+};
+
+// overrides — replaces individual style bindings with a different token
+export const WithOverrides: Story = {
+  args: {
+    name: 'search',
+    overrides: { size: 'font.size.xl', color: 'color.status.danger.icon', strokeWidth: 'border.width.thin' },
+  },
+};

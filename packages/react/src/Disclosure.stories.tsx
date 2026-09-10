@@ -53,7 +53,7 @@ export const KeepMounted: Story = { args: { keepMounted: true } };
 /* accordion: independent disclosures stacked; nothing closes its siblings. */
 export const Accordion: Story = {
   render: (args) => (
-    <Stack gap="0">
+    <Stack gap="none">
       <Disclosure {...args} summary="What happens if I cancel?" headingLevel="3" />
       <Disclosure {...args} summary="Can I change plans later?" headingLevel="3">
         <Text>Yes. Changes take effect at the next billing date.</Text>

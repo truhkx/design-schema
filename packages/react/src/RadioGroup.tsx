@@ -190,14 +190,14 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
       aria-disabled={isDisabled ? 'true' : undefined}
       onBlur={handleBlur}
     >
-      <Text element="legend" weight="medium" className="ds-radio-group__legend">
+      <legend className="ds-radio-group__legend">
         {label}
         {required ? (
           <Text element="span" size="sm" tone="muted" weight="regular" className="ds-radio-group__required">
             {REQUIRED_INDICATOR}
           </Text>
         ) : null}
-      </Text>
+      </legend>
       {description ? (
         <Text element="p" id={descriptionId} size="sm" tone="muted" className="ds-radio-group__description">
           {description}
@@ -230,9 +230,9 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
                   onClick={handleClick}
                   onChange={handleChange(option)}
                 />
-                <Text element="label" htmlFor={optionId} className="ds-radio-group__label">
+                <label htmlFor={optionId} className="ds-radio-group__label">
                   {option.label}
-                </Text>
+                </label>
               </div>
               {option.description ? (
                 <Text

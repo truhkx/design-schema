@@ -1,0 +1,79 @@
+/* Tooltip — styled only through Design Schema token custom properties. */
+
+.ds-tooltip {
+  --ds-tooltip-radius: var(--radius-sm);
+  --ds-tooltip-padding-block: var(--space-1);
+  --ds-tooltip-padding-inline: var(--space-2);
+  --ds-tooltip-offset: var(--space-1);
+  --ds-tooltip-max-width: var(--space-20);
+  --ds-tooltip-font-family: var(--font-family-body); /* literal-ok: CSS custom-property name, not a font stack */
+  --ds-tooltip-font-size: var(--font-size-sm);
+  --ds-tooltip-line-height: var(--font-line-height-normal);
+  --ds-tooltip-shadow: var(--shadow-raised);
+  --ds-tooltip-layer: var(--layer-toast);
+  --ds-tooltip-enter: var(--motion-duration-fast);
+  --ds-tooltip-exit: var(--motion-duration-fast);
+  box-sizing: border-box;
+  position: fixed;
+  padding-block: var(--ds-tooltip-padding-block);
+  padding-inline: var(--ds-tooltip-padding-inline);
+  /* maxWidth: space.20 × 3 (≈240px at comfortable density); longer text wraps. */
+  max-inline-size: calc(var(--ds-tooltip-max-width) * 3);
+  /* surface/text: locked — never overridable. Inverted so the tooltip reads as a label, not a panel. */
+  background-color: var(--color-inverse-surface);
+  color: var(--color-inverse-foreground);
+  border-radius: var(--ds-tooltip-radius);
+  box-shadow: var(--ds-tooltip-shadow);
+  font-family: var(--ds-tooltip-font-family);
+  font-size: var(--ds-tooltip-font-size);
+  line-height: var(--ds-tooltip-line-height);
+  z-index: var(--ds-tooltip-layer);
+  pointer-events: auto;
+  opacity: 0;
+  --ds-tooltip-enter-offset-x: 0;
+  --ds-tooltip-enter-offset-y: 0;
+  transform: translate(var(--ds-tooltip-enter-offset-x), var(--ds-tooltip-enter-offset-y));
+  transition-property: opacity, transform;
+  transition-duration: var(--ds-tooltip-exit);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+/* offset: the gap between trigger and tooltip, on the side the tooltip sits away from the trigger.
+   The fixed top/left/right/bottom coordinate itself is set from the trigger rect in JS with no gap. */
+.ds-tooltip[data-placement='top'] {
+  margin-block-end: var(--ds-tooltip-offset);
+  --ds-tooltip-enter-offset-y: var(--ds-tooltip-offset);
+}
+
+.ds-tooltip[data-placement='bottom'] {
+  margin-block-start: var(--ds-tooltip-offset);
+  --ds-tooltip-enter-offset-y: calc(-1 * var(--ds-tooltip-offset));
+}
+
+.ds-tooltip[data-placement='start'] {
+  margin-inline-end: var(--ds-tooltip-offset);
+  --ds-tooltip-enter-offset-x: var(--ds-tooltip-offset);
+}
+
+.ds-tooltip[data-placement='end'] {
+  margin-inline-start: var(--ds-tooltip-offset);
+  --ds-tooltip-enter-offset-x: calc(-1 * var(--ds-tooltip-offset));
+}
+
+/* enter: fade and a short rise/slide from the offset direction; instant under reduced motion. */
+.ds-tooltip--entered {
+  opacity: 1;
+  transform: translate(0, 0);
+  transition-duration: var(--ds-tooltip-enter);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-tooltip {
+    transition: none;
+  }
+}
+
+.ds-tooltip__text {
+  display: block;
+  white-space: normal;
+}

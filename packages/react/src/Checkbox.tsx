@@ -188,14 +188,14 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           onClick={handleClick}
           onChange={handleChange}
         />
-        <Text element="label" htmlFor={id} className="ds-checkbox__label">
+        <label htmlFor={id} className="ds-checkbox__label">
           {label}
           {required ? (
             <Text element="span" size="sm" tone="muted" className="ds-checkbox__required">
               {REQUIRED_INDICATOR}
             </Text>
           ) : null}
-        </Text>
+        </label>
       </div>
       {description ? (
         <Text

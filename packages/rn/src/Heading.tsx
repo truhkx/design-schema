@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { Text as RNText } from 'react-native';
 import type { TextStyle } from 'react-native';
+import { resolveToken } from '@design-schema/tokens';
+import type { TokenRef } from '@design-schema/tokens';
 import { toTextAlign } from './Text';
 import type { TextAlign } from './Text';
 import { toFontWeight, toLineHeight, useTheme } from './theme';
@@ -9,6 +11,9 @@ import type { Tokens } from './theme';
 /** Position in the document outline. The schema declares the values as strings; numbers are accepted for ergonomics. */
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6 | '1' | '2' | '3' | '4' | '5' | '6';
 export type HeadingSize = '4xl' | '3xl' | '2xl' | 'xl' | 'lg' | 'md';
+
+/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+export type HeadingOverridableBinding = 'fontFamily' | 'fontWeight' | 'fontSize' | 'lineHeight' | 'marginBlockEnd';
 
 export interface HeadingProps {
   /**
@@ -23,6 +28,8 @@ export interface HeadingProps {
   children: React.ReactNode;
   /** Horizontal text alignment. */
   align?: TextAlign;
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  overrides?: Partial<Record<HeadingOverridableBinding, TokenRef>>;
 }
 
 const LEVEL_SIZE: Record<'1' | '2' | '3' | '4' | '5' | '6', HeadingSize> = {
@@ -58,24 +65,29 @@ const SIZE_TOKEN = {
  * size only; VoiceOver and TalkBack expose the header trait but not a level. Do not
  * simulate levels with `accessibilityLabel` prefixes.
  */
-export function Heading({ level, size, children, align = 'start' }: HeadingProps): React.JSX.Element {
-  const { tokens } = useTheme();
+export function Heading({ level, size, children, align = 'start', overrides }: HeadingProps): React.JSX.Element {
+  const { tokens: t } = useTheme();
   const levelKey = String(level) as '1' | '2' | '3' | '4' | '5' | '6';
   const resolvedSize: HeadingSize = size ?? LEVEL_SIZE[levelKey];
-  const fontSize = tokens[SIZE_TOKEN[resolvedSize]];
+  const defaultFontSize = t[SIZE_TOKEN[resolvedSize]];
+  const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : defaultFontSize;
+  const lineHeightMultiplier = overrides?.lineHeight
+    ? (resolveToken(t, overrides.lineHeight) as number)
+    : t.fontLineHeightTight;
+  const fontWeight = overrides?.fontWeight ? (resolveToken(t, overrides.fontWeight) as number) : t.fontWeightSemibold;
 
   const style: TextStyle = {
-    fontFamily: tokens.fontFamilyHeading,
-    fontWeight: toFontWeight(tokens.fontWeightSemibold),
+    fontFamily: overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyHeading,
+    fontWeight: toFontWeight(fontWeight),
     fontSize,
-    lineHeight: toLineHeight(fontSize, tokens.fontLineHeightTight),
-    color: tokens.colorForegroundStrong,
-    marginBottom: tokens.spaceSm,
+    lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
+    color: t.colorForegroundStrong,
+    marginBottom: overrides?.marginBlockEnd ? (resolveToken(t, overrides.marginBlockEnd) as number) : t.spaceSm,
     textAlign: toTextAlign(align),
   };
 
   return (
-    <RNText accessibilityRole="header" allowFontScaling style={style}>
+    <RNText accessibilityRole="header" allowFontScaling style={style} testID="Heading">
       {children}
     </RNText>
   );

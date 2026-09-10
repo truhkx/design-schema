@@ -23,8 +23,8 @@ export function SignIn({ onSubmit, onInvalid, onForgotPassword }: SignInProps) {
   };
 
   return (
-    <Stack gap="6" align="stretch" element="section" aria-labelledby="sign-in-title">
-      <Stack gap="1">
+    <Stack gap="section" align="stretch" element="section" aria-labelledby="sign-in-title">
+      <Stack gap="tight">
         <Heading level="1" id="sign-in-title">
           Sign in
         </Heading>
@@ -32,10 +32,10 @@ export function SignIn({ onSubmit, onInvalid, onForgotPassword }: SignInProps) {
       </Stack>
 
       <Form name="sign-in" label="Sign in" validate="submit" onSubmit={handleSubmit} onInvalid={onInvalid}>
-        <Stack gap="4">
+        <Stack gap="normal">
           <Input label="Email address" name="email" type="email" required autocomplete="email" />
           <Input label="Password" name="password" type="password" required autocomplete="current-password" />
-          <Stack direction="horizontal" gap="2" align="center" justify="between" wrap>
+          <Stack direction="horizontal" gap="tight" align="center" justify="between" wrap>
             <Button label="Sign in" type="submit" variant="primary" />
             <Button label="Forgot password?" variant="ghost" onClick={onForgotPassword} />
           </Stack>

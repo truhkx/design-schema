@@ -182,7 +182,7 @@ component:
     rn:
       element: TextInput
       props: [keyboardType=number-pad, accessibilityLabel, accessibilityHint]
-      notes: 'No core date picker on RN, so the same calendar grid renders in a BottomSheet (height content) opened by the calendar Button; each day a Pressable with accessibilityRole="button", accessibilityState={{ selected, disabled }}, accessibilityLabel from the full formatted date plus "today"/"selected". The header month is announced on change. Typing is supported in the TextInput with the locale pattern. Adopting the community datetimepicker is the one dependency decision that would swap this for the native wheel; the API is designed so that swap changes nothing for consumers.'
+      notes: 'No core date picker on RN, so the same calendar grid renders in a BottomSheet (height content) opened by the calendar Button; each day a Pressable with accessibilityRole="button", accessibilityState={{ selected, disabled }}, accessibilityLabel from the full formatted date plus "today"/"selected". The header month is announced on change. Typing is supported in the TextInput with the locale pattern. The community datetimepicker is deliberately not used (decision 2026-09-10: react-native-svg is the only native dependency) because it cannot take tokens, so the calendar stays the system''s own grid on every platform.'
 ---
 
 A date picker gives two ways to say the same date: type it, or find it on a calendar. People who know the date type it; people who need to see the week pick it. Both produce a plain ISO date — `2026-09-10` — and never a timestamp, because a delivery date or a birthday has no time zone to get wrong.

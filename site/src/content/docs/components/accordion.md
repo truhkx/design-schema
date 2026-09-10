@@ -44,6 +44,9 @@ component:
     onChange:
       description: Fired when the set of open sections changes, with the open ids.
       platforms: { web: onChange, lit: change, rn: onChange }
+    onOpenChange:
+      description: 'Fired per section as it opens or closes, with `{ id, open, reason }` (`reason`: `trigger`, `keyboard`, `exclusive` when another section closed it, `controlled`). The per-item trigger for analytics, lazy loading of a panel''s content, or scrolling the opened section into view; `onChange` remains the set-level event for state.'
+      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange }
   keyboard:
     - { keys: [Enter, ' '], action: Toggles the focused section., from: first, expect: toggles }
     - { keys: [ArrowDown], action: Moves focus to the next trigger; wraps., from: first, expect: focus-next }

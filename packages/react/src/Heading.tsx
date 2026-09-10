@@ -1,10 +1,31 @@
-import { forwardRef, type ComponentPropsWithoutRef, type ElementType, type ReactNode } from 'react';
+import { forwardRef, type ComponentPropsWithoutRef, type CSSProperties, type ElementType, type ReactNode, type Ref } from 'react';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Heading.css';
 
 /** Position in the document outline. Accepts the schema's string values and their numeric equivalents. */
 export type HeadingLevel = '1' | '2' | '3' | '4' | '5' | '6' | 1 | 2 | 3 | 4 | 5 | 6;
 export type HeadingSize = '4xl' | '3xl' | '2xl' | 'xl' | 'lg' | 'md';
 export type HeadingAlign = 'start' | 'center' | 'end';
+
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+export type HeadingOverridableBinding = 'fontFamily' | 'fontWeight' | 'fontSize' | 'lineHeight' | 'marginBlockEnd';
+
+const OVERRIDE_HOOK: Record<HeadingOverridableBinding, string> = {
+  fontFamily: '--ds-heading-font-family', // literal-ok: CSS custom-property hook name, not a font stack
+  fontWeight: '--ds-heading-font-weight',
+  fontSize: '--ds-heading-font-size',
+  lineHeight: '--ds-heading-line-height',
+  marginBlockEnd: '--ds-heading-margin-block-end',
+};
+
+function overridesToStyle(overrides: Partial<Record<HeadingOverridableBinding, TokenRef>>): CSSProperties {
+  const style: Record<string, string> = {};
+  for (const binding of Object.keys(overrides) as HeadingOverridableBinding[]) {
+    const ref = overrides[binding];
+    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+  }
+  return style as CSSProperties;
+}
 
 export interface HeadingProps extends Omit<ComponentPropsWithoutRef<'h1'>, 'children'> {
   /** Position in the document outline. Controls the semantic element, not the visual size. */
@@ -15,6 +36,8 @@ export interface HeadingProps extends Omit<ComponentPropsWithoutRef<'h1'>, 'chil
   children: ReactNode;
   /** Horizontal text alignment. */
   align?: HeadingAlign;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: Partial<Record<HeadingOverridableBinding, TokenRef>>;
 }
 
 const ELEMENT_BY_LEVEL = {
@@ -46,7 +69,7 @@ const SIZE_BY_LEVEL: Record<keyof typeof ELEMENT_BY_LEVEL, HeadingSize> = {
  * the right look without breaking the outline.
  */
 export const Heading = forwardRef<HTMLHeadingElement, HeadingProps>(function Heading(
-  { level, size, children, align = 'start', className, ...rest },
+  { level, size, children, align = 'start', overrides, className, style, ...rest },
   ref,
 ) {
   const key = String(level) as keyof typeof ELEMENT_BY_LEVEL;
@@ -57,8 +80,11 @@ export const Heading = forwardRef<HTMLHeadingElement, HeadingProps>(function Hea
     .filter(Boolean)
     .join(' ');
 
+  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+
   return (
-    <Tag {...rest} ref={ref} className={classes}>
+    <Tag {...rest} ref={ref as Ref<HTMLHeadingElement>} data-ds="Heading" className={classes} style={mergedStyle}>
       {children}
     </Tag>
   );

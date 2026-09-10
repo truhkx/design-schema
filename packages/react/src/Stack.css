@@ -1,26 +1,23 @@
 /* Stack — styled only through Design Schema token custom properties. */
 
 .ds-stack {
+  --ds-stack-gap: var(--layout-gap-normal);
   display: flex;
   margin: 0;
   padding: 0;
   min-inline-size: 0;
+  gap: var(--ds-stack-gap);
 }
 
 .ds-stack--vertical { flex-direction: column; }
 .ds-stack--horizontal { flex-direction: row; }
 
-/* gap → space.{gap} */
-.ds-stack--gap-0 { gap: var(--space-0); }
-.ds-stack--gap-1 { gap: var(--space-1); }
-.ds-stack--gap-2 { gap: var(--space-2); }
-.ds-stack--gap-3 { gap: var(--space-3); }
-.ds-stack--gap-4 { gap: var(--space-4); }
-.ds-stack--gap-5 { gap: var(--space-5); }
-.ds-stack--gap-6 { gap: var(--space-6); }
-.ds-stack--gap-8 { gap: var(--space-8); }
-.ds-stack--gap-10 { gap: var(--space-10); }
-.ds-stack--gap-12 { gap: var(--space-12); }
+/* gap → layout.gap.{gap} */
+.ds-stack--gap-none { --ds-stack-gap: var(--layout-gap-none); }
+.ds-stack--gap-tight { --ds-stack-gap: var(--layout-gap-tight); }
+.ds-stack--gap-normal { --ds-stack-gap: var(--layout-gap-normal); }
+.ds-stack--gap-loose { --ds-stack-gap: var(--layout-gap-loose); }
+.ds-stack--gap-section { --ds-stack-gap: var(--layout-gap-section); }
 
 .ds-stack--align-start { align-items: flex-start; }
 .ds-stack--align-center { align-items: center; }

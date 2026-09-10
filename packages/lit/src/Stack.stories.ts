@@ -13,7 +13,7 @@ interface StackArgs {
   element: StackElement;
 }
 
-const GAPS: StackGap[] = ['0', '1', '2', '3', '4', '5', '6', '8', '10', '12'];
+const GAPS: StackGap[] = ['none', 'tight', 'normal', 'loose', 'section'];
 
 const meta: Meta<StackArgs> = {
   title: 'Stack/Lit',
@@ -28,7 +28,7 @@ const meta: Meta<StackArgs> = {
   },
   args: {
     direction: 'vertical',
-    gap: '4',
+    gap: 'normal',
     align: 'stretch',
     justify: 'start',
     wrap: false,
@@ -61,16 +61,11 @@ export const Horizontal: Story = { args: { direction: 'horizontal', align: 'cent
 
 /* gap */
 const gapStory = (gap: StackGap): Story => ({ args: { gap, direction: 'horizontal', align: 'center' } });
-export const Gap0: Story = gapStory('0');
-export const Gap1: Story = gapStory('1');
-export const Gap2: Story = gapStory('2');
-export const Gap3: Story = gapStory('3');
-export const Gap4: Story = gapStory('4');
-export const Gap5: Story = gapStory('5');
-export const Gap6: Story = gapStory('6');
-export const Gap8: Story = gapStory('8');
-export const Gap10: Story = gapStory('10');
-export const Gap12: Story = gapStory('12');
+export const GapNone: Story = gapStory('none');
+export const GapTight: Story = gapStory('tight');
+export const GapNormal: Story = gapStory('normal');
+export const GapLoose: Story = gapStory('loose');
+export const GapSection: Story = gapStory('section');
 
 /* align (cross axis; shown on a vertical stack so widths differ) */
 export const AlignStart: Story = { args: { align: 'start' } };

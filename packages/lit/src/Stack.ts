@@ -1,11 +1,19 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, css, html, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 
 export type StackDirection = 'vertical' | 'horizontal';
-export type StackGap = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
+export type StackGap = 'none' | 'tight' | 'normal' | 'loose' | 'section';
 export type StackAlign = 'start' | 'center' | 'end' | 'stretch';
 export type StackJustify = 'start' | 'center' | 'end' | 'between';
 export type StackElement = 'div' | 'section' | 'nav' | 'ul' | 'ol';
+
+/** Overridable style hooks; see the `overrides` property. */
+export type StackOverridableBinding = 'gap';
+
+const HOOKS: Record<StackOverridableBinding, string> = {
+  gap: '--ds-stack-gap',
+};
 
 function isRenderable(node: Node): node is Element | Text {
   return node instanceof Element || (node instanceof Text && node.data.trim() !== '');
@@ -14,12 +22,12 @@ function isRenderable(node: Node): node is Element | Text {
 /**
  * `<ds-stack>` — Stack (category: layout, role: none).
  *
- * `<ds-stack direction="horizontal" gap="2">`. The host itself is the flex
- * container (`:host { display: flex }`); children are slotted light-DOM nodes,
- * so their semantics are untouched. `element="ul"`/`"ol"` renders the slot
- * inside a `<ul role="list">` and wraps each child in an `<li>` using manual
- * slot assignment (`slotAssignment: 'manual'`), so the light DOM is never
- * modified. `nav` and `section` render the matching wrapper.
+ * `<ds-stack direction="horizontal" gap="tight">`. The host itself is the
+ * flex container (`:host { display: flex }`); children are slotted light-DOM
+ * nodes, so their semantics are untouched. `element="ul"`/`"ol"` renders the
+ * slot inside a `<ul role="list">` and wraps each child in an `<li>` using
+ * manual slot assignment (`slotAssignment: 'manual'`), so the light DOM is
+ * never modified. `nav` and `section` render the matching wrapper.
  *
  * ## When to use
  *
@@ -46,7 +54,8 @@ export class DsStack extends LitElement {
       flex-wrap: nowrap;
       align-items: stretch;
       justify-content: flex-start;
-      gap: var(--space-4);
+      --ds-stack-gap: var(--layout-gap-normal);
+      gap: var(--ds-stack-gap);
     }
 
     :host([hidden]) {
@@ -60,36 +69,21 @@ export class DsStack extends LitElement {
       flex-direction: row;
     }
 
-    /* gap: space.{gap} */
-    :host([gap='0']) {
-      gap: var(--space-0);
+    /* gap: layout.gap.{gap} */
+    :host([gap='none']) {
+      --ds-stack-gap: var(--layout-gap-none);
     }
-    :host([gap='1']) {
-      gap: var(--space-1);
+    :host([gap='tight']) {
+      --ds-stack-gap: var(--layout-gap-tight);
     }
-    :host([gap='2']) {
-      gap: var(--space-2);
+    :host([gap='normal']) {
+      --ds-stack-gap: var(--layout-gap-normal);
     }
-    :host([gap='3']) {
-      gap: var(--space-3);
+    :host([gap='loose']) {
+      --ds-stack-gap: var(--layout-gap-loose);
     }
-    :host([gap='4']) {
-      gap: var(--space-4);
-    }
-    :host([gap='5']) {
-      gap: var(--space-5);
-    }
-    :host([gap='6']) {
-      gap: var(--space-6);
-    }
-    :host([gap='8']) {
-      gap: var(--space-8);
-    }
-    :host([gap='10']) {
-      gap: var(--space-10);
-    }
-    :host([gap='12']) {
-      gap: var(--space-12);
+    :host([gap='section']) {
+      --ds-stack-gap: var(--layout-gap-section);
     }
 
     :host([align='start']) {
@@ -135,8 +129,8 @@ export class DsStack extends LitElement {
   /** Main axis. `horizontal` follows writing direction (start→end), not left→right. */
   @property({ reflect: true }) direction: StackDirection = 'vertical';
 
-  /** Space between children from the spacing scale. The only way to set spacing. */
-  @property({ reflect: true }) gap: StackGap = '4';
+  /** Space between children, from the layout rhythm. The only way to set spacing between siblings. */
+  @property({ reflect: true }) gap: StackGap = 'normal';
 
   /** Cross-axis alignment. */
   @property({ reflect: true }) align: StackAlign = 'stretch';
@@ -150,16 +144,26 @@ export class DsStack extends LitElement {
   /** Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an `li`. */
   @property() element: StackElement = 'div';
 
+  /** Per-instance style overrides: `{ gap: 'layout.gap.loose' }`. */
+  @property({ attribute: false }) overrides?: Partial<Record<StackOverridableBinding, TokenRef>>;
+
   private readonly observer = new MutationObserver(() => this.requestUpdate());
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.setAttribute('data-ds', 'Stack');
     this.observer.observe(this, { childList: true });
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.observer.disconnect();
+  }
+
+  protected override willUpdate(changed: PropertyValues): void {
+    if (changed.has('overrides')) {
+      this.applyOverrides();
+    }
   }
 
   private get items(): (Element | Text)[] {
@@ -210,6 +214,18 @@ export class DsStack extends LitElement {
     const [first] = slots;
     if (first !== undefined) {
       first.assign(...items);
+    }
+  }
+
+  private applyOverrides(): void {
+    for (const binding of Object.keys(HOOKS) as StackOverridableBinding[]) {
+      const ref = this.overrides?.[binding];
+      const hook = HOOKS[binding];
+      if (ref === undefined) {
+        this.style.removeProperty(hook);
+      } else {
+        this.style.setProperty(hook, cssVar(ref));
+      }
     }
   }
 }

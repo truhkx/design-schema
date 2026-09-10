@@ -27,22 +27,25 @@
     }
   },
   "Box.lit": {
-    "hash": "9f2cf6b25360fbf6",
-    "lastAttemptHash": "9f2cf6b25360fbf6",
-    "generatedAt": "2026-09-10T02:17:38+00:00",
+    "hash": "327bf19e583dd3cf",
+    "lastAttemptHash": "327bf19e583dd3cf",
+    "generatedAt": "2026-09-10T04:49:15+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3136,
+    "costUsd": 0.1686,
     "files": [
+      "packages/lit/src/Box.stories.ts",
       "packages/lit/src/Box.ts"
     ],
-    "gaps": 1,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Breadcrumb.lit": {
@@ -156,29 +159,51 @@
     "runner": "adopted"
   },
   "Heading.lit": {
-    "hash": "413cd6d1cbf66fc3",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
-  },
-  "Icon.lit": {
-    "hash": "ba00c2bd082d0770",
-    "lastAttemptHash": "ba00c2bd082d0770",
-    "generatedAt": "2026-09-09T22:13:29+00:00",
-    "model": "fable",
+    "hash": "b05364a311be7a5c",
+    "lastAttemptHash": "b05364a311be7a5c",
+    "generatedAt": "2026-09-10T04:45:54+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.7708,
+    "rounds": 2,
+    "costUsd": 0.6678,
     "files": [
-      "packages/lit/src/Icon.ts",
-      "packages/lit/src/Icon.stories.ts",
+      "packages/lit/src/Heading.stories.ts",
+      "packages/lit/src/Heading.test.ts",
+      "packages/lit/src/Heading.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
-      "typecheck": true
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Icon.lit": {
+    "hash": "c42b8af44c81852b",
+    "lastAttemptHash": "c42b8af44c81852b",
+    "generatedAt": "2026-09-10T04:39:49+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.8433,
+    "files": [
+      "packages/lit/src/Icon.stories.ts",
+      "packages/lit/src/Icon.test.ts",
+      "packages/lit/src/Icon.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
     }
   },
   "Input.lit": {
@@ -229,9 +254,28 @@
     "runner": "adopted"
   },
   "Stack.lit": {
-    "hash": "2acb2c86fd849b6e",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "d3d2d06f6cb02dda",
+    "lastAttemptHash": "d3d2d06f6cb02dda",
+    "generatedAt": "2026-09-10T04:48:44+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.6359,
+    "files": [
+      "packages/lit/src/Stack.stories.ts",
+      "packages/lit/src/Stack.test.ts",
+      "packages/lit/src/Stack.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   },
   "Switch.lit": {
     "hash": "e97a71a938e5e0ae",
@@ -239,8 +283,22 @@
     "runner": "adopted"
   },
   "Text.lit": {
-    "hash": "d018932fed9f2910",
-    "adoptedAt": "2026-09-09T21:36:50+00:00",
-    "runner": "adopted"
+    "hash": "6e970c7b31efd165",
+    "lastAttemptHash": "6e970c7b31efd165",
+    "generatedAt": "2026-09-10T04:43:01+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.7662,
+    "files": [],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
   }
 }

@@ -30,6 +30,7 @@ const NAMES: IconName[] = [
   'search',
   'arrow-right',
   'arrow-left',
+  'calendar',
 ];
 
 const meta: Meta<IconArgs> = {
@@ -81,6 +82,7 @@ export const NameEllipsis: Story = { args: { name: 'ellipsis' } };
 export const NameSearch: Story = { args: { name: 'search' } };
 export const NameArrowRight: Story = { args: { name: 'arrow-right' } };
 export const NameArrowLeft: Story = { args: { name: 'arrow-left' } };
+export const NameCalendar: Story = { args: { name: 'calendar' } };
 
 /* size */
 export const SizeXs: Story = { args: { size: 'xs' } };

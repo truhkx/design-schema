@@ -1,6 +1,7 @@
-import { LitElement, css, html, type TemplateResult } from 'lit';
+import { LitElement, css, html, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import { cssVar, type TokenRef } from '@design-schema/tokens';
 
 export type IconName =
   | 'check'
@@ -20,9 +21,19 @@ export type IconName =
   | 'ellipsis'
   | 'search'
   | 'arrow-right'
-  | 'arrow-left';
+  | 'arrow-left'
+  | 'calendar';
 
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+
+/** Overridable style hooks; see the `overrides` property. */
+export type IconOverridableBinding = 'size' | 'color' | 'strokeWidth';
+
+const HOOKS: Record<IconOverridableBinding, string> = {
+  size: '--ds-icon-size',
+  color: '--ds-icon-color',
+  strokeWidth: '--ds-icon-stroke-width',
+};
 
 /**
  * The glyph table (anatomy: glyph), drawn on a 16×16 grid. Module-private on
@@ -68,6 +79,9 @@ const GLYPHS: Record<IconName, TemplateResult> = {
   search: html`<circle cx="7" cy="7" r="4.5" /><path d="m10.5 10.5 3.5 3.5" />`,
   'arrow-right': html`<path d="M3 8h10M9 4l4 4-4 4" />`,
   'arrow-left': html`<path d="M13 8H3M7 4 3 8l4 4" />`,
+  calendar: html`<path
+    d="M3 3.5h10a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1ZM2 6.5h12M5 2v3M11 2v3"
+  />`,
 };
 
 /**
@@ -101,37 +115,34 @@ const GLYPHS: Record<IconName, TemplateResult> = {
 @customElement('ds-icon')
 export class DsIcon extends LitElement {
   static override styles = css`
-    /* size: font.size.{size}; color: inherited (currentColor), color.foreground at the root */
+    /* size: font.size.{size} via --ds-icon-size; color: currentColor, falling back to inherit so an ancestor (Button, Link, Alert) colors this icon for free */
     :host {
       display: inline-flex;
       flex-shrink: 0;
-      inline-size: var(--font-size-md);
-      block-size: var(--font-size-md);
-      color: inherit;
+      --ds-icon-size: var(--font-size-md);
+      --ds-icon-stroke-width: var(--border-width-focus);
+      inline-size: var(--ds-icon-size);
+      block-size: var(--ds-icon-size);
+      color: var(--ds-icon-color, inherit);
     }
 
     :host([size='xs']) {
-      inline-size: var(--font-size-xs);
-      block-size: var(--font-size-xs);
+      --ds-icon-size: var(--font-size-xs);
     }
     :host([size='sm']) {
-      inline-size: var(--font-size-sm);
-      block-size: var(--font-size-sm);
+      --ds-icon-size: var(--font-size-sm);
     }
     :host([size='md']) {
-      inline-size: var(--font-size-md);
-      block-size: var(--font-size-md);
+      --ds-icon-size: var(--font-size-md);
     }
     :host([size='lg']) {
-      inline-size: var(--font-size-lg);
-      block-size: var(--font-size-lg);
+      --ds-icon-size: var(--font-size-lg);
     }
     :host([size='xl']) {
-      inline-size: var(--font-size-xl);
-      block-size: var(--font-size-xl);
+      --ds-icon-size: var(--font-size-xl);
     }
 
-    /* inline: 1em of the surrounding text, aligned to its baseline; ignores size */
+    /* inline: 1em of the surrounding text, aligned to its baseline; ignores size (and any size override) */
     :host([inline]) {
       display: inline-block;
       vertical-align: -0.125em;
@@ -151,7 +162,7 @@ export class DsIcon extends LitElement {
       overflow: visible;
       fill: none;
       stroke: currentColor;
-      stroke-width: var(--border-width-focus);
+      stroke-width: var(--ds-icon-stroke-width);
       stroke-linecap: round;
       stroke-linejoin: round;
     }
@@ -186,6 +197,32 @@ export class DsIcon extends LitElement {
    * technology. Most icons sit next to text and should have no label.
    */
   @property() label?: string;
+
+  /** Per-instance style overrides: `{ color: 'color.status.danger.icon' }`. */
+  @property({ attribute: false }) overrides?: Partial<Record<IconOverridableBinding, TokenRef>>;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'Icon');
+  }
+
+  protected override willUpdate(changed: PropertyValues): void {
+    if (changed.has('overrides')) {
+      this.applyOverrides();
+    }
+  }
+
+  private applyOverrides(): void {
+    for (const binding of Object.keys(HOOKS) as IconOverridableBinding[]) {
+      const ref = this.overrides?.[binding];
+      const hook = HOOKS[binding];
+      if (ref === undefined) {
+        this.style.removeProperty(hook);
+      } else {
+        this.style.setProperty(hook, cssVar(ref));
+      }
+    }
+  }
 
   protected override render() {
     const glyph: TemplateResult | undefined = GLYPHS[this.name];

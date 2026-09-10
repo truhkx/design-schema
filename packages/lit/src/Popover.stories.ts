@@ -6,10 +6,11 @@ import './Button.js';
 import './Input.js';
 import './Text.js';
 import './Link.js';
-import type { PopoverPlacement } from './Popover.js';
+import type { PopoverHeadingLevel, PopoverPlacement } from './Popover.js';
 
 interface PopoverArgs {
   heading?: string;
+  headingLevel: PopoverHeadingLevel;
   placement: PopoverPlacement;
   modal: boolean;
   showArrow: boolean;
@@ -28,9 +29,14 @@ const meta: Meta<PopoverArgs> = {
       control: 'select',
       options: ['bottom-start', 'bottom', 'bottom-end', 'top-start', 'top', 'top-end', 'start', 'end'],
     },
+    headingLevel: {
+      control: 'select',
+      options: ['2', '3', '4'],
+    },
   },
   args: {
     heading: 'Filters',
+    headingLevel: '3',
     placement: 'bottom',
     modal: false,
     showArrow: false,
@@ -39,6 +45,7 @@ const meta: Meta<PopoverArgs> = {
   render: (args) => html`
     <ds-popover
       heading=${ifDefined(args.heading)}
+      heading-level=${args.headingLevel}
       placement=${args.placement}
       ?modal=${args.modal}
       ?show-arrow=${args.showArrow}
@@ -57,6 +64,11 @@ export default meta;
 type Story = StoryObj<PopoverArgs>;
 
 export const Default: Story = {};
+
+/* headingLevel */
+export const HeadingLevel2: Story = { args: { headingLevel: '2', open: true } };
+export const HeadingLevel3: Story = { args: { headingLevel: '3', open: true } };
+export const HeadingLevel4: Story = { args: { headingLevel: '4', open: true } };
 
 /* placement */
 export const PlacementBottomStart: Story = { args: { placement: 'bottom-start', open: true } };

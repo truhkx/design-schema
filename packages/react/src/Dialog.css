@@ -10,6 +10,7 @@
   --ds-dialog-part-gap: var(--layout-gap-loose);
   --ds-dialog-header-gap: var(--layout-gap-normal);
   --ds-dialog-footer-gap: var(--layout-gap-tight);
+  --ds-dialog-description-gap: var(--layout-gap-tight);
   --ds-dialog-width-sm: var(--layout-max-width-prose);
   --ds-dialog-layer: var(--layer-dialog);
   --ds-dialog-enter: var(--motion-duration-base);
@@ -78,18 +79,31 @@
 .ds-dialog__heading-group {
   display: flex;
   flex-direction: column;
-  gap: var(--layout-gap-tight);
+  gap: var(--ds-dialog-description-gap);
   min-inline-size: 0;
 }
 
-.ds-dialog__title {
+.ds-dialog__heading {
   min-inline-size: 0;
 }
 
-/* focus-visible: the title is only focused programmatically (initialFocus="title"), never removed. */
-.ds-dialog__title:focus-visible {
+/* focus-visible: the heading is only focused programmatically (initialFocus="title"), never removed. */
+.ds-dialog__heading:focus-visible {
   outline: var(--border-width-focus) solid var(--color-border-focus);
   outline-offset: var(--border-width-focus);
+}
+
+/* hideHeading: visually hidden, clipped to a 1px box — the standard sanctioned pixel literals */
+.ds-dialog__visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .ds-dialog__close {

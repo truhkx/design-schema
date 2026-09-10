@@ -9,6 +9,8 @@ import './Box.js';
 import './Button.js';
 import './Icon.js';
 
+export type PopoverHeadingLevel = '2' | '3' | '4';
+
 export type PopoverPlacement =
   | 'bottom-start'
   | 'bottom'
@@ -356,6 +358,9 @@ export class DsPopover extends LitElement {
   /** Optional heading at the top of the panel; also the accessible name when set. */
   @property() heading?: string;
 
+  /** Heading level of the panel heading, so it fits the page outline. */
+  @property({ attribute: 'heading-level', reflect: true }) headingLevel: PopoverHeadingLevel = '3';
+
   /** Controlled open state. Omit for uncontrolled (the trigger toggles it). */
   @property({ type: Boolean, reflect: true }) open?: boolean;
 
@@ -457,7 +462,7 @@ export class DsPopover extends LitElement {
       >
         <div class=${classMap({ content: true, 'has-close': this.dismissible })}>
           ${hasHeading
-            ? html`<ds-heading id="heading" part="heading" level="3" size="md" tabindex="-1">${this.heading}</ds-heading>`
+            ? html`<ds-heading id="heading" part="heading" level=${this.headingLevel} size="md" tabindex="-1">${this.heading}</ds-heading>`
             : nothing}
           <ds-box part="body"><slot @slotchange=${this.handleBodySlotChange}></slot></ds-box>
           ${this.dismissible

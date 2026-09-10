@@ -14,7 +14,7 @@ function DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogPro
     <>
       <Button label="Rename project" onClick={() => setOpen(true)} />
       <Dialog
-        title="Rename project"
+        heading="Rename project"
         {...rest}
         open={open}
         onClose={(reason) => {
@@ -49,9 +49,10 @@ const meta = {
   component: Dialog,
   args: {
     open: false,
-    title: 'Rename project',
+    heading: 'Rename project',
     description: 'Choose a new name. Existing links keep working.',
     children: defaultBody,
+    hideHeading: false,
     size: 'md',
     dismissible: true,
     initialFocus: 'first',
@@ -93,6 +94,13 @@ export const WithoutFooter: Story = {
   args: {
     footer: null,
     children: <Text>Use the close button or Escape to dismiss this dialog.</Text>,
+  },
+};
+
+export const HideHeading: Story = {
+  args: {
+    hideHeading: true,
+    description: undefined,
   },
 };
 

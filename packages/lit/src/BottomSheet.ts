@@ -9,6 +9,7 @@ import './Box.js';
 import './Stack.js';
 import './FocusScope.js';
 import './Dialog.js';
+import type { DialogOverridableBinding } from './Dialog.js';
 
 export type BottomSheetHeight = 'content' | 'half' | 'full';
 export type BottomSheetCloseReason = 'escape' | 'close-button' | 'scrim' | 'drag' | 'action';

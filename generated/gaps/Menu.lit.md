@@ -21,3 +21,7 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: keyboard action-item Home/End rows list `from: last`/`from: first` but the doc means "from anywhere while open" — implemented as always-first/always-last regardless of current focus, matching every other component's Home/End semantics.
 - Menu: `minWidth` doc says space.20 × 2.5 with 'the generator multiplies; no new token' — implemented as calc(var(--space-20) * 2.5) inline rather than a precomputed token, since no such token exists.
 - Menu: typeahead reset timing (500ms) has no token in the schema (it's an interaction timing, not motion) — chosen as a local constant rather than guessing a motion token.
+
+## 2026-09-10 18:05 — round 1
+
+- Menu: the `typeaheadReset` (motion.duration.loop) and `maxHeight` (layout.maxWidth.prose) style bindings from the schema were missing from the already-existing implementation — typeahead used a hardcoded 500ms constant instead of the token, and the popup's max-block-size only clamped to the viewport with no cap token. Added both as overridable hooks (`--ds-menu-typeahead-reset`, `--ds-menu-max-height`), wired the popup's max-block-size to `min(var(--ds-menu-max-height), viewport-gutter)`, and read the typeahead reset duration from the CSS hook at runtime via getComputedStyle (the token resolves to a `Nms` string, parsed with parseFloat like the existing popup-offset read).

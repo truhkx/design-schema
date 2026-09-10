@@ -38,6 +38,7 @@ export type DialogOverridableBinding =
   | 'partGap'
   | 'headerGap'
   | 'footerGap'
+  | 'descriptionGap'
   | 'widthSm'
   | 'layer'
   | 'enter'
@@ -53,6 +54,7 @@ const OVERRIDE_HOOK: Record<DialogOverridableBinding, string> = {
   partGap: '--ds-dialog-part-gap',
   headerGap: '--ds-dialog-header-gap',
   footerGap: '--ds-dialog-footer-gap',
+  descriptionGap: '--ds-dialog-description-gap',
   widthSm: '--ds-dialog-width-sm',
   layer: '--ds-dialog-layer',
   enter: '--ds-dialog-enter',
@@ -96,13 +98,15 @@ export interface DialogProps
   /** Controlled visibility. The consumer owns it; the dialog requests changes through `onClose`. */
   open: boolean;
   /** The dialog's title, rendered as a level-2 Heading and used as the accessible name. Says what the task is ("Rename project"). */
-  title: string;
+  heading: string;
   /** One sentence under the title explaining the task or consequence. Becomes the accessible description. */
   description?: string;
   /** The body — a Form, Text, or controls. Scrolls inside the surface when taller than the viewport; header and footer stay put. */
   children: ReactNode;
   /** The action row. Primary action first, then one secondary; follows Form's action-order rule. A dialog with no footer must be dismissable from its body. */
   footer?: ReactNode;
+  /** Visually hide the heading while it remains the accessible name (BottomSheet forwards its own hideHeading here above the breakpoint). */
+  hideHeading?: boolean;
   /** Surface width on wide viewports. Full-width below the content measure on every size. */
   size?: DialogSize;
   /** Escape, the close button and a scrim click all request close. Set false for a dialog that must be answered (then provide the answers in the footer); Escape still fires `onClose` with reason `escape` so the consumer can decide. */
@@ -126,16 +130,17 @@ export interface DialogProps
  * Use a Dialog for a short task that must complete before the user continues and needs its own
  * space: rename, create-with-a-few-fields, choose from options with consequences, confirm
  * something reversible with a form attached. Keep it to one screen of content; a dialog that
- * scrolls much is a page. Give it a `title` that names the task and a `footer` with the completing
+ * scrolls much is a page. Give it a `heading` that names the task and a `footer` with the completing
  * action first.
  */
 export const Dialog = forwardRef<HTMLDialogElement, DialogProps>(function Dialog(
   {
     open,
-    title,
+    heading,
     description,
     children,
     footer,
+    hideHeading = false,
     size = 'md',
     dismissible = true,
     initialFocus = 'first',
@@ -150,7 +155,7 @@ export const Dialog = forwardRef<HTMLDialogElement, DialogProps>(function Dialog
   ref,
 ) {
   const generatedId = useId();
-  const titleId = `ds-dialog${generatedId}-title`;
+  const headingId = `ds-dialog${generatedId}-heading`;
   const descriptionId = `ds-dialog${generatedId}-description`;
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
@@ -158,7 +163,7 @@ export const Dialog = forwardRef<HTMLDialogElement, DialogProps>(function Dialog
 
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLElement | null>(null);
-  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
@@ -169,8 +174,8 @@ export const Dialog = forwardRef<HTMLDialogElement, DialogProps>(function Dialog
   const latest = useRef({ initialFocus, onOpened });
   latest.current = { initialFocus, onOpened };
 
-  if (isDev && !title) {
-    console.warn('Dialog: `title` is required and becomes the accessible name; it must not be empty.');
+  if (isDev && !heading) {
+    console.warn('Dialog: `heading` is required and becomes the accessible name; it must not be empty.');
   }
 
   useEffect(() => {
@@ -191,7 +196,7 @@ export const Dialog = forwardRef<HTMLDialogElement, DialogProps>(function Dialog
 
     const { initialFocus: focusTarget } = latest.current;
     if (focusTarget === 'title') {
-      titleRef.current?.focus();
+      headingRef.current?.focus();
     } else if (focusTarget === 'close') {
       closeButtonRef.current?.focus();
     } else {
@@ -276,6 +281,10 @@ export const Dialog = forwardRef<HTMLDialogElement, DialogProps>(function Dialog
   const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
   const bodyOverrides = overrides?.inset ? { paddingBlock: overrides.inset, paddingInline: overrides.inset } : undefined;
 
+  const headingClasses = ['ds-dialog__heading', hideHeading ? 'ds-dialog__visually-hidden' : null]
+    .filter(Boolean)
+    .join(' ');
+
   const node = (
     <dialog
       {...rest}
@@ -283,40 +292,57 @@ export const Dialog = forwardRef<HTMLDialogElement, DialogProps>(function Dialog
       data-ds="Dialog"
       className={classes}
       style={mergedStyle}
-      aria-labelledby={titleId}
+      aria-labelledby={headingId}
       aria-describedby={description ? descriptionId : undefined}
       onCancel={handleCancel}
       onClick={handleScrimClick}
     >
-      <FocusScope trapped autoFocus="none" restoreFocus>
-        <div className="ds-dialog__surface" ref={surfaceRef}>
-          <div className="ds-dialog__header">
+      <FocusScope trapped autoFocus="none" restoreFocus data-part="focusScope">
+        <div className="ds-dialog__surface" ref={surfaceRef} data-part="surface">
+          <div className="ds-dialog__header" data-part="header">
             <div className="ds-dialog__heading-group">
-              <Heading level={2} id={titleId} ref={titleRef} tabIndex={-1} className="ds-dialog__title">
-                {title}
+              <Heading
+                level={2}
+                id={headingId}
+                ref={headingRef}
+                tabIndex={-1}
+                className={headingClasses}
+                data-part="heading"
+              >
+                {heading}
               </Heading>
               {description ? (
-                <Text id={descriptionId} tone="muted" size="sm" className="ds-dialog__description">
+                <Text id={descriptionId} tone="muted" size="sm" className="ds-dialog__description" data-part="description">
                   {description}
                 </Text>
               ) : null}
             </div>
-            <Button
-              ref={closeButtonRef}
-              variant="ghost"
-              size="sm"
-              iconOnly
-              label={COPY.closeLabel}
-              className="ds-dialog__close"
-              onClick={handleCloseButtonClick}
-              leadingIcon={<Icon name="close" inline />}
-            />
+            {dismissible ? (
+              <Button
+                ref={closeButtonRef}
+                variant="ghost"
+                size="sm"
+                iconOnly
+                label={COPY.closeLabel}
+                className="ds-dialog__close"
+                data-part="closeButton"
+                onClick={handleCloseButtonClick}
+                leadingIcon={<Icon name="close" inline />}
+              />
+            ) : null}
           </div>
-          <Box element="div" inset="lg" overrides={bodyOverrides} className="ds-dialog__body" ref={bodyRef}>
+          <Box
+            element="div"
+            inset="lg"
+            overrides={bodyOverrides}
+            className="ds-dialog__body"
+            data-part="body"
+            ref={bodyRef}
+          >
             {children}
           </Box>
           {footer !== undefined ? (
-            <div className="ds-dialog__footer">
+            <div className="ds-dialog__footer" data-part="footer">
               <Stack direction="horizontal" gap="tight" justify="end">
                 {footer}
               </Stack>

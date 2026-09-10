@@ -43,14 +43,18 @@ export interface ToastProps {
   message: string;
   /** Sets the leading icon; `neutral` has none. Toasts do not use tinted backgrounds — the icon and message carry the tone. */
   tone?: ToastTone;
-  /** Label for a single action button ("Undo", "View"). When present the toast should use `duration="persistent"` so the user has time to act. */
+  /** Label for a single action button ("Undo", "View"). When present the toast stays longer and pauses on hover and focus. */
   actionLabel?: string;
-  /** `short` ≈ 5s, `long` ≈ 10s (both computed from `motion.duration.loop` so themes without motion still get sensible times), `persistent` until dismissed. */
+  /**
+   * `short` ≈ 5s, `long` ≈ 10s (both computed from `motion.duration.loop` so themes without motion
+   * still get sensible times), `persistent` until dismissed. When `actionLabel` is set or `tone` is
+   * `danger` the toast is persistent regardless of this prop (a dev warning notes the override).
+   */
   duration?: ToastDuration;
   /** Shows a dismiss button. Persistent toasts are always dismissible regardless of this prop. */
   dismissible?: boolean;
-  /** Stable identity; a `ToastProvider` showing a toast with the same id replaces the previous one instead of stacking. Unused by a standalone `Toast`. */
-  id?: string;
+  /** Stable identity; a `ToastProvider` showing a toast with the same toastId replaces the previous one instead of stacking. Unused by a standalone `Toast`. */
+  toastId?: string;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<ToastOverridableBinding, TokenRef>>;
   /** Fired when the action button is activated. The toast then dismisses with reason `action`. */
@@ -100,10 +104,12 @@ const DURATION_LOOPS = { short: 6, long: 12 } as const satisfies Record<'short' 
  * regions, so `AccessibilityInfo.announceForAccessibility(message)` fires once on
  * mount. The toast fades and rises in over `enter`, and fades out over `exit`
  * before calling `onDismiss` — both skipped (jumping straight to the resting value)
- * under reduced motion. A timer dismisses the toast after `duration` unless
- * `duration` is `persistent`; touching the toast (`onTouchStart`/`onTouchEnd`)
- * pauses and resumes it, since native has no hover and no reliable way to observe
- * focus entering a composed `Button`'s subtree from outside.
+ * under reduced motion. A timer dismisses the toast after the effective duration
+ * unless that duration is `persistent` — which it always is once `actionLabel` is
+ * set or `tone` is `danger`, regardless of the `duration` prop (a `__DEV__` warning
+ * flags the mismatch); touching the toast (`onTouchStart`/`onTouchEnd`) pauses and
+ * resumes the timer, since native has no hover and no reliable way to observe focus
+ * entering a composed `Button`'s subtree from outside.
  *
  * Acknowledged native limits: `escape-dismiss` and the F6 focus-navigation model
  * describe the web keyboard model and are not implemented here — there is no
@@ -140,7 +146,10 @@ export function Toast({
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationBase;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
 
-  const isDismissible = duration === 'persistent' ? true : dismissible;
+  // An action or danger tone forces the toast to stay until dismissed, regardless of `duration`.
+  const forcedPersistent = actionLabel !== undefined || tone === 'danger';
+  const effectiveDuration: ToastDuration = forcedPersistent ? 'persistent' : duration;
+  const isDismissible = effectiveDuration === 'persistent' ? true : dismissible;
   const iconName = TONE_ICON[tone];
   const iconColor = t[TONE_COLOR_TOKEN[tone]];
   const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
@@ -151,8 +160,8 @@ export function Toast({
   }, []);
 
   React.useEffect(() => {
-    if (__DEV__ && duration !== 'persistent' && (actionLabel !== undefined || tone === 'danger')) {
-      console.warn('Toast: use duration="persistent" when the toast has an action or a danger tone, so nobody misses it.');
+    if (__DEV__ && duration !== 'persistent' && forcedPersistent) {
+      console.warn('Toast: `duration` should be `persistent` when an action is present or `tone` is `danger`, so the toast is never missed.');
     }
     // Reflects how this instance was configured on mount; a live toast is not reconfigured.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,7 +177,7 @@ export function Toast({
 
   // The auto-dismiss timer, pausable by touch. `motion.duration.loop` keeps `short`/
   // `long` sensible even in a theme with no dedicated toast-duration token.
-  const totalDuration = duration === 'persistent' ? null : t.motionDurationLoop * DURATION_LOOPS[duration];
+  const totalDuration = effectiveDuration === 'persistent' ? null : t.motionDurationLoop * DURATION_LOOPS[effectiveDuration];
   const remainingRef = React.useRef(totalDuration ?? 0);
   const timerStartRef = React.useRef(0);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -333,7 +342,7 @@ interface ToastEntry extends ToastProps {
 export type ToastOptions = ToastProps;
 
 export interface ToastContextValue {
-  /** Shows a toast. Returns its id (generated when `options.id` is omitted). Showing a toast with the same id replaces the previous one (`onDismiss('replaced')` on the one it replaces). */
+  /** Shows a toast. Returns its id (generated when `options.toastId` is omitted). Showing a toast with the same `toastId` replaces the previous one (`onDismiss('replaced')` on the one it replaces). */
   toast: (options: ToastOptions) => string;
   /** Removes a toast immediately without animating it out or notifying its `onDismiss`. Prefer letting the toast dismiss itself. */
   dismiss: (id: string) => void;
@@ -357,7 +366,7 @@ const MAX_TOASTS = 3; // literal-ok: schema-specified stack limit, not a design 
  * absolutely positioned `View` above the bottom safe-area inset, `layer.toast`
  * z-index, centered, up to three toasts stacked newest-at-the-bottom) and exposes
  * `useToast()` / the module-level `toast()` so any code can show one. A toast shown
- * with an `id` already on screen replaces it (`onDismiss('replaced')` on the
+ * with a `toastId` already on screen replaces it (`onDismiss('replaced')` on the
  * replaced one); showing a fourth toast evicts the oldest the same way.
  */
 export function ToastProvider({ children, overrides }: ToastProviderProps): React.JSX.Element {
@@ -372,7 +381,7 @@ export function ToastProvider({ children, overrides }: ToastProviderProps): Reac
   }, []);
 
   const toast = React.useCallback((options: ToastOptions): string => {
-    const id = options.id ?? `toast-${(counterRef.current += 1)}`;
+    const id = options.toastId ?? `toast-${(counterRef.current += 1)}`;
     const current = entriesRef.current;
     const replaced = current.find((entry) => entry.id === id);
     replaced?.onDismiss?.('replaced');

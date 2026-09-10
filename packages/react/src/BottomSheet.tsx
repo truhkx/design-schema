@@ -317,7 +317,8 @@ export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(funct
         {...rest}
         ref={ref}
         open={open}
-        title={title}
+        heading={title}
+        hideHeading={hideTitle}
         footer={footer}
         size="md"
         dismissible={dismissible}

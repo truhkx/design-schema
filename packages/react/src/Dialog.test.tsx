@@ -17,7 +17,7 @@ function setup(given: Partial<DialogProps> = {}) {
   const props = {
     ...meta.args,
     open: true,
-    title: 'Rename project',
+    heading: 'Rename project',
     children: BODY,
     onClose,
     onOpened,
@@ -75,7 +75,7 @@ describe('Dialog', () => {
   /* derived: a11y.requires */
   it('has-accessible-name', () => {
     const d = setup();
-    expect(screen.getByRole('heading', { level: 2, name: d.props.title })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: d.props.heading })).toBeInTheDocument();
     expect(d.dialog()).toHaveAttribute('aria-labelledby');
   });
 

@@ -40,3 +40,6 @@ export const WithError: Story = {
   args: { label: 'I agree to the terms', name: 'terms', required: true, error: 'Accept the terms to continue.' },
 };
 export const Controlled: Story = { args: { checked: true } };
+export const HideLabel: Story = {
+  args: { label: 'Select row', name: 'select-row', hideLabel: true },
+};

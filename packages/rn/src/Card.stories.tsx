@@ -19,6 +19,7 @@ const meta: Meta<typeof Card> = {
     inset: 'md',
     surface: 'default',
     interactive: false,
+    focusable: false,
   },
 };
 
@@ -75,6 +76,10 @@ export const Interactive: Story = {
       </>
     ),
   },
+};
+
+export const Focusable: Story = {
+  args: { focusable: true },
 };
 
 export const WithOverrides: Story = {

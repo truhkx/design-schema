@@ -234,18 +234,19 @@
     }
   },
   "Checkbox.web": {
-    "hash": "0047d2b46382ce3b",
-    "lastAttemptHash": "0047d2b46382ce3b",
-    "generatedAt": "2026-09-10T05:41:34+00:00",
+    "hash": "02df6704e0cf80ee",
+    "lastAttemptHash": "02df6704e0cf80ee",
+    "generatedAt": "2026-09-10T21:39:22+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7837,
+    "costUsd": 0.8603,
     "files": [
       "packages/react/src/Checkbox.css",
+      "packages/react/src/Checkbox.stories.tsx",
       "packages/react/src/Checkbox.tsx"
     ],
-    "gaps": 3,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -772,17 +773,18 @@
     }
   },
   "RadioGroup.web": {
-    "hash": "1d46283b3340d19c",
-    "lastAttemptHash": "1d46283b3340d19c",
-    "generatedAt": "2026-09-10T05:46:22+00:00",
+    "hash": "9baa5fa99d2663bb",
+    "lastAttemptHash": "9baa5fa99d2663bb",
+    "generatedAt": "2026-09-10T21:42:10+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5537,
+    "costUsd": 0.4758,
     "files": [
       "packages/react/src/RadioGroup.css",
-      "packages/react/src/RadioGroup.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/RadioGroup.stories.tsx",
+      "packages/react/src/RadioGroup.test.tsx",
+      "packages/react/src/RadioGroup.tsx"
     ],
     "gaps": 3,
     "gates": {
@@ -987,17 +989,17 @@
     }
   },
   "Switch.web": {
-    "hash": "de1b72c4d4fb9f1b",
-    "lastAttemptHash": "de1b72c4d4fb9f1b",
-    "generatedAt": "2026-09-10T05:44:03+00:00",
+    "hash": "7e05894004cb7fb6",
+    "lastAttemptHash": "7e05894004cb7fb6",
+    "generatedAt": "2026-09-10T21:40:36+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5321,
+    "costUsd": 0.417,
     "files": [
       "packages/react/src/Switch.css",
-      "packages/react/src/Switch.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Switch.stories.tsx",
+      "packages/react/src/Switch.tsx"
     ],
     "gaps": 2,
     "gates": {

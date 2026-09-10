@@ -129,6 +129,19 @@
   font-weight: var(--ds-checkbox-label-weight);
 }
 
+/* hideLabel: visually hidden, clipped to a 1px box — the standard sanctioned pixel literals */
+.ds-checkbox__visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 .ds-checkbox__description,
 .ds-checkbox__error {
   margin: 0;

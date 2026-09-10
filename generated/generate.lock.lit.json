@@ -46,16 +46,15 @@
     }
   },
   "Alert.lit": {
-    "hash": "c39b881d506fe498",
-    "lastAttemptHash": "c39b881d506fe498",
-    "generatedAt": "2026-09-10T05:57:17+00:00",
+    "hash": "1ce60c2bcae6f667",
+    "lastAttemptHash": "1ce60c2bcae6f667",
+    "generatedAt": "2026-09-10T21:42:01+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9962,
+    "costUsd": 1.9799,
     "files": [
-      "packages/lit/src/Alert.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Alert.ts"
     ],
     "gaps": 3,
     "gates": {

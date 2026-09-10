@@ -55,6 +55,14 @@ export interface CardProps {
    * card itself is not focusable — its single child is the target.
    */
   interactive?: boolean;
+  /**
+   * The card root takes `tabIndex={-1}` so a container (Feed) can move focus to it
+   * by calling `.focus()` on the forwarded ref, and draws its own focus ring when
+   * focused that way. Not a tab stop; not for making cards clickable (`interactive`).
+   * Has no effect while `interactive` is set — the child link/button is already the
+   * sole focus target.
+   */
+  focusable?: boolean;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<CardOverridableBinding, TokenRef>>;
 }
@@ -86,6 +94,19 @@ const SURFACE_HOVER_TOKEN = {
   default: 'colorBackgroundSubtle',
   subtle: 'colorBackgroundStrong',
 } as const satisfies Record<CardSurface, keyof Tokens>;
+
+/**
+ * RN core's `View` type omits `onFocus`/`onBlur` even though the runtime (and
+ * react-native-web, where `focusable`'s scripted focus is actually exercised)
+ * supports them; this typed alias documents that gap instead of reaching for `any`.
+ */
+type FocusableViewProps = React.ComponentProps<typeof View> & {
+  onFocus?: () => void;
+  onBlur?: () => void;
+};
+const FocusableView = View as unknown as React.ForwardRefExoticComponent<
+  FocusableViewProps & React.RefAttributes<View>
+>;
 
 /**
  * Walks `children`, wraps the single `Button`/`Link` it finds in an inert, hidden
@@ -172,20 +193,40 @@ function extendInteractiveChild(node: React.ReactNode, state: InteractiveScanSta
  * There is no pointer hover on native, so `hoverBackground` styles the pressed state
  * instead — the same substitution `Button` and `Link` already make — and `transition`
  * has no visible effect since there is no continuous hover to animate between.
+ *
+ * `focusable` forwards the root's ref (a plain `View`, or the `Pressable` when
+ * `interactive`) so a container can call `.focus()`/`.blur()` on it (RN's
+ * `NativeMethods`) and sets `tabIndex={-1}` — a real DOM `tabIndex=-1` under
+ * react-native-web (scriptable, no tab stop), though on native Android RN's own
+ * `tabIndex` typing treats `-1` as simply not focusable, so scripted focus is a
+ * react-native-web-only guarantee here. The ring it draws reads `onFocus`/`onBlur`,
+ * which RN core's `View` type omits (see `FocusableViewProps`); no component in this
+ * package currently calls the ref (Feed's native list has no analog of the web
+ * doc's PageUp/PageDown scripted paging), so this wires up the mechanism for a
+ * future caller without one yet.
  */
-export function Card({
-  children,
-  heading,
-  headingLevel = '3',
-  headerActions,
-  footer,
-  inset = 'md',
-  surface = 'default',
-  interactive = false,
-  overrides,
-}: CardProps): React.JSX.Element {
+export const Card = React.forwardRef<View, CardProps>(function Card(
+  {
+    children,
+    heading,
+    headingLevel = '3',
+    headerActions,
+    footer,
+    inset = 'md',
+    surface = 'default',
+    interactive = false,
+    focusable = false,
+    overrides,
+  }: CardProps,
+  ref,
+): React.JSX.Element {
   const { tokens: t } = useTheme();
   const [focused, setFocused] = React.useState(false);
+  const [scriptFocused, setScriptFocused] = React.useState(false);
+
+  if (__DEV__ && interactive && focusable) {
+    console.warn('Card: `focusable` has no effect while `interactive` is set; the child Link/Button is already the sole focus target.');
+  }
 
   const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t[INSET_TOKEN[inset]];
   const paddingInline = overrides?.paddingInline
@@ -226,7 +267,10 @@ export function Card({
     borderRadius: radius,
     backgroundColor: background,
   };
-  if (surface === 'default' && !interactive) {
+  if (focusable && !interactive) {
+    surfaceStyle.borderWidth = t.borderWidthFocus;
+    surfaceStyle.borderColor = scriptFocused ? t.colorBorderFocus : surface === 'default' ? borderColor : 'transparent';
+  } else if (surface === 'default' && !interactive) {
     surfaceStyle.borderWidth = borderWidth;
     surfaceStyle.borderColor = borderColor;
   }
@@ -282,9 +326,16 @@ export function Card({
 
   if (!interactive) {
     return (
-      <View style={surfaceStyle} testID="Card">
+      <FocusableView
+        ref={ref}
+        style={surfaceStyle}
+        testID="Card"
+        {...(focusable
+          ? { tabIndex: -1, onFocus: () => setScriptFocused(true), onBlur: () => setScriptFocused(false) }
+          : {})}
+      >
         {content}
-      </View>
+      </FocusableView>
     );
   }
 
@@ -299,6 +350,7 @@ export function Card({
 
   return (
     <Pressable
+      ref={ref}
       accessibilityRole={target?.role ?? 'button'}
       accessibilityLabel={target?.label}
       accessibilityState={{ disabled: target?.disabled ?? false }}
@@ -315,4 +367,4 @@ export function Card({
       {content}
     </Pressable>
   );
-}
+});

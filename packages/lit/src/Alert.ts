@@ -13,6 +13,8 @@ export type AlertDismissDetail = void;
 /** copy.dismissLabel */
 const COPY_DISMISS_LABEL = 'Dismiss';
 
+type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[] | null };
+
 /** Overridable style hooks; see the `overrides` property. `background`, `foreground`, `bodyColor` and `icon` are locked and excluded. */
 export type AlertOverridableBinding =
   | 'border'
@@ -243,6 +245,10 @@ export class DsAlert extends LitElement {
     }
   }
 
+  protected override updated(): void {
+    this.syncAccessibleName();
+  }
+
   protected override render() {
     const hasHeading = Boolean(this.heading) || this.querySelector('[slot="heading"]') !== null;
     return html`
@@ -250,9 +256,13 @@ export class DsAlert extends LitElement {
         <ds-icon class="icon" part="icon" name=${this.tone}></ds-icon>
         <div class="content">
           ${hasHeading
-            ? html`<p class="heading" part="heading"><slot name="heading">${this.heading ?? nothing}</slot></p>`
+            ? html`<p class="heading" part="heading">
+                <slot name="heading" @slotchange=${this.handleContentSlotChange}
+                  >${this.heading ?? nothing}</slot
+                >
+              </p>`
             : nothing}
-          <div class="body" part="body"><slot></slot></div>
+          <div class="body" part="body"><slot @slotchange=${this.handleContentSlotChange}></slot></div>
         </div>
         ${this.dismissible
           ? html`
@@ -273,6 +283,46 @@ export class DsAlert extends LitElement {
     `;
   }
 
+  /** Light-DOM slot content (heading or body) changed without a property change; re-render to keep `hasHeading` and the accessible name current. */
+  private handleContentSlotChange(): void {
+    this.requestUpdate();
+  }
+
+  /**
+   * The region is named by the heading when present, else by the body (a
+   * status region is named by its content) — an Alert always has a name.
+   * `ariaLabelledByElements` points cross-root at the shadow-DOM element
+   * where supported. Otherwise the target's flattened text becomes a
+   * literal `aria-label` attribute, not `internals.ariaLabel`: ARIAMixin
+   * values set through ElementInternals aren't visible to the
+   * accessible-name computation the test suite uses (only real attributes
+   * are), though real assistive tech reads either.
+   */
+  private syncAccessibleName(): void {
+    const internals = this.internals as LabelledInternals;
+    const target =
+      this.renderRoot.querySelector<HTMLElement>('.heading') ??
+      this.renderRoot.querySelector<HTMLElement>('.body');
+    if ('ariaLabelledByElements' in this.internals) {
+      internals.ariaLabelledByElements = target ? [target] : null;
+      this.removeAttribute('aria-label');
+      return;
+    }
+    // No cross-root ariaLabelledByElements support: read the assigned (or
+    // fallback) slot content directly, since `target.textContent` does not
+    // see light-DOM nodes projected into a shadow-root `<slot>`.
+    const slot = target?.querySelector<HTMLSlotElement>('slot') ?? null;
+    const text = (slot?.assignedNodes({ flatten: true }) ?? [])
+      .map((node) => node.textContent ?? '')
+      .join(' ')
+      .trim();
+    if (text) {
+      this.setAttribute('aria-label', text);
+    } else {
+      this.removeAttribute('aria-label');
+    }
+  }
+
   private handleDismiss(event: Event): void {
     // Keep the button's `press` inside the alert; consumers listen for `dismiss`.
     event.stopPropagation();
@@ -282,19 +332,31 @@ export class DsAlert extends LitElement {
     );
   }
 
-  /** The consumer will remove the alert, so focus moves to the next focusable element first. */
+  /**
+   * The consumer will remove the alert, so focus moves onward first: to the
+   * next focusable element after the alert in reading order, or to the
+   * previous one when there is none, so focus is never lost. Left alone if
+   * nothing outside the alert is focusable.
+   */
   private moveFocusOnward(): void {
     const active = document.activeElement;
     if (active === null || (active !== this && !this.contains(active))) {
       return;
     }
-    const candidates = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE));
-    const next = candidates.find(
-      (candidate) =>
-        !this.contains(candidate) &&
-        (this.compareDocumentPosition(candidate) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+    const candidates = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+      (candidate) => !this.contains(candidate),
     );
-    next?.focus();
+    const next = candidates.find(
+      (candidate) => (this.compareDocumentPosition(candidate) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+    );
+    if (next) {
+      next.focus();
+      return;
+    }
+    const before = candidates.filter(
+      (candidate) => (this.compareDocumentPosition(candidate) & Node.DOCUMENT_POSITION_PRECEDING) !== 0,
+    );
+    before[before.length - 1]?.focus();
   }
 
   private applyOverrides(): void {

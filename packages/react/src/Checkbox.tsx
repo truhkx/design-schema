@@ -87,6 +87,9 @@ export interface CheckboxProps
   > {
   /** Visible label. Clicking or tapping it toggles the control. */
   label: string;
+  /** Visually hide the label (it remains the accessible name): a selection column in a Table,
+   * where the row name is the label. */
+  hideLabel?: boolean;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
   /** The value submitted when checked. Lets several checkboxes share a `name` to form a multi-select. */
@@ -124,6 +127,7 @@ export interface CheckboxProps
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
   {
     label,
+    hideLabel = false,
     name,
     value = 'on',
     checked,
@@ -225,8 +229,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
   const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
 
+  const labelClasses = ['ds-checkbox__label', hideLabel ? 'ds-checkbox__visually-hidden' : null]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={classes} data-ds="Checkbox" style={mergedStyle}>
+    <div className={classes} data-ds="Checkbox" data-ds-field style={mergedStyle}>
       <div className="ds-checkbox__row">
         <input
           {...rest}
@@ -246,7 +254,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           onClick={handleClick}
           onChange={handleChange}
         />
-        <label htmlFor={id} className="ds-checkbox__label">
+        <label htmlFor={id} className={labelClasses}>
           {label}
           {required ? (
             <Text element="span" size="sm" tone="muted" className="ds-checkbox__required">

@@ -320,3 +320,6 @@ export type { TreeProps, TreeNode, TreeNodeChildren, TreeSelectable, TreeOverrid
 
 export { Splitter } from './Splitter';
 export type { SplitterProps, SplitterOrientation, SplitterStackBelow, SplitterOverridableBinding } from './Splitter';
+
+export { Feed } from './Feed';
+export type { FeedProps, FeedItem, FeedHeadingLevel, FeedOverridableBinding } from './Feed';

@@ -1,0 +1,15 @@
+# Gaps reported while generating Table for web
+
+Each entry is a place the doc made the generator guess. Fix the doc, re-run parse, regenerate.
+
+## 2026-09-10 13:29 — round 1
+
+- anatomy.caption composition names Heading, but props/platform-notes describe a plain `<caption>` with no `headingLevel` prop. Followed the sibling Lit implementation's precedent: caption renders `<Heading level={2} size="md">`, with a fixed, non-configurable level — worth adding a `captionHeadingLevel`-style prop (or dropping the Heading composition) if this is load-bearing for page outlines.
+- anatomy lists a `footer` part with no prop or content contract in `props`. Added a `footer?: ReactNode` prop (rendered as `<div class="ds-table__footer" data-part="footer">`) for parity with the Lit sibling's `slot="footer"`, but the schema never specifies what belongs there or how it should be styled.
+- `onRowPress` interactivity: enabled only when `rowHeaderColumn` exists AND has no custom `render` (mirroring the Lit implementation), since a custom render may already contain interactive content (a Link) that a wrapping Button would conflict with. If a consumer passes `onRowPress` with a rendered row-header column, the row silently stays non-interactive rather than erroring — not stated explicitly in the doc.
+- Row-header text used in `copy.selectRow`/`onRowPress`'s Button label falls back to the raw underlying value (`String(row[key])`) when the row-header column has a custom `render`, since a ReactNode can't be reduced to plain text for an aria-label/Button label.
+- Sortable header Button's visible label is the full `copy.sortAscending`/`sortDescending` phrase ("Sort by Amount, ascending") rather than the plain column name, since `Button` cannot have a distinct accessible name from its visible text (its `aria-label` prop is not exposed to consumers) and both `sortAscending`/`sortDescending` copy strings had to be used verbatim somewhere. The plain column header text is not shown at all on sortable columns.
+- `maxHeight: viewport` formula ("viewport height minus the section rhythm") implemented as `calc(100vh - var(--layout-gap-section) * 2)`, matching the sibling Lit component's exact choice; the doc doesn't spell out the multiplier.
+- Horizontal scroll-step distance for ArrowLeft/ArrowRight in the `scroll` region is a fixed, undocumented `40` (px, unitless in `scrollBy`) — the doc doesn't specify a magnitude, and this was chosen to match the sibling Lit implementation's `SCROLL_STEP_PX`.
+- The scroll-region edge fade (`scrollFade`) is a static `mask-image` gradient always applied at both edges, rather than dynamically hiding at the very start/end of the scrollable content — a reasonable simplification also present in the Lit sibling.
+- `stickyColumnShadow` is toggled globally on the scroll region once `scrollLeft > 0`, rather than only while the row-header column is actually still off the left edge (the difference is only observable if the table's total width barely exceeds the viewport).

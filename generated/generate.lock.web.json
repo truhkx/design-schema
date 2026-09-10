@@ -950,6 +950,31 @@
       "modules": true
     }
   },
+  "Table.web": {
+    "hash": "0b144ac553bc9c2a",
+    "lastAttemptHash": "0b144ac553bc9c2a",
+    "generatedAt": "2026-09-10T17:29:57+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 3.8566,
+    "files": [
+      "packages/react/src/Table.css",
+      "packages/react/src/Table.stories.tsx",
+      "packages/react/src/Table.test.tsx",
+      "packages/react/src/Table.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Tabs.web": {
     "hash": "88a3ec4c66406a7c",
     "lastAttemptHash": "88a3ec4c66406a7c",

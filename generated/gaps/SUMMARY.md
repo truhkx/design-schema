@@ -1,6 +1,6 @@
 # Gap digest — phase Rows
 
-Generated 2026-09-10T13:15 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T13:22 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -1459,6 +1459,19 @@ Doc: `site/src/content/docs/components/test-failures.md`
 
 Doc: `site/src/content/docs/components/table.md`
 
+### 2026-09-10 13:22 — lit round 1
+
+- **DOC** Checkbox has no hidden-label mode, so the selectCell/selectAllCell composition (mandated by the schema) always shows visible 'Select {rowName}'/'Select all rows' text next to every row's checkbox — likely not the intended dense selection-column look. Checkbox's schema would need a label-visibility variant to fix this without restyling the child. → `site/src/content/docs/components/table.md`
+- **DOC** 'render'/'rowActions' shape strings say '(row: Row) => ReactNode', which doesn't exist on this platform; typed both as '(row: TableRow) => unknown' returning a lit template, matching how the Lit platform notes say render functions return lit templates. → `site/src/content/docs/components/table.md`
+- **DOC** onRowPress is documented as an event only, with no prop gating when it fires ('Only when the row has no other interactive content'). Implemented as: the row-header column's cells become a Button firing row-press whenever that column has no custom `render` (i.e. the consumer hasn't put their own Link/interactive content there); when `render` is set, row-press never fires for that row, since the doc's own guidance is to put a Link in `render` instead. rowHover/interactive styling is applied only in that same case — a consumer-supplied Link via `render` gets no automatic hover treatment, since Table can't detect interactive content inside an opaque render() result. → `site/src/content/docs/components/table.md`
+- **DOC** No prop specifies the composed caption Heading's level; defaulted to level="2" with size="md" (matching captionSize's default token), since nothing in the schema constrains it to the surrounding page outline. → `site/src/content/docs/components/table.md`
+- **DOC** The 'footer' anatomy part has no prop, slot contract, style binding, or guidance describing its content anywhere in the schema — added a bare `<slot name="footer">` with no styling contract, purely to cover the anatomy entry. → `site/src/content/docs/components/table.md`
+- **DOC** copy.rowCount and copy.scrollHint aren't tied to a specific element by the doc; used rowCount as a visually-hidden `aria-describedby` on the `<table>` and scrollHint the same way on the scroll region — a reasonable placement, not a specified one. → `site/src/content/docs/components/table.md`
+- **DOC** maxHeight: 'viewport' formula ('viewport height minus the section rhythm') isn't numeric in the doc; implemented as `calc(100vh - var(--layout-gap-section) * 2)`. → `site/src/content/docs/components/table.md`
+- **DOC** The keyboard rule ties the scroll-region's focus/arrow-key behavior to 'below the breakpoint', but the web platform notes describe the scroll region unconditionally for responsive: scroll; implemented it unconditionally (always present, not gated by container width) since gating a tabindex/keydown listener on a live container-query match adds real complexity for an unspecified benefit. → `site/src/content/docs/components/table.md`
+- **DOC** ArrowLeft/ArrowRight scroll step size (used 40px) isn't specified by the doc. → `site/src/content/docs/components/table.md`
+- **DOC** Column `width: 'min'/'fill'` is implemented via `<col>` sizing hints under the default (auto) table layout, where the browser treats them only as hints rather than enforcing them the way `table-layout: fixed` would; exact sizing/truncation behavior isn't specified by the schema. → `site/src/content/docs/components/table.md`
+
 ### 2026-09-10 13:15 — rn round 1
 
 - **DOC** Column `width: 'auto'` vs `'min'` are not distinguished: RN has no text-measurement API without an extra layout pass, so both render as a fixed `space.20` width; only `width: 'fill'` (flex:1) is distinct. → `site/src/content/docs/components/table.md`
@@ -1642,7 +1655,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 809 · CODE: 39 · TOOLING: 2 · NOISE: 14
+DOC: 819 · CODE: 39 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

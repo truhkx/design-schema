@@ -257,3 +257,20 @@ export type {
   CarouselChangeReason,
   CarouselOverridableBinding,
 } from './Carousel';
+
+export { Table } from './Table';
+export type {
+  TableProps,
+  TableRow,
+  TableColumn,
+  TableColumnAlign,
+  TableColumnWidth,
+  TableColumnHideBelow,
+  TableSortState,
+  TableSortDirection,
+  TableSelectable,
+  TableResponsive,
+  TableMaxHeight,
+  TableDensity,
+  TableOverridableBinding,
+} from './Table';

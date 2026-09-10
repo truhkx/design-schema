@@ -5,72 +5,72 @@
       "$description": "Derived by tools/theme.py \u2014 edit the theme doc, not this file.",
       "neutral": {
         "0": {
-          "$value": "#ffffff"
+          "$value": "#f9eace"
         },
         "50": {
-          "$value": "#f8f6f6"
+          "$value": "#f4e4c8"
         },
         "100": {
-          "$value": "#efeceb"
+          "$value": "#edddc0"
         },
         "200": {
-          "$value": "#dddad8"
+          "$value": "#e0d0b3"
         },
         "300": {
-          "$value": "#c2bcbb"
+          "$value": "#ccbc9f"
         },
         "400": {
-          "$value": "#9a9492"
+          "$value": "#a29379"
         },
         "500": {
-          "$value": "#76706e"
+          "$value": "#7c705a"
         },
         "600": {
-          "$value": "#5d5654"
+          "$value": "#605747"
         },
         "700": {
-          "$value": "#47413f"
+          "$value": "#474237"
         },
         "800": {
-          "$value": "#2f2a29"
+          "$value": "#2d2b27"
         },
         "900": {
-          "$value": "#1b1716"
+          "$value": "#1a1815"
         },
         "1000": {
-          "$value": "#000000"
+          "$value": "#040302"
         }
       },
       "brand": {
         "50": {
-          "$value": "#fff2ee"
+          "$value": "#f6f5f4"
         },
         "100": {
-          "$value": "#ffe0d6"
+          "$value": "#e8e8e7"
         },
         "200": {
-          "$value": "#ffc5b2"
+          "$value": "#d5d4d3"
         },
         "300": {
-          "$value": "#ff9876"
+          "$value": "#b8b7b6"
         },
         "400": {
-          "$value": "#e5724c"
+          "$value": "#999896"
         },
         "500": {
-          "$value": "#c45229"
+          "$value": "#7d7a77"
         },
         "600": {
-          "$value": "#a73a0e"
+          "$value": "#66625f"
         },
         "700": {
-          "$value": "#872800"
+          "$value": "#504c48"
         },
         "800": {
-          "$value": "#651b00"
+          "$value": "#3b3733"
         },
         "900": {
-          "$value": "#450e00"
+          "$value": "#27231f"
         }
       },
       "danger": {
@@ -171,34 +171,34 @@
       },
       "info": {
         "50": {
-          "$value": "#fff2ee"
+          "$value": "#fff3e7"
         },
         "100": {
-          "$value": "#ffe0d6"
+          "$value": "#ffe2c5"
         },
         "200": {
-          "$value": "#ffc5b2"
+          "$value": "#ffc88f"
         },
         "300": {
-          "$value": "#fe9978"
+          "$value": "#eea654"
         },
         "400": {
-          "$value": "#e27551"
+          "$value": "#d28415"
         },
         "500": {
-          "$value": "#c2542e"
+          "$value": "#ac6900"
         },
         "600": {
-          "$value": "#a53d15"
+          "$value": "#8c5500"
         },
         "700": {
-          "$value": "#872800"
+          "$value": "#6e4100"
         },
         "800": {
-          "$value": "#651b00"
+          "$value": "#522f00"
         },
         "900": {
-          "$value": "#450e00"
+          "$value": "#371d00"
         }
       }
     }
@@ -256,28 +256,28 @@
     "size": {
       "$type": "dimension",
       "xs": {
-        "$value": "9px"
+        "$value": "10px"
       },
       "sm": {
-        "$value": "12px"
+        "$value": "13px"
       },
       "md": {
         "$value": "16px"
       },
       "lg": {
-        "$value": "21px"
+        "$value": "20px"
       },
       "xl": {
-        "$value": "28px"
+        "$value": "25px"
       },
       "2xl": {
-        "$value": "38px"
+        "$value": "31px"
       },
       "3xl": {
-        "$value": "51px"
+        "$value": "39px"
       },
       "4xl": {
-        "$value": "67px"
+        "$value": "49px"
       }
     },
     "lineHeight": {
@@ -433,13 +433,13 @@
       "$value": "0px"
     },
     "sm": {
-      "$value": "8px"
+      "$value": "4px"
     },
     "md": {
-      "$value": "12px"
+      "$value": "8px"
     },
     "lg": {
-      "$value": "16px"
+      "$value": "12px"
     },
     "full": {
       "$value": "999px"

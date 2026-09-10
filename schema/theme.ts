@@ -12,7 +12,10 @@ export const themeDef = z.object({
   tone: z.array(z.string()).min(2).max(5),
   not: z.string(),
   seed: z.object({
+    /** Brand color. Near-achromatic (OKLCH chroma < 0.03) means "ink": the action fill is the darkest neutral on light, the lightest on dark. */
     color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+    /** Optional second seed: the neutral ramp takes its hue and (capped) chroma, and the light page is this color lifted, not white. */
+    neutral: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
     typeface: z.string().default('system'),
     headingTypeface: z.string().optional(),
     mono: z.string().default('system'),

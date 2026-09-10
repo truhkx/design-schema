@@ -46,13 +46,13 @@
     },
     "link": {
       "default": {
-        "$value": "{color.palette.brand.300}"
+        "$value": "{color.foreground.default}"
       },
       "hover": {
-        "$value": "{color.palette.brand.200}"
+        "$value": "{color.foreground.strong}"
       },
       "visited": {
-        "$value": "{color.palette.brand.100}"
+        "$value": "{color.foreground.muted}"
       }
     },
     "control": {
@@ -63,10 +63,10 @@
         "$value": "{color.palette.neutral.500}"
       },
       "selectedBackground": {
-        "$value": "{color.palette.brand.500}"
+        "$value": "{color.palette.neutral.0}"
       },
       "selectedForeground": {
-        "$value": "{color.palette.neutral.0}"
+        "$value": "{color.palette.neutral.1000}"
       },
       "trackOff": {
         "$value": "{color.palette.neutral.500}"
@@ -132,7 +132,7 @@
     },
     "overlay": {
       "scrim": {
-        "$value": "#00000099"
+        "$value": "#04030299"
       },
       "surface": {
         "$value": "{color.palette.neutral.800}"
@@ -175,13 +175,13 @@
     "action": {
       "primary": {
         "background": {
-          "$value": "{color.palette.brand.500}"
+          "$value": "{color.palette.neutral.0}"
         },
         "backgroundHover": {
-          "$value": "{color.palette.brand.400}"
+          "$value": "{color.palette.neutral.100}"
         },
         "foreground": {
-          "$value": "{color.foreground.onAction}"
+          "$value": "{color.palette.neutral.1000}"
         }
       },
       "secondary": {
@@ -208,10 +208,10 @@
       },
       "danger": {
         "background": {
-          "$value": "{color.palette.danger.500}"
+          "$value": "{color.palette.danger.600}"
         },
         "backgroundHover": {
-          "$value": "{color.palette.danger.600}"
+          "$value": "{color.palette.danger.700}"
         },
         "foreground": {
           "$value": "{color.foreground.onAction}"
@@ -223,19 +223,19 @@
     "$type": "shadow",
     "raised": {
       "$value": {
-        "color": "#00000059",
+        "color": "#04030200",
         "offsetX": "0px",
-        "offsetY": "1px",
-        "blur": "3px",
+        "offsetY": "0px",
+        "blur": "0px",
         "spread": "0px"
       }
     },
     "overlay": {
       "$value": {
-        "color": "#00000080",
+        "color": "#04030200",
         "offsetX": "0px",
-        "offsetY": "8px",
-        "blur": "24px",
+        "offsetY": "0px",
+        "blur": "0px",
         "spread": "0px"
       }
     }

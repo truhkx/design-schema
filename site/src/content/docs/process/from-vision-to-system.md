@@ -31,6 +31,8 @@ The frontmatter decisions, in order of leverage:
 
 **A seed.** One brand color and one typeface. The neutral, brand and status ramps are all derived from the color; `neutralTint` controls how much of its hue bleeds into the grays.
 
+**Two-seed palettes.** Some brands are their surfaces: sand pages with near-black type and buttons, navy pages with cream. One seed cannot say that, because the grays only take a faint cast from the brand hue and an achromatic brand would leave dark mode's primary fill a mid gray. Set `seed.neutral` to the surface color: the neutral ramp takes its hue and chroma, the light page becomes that color lifted rather than white, and the darkest neutral stays a warm black. When `seed.color` itself is near-achromatic, the brand is treated as ink — the action fill is the darkest neutral on a light page and the lightest on a dark one, links take the text color (Link always underlines), and the focus ring is the brand step that reads at 3:1 on both surfaces. Every contrast-chosen step is still chosen against the new surfaces, and the build still proves every pair. See [Warm & friendly](/themes/warm-friendly/) for the first two-seed theme.
+
 **Scale, radius, density.** A base size and modular ratio (1.2 dense/technical, 1.25 balanced, 1.333 editorial), a radius preset, and a spacing multiplier. The tone usually dictates these: "precise" wants small radii and a tight ratio; "friendly" wants the opposite.
 
 **Modes.** Which of light and dark the theme supports, and which is the default. Both are derived and both are contrast-checked.

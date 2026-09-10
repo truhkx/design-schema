@@ -1,27 +1,28 @@
 {
   "id": "warm-friendly",
-  "status": "draft",
+  "status": "review",
   "tone": [
     "warm",
-    "friendly",
-    "generous",
-    "unhurried"
+    "tactile",
+    "calm",
+    "confident"
   ],
-  "not": "corporate",
+  "not": "loud",
   "seed": {
-    "color": "#C8552D",
+    "color": "#1E1A16",
+    "neutral": "#C9B99C",
     "typeface": "system",
     "mono": "system"
   },
-  "neutralTint": 0.3,
+  "neutralTint": 0.6,
   "scale": {
     "base": 16,
-    "ratio": 1.333
+    "ratio": 1.25
   },
-  "radius": "lg",
+  "radius": "md",
   "density": "roomy",
   "motion": "subtle",
-  "elevation": "subtle",
+  "elevation": "flat",
   "layout": {
     "rhythm": "loose",
     "contentWidth": 1040

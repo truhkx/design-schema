@@ -72,6 +72,36 @@ def ramp(hue: float, chroma_peak: float, L_targets: dict[str, float], seed_L: fl
     return out
 
 
+# Two-seed palettes. With `seed.neutral` the grays take that color's hue and (capped) chroma instead of a faint
+# cast of the brand hue, the light-mode page is that color lifted rather than white, and the darkest step stays
+# warm rather than pure black. Without it nothing below runs and the output is byte-identical to before.
+NEUTRAL_CHROMA_MAX = 0.06
+NEUTRAL_TOP_LIFT = 0.15
+NEUTRAL_TOP_MAX = 0.96
+NEUTRAL_TOP_MIN = 0.86   # a dark "neutral" seed still needs a light page to sit on
+NEUTRAL_BOTTOM = 0.10    # the darkest step: near-black with the hue kept, never #000
+# Below this chroma the brand is "ink": the darkest neutral is the action fill in light mode, the lightest in dark.
+INK_CHROMA = 0.03
+
+
+def neutral_targets(neutral_L: float) -> dict[str, float]:
+    """NEUTRAL_L with the light end compressed under min(L + 0.15, 0.96) and the dark end lifted off 0.0."""
+    top = max(NEUTRAL_TOP_MIN, min(neutral_L + NEUTRAL_TOP_LIFT, NEUTRAL_TOP_MAX))
+    out = {}
+    for step, L in NEUTRAL_L.items():
+        if L >= 0.80:
+            out[step] = round(0.80 + (L - 0.80) * (top - 0.80) / 0.20, 4)
+        elif L <= 0.21:
+            out[step] = round(NEUTRAL_BOTTOM + (L / 0.21) * (0.21 - NEUTRAL_BOTTOM), 4)
+        else:
+            out[step] = L
+    return out
+
+
+def is_ink(seed_color: str) -> bool:
+    return hex_to_oklch(seed_color)[1] < INK_CHROMA
+
+
 def lightest_passing(candidates: list[str], ramp_: dict, against: str, floor: float) -> str:
     """First step (in the given order) whose contrast against `against` meets the floor."""
     for step in candidates:
@@ -84,9 +114,15 @@ def derive_base(t: dict) -> dict:
     seed_L, seed_C, seed_H = hex_to_oklch(t["seed"]["color"])
     tint = t.get("neutralTint", 0.2)
     hues = {"danger": 25, "success": 145, "warning": 80, "info": None, **t.get("statusHues", {})}
+    neutral_seed = t["seed"].get("neutral")
+    if neutral_seed:
+        n_L, n_C, n_H = hex_to_oklch(neutral_seed)
+        neutral = ramp(n_H, min(n_C, NEUTRAL_CHROMA_MAX), neutral_targets(n_L), seed_L=n_L)
+    else:
+        neutral = ramp(seed_H, 0.03 * tint, NEUTRAL_L, seed_L=0.5)
     palette = {
         "$description": "Derived by tools/theme.py — edit the theme doc, not this file.",
-        "neutral": ramp(seed_H, 0.03 * tint, NEUTRAL_L, seed_L=0.5),
+        "neutral": neutral,
         "brand": ramp(seed_H, seed_C, RAMP_L, seed_L=seed_L),
         "danger": ramp(hues["danger"], 0.19, RAMP_L),
         "success": ramp(hues["success"], 0.17, RAMP_L),
@@ -188,6 +224,33 @@ def control_pair(b: dict, n: dict, bg: str, control_bg: str, candidates: list[st
     return candidates[-1], "0"
 
 
+def focus_step(b: dict, page_bg: str, control_bg: str, candidates: list[str]) -> str:
+    """The brand step that reads as a boundary (3:1, WCAG 1.4.11) against both the page and the control surface."""
+    for step in candidates:
+        if contrast(b[step]["$value"], page_bg) >= 3.0 and contrast(b[step]["$value"], control_bg) >= 3.0:
+            return step
+    return candidates[-1]
+
+
+def apply_ink(semantic: dict, b: dict, n: dict, mode: str, bg: str, control_bg: str) -> None:
+    """The achromatic brand rule. An ink seed has no hue to carry an action, so the fill is the darkest neutral on
+    a light page and the lightest neutral on a dark one (the inverse), with the opposite end as its text; links are
+    the text color (Link always underlines, so color was never the only cue); the focus ring is the brand step that
+    passes 3:1 on both surfaces; the selected control fill follows the same inversion. Status hues are untouched."""
+    ref = lambda path: f"{{{path}}}"  # noqa: E731
+    dark = mode == "dark"
+    fill, ink, hover = ("0", "1000", "100") if dark else ("1000", "0", "800")
+    semantic["action"]["primary"] = {"background": T(ref(f"color.palette.neutral.{fill}")),
+                                     "backgroundHover": T(ref(f"color.palette.neutral.{hover}")),
+                                     "foreground": T(ref(f"color.palette.neutral.{ink}"))}
+    semantic["link"] = {"default": T(ref("color.foreground.default")), "hover": T(ref("color.foreground.strong")),
+                        "visited": T(ref("color.foreground.muted"))}
+    candidates = ["300", "400", "200", "500"] if dark else ["500", "600", "700", "400"]
+    semantic["border"]["focus"] = T(ref(f"color.palette.brand.{focus_step(b, bg, control_bg, candidates)}"))
+    semantic["control"]["selectedBackground"] = T(ref(f"color.palette.neutral.{fill}"))
+    semantic["control"]["selectedForeground"] = T(ref(f"color.palette.neutral.{ink}"))
+
+
 def alpha_hex(hex_color: str, alpha: float) -> str:
     return f"{hex_color[:7]}{round(alpha * 255):02x}"
 
@@ -221,9 +284,11 @@ def inverse_colors(p: dict, mode: str) -> dict:
             "focus": T(ref(f"color.palette.brand.{link}")), "status": status}
 
 
-def derive_mode(base: dict, mode: str, elevation: float = 1.0) -> dict:
+def derive_mode(base: dict, mode: str, elevation: float = 1.0, ink: bool | None = None) -> dict:
     p = base["color"]["palette"]
     n, b, d = p["neutral"], p["brand"], p["danger"]
+    if ink is None:  # detect from the ramp when the caller does not know the seed
+        ink = hex_to_oklch(b["500"]["$value"])[1] < INK_CHROMA
     white = n["0"]["$value"]
     ref = lambda path: f"{{{path}}}"  # noqa: E731
     if mode == "light":
@@ -301,6 +366,8 @@ def derive_mode(base: dict, mode: str, elevation: float = 1.0) -> dict:
                            "foreground": T(ref("color.foreground.onAction"))},
             },
         }
+    if ink:
+        apply_ink(semantic, b, n, mode, bg, n["0"]["$value"] if mode == "light" else n["800"]["$value"])
     return {"color": {"$type": "color", "$description": f"Semantic layer ({mode}) — derived by tools/theme.py.", **semantic},
             "shadow": shadows(n["1000"]["$value"], elevation, dark=mode == "dark")}
 
@@ -335,7 +402,7 @@ def main() -> int:
         base = derive_base(t)
         (out / "base.json").write_text(json.dumps(base, indent=2) + "\n")
         for mode in t["modes"]["supports"]:
-            tree = derive_mode(base, mode, ELEVATION[t.get('elevation', 'subtle')])
+            tree = derive_mode(base, mode, ELEVATION[t.get('elevation', 'subtle')], ink=is_ink(t["seed"]["color"]))
             apply_overrides(tree, (t.get("overrides") or {}).get(mode) or {})
             (out / f"{mode}.json").write_text(json.dumps(tree, indent=2) + "\n")
         (out / "theme.json").write_text(json.dumps(t, indent=2) + "\n")

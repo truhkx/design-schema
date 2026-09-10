@@ -46,13 +46,13 @@
     },
     "link": {
       "default": {
-        "$value": "{color.palette.brand.600}"
+        "$value": "{color.foreground.default}"
       },
       "hover": {
-        "$value": "{color.palette.brand.700}"
+        "$value": "{color.foreground.strong}"
       },
       "visited": {
-        "$value": "{color.palette.brand.800}"
+        "$value": "{color.foreground.muted}"
       }
     },
     "control": {
@@ -63,7 +63,7 @@
         "$value": "{color.palette.neutral.500}"
       },
       "selectedBackground": {
-        "$value": "{color.palette.brand.600}"
+        "$value": "{color.palette.neutral.1000}"
       },
       "selectedForeground": {
         "$value": "{color.palette.neutral.0}"
@@ -132,7 +132,7 @@
     },
     "overlay": {
       "scrim": {
-        "$value": "#00000066"
+        "$value": "#04030266"
       },
       "surface": {
         "$value": "{color.palette.neutral.0}"
@@ -175,13 +175,13 @@
     "action": {
       "primary": {
         "background": {
-          "$value": "{color.palette.brand.500}"
+          "$value": "{color.palette.neutral.1000}"
         },
         "backgroundHover": {
-          "$value": "{color.palette.brand.600}"
+          "$value": "{color.palette.neutral.800}"
         },
         "foreground": {
-          "$value": "{color.foreground.onAction}"
+          "$value": "{color.palette.neutral.0}"
         }
       },
       "secondary": {
@@ -223,19 +223,19 @@
     "$type": "shadow",
     "raised": {
       "$value": {
-        "color": "#0000001a",
+        "color": "#04030200",
         "offsetX": "0px",
-        "offsetY": "1px",
-        "blur": "3px",
+        "offsetY": "0px",
+        "blur": "0px",
         "spread": "0px"
       }
     },
     "overlay": {
       "$value": {
-        "color": "#0000002e",
+        "color": "#04030200",
         "offsetX": "0px",
-        "offsetY": "8px",
-        "blur": "24px",
+        "offsetY": "0px",
+        "blur": "0px",
         "spread": "0px"
       }
     }

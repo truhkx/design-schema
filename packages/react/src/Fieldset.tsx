@@ -28,6 +28,7 @@ export type FieldsetOverridableBinding =
   | 'helperSize'
   | 'partGap'
   | 'fieldsGap'
+  | 'disabledOpacity'
   | 'fontFamily'
   | 'lineHeight';
 
@@ -37,6 +38,7 @@ const OVERRIDE_HOOK: Record<FieldsetOverridableBinding, string> = {
   helperSize: '--ds-fieldset-helper-size',
   partGap: '--ds-fieldset-part-gap',
   fieldsGap: '--ds-fieldset-fields-gap',
+  disabledOpacity: '--ds-fieldset-disabled-opacity',
   fontFamily: '--ds-fieldset-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   lineHeight: '--ds-fieldset-line-height',
 };
@@ -51,7 +53,10 @@ function overridesToStyle(overrides: Partial<Record<FieldsetOverridableBinding, 
 }
 
 export interface FieldsetProps
-  extends Omit<ComponentPropsWithoutRef<'fieldset'>, 'disabled' | 'children' | 'aria-describedby' | 'aria-disabled'> {
+  extends Omit<
+    ComponentPropsWithoutRef<'fieldset'>,
+    'disabled' | 'children' | 'aria-describedby' | 'aria-disabled' | 'aria-invalid'
+  > {
   /** The group's name — what the fields together describe ("Shipping address", "Notification
    * preferences"). Always visible. The accessible name of the group; screen readers read it
    * before each field inside. */
@@ -117,6 +122,7 @@ export const Fieldset = forwardRef<HTMLFieldSetElement, FieldsetProps>(function 
       style={mergedStyle}
       aria-describedby={describedBy || undefined}
       aria-disabled={disabled ? 'true' : undefined}
+      aria-invalid={error ? 'true' : undefined}
     >
       <legend className="ds-fieldset__legend">
         {legend}

@@ -5,6 +5,7 @@
   --ds-meter-track-height: var(--space-2);
   --ds-meter-radius: var(--radius-full);
   --ds-meter-part-gap: var(--space-1);
+  --ds-meter-label-gap: var(--space-2);
   --ds-meter-transition: var(--motion-duration-base);
   display: flex;
   flex-direction: column;
@@ -17,7 +18,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--ds-meter-label-gap);
 }
 
 .ds-meter__label,

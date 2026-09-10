@@ -40,7 +40,7 @@ export { RadioGroup } from './RadioGroup';
 export type { RadioGroupOption, RadioGroupOrientation, RadioGroupOverridableBinding, RadioGroupProps } from './RadioGroup';
 
 export { Disclosure } from './Disclosure';
-export type { DisclosureHeadingLevel, DisclosureOverridableBinding, DisclosureProps } from './Disclosure';
+export type { DisclosureHeadingLevel, DisclosureOverridableBinding, DisclosureProps, DisclosureToggleReason } from './Disclosure';
 
 export { Alert } from './Alert';
 export type { AlertLive, AlertOverridableBinding, AlertProps, AlertTone } from './Alert';

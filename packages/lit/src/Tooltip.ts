@@ -206,6 +206,13 @@ export class DsTooltip extends LitElement {
   /** Hover delay before showing: `default` (motion.duration.base × 3) or `none` for a warm toolbar item. */
   @property() delay: TooltipDelay = 'default';
 
+  /**
+   * Controlled visibility, for stories and tests only (the `Keyboard` story
+   * renders the tooltip open with it). Product code never sets this: a
+   * tooltip is hover and focus driven.
+   */
+  @property({ type: Boolean }) open?: boolean;
+
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
   @property({ attribute: false }) overrides?: Partial<Record<TooltipOverridableBinding, TokenRef>>;
 
@@ -264,6 +271,13 @@ export class DsTooltip extends LitElement {
   }
 
   protected override updated(changed: PropertyValues): void {
+    if (changed.has('open')) {
+      if (this.open) {
+        this.showPopup();
+      } else if (this.open === false) {
+        this.hidePopup();
+      }
+    }
     if (this.visible && changed.has('placement')) {
       this.updatePosition();
     }
@@ -285,6 +299,9 @@ export class DsTooltip extends LitElement {
     this.detachTrigger();
     this.triggerEl = next;
     this.attachTrigger();
+    if (this.open) {
+      this.showPopup();
+    }
   };
 
   private attachTrigger(): void {

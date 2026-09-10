@@ -143,17 +143,17 @@
     }
   },
   "Breadcrumb.web": {
-    "hash": "b26de1f2b2cc5d53",
-    "lastAttemptHash": "b26de1f2b2cc5d53",
-    "generatedAt": "2026-09-10T05:58:59+00:00",
+    "hash": "990d4b5cd5ab607c",
+    "lastAttemptHash": "990d4b5cd5ab607c",
+    "generatedAt": "2026-09-10T21:49:45+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5422,
+    "costUsd": 0.2672,
     "files": [
       "packages/react/src/Breadcrumb.css",
-      "packages/react/src/Breadcrumb.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Breadcrumb.stories.tsx",
+      "packages/react/src/Breadcrumb.tsx"
     ],
     "gaps": 2,
     "gates": {
@@ -445,20 +445,19 @@
     }
   },
   "Fieldset.web": {
-    "hash": "ad8ffe63de0f5c3f",
-    "lastAttemptHash": "ad8ffe63de0f5c3f",
-    "generatedAt": "2026-09-10T06:07:49+00:00",
+    "hash": "7dd365e58ee8744d",
+    "lastAttemptHash": "7dd365e58ee8744d",
+    "generatedAt": "2026-09-10T21:54:47+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0884,
+    "costUsd": 0.5576,
     "files": [
       "packages/react/src/Fieldset.css",
-      "packages/react/src/Fieldset.stories.tsx",
-      "packages/react/src/Fieldset.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Fieldset.test.tsx",
+      "packages/react/src/Fieldset.tsx"
     ],
-    "gaps": 4,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -679,20 +678,20 @@
     }
   },
   "Meter.web": {
-    "hash": "f1f5e0824eff962b",
-    "lastAttemptHash": "f1f5e0824eff962b",
-    "generatedAt": "2026-09-10T06:02:26+00:00",
+    "hash": "53fe8c7b0ff9cb0d",
+    "lastAttemptHash": "53fe8c7b0ff9cb0d",
+    "generatedAt": "2026-09-10T21:52:22+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6882,
+    "costUsd": 0.7332,
     "files": [
       "packages/react/src/Meter.css",
       "packages/react/src/Meter.stories.tsx",
-      "packages/react/src/Meter.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Meter.test.tsx",
+      "packages/react/src/Meter.tsx"
     ],
-    "gaps": 2,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

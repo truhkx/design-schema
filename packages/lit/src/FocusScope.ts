@@ -150,6 +150,13 @@ export class DsFocusScope extends LitElement {
   /** Pauses the scope without unmounting it, so a nested scope can own Tab instead. */
   @property({ type: Boolean, reflect: true }) active = true;
 
+  /**
+   * Explicit element to restore focus to instead of the recorded opener. Not
+   * an attribute — set the property directly (there is no React ref concept
+   * in Lit; this is a plain element reference).
+   */
+  @property({ attribute: false }) returnFocusTo?: HTMLElement | null;
+
   @query('[data-focus-scope-anchor]') private readonly anchorEl!: HTMLElement;
 
   @query('[data-focus-sentinel="start"]') private readonly startSentinelEl!: HTMLElement;
@@ -282,6 +289,11 @@ export class DsFocusScope extends LitElement {
   }
 
   private restoreFocusOnExit(): void {
+    const explicit = this.returnFocusTo;
+    if (explicit && explicit.isConnected && isFocusable(explicit)) {
+      explicit.focus();
+      return;
+    }
     const opener = this.openerElement;
     if (opener && opener.isConnected && isFocusable(opener)) {
       opener.focus();

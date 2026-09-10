@@ -35,7 +35,7 @@ const meta: Meta<ToastArgs> = {
       tone=${args.tone}
       action-label=${ifDefined(args.actionLabel)}
       duration=${args.duration}
-      ?dismissible=${args.dismissible}
+      ?no-dismiss=${!args.dismissible}
     ></ds-toast>
   `,
 };

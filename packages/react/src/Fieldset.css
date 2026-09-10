@@ -9,6 +9,7 @@
   --ds-fieldset-error-text: var(--color-foreground-danger);
   --ds-fieldset-part-gap: var(--layout-gap-tight);
   --ds-fieldset-fields-gap: var(--layout-gap-normal);
+  --ds-fieldset-disabled-opacity: var(--opacity-disabled);
   --ds-fieldset-font-family: var(--font-family-body);
   --ds-fieldset-line-height: var(--font-line-height-normal);
   display: flex;
@@ -46,6 +47,11 @@
 
 .ds-fieldset__error {
   color: var(--ds-fieldset-error-text);
+}
+
+/* disabled: fields keep their own disabled handling; the group itself just dims. */
+.ds-fieldset--disabled {
+  opacity: var(--ds-fieldset-disabled-opacity);
 }
 
 /* fieldsGap → layout.gap.{gap}, applied through the composed Stack's own gap scale (closest preset). */

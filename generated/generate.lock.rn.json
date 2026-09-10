@@ -46,18 +46,17 @@
     }
   },
   "Alert.rn": {
-    "hash": "c134df494967eb75",
-    "lastAttemptHash": "c134df494967eb75",
-    "generatedAt": "2026-09-10T05:57:07+00:00",
+    "hash": "ef5ecb5064cae7d2",
+    "lastAttemptHash": "ef5ecb5064cae7d2",
+    "generatedAt": "2026-09-10T21:54:06+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5673,
+    "costUsd": 0.5186,
     "files": [
-      "packages/rn/src/Alert.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Alert.tsx"
     ],
-    "gaps": 4,
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -337,18 +336,18 @@
     }
   },
   "Disclosure.rn": {
-    "hash": "3278ce75a72c1988",
-    "lastAttemptHash": "3278ce75a72c1988",
-    "generatedAt": "2026-09-10T05:55:00+00:00",
+    "hash": "b0f8ee25b29c4f01",
+    "lastAttemptHash": "b0f8ee25b29c4f01",
+    "generatedAt": "2026-09-10T21:51:25+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8299,
+    "costUsd": 1.0876,
     "files": [
       "packages/rn/src/Disclosure.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -538,13 +537,13 @@
     }
   },
   "Landmark.rn": {
-    "hash": "0808a06b50b192bb",
-    "lastAttemptHash": "0808a06b50b192bb",
-    "generatedAt": "2026-09-10T05:57:41+00:00",
+    "hash": "45e72afda9759ca6",
+    "lastAttemptHash": "45e72afda9759ca6",
+    "generatedAt": "2026-09-10T21:54:26+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.1864,
+    "costUsd": 0.1487,
     "files": [
       "packages/rn/src/Landmark.tsx"
     ],

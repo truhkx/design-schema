@@ -23,6 +23,16 @@ const COPY_DISMISS_LABEL = 'Dismiss';
 /** copy.regionLabel */
 const COPY_REGION_LABEL = 'Notifications';
 
+/** Negates a boolean attribute: `no-dismiss` present means `dismissible` is `false`. */
+const NEGATED_BOOLEAN_CONVERTER = {
+  fromAttribute(value: string | null): boolean {
+    return value === null;
+  },
+  toAttribute(value: boolean): string | null {
+    return value ? null : '';
+  },
+};
+
 /** `duration: short` multiplies motion.duration.loop by this to get ~5s. */
 const SHORT_MULTIPLIER = 6;
 /** `duration: long` multiplies motion.duration.loop by this to get ~10s. */
@@ -228,8 +238,11 @@ export class DsToast extends LitElement {
   /** `short` ≈ 5s, `long` ≈ 10s (motion.duration.loop × 6 / × 12), `persistent` until dismissed. */
   @property({ reflect: true }) duration: ToastDuration = 'short';
 
-  /** Shows a dismiss button. Persistent toasts are always dismissible regardless of this value. */
-  @property({ type: Boolean, reflect: true }) dismissible = true;
+  /** Stable identity; showing a toast with the same `toastId` replaces this one instead of stacking. Named `toastId` (attribute `toast-id`) so it does not collide with the DOM `id`. */
+  @property({ attribute: 'toast-id' }) toastId?: string;
+
+  /** Shows a dismiss button. Persistent toasts are always dismissible regardless of this value. Exposed as the negated `no-dismiss` attribute (a boolean attribute cannot express `false` for a prop that defaults `true`). */
+  @property({ attribute: 'no-dismiss', converter: NEGATED_BOOLEAN_CONVERTER }) dismissible = true;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
   @property({ attribute: false }) overrides?: Partial<Record<ToastOverridableBinding, TokenRef>>;
@@ -665,8 +678,8 @@ export interface ToastOptions {
   actionLabel?: string;
   duration?: ToastDuration;
   dismissible?: boolean;
-  /** Stable identity; showing a toast with the same id replaces the previous one instead of stacking. */
-  id?: string;
+  /** Stable identity; showing a toast with the same toastId replaces the previous one instead of stacking. */
+  toastId?: string;
 }
 
 /** Resolution of the promise `toast()` returns, once the toast leaves the screen. */

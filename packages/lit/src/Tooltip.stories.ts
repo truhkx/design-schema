@@ -73,16 +73,16 @@ export const DescribesFalse: Story = {
 };
 
 /**
- * Renders present with its trigger, autofocused so it is open on mount, among
- * three focusable siblings so the keyboard gate can verify Escape hides it
- * without moving focus and Tab still reaches every control normally.
+ * Renders `open` so the tooltip is present on mount, among three focusable
+ * siblings so the keyboard gate can verify Escape hides it without moving
+ * focus and Tab still reaches every control normally.
  */
 export const Keyboard: Story = {
   render: () => html`
     <div style="display: flex; gap: var(--space-md);">
       <button type="button">Before</button>
-      <ds-tooltip content="Includes archived items">
-        <button type="button" autofocus>Show all</button>
+      <ds-tooltip content="Includes archived items" open>
+        <ds-button label="Show all"></ds-button>
       </ds-tooltip>
       <button type="button">After</button>
     </div>

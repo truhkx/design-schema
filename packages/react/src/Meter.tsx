@@ -15,6 +15,7 @@ export type MeterOverridableBinding =
   | 'fontFamily'
   | 'lineHeight'
   | 'partGap'
+  | 'labelGap'
   | 'transition';
 
 /** Bindings owned by the root; `labelSize`/`labelWeight`/`valueSize`/`fontFamily`/`lineHeight` are forwarded
@@ -23,6 +24,7 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<MeterOverridableBinding, string>> = {
   trackHeight: '--ds-meter-track-height',
   radius: '--ds-meter-radius',
   partGap: '--ds-meter-part-gap',
+  labelGap: '--ds-meter-label-gap',
   transition: '--ds-meter-transition',
 };
 

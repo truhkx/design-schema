@@ -21,6 +21,7 @@ export type AlertOverridableBinding =
   | 'gap'
   | 'partGap'
   | 'iconSize'
+  | 'headingSize'
   | 'headingWeight'
   | 'fontFamily'
   | 'fontSize'
@@ -120,6 +121,7 @@ export function Alert({
   const padding = overrides?.padding ? (resolveToken(t, overrides.padding) as number) : t.spaceMd;
   const gap = overrides?.gap ? (resolveToken(t, overrides.gap) as number) : t.space3;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
+  const headingSize = overrides?.headingSize ? (resolveToken(t, overrides.headingSize) as number) : t.fontSizeMd;
   const headingWeight = overrides?.headingWeight ? (resolveToken(t, overrides.headingWeight) as number) : t.fontWeightSemibold;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t.fontSizeMd;
@@ -151,9 +153,10 @@ export function Alert({
   };
 
   const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
+  const headingLineHeight = toLineHeight(headingSize, lineHeightMultiplier);
 
   const iconCellStyle: ViewStyle = {
-    height: lineHeight,
+    height: heading !== undefined ? headingLineHeight : lineHeight,
     justifyContent: 'center',
   };
 
@@ -165,9 +168,9 @@ export function Alert({
 
   const headingStyle: TextStyle = {
     fontFamily,
-    fontSize,
+    fontSize: headingSize,
     fontWeight: toFontWeight(headingWeight),
-    lineHeight,
+    lineHeight: headingLineHeight,
     color: foreground,
   };
 

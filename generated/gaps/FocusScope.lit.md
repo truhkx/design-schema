@@ -14,3 +14,7 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - FocusScope: schema lists no styles and 'Overridable: none / Locked: none', so no `overrides` property was added — only visually-hidden sentinel styling exists, which is token-exempt by convention.
 - FocusScope: 'container' autoFocus relies on `delegatesFocus` redirecting `this.focus()` to the shadow tree's tabindex=-1 anchor node standing in for the host, since the host itself carries no tabindex; this satisfies 'focus goes to the scope's own wrapper' without making the host part of the natural tab order.
+
+## 2026-09-10 17:49 — round 1
+
+- FocusScope: schema's returnFocusTo prop (type object, shape RefObject<HTMLElement | View>) had no Lit equivalent documented — Lit has no ref concept, so I exposed it as a non-reflected `HTMLElement | null | undefined` property (`@property({ attribute: false })`) consumers set directly, checked before the recorded opener in restoreFocusOnExit. The file already existed (pre-generated) with every other prop, event, and the keyboard model correctly implemented; only this prop was missing entirely, which I added.

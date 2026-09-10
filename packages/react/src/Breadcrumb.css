@@ -8,6 +8,7 @@
   --ds-breadcrumb-line-height: var(--font-line-height-normal);
   /* locked: accessibility-bearing, never overridable */
   --ds-breadcrumb-current-color: var(--color-foreground);
+  --ds-breadcrumb-item-color: var(--color-foreground-muted);
   --ds-breadcrumb-separator-color: var(--color-foreground-muted);
   --ds-breadcrumb-min-target: var(--size-target-min);
   display: block;
@@ -43,7 +44,11 @@
 }
 
 /* current: the current page, plain text in the regular weight. */
-.ds-breadcrumb__current,
-.ds-breadcrumb__text {
+.ds-breadcrumb__current {
   color: var(--ds-breadcrumb-current-color);
+}
+
+/* text: an ancestor without href, a level with no page of its own. */
+.ds-breadcrumb__text {
+  color: var(--ds-breadcrumb-item-color);
 }

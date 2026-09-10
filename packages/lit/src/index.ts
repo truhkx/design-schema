@@ -40,6 +40,7 @@ import './Tooltip.js';
 import './Toast.js';
 import './Popover.js';
 import './BottomSheet.js';
+import './ActionSheet.js';
 
 export { DsButton } from './Button.js';
 export type {
@@ -210,3 +211,13 @@ export type {
   BottomSheetDragDismissDetail,
   BottomSheetOverridableBinding,
 } from './BottomSheet.js';
+
+export { DsActionSheet } from './ActionSheet.js';
+export type {
+  ActionSheetActionTone,
+  ActionSheetCloseReason,
+  ActionSheetAction,
+  ActionSheetActionDetail,
+  ActionSheetCloseDetail,
+  ActionSheetOverridableBinding,
+} from './ActionSheet.js';

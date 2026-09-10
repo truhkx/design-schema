@@ -164,3 +164,13 @@ export type {
   ActionSheetCloseReason,
   ActionSheetOverridableBinding,
 } from './ActionSheet';
+
+export { SidePanel } from './SidePanel';
+export type {
+  SidePanelProps,
+  SidePanelSide,
+  SidePanelWidth,
+  SidePanelPersistent,
+  SidePanelOpenChangeReason,
+  SidePanelOverridableBinding,
+} from './SidePanel';

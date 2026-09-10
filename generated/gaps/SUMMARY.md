@@ -1,6 +1,29 @@
-# Gap digest — phase Focus
+# Gap digest — phase Overlays
 
-Generated 2026-09-10T02:43 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T03:17 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+
+## ActionSheet
+
+Doc: `site/src/content/docs/components/actionsheet.md`
+
+### 2026-09-10 03:16 — web round 1
+
+- **DOC** ActionSheet: the wide/Menu presentation must anchor 'to the element that was focused when open became true' (an arbitrary external DOM node), but Menu owns and renders its own internal trigger Button — there's no API to anchor Menu to a foreign element. Chose to render Menu with its own trigger positioned (via the sanctioned style-prop passthrough) at a fixed rect captured from document.activeElement at open time, made invisible (opacity 0, pointer-events none) so Menu's popup positions itself relative to that point. This leaves a zero-opacity, pointer-events-none but still keyboard-focusable proxy button in the DOM whenever the wide sheet is open — not a perfect substitute for anchoring to the real opener. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: Menu's onOpenChange(false) fires for both a real dismissal (Escape/outside click) and, just before onAction, for a chosen action — it doesn't say which, and ActionSheet's contract requires onClose to fire only for the former. Worked around with a same-tick setTimeout that the paired onAction call cancels. Also, Menu doesn't distinguish escape from an outside click, so both collapse to onClose('escape') in the wide presentation (the only one of the four reasons — escape/scrim/cancel/drag — that fits a non-modal, scrim-less, cancel-row-less surface). → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: general generation instructions mention overlay portals may accept a `container` prop override, but the component's own YAML props list has no `container` prop (only open/title/actions/cancelLabel). Followed the schema as source of truth and hardcoded `document.body` as the portal target, unlike BottomSheet/Popover which do declare `container`. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: anatomy lists no 'handle' part, but the platform notes say the phone presentation reuses BottomSheet's <dialog> mechanics 'as BottomSheet', which includes a drag handle enabling the drag-to-dismiss gesture referenced by the 'drag' close reason and the gesture-alternative requirement. Rendered a decorative grab handle (aria-hidden, no data-part since it isn't a named anatomy part) to support this, matching BottomSheet visually. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: styles list gives `itemGap` the description 'Between icon and label' only (no separate token for vertical spacing between rows). Interpreted this literally — rows are stacked with no gap and get their rhythm entirely from `itemPaddingBlock`, unlike Menu.css which reuses its `itemGap` for both row spacing and icon-label spacing. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: `fontFamily` and `lineHeight` are generic overridable bindings but the title renders through a composed `Text`, which always sets its own font-family/line-height (never inherits). Forwarded both bindings into Text's own `overrides` (alongside `titleSize`→Text `fontSize`) as well as applying them as root CSS hooks for the item rows, so a single override value affects both consistently — mirroring the `Divider → Text fontSize` precedent, extended by analogy to `fontFamily`/`lineHeight` since no other component schema exercises that exact combination. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the forwardRef exposes the phone presentation's `HTMLDialogElement` only; in the wide/Menu presentation the consumer's ref is not attached to anything (Menu's root is an `HTMLDivElement`, an incompatible type), unlike BottomSheet's wide branch which forwards the same ref to Dialog because both render a native `<dialog>`. → `site/src/content/docs/components/actionsheet.md`
+
+### 2026-09-10 03:08 — rn round 1
+
+- **DOC** ActionSheet: spec says 'Above maxWidth: renders Menu anchored to the element that was focused when open became true' but the package's Menu always renders its own internal trigger Button and has no API to anchor to an externally-rendered element (ActionSheet has no trigger of its own — open is fully controlled). Composing Menu for this would require re-implementing its anchor/positioning logic, which the instructions forbid. Chose to always render the phone sheet presentation, on tablets too — the mirror image of the limitation Menu.tsx's own doc comment already acknowledges about ActionSheet. The `maxWidth` override is consequently a no-op on this platform. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the web keyboard model (ArrowUp/ArrowDown/Home/End roving-tabindex between actions) has no RN equivalent — `Pressable` exposes no generic key-event API. Implemented the acknowledged-limit convention already used by Menu/RadioGroup: each row is its own Tab/focus stop; Enter/Space work through the platform's native activation. Reported here since the keyboard scenarios describing arrow movement cannot be expressed as RN tests. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: anatomy has no 'handle' part (unlike BottomSheet), but the platform notes say 'drag-to-dismiss on the header as BottomSheet.' Interpreted 'header' as the title area (present whether or not `title` is set) and attached the PanResponder there; no visual grab affordance is drawn since no handle bar exists in the anatomy. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: no padding/vertical-rhythm binding is defined for the title/header area or the cancel row's own inset (only itemPaddingInline/itemPaddingBlock are bound, for action rows). Reused itemPaddingInline for both, and a plain `t.spaceSm` (not bound to any override) for the header's vertical padding, matching the precedent BottomSheet set for its own unbound header spacing. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** Menu.tsx's doc comment currently states 'there is no ActionSheet component in this package yet' — now stale now that ActionSheet exists. Left unedited since it's outside this generation's scope (only ActionSheet.tsx and index.ts were requested), but should be updated in a follow-up pass. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: behavior scenario 'has-accessible-name' is satisfied via `accessibilityLabel` on the surface (title ?? copy.defaultLabel) rather than a native heading/aria mechanism, matching the a11y.role: menu contract; no gap in coverage, noted for completeness. → `site/src/content/docs/components/actionsheet.md`
 
 ## Alert
 
@@ -29,6 +52,26 @@ Doc: `site/src/content/docs/components/alert.md`
 
 Doc: `site/src/content/docs/components/alertdialog.md`
 
+### 2026-09-10 02:51 — lit round 1
+
+- **DOC** AlertDialog was already generated and exported prior to this invocation and fully matches the current spec (props, events, tokens, keyboard model, a11y, stories, tests); no changes were made. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** Schema prop `title` is implemented as `heading` per the package convention that a prop colliding with a native HTMLElement member (HTMLElement.title) must be renamed, with only the attribute/doc-facing name preserved elsewhere — consistent with Dialog.ts's identical handling. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** Icon glyph selection (name=${tone}) is only specified in the web platform notes ('<Icon name={tone}>'), not repeated in the lit notes; applied the same mapping in ds-icon since the tone enum values (danger/warning/info) match existing icon names. → `site/src/content/docs/components/alertdialog.md`
+
+### 2026-09-10 02:44 — rn round 1
+
+- **DOC** AlertDialog: confirmDisabled is described as 'aria-disabled, still focusable' but the composed Button only supports native disabled (removes focusability) — no restyle/reimplementation allowed, so confirmDisabled maps to Button's disabled as-is; a focusable-but-inert Confirm needs a Button API change. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: a11y.role alertdialog has no native RN accessibilityRole equivalent; left unset, relying on accessibilityViewIsModal + accessibilityLabel/accessibilityHint on the surface, matching Dialog's precedent for role=dialog. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: overrides.footerGap can't reach Stack's internal gap (no override hook on Stack's fixed space.* gap presets), so the footer row is hardcoded to gap="tight" and the override is a no-op — same limit Dialog documents for its footer. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: icon size for the tone glyph isn't specified; chose size="lg" since the a11y.contrast entry for the icon marks large: true. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: composition lists focusScope: FocusScope but names no component for the icon+text wrapper or outer surface/scrim; rendered as plain Views, matching Dialog's precedent. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: initial focus targets a wrapping View around the title rather than the Heading's own Text node (Heading doesn't forward refs) — same native limit Dialog documents for initialFocus="title". → `site/src/content/docs/components/alertdialog.md`
+
+### 2026-09-10 02:44 — web round 1
+
+- **DOC** AlertDialog was already generated and committed prior to this session (verified complete: composition matches spec via FocusScope/Heading/Icon/Stack/Text, native dialog role=alertdialog with showModal/scrim/no-close-button/Cancel-first-focus, tone→icon/confirm-variant mapping, all override hooks, reduced-motion handling); confirmed with `vitest run src/AlertDialog.test.tsx` (6/6 passing) rather than rewriting from scratch. No ambiguities found in this pass. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** footerGap: schema declares an overridable `footerGap` binding but the footer is a composed Stack (`gap: tight` per platform notes) rather than a raw flex gap the CSS controls directly; the existing implementation documents this in a CSS comment and leaves the override present-but-inert on the Stack's fixed gap — flagged since the override technically has no visible effect. → `site/src/content/docs/components/alertdialog.md`
+
 ### 2026-09-09 23:37 — rn round 1
 
 - **DOC** AlertDialog: `confirmDisabled` is described as 'aria-disabled, still focusable' (web ARIA convention), but the composed `Button` only supports native `disabled` (removes from focus/interaction per its own doc) — no restyle/reimplementation is allowed, so `confirmDisabled` maps to `Button`'s `disabled` prop as-is; a focusable-but-inert Confirm is not achievable without a Button API change. → `site/src/content/docs/components/alertdialog.md`
@@ -55,6 +98,39 @@ Doc: `site/src/content/docs/components/alertdialog.md`
 - **DOC** Icon size: schema doesn't specify a size token for the status icon binding (only the color, `color.status.{tone}.icon`, locked). I chose IconSize 'lg' for visual weight as the dialog's primary signal; a 'md' default would also be defensible. → `site/src/content/docs/components/alertdialog.md`
 - **DOC** partGap's doc text says 'between the text block and the footer', but in the DOM the icon sits inline with the text block as one row (`.ds-alert-dialog__content`), so partGap actually measures from that icon+text row to the footer rather than from text alone. Visually identical (icon and text are top-aligned), but noting the wording mismatch. → `site/src/content/docs/components/alertdialog.md`
 - **DOC** `footerGap` (layout.gap.tight) is declared as an overridable CSS hook on the root for API-surface consistency with the schema, but — same as the existing Dialog component — it isn't actually wired to anything, because the footer's spacing comes from the composed Stack's own fixed gap scale (`gap="1"`), which can't read an arbitrary custom-property token. This mirrors an existing, unresolved gap already present in Dialog.tsx/Dialog.css, not a new one. → `site/src/content/docs/components/alertdialog.md`
+
+## BottomSheet
+
+Doc: `site/src/content/docs/components/bottomsheet.md`
+
+### 2026-09-10 03:14 — lit round 1
+
+- **DOC** BottomSheet: the schema names the title prop `title`, but `title` is a native HTMLElement member (tooltip). Renamed to `heading` (property and attribute) to match the established Dialog/AlertDialog convention in this package rather than shadowing the native accessor; `hideTitle`/`hide-title` kept its schema name even though it now hides the `heading` field. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: `draggable` also collides with the native global `draggable` HTML attribute/IDL property (HTML5 drag-and-drop, string-reflected). Kept the literal name since platforms.lit.reflect explicitly lists it, but this shadows the native accessor on instances of this element; harmless here since the gesture is handled via Pointer Events, not native DnD, but worth flagging since the general Lit convention calls out exactly this class of clash for `title`/`role`. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: scoped the `content` variant's 90% viewport cap (`max-block-size: 90dvh`) to the `content` height only, removing it for `half`/`full`. The doc's platform note gives `full` an explicit `calc(100dvh - layout.gutter)` block-size that would otherwise be clamped by a globally-applied 90dvh cap, undermining 'near-full-screen'; the doc doesn't state this interaction explicitly. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: no `initialFocus` prop exists (unlike Dialog). Guidance only says focus moves 'to the first control or the title', so I implemented Dialog's default 'first' behavior (first focusable in the body, else the close button, else the heading) with no way to configure it otherwise. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: when rendered as `<ds-dialog>` above the `maxWidth` breakpoint, `hideTitle` has no effect since Dialog has no hidden-title variant in its own schema — the title always shows in that presentation. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: behavior when the viewport crosses the `maxWidth` breakpoint while the sheet is `open` (a live resize mid-session) isn't specified. No animated hand-off between the sheet and Dialog presentations is implemented; the template swaps on the next render and scroll-lock/focus bookkeeping is only engaged while in the sheet presentation. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: `drag-dismiss` has no described `detail` shape in the schema, so the CustomEvent carries none (mirrors `onDragDismiss?: () => void` in the already-generated React version). → `site/src/content/docs/components/bottomsheet.md`
+
+### 2026-09-10 03:06 — web round 1
+
+- **DOC** BottomSheet: above the maxWidth breakpoint the spec says to render Dialog directly ('composition, not duplication'), so the mounted root there carries data-ds="Dialog" instead of data-ds="BottomSheet" — the testability hook differs by viewport; there's no way to satisfy both the composition instruction and a stable root hook at once. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: hideTitle has no effect in the wide/Dialog presentation, since Dialog's schema has no hidden-title mode and the rule forbids restyling/reaching into composed children. The title is always visible there. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: overrides (the per-instance token hooks) only apply to the bottom-edge presentation; above the breakpoint the sheet renders as Dialog, which has its own distinct overridable-binding set, so BottomSheet overrides are silently unused in that mode. Not stated in the doc. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: a11y.requires lists target-44px, but the close button is a composed Button, whose schema only exposes size sm/md/lg (no 'comfortable target' variant), and the rules forbid restyling a child's internals. Used size="md" (the largest available) but can't guarantee the rendered target actually reaches 44px — the gap is in Button's schema, not something this generator can fix without growing it. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the exit token's description says a drag dismiss 'continues at the drag velocity'; implemented the standard exit transition (same as a non-drag close) instead of momentum-preserving physics, since the schema gives no numeric spec for how velocity should map to animation. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the wide/narrow breakpoint is read at runtime via getComputedStyle(--layout-max-width-prose) rather than hard-coded, so it can't reflect a per-instance overrides.maxWidth (that hook only exists on the mounted sheet element, which doesn't exist yet when the presentation decision is made). → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: schema has no initialFocus prop (unlike Dialog), so default focus-on-open always targets the first focusable body control, falling back to the close button — this mirrors Dialog's 'first' default but isn't explicitly specified for BottomSheet. → `site/src/content/docs/components/bottomsheet.md`
+
+### 2026-09-10 03:01 — rn round 1
+
+- **DOC** BottomSheet: the drag gesture's threshold ("released past the threshold") and velocity aren't quantified in the spec; I chose 25% of measured sheet height (matching web's stated 25%) and a 1.5 px/ms release velocity, and used `Animated.decay` for the post-release motion since the spec's "continues at the drag velocity" has no native-specific guidance on the mechanism. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the RN notes say the ScrollView's scrollY-at-0 'hands the gesture to the pan responder,' implying the body itself can also initiate a drag-dismiss when scrolled to top. I implemented drag only on the header/handle (the PanResponder is not attached to the ScrollView) since arbitrating responder ownership between a ScrollView and a PanResponder without a new gesture dependency is unreliable; dragging must start on the header, not from within scrolled-to-top body content. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: no `initialFocus` prop exists on this component (unlike Dialog), so focus placement on open relies entirely on FocusScope's default `autoFocus="first"`, which on native resolves to the scope's own wrapper (not a real first-focusable descendant) — the same acknowledged limit FocusScope documents for itself. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: when rendered as `Dialog` above `maxWidth` (tablet/wide), `hideTitle` has no effect since Dialog always shows its title — the title is visually present in the wide presentation even when `hideTitle` is true, though it remains the accessible name either way. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: `scroll-lock` (a11y.requires) has no native equivalent — there's no page scroll for a modal `Modal` to suppress — so it isn't implemented, matching Dialog's existing documented limitation. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: `accessibilityRole="dialog"` (a11y.role) is not set explicitly on the surface, matching the existing Dialog/AlertDialog implementations in this package, which rely on `accessibilityViewIsModal` plus the native `Modal` instead — following established precedent rather than the schema's literal `role: dialog` value, since RN's `accessibilityRole` enum support for 'dialog' is inconsistent across versions. → `site/src/content/docs/components/bottomsheet.md`
 
 ## Box
 
@@ -400,6 +476,11 @@ Doc: `site/src/content/docs/components/container.md`
 ## Dialog
 
 Doc: `site/src/content/docs/components/dialog.md`
+
+### 2026-09-10 02:49 — lit round 1
+
+- **DOC** (report recovered after a second request) → `site/src/content/docs/components/dialog.md`
+- NOISE: 6 repeated or empty line(s) collapsed
 
 ### 2026-09-10 02:43 — web round 1
 
@@ -772,6 +853,26 @@ Doc: `site/src/content/docs/components/link.md`
 
 Doc: `site/src/content/docs/components/menu.md`
 
+### 2026-09-10 02:51 — lit round 1
+
+- **DOC** Menu: keyboard action-item Home/End rows list `from: last`/`from: first` but the doc means "from anywhere while open" — implemented as always-first/always-last regardless of current focus, matching every other component's Home/End semantics. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: `minWidth` doc says space.20 × 2.5 with 'the generator multiplies; no new token' — implemented as calc(var(--space-20) * 2.5) inline rather than a precomputed token, since no such token exists. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: typeahead reset timing (500ms) has no token in the schema (it's an interaction timing, not motion) — chosen as a local constant rather than guessing a motion token. → `site/src/content/docs/components/menu.md`
+
+### 2026-09-10 02:45 — web round 1
+
+- **DOC** Menu: `open` is documented as "controlled open state" with no explicit uncontrolled-close mechanism when using it purely as a boolean toggle from outside (no onOpenChange-driven two-way binding helper) — implemented as fully controlled-if-present (parent must flip `open` itself on onOpenChange), matching Dialog/AlertDialog convention in this package. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: minWidth token math ("space.20 × 2.5, i.e. 200px") is described in prose, not as a generator-computed literal — implemented as calc(var(--ds-menu-min-width) * 2.5) in CSS to avoid a hard-coded px value, since the doc explicitly says 'no new token'. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: spec's keyboard table marks ArrowDown-from-trigger and ArrowUp-from-trigger as `expect: manual` — verified via the Keyboard story (open:true) rather than an automated scenario, per the doc's own scenario list which only covers `renders-*` and `has-accessible-name`. → `site/src/content/docs/components/menu.md`
+
+### 2026-09-10 02:44 — rn round 1
+
+- **DOC** Menu: no ActionSheet component exists in this package yet, so RN always renders the anchored dropdown Modal (even on phones) instead of the touch ActionSheet presentation the docs describe. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: RN has no generic key-event API on Pressable, so ArrowUp/ArrowDown/Home/End movement and a-z typeahead are not implemented; each item is its own Tab stop instead (same convention as RadioGroup). → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: opening via ArrowUp to focus the last item can't be distinguished from Enter/Space activation on Button, so opening always focuses the first enabled item regardless of how it was triggered. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: Button has no prop to carry accessibilityState.expanded, so the trigger's expanded/collapsed state isn't exposed to assistive technology on RN. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: the popup is not scrollable — a very long item list just grows to fit its content, which can overflow the viewport on small screens. → `site/src/content/docs/components/menu.md`
+
 ### 2026-09-10 00:21 — rn round 1
 
 - **DOC** Menu: no ActionSheet component exists in this package yet (only referenced in FocusScope's own doc comment), so the phone-vs-tablet split the platform notes describe ("Menus on touch are ActionSheets") isn't implementable by composition. Chose to always render the anchored transparent-Modal dropdown, on phones too, and documented this as an acknowledged limit in the JSDoc. → `site/src/content/docs/components/menu.md`
@@ -825,6 +926,43 @@ Doc: `site/src/content/docs/components/meter.md`
 
 - **DOC** Meter: existing Meter.tsx was missing the overrides prop (and MeterOverridableBinding type) required by the schema's overrides contract, plus the testID="Meter" testability hook — added both, mapping trackHeight/radius/labelSize/labelWeight/valueSize/fontFamily/lineHeight/partGap/transition to overrides and keeping track/fill/labelColor/valueColor locked, and exported MeterOverridableBinding from index.ts. → `site/src/content/docs/components/meter.md`
 
+## Popover
+
+Doc: `site/src/content/docs/components/popover.md`
+
+### 2026-09-10 03:06 — lit round 1
+
+- **DOC** heading: no level is specified in the schema for the composed <ds-heading>; chose level=3 (Popover sits one step below a typical Dialog's level 2). A future 'headingLevel' prop would remove the guess. → `site/src/content/docs/components/popover.md`
+- **DOC** trigger accessible-name fallback: since aria-controls can't cross the shadow boundary and the trigger is arbitrary slotted content, the panel's aria-label (when heading is unset) is read from the trigger's aria-label/label/textContent attributes in that order. This works for <ds-button label="..."> authored via attribute syntax (as in the stories) but not for a trigger whose accessible name is set only via a JS property binding (`.label=`) or is entirely composed inside another element's shadow root — no generic cross-shadow-boundary way to read an arbitrary element's computed accessible name exists from outside. → `site/src/content/docs/components/popover.md`
+- **DOC** trigger activation (keyboard 'Enter/Space toggles from the trigger') is implemented via a native `click` listener on the slotted trigger, matching the web platform note's 'onClick toggle' — this covers any native-activatable element (button, link) but not a non-native focusable trigger (e.g. a plain <div tabindex="0">) that doesn't itself convert Enter/Space to a click. → `site/src/content/docs/components/popover.md`
+- **DOC** 'has-accessible-name' scenario is ambiguous for a closed-by-default Popover: the host `ds-popover` itself carries no role/aria-label (only the trigger and, once open, the panel do). Implemented so the trigger always has its own accessible name; flagging in case the scenario expects the host element itself to expose one. → `site/src/content/docs/components/popover.md`
+- **DOC** arrow (showArrow): rendered as a single rotated square with a border only on its top+left edges (a common CSS shortcut for a diamond pointer), so it doesn't perfectly blend into the panel border for every placement side — a pixel-perfect per-side border was out of scope for the described 'small pointer'. → `site/src/content/docs/components/popover.md`
+- **DOC** 'inset' token governs the panel's own padding (matching Dialog's precedent for its 'inset' binding); the anatomy's separate 'body: Box' composition is used for the default-slot wrapper without setting Box's own `inset` attribute, mirroring how Dialog.ts composes its body Box. → `site/src/content/docs/components/popover.md`
+- **DOC** dismissible defaults to true and the schema's platforms.lit.reflect list does not include it, but the generic 'booleans that default to true' rule requires a negated, reflected attribute (`no-dismiss`) — implemented via a custom Lit converter since it's not in the reflect list and no existing component demonstrates this exact pattern (Dialog.ts's own `dismissible` does NOT follow this rule, reflecting a plain, non-negatable boolean instead). → `site/src/content/docs/components/popover.md`
+
+### 2026-09-10 02:57 — web round 1
+
+- **DOC** platforms.web.element is 'div' but the a11y root the tests key off (data-ds) needed to be on an always-present wrapper, not the conditionally-portaled role=dialog panel — mirrored Menu.tsx's convention (wrapper div carries data-ds='Popover' and wraps the cloned trigger + portal) so `renders`/`has-accessible-name` scenarios pass even when closed; the panel itself carries only data-part='panel'. → `site/src/content/docs/components/popover.md`
+- **DOC** Notes say 'Modal: uses a native <dialog> with showModal()' but the attributes list also asks for explicit role=dialog/aria-modal on the same element set as non-modal. Followed the codebase precedent (Dialog.tsx/AlertDialog.tsx): native <dialog> for modal (gets inert-background and focus containment from the browser's top layer for free) with explicit role='dialog' aria-modal='true' added redundantly; a plain <div role='dialog' aria-modal='false'> for non-modal. → `site/src/content/docs/components/popover.md`
+- **DOC** 'Lock body scroll while open' is listed as a generic overlay rule, but Popover's own prop doc says non-modal 'the page stays interactive.' Scroll lock is applied only when modal=true; non-modal popovers never lock page scroll. Flagging in case the intent was scroll-lock always. → `site/src/content/docs/components/popover.md`
+- **DOC** Notes call for both a document pointerdown-outside listener and a focusout-to-outside listener for non-modal dismissal. Implemented only pointerdown-outside, because the explicit Tab/Shift+Tab handlers already own the keyboard-driven 'leaves the panel' cases, and a generic focusout listener firing alongside the manual focus-move in the Tab-out handler risked double `onOpenChange` calls for one interaction. A `closingRef` guard was added regardless as a safety net. → `site/src/content/docs/components/popover.md`
+- **DOC** No `headingLevel`/level prop exists on Popover (unlike Dialog which has a fixed level too). Hardcoded the heading to level 2, matching Dialog's own default, since a11y.requires doesn't list heading-hierarchy for Popover anyway. → `site/src/content/docs/components/popover.md`
+- **DOC** Arrow placement is centered on the panel's cross-axis edge (e.g. horizontally centered under the trigger for bottom/top placements) rather than tracking the trigger's actual center, since corner placements (bottom-start/bottom-end) don't guarantee the trigger sits under the panel's midpoint. Accurate for the four non-corner placements (top/bottom/start/end); a visual approximation for the four corner ones. → `site/src/content/docs/components/popover.md`
+- **DOC** The 'start'/'end' pure-side placements resolve left/right using the trigger's computed `direction` (RTL-aware), matching Tooltip's existing precedent; the four corner placements (bottom-start, etc.) stay physical left/right with no RTL awareness, matching Menu's existing precedent. The two families of placements are therefore inconsistent with each other on RTL, but each matches an established sibling component. → `site/src/content/docs/components/popover.md`
+- **DOC** trigger is typed as `ReactElement` (not the schema's generic `content`/ReactNode) since cloning it to inject aria-expanded/aria-controls/onClick/ref requires a single element — same tightening Tooltip already makes for its identical 'exactly one focusable element' wording. → `site/src/content/docs/components/popover.md`
+
+### 2026-09-10 02:53 — rn round 1
+
+- **DOC** Popover: RN's `Modal` always intercepts touch behind it, so `modal=false`'s spec requirement that "the page stays interactive" cannot be reproduced — only "tapping outside closes it" is implemented (backdrop is transparent, not tinted, but still blocks the underlying screen). Same limit this package's Menu already accepts. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: the panel's accessible name (a11y `accessible-name`, web's `aria-labelledby` the heading or the trigger's rendered text) has no RN equivalent for reading arbitrary trigger content, so it falls back to the trigger element's `label` string prop when present (works for this package's own Button/Link) and is otherwise undefined — a dev warning fires, but a non-Button trigger with no `heading` renders a panel with no accessible name. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: 'moves focus to the first control (or the heading, if there are none)' cannot be implemented literally — RN has no descendant walker to find a real first focusable control or to detect that the body has none (the same limit Dialog's `initialFocus` and FocusScope document), so focus always lands on the body wrapper via `AccessibilityInfo.setAccessibilityFocus`; the heading fallback is unreachable. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: `accessibilityState={{ expanded: isOpen }}` cloned onto the trigger has no effect when the trigger is this package's own `Button`, since `Button` does not forward unrecognized props onto its underlying `Pressable` (documented limit already acknowledged by Menu). `aria-controls` has no native analogue and is not attempted. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: Tab / Shift+Tab (`tab-out` reason, and the modal Tab-wrap) has no implementation — RN's `Pressable` exposes no generic hardware key-event API to detect Tab, and the modal case is inherited from `FocusScope`'s own documented 'no Tab order to confine' limit. `onOpenChange` can never fire with reason `tab-out` on this platform. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: per the RN platform notes phones should get a `BottomSheet` (height=content) instead of an anchored panel, but this package has no `BottomSheet` component yet, so this generator always renders the tablet/react-native-web anchored-panel variant regardless of form factor — the same acknowledged gap Menu's doc records for its own (missing) ActionSheet fallback. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: 'repositions on scroll and resize while open' is only handled for resize indirectly (the panel is measured once per open via `measureInWindow`); there is no generic native scroll-position listener to re-measure against, matching Menu's own dropdown, which has the identical limitation though its doc doesn't call it out. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: the optional arrow (`showArrow`) is centered on the panel's measured edge rather than re-aligned to the trigger's own center once the panel has been shifted to stay on-screen — a cosmetic simplification, not a spec requirement broken outright since the schema doesn't specify arrow alignment precision. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: `dismissible` is implemented as an all-or-nothing render gate on the close button (hidden when `false`) rather than Dialog's disabled-but-present pattern, since the schema's own wording ('Show the close button') reads as a visibility toggle rather than Dialog's stricter 'must be answered' semantics; flagging the interpretation in case the intended behavior was closer to Dialog's. → `site/src/content/docs/components/popover.md`
+
 ## RadioGroup
 
 Doc: `site/src/content/docs/components/radiogroup.md`
@@ -850,6 +988,21 @@ Doc: `site/src/content/docs/components/radiogroup.md`
 - **DOC** RadioGroup.tsx/.css pre-existed but predated the overrides/data-ds/data-part conventions now required across the package; brought it in line: added RadioGroupOverridableBinding (the 16 non-locked bindings from styles), an overrides prop wired through cssVar()/OVERRIDE_HOOK the same way Checkbox/Switch do, data-ds="RadioGroup" on the fieldset root, and data-part on description, radio, radioLabel, radioDescription, and errorMessage (group/legend/radioIndicator left without data-part since they're reachable via role or are pseudo-elements, matching the Checkbox/Switch precedent). → `site/src/content/docs/components/radiogroup.md`
 - **DOC** CSS previously read design tokens directly instead of through --ds-radio-group-<binding> hooks; rewrote it so every schema binding (locked and overridable) is a custom-property hook on .ds-radio-group, mirroring Checkbox.css/Switch.css, so overrides actually take effect. → `site/src/content/docs/components/radiogroup.md`
 - **DOC** helperSize/descriptionText/errorText were only applied via the shared Text component's size/tone props, not as CSS hooks on the wrapper classes; added explicit font-size/color rules on .ds-radio-group__description, __option-description, and __error keyed to the hooks (same pattern as Checkbox) so the overridable helperSize binding has an effect and locked descriptionText/errorText are hooks rather than baked-in token references. → `site/src/content/docs/components/radiogroup.md`
+
+## SidePanel
+
+Doc: `site/src/content/docs/components/sidepanel.md`
+
+### 2026-09-10 03:17 — rn round 1
+
+- **DOC** SidePanel: copy.openLabel ('Open menu') has no described consumption point — the trigger is entirely caller-supplied content, not a built-in button the component renders. I use it as a fallback accessibilityLabel on the cloned trigger only when the trigger element has no string `label` prop of its own, so the toggle always has an accessible name of last resort; the schema doesn't confirm this is the intended use. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the guidance text says the trigger is 'usually iconOnly with the menu Icon', but this package's Icon glyph set (paths.ts) has no `menu` (hamburger) name — only chevrons, close, plus/minus, status glyphs, external, ellipsis, search, arrows, calendar. Used a plain labeled (non-iconOnly) Button in the stories instead of inventing a glyph; a `menu` icon is a gap for whoever owns the Icon component. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: 'Escape ... request close. When false, only the trigger and footer actions close it' contradicts this package's own Dialog/BottomSheet precedent, where Escape/the Android back button always reports regardless of `dismissible` (the consumer decides). I followed SidePanel's own explicit wording and gated Escape/onRequestClose by `dismissible`, diverging from the Dialog convention — flagging in case the intent was actually to match Dialog. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: non-modal 'the page stays live' (touches behind the panel work) cannot be reproduced natively — RN's `Modal` intercepts every touch behind it regardless of transparency, the same acknowledged limit Popover's own doc records. Only 'a tap outside closes it' is implementable; scroll-lock and `inert` background have no native equivalent either (same acknowledged gap as Dialog/BottomSheet). → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: `useSidePanelEdgeSwipe`'s `onOpen` callback has no wiring to a specific SidePanel instance's internal state — for an uncontrolled panel (no `open` prop) there is no imperative handle besides the rendered `trigger`, so edge-swipe-to-open only works if the consumer also controls `open` themselves. Also, the 'edge zone' width a swipe must start within has no token in the schema; I used `sizeTargetComfortable` as the nearest existing token, a guess. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: `navigation` is kept on the `SidePanelCloseReason` type for parity with the web/Lit docs (a followed Link closes the panel there via a client router) but is never emitted by this native component — there's no router hook to observe a followed Link, same as `action` for Dialog/BottomSheet. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: persistent-mode accessibility role — the platforms.rn notes explicitly say 'a sibling View with accessibilityRole="none" and a label', which I followed verbatim, even though the general package convention elsewhere favors `role` (RN ≥0.74) for landmark parity with the web `complementary`/`navigation` role; RN has no such landmark role value, so `none`+label is the documented fallback. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** No SidePanel.test.tsx was written — this generation task's Output section only asked for the .tsx (plus stories); none of the package's other overlay components (BottomSheet, Popover, ActionSheet) has a sibling .test.tsx either, so behavior-scenario tests were left to whatever separate pass covers that (per the project's ongoing behavior-scenarios rollout). → `site/src/content/docs/components/sidepanel.md`
 
 ## Stack
 
@@ -1009,7 +1162,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 422 · CODE: 38 · TOOLING: 2 · NOISE: 8
+DOC: 510 · CODE: 38 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

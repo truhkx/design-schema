@@ -1,0 +1,202 @@
+/* SidePanel — styled only through Design Schema token custom properties. */
+
+.ds-side-panel {
+  display: inline-block;
+}
+
+.ds-side-panel__panel {
+  --ds-side-panel-scrim: var(--color-overlay-scrim);
+  --ds-side-panel-shadow: var(--shadow-overlay);
+  --ds-side-panel-border: var(--color-border);
+  --ds-side-panel-border-width: var(--border-width-thin);
+  /* width: layout.maxWidth.prose; widthNarrow: space.20 × 3, the doc's own arithmetic, no literal. */
+  --ds-side-panel-width: var(--layout-max-width-prose);
+  --ds-side-panel-width-narrow: calc(var(--space-20) * 3);
+  --ds-side-panel-width-wide: var(--layout-max-width-content);
+  --ds-side-panel-edge-gutter: var(--space-12);
+  --ds-side-panel-inset: var(--layout-inset-lg);
+  --ds-side-panel-header-gap: var(--layout-gap-normal);
+  --ds-side-panel-part-gap: var(--layout-gap-loose);
+  --ds-side-panel-footer-gap: var(--layout-gap-tight);
+  --ds-side-panel-layer: var(--layer-sheet);
+  --ds-side-panel-enter: var(--motion-duration-base);
+  --ds-side-panel-exit: var(--motion-duration-fast);
+  box-sizing: border-box;
+  position: fixed;
+  inset-block: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  inline-size: min(var(--ds-side-panel-width), calc(100vw - var(--ds-side-panel-edge-gutter)));
+  max-inline-size: none;
+  max-block-size: none;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-family-body);
+  z-index: var(--ds-side-panel-layer);
+}
+
+.ds-side-panel__panel--start {
+  inset-inline-start: 0;
+}
+
+.ds-side-panel__panel--end {
+  inset-inline-end: 0;
+}
+
+.ds-side-panel__panel--width-narrow {
+  inline-size: min(var(--ds-side-panel-width-narrow), calc(100vw - var(--ds-side-panel-edge-gutter)));
+}
+
+.ds-side-panel__panel--width-wide {
+  inline-size: min(var(--ds-side-panel-width-wide), calc(100vw - var(--ds-side-panel-edge-gutter)));
+}
+
+/* scrim → color.overlay.scrim; ::backdrop inherits the custom property from its originating element. */
+.ds-side-panel__panel::backdrop {
+  background-color: var(--ds-side-panel-scrim);
+}
+
+.ds-side-panel__surface {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  gap: var(--ds-side-panel-part-gap);
+  /* surface: locked — never overridden independently. */
+  background-color: var(--color-overlay-surface);
+  box-shadow: var(--ds-side-panel-shadow);
+  overflow: hidden;
+  transform: translateX(-100%);
+  transition-property: transform;
+  transition-duration: var(--ds-side-panel-exit);
+  transition-timing-function: var(--motion-easing-exit);
+}
+
+/* enter/exit: slide in from the edge the panel is anchored to, flipped under RTL. */
+.ds-side-panel__panel--end .ds-side-panel__surface {
+  transform: translateX(100%);
+}
+
+.ds-side-panel__panel--start:dir(rtl) .ds-side-panel__surface {
+  transform: translateX(100%);
+}
+
+.ds-side-panel__panel--end:dir(rtl) .ds-side-panel__surface {
+  transform: translateX(-100%);
+}
+
+.ds-side-panel__panel--visible .ds-side-panel__surface {
+  transform: translateX(0);
+  transition-duration: var(--ds-side-panel-enter);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+.ds-side-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-side-panel-header-gap);
+  padding-inline: var(--ds-side-panel-inset);
+  padding-block-start: var(--ds-side-panel-inset);
+  padding-inline-start: max(var(--ds-side-panel-inset), env(safe-area-inset-left));
+  padding-inline-end: max(var(--ds-side-panel-inset), env(safe-area-inset-right));
+  flex: 0 0 auto;
+  touch-action: none;
+}
+
+.ds-side-panel__title {
+  min-inline-size: 0;
+}
+
+/* hideTitle: the title stays in the DOM for the accessible name but is visually hidden — the
+   standard clip pattern, the one sanctioned pixel literal. */
+.ds-side-panel__title--hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ds-side-panel__close {
+  flex: 0 0 auto;
+}
+
+/* body → the Box's own inset (default layout.inset.lg); this is the part that scrolls when content
+   is taller than the panel. */
+.ds-side-panel__body {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow: auto;
+}
+
+.ds-side-panel__footer {
+  padding-inline: var(--ds-side-panel-inset);
+  padding-block-end: max(var(--ds-side-panel-inset), env(safe-area-inset-bottom));
+  flex: 0 0 auto;
+}
+
+/* footerGap → layout.gap.tight, applied through the composed Stack's own gap scale (closest preset). */
+
+.ds-side-panel__scrim {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background-color: var(--ds-side-panel-scrim);
+  z-index: var(--ds-side-panel-layer);
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: var(--ds-side-panel-exit);
+  transition-timing-function: var(--motion-easing-exit);
+}
+
+.ds-side-panel__scrim--visible {
+  opacity: 1;
+  transition-duration: var(--ds-side-panel-enter);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-side-panel__surface,
+  .ds-side-panel__scrim {
+    transition: none;
+  }
+}
+
+/* Persistent: the panel stops being an overlay and lays out as a fixed sidebar in the page's own
+   grid, with a border standing in for the overlay's shadow, and no scrim/trap/animation. */
+.ds-side-panel__panel--persistent {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  display: block;
+  block-size: 100%;
+}
+
+.ds-side-panel__panel--persistent .ds-side-panel__surface {
+  box-shadow: none;
+  transform: none;
+  transition: none;
+}
+
+.ds-side-panel__panel--persistent.ds-side-panel__panel--start .ds-side-panel__surface {
+  border-inline-end: var(--ds-side-panel-border-width) solid var(--ds-side-panel-border);
+}
+
+.ds-side-panel__panel--persistent.ds-side-panel__panel--end .ds-side-panel__surface {
+  border-inline-start: var(--ds-side-panel-border-width) solid var(--ds-side-panel-border);
+}
+
+/* Body scroll lock while a modal SidePanel is present; toggled on <html> by the component. */
+html.ds-side-panel-lock-scroll {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}

@@ -579,6 +579,30 @@
       "modules": true
     }
   },
+  "SidePanel.web": {
+    "hash": "ede8cadd07ff4c1e",
+    "lastAttemptHash": "ede8cadd07ff4c1e",
+    "generatedAt": "2026-09-10T07:25:26+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.6019,
+    "files": [
+      "packages/react/src/SidePanel.css",
+      "packages/react/src/SidePanel.stories.tsx",
+      "packages/react/src/SidePanel.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Stack.web": {
     "hash": "395ec760b1de6f6c",
     "lastAttemptHash": "395ec760b1de6f6c",

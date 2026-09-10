@@ -314,19 +314,19 @@
     }
   },
   "DatePicker.lit": {
-    "hash": "96da04f9dcd5cd64",
-    "lastAttemptHash": "96da04f9dcd5cd64",
-    "generatedAt": "2026-09-10T15:52:59+00:00",
+    "hash": "f26eb1d824e93766",
+    "lastAttemptHash": "f26eb1d824e93766",
+    "generatedAt": "2026-09-10T22:54:40+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.9786,
+    "costUsd": 1.955,
     "files": [
       "packages/lit/src/DatePicker.stories.ts",
       "packages/lit/src/DatePicker.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -755,19 +755,17 @@
     }
   },
   "Search.lit": {
-    "hash": "807d2f7286811cdb",
-    "lastAttemptHash": "807d2f7286811cdb",
-    "generatedAt": "2026-09-10T15:34:54+00:00",
+    "hash": "4d893a68f61f48aa",
+    "lastAttemptHash": "4d893a68f61f48aa",
+    "generatedAt": "2026-09-10T22:48:34+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.598,
+    "costUsd": 0.7365,
     "files": [
-      "packages/lit/src/Search.stories.ts",
-      "packages/lit/src/Search.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Search.ts"
     ],
-    "gaps": 8,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,

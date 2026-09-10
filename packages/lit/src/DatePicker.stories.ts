@@ -9,6 +9,7 @@ interface DatePickerArgs {
   name: string;
   value?: DatePickerValue;
   defaultValue?: DatePickerValue;
+  open?: boolean;
   range: boolean;
   min?: string;
   max?: string;
@@ -17,6 +18,8 @@ interface DatePickerArgs {
   placeholder?: string;
   description?: string;
   required: boolean;
+  hideLabel: boolean;
+  size: 'sm' | 'md';
   disabled: boolean;
   invalid: boolean;
   error?: string;
@@ -32,6 +35,8 @@ const meta: Meta<DatePickerArgs> = {
     range: { control: 'boolean' },
     showWeekNumbers: { control: 'boolean' },
     required: { control: 'boolean' },
+    hideLabel: { control: 'boolean' },
+    size: { control: 'select', options: ['sm', 'md'] },
     disabled: { control: 'boolean' },
     invalid: { control: 'boolean' },
   },
@@ -40,6 +45,7 @@ const meta: Meta<DatePickerArgs> = {
     name: 'due',
     value: undefined,
     defaultValue: undefined,
+    open: undefined,
     range: false,
     min: undefined,
     max: undefined,
@@ -48,6 +54,8 @@ const meta: Meta<DatePickerArgs> = {
     placeholder: undefined,
     description: undefined,
     required: false,
+    hideLabel: false,
+    size: 'md',
     disabled: false,
     invalid: false,
     error: undefined,
@@ -58,6 +66,7 @@ const meta: Meta<DatePickerArgs> = {
       name=${args.name}
       .value=${args.value}
       .defaultValue=${args.defaultValue}
+      ?open=${args.open}
       ?range=${args.range}
       min=${ifDefined(args.min)}
       max=${ifDefined(args.max)}
@@ -66,6 +75,8 @@ const meta: Meta<DatePickerArgs> = {
       placeholder=${ifDefined(args.placeholder)}
       description=${ifDefined(args.description)}
       ?required=${args.required}
+      ?hide-label=${args.hideLabel}
+      size=${args.size}
       ?disabled=${args.disabled}
       ?invalid=${args.invalid}
       error=${ifDefined(args.error)}
@@ -88,9 +99,15 @@ export const RangeTrue: Story = {
 export const ShowWeekNumbersFalse: Story = { args: { showWeekNumbers: false } };
 export const ShowWeekNumbersTrue: Story = { args: { showWeekNumbers: true } };
 
+/* size */
+export const SizeSm: Story = { args: { size: 'sm' } };
+export const SizeMd: Story = { args: { size: 'md' } };
+
 /* boolean states */
 export const RequiredTrue: Story = { args: { required: true } };
+export const HideLabelTrue: Story = { args: { hideLabel: true, defaultValue: '2026-09-10' } };
 export const DisabledTrue: Story = { args: { disabled: true, defaultValue: '2026-09-10' } };
+export const OpenTrue: Story = { args: { open: true, defaultValue: '2026-09-10' } };
 
 export const WithMinMax: Story = {
   args: {

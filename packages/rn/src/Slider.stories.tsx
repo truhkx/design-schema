@@ -47,7 +47,8 @@ export const WithMarks: Story = {
     name: 'speed',
     min: 0.5,
     max: 2,
-    step: undefined,
+    step: 0.5,
+    snapToMarks: true,
     defaultValue: 1,
     formatValue: (v: number) => `${v}×`,
     marks: [
@@ -69,16 +70,18 @@ export const WithError: Story = {
   args: { error: 'Choose a volume above 0.' },
 };
 
+export const Required: Story = { args: { required: true } };
+
+export const Invalid: Story = { args: { invalid: true } };
+
 /**
  * Slider has no trigger/open state (the "Keyboard" convention for overlay components
- * doesn't map onto it), so this renders three adjustable thumbs at once — a plain
- * slider plus a range slider's two thumbs — as the manual keyboard/axe-check surface.
+ * doesn't map onto it); the docs call for rendering the range form here, whose two
+ * thumbs are the whole keyboard/axe-check surface (the three-focusable-children rule
+ * does not apply).
  */
 export const Keyboard: Story = {
   render: () => (
-    <>
-      <Slider label="Volume" name="volume" defaultValue={40} />
-      <Slider label="Price range" name="price" min={0} max={500} step={10} defaultValue={[100, 350]} range formatValue={(v) => `$${v}`} />
-    </>
+    <Slider label="Price range" name="price" min={0} max={500} step={10} defaultValue={[100, 350]} range formatValue={(v) => `$${v}`} />
   ),
 };

@@ -8,6 +8,7 @@ import './Text.js';
 import './Icon.js';
 import './Button.js';
 import './Listbox.js';
+import './Landmark.js';
 import type { DsListbox, ListboxChangeDetail, ListboxItem } from './Listbox.js';
 
 export type SearchSize = 'md' | 'lg';
@@ -90,8 +91,8 @@ type ActiveDescendantHost = HTMLInputElement & { ariaActiveDescendantElement?: E
  * `<ds-search>` — Search (category: input, APG pattern: combobox).
  *
  * `<ds-search label="Search products" name="q" action="/search">` renders a
- * `<form>` inside the shadow root — `role="search"` (the page's search
- * landmark) when `landmark` is set — with a visually-hidden `<label>`, a
+ * `<form>` inside the shadow root, wrapped in a composed `<ds-landmark
+ * role="search">` (named by `label`) when `landmark` is set, with a visually-hidden `<label>`, a
  * decorative "search" `Icon`, a `type="search"` `<input>`, a clear `Button`
  * shown once there is text, and a submit `Button`. Submitting dispatches a
  * composed `submit` CustomEvent with the trimmed query; when `action` is set
@@ -120,6 +121,7 @@ type ActiveDescendantHost = HTMLInputElement & { ariaActiveDescendantElement?: E
  * @fires change - Fired on every keystroke with the query, with `{ value }` in `detail`.
  * @fires submit - Fired on Enter, the submit button, or choosing a suggestion, with the trimmed query in `{ value }`.
  * @fires clear - Fired when the field is emptied via the clear button or Escape.
+ * @csspart landmark - The composed `<ds-landmark role="search">` wrapping the form (anatomy: landmark).
  * @csspart label - The visually-hidden-by-default `<label>` (anatomy: label).
  * @csspart field - The bordered pill wrapper around icon, input and buttons (anatomy: field).
  * @csspart icon - The decorative leading `<ds-icon>` (anatomy: icon).
@@ -463,8 +465,8 @@ export class DsSearch extends LitElement {
     const hasSuggestions = this.hasSuggestionsFeature;
     const items = this.suggestions ?? [];
 
-    return html`
-      <form id="form" part="form" role=${this.landmark ? 'search' : nothing} @submit=${this.handleFormSubmit}>
+    const form = html`
+      <form id="form" part="form" @submit=${this.handleFormSubmit}>
         <label
           id="label"
           part="label"
@@ -541,6 +543,7 @@ export class DsSearch extends LitElement {
                           part="listbox"
                           class="listbox"
                           labelledBy="label"
+                          embedded
                           .options=${this.listboxOptions}
                           .selectionFollowsFocus=${false}
                           @change=${this.handleListboxChange}
@@ -555,6 +558,10 @@ export class DsSearch extends LitElement {
         </div>
       </form>
     `;
+
+    return this.landmark
+      ? html`<ds-landmark role="search" .label=${this.label} part="landmark">${form}</ds-landmark>`
+      : form;
   }
 
   private readonly handleInput = (event: InputEvent): void => {

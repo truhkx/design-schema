@@ -341,6 +341,7 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
     if (!isControlled) setInternalValue(next);
     latestValueRef.current = next;
     onChange?.(next);
+    if (form && form.validate === 'change') form.validateField(name);
   }
 
   function updateThumb(index: 0 | 1 | null, raw: number, snap: (raw: number) => number = snapValue) {
@@ -407,6 +408,7 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
     draggingRef.current = false;
     setDraggingKey(null);
     onChangeEnd?.(latestValueRef.current);
+    if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
@@ -446,6 +448,7 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
     if (keyChangedRef.current) {
       keyChangedRef.current = false;
       onChangeEnd?.(latestValueRef.current);
+      if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
     }
   };
 

@@ -700,20 +700,20 @@
     }
   },
   "NumberInput.web": {
-    "hash": "1a4a6b4c5f6fb7be",
-    "lastAttemptHash": "1a4a6b4c5f6fb7be",
-    "generatedAt": "2026-09-10T15:07:00+00:00",
+    "hash": "3afa6e042c1f36b0",
+    "lastAttemptHash": "3afa6e042c1f36b0",
+    "generatedAt": "2026-09-10T22:53:10+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.9801,
+    "costUsd": 1.3445,
     "files": [
       "packages/react/src/NumberInput.css",
       "packages/react/src/NumberInput.stories.tsx",
       "packages/react/src/NumberInput.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -890,20 +890,18 @@
     }
   },
   "Slider.web": {
-    "hash": "fda13272ddc0eebb",
-    "lastAttemptHash": "fda13272ddc0eebb",
-    "generatedAt": "2026-09-10T14:55:46+00:00",
+    "hash": "cc096e164d726ce5",
+    "lastAttemptHash": "cc096e164d726ce5",
+    "generatedAt": "2026-09-10T22:47:52+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.9196,
+    "costUsd": 1.292,
     "files": [
-      "packages/react/src/Slider.css",
       "packages/react/src/Slider.stories.tsx",
-      "packages/react/src/Slider.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Slider.tsx"
     ],
-    "gaps": 8,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

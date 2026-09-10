@@ -47,7 +47,7 @@ export const CustomFormatValue: Story = {
     label: 'Importing contacts',
     value: 3,
     max: 12,
-    formatValue: (value, max) => `${value} of ${max} files`,
+    formatValue: (value, _min, max) => `${value} of ${max} files`,
   },
 };
 export const CustomRange: Story = { args: { min: 0, max: 10, value: 7 } };

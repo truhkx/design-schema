@@ -12,8 +12,10 @@ const meta = {
     max: 10,
     step: 1,
     format: 'decimal',
-    showSteppers: true,
+    size: 'md',
+    hideSteppers: false,
     required: false,
+    hideLabel: false,
     disabled: false,
     invalid: false,
   },
@@ -48,20 +50,27 @@ export const FormatUnit: Story = {
   args: { format: 'unit', unit: 'kilogram', label: 'Weight', name: 'weight', defaultValue: 3.5, precision: 1, min: 0 },
 };
 
-/* showSteppers */
-export const ShowSteppersTrue: Story = { args: { showSteppers: true } };
-export const ShowSteppersFalse: Story = { args: { showSteppers: false } };
+/* size */
+export const SizeSm: Story = { args: { size: 'sm' } };
+export const SizeMd: Story = { args: { size: 'md' } };
+
+/* hideSteppers */
+export const HideSteppersFalse: Story = { args: { hideSteppers: false } };
+export const HideSteppersTrue: Story = { args: { hideSteppers: true } };
 
 /* affixes */
-export const WithPrefix: Story = {
-  args: { label: 'Budget', name: 'budget', prefix: '$', defaultValue: 500, min: 0, format: 'decimal' },
+export const WithLeadingText: Story = {
+  args: { label: 'Budget', name: 'budget', leadingText: '$', defaultValue: 500, min: 0, format: 'decimal' },
 };
-export const WithSuffix: Story = {
-  args: { label: 'Duration', name: 'duration', suffix: 'min', defaultValue: 30, min: 0, format: 'decimal' },
+export const WithTrailingText: Story = {
+  args: { label: 'Duration', name: 'duration', trailingText: 'min', defaultValue: 30, min: 0, format: 'decimal' },
 };
 
 /* states */
 export const Required: Story = { args: { required: true } };
+export const HideLabel: Story = {
+  args: { label: 'Quantity', hideLabel: true },
+};
 export const Disabled: Story = { args: { disabled: true } };
 export const Invalid: Story = { args: { invalid: true } };
 export const WithDescription: Story = {

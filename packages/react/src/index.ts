@@ -222,7 +222,7 @@ export { Slider } from './Slider';
 export type { SliderProps, SliderShowValue, SliderValue, SliderMark, SliderOverridableBinding } from './Slider';
 
 export { NumberInput } from './NumberInput';
-export type { NumberInputProps, NumberInputFormat, NumberInputOverridableBinding } from './NumberInput';
+export type { NumberInputProps, NumberInputFormat, NumberInputSize, NumberInputOverridableBinding } from './NumberInput';
 
 export { ProgressBar } from './ProgressBar';
 export type { ProgressBarProps, ProgressBarTone, ProgressBarAnnounce, ProgressBarOverridableBinding } from './ProgressBar';

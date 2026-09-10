@@ -16,6 +16,8 @@ import type { ListboxOption } from './Listbox.js';
 /** `value`/`defaultValue` shape: an ISO calendar date, or `{ start, end }` of them with `range`. Never a `Date` — a calendar date has no time zone. */
 export type DatePickerValue = string | { start: string; end: string };
 
+export type DatePickerSize = 'sm' | 'md';
+
 /** Detail carried by the `change` CustomEvent. `undefined` when the value is cleared. */
 export interface DatePickerChangeDetail {
   value: DatePickerValue | undefined;
@@ -41,6 +43,8 @@ export type DatePickerOverridableBinding =
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
+  | 'paddingBlockSm'
+  | 'paddingInlineSm'
   | 'calendarInset'
   | 'calendarGap'
   | 'daySize'
@@ -52,11 +56,14 @@ export type DatePickerOverridableBinding =
   | 'weekdayWeight'
   | 'monthTitleSize'
   | 'monthTitleWeight'
+  | 'partGap'
+  | 'fieldGap'
   | 'dayFontSize'
   | 'fontFamily'
   | 'lineHeight'
   | 'labelWeight'
   | 'helperSize'
+  | 'minTargetSm'
   | 'disabledOpacity'
   | 'transition';
 
@@ -67,6 +74,8 @@ const HOOKS: Record<DatePickerOverridableBinding, string> = {
   radius: '--ds-date-picker-radius',
   paddingInline: '--ds-date-picker-padding-inline',
   paddingBlock: '--ds-date-picker-padding-block',
+  paddingBlockSm: '--ds-date-picker-padding-block-sm',
+  paddingInlineSm: '--ds-date-picker-padding-inline-sm',
   calendarInset: '--ds-date-picker-calendar-inset',
   calendarGap: '--ds-date-picker-calendar-gap',
   daySize: '--ds-date-picker-day-size',
@@ -78,11 +87,14 @@ const HOOKS: Record<DatePickerOverridableBinding, string> = {
   weekdayWeight: '--ds-date-picker-weekday-weight',
   monthTitleSize: '--ds-date-picker-month-title-size',
   monthTitleWeight: '--ds-date-picker-month-title-weight',
+  partGap: '--ds-date-picker-part-gap',
+  fieldGap: '--ds-date-picker-field-gap',
   dayFontSize: '--ds-date-picker-day-font-size',
   fontFamily: '--ds-date-picker-font-family', // literal-ok: CSS custom-property name, not a font stack
   lineHeight: '--ds-date-picker-line-height',
   labelWeight: '--ds-date-picker-label-weight',
   helperSize: '--ds-date-picker-helper-size',
+  minTargetSm: '--ds-date-picker-min-target-sm',
   disabledOpacity: '--ds-date-picker-disabled-opacity',
   transition: '--ds-date-picker-transition',
 };
@@ -342,6 +354,11 @@ export class DsDatePicker extends LitElement {
       --ds-date-picker-radius: var(--radius-md);
       --ds-date-picker-padding-inline: var(--space-md);
       --ds-date-picker-padding-block: var(--space-sm);
+      --ds-date-picker-padding-inline-sm: var(--space-2);
+      --ds-date-picker-padding-block-sm: var(--space-1);
+      --ds-date-picker-min-target-sm: var(--size-target-min);
+      --ds-date-picker-part-gap: var(--space-1);
+      --ds-date-picker-field-gap: var(--space-2);
       --ds-date-picker-calendar-inset: var(--layout-inset-md);
       --ds-date-picker-calendar-gap: var(--layout-gap-normal);
       --ds-date-picker-day-size: var(--size-target-comfortable);
@@ -375,7 +392,7 @@ export class DsDatePicker extends LitElement {
 
     /* descriptionText: color.foreground.muted, locked (set on ds-text via tone="muted") */
     .description {
-      margin-block-start: var(--space-1);
+      margin-block-start: var(--ds-date-picker-part-gap);
     }
 
     /* background / foreground / border: color.background / color.foreground / color.border.strong, locked */
@@ -384,10 +401,10 @@ export class DsDatePicker extends LitElement {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: var(--layout-gap-tight);
+      gap: var(--ds-date-picker-field-gap);
       inline-size: 100%;
       min-block-size: var(--size-target-comfortable);
-      margin-block-start: var(--space-1);
+      margin-block-start: var(--ds-date-picker-part-gap);
       padding-block: var(--ds-date-picker-padding-block);
       padding-inline: var(--ds-date-picker-padding-inline);
       border: var(--ds-date-picker-border-width) solid var(--color-border-strong);
@@ -433,6 +450,22 @@ export class DsDatePicker extends LitElement {
     }
     .field.disabled .input {
       cursor: not-allowed;
+    }
+
+    /* paddingBlockSm / paddingInlineSm / minTargetSm replace the md bindings at size sm */
+    :host([size='sm']) .field {
+      min-block-size: var(--ds-date-picker-min-target-sm);
+      padding-block: var(--ds-date-picker-padding-block-sm);
+      padding-inline: var(--ds-date-picker-padding-inline-sm);
+    }
+
+    :host([size='sm']) .field:focus-within {
+      padding-inline: calc(
+        var(--ds-date-picker-padding-inline-sm) - (var(--border-width-focus) - var(--ds-date-picker-border-width))
+      );
+      padding-block: calc(
+        var(--ds-date-picker-padding-block-sm) - (var(--border-width-focus) - var(--ds-date-picker-border-width))
+      );
     }
 
     /* placeholder: color.foreground.muted, locked */
@@ -583,7 +616,7 @@ export class DsDatePicker extends LitElement {
       color: var(--color-foreground-danger);
     }
     .error:not(:empty) {
-      margin-block-start: var(--space-1);
+      margin-block-start: var(--ds-date-picker-part-gap);
     }
   `;
 
@@ -598,6 +631,14 @@ export class DsDatePicker extends LitElement {
 
   /** Initial value for an uncontrolled field. */
   @property({ attribute: false }) defaultValue?: DatePickerValue;
+
+  /**
+   * Controlled calendar state, for programmatic use and for stories and
+   * tests. Omit for the button-driven default. Not listed under this
+   * component's `platforms.lit.reflect`, but reflected anyway, matching
+   * Popover's `open`.
+   */
+  @property({ type: Boolean, reflect: true }) open?: boolean;
 
   /** Pick a start and an end date in one calendar; two inputs in the field. */
   @property({ type: Boolean, reflect: true }) range = false;
@@ -625,6 +666,17 @@ export class DsDatePicker extends LitElement {
 
   /** Must have a value to submit. */
   @property({ type: Boolean, reflect: true }) required = false;
+
+  /** Visually hide the label (it remains the accessible name). Only for a field whose context already names it. */
+  @property({ type: Boolean, attribute: 'hide-label' }) hideLabel = false;
+
+  /**
+   * `sm` for fields inside grid cells and toolbars: minimum target height,
+   * tighter padding, small type. Not listed under this component's
+   * `platforms.lit.reflect`, but reflected anyway since the size variant is
+   * expressed as a CSS attribute selector, matching Input's `size`.
+   */
+  @property({ reflect: true }) size: DatePickerSize = 'md';
 
   /** Not editable, still readable. */
   @property({ type: Boolean, reflect: true }) disabled = false;
@@ -663,8 +715,8 @@ export class DsDatePicker extends LitElement {
   /** Raw typed text of the end input. `range` only. */
   @state() private textEnd = '';
 
-  /** Whether the calendar is open. */
-  @state() private isOpen = false;
+  /** Uncontrolled open state, used when `open` is omitted. */
+  @state() private internalOpen = false;
 
   /** The visible month, 0-based. */
   @state() private viewYear = new Date().getFullYear();
@@ -695,6 +747,26 @@ export class DsDatePicker extends LitElement {
 
   private get isDisabled(): boolean {
     return this.disabled || this.formDisabled;
+  }
+
+  /** Whether the calendar is currently open, controlled or not. */
+  private get isOpen(): boolean {
+    return this.open ?? this.internalOpen;
+  }
+
+  /** Routes an open-state change through the controlled `open` prop or `internalOpen`, and fires `open-change` when it actually changes. */
+  private setOpen(next: boolean): void {
+    if (this.isOpen === next) {
+      return;
+    }
+    if (this.open !== undefined) {
+      this.open = next;
+    } else {
+      this.internalOpen = next;
+    }
+    this.dispatchEvent(
+      new CustomEvent<DatePickerOpenChangeDetail>('open-change', { detail: { open: next }, bubbles: true, composed: true }),
+    );
   }
 
   /** The committed value: the ISO date, `{ start, end }` once both are set (`range`), or `null`. */
@@ -771,7 +843,9 @@ export class DsDatePicker extends LitElement {
     this.value = undefined;
     this.seedFromValue(this.defaultValue);
     this.lastEmittedValue = this.currentValue;
-    this.isOpen = false;
+    if (this.open === undefined) {
+      this.internalOpen = false;
+    }
   }
 
   formStateRestoreCallback(state: File | string | FormData | null): void {
@@ -834,7 +908,12 @@ export class DsDatePicker extends LitElement {
     const weekdays = this.weekdayLabels;
 
     return html`
-      <ds-text id="label" part="label" class="label" element="p" weight="medium"
+      <ds-text
+        id="label"
+        part="label"
+        class=${classMap({ label: true, 'visually-hidden': this.hideLabel })}
+        element="p"
+        weight="medium"
         >${this.label}${this.required
           ? html`<span aria-hidden="true">${COPY_REQUIRED_INDICATOR}</span>`
           : nothing}</ds-text
@@ -903,7 +982,7 @@ export class DsDatePicker extends LitElement {
             id="calendar-button"
             part="calendarButton"
             variant="ghost"
-            size="sm"
+            size=${this.size}
             icon-only
             label=${this.range ? COPY_OPEN_RANGE : COPY_OPEN}
             ?disabled=${isDisabled}
@@ -1182,7 +1261,7 @@ export class DsDatePicker extends LitElement {
   }
 
   private closeCalendar(): void {
-    this.isOpen = false;
+    this.setOpen(false);
     void this.focusCalendarButton();
   }
 
@@ -1292,16 +1371,12 @@ export class DsDatePicker extends LitElement {
       event.preventDefault();
       const anchor = (which === 'start' ? this.internalStart : this.internalEnd) ?? this.internalStart ?? todayISO();
       this.moveViewTo(anchor);
-      this.isOpen = true;
+      this.setOpen(true);
     }
   }
 
   private readonly handlePopoverOpenChange = (event: CustomEvent<PopoverOpenChangeDetail>): void => {
-    const open = event.detail.open;
-    this.isOpen = open;
-    this.dispatchEvent(
-      new CustomEvent<DatePickerOpenChangeDetail>('open-change', { detail: { open }, bubbles: true, composed: true }),
-    );
+    this.setOpen(event.detail.open);
   };
 
   private valuesEqual(a: DatePickerValue | null, b: DatePickerValue | null): boolean {

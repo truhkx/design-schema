@@ -760,6 +760,28 @@
       "modules": true
     }
   },
+  "Slider.rn": {
+    "hash": "21397ca97758d7d1",
+    "lastAttemptHash": "21397ca97758d7d1",
+    "generatedAt": "2026-09-10T22:53:40+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.8455,
+    "files": [
+      "packages/rn/src/Slider.stories.tsx",
+      "packages/rn/src/Slider.tsx"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Splitter.rn": {
     "hash": "4557be4ba042316e",
     "lastAttemptHash": "4557be4ba042316e",

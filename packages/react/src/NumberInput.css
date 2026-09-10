@@ -14,6 +14,8 @@
   --ds-number-input-radius: var(--radius-md);
   --ds-number-input-padding-inline: var(--space-md);
   --ds-number-input-padding-block: var(--space-sm);
+  --ds-number-input-padding-block-sm: var(--space-1);
+  --ds-number-input-padding-inline-sm: var(--space-2);
   --ds-number-input-affix-color: var(--color-foreground-muted);
   --ds-number-input-affix-gap: var(--layout-gap-tight);
   --ds-number-input-stepper-gap: var(--layout-gap-none);
@@ -23,6 +25,7 @@
   --ds-number-input-font-size: var(--font-size-md);
   --ds-number-input-line-height: var(--font-line-height-normal);
   --ds-number-input-min-target: var(--size-target-comfortable);
+  --ds-number-input-min-target-sm: var(--size-target-min);
   --ds-number-input-focus-ring-width: var(--border-width-focus);
   --ds-number-input-disabled-opacity: var(--opacity-disabled);
   display: flex;
@@ -30,6 +33,27 @@
   gap: var(--ds-number-input-part-gap);
   inline-size: 100%;
   font-family: var(--ds-number-input-font-family);
+}
+
+/* size: sm swaps paddingBlock/paddingInline/minTarget for their Sm bindings and fontSize to sm. */
+.ds-number-input--sm {
+  --ds-number-input-padding-block: var(--ds-number-input-padding-block-sm);
+  --ds-number-input-padding-inline: var(--ds-number-input-padding-inline-sm);
+  --ds-number-input-min-target: var(--ds-number-input-min-target-sm);
+  --ds-number-input-font-size: var(--font-size-sm);
+}
+
+/* visually hidden: clipped to a 1px box, off the normal flow — the standard sanctioned pixel literals */
+.ds-number-input__visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .ds-number-input__label-wrapper {

@@ -88,7 +88,7 @@ export interface ProgressBarProps extends Omit<ComponentPropsWithoutRef<'div'>, 
   /** End of the range. */
   max?: number;
   /** Renders the value text ("42%", "3 of 12 files"). Defaults to a percentage. */
-  formatValue?: (value: number, max: number) => string;
+  formatValue?: (value: number, min: number, max: number) => string;
   /** Show the value text beside the label. Ignored when indeterminate. */
   showValue?: boolean;
   /** Visually hide the label (it remains the accessible name). For bars inside a Card whose heading already says what is happening. */
@@ -145,8 +145,9 @@ export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(function
   const clamped = determinate && validRange ? Math.min(Math.max(value as number, min), max) : min;
   const percent = determinate && validRange ? ((clamped - min) / (max - min)) * 100 : 0;
 
-  const resolvedFormatValue = formatValue ?? ((v: number, m: number) => `${Math.round((v / m) * 100)}%`);
-  const resolvedValueText = determinate ? resolvedFormatValue(clamped, max) : undefined;
+  const resolvedFormatValue =
+    formatValue ?? ((v: number, mn: number, mx: number) => `${Math.round(((v - mn) / (mx - mn)) * 100)}%`);
+  const resolvedValueText = determinate ? resolvedFormatValue(clamped, min, max) : undefined;
 
   const [liveMessage, setLiveMessage] = useState('');
   const indeterminateAnnouncedRef = useRef(false);
@@ -180,13 +181,13 @@ export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(function
         lastMilestoneRef.current = milestone;
         if (milestone > 0) {
           setLiveMessage(
-            COPY.progress.replace('{label}', label).replace('{value}', resolvedFormatValue(clamped, max)),
+            COPY.progress.replace('{label}', label).replace('{value}', resolvedFormatValue(clamped, min, max)),
           );
         }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [announce, determinate, clamped, max, percent, label]);
+  }, [announce, determinate, clamped, min, max, percent, label]);
 
   const classes = ['ds-progress-bar', TONE_CLASS[tone], className ?? null].filter(Boolean).join(' ');
 
@@ -239,7 +240,7 @@ export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(function
           style={determinate ? { inlineSize: `${percent}%` } : undefined}
         />
       </div>
-      <div className="ds-progress-bar__visually-hidden" data-part="liveRegion" role="status" aria-live="polite">
+      <div className="ds-progress-bar__visually-hidden" role="status" aria-live="polite">
         {liveMessage}
       </div>
     </div>

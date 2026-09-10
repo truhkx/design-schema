@@ -20,6 +20,7 @@ import { useFormContext } from './FormContext';
 import './NumberInput.css';
 
 export type NumberInputFormat = 'decimal' | 'currency' | 'percent' | 'unit';
+export type NumberInputSize = 'sm' | 'md';
 
 /** copy.* — used verbatim; `{label}`/`{min}`/`{max}` are replaced as noted. */
 const COPY = {
@@ -28,8 +29,13 @@ const COPY = {
   required: '{label} is required.',
   invalid: '{label} must be a number.',
   outOfRange: '{label} must be between {min} and {max}.',
+  currencyMissing: 'format "currency" needs a currency code.',
   requiredIndicator: ' (required)',
 };
+
+/* Only declared when the bundler defines it; never assumed. */
+declare const process: { env: Record<string, string | undefined> } | undefined;
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type NumberInputOverridableBinding =
@@ -39,6 +45,8 @@ export type NumberInputOverridableBinding =
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
+  | 'paddingBlockSm'
+  | 'paddingInlineSm'
   | 'affixGap'
   | 'stepperGap'
   | 'stepperDivider'
@@ -48,12 +56,14 @@ export type NumberInputOverridableBinding =
   | 'fontFamily'
   | 'fontSize'
   | 'lineHeight'
+  | 'minTargetSm'
   | 'disabledOpacity';
 
 /** Bindings owned by the root; labelWeight/helperSize are forwarded entirely into the composed
  * Text elements' own `overrides` instead (the split Meter, RadioGroup and Slider use), and
- * fontFamily/fontSize/lineHeight are forwarded to Text *and* kept on the root for the raw
- * `<input>`, which has no Text of its own. */
+ * fontFamily/lineHeight are forwarded to Text *and* kept on the root for the raw `<input>`, which
+ * has no Text of its own. `fontSize` stays root-only: it tracks the field's own `size` prop, not
+ * the label's. */
 const ROOT_OVERRIDE_HOOK: Partial<Record<NumberInputOverridableBinding, string>> = {
   borderFocus: '--ds-number-input-border-focus',
   borderInvalid: '--ds-number-input-border-invalid',
@@ -61,10 +71,13 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<NumberInputOverridableBinding, string>>
   radius: '--ds-number-input-radius',
   paddingInline: '--ds-number-input-padding-inline',
   paddingBlock: '--ds-number-input-padding-block',
+  paddingBlockSm: '--ds-number-input-padding-block-sm',
+  paddingInlineSm: '--ds-number-input-padding-inline-sm',
   affixGap: '--ds-number-input-affix-gap',
   stepperGap: '--ds-number-input-stepper-gap',
   stepperDivider: '--ds-number-input-stepper-divider',
   partGap: '--ds-number-input-part-gap',
+  minTargetSm: '--ds-number-input-min-target-sm',
   disabledOpacity: '--ds-number-input-disabled-opacity',
 };
 
@@ -173,7 +186,7 @@ function formatDisplayValue(
         try {
           return new Intl.NumberFormat(undefined, { ...base, style: 'unit', unit, unitDisplay: 'short' }).format(num);
         } catch {
-          // Not a valid Intl unit identifier — fall through to a plain decimal; `suffix` carries the literal unit instead.
+          // Not a valid Intl unit identifier — fall through to a plain decimal; `trailingText` carries the literal unit instead.
         }
       }
       return new Intl.NumberFormat(undefined, base).format(num);
@@ -195,6 +208,7 @@ export interface NumberInputProps
     | 'max'
     | 'step'
     | 'required'
+    | 'size'
     | 'disabled'
     | 'onChange'
     | 'onFocus'
@@ -226,20 +240,28 @@ export interface NumberInputProps
   format?: NumberInputFormat;
   /** ISO 4217 code for `format: currency` (e.g. USD). */
   currency?: string;
-  /** Intl unit identifier for `format: unit` (e.g. kilogram, hour), or a literal shown as `suffix`. */
+  /** Intl unit identifier for `format: unit` (e.g. kilogram, hour), or a literal shown as `trailingText`. */
   unit?: string;
-  /** Static text before the value inside the field ("$"), when `format` cannot express it. */
-  prefix?: string;
-  /** Static text after the value inside the field ("kg", "%"). */
-  suffix?: string;
-  /** Show the increment/decrement buttons. Arrow keys work regardless. */
-  showSteppers?: boolean;
+  /** Static text before the value inside the field ("$"), when `format` cannot express it. (Not
+   * `prefix`: that name is a native Element member.) */
+  leadingText?: string;
+  /** Static text after the value inside the field ("kg", "%"). Also the literal shown when `unit`
+   * is not a valid Intl unit. */
+  trailingText?: string;
+  /** Hide the increment/decrement buttons. Arrow keys work regardless. */
+  hideSteppers?: boolean;
   /** Example value shown while empty. */
   placeholder?: string;
   /** Helper text. */
   description?: string;
   /** Must have a value to submit. */
   required?: boolean;
+  /** Visually hide the label (it remains the accessible name). Only for a field whose context
+   * already names it: a DataGrid cell editor, a Search. */
+  hideLabel?: boolean;
+  /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small
+   * type. */
+  size?: NumberInputSize;
   /** Not editable, not submitted, still readable. */
   disabled?: boolean;
   /** Marks the field invalid. */
@@ -274,12 +296,14 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
     format = 'decimal',
     currency,
     unit,
-    prefix,
-    suffix,
-    showSteppers = true,
+    leadingText,
+    trailingText,
+    hideSteppers = false,
     placeholder,
     description,
     required = false,
+    hideLabel = false,
+    size = 'md',
     disabled = false,
     invalid = false,
     error,
@@ -364,8 +388,12 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
 
   function stepBy(delta: number) {
     if (isDisabled) return;
-    const base = latestValueRef.current ?? min ?? max ?? 0;
-    let next = roundTo(base + delta, resolvedPrecision);
+    // From empty, increment goes straight to `min ?? 0` and decrement to `max ?? 0` rather than
+    // treating the empty field as zero and adding the delta.
+    let next =
+      latestValueRef.current === undefined
+        ? roundTo(delta > 0 ? min ?? 0 : max ?? 0, resolvedPrecision)
+        : roundTo(latestValueRef.current + delta, resolvedPrecision);
     if (min !== undefined) next = Math.max(next, min);
     if (max !== undefined) next = Math.min(next, max);
     applyValue(next);
@@ -484,6 +512,10 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
     }
   };
 
+  if (isDev && format === 'currency' && !currency) {
+    console.warn(`NumberInput: ${COPY.currencyMissing}`);
+  }
+
   const atMin = min !== undefined && committedValue !== undefined && committedValue <= min;
   const atMax = max !== undefined && committedValue !== undefined && committedValue >= max;
 
@@ -493,14 +525,19 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
   const ariaValueText =
     committedValue === undefined
       ? undefined
-      : `${prefix ?? ''}${formatDisplayValue(committedValue, format, resolvedPrecision, currency, unit)}${suffix ?? ''}`;
+      : `${leadingText ?? ''}${formatDisplayValue(committedValue, format, resolvedPrecision, currency, unit)}${trailingText ?? ''}`;
 
   const { rootStyle, labelOverrides, descriptionOverrides, errorOverrides } = overrides
     ? resolveOverrides(overrides)
     : { rootStyle: undefined, labelOverrides: undefined, descriptionOverrides: undefined, errorOverrides: undefined };
   const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
 
-  const classes = ['ds-number-input', isDisabled ? 'ds-number-input--disabled' : null, className ?? null]
+  const classes = [
+    'ds-number-input',
+    `ds-number-input--${size}`,
+    isDisabled ? 'ds-number-input--disabled' : null,
+    className ?? null,
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -512,9 +549,13 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
     .filter(Boolean)
     .join(' ');
 
+  const labelWrapperClasses = ['ds-number-input__label-wrapper', hideLabel ? 'ds-number-input__visually-hidden' : null]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={classes} data-ds="NumberInput" style={mergedStyle}>
-      <label className="ds-number-input__label-wrapper" htmlFor={id}>
+    <div className={classes} data-ds="NumberInput" data-ds-field style={mergedStyle}>
+      <label className={labelWrapperClasses} htmlFor={id}>
         <Text element="span" data-part="label" weight="medium" className="ds-number-input__label" overrides={labelOverrides}>
           {label}
           {required ? <span className="ds-number-input__required">{COPY.requiredIndicator}</span> : null}
@@ -535,9 +576,9 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
       ) : null}
       <div className={fieldClasses} data-part="field">
         <div className="ds-number-input__control">
-          {prefix ? (
+          {leadingText ? (
             <span className="ds-number-input__affix" data-part="prefix" aria-hidden="true">
-              {prefix}
+              {leadingText}
             </span>
           ) : null}
           <input
@@ -567,13 +608,13 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
           />
-          {suffix ? (
+          {trailingText ? (
             <span className="ds-number-input__affix" data-part="suffix" aria-hidden="true">
-              {suffix}
+              {trailingText}
             </span>
           ) : null}
         </div>
-        {showSteppers ? (
+        {!hideSteppers ? (
           <span className="ds-number-input__steppers">
             <Button
               variant="ghost"

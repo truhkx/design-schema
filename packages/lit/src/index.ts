@@ -359,6 +359,7 @@ export type {
 export { DsDatePicker } from './DatePicker.js';
 export type {
   DatePickerValue,
+  DatePickerSize,
   DatePickerChangeDetail,
   DatePickerOpenChangeDetail,
   DatePickerOverridableBinding,

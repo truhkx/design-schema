@@ -12,6 +12,7 @@ are the rubric.
 Gates today:
   literals   tools/lint_literals.py            no hex/px/ms/font literals in the package
   typecheck  pnpm --filter <pkg> typecheck     the real TypeScript typings (needs node_modules)
+  deps       tools/check_deps.py                the package gained no runtime dependency outside the allowed set
   keyboard   tools/keyboard_tests.py + Playwright   every `keyboard` rule with an `expect`, against the Keyboard story  (--with keyboard)
   axe        tests/gates/axe.spec.ts + Playwright   axe over every story, light and dark                                (--with axe)
   behavior   tools/behavior_tests.py + pnpm test    every `behavior` scenario, against the real component module        (--with behavior)
@@ -71,6 +72,7 @@ def gates_for(platform: str, skip: set[str] | None = None, extra: set[str] | Non
         Gate("contrast", [PY, str(ROOT / "tools" / "check_contrast.py")]),
         Gate("literals", [PY, str(ROOT / "tools" / "lint_literals.py"), "--platform", platform]),
         Gate("typecheck", [pnpm(), "--filter", f"@design-schema/{pkg}", "typecheck"]),
+        Gate("deps", [PY, str(ROOT / "tools" / "check_deps.py"), "--platform", platform]),
     ]
     if "keyboard" in extra and platform in ("web", "lit"):
         all_gates.append(Gate("keyboard", [PY, str(ROOT / "tools" / "keyboard_tests.py")]))

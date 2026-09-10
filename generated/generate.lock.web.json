@@ -824,20 +824,18 @@
     }
   },
   "SegmentedControl.web": {
-    "hash": "6210c9ba9174da52",
-    "lastAttemptHash": "6210c9ba9174da52",
-    "generatedAt": "2026-09-10T13:31:24+00:00",
+    "hash": "4de8462770a4313a",
+    "lastAttemptHash": "4de8462770a4313a",
+    "generatedAt": "2026-09-10T22:30:18+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0042,
+    "costUsd": 0.4258,
     "files": [
       "packages/react/src/SegmentedControl.css",
-      "packages/react/src/SegmentedControl.stories.tsx",
-      "packages/react/src/SegmentedControl.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/SegmentedControl.tsx"
     ],
-    "gaps": 4,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1040,20 +1038,18 @@
     }
   },
   "Tabs.web": {
-    "hash": "88a3ec4c66406a7c",
-    "lastAttemptHash": "88a3ec4c66406a7c",
-    "generatedAt": "2026-09-10T13:26:25+00:00",
+    "hash": "a3cf6dc65cf1b394",
+    "lastAttemptHash": "a3cf6dc65cf1b394",
+    "generatedAt": "2026-09-10T22:28:38+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2487,
+    "costUsd": 1.7502,
     "files": [
-      "packages/react/src/Tabs.css",
       "packages/react/src/Tabs.stories.tsx",
-      "packages/react/src/Tabs.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Tabs.tsx"
     ],
-    "gaps": 5,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

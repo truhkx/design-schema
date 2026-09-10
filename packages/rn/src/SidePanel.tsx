@@ -27,6 +27,7 @@ import { toEasing, useReducedMotion, useTheme } from './theme';
 export type SidePanelSide = 'start' | 'end';
 export type SidePanelWidth = 'narrow' | 'default' | 'wide';
 export type SidePanelPersistent = 'never' | 'content' | 'page';
+export type SidePanelRole = 'complementary' | 'navigation';
 /** Why `onOpenChange` fired. `action` and `navigation` are never emitted by SidePanel itself — they exist for a consumer whose footer action, or a followed Link inside the body, wants to report a close through the same callback (native has no client-router hook to detect a followed Link, unlike the web generator). */
 export type SidePanelCloseReason = 'trigger' | 'escape' | 'close-button' | 'scrim' | 'swipe' | 'action' | 'navigation';
 
@@ -53,10 +54,10 @@ export interface SidePanelProps {
   trigger?: React.ReactNode;
   /** Controlled visibility. Omit for uncontrolled (the trigger toggles it). Ignored once `persistent` takes over — the panel is then always present. */
   open?: boolean;
-  /** The panel's title and accessible name. May be visually hidden with `hideTitle`. */
-  title: string;
-  /** Keep the title for assistive technology but do not render it. The accessible name is required regardless. */
-  hideTitle?: boolean;
+  /** The panel's title and accessible name. May be visually hidden with `hideHeading`. */
+  heading: string;
+  /** Keep the heading for assistive technology but do not render it. The accessible name is required regardless. */
+  hideHeading?: boolean;
   /** The body. Scrolls inside the panel when taller than the viewport. */
   children: React.ReactNode;
   /** Pinned to the bottom of the panel above the safe area. */
@@ -67,6 +68,8 @@ export interface SidePanelProps {
   width?: SidePanelWidth;
   /** Above the chosen breakpoint the panel renders as a fixed sidebar beside the content instead of an overlay: always visible regardless of `open`, no scrim, no trap, trigger hidden. `content` switches at `layout.maxWidth.content`, `page` at `layout.maxWidth.page`. */
   persistent?: SidePanelPersistent;
+  /** The landmark role the panel exposes as a persistent sidebar: `navigation` for a menu of Links, `complementary` for filters, a cart, a detail. Native has no `<aside>`/landmark equivalent for the overlay surface, so this reaches only the persistent sidebar's `role`. */
+  role?: SidePanelRole;
   /** `false` (default, the disclosure pattern): focus stays on the trigger when it opens, the panel is not trapped. `true`: a modal Dialog at the edge — focus moves in and is trapped, always shows a scrim. */
   modal?: boolean;
   /** Show the scrim in non-modal mode too. Modal always has one regardless of this prop. */
@@ -109,7 +112,7 @@ const DRAG_DISMISS_VELOCITY = 1.5; // literal-ok: release velocity (px/ms) past 
  * mode — and an `Animated.View` surface anchored to `side` (`I18nManager.isRTL`
  * flips it), sliding in on open (skipped under reduced motion). The surface composes
  * `FocusScope` (`trapped={modal}`, `autoFocus={modal ? 'first' : 'none'}`), `Heading`
- * (level 2, hidden with `hideTitle`) for the title, `Button` for the close control,
+ * (level 2, hidden with `hideHeading`) for the heading, `Button` for the close control,
  * `Box` for the scrollable body and `Stack` for the footer row — never restyled
  * directly. A `PanResponder` on the surface tracks a drag toward the edge it came
  * from; past 25% of its measured width or a fast flick, it fires `onOpenChange`
@@ -123,17 +126,20 @@ const DRAG_DISMISS_VELOCITY = 1.5; // literal-ok: release velocity (px/ms) past 
  * are clamped to the viewport minus `edgeGutter` so a phone-width panel always
  * leaves a strip of scrim visible. Above the `persistent` breakpoint
  * (`useWindowDimensions` against the chosen `layout.maxWidth.*` token) the panel
- * renders instead as a plain `View` (`accessibilityRole="none"`, labelled by
- * `title`) with a border on the edge facing the content, always visible regardless
- * of `open`, with the trigger unrendered — the mirror of the web generator's fixed
- * sidebar. Edge-swipe-to-open is not implemented inside the component (it needs a
- * gesture on the screen root, not the panel itself); `useSidePanelEdgeSwipe` is
- * exported for a consumer to wire onto their own root view.
+ * renders instead as a plain `View` (native `role` set from the `role` prop,
+ * labelled by `heading`) with a border on the edge facing the content, always
+ * visible regardless of `open`, with the trigger unrendered — the mirror of the web
+ * generator's fixed sidebar. Edge-swipe-to-open is not implemented inside the
+ * component (it needs a gesture on the screen root, not the panel itself);
+ * `useSidePanelEdgeSwipe` is exported for a consumer to wire onto their own root
+ * view.
  *
- * Acknowledged native limits: there is no page-scroll lock or `inert` background —
- * the same limit `Dialog` and `BottomSheet` document, since there is no page scroll
- * for a modal window to suppress; the modal Tab-wrap and non-modal "Tab flows into
- * the panel" behavior have no native key-event equivalent, the same limit
+ * Acknowledged native limits: `role` reaches only the persistent sidebar — the
+ * overlay surface has no `<aside>`/landmark equivalent on native, so its region role
+ * is not exposed while disclosed or modal; there is no page-scroll lock or `inert`
+ * background — the same limit `Dialog` and `BottomSheet` document, since there is no
+ * page scroll for a modal window to suppress; the modal Tab-wrap and non-modal "Tab
+ * flows into the panel" behavior have no native key-event equivalent, the same limit
  * `FocusScope` itself documents; a followed `Link` inside the body cannot close the
  * panel on its own (no client router to observe), so `navigation` is never emitted
  * by this component, only reserved on the type for parity with the web/Lit docs.
@@ -141,13 +147,14 @@ const DRAG_DISMISS_VELOCITY = 1.5; // literal-ok: release velocity (px/ms) past 
 export function SidePanel({
   trigger,
   open,
-  title,
-  hideTitle = false,
+  heading,
+  hideHeading = false,
   children,
   footer,
   side = 'start',
   width = 'default',
   persistent = 'never',
+  role = 'complementary',
   modal = false,
   scrim = true,
   dismissible = true,
@@ -411,10 +418,10 @@ export function SidePanel({
     };
 
     return (
-      <View style={sidebarStyle} accessibilityRole="none" accessibilityLabel={title} testID="SidePanel">
-        {!hideTitle ? (
+      <View style={sidebarStyle} role={role} accessibilityLabel={heading} testID="SidePanel">
+        {!hideHeading ? (
           <View style={headerStyle} testID="SidePanel.header">
-            <Heading level={2}>{title}</Heading>
+            <Heading level={2}>{heading}</Heading>
           </View>
         ) : null}
         <ScrollView testID="SidePanel.body" style={bodyFlexStyle} contentContainerStyle={bodyContentStyle}>
@@ -508,11 +515,11 @@ export function SidePanel({
                 style={surfaceStyle}
                 onLayout={handleSurfaceLayout}
                 accessibilityViewIsModal={modal}
-                accessibilityLabel={title}
+                accessibilityLabel={heading}
                 testID="SidePanel.surface"
               >
                 <View style={headerStyle} testID="SidePanel.header">
-                  {!hideTitle ? <Heading level={2}>{title}</Heading> : null}
+                  {!hideHeading ? <Heading level={2}>{heading}</Heading> : null}
                   <Button
                     label={COPY.closeLabel}
                     variant="ghost"

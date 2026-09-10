@@ -14,7 +14,7 @@ const meta: Meta<typeof BottomSheet> = {
   decorators: [withTheme()],
   args: {
     open: true,
-    title: 'Filters',
+    heading: 'Filters',
     children: <Text>Narrow results by price, distance and rating.</Text>,
     footer: (
       <>
@@ -24,7 +24,7 @@ const meta: Meta<typeof BottomSheet> = {
     ),
     height: 'content',
     dismissible: true,
-    draggable: true,
+    dragToDismiss: true,
   },
 };
 
@@ -40,10 +40,10 @@ export const HeightHalf: Story = { args: { height: 'half' } };
 export const HeightFull: Story = { args: { height: 'full' } };
 
 // notable states
-export const HideTitle: Story = {
+export const HideHeading: Story = {
   args: {
-    title: 'Share to',
-    hideTitle: true,
+    heading: 'Share to',
+    hideHeading: true,
     children: (
       <Stack direction="horizontal" gap="loose" justify="center">
         <Text>Messages</Text>
@@ -68,7 +68,7 @@ export const NotDismissible: Story = {
   },
 };
 
-export const NotDraggable: Story = { args: { draggable: false } };
+export const DragToDismissFalse: Story = { args: { dragToDismiss: false } };
 
 export const WithOverrides: Story = {
   args: {

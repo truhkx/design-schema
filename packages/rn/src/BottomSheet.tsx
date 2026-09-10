@@ -45,10 +45,10 @@ export type BottomSheetOverridableBinding =
 export interface BottomSheetProps {
   /** Controlled visibility, as in Dialog. */
   open: boolean;
-  /** The sheet's title and accessible name. May be visually hidden with `hideTitle` when the content is self-explanatory (a share sheet). */
-  title: string;
-  /** Keep the title for assistive technology but do not render it. The accessible name is required regardless. */
-  hideTitle?: boolean;
+  /** The sheet's title and accessible name. May be visually hidden with `hideHeading` when the content is self-explanatory (a share sheet). */
+  heading: string;
+  /** Keep the heading for assistive technology but do not render it. The accessible name is required regardless. */
+  hideHeading?: boolean;
   /** The body. Scrolls inside the sheet when taller than the sheet's height. */
   children: React.ReactNode;
   /** Action row, pinned to the bottom of the sheet above the safe area. */
@@ -57,8 +57,8 @@ export interface BottomSheetProps {
   height?: BottomSheetHeight;
   /** Escape, the close button, a scrim tap and the drag gesture all request close. When false, only the footer actions close it; Escape still reports. */
   dismissible?: boolean;
-  /** Drag the handle (or the sheet) downward to dismiss, with a velocity threshold. Purely additive: the close button and Escape always exist. */
-  draggable?: boolean;
+  /** Drag the handle (or the header) downward to dismiss, with a velocity threshold. Purely additive: the close button and Escape always exist. */
+  dragToDismiss?: boolean;
   /** Requested close with reason: `escape`, `close-button`, `scrim`, `drag`, or `action`. */
   onClose?: (reason: BottomSheetCloseReason) => void;
   /** The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag; provided so analytics can distinguish gestures. */
@@ -106,33 +106,33 @@ const DRAG_DISMISS_VELOCITY = 1.5; // literal-ok: release velocity (px/ms) past 
  * scrim `Pressable` and an `Animated.View` surface anchored to the bottom, sliding up
  * on open (skipped under reduced motion). The surface composes `FocusScope`
  * (`trapped`, `restoreFocus`) for the trap and focus-restore-on-close, `Heading`
- * (level 2) for the title, `Button` for the close control, `Box` for the scrollable
+ * (level 2) for the heading, `Button` for the close control, `Box` for the scrollable
  * body and `Stack` for the footer row — never restyled directly. A `PanResponder` on
- * the header (handle plus title row) tracks a downward drag; past 25% of the measured
- * surface height or a fast flick, it fires `onDragDismiss` then `onClose('drag')` and
- * continues the motion off-screen with `Animated.decay` at the release velocity
- * (instant, no decay, under reduced motion); otherwise it springs back. The gesture
- * is additive — the close button and Escape (mapped from the Android back button via
- * `onRequestClose`) always exist and are never gated by `draggable`, only by
- * `dismissible`. `height` sets the surface's fixed height as a fraction of
- * `useWindowDimensions()` for `half`/`full`, or lets it size to content up to 90% of
- * the viewport (`content`). Bottom padding for the footer uses `SafeAreaView`, the
- * only inset mechanism available without a new dependency. Above `maxWidth`, the
- * component renders `Dialog` directly (composition, not duplication) with the shared
- * bindings forwarded through `overrides`; `hideTitle` has no Dialog equivalent, so the
- * title always renders in that presentation. Scroll-lock has no native equivalent —
- * there is no page scroll for a modal window to suppress — so it is not implemented,
- * the same acknowledged limit as Dialog.
+ * the header (handle plus heading row) tracks a downward drag; past 25% of the
+ * measured surface height or a fast flick, it fires `onDragDismiss` then
+ * `onClose('drag')` and continues the motion off-screen with `Animated.decay` at the
+ * release velocity (instant, no decay, under reduced motion); otherwise it springs
+ * back. The gesture is additive — the close button and Escape (mapped from the
+ * Android back button via `onRequestClose`) always exist and are never gated by
+ * `dragToDismiss`, only by `dismissible`. `height` sets the surface's fixed height as
+ * a fraction of `useWindowDimensions()` for `half`/`full`, or lets it size to content
+ * up to 90% of the viewport (`content`). Bottom padding for the footer uses
+ * `SafeAreaView`, the only inset mechanism available without a new dependency. Above
+ * `maxWidth`, the component renders `Dialog` directly (composition, not duplication)
+ * with the shared bindings forwarded through `overrides`; `hideHeading` maps directly
+ * to Dialog's own prop of the same name. Scroll-lock has no native equivalent — there
+ * is no page scroll for a modal window to suppress — so it is not implemented, the
+ * same acknowledged limit as Dialog.
  */
 export function BottomSheet({
   open,
-  title,
-  hideTitle = false,
+  heading,
+  hideHeading = false,
   children,
   footer,
   height = 'content',
   dismissible = true,
-  draggable = true,
+  dragToDismiss = true,
   onClose,
   onDragDismiss,
   overrides,
@@ -240,7 +240,7 @@ export function BottomSheet({
         // stolen by the responder; only an actual downward drag claims it.
         onStartShouldSetPanResponder: () => false,
         onMoveShouldSetPanResponder: (_, gestureState) =>
-          draggable && dismissible && gestureState.dy > 4 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+          dragToDismiss && dismissible && gestureState.dy > 4 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
         onPanResponderMove: (_, gestureState) => {
           if (gestureState.dy > 0) {
             dragY.setValue(gestureState.dy);
@@ -282,7 +282,7 @@ export function BottomSheet({
           Animated.timing(dragY, { toValue: 0, duration: exitDuration, useNativeDriver: false }).start();
         },
       }),
-    [draggable, dismissible, dragY, windowHeight, onDragDismiss, onClose, reducedMotion, exitDuration, t.motionEasingStandard],
+    [dragToDismiss, dismissible, dragY, windowHeight, onDragDismiss, onClose, reducedMotion, exitDuration, t.motionEasingStandard],
   );
 
   if (isWide) {
@@ -294,7 +294,16 @@ export function BottomSheet({
         ) as Partial<Record<DialogOverridableBinding, TokenRef>>)
       : undefined;
     return (
-      <Dialog open={open} heading={title} size="md" dismissible={dismissible} footer={footer} onClose={onClose} overrides={dialogOverrides}>
+      <Dialog
+        open={open}
+        heading={heading}
+        hideHeading={hideHeading}
+        size="md"
+        dismissible={dismissible}
+        footer={footer}
+        onClose={onClose}
+        overrides={dialogOverrides}
+      >
         {children}
       </Dialog>
     );
@@ -329,7 +338,7 @@ export function BottomSheet({
 
   const headerStyle: ViewStyle = {
     paddingHorizontal: inset,
-    paddingTop: t.spaceSm, // not named by any binding; matches Dialog's title-group gap precedent
+    paddingTop: t.spaceSm, // not named by any binding; matches Dialog's heading-group gap precedent
     gap: t.layoutGapTight,
   };
 
@@ -341,7 +350,7 @@ export function BottomSheet({
     backgroundColor: t.colorForegroundMuted,
   };
 
-  const titleRowStyle: ViewStyle = {
+  const headingRowStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
@@ -372,13 +381,13 @@ export function BottomSheet({
               style={surfaceStyle}
               onLayout={handleSurfaceLayout}
               accessibilityViewIsModal
-              accessibilityLabel={title}
+              accessibilityLabel={heading}
               testID="BottomSheet"
             >
-              <View {...(draggable && dismissible ? panResponder.panHandlers : null)} style={headerStyle} testID="BottomSheet.header">
+              <View {...(dragToDismiss && dismissible ? panResponder.panHandlers : null)} style={headerStyle} testID="BottomSheet.header">
                 <View style={handleStyle} accessibilityElementsHidden importantForAccessibility="no" testID="BottomSheet.handle" />
-                <View style={titleRowStyle}>
-                  {!hideTitle ? <Heading level={2}>{title}</Heading> : null}
+                <View style={headingRowStyle}>
+                  {!hideHeading ? <Heading level={2}>{heading}</Heading> : null}
                   <Button
                     label={COPY.closeLabel}
                     variant="ghost"

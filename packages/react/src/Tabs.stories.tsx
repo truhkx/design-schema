@@ -8,14 +8,12 @@ const TABS: TabsItem[] = [
   { id: 'settings', label: 'Settings', disabled: true },
 ];
 
-const panels = (
-  <>
-    <TabPanel id="overview">Project overview and key metrics.</TabPanel>
-    <TabPanel id="activity">Recent activity across the project.</TabPanel>
-    <TabPanel id="files">Files attached to the project.</TabPanel>
-    <TabPanel id="settings">Project settings.</TabPanel>
-  </>
-);
+const panels = [
+  <TabPanel key="overview" id="overview">Project overview and key metrics.</TabPanel>,
+  <TabPanel key="activity" id="activity">Recent activity across the project.</TabPanel>,
+  <TabPanel key="files" id="files">Files attached to the project.</TabPanel>,
+  <TabPanel key="settings" id="settings">Project settings.</TabPanel>,
+];
 
 const meta = {
   title: 'Tabs/React',
@@ -54,6 +52,7 @@ export const FitFill: Story = {
   args: {
     fit: 'fill',
     tabs: TABS.slice(0, 3),
+    children: panels.slice(0, 3),
   },
 };
 

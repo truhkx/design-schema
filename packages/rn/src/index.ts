@@ -126,6 +126,7 @@ export type {
   SidePanelOverridableBinding,
   SidePanelPersistent,
   SidePanelProps,
+  SidePanelRole,
   SidePanelSide,
   SidePanelWidth,
   UseSidePanelEdgeSwipeOptions,

@@ -10,6 +10,8 @@ import type { DsListbox, ListboxChangeDetail, ListboxGroupOption, ListboxItem, L
 
 export type SelectNative = 'auto' | 'always' | 'never';
 
+export type SelectSize = 'sm' | 'md';
+
 /** `value`/`defaultValue` shape: a single value, or with `multiple` an array. */
 export type SelectValue = string | string[];
 

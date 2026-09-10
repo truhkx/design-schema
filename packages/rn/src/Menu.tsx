@@ -188,7 +188,7 @@ function computeMenuPosition(
  * package's own `ActionSheet` with the items flattened to a plain action list —
  * groups become part of that list without their label row and separators are
  * dropped, since `ActionSheet` has no slot for either (an acknowledged gap; see
- * `toActionSheetActions`). `label` becomes `ActionSheet`'s `title`, so it still
+ * `toActionSheetActions`). `label` becomes `ActionSheet`'s `heading`, so it still
  * reads above the list and still names the accessible name. At or above that width
  * (tablets and react-native-web), renders a transparent `Modal` (`animationType="none"`,
  * self-animated) with a full-screen scrim `Pressable` and a popup `View` absolutely
@@ -467,7 +467,7 @@ export function Menu({
         {trigger}
         <ActionSheet
           open={isOpen}
-          title={label}
+          heading={label}
           actions={toActionSheetActions(items)}
           onAction={handleSheetAction}
           onClose={handleSheetClose}

@@ -76,6 +76,10 @@ function firstEnabledId(items: TabsItem[]): string | undefined {
   return items.find((item) => !item.disabled)?.id ?? items[0]?.id;
 }
 
+/* Only declared when the bundler defines it; never assumed. */
+declare const process: { env: Record<string, string | undefined> } | undefined;
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+
 export interface TabPanelProps extends Omit<ComponentPropsWithoutRef<'div'>, 'id'> {
   /** Matches the `id` of the tab this panel belongs to. */
   id: string;
@@ -167,8 +171,30 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
 
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());
 
+  const allPanels = Children.toArray(children).filter(isValidElement) as ReactElement<TabPanelProps>[];
+  const panelIds = new Set(allPanels.map((panel) => panel.props.id));
+  const tabIds = new Set(tabs.map((tab) => tab.id));
+  const renderTabs = tabs.filter((tab) => panelIds.has(tab.id));
+  const panels = allPanels.filter((panel) => tabIds.has(panel.props.id));
+
+  if (isDev && !label) {
+    console.warn('Tabs: `label` is required and becomes the tab list’s accessible name.');
+  }
+  if (isDev) {
+    for (const tab of tabs) {
+      if (!panelIds.has(tab.id)) console.warn(`Tabs: tab "${tab.id}" has no matching panel; it will not be rendered.`);
+    }
+    for (const panel of allPanels) {
+      if (!tabIds.has(panel.props.id)) {
+        console.warn(`Tabs: panel "${panel.props.id}" has no matching tab; it will not be rendered.`);
+      }
+    }
+  }
+
   const isControlled = value !== undefined;
-  const [internalValue, setInternalValue] = useState<string | undefined>(() => defaultValue ?? firstEnabledId(tabs));
+  const [internalValue, setInternalValue] = useState<string | undefined>(
+    () => defaultValue ?? firstEnabledId(renderTabs),
+  );
   const selected = isControlled ? value : internalValue;
 
   // The roving-tabindex target: tracks the selection under automatic activation, but can lead it
@@ -209,7 +235,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
       );
     };
     measure();
-    tabEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (typeof tabEl.scrollIntoView === 'function') tabEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
@@ -222,7 +248,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   };
 
   const handleListKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const enabled = tabs.filter((tab) => !tab.disabled);
+    const enabled = renderTabs.filter((tab) => !tab.disabled);
     if (enabled.length === 0) return;
     const currentIndex = enabled.findIndex((tab) => tab.id === activeId);
     const nextKey = orientation === 'horizontal' ? 'ArrowRight' : 'ArrowDown';
@@ -262,8 +288,6 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     }
   };
 
-  const panels = Children.toArray(children).filter(isValidElement) as ReactElement<TabPanelProps>[];
-
   const classes = ['ds-tabs', `ds-tabs--${orientation}`, `ds-tabs--fit-${fit}`, className ?? null]
     .filter(Boolean)
     .join(' ');
@@ -281,7 +305,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
         className="ds-tabs__list"
         onKeyDown={handleListKeyDown}
       >
-        {tabs.map((tab) => {
+        {renderTabs.map((tab) => {
           const tabId = `${baseId}-tab-${tab.id}`;
           const isSelected = tab.id === selected;
           const tabClasses = [

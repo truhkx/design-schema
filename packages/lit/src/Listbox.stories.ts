@@ -12,10 +12,15 @@ interface ListboxArgs {
   defaultValue?: ListboxValue;
   selectionFollowsFocus: boolean;
   required: boolean;
+  invalid: boolean;
+  error?: string;
+  embedded: boolean;
   disabled: boolean;
   name: string;
   emptyMessage?: string;
   maxVisible: ListboxMaxVisible;
+  defaultActiveValue?: string;
+  loading: boolean;
 }
 
 const FRUIT_OPTIONS: ListboxOption[] = [
@@ -71,7 +76,10 @@ const meta: Meta<ListboxArgs> = {
     multiple: { control: 'boolean' },
     selectionFollowsFocus: { control: 'boolean' },
     required: { control: 'boolean' },
+    invalid: { control: 'boolean' },
+    embedded: { control: 'boolean' },
     disabled: { control: 'boolean' },
+    loading: { control: 'boolean' },
   },
   args: {
     label: 'Assignees',
@@ -81,10 +89,15 @@ const meta: Meta<ListboxArgs> = {
     defaultValue: undefined,
     selectionFollowsFocus: true,
     required: false,
+    invalid: false,
+    error: undefined,
+    embedded: false,
     disabled: false,
     name: 'fruit',
     emptyMessage: undefined,
     maxVisible: '8',
+    defaultActiveValue: undefined,
+    loading: false,
   },
   render: (args) => html`
     <ds-listbox
@@ -95,10 +108,15 @@ const meta: Meta<ListboxArgs> = {
       .defaultValue=${args.defaultValue}
       ?no-selection-follows-focus=${!args.selectionFollowsFocus}
       ?required=${args.required}
+      ?invalid=${args.invalid}
+      .error=${args.error}
+      ?embedded=${args.embedded}
       ?disabled=${args.disabled}
       name=${args.name}
       empty-message=${ifDefined(args.emptyMessage)}
       max-visible=${args.maxVisible}
+      default-active-value=${ifDefined(args.defaultActiveValue)}
+      ?loading=${args.loading}
     ></ds-listbox>
   `,
 };
@@ -122,8 +140,13 @@ export const SelectionFollowsFocusFalse: Story = {
   args: { selectionFollowsFocus: false, defaultValue: 'apple' },
 };
 export const RequiredTrue: Story = { args: { required: true } };
+export const InvalidTrue: Story = { args: { invalid: true } };
+export const ErrorMessage: Story = { args: { error: 'Fix this before continuing.' } };
+export const EmbeddedTrue: Story = { args: { embedded: true } };
 export const DisabledTrue: Story = { args: { disabled: true, defaultValue: 'apple' } };
 export const DisabledOption: Story = { args: { options: DISABLED_OPTION_LIST } };
+export const LoadingTrue: Story = { args: { loading: true, options: [] } };
+export const DefaultActiveValueSet: Story = { args: { defaultActiveValue: 'cherry' } };
 
 export const WithDescriptionsAndIcons: Story = {
   args: { label: 'Plan', options: PLAN_OPTIONS, defaultValue: 'team' },

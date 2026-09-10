@@ -813,7 +813,7 @@ export function Combobox({
       {usesSheet ? (
         <BottomSheet
           open={open}
-          title={label}
+          heading={label}
           onClose={() => closePopup(true)}
           footer={multiple ? <Button label={COPY.done} onPress={() => closePopup(true)} /> : undefined}
         >

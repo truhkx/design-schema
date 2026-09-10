@@ -867,7 +867,7 @@ export function TreeGrid({
           </Text>
         </View>
       ) : null}
-      <BottomSheet open={selectEditorTarget !== null} title={selectEditorColumn?.header ?? ''} onClose={() => setSelectEditorTarget(null)}>
+      <BottomSheet open={selectEditorTarget !== null} heading={selectEditorColumn?.header ?? ''} onClose={() => setSelectEditorTarget(null)}>
         {selectEditorColumn && selectEditorRow ? (
           <Listbox
             label={selectEditorColumn.header}

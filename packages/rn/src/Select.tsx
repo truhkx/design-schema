@@ -524,7 +524,7 @@ export function Select({
       {usesSheet ? (
         <BottomSheet
           open={open}
-          title={label}
+          heading={label}
           onClose={closePopup}
           footer={multiple ? <Button label={COPY.done} onPress={closePopup} /> : undefined}
         >

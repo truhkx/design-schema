@@ -30,10 +30,15 @@ type ListboxRow = { value: string; label: string; description?: string; icon?: I
 export type ListboxValue = string | string[];
 export type ListboxMaxVisible = '5' | '8' | '12' | 'all' | 5 | 8 | 12;
 
-/** copy.* — used verbatim; `{label}` is replaced by the accessible name. `selectedCount` is shown by the surrounding UI, not this component. */
+/**
+ * copy.* — used verbatim; `{label}` is replaced by the accessible name. `selectedCount` is shown
+ * by the surrounding UI, not this component. The schema's `invalid` prop references `copy.invalid`,
+ * but no such key exists under `copy:` — treated as a state-only flag with no bundled message.
+ */
 const COPY = {
   empty: 'No options',
   required: '{label} is required.',
+  loading: 'Loading…',
 };
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */

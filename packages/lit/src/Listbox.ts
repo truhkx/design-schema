@@ -45,6 +45,15 @@ export interface ListboxActiveChangeDetail {
 const COPY_EMPTY = 'No options';
 /** copy.required */
 const COPY_REQUIRED = (label: string): string => `${label} is required.`;
+/** copy.loading */
+const COPY_LOADING = 'Loading…';
+/**
+ * The schema's `invalid` prop description references `copy.invalid`, but the
+ * component's own `copy` block does not define it (only `empty`, `required`,
+ * `selectedCount` and `loading` are listed) — see the generator's gap notes.
+ * Matches the fallback message used by Input/Select for the same situation.
+ */
+const COPY_INVALID = (label: string): string => `${label} is not valid.`;
 /**
  * copy.selectedCount — not part of Listbox's own anatomy (nothing here renders a
  * count), so it is exported for composing components (a Select trigger, a
@@ -157,6 +166,7 @@ function flattenOptions(options: ListboxOption[]): ListboxItem[] {
  * @csspart option-icon - An option's leading `<ds-icon>` (anatomy: optionIcon).
  * @csspart option-check - An option's selected-state `<ds-icon>`, always rendered so labels align (anatomy: optionCheck).
  * @csspart empty-state - The `<ds-text>` shown when `options` is empty (anatomy: emptyState).
+ * @csspart error-message - The `role="alert"` error message region. Not in this component's anatomy (gap: the schema defines `error` and `error-identification` but no matching part).
  */
 @customElement('ds-listbox')
 export class DsListbox extends LitElement {
@@ -312,6 +322,23 @@ export class DsListbox extends LitElement {
       padding-block: var(--ds-listbox-option-padding-block);
       padding-inline: var(--ds-listbox-option-padding-inline);
     }
+
+    /* embedded: the popup that composes this list owns border, surface and radius */
+    .list.is-embedded {
+      border-style: none;
+      border-radius: 0;
+      background: none;
+    }
+
+    /* errorText: not a binding in this component's schema (gap) — styled like Input/Select's own errorText token */
+    .error {
+      font-size: var(--ds-listbox-option-description-size);
+      line-height: var(--ds-listbox-line-height);
+      color: var(--color-foreground-danger);
+    }
+    .error:not(:empty) {
+      margin-block-start: var(--ds-listbox-list-padding);
+    }
   `;
 
   /** Accessible name of the list. Ignored when `labelledBy` is set. */
@@ -349,6 +376,33 @@ export class DsListbox extends LitElement {
   /** At least one option must be selected to submit when inside a Form. */
   @property({ type: Boolean, reflect: true }) required = false;
 
+  /**
+   * Marks the list invalid. Usually set by the Form; can be set directly.
+   * Not listed under this component's `platforms.lit.reflect`, so it is not
+   * reflected to a host attribute — style consumers read the `.error` text
+   * instead, as the schema defines no invalid-specific style binding.
+   */
+  @property({ type: Boolean }) invalid = false;
+
+  private errorValue?: string;
+
+  /** Error message rendered below the list and linked by aria-describedby. Setting it implies `invalid`. */
+  @property()
+  get error(): string | undefined {
+    return this.errorValue;
+  }
+  set error(value: string | undefined) {
+    const old = this.errorValue;
+    this.errorValue = value;
+    // Setting `error` implies `invalid`; clearing it removes the invalid state, synchronously
+    // so that `checkValidity()` right after an assignment is already correct.
+    this.invalid = Boolean(value);
+    this.requestUpdate('error', old);
+  }
+
+  /** The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; this list draws none of its own. */
+  @property({ type: Boolean }) embedded = false;
+
   /** The whole list is inert but readable. Individual options use `options[].disabled`. */
   @property({ type: Boolean, reflect: true }) disabled = false;
 
@@ -360,6 +414,12 @@ export class DsListbox extends LitElement {
 
   /** Height in rows before the list scrolls; `all` never scrolls. */
   @property({ attribute: 'max-visible' }) maxVisible: ListboxMaxVisible = '8';
+
+  /** The option active when the list first receives focus. Defaults to the first selected item, else the first enabled item. */
+  @property({ attribute: 'default-active-value' }) defaultActiveValue?: string;
+
+  /** Options are being fetched (async Combobox); shows `copy.loading` in place of the empty message and marks the list aria-busy. */
+  @property({ type: Boolean }) loading = false;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
   @property({ attribute: false }) overrides?: Partial<Record<ListboxOverridableBinding, TokenRef>>;
@@ -491,7 +551,11 @@ export class DsListbox extends LitElement {
     return html`
       <div
         id="list"
-        class=${classMap({ list: true, 'is-max-visible-all': this.maxVisible === 'all' })}
+        class=${classMap({
+          list: true,
+          'is-max-visible-all': this.maxVisible === 'all',
+          'is-embedded': this.embedded,
+        })}
         style=${styleMap(rowsStyle)}
         part="list"
         role="listbox"
@@ -500,6 +564,9 @@ export class DsListbox extends LitElement {
         aria-labelledby=${ifDefined(this.labelledBy)}
         aria-multiselectable=${ifDefined(this.multiple ? 'true' : undefined)}
         aria-required=${ifDefined(this.required ? 'true' : undefined)}
+        aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
+        aria-describedby=${ifDefined(this.error ? 'error-message' : undefined)}
+        aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
         aria-disabled=${ifDefined(this.isDisabled ? 'true' : undefined)}
         aria-activedescendant=${ifDefined(activeId)}
         @keydown=${this.handleKey}
@@ -507,10 +574,11 @@ export class DsListbox extends LitElement {
       >
         ${isEmpty
           ? html`<ds-text class="empty" part="empty-state" tone="muted"
-              >${this.emptyMessage || COPY_EMPTY}</ds-text
+              >${this.loading ? COPY_LOADING : this.emptyMessage || COPY_EMPTY}</ds-text
             >`
           : this.renderOptionList(this.options, optionIds)}
       </div>
+      <div id="error-message" part="error-message" class="error" role="alert">${this.error ?? ''}</div>
     `;
   }
 
@@ -628,8 +696,12 @@ export class DsListbox extends LitElement {
     if (items.length === 0) {
       return;
     }
+    const preferred =
+      this.defaultActiveValue !== undefined
+        ? items.find((item) => item.value === this.defaultActiveValue)
+        : undefined;
     const selected = items.find((item) => this.selectedSet.has(item.value));
-    this.setActive((selected ?? items[0]).value);
+    this.setActive((preferred ?? selected ?? items[0]).value);
   };
 
   private handleOptionClick(item: ListboxItem): void {
@@ -814,7 +886,11 @@ export class DsListbox extends LitElement {
       this.internals.setFormValue(this.isDisabled || value === null ? null : (value as string));
     }
 
-    if (this.required && value === null) {
+    if (this.error) {
+      this.internals.setValidity({ customError: true }, this.error, this.listEl);
+    } else if (this.invalid) {
+      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), this.listEl);
+    } else if (this.required && value === null) {
       this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), this.listEl);
     } else {
       this.internals.setValidity({});

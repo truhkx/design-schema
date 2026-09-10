@@ -601,19 +601,18 @@
     }
   },
   "Listbox.lit": {
-    "hash": "5038953492ef3de1",
-    "lastAttemptHash": "5038953492ef3de1",
-    "generatedAt": "2026-09-10T13:44:14+00:00",
+    "hash": "9c1ec240b3705daa",
+    "lastAttemptHash": "9c1ec240b3705daa",
+    "generatedAt": "2026-09-10T22:29:38+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.1873,
+    "costUsd": 1.152,
     "files": [
       "packages/lit/src/Listbox.stories.ts",
-      "packages/lit/src/Listbox.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Listbox.ts"
     ],
-    "gaps": 7,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -781,19 +780,18 @@
     }
   },
   "SegmentedControl.lit": {
-    "hash": "184d93a477da77f4",
-    "lastAttemptHash": "184d93a477da77f4",
-    "generatedAt": "2026-09-10T13:33:13+00:00",
+    "hash": "a41091d385e6998b",
+    "lastAttemptHash": "a41091d385e6998b",
+    "generatedAt": "2026-09-10T22:24:24+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9051,
+    "costUsd": 0.9417,
     "files": [
       "packages/lit/src/SegmentedControl.stories.ts",
-      "packages/lit/src/SegmentedControl.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/SegmentedControl.ts"
     ],
-    "gaps": 4,
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,

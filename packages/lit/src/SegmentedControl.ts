@@ -69,9 +69,12 @@ const HOOKS: Record<SegmentedControlOverridableBinding, string> = {
  * semantics), wrapping and skipping disabled options; Home/End jump to the
  * first/last enabled option and select it too. The pill is an absolutely
  * positioned element measured from the selected segment's box and animated
- * with `transition`, removed under reduced motion. Selecting a segment fires
- * a composed `change` CustomEvent with `{ value }`. Not form-associated: a
- * segmented control has nothing to submit, it only switches a mode.
+ * with `transition`, removed under reduced motion. `iconOnly` wraps each
+ * segment's button in a `<ds-tooltip>` (`describes="false"`) so the option's
+ * label is both the accessible name and the visible hover/focus label.
+ * Selecting a segment fires a composed `change` CustomEvent with `{ value }`.
+ * Not form-associated: a segmented control has nothing to submit, it only
+ * switches a mode.
  *
  * ## When to use
  *
@@ -93,6 +96,9 @@ const HOOKS: Record<SegmentedControlOverridableBinding, string> = {
  * @csspart segment-label - A segment's visible label (anatomy: segmentLabel).
  * @csspart segment-icon - A segment's `<ds-icon>` (anatomy: segmentIcon).
  * @csspart indicator - The pill tracking the selected segment (anatomy: indicator).
+ *
+ * With `iconOnly`, each segment (anatomy: tooltip) is wrapped in a `<ds-tooltip>`
+ * showing the option's label; the tooltip has no part of its own to style.
  */
 @customElement('ds-segmented-control')
 export class DsSegmentedControl extends LitElement {
@@ -112,6 +118,9 @@ export class DsSegmentedControl extends LitElement {
       --ds-segmented-control-segment-padding-inline: var(--space-md);
       --ds-segmented-control-segment-padding-block: var(--space-1);
       --ds-segmented-control-segment-gap: var(--layout-gap-tight);
+      --ds-segmented-control-segment-spacing: var(--space-0);
+      --ds-segmented-control-selected-weight: var(--font-weight-semibold);
+      --ds-segmented-control-padding-block-sm: var(--space-1);
       --ds-segmented-control-font-family: var(--font-family-body);
       --ds-segmented-control-font-size: var(--font-size-md);
       --ds-segmented-control-font-weight: var(--font-weight-medium);
@@ -143,6 +152,7 @@ export class DsSegmentedControl extends LitElement {
       box-sizing: border-box;
       display: flex;
       inline-size: 100%;
+      gap: var(--ds-segmented-control-segment-spacing);
       padding: var(--ds-segmented-control-group-padding);
       border-radius: var(--ds-segmented-control-group-radius);
       background: var(--color-background-strong);
@@ -167,7 +177,8 @@ export class DsSegmentedControl extends LitElement {
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .indicator {
+      .indicator,
+      .segment {
         transition: none;
       }
     }
@@ -191,24 +202,30 @@ export class DsSegmentedControl extends LitElement {
       background: transparent;
       font-family: var(--ds-segmented-control-font-family);
       font-size: var(--ds-segmented-control-font-size);
-      font-weight: var(--font-weight-regular);
+      font-weight: var(--ds-segmented-control-font-weight);
       line-height: var(--ds-segmented-control-line-height);
       /* segmentColor: color.foreground.muted, locked */
       color: var(--color-foreground-muted);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
-      transition: color var(--ds-segmented-control-transition) var(--motion-easing-standard);
+      transition:
+        color var(--ds-segmented-control-transition) var(--motion-easing-standard),
+        font-weight var(--ds-segmented-control-transition) var(--motion-easing-standard);
     }
 
     :host([fill]) .segment {
       flex: 1 1 0%;
     }
 
-    /* segmentSelectedColor: color.foreground.strong, locked; fontWeight: font.weight.medium marks the selection alongside the pill and checked state, not color alone */
+    :host([size='sm']) .segment {
+      padding-block: var(--ds-segmented-control-padding-block-sm);
+    }
+
+    /* segmentSelectedColor: color.foreground.strong, locked; selectedWeight: font.weight.semibold marks the selection alongside the pill and checked state, not color alone */
     .segment[aria-checked='true'] {
       color: var(--color-foreground-strong);
-      font-weight: var(--ds-segmented-control-font-weight);
+      font-weight: var(--ds-segmented-control-selected-weight);
     }
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
@@ -316,7 +333,7 @@ export class DsSegmentedControl extends LitElement {
   private renderSegment(option: SegmentedControlOption, selected: boolean) {
     const disabled = option.disabled === true;
     const focused = (this.focusedValue ?? this.currentValue) === option.value;
-    return html`
+    const button = html`
       <button
         type="button"
         class="segment"
@@ -335,6 +352,9 @@ export class DsSegmentedControl extends LitElement {
         ${!this.iconOnly ? html`<span class="segment-label" part="segment-label">${option.label}</span>` : nothing}
       </button>
     `;
+    return this.iconOnly
+      ? html`<ds-tooltip content=${option.label} ?describes=${false}>${button}</ds-tooltip>`
+      : button;
   }
 
   private readonly handleKeydown = (event: KeyboardEvent): void => {

@@ -13,7 +13,7 @@ const meta: Meta<typeof SidePanel> = {
   decorators: [withTheme()],
   args: {
     open: true,
-    title: 'Menu',
+    heading: 'Menu',
     children: (
       <Stack gap="tight" align="start">
         <Link href="#" label="Home" />
@@ -24,6 +24,7 @@ const meta: Meta<typeof SidePanel> = {
     side: 'start',
     width: 'default',
     persistent: 'never',
+    role: 'complementary',
     modal: false,
     scrim: true,
     dismissible: true,
@@ -39,7 +40,7 @@ export const Default: Story = {};
 
 // side
 export const SideStart: Story = { args: { side: 'start' } };
-export const SideEnd: Story = { args: { side: 'end', title: 'Your cart', children: <Text>Cart contents go here.</Text> } };
+export const SideEnd: Story = { args: { side: 'end', heading: 'Your cart', children: <Text>Cart contents go here.</Text> } };
 
 // width
 export const WidthNarrow: Story = { args: { width: 'narrow' } };
@@ -47,7 +48,7 @@ export const WidthDefault: Story = { args: { width: 'default' } };
 export const WidthWide: Story = {
   args: {
     width: 'wide',
-    title: 'Filters',
+    heading: 'Filters',
     children: <Text>A wider panel for a form of filters.</Text>,
   },
 };
@@ -57,20 +58,24 @@ export const PersistentNever: Story = { args: { persistent: 'never' } };
 export const PersistentContent: Story = { args: { persistent: 'content' } };
 export const PersistentPage: Story = { args: { persistent: 'page' } };
 
+// role
+export const RoleComplementary: Story = { args: { role: 'complementary' } };
+export const RoleNavigation: Story = { args: { role: 'navigation' } };
+
 // notable states
 export const Modal: Story = { args: { modal: true } };
 export const NoScrim: Story = { args: { scrim: false } };
 export const NotDismissible: Story = { args: { dismissible: false } };
 export const NotSwipeable: Story = { args: { swipeable: false } };
-export const HideTitle: Story = {
+export const HideHeading: Story = {
   args: {
-    title: 'Menu',
-    hideTitle: true,
+    heading: 'Menu',
+    hideHeading: true,
   },
 };
 export const WithFooter: Story = {
   args: {
-    title: 'Filters',
+    heading: 'Filters',
     children: <Text>Narrow results by price, distance and rating.</Text>,
     footer: (
       <>

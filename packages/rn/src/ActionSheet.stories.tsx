@@ -20,7 +20,7 @@ const meta: Meta<typeof ActionSheet> = {
   decorators: [withTheme()],
   args: {
     open: true,
-    title: 'Photo.jpg',
+    heading: 'Photo.jpg',
     actions: ACTIONS,
   },
 };
@@ -32,9 +32,11 @@ type Story = StoryObj<typeof ActionSheet>;
 export const Default: Story = {};
 
 // notable states
-export const NoTitle: Story = { args: { title: undefined } };
+export const NoHeading: Story = { args: { heading: undefined } };
 
 export const CustomCancelLabel: Story = { args: { cancelLabel: 'Not now' } };
+
+export const NotDismissible: Story = { args: { dismissible: false } };
 
 export const WithOverrides: Story = {
   args: {

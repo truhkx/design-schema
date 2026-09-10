@@ -12,6 +12,9 @@
   --ds-segmented-control-segment-padding-inline: var(--space-md);
   --ds-segmented-control-segment-padding-block: var(--space-1);
   --ds-segmented-control-segment-gap: var(--layout-gap-tight);
+  --ds-segmented-control-segment-spacing: var(--space-0);
+  --ds-segmented-control-selected-weight: var(--font-weight-semibold);
+  --ds-segmented-control-padding-block-sm: var(--space-1);
   --ds-segmented-control-font-family: var(--font-family-body);
   --ds-segmented-control-font-size: var(--font-size-md);
   --ds-segmented-control-font-weight: var(--font-weight-medium);
@@ -24,6 +27,7 @@
   box-sizing: border-box;
   position: relative;
   display: inline-flex;
+  gap: var(--ds-segmented-control-segment-spacing);
   padding: var(--ds-segmented-control-group-padding);
   border-radius: var(--ds-segmented-control-group-radius);
   background-color: var(--ds-segmented-control-group-background);
@@ -33,6 +37,11 @@
 /* size → fontSize: font.size.{size} */
 .ds-segmented-control--sm { --ds-segmented-control-font-size: var(--font-size-sm); }
 .ds-segmented-control--md { --ds-segmented-control-font-size: var(--font-size-md); }
+
+/* paddingBlockSm: vertical padding at size sm; md keeps segmentPaddingBlock. */
+.ds-segmented-control--sm .ds-segmented-control__segment {
+  padding-block: var(--ds-segmented-control-padding-block-sm);
+}
 
 .ds-segmented-control--fill {
   display: flex;
@@ -70,6 +79,7 @@
 /* selected: text weight/color only — the pill (below) is the low-contrast surface (1.4.11 n/a here; 1.4.1 met by the text change). */
 .ds-segmented-control__segment[aria-checked='true'] {
   color: var(--ds-segmented-control-segment-selected-color);
+  font-weight: var(--ds-segmented-control-selected-weight);
 }
 
 .ds-segmented-control__segment--disabled {

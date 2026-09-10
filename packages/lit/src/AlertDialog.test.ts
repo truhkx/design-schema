@@ -8,6 +8,13 @@ import './AlertDialog.js';
 import type { DsAlertDialog } from './AlertDialog.js';
 import meta from './AlertDialog.stories.js';
 
+/** The deepest focused element: `document.activeElement` is a shadow host while focus is inside its shadow tree. */
+function deepActiveElement(): Element | null {
+  let el: Element | null = document.activeElement;
+  while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
+  return el;
+}
+
 type Given = Partial<Pick<DsAlertDialog, 'open' | 'heading' | 'description' | 'tone' | 'confirmLabel' | 'cancelLabel' | 'confirmDisabled'>>;
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
@@ -59,6 +66,6 @@ describe('ds-alert-dialog', () => {
   it('control-is-focusable', async () => {
     const { el } = await setup();
     const cancelButton = el.shadowRoot!.querySelector('.cancel');
-    expect(document.activeElement).toBe(cancelButton);
+    expect(deepActiveElement()).toBe(cancelButton);
   });
 });

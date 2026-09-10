@@ -51,6 +51,18 @@ NON_CONCRETE_ROLES = {"none", "presentation", "text", "landmark"}
 # The component's surface is not in the document until something opens it and there is no `open` prop to set.
 HOVER_ROLES = {"tooltip"}
 SOURCE_FILE = {"web": "packages/react/src/{name}.tsx", "lit": "packages/lit/src/{name}.ts", "rn": "packages/rn/src/{name}.tsx"}
+ACTIVE_CHAIN_HELPER = """/** Every element that is "active" from the document down through shadow roots: the host, then the inner one.
+ *  document.activeElement alone is a shadow host while focus sits inside its shadow tree. */
+function activeChain(): Element[] {
+  const chain: Element[] = [];
+  let el: Element | null = document.activeElement;
+  while (el) {
+    chain.push(el);
+    el = el.shadowRoot?.activeElement ?? null;
+  }
+  return chain;
+}
+"""
 DEEP_QUERY_HELPER = """function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -312,7 +324,7 @@ def then_focusable_lines(c: dict, platform: str) -> list[str]:
     if platform == "web":
         return [f"act(() => ({control}).focus());", f"expect({control}).toHaveFocus();"]
     if platform == "lit":
-        return ["s.el.focus();", "expect(document.activeElement).toBe(s.el);"]
+        return ["s.el.focus();", "expect(activeChain()).toContain(s.el);"]
     raise Unmappable("then.focusable: React Native cannot observe focus")
 
 
@@ -327,9 +339,11 @@ def then_focused_lines(c: dict, target: str, platform: str) -> list[str]:
             return ["expect(document.activeElement === document.body).toBe(true);"]
         return [f"expect(document.activeElement).toBe({part_locator(c, target, platform)});"]
     if platform == "lit":
+        # Focus inside nested shadow roots (a composed ds-button inside a dialog) shows up as a chain of hosts;
+        # the part is focused when it, or the host that contains it, is in that chain.
         if target == "none":
-            return ["expect(s.el.shadowRoot!.activeElement).toBeNull();"]
-        return [f"expect(s.el.shadowRoot!.activeElement).toBe({part_locator(c, target, platform)});"]
+            return ["expect(activeChain()).not.toContain(s.el);"]
+        return [f"expect(activeChain()).toContain({part_locator(c, target, platform)});"]
     raise Unmappable(f"then.focused: no mapping for {platform}")
 
 
@@ -603,6 +617,7 @@ def lit_file(c: dict, scenarios: list[dict]) -> str:
     if needs_regex_helper(scenarios):
         lines.append(ESCAPE_REGEXP_HELPER)
     lines.append(DEEP_QUERY_HELPER)
+    lines.append(ACTIVE_CHAIN_HELPER)
     lines.append("async function setup(given: Record<string, unknown> = {}) {")
     lines.append(f"  const el = document.createElement('{tag}');")
     lines.append("  const props = { ...meta.args, ...given };")

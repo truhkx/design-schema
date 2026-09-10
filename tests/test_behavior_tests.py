@@ -267,3 +267,18 @@ class TestNameAndRenders:
         text = {**WIDGET, "a11y": {"role": "text", "requires": []}}
         with pytest.raises(bt.Unmappable, match="cannot be queried"):
             bt.then_name_lines(text, "web")
+
+
+class TestLitFocus:
+    """Focus inside shadow roots: document.activeElement is the host, so assertions walk the active chain."""
+
+    def test_focusable_checks_the_host_is_in_the_active_chain(self):
+        assert bt.then_focusable_lines(WIDGET, "lit") == ["s.el.focus();", "expect(activeChain()).toContain(s.el);"]
+
+    def test_focused_part_and_none_use_the_chain(self):
+        assert bt.then_focused_lines(WIDGET, "label", "lit") == ["expect(activeChain()).toContain(s.label());"]
+        assert bt.then_focused_lines(WIDGET, "none", "lit") == ["expect(activeChain()).not.toContain(s.el);"]
+
+    def test_the_lit_file_carries_the_helper(self):
+        content = bt.lit_file(WIDGET, [{"name": "f", "then": [{"focusable": True}]}])
+        assert "function activeChain()" in content and "expect(activeChain()).toContain(s.el);" in content

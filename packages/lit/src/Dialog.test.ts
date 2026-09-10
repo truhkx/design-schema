@@ -10,6 +10,13 @@ import './Button.js';
 import type { DsDialog } from './Dialog.js';
 import meta from './Dialog.stories.js';
 
+/** The deepest focused element: `document.activeElement` is a shadow host while focus is inside its shadow tree. */
+function deepActiveElement(): Element | null {
+  let el: Element | null = document.activeElement;
+  while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
+  return el;
+}
+
 type Given = Partial<Pick<DsDialog, 'open' | 'heading' | 'description' | 'size' | 'dismissible' | 'initialFocus'>>;
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element with a body control and footer. */
@@ -93,6 +100,6 @@ describe('ds-dialog', () => {
 
   it('control-is-focusable', async () => {
     const { input } = await setup();
-    expect(document.activeElement).toBe(input);
+    expect(deepActiveElement()).toBe(input);
   });
 });

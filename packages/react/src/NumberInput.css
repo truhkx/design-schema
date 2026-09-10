@@ -1,0 +1,147 @@
+/* NumberInput — styled only through Design Schema token custom properties. */
+
+.ds-number-input {
+  /* labelWeight/helperSize are forwarded entirely into the composed Text elements' own overrides
+     instead (the split Meter, RadioGroup and Slider use); fontFamily/fontSize/lineHeight are
+     forwarded to Text *and* kept here, for the raw `<input>` which has no Text of its own. */
+  --ds-number-input-background: var(--color-background);
+  --ds-number-input-foreground: var(--color-foreground);
+  --ds-number-input-placeholder: var(--color-foreground-muted);
+  --ds-number-input-border: var(--color-border-strong);
+  --ds-number-input-border-focus: var(--color-border-focus);
+  --ds-number-input-border-invalid: var(--color-border-danger);
+  --ds-number-input-border-width: var(--border-width-thin);
+  --ds-number-input-radius: var(--radius-md);
+  --ds-number-input-padding-inline: var(--space-md);
+  --ds-number-input-padding-block: var(--space-sm);
+  --ds-number-input-affix-color: var(--color-foreground-muted);
+  --ds-number-input-affix-gap: var(--layout-gap-tight);
+  --ds-number-input-stepper-gap: var(--layout-gap-none);
+  --ds-number-input-stepper-divider: var(--color-border);
+  --ds-number-input-part-gap: var(--space-1);
+  --ds-number-input-font-family: var(--font-family-body);
+  --ds-number-input-font-size: var(--font-size-md);
+  --ds-number-input-line-height: var(--font-line-height-normal);
+  --ds-number-input-min-target: var(--size-target-comfortable);
+  --ds-number-input-focus-ring-width: var(--border-width-focus);
+  --ds-number-input-disabled-opacity: var(--opacity-disabled);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-number-input-part-gap);
+  inline-size: 100%;
+  font-family: var(--ds-number-input-font-family);
+}
+
+.ds-number-input__label-wrapper {
+  display: inline-block;
+}
+
+.ds-number-input__required {
+  font-weight: inherit;
+}
+
+.ds-number-input__field {
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  inline-size: 100%;
+  min-block-size: var(--ds-number-input-min-target);
+  border: var(--ds-number-input-border-width) solid var(--ds-number-input-border);
+  border-radius: var(--ds-number-input-radius);
+  background-color: var(--ds-number-input-background);
+  overflow: hidden;
+}
+
+/* borderFocus + focusRingWidth: the border thickens and recolors as the focus indicator, like
+   Input; the control's padding shrinks by the added width so the field's outer box does not shift. */
+.ds-number-input__field:focus-within {
+  border-color: var(--ds-number-input-border-focus);
+  border-width: var(--ds-number-input-focus-ring-width);
+}
+
+.ds-number-input__field:focus-within .ds-number-input__control {
+  padding-inline: calc(var(--ds-number-input-padding-inline) - (var(--ds-number-input-focus-ring-width) - var(--ds-number-input-border-width)));
+  padding-block: calc(var(--ds-number-input-padding-block) - (var(--ds-number-input-focus-ring-width) - var(--ds-number-input-border-width)));
+}
+
+/* borderInvalid */
+.ds-number-input__field--invalid {
+  border-color: var(--ds-number-input-border-invalid);
+}
+
+/* disabled: visible, readable, not editable — dimmed rather than recolored. */
+.ds-number-input__field--disabled {
+  opacity: var(--ds-number-input-disabled-opacity);
+}
+
+.ds-number-input__control {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  gap: var(--ds-number-input-affix-gap);
+  padding-inline: var(--ds-number-input-padding-inline);
+  padding-block: var(--ds-number-input-padding-block);
+}
+
+.ds-number-input__affix {
+  flex: 0 0 auto;
+  color: var(--ds-number-input-affix-color);
+  font-family: var(--ds-number-input-font-family);
+  font-size: var(--ds-number-input-font-size);
+  line-height: var(--ds-number-input-line-height);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.ds-number-input__input {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ds-number-input-foreground);
+  font: inherit;
+  font-family: var(--ds-number-input-font-family);
+  font-size: var(--ds-number-input-font-size);
+  line-height: var(--ds-number-input-line-height);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.ds-number-input__input::placeholder {
+  color: var(--ds-number-input-placeholder);
+  opacity: 1;
+}
+
+.ds-number-input__input:focus-visible {
+  outline: none;
+}
+
+/* stepperGap/stepperDivider: the two Buttons sit flush at the end of the field, a hairline away
+   from the input — never restyled themselves, only positioned by this wrapper. */
+.ds-number-input__steppers {
+  display: flex;
+  align-items: stretch;
+  flex: 0 0 auto;
+  gap: var(--ds-number-input-stepper-gap);
+  border-inline-start: var(--ds-number-input-border-width) solid var(--ds-number-input-stepper-divider);
+}
+
+.ds-number-input__description {
+  margin: 0;
+}
+
+.ds-number-input__error {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ds-number-input__field {
+    transition:
+      border-color var(--motion-duration-fast) var(--motion-easing-standard),
+      border-width var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+}

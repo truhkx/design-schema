@@ -277,6 +277,30 @@
       "modules": true
     }
   },
+  "DatePicker.web": {
+    "hash": "82b8e0d6e69e22bc",
+    "lastAttemptHash": "82b8e0d6e69e22bc",
+    "generatedAt": "2026-09-10T15:48:50+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 4.2177,
+    "files": [
+      "packages/react/src/DatePicker.css",
+      "packages/react/src/DatePicker.stories.tsx",
+      "packages/react/src/DatePicker.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 13,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Dialog.web": {
     "hash": "871bd175545e7939",
     "lastAttemptHash": "871bd175545e7939",
@@ -605,6 +629,30 @@
       "modules": true
     }
   },
+  "NumberInput.web": {
+    "hash": "1a4a6b4c5f6fb7be",
+    "lastAttemptHash": "1a4a6b4c5f6fb7be",
+    "generatedAt": "2026-09-10T15:07:00+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.9801,
+    "files": [
+      "packages/react/src/NumberInput.css",
+      "packages/react/src/NumberInput.stories.tsx",
+      "packages/react/src/NumberInput.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 10,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Popover.web": {
     "hash": "152c2e281a9168a6",
     "lastAttemptHash": "152c2e281a9168a6",
@@ -629,6 +677,30 @@
       "modules": true
     }
   },
+  "ProgressBar.web": {
+    "hash": "bcac08502380578d",
+    "lastAttemptHash": "bcac08502380578d",
+    "generatedAt": "2026-09-10T15:10:14+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.7604,
+    "files": [
+      "packages/react/src/ProgressBar.css",
+      "packages/react/src/ProgressBar.stories.tsx",
+      "packages/react/src/ProgressBar.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "RadioGroup.web": {
     "hash": "1d46283b3340d19c",
     "lastAttemptHash": "1d46283b3340d19c",
@@ -643,6 +715,30 @@
       "packages/react/src/index.ts"
     ],
     "gaps": 3,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Search.web": {
+    "hash": "18e4bc0253dede5f",
+    "lastAttemptHash": "18e4bc0253dede5f",
+    "generatedAt": "2026-09-10T15:30:23+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.5758,
+    "files": [
+      "packages/react/src/Search.css",
+      "packages/react/src/Search.stories.tsx",
+      "packages/react/src/Search.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -773,6 +869,30 @@
       "packages/react/src/index.ts"
     ],
     "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
+  "Stepper.web": {
+    "hash": "d50957a3bdaf3b12",
+    "lastAttemptHash": "d50957a3bdaf3b12",
+    "generatedAt": "2026-09-10T15:21:16+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.759,
+    "files": [
+      "packages/react/src/Stepper.css",
+      "packages/react/src/Stepper.stories.tsx",
+      "packages/react/src/Stepper.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,

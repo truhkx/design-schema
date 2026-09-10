@@ -49,6 +49,10 @@ import './Listbox.js';
 import './Select.js';
 import './Combobox.js';
 import './Slider.js';
+import './NumberInput.js';
+import './ProgressBar.js';
+import './Stepper.js';
+import './Search.js';
 
 export { DsAccordion } from './Accordion.js';
 export type {
@@ -307,3 +311,29 @@ export type {
   SliderChangeDetail,
   SliderOverridableBinding,
 } from './Slider.js';
+
+export { DsNumberInput } from './NumberInput.js';
+export type { NumberInputFormat, NumberInputChangeDetail, NumberInputOverridableBinding } from './NumberInput.js';
+
+export { DsProgressBar } from './ProgressBar.js';
+export type { ProgressBarTone, ProgressBarAnnounce, ProgressBarOverridableBinding } from './ProgressBar.js';
+
+export { DsStepper } from './Stepper.js';
+export type {
+  StepperOrientation,
+  StepperNavigable,
+  StepperStepStatus,
+  StepperStep,
+  StepperStepSelectDetail,
+  StepperOverridableBinding,
+} from './Stepper.js';
+
+export { DsSearch } from './Search.js';
+export type {
+  SearchSize,
+  SearchSuggestion,
+  SearchChangeDetail,
+  SearchSubmitDetail,
+  SearchClearDetail,
+  SearchOverridableBinding,
+} from './Search.js';

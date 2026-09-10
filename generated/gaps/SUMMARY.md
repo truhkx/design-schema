@@ -1,6 +1,6 @@
-# Gap digest — phase Selection
+# Gap digest — phase Numeric
 
-Generated 2026-09-10T10:22 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T10:59 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -1206,6 +1206,33 @@ Doc: `site/src/content/docs/components/sidepanel.md`
 - **DOC** SidePanel: persistent-mode accessibility role — the platforms.rn notes explicitly say 'a sibling View with accessibilityRole="none" and a label', which I followed verbatim, even though the general package convention elsewhere favors `role` (RN ≥0.74) for landmark parity with the web `complementary`/`navigation` role; RN has no such landmark role value, so `none`+label is the documented fallback. → `site/src/content/docs/components/sidepanel.md`
 - **DOC** No SidePanel.test.tsx was written — this generation task's Output section only asked for the .tsx (plus stories); none of the package's other overlay components (BottomSheet, Popover, ActionSheet) has a sibling .test.tsx either, so behavior-scenario tests were left to whatever separate pass covers that (per the project's ongoing behavior-scenarios rollout). → `site/src/content/docs/components/sidepanel.md`
 
+## Slider
+
+Doc: `site/src/content/docs/components/slider.md`
+
+### 2026-09-10 10:55 — web round 1
+
+- **DOC** Slider: schema props have no `required`/`invalid` fields and `copy` only defines minimumLabel/maximumLabel, unlike Input/Checkbox/RadioGroup's required+invalid+copy.required/copy.invalid pattern. Implemented `validate()` as just returning the `error` prop, with no required-field enforcement. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: marks doc says 'Values snap to marks when step is omitted,' but `step` always carries a default of 1 (props can't structurally distinguish 'omitted' from 'explicitly 1'). Chose to always snap by `step` for drag/click/arrow keys (so arrows never get stuck between sparse marks), and only used marks for PageUp/PageDown 'next mark' navigation as separately and explicitly specified. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: platforms.web `attributes` list for the thumb doesn't include aria-describedby, but a11y.requires lists error-identification and label-association, which need the description/error text linked to something. Added aria-describedby on each thumb referencing description/error ids (same mechanism Input/Checkbox/RadioGroup use) as the minimal way to satisfy that requirement; did not add aria-invalid since no token/requirement calls for a visual invalid state. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: composition says `valueText: Text`, but the same anatomy part also renders as a hover/drag bubble with an inverse-surface pill background, which the Text component can't express (no background/padding, no 'inverse' tone). Rendered the beside-label value as a Text component (matching composition) but the bubble as plain markup (like Tooltip's popup), styled directly from the bubbleSurface/bubbleText/valueSize tokens — the bubble's font-size is hardcoded to font-size-sm rather than going through the `valueSize` override contract. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: no copy template is given for how a range's beside-label value text should combine the two thumb values. Joined them as `${formatValue(low)} – ${formatValue(high)}` (en dash) — a judgment call, not a copy string from the schema. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: APG multithumb convention (referenced via `apg: slider-multithumb`) suggests each range thumb's aria-valuemin/aria-valuemax should reflect the live constraint from its sibling thumb (min thumb's max = current high value, and vice versa) rather than the global min/max on both. Implemented it that way even though the schema's flat attribute list doesn't spell this out. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the prompt's generic Keyboard-story guidance asks for 'at least three focusable children'; a range Slider only ever has two thumbs (a single slider has one). Used the two-thumb `range` story for Keyboard since three isn't achievable for this component. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: pointer capture and the drag/click handlers are attached to a wrapper (`.ds-slider__body`, needed so `trackPaddingBlock` can size the 44px hit region without visually inflating the thin rail) rather than literally the `track` element as the platform note phrases it; the rail (`data-part="track"`) is used only for the horizontal position math, which is equivalent since the wrapper has no inline padding. → `site/src/content/docs/components/slider.md`
+
+### 2026-09-10 10:51 — lit round 1
+
+- **DOC** Slider: `step` has a schema default of 1, so a Lit property can't distinguish 'step omitted' from 'step explicitly 1' to satisfy 'marks... snap to marks when step is omitted' during pointer drag/click. Implemented: step always governs drag/click snapping; when `marks` is set, PageUp/PageDown jump to the next/previous mark instead of ±10 steps (that part of the spec is unambiguous). → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: `value`/`defaultValue` are typed `number | [number, number]` (shape given but base `type: number`, not `array`/`object`). Implemented as `@property({ attribute: false })` per the array/object convention, so they are JS-only properties, not settable as HTML attributes — flag if attribute-level control is expected. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: range mode's aria-labelledby uses hidden spans whose text is the full `copy.minimumLabel`/`copy.maximumLabel` template evaluated with `label` (e.g. 'Volume minimum'), rather than concatenating the visible label element with a bare 'minimum' node. This satisfies both 'aria-labelledby on each thumb' and 'use copy.* verbatim', but the doc doesn't show the exact DOM shape, so it's a judgment call. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: no format is specified for the beside-label/bubble text of a range's *combined* display (each thumb's own aria-valuetext/bubble is per-thumb and unambiguous). Chose `formatValue(lo) – formatValue(hi)` (en dash) for the `showValue: always` row; not in the spec. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: `ds-form` (Form.ts) collects fields via a hardcoded `FIELD_SELECTOR`/`FIELD_TAGS` list (`ds-input, ds-checkbox, ds-switch, ds-radio-group`) that does not include `ds-slider`, and `DsFormField.currentValue` is typed `string | boolean | null` vs. Slider's `number | [number, number]`. Slider is form-associated via `ElementInternals` directly (native `<form>` sees it, `FormData` gets two entries under `name` for a range), but `<ds-form>` won't auto-collect/validate it without a separate change to Form.ts, which is out of this generation's scope. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: schema has no `required` prop (unlike Input/RadioGroup), so it doesn't fully implement `DsFormField` (missing `required`). Kept the schema's prop set exactly; didn't invent a `required` prop. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the bubble's corner radius (`radius.sm`) has no declared style binding in the schema (only `bubbleSurface`/`bubbleText` are defined) — used a fixed, non-overridable `--radius-sm` purely for shape, matching Tooltip's popup shape. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: pointer-drag value math (`positionToValue`) is LTR-only (`clientX - rect.left`), matching the pattern of other components in this package that don't special-case `:dir(rtl)` for pointer math (only Switch handles RTL, purely via a CSS transform on a discrete thumb, not continuous drag). → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the package-wide testability rule requires a `Keyboard` story with 'at least three focusable children' — Slider's `range` mode tops out at two thumbs (its whole APG model), so the `Keyboard` story renders the range+marks configuration with two thumbs; a third focusable child isn't structurally possible for this component. → `site/src/content/docs/components/slider.md`
+
 ## Stack
 
 Doc: `site/src/content/docs/components/stack.md`
@@ -1394,7 +1421,7 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 ## Totals
 
-DOC: 655 · CODE: 38 · TOOLING: 2 · NOISE: 14
+DOC: 672 · CODE: 38 · TOOLING: 2 · NOISE: 14
 
 ## Gates to fix
 

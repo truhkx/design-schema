@@ -52,7 +52,7 @@ function statusWord(status: StepperStepStatus): string | undefined {
   return undefined;
 }
 
-/** Overridable style hooks; see the `overrides` property. `indicatorBorder`, `indicatorCompleteBackground`, `indicatorCompleteForeground`, `indicatorCurrentBorder`, `indicatorErrorBackground`, `indicatorErrorForeground`, `indicatorErrorBorder`, `connectorComplete`, `labelColor`, `labelUpcomingColor`, `descriptionColor`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. `indicatorBorder`, `indicatorCompleteBackground`, `indicatorCompleteForeground`, `indicatorCurrentBorder`, `indicatorErrorBackground`, `indicatorErrorForeground`, `indicatorErrorBorder`, `connectorComplete`, `labelColor`, `labelUpcomingColor`, `descriptionColor`, `indicatorColor`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
 export type StepperOverridableBinding =
   | 'indicatorSize'
   | 'indicatorBackground'
@@ -65,6 +65,8 @@ export type StepperOverridableBinding =
   | 'labelCurrentWeight'
   | 'labelSize'
   | 'descriptionSize'
+  | 'stepHover'
+  | 'stepRadius'
   | 'stepGap'
   | 'partGap'
   | 'fontFamily'
@@ -82,6 +84,8 @@ const HOOKS: Record<StepperOverridableBinding, string> = {
   labelCurrentWeight: '--ds-stepper-label-current-weight',
   labelSize: '--ds-stepper-label-size',
   descriptionSize: '--ds-stepper-description-size',
+  stepHover: '--ds-stepper-step-hover',
+  stepRadius: '--ds-stepper-step-radius',
   stepGap: '--ds-stepper-step-gap',
   partGap: '--ds-stepper-part-gap',
   fontFamily: '--ds-stepper-font-family', // literal-ok: CSS custom-property name, not a font stack
@@ -150,6 +154,8 @@ export class DsStepper extends LitElement {
       --ds-stepper-label-current-weight: var(--font-weight-semibold);
       --ds-stepper-label-size: var(--font-size-sm);
       --ds-stepper-description-size: var(--font-size-xs);
+      --ds-stepper-step-hover: var(--color-action-ghost-background-hover);
+      --ds-stepper-step-radius: var(--radius-sm);
       --ds-stepper-step-gap: var(--layout-gap-normal);
       --ds-stepper-part-gap: var(--space-2);
       --ds-stepper-font-family: var(--font-family-body);
@@ -286,6 +292,7 @@ export class DsStepper extends LitElement {
       margin: 0;
       padding: 0;
       border: 0;
+      border-radius: var(--ds-stepper-step-radius);
       background: transparent;
       font: inherit;
     }
@@ -294,10 +301,23 @@ export class DsStepper extends LitElement {
       align-items: flex-start;
     }
 
+    /* stepHover: color.action.ghost.backgroundHover — hover and press background of a navigable step */
     button.control {
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
+      transition: background-color var(--ds-stepper-transition) var(--motion-easing-standard);
+    }
+
+    button.control:hover,
+    button.control:active {
+      background: var(--ds-stepper-step-hover);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      button.control {
+        transition: none;
+      }
     }
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */

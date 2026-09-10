@@ -1,12 +1,12 @@
 {
   "Accordion.rn": {
-    "hash": "6346b0580263dc73",
-    "lastAttemptHash": "6346b0580263dc73",
-    "generatedAt": "2026-09-10T14:03:35+00:00",
+    "hash": "c489683f73c513fe",
+    "lastAttemptHash": "c489683f73c513fe",
+    "generatedAt": "2026-09-10T22:47:19+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7376,
+    "costUsd": 0.2335,
     "files": [
       "packages/rn/src/Accordion.stories.tsx",
       "packages/rn/src/Accordion.tsx",
@@ -249,13 +249,13 @@
     }
   },
   "Combobox.rn": {
-    "hash": "0f608d1069c4ddd0",
-    "lastAttemptHash": "0f608d1069c4ddd0",
-    "generatedAt": "2026-09-10T14:00:18+00:00",
+    "hash": "a6c12c54a1957ec4",
+    "lastAttemptHash": "a6c12c54a1957ec4",
+    "generatedAt": "2026-09-10T22:46:38+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.5657,
+    "costUsd": 0.2942,
     "files": [
       "packages/rn/src/Combobox.stories.tsx",
       "packages/rn/src/Combobox.tsx",
@@ -715,18 +715,19 @@
     }
   },
   "Select.rn": {
-    "hash": "7bad744555f8c77d",
-    "lastAttemptHash": "7bad744555f8c77d",
-    "generatedAt": "2026-09-10T13:48:05+00:00",
+    "hash": "ee8412bc1e2cb328",
+    "lastAttemptHash": "ee8412bc1e2cb328",
+    "generatedAt": "2026-09-10T22:46:00+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.1779,
+    "costUsd": 2.0184,
     "files": [
+      "packages/rn/src/Select.stories.tsx",
       "packages/rn/src/Select.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

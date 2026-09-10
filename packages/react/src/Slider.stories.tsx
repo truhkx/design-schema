@@ -72,8 +72,31 @@ export const WithMarks: Story = {
   },
 };
 
+/* snapToMarks */
+export const SnapToMarks: Story = {
+  args: {
+    label: 'Playback speed',
+    name: 'speed',
+    min: 0,
+    max: 4,
+    step: 1,
+    snapToMarks: true,
+    defaultValue: 2,
+    marks: [
+      { value: 0, label: '0.5×' },
+      { value: 1, label: '0.75×' },
+      { value: 2, label: '1×' },
+      { value: 3, label: '1.5×' },
+      { value: 4, label: '2×' },
+    ],
+    formatValue: (value: number) => ['0.5×', '0.75×', '1×', '1.5×', '2×'][value] ?? String(value),
+  },
+};
+
 /* states */
 export const Disabled: Story = { args: { disabled: true } };
+export const Required: Story = { args: { required: true } };
+export const Invalid: Story = { args: { invalid: true } };
 export const WithDescription: Story = {
   args: { description: 'Changes take effect immediately.' },
 };

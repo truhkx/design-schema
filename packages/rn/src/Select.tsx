@@ -23,7 +23,6 @@ import { Listbox } from './Listbox';
 import type { ListboxGroup, ListboxItem, ListboxOption, ListboxValue } from './Listbox';
 import { Text } from './Text';
 import { toEasing, useReducedMotion, useTheme } from './theme';
-import type { Tokens } from './theme';
 
 /** Which picker surface to use. See `Select`'s doc for how each maps on this platform. */
 export type SelectNative = 'auto' | 'always' | 'never';
@@ -116,8 +115,6 @@ const COPY = {
   done: 'Done',
 } as const;
 
-const FONT_SIZE_TOKEN = { sm: 'fontSizeSm', md: 'fontSizeMd' } as const satisfies Record<SelectSize, keyof Tokens>;
-
 function isGroup(item: ListboxItem): item is ListboxGroup {
   return 'group' in item;
 }
@@ -166,7 +163,11 @@ type Rect = { x: number; y: number; width: number; height: number };
  * OS picker without a banned community dependency: `never` always uses the popup;
  * `auto` and `always` both use the phone/tablet split described above. See the
  * generation gap notes for the web-only "native `<select>`" meaning of `always` that
- * has no native equivalent here.
+ * has no native equivalent here. `size: sm` swaps the trigger's vertical padding and
+ * target height for their `Sm` bindings and the trigger/label/Listbox text to
+ * `font.size.sm`; `hideLabel` keeps the label as the trigger's `accessibilityLabel`
+ * while dropping its visible `Text`. `open` is a controlled escape hatch for
+ * programmatic opening (stories, tests); when omitted the trigger drives it.
  */
 export function Select({
   label,
@@ -420,7 +421,6 @@ export function Select({
         ? (resolveToken(t, overrides.minTargetSm) as number)
         : t.sizeTargetMin
       : t.sizeTargetComfortable;
-  const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[FONT_SIZE_TOKEN[size]];
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
@@ -453,7 +453,7 @@ export function Select({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: triggerGap,
-    minHeight: t.sizeTargetComfortable,
+    minHeight: minTarget,
     backgroundColor: t.colorBackground,
     borderWidth: activeTriggerBorderWidth,
     borderColor: triggerBorderColor,
@@ -472,7 +472,7 @@ export function Select({
   const helperOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.helperSize, lineHeight: overrides?.lineHeight };
   const listboxOverrides = {
     fontFamily: overrides?.fontFamily,
-    fontSize: overrides?.fontSize,
+    fontSize: overrides?.fontSize ?? (size === 'sm' ? ('font.size.sm' as TokenRef) : undefined),
     lineHeight: overrides?.lineHeight,
     disabledOpacity: overrides?.disabledOpacity,
   };
@@ -522,9 +522,11 @@ export function Select({
 
   return (
     <View testID="Select" style={containerStyle}>
-      <Text weight="medium" overrides={labelOverrides}>
-        {visibleLabel}
-      </Text>
+      {hideLabel ? null : (
+        <Text size={size} weight="medium" overrides={labelOverrides}>
+          {visibleLabel}
+        </Text>
+      )}
       {description !== undefined ? (
         <Text size="sm" tone="muted" overrides={helperOverrides}>
           {description}
@@ -543,7 +545,7 @@ export function Select({
         style={triggerStyle}
         testID="Select.trigger"
       >
-        <Text tone={hasSelection ? 'default' : 'muted'} overrides={valueTextStyle}>
+        <Text size={size} tone={hasSelection ? 'default' : 'muted'} overrides={valueTextStyle}>
           {valueText}
         </Text>
         <Icon name="chevron-down" size="sm" color={t.colorForegroundMuted} />

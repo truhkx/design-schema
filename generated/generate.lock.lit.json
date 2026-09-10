@@ -711,19 +711,17 @@
     }
   },
   "ProgressBar.lit": {
-    "hash": "ddf87b535c18f070",
-    "lastAttemptHash": "ddf87b535c18f070",
-    "generatedAt": "2026-09-10T15:12:21+00:00",
+    "hash": "579b29428b8358e5",
+    "lastAttemptHash": "579b29428b8358e5",
+    "generatedAt": "2026-09-10T22:43:47+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.4058,
+    "costUsd": 0.4636,
     "files": [
-      "packages/lit/src/ProgressBar.stories.ts",
-      "packages/lit/src/ProgressBar.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/ProgressBar.ts"
     ],
-    "gaps": 5,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -916,19 +914,18 @@
     }
   },
   "Stepper.lit": {
-    "hash": "e6a7726a41833baf",
-    "lastAttemptHash": "e6a7726a41833baf",
-    "generatedAt": "2026-09-10T15:26:37+00:00",
+    "hash": "98291b020e091137",
+    "lastAttemptHash": "98291b020e091137",
+    "generatedAt": "2026-09-10T22:45:32+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.2761,
+    "costUsd": 0.4594,
     "files": [
       "packages/lit/src/Stepper.stories.ts",
-      "packages/lit/src/Stepper.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Stepper.ts"
     ],
-    "gaps": 7,
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,

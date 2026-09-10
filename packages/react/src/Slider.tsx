@@ -19,10 +19,13 @@ export type SliderValue = number | [number, number];
 /** One tick mark. Values snap to `step`; marks are decoration plus PageUp/PageDown stops. */
 export type SliderMark = { value: number; label?: string };
 
-/** copy.* — used verbatim; `{label}` is replaced by the visible label. */
+/** copy.* — used verbatim; `{label}`/`{low}`/`{high}` are replaced as noted. */
 const COPY = {
   minimumLabel: '{label} minimum',
   maximumLabel: '{label} maximum',
+  rangeText: '{low} – {high}',
+  required: '{label} is required.',
+  invalid: '{label} is not valid.',
 };
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
@@ -131,6 +134,12 @@ export interface SliderProps extends Omit<ComponentPropsWithoutRef<'div'>, 'chil
   max?: number;
   /** Arrow-key increment and snapping granularity. */
   step?: number;
+  /** With `marks`, snap drag and click to the marks instead of `step` (keys still move by step, PageUp/Down by mark). */
+  snapToMarks?: boolean;
+  /** Must have a value other than the default to submit (`copy.required`). */
+  required?: boolean;
+  /** Marks the slider invalid (`copy.invalid` when no `error`). */
+  invalid?: boolean;
   /** Controlled value; for a range, a two-number array. */
   value?: SliderValue;
   /** Initial value (or pair). Defaults to `min` (or `[min, max]`). */
@@ -188,6 +197,9 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
     min = 0,
     max = 100,
     step = 1,
+    snapToMarks = false,
+    required = false,
+    invalid = false,
     value,
     defaultValue,
     range = false,
@@ -224,14 +236,16 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
     if (isDev && !validRange) console.warn(`Slider: \`max\` (${max}) must be greater than \`min\` (${min}).`);
   }, [validRange, min, max]);
 
+  const effectiveDefault: SliderValue = defaultValue ?? (range ? [min, max] : min);
   const isControlled = value !== undefined;
-  const [internalValue, setInternalValue] = useState<SliderValue>(defaultValue ?? (range ? [min, max] : min));
+  const [internalValue, setInternalValue] = useState<SliderValue>(effectiveDefault);
   const current = isControlled ? (value as SliderValue) : internalValue;
   const latestValueRef = useRef<SliderValue>(current);
   latestValueRef.current = current;
 
   const isDisabled = disabled || (form?.disabled ?? false);
   const resolvedError = error ?? form?.errors[name];
+  const isInvalid = invalid || resolvedError !== undefined;
 
   // [draggingKey] the pressed thumb (halo); [focusedKey] the focused thumb (hover-mode bubble).
   const [draggingKey, setDraggingKey] = useState<ThumbKey | null>(null);
@@ -242,8 +256,8 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
 
   const resolvedFormatValue = formatValue ?? ((v: number) => String(v));
 
-  const latest = useRef({ label, disabled: isDisabled, error });
-  latest.current = { label, disabled: isDisabled, error };
+  const latest = useRef({ label, disabled: isDisabled, required, invalid, error, effectiveDefault });
+  latest.current = { label, disabled: isDisabled, required, invalid, error, effectiveDefault };
 
   useEffect(() => {
     if (!form) return undefined;
@@ -258,7 +272,18 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
         return Array.isArray(v) ? [String(v[0]), String(v[1])] : String(v);
       },
       isDisabled: () => latest.current.disabled,
-      validate: () => latest.current.error ?? null,
+      validate: () => {
+        const { label: currentLabel, required: isRequired, invalid: isInvalidProp, error: errorProp, effectiveDefault: currentDefault } =
+          latest.current;
+        if (errorProp !== undefined) return errorProp;
+        const v = latestValueRef.current;
+        const atDefault = Array.isArray(v) && Array.isArray(currentDefault)
+          ? v[0] === currentDefault[0] && v[1] === currentDefault[1]
+          : v === currentDefault;
+        if (isRequired && atDefault) return COPY.required.replace('{label}', currentLabel);
+        if (isInvalidProp) return COPY.invalid.replace('{label}', currentLabel);
+        return null;
+      },
       focus: () => (range ? thumbRefs.current.min : thumbRefs.current.single)?.focus(),
     });
   }, [form, name, id, range]);
@@ -279,6 +304,27 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
     return marks && marks.length > 0 ? [...marks].map((m) => m.value).sort((a, b) => a - b) : [];
   }
 
+  /** Nearest mark to `raw`; falls back to `step` snapping when there are no marks. */
+  function snapToNearestMark(raw: number): number {
+    const values = sortedMarkValues();
+    if (values.length === 0) return snapValue(raw);
+    let nearest = values[0];
+    let bestDistance = Math.abs(raw - nearest);
+    for (const candidate of values) {
+      const distance = Math.abs(raw - candidate);
+      if (distance < bestDistance) {
+        nearest = candidate;
+        bestDistance = distance;
+      }
+    }
+    return nearest;
+  }
+
+  /** Drag/click snapping: marks when `snapToMarks`, otherwise `step`. Keys always snap to `step` (see `handleThumbKeyDown`). */
+  function snapForPointer(raw: number): number {
+    return snapToMarks ? snapToNearestMark(raw) : snapValue(raw);
+  }
+
   function pageStep(from: number, direction: 1 | -1): number {
     const values = sortedMarkValues();
     if (values.length === 0) return from + direction * step * 10;
@@ -297,8 +343,8 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
     onChange?.(next);
   }
 
-  function updateThumb(index: 0 | 1 | null, raw: number) {
-    const snapped = snapValue(raw);
+  function updateThumb(index: 0 | 1 | null, raw: number, snap: (raw: number) => number = snapValue) {
+    const snapped = snap(raw);
     if (index === null) {
       commitValue(snapped);
       return;
@@ -346,14 +392,14 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
     draggingRef.current = true;
     const key: ThumbKey = index === null ? 'single' : index === 0 ? 'min' : 'max';
     setDraggingKey(key);
-    updateThumb(index, raw);
+    updateThumb(index, raw, snapForPointer);
     event.currentTarget.setPointerCapture(event.pointerId);
     thumbRefs.current[key]?.focus();
   };
 
   const handleBodyPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!draggingRef.current) return;
-    updateThumb(activeIndexRef.current, valueFromClientX(event.clientX));
+    updateThumb(activeIndexRef.current, valueFromClientX(event.clientX), snapForPointer);
   };
 
   const handleBodyPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -417,7 +463,14 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
     : { rootStyle: undefined, labelTextOverrides: undefined, descriptionTextOverrides: undefined, valueTextOverrides: undefined, errorTextOverrides: undefined };
   const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
 
-  const classes = ['ds-slider', isDisabled ? 'ds-slider--disabled' : null, className ?? null].filter(Boolean).join(' ');
+  const classes = [
+    'ds-slider',
+    isDisabled ? 'ds-slider--disabled' : null,
+    isInvalid ? 'ds-slider--invalid' : null,
+    className ?? null,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div {...rest} ref={ref} id={id} data-ds="Slider" className={classes} style={mergedStyle}>
@@ -440,7 +493,9 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
             className="ds-slider__value"
             overrides={valueTextOverrides}
           >
-            {range ? `${resolvedFormatValue(lowValue)} – ${resolvedFormatValue(highValue)}` : resolvedFormatValue(singleValue)}
+            {range
+              ? COPY.rangeText.replace('{low}', resolvedFormatValue(lowValue)).replace('{high}', resolvedFormatValue(highValue))
+              : resolvedFormatValue(singleValue)}
           </Text>
         ) : null}
       </div>

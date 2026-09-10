@@ -13,3 +13,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - The tablet/react-native-web popup is a Modal that deliberately does NOT focus-trap (unlike Select/Menu/Dialog's popups), because the APG combobox model requires focus to stay in the text input while the list is browsed by touch. This is an intentional deviation from the trapping pattern used elsewhere in the package.
 - Added a 'Done' copy string for the BottomSheet footer under `multiple`, not present in the schema's `copy` block — the same addition Select's own RN generation already makes for its BottomSheet footer.
 - Result-count/loading/empty announcements fire via AccessibilityInfo.announceForAccessibility on both iOS and Android (debounced ~motion.duration.base×2), unlike the existing iOS-only gating used for the error-message announcement elsewhere in the package, since the spec doesn't distinguish platforms for this one; Android additionally gets accessibilityLiveRegion="polite" on the status view.
+
+## 2026-09-10 18:46 — round 1
+
+- Combobox: no open/defaultOpen prop in the schema, so the Keyboard story ships closed with ≥3 options rather than pre-opened.
+- allowCustom: copy.addCustom row is implemented as a sentinel-prefixed synthetic ListboxOption prepended to Listbox's options, since Listbox has no injected-action-row concept.
+- Keyboard model: Listbox rows are touch Pressables with no key-event API, so ArrowDown/ArrowUp/Home/End/Alt+ArrowDown have no native equivalent; Enter only commits typed custom text; Escape only fires via onKeyPress (hardware keyboard/react-native-web only); Tab's non-commit behavior has no native hook, blur-closes instead.
+- Platform notes mention chips 'in the sheet header' but BottomSheet's API has no header slot, so chips + TextInput render at the top of the sheet body instead.
+- Phone closed-field summary shows chips read-only with no remove/clear button (nesting Pressables would conflict); removal/clearing only available once the sheet is open.
+- Loading row and empty/no-matches row are both modeled through Listbox's single emptyMessage slot, since Listbox has no separate loading-row concept.
+- Tablet/react-native-web popup Modal deliberately does not focus-trap (unlike Select/Menu/Dialog), since focus must stay in the text input per the APG combobox model.
+- Added a 'Done' copy string for the BottomSheet footer under multiple, not present in the schema's copy block (same addition Select's RN generation makes).
+- Result-count/loading/empty announcements use AccessibilityInfo.announceForAccessibility on both iOS and Android, unlike the iOS-only gating used elsewhere for error announcements, since the spec doesn't distinguish platforms here.

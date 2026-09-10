@@ -1099,21 +1099,20 @@
     }
   },
   "Toolbar.web": {
-    "hash": "1e1976b0589e49b7",
-    "lastAttemptHash": "1e1976b0589e49b7",
-    "generatedAt": "2026-09-10T16:56:34+00:00",
+    "hash": "103eb866456b976d",
+    "lastAttemptHash": "103eb866456b976d",
+    "generatedAt": "2026-09-10T23:09:43+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.1039,
+    "costUsd": 0.2486,
     "files": [
       "packages/react/src/Toolbar.css",
       "packages/react/src/Toolbar.stories.tsx",
-      "packages/react/src/Toolbar.test.tsx",
       "packages/react/src/Toolbar.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

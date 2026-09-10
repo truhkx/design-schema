@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './Tree.js';
-import type { TreeNode, TreeSelectable } from './Tree.js';
+import type { TreeHeadingLevel, TreeNode, TreeSelectable } from './Tree.js';
 
 interface TreeArgs {
   label: string;
   showLabel: boolean;
+  headingLevel: TreeHeadingLevel;
   nodes: TreeNode[];
   selectable: TreeSelectable;
   selectChildren: boolean;
@@ -68,10 +69,12 @@ const meta: Meta<TreeArgs> = {
   },
   argTypes: {
     selectable: { control: 'select', options: ['none', 'single', 'multiple'] },
+    headingLevel: { control: 'select', options: ['2', '3', '4'] },
   },
   args: {
     label: 'Folders',
     showLabel: false,
+    headingLevel: '2',
     nodes: FOLDER_NODES,
     selectable: 'single',
     selectChildren: false,
@@ -83,6 +86,7 @@ const meta: Meta<TreeArgs> = {
     <ds-tree
       label=${args.label}
       ?show-label=${args.showLabel}
+      heading-level=${args.headingLevel}
       .nodes=${args.nodes}
       selectable=${args.selectable}
       ?select-children=${args.selectChildren}
@@ -107,6 +111,11 @@ export const SelectableMultiple: Story = {
 };
 
 export const ShowLabel: Story = { args: { showLabel: true } };
+
+/* headingLevel */
+export const HeadingLevel2: Story = { args: { showLabel: true, headingLevel: '2' } };
+export const HeadingLevel3: Story = { args: { showLabel: true, headingLevel: '3' } };
+export const HeadingLevel4: Story = { args: { showLabel: true, headingLevel: '4' } };
 
 export const NoGuides: Story = { args: { showGuides: false } };
 

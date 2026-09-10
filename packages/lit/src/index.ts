@@ -445,6 +445,7 @@ export type {
 export { DsTree } from './Tree.js';
 export type {
   TreeNode,
+  TreeHeadingLevel,
   TreeSelectable,
   TreeSelectionChangeDetail,
   TreeExpandChangeDetail,

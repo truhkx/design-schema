@@ -1091,19 +1091,19 @@
     }
   },
   "Tree.lit": {
-    "hash": "74cd552fcc518f49",
-    "lastAttemptHash": "74cd552fcc518f49",
-    "generatedAt": "2026-09-10T18:34:34+00:00",
+    "hash": "7e86f3fe33e24e3a",
+    "lastAttemptHash": "7e86f3fe33e24e3a",
+    "generatedAt": "2026-09-10T23:10:31+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.31,
+    "costUsd": 1.9893,
     "files": [
       "packages/lit/src/Tree.stories.ts",
       "packages/lit/src/Tree.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

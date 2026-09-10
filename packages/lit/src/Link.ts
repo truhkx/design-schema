@@ -101,14 +101,9 @@ export class DsLink extends LitElement {
       border-radius: var(--radius-sm);
     }
 
-    /* externalIcon: 1em of the surrounding font size, never larger */
-    .external-icon {
-      display: inline-block;
-      inline-size: 1em;
-      block-size: 1em;
+    /* externalIcon: 1em of the surrounding font size (ds-icon's own inline sizing), never larger */
+    ds-icon {
       margin-inline-start: var(--ds-link-external-icon-gap);
-      vertical-align: -0.125em;
-      fill: currentColor;
     }
 
     .visually-hidden {
@@ -138,7 +133,7 @@ export class DsLink extends LitElement {
   @property({ reflect: true }) tone: LinkTone = 'default';
 
   /** Downloads the resource instead of navigating. */
-  @property({ type: Boolean }) download = false;
+  @property({ type: Boolean, reflect: true }) download = false;
 
   /** Per-instance style overrides: `{ underlineOffset: 'space.2' }`. Locked bindings are ignored. */
   @property({ attribute: false }) overrides?: Partial<Record<LinkOverridableBinding, TokenRef>>;
@@ -165,17 +160,7 @@ export class DsLink extends LitElement {
       >
         <span part="label">${this.label}</span>${this.external
           ? html`<span class="visually-hidden">${EXTERNAL_SUFFIX}</span
-              ><svg
-                class="external-icon"
-                part="external-icon"
-                aria-hidden="true"
-                focusable="false"
-                viewBox="0 0 16 16"
-              >
-                <path
-                  d="M9 2h5v5h-1.5V4.56L7.53 9.53 6.47 8.47l4.97-4.97H9V2ZM3 4h4v1.5H4.5v6h6V9H12v4H3V4Z"
-                />
-              </svg>`
+              ><ds-icon part="external-icon" name="external" inline></ds-icon>`
           : nothing}
       </a>
     `;

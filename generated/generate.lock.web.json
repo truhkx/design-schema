@@ -118,18 +118,20 @@
     }
   },
   "Box.web": {
-    "hash": "5f50b1b77224334a",
-    "lastAttemptHash": "5f50b1b77224334a",
-    "generatedAt": "2026-09-10T04:52:57+00:00",
+    "hash": "5a7e0df2de946918",
+    "lastAttemptHash": "5a7e0df2de946918",
+    "generatedAt": "2026-09-10T21:18:45+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6158,
+    "costUsd": 0.2357,
     "files": [
       "packages/react/src/Box.css",
+      "packages/react/src/Box.stories.tsx",
+      "packages/react/src/Box.test.tsx",
       "packages/react/src/Box.tsx"
     ],
-    "gaps": 1,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,

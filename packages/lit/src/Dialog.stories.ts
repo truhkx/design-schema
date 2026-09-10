@@ -11,6 +11,7 @@ interface DialogArgs {
   open: boolean;
   heading: string;
   description?: string;
+  hideHeading: boolean;
   size: DialogSize;
   dismissible: boolean;
   initialFocus: DialogInitialFocus;
@@ -30,6 +31,7 @@ const meta: Meta<DialogArgs> = {
     open: true,
     heading: 'Rename project',
     description: 'This changes the project name everywhere it appears.',
+    hideHeading: false,
     size: 'md',
     dismissible: true,
     initialFocus: 'first',
@@ -39,8 +41,9 @@ const meta: Meta<DialogArgs> = {
       ?open=${args.open}
       heading=${args.heading}
       description=${ifDefined(args.description)}
+      ?hide-heading=${args.hideHeading}
       size=${args.size}
-      ?dismissible=${args.dismissible}
+      ?no-dismiss=${!args.dismissible}
       initial-focus=${args.initialFocus}
     >
       <ds-input label="Project name" name="projectName" value="Untitled project"></ds-input>
@@ -73,7 +76,7 @@ export const DismissibleFalse: Story = {
       heading=${args.heading}
       description="You must choose an option below to continue."
       size=${args.size}
-      ?dismissible=${args.dismissible}
+      ?no-dismiss=${!args.dismissible}
       initial-focus=${args.initialFocus}
     >
       <ds-text>Your session is about to expire.</ds-text>
@@ -86,6 +89,9 @@ export const DismissibleFalse: Story = {
 export const NoDescription: Story = {
   args: { description: undefined },
 };
+
+/* hideHeading */
+export const HideHeadingTrue: Story = { args: { hideHeading: true } };
 
 export const NoFooter: Story = {
   render: (args) => html`

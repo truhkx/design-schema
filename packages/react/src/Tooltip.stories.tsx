@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Tooltip } from './Tooltip';
 import { Button } from './Button';
+import { Icon } from './Icon';
 
 const meta = {
   title: 'Tooltip/React',
@@ -31,17 +32,7 @@ export const DelayNone: Story = { args: { delay: 'none' } };
 export const DescribesFalseIconOnly: Story = {
   args: {
     describes: false,
-    children: (
-      <Button
-        label="Bold"
-        iconOnly
-        leadingIcon={
-          <svg width="1em" height="1em" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-            <path d="M4 2h5a3 3 0 010 6H4zM4 8h6a3 3 0 010 6H4z" />
-          </svg>
-        }
-      />
-    ),
+    children: <Button label="Bold" iconOnly leadingIcon={<Icon name="check" inline />} />,
   },
 };
 

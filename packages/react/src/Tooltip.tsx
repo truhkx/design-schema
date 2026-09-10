@@ -419,12 +419,19 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(function Tooltip
   return (
     <>
       {cloned}
+      {/*
+        Always mounted (unlike the portaled popup below) so `aria-describedby`/`aria-labelledby`
+        never dangles while the popup is closed — a visually-hidden node is the "real" accessible
+        description/name; the popup is a second, presentational copy for sighted users.
+      */}
+      <span id={tooltipId} role="tooltip" className="ds-tooltip__visually-hidden" data-part="text">
+        {content}
+      </span>
       {present
         ? createPortal(
             <div
               ref={popupRef}
-              role="tooltip"
-              id={tooltipId}
+              aria-hidden="true"
               data-ds="Tooltip"
               data-placement={resolvedPlacement}
               className={popupClasses}

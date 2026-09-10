@@ -11,7 +11,15 @@ import { useTheme } from './theme';
 export type FieldsetGap = Extract<StackGap, 'tight' | 'normal' | 'loose'>;
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-export type FieldsetOverridableBinding = 'legendSize' | 'legendWeight' | 'helperSize' | 'partGap' | 'fieldsGap' | 'fontFamily' | 'lineHeight';
+export type FieldsetOverridableBinding =
+  | 'legendSize'
+  | 'legendWeight'
+  | 'helperSize'
+  | 'partGap'
+  | 'fieldsGap'
+  | 'disabledOpacity'
+  | 'fontFamily'
+  | 'lineHeight';
 
 /** What Fieldset shares with the fields inside it. Input, Checkbox, Switch and RadioGroup read this to prefix the legend into their own `accessibilityLabel` ("Shipping address, Street") and to fold in the group's `disabled`. */
 export interface FieldsetContextValue {
@@ -91,6 +99,7 @@ export function Fieldset({ legend, children, description, error, disabled = fals
     : children;
 
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.layoutGapTight;
+  const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
 
   const typographyOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
   const legendOverrides = { ...typographyOverrides, fontSize: overrides?.legendSize, fontWeight: overrides?.legendWeight };
@@ -99,7 +108,7 @@ export function Fieldset({ legend, children, description, error, disabled = fals
   const groupStyle: ViewStyle = {
     flexDirection: 'column',
     gap: partGap,
-    opacity: disabled ? t.opacityDisabled : 1,
+    opacity: disabled ? disabledOpacity : 1,
   };
 
   return (

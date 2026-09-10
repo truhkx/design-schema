@@ -14,3 +14,7 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - FocusScope: the derived 'control-is-focusable' scenario assumes a focusable root control, but FocusScope's root is tabindex=-1 (programmatically focusable only, never Tab-reachable itself) — interpreted 'focusable' as 'accepts .focus() calls', not 'reachable by Tab'.
 - FocusScope: the keyboard rule 'Tab, from: first, expect: focus-next' (ordinary forward movement) has no explicit handler — it's satisfied by native browser Tab order since the component only intercepts Tab at the trapped edges, which may or may not be what the keyboard gate expects to see as an explicit code path.
+
+## 2026-09-10 17:56 — round 1
+
+- FocusScope: the schema's returnFocusTo shape is written cross-platform as `RefObject<HTMLElement | View>`, but `View` is a React Native type with no web equivalent — typed it as `RefObject<HTMLElement>` for this platform and wired it into the unmount restore logic (preferred over the recorded opener, which still wins over the next-focusable fallback) since the existing FocusScope.tsx (present since the initial commit) was otherwise complete but had never implemented this prop at all.

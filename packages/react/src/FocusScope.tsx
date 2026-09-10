@@ -6,6 +6,7 @@ import {
   type ComponentPropsWithoutRef,
   type KeyboardEvent,
   type ReactNode,
+  type RefObject,
 } from 'react';
 import './FocusScope.css';
 
@@ -32,6 +33,12 @@ export interface FocusScopeProps
    * next focusable element in the document if that one is gone.
    */
   restoreFocus?: boolean;
+  /**
+   * Explicit element to restore focus to instead of the recorded opener. Required on native when
+   * the opener is not a TextInput (React Native exposes no generic "currently focused element"),
+   * so every overlay passes its trigger ref.
+   */
+  returnFocusTo?: RefObject<HTMLElement>;
   /**
    * Pause the scope without unmounting it — used while a nested scope (a Menu inside a Dialog) is
    * open, so the innermost active scope owns Tab.
@@ -113,7 +120,17 @@ const scopeStack: Array<{ active: boolean }> = [];
  * keeps the page usable).
  */
 export const FocusScope = forwardRef<HTMLDivElement, FocusScopeProps>(function FocusScope(
-  { children, trapped = true, autoFocus = 'first', restoreFocus = true, active = true, onEscapeAttempt, className, ...rest },
+  {
+    children,
+    trapped = true,
+    autoFocus = 'first',
+    restoreFocus = true,
+    returnFocusTo,
+    active = true,
+    onEscapeAttempt,
+    className,
+    ...rest
+  },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -125,8 +142,8 @@ export const FocusScope = forwardRef<HTMLDivElement, FocusScopeProps>(function F
   const entryRef = useRef<{ active: boolean }>({ active });
   entryRef.current.active = active;
 
-  const latest = useRef({ trapped, restoreFocus, onEscapeAttempt });
-  latest.current = { trapped, restoreFocus, onEscapeAttempt };
+  const latest = useRef({ trapped, restoreFocus, returnFocusTo, onEscapeAttempt });
+  latest.current = { trapped, restoreFocus, returnFocusTo, onEscapeAttempt };
 
   const isTop = () => scopeStack.length > 0 && scopeStack[scopeStack.length - 1] === entryRef.current;
   const isEffectivelyActive = () => entryRef.current.active && isTop();
@@ -166,7 +183,10 @@ export const FocusScope = forwardRef<HTMLDivElement, FocusScopeProps>(function F
     return () => {
       const opener2 = openerRef.current;
       if (latest.current.restoreFocus) {
-        if (opener2 && document.contains(opener2)) {
+        const explicit = latest.current.returnFocusTo?.current;
+        if (explicit && document.contains(explicit)) {
+          explicit.focus();
+        } else if (opener2 && document.contains(opener2)) {
           opener2.focus();
         } else if (markerRef.current) {
           findNextFocusableAfter(markerRef.current)?.focus();

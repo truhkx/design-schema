@@ -468,19 +468,17 @@
     }
   },
   "FocusScope.web": {
-    "hash": "d7a07c69e9950927",
-    "lastAttemptHash": "d7a07c69e9950927",
-    "generatedAt": "2026-09-10T06:15:28+00:00",
+    "hash": "fee83d3edcbf61c6",
+    "lastAttemptHash": "fee83d3edcbf61c6",
+    "generatedAt": "2026-09-10T21:56:12+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2085,
+    "costUsd": 0.4021,
     "files": [
-      "packages/react/src/FocusScope.css",
-      "packages/react/src/FocusScope.stories.tsx",
       "packages/react/src/FocusScope.tsx"
     ],
-    "gaps": 2,
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1136,13 +1134,13 @@
     }
   },
   "Tooltip.web": {
-    "hash": "42ca8d38a76b6d0d",
-    "lastAttemptHash": "42ca8d38a76b6d0d",
-    "generatedAt": "2026-09-10T06:16:18+00:00",
+    "hash": "56af88ce7ed30410",
+    "lastAttemptHash": "56af88ce7ed30410",
+    "generatedAt": "2026-09-10T22:00:57+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2049,
+    "costUsd": 0.8655,
     "files": [
       "packages/react/src/Tooltip.css",
       "packages/react/src/Tooltip.stories.tsx",

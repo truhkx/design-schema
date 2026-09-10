@@ -18,6 +18,7 @@ export type MeterOverridableBinding =
   | 'fontFamily'
   | 'lineHeight'
   | 'partGap'
+  | 'labelGap'
   | 'transition';
 
 export interface MeterProps {
@@ -101,6 +102,7 @@ export function Meter({
   const fontFamily = overrides?.fontFamily ? (resolveToken(tokens, overrides.fontFamily) as string) : tokens.fontFamilyBody;
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(tokens, overrides.lineHeight) as number) : tokens.fontLineHeightNormal;
   const partGap = overrides?.partGap ? (resolveToken(tokens, overrides.partGap) as number) : tokens.space1;
+  const labelGap = overrides?.labelGap ? (resolveToken(tokens, overrides.labelGap) as number) : tokens.space2;
   const transitionDuration = overrides?.transition ? (resolveToken(tokens, overrides.transition) as number) : tokens.motionDurationBase;
 
   // The fill is animated on `width` in pixels (measured from the track) rather than
@@ -142,7 +144,7 @@ export function Meter({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
-    gap: tokens.space2,
+    gap: labelGap,
   };
 
   const labelStyle: TextStyle = {

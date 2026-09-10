@@ -137,18 +137,17 @@
     }
   },
   "Breadcrumb.rn": {
-    "hash": "d4dbd8d3d83c5b4e",
-    "lastAttemptHash": "d4dbd8d3d83c5b4e",
-    "generatedAt": "2026-09-10T05:59:23+00:00",
+    "hash": "097b54eaf8ecfcd5",
+    "lastAttemptHash": "097b54eaf8ecfcd5",
+    "generatedAt": "2026-09-10T21:58:06+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4073,
+    "costUsd": 0.7015,
     "files": [
-      "packages/rn/src/Breadcrumb.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Breadcrumb.tsx"
     ],
-    "gaps": 1,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -402,19 +401,17 @@
     }
   },
   "Fieldset.rn": {
-    "hash": "1350363fc6c82db9",
-    "lastAttemptHash": "1350363fc6c82db9",
-    "generatedAt": "2026-09-10T06:04:33+00:00",
+    "hash": "4a98923230e87387",
+    "lastAttemptHash": "4a98923230e87387",
+    "generatedAt": "2026-09-10T22:01:18+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9594,
+    "costUsd": 0.454,
     "files": [
-      "packages/rn/src/Fieldset.stories.tsx",
-      "packages/rn/src/Fieldset.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Fieldset.tsx"
     ],
-    "gaps": 5,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -626,18 +623,17 @@
     }
   },
   "Meter.rn": {
-    "hash": "21c4c4772ea4e2eb",
-    "lastAttemptHash": "21c4c4772ea4e2eb",
-    "generatedAt": "2026-09-10T06:00:27+00:00",
+    "hash": "e0221401eb922340",
+    "lastAttemptHash": "e0221401eb922340",
+    "generatedAt": "2026-09-10T21:59:20+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3528,
+    "costUsd": 0.2634,
     "files": [
-      "packages/rn/src/Meter.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Meter.tsx"
     ],
-    "gaps": 1,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,

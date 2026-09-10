@@ -1,5 +1,6 @@
 import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Heading.js';
@@ -33,6 +34,7 @@ export type DialogOverridableBinding =
   | 'partGap'
   | 'headerGap'
   | 'footerGap'
+  | 'descriptionGap'
   | 'widthSm'
   | 'layer'
   | 'enter'
@@ -48,6 +50,7 @@ const HOOKS: Record<DialogOverridableBinding, string> = {
   partGap: '--ds-dialog-part-gap',
   headerGap: '--ds-dialog-header-gap',
   footerGap: '--ds-dialog-footer-gap',
+  descriptionGap: '--ds-dialog-description-gap',
   widthSm: '--ds-dialog-width-sm',
   layer: '--ds-dialog-layer',
   enter: '--ds-dialog-enter',
@@ -56,6 +59,16 @@ const HOOKS: Record<DialogOverridableBinding, string> = {
 
 /** copy.closeLabel */
 const COPY_CLOSE_LABEL = 'Close';
+
+/** Negates a boolean attribute: `no-dismiss` present means `dismissible` is `false`. */
+const NEGATED_BOOLEAN_CONVERTER = {
+  fromAttribute(value: string | null): boolean {
+    return value === null;
+  },
+  toAttribute(value: boolean): string | null {
+    return value ? null : '';
+  },
+};
 
 /** Elements considered a focusable "control" when locating the first one in the body. */
 const FOCUSABLE_SELECTOR = [
@@ -169,6 +182,7 @@ export class DsDialog extends LitElement {
       --ds-dialog-part-gap: var(--layout-gap-loose);
       --ds-dialog-header-gap: var(--layout-gap-normal);
       --ds-dialog-footer-gap: var(--layout-gap-tight);
+      --ds-dialog-description-gap: var(--layout-gap-tight);
       --ds-dialog-width-sm: var(--layout-max-width-prose);
       --ds-dialog-max-width: calc(var(--layout-max-width-content) * 0.75);
       --ds-dialog-layer: var(--layer-dialog);
@@ -268,6 +282,7 @@ export class DsDialog extends LitElement {
     .titles {
       display: flex;
       flex-direction: column;
+      gap: var(--ds-dialog-description-gap);
       min-inline-size: 0;
     }
 
@@ -279,6 +294,20 @@ export class DsDialog extends LitElement {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
       border-radius: var(--radius-sm);
+    }
+
+    /* hideHeading: kept for the accessible name, removed from the visual layout. */
+    .heading--hidden {
+      /* literal-ok: standard visually-hidden clip pattern, exempt from token-only rule */
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
 
     .body {
@@ -300,14 +329,24 @@ export class DsDialog extends LitElement {
   /** One sentence under the title explaining the task or consequence. Becomes the accessible description. */
   @property() description?: string;
 
+  /** Visually hides the heading while it remains the accessible name (BottomSheet forwards its own hideHeading here above the breakpoint). */
+  @property({ type: Boolean, attribute: 'hide-heading' }) hideHeading = false;
+
   /** Surface width on wide viewports. Full-width below the content measure on every size. */
   @property({ reflect: true }) size: DialogSize = 'md';
 
-  /** Escape, the close button and a scrim click all request close. `false` for a dialog that must be answered; Escape still reports. */
-  @property({ type: Boolean, reflect: true }) dismissible = true;
+  /**
+   * Escape, the close button and a scrim click all request close. `false` for a dialog
+   * that must be answered (then provide the answers in the footer): the close button is
+   * not rendered and the scrim does nothing; Escape still reports. Attribute is the
+   * negation, `no-dismiss`, because a boolean attribute cannot express `false` for a prop
+   * that defaults `true`.
+   */
+  @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  dismissible = true;
 
   /** Where focus lands on open: the first focusable control in the body (default), the title, or the close button. */
-  @property({ attribute: 'initial-focus' }) initialFocus: DialogInitialFocus = 'first';
+  @property({ attribute: 'initial-focus', reflect: true }) initialFocus: DialogInitialFocus = 'first';
 
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings (surface, focusRing, focusRingWidth) are ignored. */
   @property({ attribute: false }) overrides?: Partial<Record<DialogOverridableBinding, TokenRef>>;
@@ -359,6 +398,7 @@ export class DsDialog extends LitElement {
   protected override render() {
     const hasDescription = Boolean(this.description);
     const hasFooter = this.querySelector('[slot="footer"]') !== null;
+    const headingClasses = classMap({ 'heading--hidden': this.hideHeading });
 
     return html`
       <dialog
@@ -379,24 +419,30 @@ export class DsDialog extends LitElement {
           >
             <div class="header" part="header">
               <div class="titles">
-                <ds-heading id="heading" part="title" level="2" size="lg" tabindex="-1">${this.heading}</ds-heading>
+                <ds-heading id="heading" part="title" level="2" size="lg" tabindex="-1" class=${headingClasses}
+                  >${this.heading}</ds-heading
+                >
                 ${hasDescription
                   ? html`<ds-text id="description" part="description" size="sm" tone="muted"
                       >${this.description}</ds-text
                     >`
                   : nothing}
               </div>
-              <ds-button
-                class="close"
-                part="close-button"
-                variant="ghost"
-                size="sm"
-                icon-only
-                label=${COPY_CLOSE_LABEL}
-                @press=${this.handleCloseButtonPress}
-              >
-                <ds-icon slot="leading-icon" name="close"></ds-icon>
-              </ds-button>
+              ${this.dismissible
+                ? html`
+                    <ds-button
+                      class="close"
+                      part="close-button"
+                      variant="ghost"
+                      size="sm"
+                      icon-only
+                      label=${COPY_CLOSE_LABEL}
+                      @press=${this.handleCloseButtonPress}
+                    >
+                      <ds-icon slot="leading-icon" name="close"></ds-icon>
+                    </ds-button>
+                  `
+                : nothing}
             </div>
             <ds-box class="body" part="body" style="overflow-y: auto; min-block-size: 0">
               <slot></slot>
@@ -433,10 +479,8 @@ export class DsDialog extends LitElement {
 
   private readonly handleCloseButtonPress = (event: Event): void => {
     // Keep the button's `press` inside the dialog; consumers listen for `close`.
+    // Only rendered when dismissible, so no guard needed here.
     event.stopPropagation();
-    if (!this.dismissible) {
-      return;
-    }
     this.dispatchClose('close-button');
   };
 
@@ -494,7 +538,8 @@ export class DsDialog extends LitElement {
   private applyInitialFocus(): void {
     let target: HTMLElement | null;
     if (this.initialFocus === 'close') {
-      target = this.closeButtonEl;
+      // The close button does not render when non-dismissible; fall back rather than drop focus.
+      target = this.closeButtonEl ?? this.findFirstBodyFocusable() ?? this.headingEl;
     } else if (this.initialFocus === 'title') {
       target = this.headingEl;
     } else {

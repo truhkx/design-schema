@@ -4,6 +4,7 @@ import type { TextStyle, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
+import { Icon } from './Icon';
 import { Link } from './Link';
 import { Text } from './Text';
 import { toFontWeight, toLineHeight, useTheme } from './theme';
@@ -31,9 +32,6 @@ const COPY = {
   separator: '/',
   expandLabel: 'Show all pages',
 } as const;
-
-/** Decorative glyph passed to the ellipsis Button as `leadingIcon`. */
-const ELLIPSIS_GLYPH = '…';
 
 /** Trails longer than this collapse (when `collapse` is on). */
 const COLLAPSE_ABOVE = 4;
@@ -123,15 +121,15 @@ export function Breadcrumb({
     color: tokens.colorForeground,
   };
 
+  const itemStyleText: TextStyle = {
+    ...textStyle,
+    color: tokens.colorForegroundMuted,
+  };
+
   const separatorStyle: TextStyle = {
     ...textStyle,
     color: tokens.colorForegroundMuted,
     marginHorizontal: gap,
-  };
-
-  const ellipsisTextStyle: TextStyle = {
-    ...textStyle,
-    color: tokens.colorActionGhostForeground,
   };
 
   const separator = (key: string): React.JSX.Element => (
@@ -158,11 +156,7 @@ export function Breadcrumb({
             variant="ghost"
             size="sm"
             iconOnly
-            leadingIcon={
-              <RNText allowFontScaling style={ellipsisTextStyle}>
-                {ELLIPSIS_GLYPH}
-              </RNText>
-            }
+            leadingIcon={<Icon name="ellipsis" color={tokens.colorActionGhostForeground} />}
             onPress={() => {
               setExpanded(true);
               setPendingFocus(true);
@@ -190,12 +184,13 @@ export function Breadcrumb({
         style={itemStyle}
       >
         {href === undefined ? (
-          <RNText allowFontScaling style={currentStyle}>
+          <RNText allowFontScaling style={itemStyleText}>
             {item.label}
           </RNText>
         ) : (
-          // Nested in a system Text at `fontSize` so the Link inherits the breadcrumb typography.
-          <Text size="sm">
+          // Nested in a system Text at `fontSize` so the Link inherits the breadcrumb typography;
+          // forwards this component's own fontSize override so the size stays one value everywhere.
+          <Text overrides={{ fontSize: overrides?.fontSize ?? 'font.size.sm' }}>
             <Link
               href={href}
               label={item.label}

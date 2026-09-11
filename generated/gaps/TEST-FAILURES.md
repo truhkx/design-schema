@@ -1,14 +1,13 @@
-# Test failures after the harness fixes (2026-09-10T21:10)
+# Test failures after the harness fixes (2026-09-10T21:11)
 
 Written by the job 170 pass from logs/test-{react,lit,rn}.json. Every row is a doc-versus-code mismatch or an open question, not a harness fault: fix the doc, or regenerate the target. Generated code under packages/*/src is the generator's; nothing here was patched by hand.
 
-## React (web) — 8 failing, 751 passing, 12 skipped
+## React (web) — 7 failing, 752 passing, 12 skipped
 
 | Scenario | File | Error | Diagnosis |
 | --- | --- | --- | --- |
 | renders | `generated/behavior/ActionSheet.web.test.tsx` | TypeError: Cannot read properties of undefined (reading 'filter') | See the error; not classified. |
 | has-accessible-name | `generated/behavior/ActionSheet.web.test.tsx` | TypeError: Cannot read properties of undefined (reading 'filter') | See the error; not classified. |
-| has-accessible-name | `generated/behavior/BottomSheet.web.test.tsx` | TestingLibraryElementError: Unable to find an accessible element with the role "dialog" and name `false` | See the error; not classified. |
 | press-tracks | `generated/behavior/Button.web.test.tsx` | AssertionError: expected "spy" to be called with arguments: [ { name: 'signup', …(1) }, Anything ] | Extension scenario (Button.analytics): the generated Button predates the extension and never fires onTrack. Regenerate Button (all platforms). |
 | error-is-identified | `generated/behavior/DatePicker.web.test.tsx` | Error: expect(element).toHaveAttribute("aria-invalid", "true") // element.getAttribute("aria-invalid") === "true" | Invalid state not reflected as aria-invalid where the doc places it. |
 | has-accessible-name | `generated/behavior/Select.web.test.tsx` | TestingLibraryElementError: Unable to find an accessible element with the role "combobox" and name "Country" | See the error; not classified. |

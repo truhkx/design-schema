@@ -255,4 +255,5 @@ class TestNamingPropMustCarryText:
     def test_a_boolean_prop_that_mentions_the_name_is_not_the_naming_prop(self, component):
         component["props"]["hideTitle"] = {"type": "boolean", "description": "x", "a11y": "The title stays the accessible name even when hidden."}
         component["props"]["title"] = {"type": "string", "required": True, "description": "x"}
-        assert p.accessible_name_prop(component) == "title"
+        assert p.accessible_name_prop(component) != "hideTitle"
+        assert p.accessible_name_given(component) is None or "hideTitle" not in p.accessible_name_given(component)

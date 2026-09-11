@@ -624,17 +624,17 @@
     }
   },
   "Menu.lit": {
-    "hash": "85f53ebe5e1f4a49",
-    "lastAttemptHash": "85f53ebe5e1f4a49",
-    "generatedAt": "2026-09-10T22:05:25+00:00",
+    "hash": "7496c801d387cf50",
+    "lastAttemptHash": "7496c801d387cf50",
+    "generatedAt": "2026-09-11T00:03:59+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6415,
+    "costUsd": 1.0604,
     "files": [
       "packages/lit/src/Menu.ts"
     ],
-    "gaps": 1,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

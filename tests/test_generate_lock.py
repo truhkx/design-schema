@@ -113,3 +113,16 @@ class TestGapsAreOwnedPerTarget:
         g.record_gaps("Button", "web", ["a"], 1)
         g.record_gaps("Button", "rn", ["b"], 1)
         assert sorted(p.name for p in tmp_path.iterdir()) == ["Button.rn.md", "Button.web.md"]
+
+
+class TestAbandonedRunLogs:
+    def test_a_stale_log_without_its_end_marker_does_not_count_as_running(self, lock_dir):
+        import os, time
+        (lock_dir / "logs").mkdir()
+        log = lock_dir / "logs" / "tier2.log"
+        log.write_text("== tier2 ==\nround 1: model", encoding="utf-8")
+        old = time.time() - g.RUNNING_LOG_MAX_AGE_S - 60
+        os.utime(log, (old, old))
+        assert g._generator_running() is False
+        log.write_text("== tier2 ==\nround 2: model", encoding="utf-8")  # touched now
+        assert g._generator_running() is True

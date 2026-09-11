@@ -106,14 +106,21 @@ def _write_json(path: Path, data: dict) -> None:
     os.replace(tmp, path)
 
 
+RUNNING_LOG_MAX_AGE_S = 30 * 60  # a log without its end marker that has not moved in half an hour was abandoned, not paused
+
+
 def _generator_running() -> bool:
-    """True while another generator run appears to be in progress (tier2.ps1 / regen.ps1 logs without their end marker)."""
+    """True while another generator run appears to be in progress: a tier2.ps1 / regen.ps1 log without its end
+    marker that was written to recently. A killed window leaves a log without the marker forever; its age tells."""
+    import time
+
     for log in list(LOGS.glob("tier2.log")) + list(LOGS.glob("regen*.log")):
         try:
             text = log.read_text(encoding="utf-8", errors="replace")
+            age = time.time() - log.stat().st_mtime
         except OSError:
             continue
-        if "== done ==" not in text and "queue complete" not in text:
+        if "== done ==" not in text and "queue complete" not in text and age < RUNNING_LOG_MAX_AGE_S:
             return True
     return False
 

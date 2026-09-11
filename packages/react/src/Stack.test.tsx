@@ -6,11 +6,12 @@ import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { Stack, type StackProps } from './Stack';
 import meta from './Stack.stories';
+import type { ComponentProps } from 'react';
 
 /** The Default story's args plus the scenario's `given`. */
 function setup(given: Partial<StackProps> = {}) {
   const props = { ...meta.args, ...given };
-  return render(<Stack {...props} />);
+  return render(<Stack {...(props as ComponentProps<typeof Stack>)} />);
 }
 
 describe('Stack', () => {

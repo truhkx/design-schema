@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type TemplateResult, type CSSResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -17,11 +17,11 @@ import type { IconName } from './Icon.js';
 export interface TreeNode {
   id: string;
   label: string;
-  icon?: IconName;
-  badge?: string;
-  disabled?: boolean;
-  href?: string;
-  children?: TreeNode[] | 'lazy';
+  icon?: IconName | undefined;
+  badge?: string | undefined;
+  disabled?: boolean | undefined;
+  href?: string | undefined;
+  children?: TreeNode[] | 'lazy' | undefined;
 }
 
 export type TreeHeadingLevel = '2' | '3' | '4';
@@ -122,7 +122,7 @@ function nextTreeId(): string {
 interface VisibleEntry {
   node: TreeNode;
   level: number;
-  parentId?: string;
+  parentId?: string | undefined;
   posinset: number;
   setsize: number;
   hasChildren: boolean;
@@ -162,9 +162,9 @@ interface VisibleEntry {
  */
 @customElement('ds-tree')
 export class DsTree extends LitElement {
-  static override shadowRootOptions = { ...LitElement.shadowRootOptions, delegatesFocus: true };
+  static override shadowRootOptions: ShadowRootInit = { ...LitElement.shadowRootOptions, delegatesFocus: true };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--ds-tree-font-family);
@@ -356,62 +356,62 @@ export class DsTree extends LitElement {
   `;
 
   /** What the tree lists ("Folders", "Categories"). The accessible name of the tree; visually hidden unless `showLabel`. */
-  @property() label!: string;
+  @property() accessor label!: string;
 
   /** Shows `label` as a heading above the tree; then the tree is `aria-labelledby` it instead of `aria-label`. */
-  @property({ type: Boolean, reflect: true, attribute: 'show-label' }) showLabel = false;
+  @property({ type: Boolean, reflect: true, attribute: 'show-label' }) accessor showLabel = false;
 
   /** Heading level of the visible label in the page outline; its size is `headingSize` regardless. */
-  @property({ reflect: true, attribute: 'heading-level' }) headingLevel: TreeHeadingLevel = '2';
+  @property({ reflect: true, attribute: 'heading-level' }) accessor headingLevel: TreeHeadingLevel = '2';
 
   /** The hierarchy. A property, not an attribute. */
-  @property({ attribute: false }) nodes: TreeNode[] = [];
+  @property({ attribute: false }) accessor nodes: TreeNode[] = [];
 
   /** Controlled expanded ids. */
-  @property({ attribute: false }) expanded?: string[];
+  @property({ attribute: false }) accessor expanded: string[] | undefined;
 
   /** Initially expanded ids. `["*"]` expands every node with children. */
-  @property({ attribute: false }) defaultExpanded?: string[];
+  @property({ attribute: false }) accessor defaultExpanded: string[] | undefined;
 
   /** `single`: one current node. `multiple`: checkbox-like cascading selection. `none`: expand/collapse only. */
-  @property({ reflect: true }) selectable: TreeSelectable = 'single';
+  @property({ reflect: true }) accessor selectable: TreeSelectable = 'single';
 
   /** Controlled selected ids. */
-  @property({ attribute: false }) selected?: string[];
+  @property({ attribute: false }) accessor selected: string[] | undefined;
 
   /** Initially selected ids. */
-  @property({ attribute: false }) defaultSelected?: string[];
+  @property({ attribute: false }) accessor defaultSelected: string[] | undefined;
 
   /** With `multiple`, selecting a parent selects its descendants and parents show indeterminate. */
-  @property({ type: Boolean, reflect: true, attribute: 'select-children' }) selectChildren = false;
+  @property({ type: Boolean, reflect: true, attribute: 'select-children' }) accessor selectChildren = false;
 
   /** With `single`, moving focus also selects. Off by default: focus moves, Enter or Space selects. */
-  @property({ type: Boolean, reflect: true, attribute: 'select-on-focus' }) selectOnFocus = false;
+  @property({ type: Boolean, reflect: true, attribute: 'select-on-focus' }) accessor selectOnFocus = false;
 
   /** Vertical guide lines under open parents. Exposed as the negated `hide-guides` attribute (the doc's default
       is `true`, so per the negated-boolean-attribute convention this can't be a positively named attribute —
       see gaps: the schema's own `platforms.lit.reflect` list names this `show-guides`, which contradicts that
       convention for a true-default boolean). */
   @property({ attribute: 'hide-guides', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  showGuides = true;
+  accessor showGuides = true;
 
   /** Per-instance style overrides: `{ indent: 'space.6' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<TreeOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<TreeOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled expanded ids, seeded from `defaultExpanded` on first update. */
-  @state() private internalExpanded: string[] = [];
+  @state() private accessor internalExpanded: string[] = [];
 
   /** Uncontrolled selected ids, seeded from `defaultSelected` on first update. */
-  @state() private internalSelected: string[] = [];
+  @state() private accessor internalSelected: string[] = [];
 
   /** The node currently carrying the roving tabindex and (usually) real focus. */
-  @state() private focusedId: string | null = null;
+  @state() private accessor focusedId: string | null = null;
 
-  @state() private liveMessage = '';
+  @state() private accessor liveMessage = '';
 
   private readonly instanceId = nextTreeId();
   private typeaheadQuery = '';
-  private typeaheadTimer?: ReturnType<typeof setTimeout>;
+  private typeaheadTimer?: ReturnType<typeof setTimeout> | undefined;
 
   private get currentExpanded(): string[] {
     return this.expanded ?? this.internalExpanded;
@@ -452,7 +452,7 @@ export class DsTree extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const items = this.nodes;
     return html`
       ${this.showLabel
@@ -766,7 +766,7 @@ export class DsTree extends LitElement {
     const next = [...new Set([...this.currentSelected, ...additions])];
     this.commitSelected(next);
     this.liveMessage = COPY_SELECTED_COUNT(next.length);
-    this.focusEntry(to.node.id);
+    this.focusEntry(to!.node.id);
   }
 
   /* ---------- activation ---------- */
@@ -825,20 +825,20 @@ export class DsTree extends LitElement {
     }
     const currentIndex = items.findIndex((entry) => entry.node.id === this.focusedId);
     const nextIndex = Math.max(0, Math.min(items.length - 1, currentIndex + delta));
-    this.focusEntry(items[nextIndex].node.id);
+    this.focusEntry(items[nextIndex]!.node.id);
   }
 
   private focusFirst(): void {
     const items = this.navigable();
     if (items.length > 0) {
-      this.focusEntry(items[0].node.id);
+      this.focusEntry(items[0]!.node.id);
     }
   }
 
   private focusLast(): void {
     const items = this.navigable();
     if (items.length > 0) {
-      this.focusEntry(items[items.length - 1].node.id);
+      this.focusEntry(items[items.length - 1]!.node.id);
     }
   }
 
@@ -897,7 +897,7 @@ export class DsTree extends LitElement {
         const items = this.navigable();
         const childIndex = items.findIndex((e) => e.parentId === entry.node.id);
         if (childIndex !== -1) {
-          this.focusEntry(items[childIndex].node.id);
+          this.focusEntry(items[childIndex]!.node.id);
         }
         return;
       }

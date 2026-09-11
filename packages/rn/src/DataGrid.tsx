@@ -13,7 +13,7 @@ import type {
   ListRenderItemInfo,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  TextInputKeyPressEventData,
+  TextInputKeyPressEvent,
   TextStyle,
   ViewStyle,
 } from 'react-native';
@@ -52,21 +52,21 @@ export interface DataGridColumnOption {
 export interface DataGridColumn {
   key: string;
   header: string;
-  abbr?: string;
-  align?: DataGridColumnAlign;
-  sortable?: boolean;
+  abbr?: string | undefined;
+  align?: DataGridColumnAlign | undefined;
+  sortable?: boolean | undefined;
   /** Pixel width, a multiple of `space.1` (e.g. 160). Columns do not auto-size. */
-  width?: number;
-  minWidth?: number;
-  resizable?: boolean;
-  isRowHeader?: boolean;
+  width?: number | undefined;
+  minWidth?: number | undefined;
+  resizable?: boolean | undefined;
+  isRowHeader?: boolean | undefined;
   /** Keeps the column in place while the grid scrolls sideways. */
-  pinned?: DataGridColumnPinned;
-  editable?: boolean;
-  editor?: DataGridEditorKind;
-  options?: DataGridColumnOption[];
-  render?: (row: DataGridRow) => React.ReactNode;
-  validate?: (value: unknown, row: DataGridRow) => string | undefined;
+  pinned?: DataGridColumnPinned | undefined;
+  editable?: boolean | undefined;
+  editor?: DataGridEditorKind | undefined;
+  options?: DataGridColumnOption[] | undefined;
+  render?: ((row: DataGridRow) => React.ReactNode) | undefined;
+  validate?: ((value: unknown, row: DataGridRow) => string | undefined) | undefined;
 }
 
 /** Controlled sort state. */
@@ -144,56 +144,56 @@ export interface DataGridProps {
   /** What the grid holds ("Price list"). The accessible name; visually hidden with `hideCaption`. */
   caption: string;
   /** Visually hide the caption; it remains the accessible name. */
-  hideCaption?: boolean;
+  hideCaption?: boolean | undefined;
   /** Column definitions plus grid concerns (width, pinning, editing). Exactly one column may be `isRowHeader`. */
   columns: DataGridColumn[];
   /** The rows. `id` must be stable. Only visible rows are rendered. */
   data: DataGridRow[];
   /** Total rows when `data` is a window of a larger set (server paging). Drives `onEndReached`. */
-  rowCount?: number;
+  rowCount?: number | undefined;
   /** Controlled sort state; the caller sorts `data`. */
-  sort?: DataGridSort;
+  sort?: DataGridSort | undefined;
   /** Initial sort; the grid sorts `data` itself when `rowCount` is not set. */
-  defaultSort?: DataGridSort;
+  defaultSort?: DataGridSort | undefined;
   /**
    * `row` adds a checkbox column and toggles rows; `cell` selects one cell.
    * `range` has no touch or hardware-keyboard equivalent on this platform and degrades to `row`
    * (a `__DEV__` warning notes this); see the generation gap notes.
    */
-  selectable?: DataGridSelectable;
+  selectable?: DataGridSelectable | undefined;
   /** Controlled selected row ids (row mode). */
-  selected?: string[];
+  selected?: string[] | undefined;
   /** Master switch: cells whose column is `editable` can be edited by tapping them. */
-  editable?: boolean;
+  editable?: boolean | undefined;
   /** Row height: compact suits the grid's purpose; comfortable for touch. */
-  density?: DataGridDensity;
+  density?: DataGridDensity | undefined;
   /** The header stays visible while the body scrolls. Always true unless `height="content"`. */
-  stickyHeader?: boolean;
+  stickyHeader?: boolean | undefined;
   /**
    * `viewport` fills the height available under the header; `content` grows with rows (no
    * virtualization, small grids); `fixed` uses `overrides.fixedHeight`.
    */
-  height?: DataGridHeight;
+  height?: DataGridHeight | undefined;
   /** Data is being fetched: existing rows stay, `copy.loading` shows in the status bar. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** Shown when `data` is empty. Defaults to `copy.empty`. */
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
   /** A footer line with row count, selection count and, while editing, the validation message. */
-  showStatusBar?: boolean;
+  showStatusBar?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<DataGridOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<DataGridOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a sortable header is activated, with the new sort state. */
-  onSortChange?: (sort: DataGridSort) => void;
+  onSortChange?: ((sort: DataGridSort) => void) | undefined;
   /** Fired with the new selection: row ids, one cell, or (web/lit only) a range. */
-  onSelectionChange?: (selection: DataGridSelection) => void;
+  onSelectionChange?: ((selection: DataGridSelection) => void) | undefined;
   /** Fired when an edit commits, with the new and previous value. The caller updates `data`. */
-  onCellChange?: (change: DataGridCellChange) => void;
+  onCellChange?: ((change: DataGridCellChange) => void) | undefined;
   /** Fired when an editor is about to open; return `false` to refuse editing that cell. */
-  onEditStart?: (target: DataGridCellSelection) => boolean | void;
+  onEditStart?: ((target: DataGridCellSelection) => boolean | void) | undefined;
   /** Fired (as `FlatList`'s `onEndReached`) when the visible window nears the end of `data` and `rowCount` says there is more. */
-  onEndReached?: (range: DataGridRangeNeeded) => void;
+  onEndReached?: ((range: DataGridRangeNeeded) => void) | undefined;
   /** Fired with the column and its new width when a resizable column finishes being dragged. */
-  onColumnResize?: (resize: DataGridColumnResize) => void;
+  onColumnResize?: ((resize: DataGridColumnResize) => void) | undefined;
 }
 
 const COPY = {
@@ -664,7 +664,7 @@ export function DataGrid({
       paddingVertical: t.space1,
     };
 
-    const handleKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>): void => {
+    const handleKeyPress = (event: TextInputKeyPressEvent): void => {
       if (event.nativeEvent.key === 'Enter') {
         commitEdit(row, column, editingValue);
       } else if (event.nativeEvent.key === 'Escape') {

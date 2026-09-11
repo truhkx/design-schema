@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -90,7 +90,7 @@ const HOOKS: Record<ProgressBarOverridableBinding, string> = {
  */
 @customElement('ds-progress-bar')
 export class DsProgressBar extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--ds-progress-bar-font-family);
@@ -199,38 +199,38 @@ export class DsProgressBar extends LitElement {
   `;
 
   /** What is progressing ("Uploading photos"). The accessible name, visible unless `hideLabel`. */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** Progress so far, between `min` and `max`. Omit for an indeterminate bar. */
-  @property({ type: Number }) value?: number;
+  @property({ type: Number }) accessor value: number | undefined;
 
   /** Start of the range. */
-  @property({ type: Number }) min = 0;
+  @property({ type: Number }) accessor min = 0;
 
   /** End of the range. */
-  @property({ type: Number }) max = 100;
+  @property({ type: Number }) accessor max = 100;
 
   /** Renders the value text ("42%", "3 of 12 files"). Defaults to a percentage of the range. */
-  @property({ attribute: false }) formatValue?: (value: number, min: number, max: number) => string;
+  @property({ attribute: false }) accessor formatValue: ((value: number, min: number, max: number) => string) | undefined;
 
   /** Show the value text beside the label. Ignored when indeterminate. Exposed as the negated `hide-value` attribute (a boolean attribute cannot express `false` for a prop that defaults `true`). */
   @property({ attribute: 'hide-value', converter: NEGATED_BOOLEAN_CONVERTER })
-  showValue = true;
+  accessor showValue = true;
 
   /** Visually hides the label; it remains the accessible name. */
-  @property({ type: Boolean, reflect: true, attribute: 'hide-label' }) hideLabel = false;
+  @property({ type: Boolean, reflect: true, attribute: 'hide-label' }) accessor hideLabel = false;
 
   /** Neutral while running; `success` at completion, `danger` when the task failed part-way. */
-  @property({ reflect: true }) tone: ProgressBarTone = 'neutral';
+  @property({ reflect: true }) accessor tone: ProgressBarTone = 'neutral';
 
   /** What a screen reader hears without focusing the bar: nothing, every 25%, or only completion. */
-  @property({ reflect: true }) announce: ProgressBarAnnounce = 'complete';
+  @property({ reflect: true }) accessor announce: ProgressBarAnnounce = 'complete';
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings (fill, fillSuccess, fillDanger, labelColor, valueColor) are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<ProgressBarOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<ProgressBarOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Text of the last announcement made to the live region. */
-  @state() private liveMessage = '';
+  @state() private accessor liveMessage = '';
 
   /** Highest 25%-tier (0/25/50/75/100) already announced, for `announce: milestones`. */
   private announcedMilestone = 0;
@@ -296,7 +296,7 @@ export class DsProgressBar extends LitElement {
     this.updateAnnouncements();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const indeterminate = this.isIndeterminate;
 
     return html`
@@ -387,8 +387,8 @@ export class DsProgressBar extends LitElement {
     }
   }
 
-  private get labelTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef>> {
-    const result: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  private get labelTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
+    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
     if (this.overrides?.fontFamily) {
       result.fontFamily = this.overrides.fontFamily;
     }
@@ -401,8 +401,8 @@ export class DsProgressBar extends LitElement {
     return result;
   }
 
-  private get valueTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef>> {
-    const result: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  private get valueTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
+    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
     if (this.overrides?.fontFamily) {
       result.fontFamily = this.overrides.fontFamily;
     }

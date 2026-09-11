@@ -1,11 +1,11 @@
 import {
-  forwardRef,
   useEffect,
   useRef,
   useState,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type MouseEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Link } from './Link';
@@ -13,7 +13,7 @@ import { Button } from './Button';
 import { Icon } from './Icon';
 import './Breadcrumb.css';
 
-export type BreadcrumbItem = { label: string; href?: string };
+export type BreadcrumbItem = { label: string; href?: string | undefined };
 
 /** copy.separator — drawn by CSS so it is not in the accessibility tree. */
 const SEPARATOR = '/';
@@ -33,7 +33,7 @@ const OVERRIDE_HOOK: Record<BreadcrumbOverridableBinding, string> = {
   lineHeight: '--ds-breadcrumb-line-height',
 };
 
-function overridesToStyle(overrides: Partial<Record<BreadcrumbOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<BreadcrumbOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as BreadcrumbOverridableBinding[]) {
     const ref = overrides[binding];
@@ -46,13 +46,13 @@ export interface BreadcrumbProps extends Omit<ComponentPropsWithoutRef<'nav'>, '
   /** The trail from root to current page, in order. An ancestor without `href` renders as plain text; the last is the current page. */
   items: BreadcrumbItem[];
   /** Accessible name of the navigation landmark. Change it only if the page has another breadcrumb. */
-  label?: string;
+  label?: string | undefined;
   /** When there are more than four items, show the first, an ellipsis, and the last two; the ellipsis reveals the rest. */
-  collapse?: boolean;
+  collapse?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<BreadcrumbOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<BreadcrumbOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a non-current item is activated, with the item, its index and the click event; call `event.preventDefault()` to route client-side. */
-  onNavigate?: (item: BreadcrumbItem, index: number, event: MouseEvent<HTMLAnchorElement>) => void;
+  onNavigate?: ((item: BreadcrumbItem, index: number, event: MouseEvent<HTMLAnchorElement>) => void) | undefined;
 }
 
 /**
@@ -63,10 +63,7 @@ export interface BreadcrumbProps extends Omit<ComponentPropsWithoutRef<'nav'>, '
  * catalogues, settings sub-pages, file browsers — where the user benefits from seeing the
  * ancestors and jumping to any of them. Place it above the page title, at the top of `main`.
  */
-export const Breadcrumb = forwardRef<HTMLElement, BreadcrumbProps>(function Breadcrumb(
-  { items, label = 'Breadcrumb', collapse = true, overrides, onNavigate, className, style, ...rest },
-  ref,
-) {
+export const Breadcrumb = function Breadcrumb({ ref, items, label = 'Breadcrumb', collapse = true, overrides, onNavigate, className, style, ...rest }: BreadcrumbProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const [expanded, setExpanded] = useState(false);
   const collapsed = collapse && !expanded && items.length > COLLAPSE_ABOVE;
   const linkRefs = useRef(new Map<number, HTMLAnchorElement>());
@@ -159,4 +156,4 @@ export const Breadcrumb = forwardRef<HTMLElement, BreadcrumbProps>(function Brea
       </ol>
     </nav>
   );
-});
+};

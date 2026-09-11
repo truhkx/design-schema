@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Button.js';
@@ -75,7 +75,7 @@ const HOOKS: Record<CarouselOverridableBinding, string> = {
  */
 @customElement('ds-carousel-slide')
 export class DsCarouselSlide extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       box-sizing: border-box;
@@ -88,14 +88,14 @@ export class DsCarouselSlide extends LitElement {
   `;
 
   /** The slide's own name, used in its positional label and as the tabs-picker label. */
-  @property() heading?: string;
+  @property() accessor heading: string | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'CarouselSlide');
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`<slot></slot>`;
   }
 }
@@ -143,7 +143,7 @@ export class DsCarouselSlide extends LitElement {
  */
 @customElement('ds-carousel')
 export class DsCarousel extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       position: relative;
       display: block;
@@ -333,51 +333,51 @@ export class DsCarousel extends LitElement {
   `;
 
   /** What the carousel shows ("Featured products"). Not visible; the region's accessible name. */
-  @property() label!: string;
+  @property() accessor label!: string;
 
   /** Slides visible at once at the widest layout; fewer show as the viewport narrows. */
-  @property({ type: Number, reflect: true, attribute: 'per-view' }) perView = 1;
+  @property({ type: Number, reflect: true, attribute: 'per-view' }) accessor perView = 1;
 
   /** Next from the last slide returns to the first. Off by default so users can tell where the end is. */
-  @property({ type: Boolean, reflect: true }) loop = false;
+  @property({ type: Boolean, reflect: true }) accessor loop = false;
 
   /** Rotates every `interval`. Starts only without reduced motion; stops on hover, focus, touch, or pause, and never restarts on its own. */
-  @property({ type: Boolean, reflect: true }) autoplay = false;
+  @property({ type: Boolean, reflect: true }) accessor autoplay = false;
 
   /** Milliseconds between automatic advances. Below 5000 is refused in development. */
-  @property({ type: Number }) interval = 6000;
+  @property({ type: Number }) accessor interval = 6000;
 
   /** How slides are chosen directly. */
-  @property({ reflect: true }) picker: CarouselPicker = 'dots';
+  @property({ reflect: true }) accessor picker: CarouselPicker = 'dots';
 
   /** Controlled current slide (zero-based). Omit for uncontrolled. */
-  @property({ type: Number, reflect: true, attribute: 'active-index' }) activeIndex?: number;
+  @property({ type: Number, reflect: true, attribute: 'active-index' }) accessor activeIndex: number | undefined;
 
   /** Swiping or scrolling snaps to slide boundaries. Exposed as the negated `no-snap` attribute (a boolean attribute cannot express `false` for a prop that defaults `true`). */
-  @property({ attribute: 'no-snap', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER }) snap = true;
+  @property({ attribute: 'no-snap', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER }) accessor snap = true;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<CarouselOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<CarouselOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled current slide, updated by navigation and by the intersection observer. */
-  @state() private internalIndex = 0;
+  @state() private accessor internalIndex = 0;
 
   /** The picker item currently carrying the roving tabindex. */
-  @state() private focusedPickerIndex: number | null = null;
+  @state() private accessor focusedPickerIndex: number | null = null;
 
-  @state() private hovering = false;
-  @state() private focusWithin = false;
-  @state() private touching = false;
-  @state() private userPaused = false;
-  @state() private reducedMotion = false;
-  @state() private announceText = '';
+  @state() private accessor hovering = false;
+  @state() private accessor focusWithin = false;
+  @state() private accessor touching = false;
+  @state() private accessor userPaused = false;
+  @state() private accessor reducedMotion = false;
+  @state() private accessor announceText = '';
 
-  @query('.viewport') private readonly viewportEl?: HTMLElement;
+  @query('.viewport') private accessor viewportEl!: HTMLElement | null;
 
-  private intersectionObserver?: IntersectionObserver;
-  private reducedMotionQuery?: MediaQueryList;
-  private timer?: number;
-  private currentIntervalMs?: number;
+  private intersectionObserver?: IntersectionObserver | undefined;
+  private reducedMotionQuery?: MediaQueryList | undefined;
+  private timer?: number | undefined;
+  private currentIntervalMs?: number | undefined;
   private readonly uid = `ds-carousel-${++instanceCount}`;
   /** Set for a short window after a programmatic scroll, so the intersection observer's own index sync does not re-dispatch a duplicate `change`. */
   private suppressSwipeUntil = 0;
@@ -469,7 +469,7 @@ export class DsCarousel extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const total = this.total;
     const current = this.currentIndex;
     const playing = this.isPlaying;
@@ -703,7 +703,7 @@ export class DsCarousel extends LitElement {
   }
 
   /** Navigates to `index`, dispatching `change` and announcing the result. `autoplay` always wraps regardless of `loop` — see the generation gap note. */
-  private moveTo(index: number, reason: CarouselChangeReason, options: { scroll?: boolean } = {}): void {
+  private moveTo(index: number, reason: CarouselChangeReason, options: { scroll?: boolean | undefined } = {}): void {
     const total = this.total;
     if (total === 0) {
       return;

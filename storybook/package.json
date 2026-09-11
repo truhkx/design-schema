@@ -6,12 +6,12 @@
     "storybook": "concurrently -k -n react,lit,rn,root \"pnpm --filter @design-schema/react storybook\" \"pnpm --filter @design-schema/lit storybook\" \"pnpm --filter @design-schema/rn storybook\" \"node start-root.mjs\""
   },
   "devDependencies": {
-    "@storybook/react": "^8.3.0",
-    "@storybook/react-vite": "^8.3.0",
+    "@storybook/react-vite": "^10.6.0",
     "concurrently": "^9.0.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "storybook": "^8.3.0",
-    "vite": "^5.4.0"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "storybook": "^10.6.0",
+    "vite": "^8.3.0",
+    "@storybook/addon-mcp": "^10.6.0"
   }
 }

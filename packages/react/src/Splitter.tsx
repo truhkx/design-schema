@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useLayoutEffect,
@@ -10,6 +9,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -46,7 +46,7 @@ const OVERRIDE_HOOK: Record<SplitterOverridableBinding, string> = {
   transition: '--ds-splitter-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<SplitterOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<SplitterOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as SplitterOverridableBinding[]) {
     const ref = overrides[binding];
@@ -74,11 +74,11 @@ const BREAKPOINT_VAR: Record<Exclude<SplitterStackBelow, 'never'>, string> = {
   content: '--layout-max-width-content',
 };
 
-function readPersisted(key: string | undefined): { size?: number; collapsed?: boolean } | null {
+function readPersisted(key: string | undefined): { size?: number | undefined; collapsed?: boolean | undefined } | null {
   if (!key || typeof window === 'undefined') return null;
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as { size?: number; collapsed?: boolean }) : null;
+    return raw ? (JSON.parse(raw) as { size?: number | undefined; collapsed?: boolean | undefined }) : null;
   } catch {
     return null;
   }
@@ -97,43 +97,43 @@ export interface SplitterProps extends Omit<ComponentPropsWithoutRef<'div'>, 'ch
   /** What the divider resizes ("Sidebar width", "Preview height"). The separator's accessible name. */
   label: string;
   /** `horizontal` places panes side by side (the separator is vertical); `vertical` stacks them. */
-  orientation?: SplitterOrientation;
+  orientation?: SplitterOrientation | undefined;
   /** The first pane (start or top). Its size is what the separator controls and reports. */
   primary: ReactNode;
   /** The second pane, which takes the remaining space. */
   secondary: ReactNode;
   /** Controlled size of the primary pane as a percentage of the container (0–100). */
-  size?: number;
+  size?: number | undefined;
   /** Initial primary size, percent. */
-  defaultSize?: number;
+  defaultSize?: number | undefined;
   /** Smallest primary size, percent. Below this the pane collapses instead, when `collapsible`. */
-  minSize?: number;
+  minSize?: number | undefined;
   /** Largest primary size, percent. */
-  maxSize?: number;
+  maxSize?: number | undefined;
   /** Arrow-key increment, percent. */
-  step?: number;
+  step?: number | undefined;
   /**
    * The primary pane can collapse to nothing: drag past the minimum, press Enter on the
    * separator, or use the collapse button. Enter again restores the last size.
    */
-  collapsible?: boolean;
+  collapsible?: boolean | undefined;
   /** Controlled collapsed state. */
-  collapsed?: boolean;
+  collapsed?: boolean | undefined;
   /** When set, the size is remembered per user under this key (localStorage) so a sidebar stays where it was left. */
-  persistKey?: string;
+  persistKey?: string | undefined;
   /**
    * Below this layout width a horizontal splitter stacks its panes and the separator becomes
    * inert (a phone has no room for two panes side by side).
    */
-  stackBelow?: SplitterStackBelow;
+  stackBelow?: SplitterStackBelow | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<SplitterOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SplitterOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired continuously while dragging and on each key press, with the primary size in percent. */
-  onSizeChange?: (size: number) => void;
+  onSizeChange?: ((size: number) => void) | undefined;
   /** Fired once when a drag ends, with the final size. */
-  onSizeChangeEnd?: (size: number) => void;
+  onSizeChangeEnd?: ((size: number) => void) | undefined;
   /** Fired when the primary pane collapses or restores. */
-  onCollapseChange?: (collapsed: boolean) => void;
+  onCollapseChange?: ((collapsed: boolean) => void) | undefined;
 }
 
 /**
@@ -146,33 +146,31 @@ export interface SplitterProps extends Omit<ComponentPropsWithoutRef<'div'>, 'ch
  * sensible `minSize`/`maxSize`, and use `persistKey` so the choice sticks. Use `collapsible` for
  * sidebars.
  */
-export const Splitter = forwardRef<HTMLDivElement, SplitterProps>(function Splitter(
-  {
-    label,
-    orientation = 'horizontal',
-    primary,
-    secondary,
-    size,
-    defaultSize = 30,
-    minSize = 10,
-    maxSize = 90,
-    step = 2,
-    collapsible = false,
-    collapsed,
-    persistKey,
-    stackBelow = 'prose',
-    overrides,
-    onSizeChange,
-    onSizeChangeEnd,
-    onCollapseChange,
-    id: idProp,
-    className,
-    style,
-    onKeyDown,
-    ...rest
-  },
+export const Splitter = function Splitter({
   ref,
-) {
+  label,
+  orientation = 'horizontal',
+  primary,
+  secondary,
+  size,
+  defaultSize = 30,
+  minSize = 10,
+  maxSize = 90,
+  step = 2,
+  collapsible = false,
+  collapsed,
+  persistKey,
+  stackBelow = 'prose',
+  overrides,
+  onSizeChange,
+  onSizeChangeEnd,
+  onCollapseChange,
+  id: idProp,
+  className,
+  style,
+  onKeyDown,
+  ...rest
+}: SplitterProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const id = idProp ?? `ds-splitter${generatedId}`;
   const primaryId = `${id}-primary`;
@@ -372,7 +370,7 @@ export const Splitter = forwardRef<HTMLDivElement, SplitterProps>(function Split
     const active = document.activeElement;
     const regions = [primaryRef, separatorRef, secondaryRef];
     const activeIndex = regions.findIndex((r) => r.current === active || (r.current?.contains(active) ?? false));
-    const nextRegion = regions[activeIndex === -1 ? 0 : (activeIndex + 1) % regions.length].current;
+    const nextRegion = regions[activeIndex === -1 ? 0 : (activeIndex + 1) % regions.length]!.current;
     if (!nextRegion) return;
     event.preventDefault();
     const focusable = nextRegion.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
@@ -475,4 +473,4 @@ export const Splitter = forwardRef<HTMLDivElement, SplitterProps>(function Split
       </div>
     </div>
   );
-});
+};

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Card.js';
@@ -8,7 +8,7 @@ import './Link.js';
 import type { CardHeadingLevel, CardInset, CardSurface } from './Card.js';
 
 interface CardArgs {
-  heading?: string;
+  heading?: string | undefined;
   headingLevel: CardHeadingLevel;
   inset: CardInset;
   surface: CardSurface;

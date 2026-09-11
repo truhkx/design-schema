@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ProgressBar } from './ProgressBar';
 
-const meta = {
+const meta: Meta<typeof ProgressBar> = {
   title: 'ProgressBar/React',
   component: ProgressBar,
   args: {
@@ -21,7 +21,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof ProgressBar>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

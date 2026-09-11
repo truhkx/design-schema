@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Tree } from './Tree';
 import type { TreeNode } from './Tree';
 import { withTheme } from './decorators';

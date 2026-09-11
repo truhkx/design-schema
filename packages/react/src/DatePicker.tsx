@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -12,6 +11,7 @@ import {
   type CSSProperties,
   type FocusEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -94,7 +94,7 @@ export type DatePickerOverridableBinding =
  * `fontSize` override — Select has no `fontWeight` override to forward monthTitleWeight into, so
  * that binding only ever reaches the (non-rendering) root hook.
  */
-const ROOT_OVERRIDE_HOOK: Partial<Record<DatePickerOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<DatePickerOverridableBinding, string | undefined>> = {
   borderFocus: '--ds-date-picker-border-focus',
   borderInvalid: '--ds-date-picker-border-invalid',
   borderWidth: '--ds-date-picker-border-width',
@@ -122,16 +122,16 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<DatePickerOverridableBinding, string>> 
   transition: '--ds-date-picker-transition',
 };
 
-function resolveOverrides(overrides: Partial<Record<DatePickerOverridableBinding, TokenRef>>): {
+function resolveOverrides(overrides: Partial<Record<DatePickerOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  monthSelectOverrides: Partial<Record<SelectOverridableBinding, TokenRef>>;
+  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  monthSelectOverrides: Partial<Record<SelectOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const monthSelectOverrides: Partial<Record<SelectOverridableBinding, TokenRef>> = {};
+  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const monthSelectOverrides: Partial<Record<SelectOverridableBinding, TokenRef | undefined>> = {};
 
   for (const binding of Object.keys(overrides) as DatePickerOverridableBinding[]) {
     const ref = overrides[binding];
@@ -230,8 +230,8 @@ function getFirstDayOfWeek(locale: string | undefined): number {
   try {
     const resolvedLocale = locale ?? new Intl.DateTimeFormat().resolvedOptions().locale;
     const localeObject = new Intl.Locale(resolvedLocale) as Intl.Locale & {
-      getWeekInfo?: () => { firstDay: number };
-      weekInfo?: { firstDay: number };
+      getWeekInfo?: (() => { firstDay: number }) | undefined;
+      weekInfo?: { firstDay: number } | undefined;
     };
     const firstDay = localeObject.getWeekInfo?.().firstDay ?? localeObject.weekInfo?.firstDay;
     if (typeof firstDay === 'number') return firstDay % 7;
@@ -319,11 +319,11 @@ function parseTypedDate(raw: string, tokens: PatternToken[]): ISODate | undefine
     });
   } else if (groups.length === 1) {
     const lengths = order.map((t) => (t.kind === 'year' ? 4 : 2));
-    if (groups[0].length !== lengths.reduce((a, b) => a + b, 0)) return undefined;
+    if (groups[0]!.length !== lengths.reduce((a, b) => a + b, 0)) return undefined;
     let cursor = 0;
     order.forEach((token, i) => {
-      const slice = groups[0].slice(cursor, cursor + lengths[i]);
-      cursor += lengths[i];
+      const slice = groups[0]!.slice(cursor, cursor + lengths[i]!);
+      cursor += lengths[i]!;
       if (token.kind === 'month') month = slice;
       else if (token.kind === 'day') day = slice;
       else year = slice;
@@ -397,45 +397,45 @@ export interface DatePickerProps
   /** Field name for the Form. The value is an ISO calendar date string, or `{ start, end }` for a range. */
   name: string;
   /** Controlled value (ISO date, or a range). */
-  value?: DatePickerValue;
+  value?: DatePickerValue | undefined;
   /** Initial value. */
-  defaultValue?: DatePickerValue;
+  defaultValue?: DatePickerValue | undefined;
   /** Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default. */
-  open?: boolean;
+  open?: boolean | undefined;
   /** Pick a start and an end date in one calendar; two inputs in the field. */
-  range?: boolean;
+  range?: boolean | undefined;
   /** Earliest selectable date (ISO). Earlier days are disabled and the error uses `copy.tooEarly`. */
-  min?: string;
+  min?: string | undefined;
   /** Latest selectable date (ISO). */
-  max?: string;
+  max?: string | undefined;
   /** Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden, and are skipped by keyboard movement. */
-  isDateDisabled?: (isoDate: string) => boolean;
+  isDateDisabled?: ((isoDate: string) => boolean) | undefined;
   /** BCP 47 locale for month/weekday names, the first day of the week, and the typed format. Defaults to the device locale. */
-  locale?: string;
+  locale?: string | undefined;
   /** An ISO week-number column at the start of each row. */
-  showWeekNumbers?: boolean;
+  showWeekNumbers?: boolean | undefined;
   /** Defaults to the locale's pattern ("MM/DD/YYYY", "DD.MM.YYYY"). */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /** Helper text. */
-  description?: string;
+  description?: string | undefined;
   /** Must have a value to submit. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search. */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
-  size?: DatePickerSize;
+  size?: DatePickerSize | undefined;
   /** Not editable, still readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Error message; implies invalid. */
-  error?: string;
+  error?: string | undefined;
   /** Portal target for the calendar's DOM node. Defaults to `document.body`. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<DatePickerOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<DatePickerOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a complete valid date (or range) is typed or picked, with the ISO value; with undefined when cleared. */
-  onChange?: (value: DatePickerValue | undefined) => void;
+  onChange?: ((value: DatePickerValue | undefined) => void) | undefined;
   /** Fired when the calendar opens or closes. */
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: ((open: boolean) => void) | undefined;
 }
 
 /**
@@ -447,37 +447,35 @@ export interface DatePickerProps
  * they exist and `isDateDisabled` for days that cannot be chosen, so the calendar shows what is
  * possible instead of validating after the fact.
  */
-export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function DatePicker(
-  {
-    label,
-    name,
-    value,
-    defaultValue,
-    open: openProp,
-    range = false,
-    min,
-    max,
-    isDateDisabled,
-    locale,
-    showWeekNumbers = false,
-    placeholder,
-    description,
-    required = false,
-    hideLabel = false,
-    size = 'md',
-    disabled = false,
-    error,
-    container,
-    overrides,
-    onChange,
-    onOpenChange,
-    id: idProp,
-    className,
-    style,
-    ...rest
-  },
+export const DatePicker = function DatePicker({
   ref,
-) {
+  label,
+  name,
+  value,
+  defaultValue,
+  open: openProp,
+  range = false,
+  min,
+  max,
+  isDateDisabled,
+  locale,
+  showWeekNumbers = false,
+  placeholder,
+  description,
+  required = false,
+  hideLabel = false,
+  size = 'md',
+  disabled = false,
+  error,
+  container,
+  overrides,
+  onChange,
+  onOpenChange,
+  id: idProp,
+  className,
+  style,
+  ...rest
+}: DatePickerProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
   const form = useFormContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-date-picker${generatedId}`);
@@ -852,7 +850,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
 
   const describedBy = [description ? descriptionId : null, resolvedError ? errorId : null].filter(Boolean).join(' ');
 
-  const gridLabelText = interpolate(COPY.gridLabel, { label, month: monthNames[displayedMonth.month], year: String(displayedMonth.year) });
+  const gridLabelText = interpolate(COPY.gridLabel, { label, month: monthNames[displayedMonth.month]!, year: String(displayedMonth.year) });
 
   const monthOptions: ListboxOption[] = monthNames.map((monthName, index) => ({ value: String(index), label: monthName }));
   const yearNow = todayISO().slice(0, 4);
@@ -1070,7 +1068,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
                       <tr key={weekDays[0]}>
                         {showWeekNumbers ? (
                           <td className="ds-date-picker__week-number" data-part="weekNumber">
-                            {isoWeekNumber(weekDays[0])}
+                            {isoWeekNumber(weekDays[0]!)}
                           </td>
                         ) : null}
                         {weekDays.map((iso) => {
@@ -1135,4 +1133,4 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(function
       ) : null}
     </div>
   );
-});
+};

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Toolbar } from './Toolbar';
 import type { ToolbarOrientation } from './Toolbar';
 import { Button } from './Button';

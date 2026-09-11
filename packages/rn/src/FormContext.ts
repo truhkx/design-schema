@@ -42,13 +42,13 @@ export interface FormContextValue {
   /** Whether the Form renders (and announces) its own error summary. */
   errorSummary: boolean;
   /** Errors from the most recent validation, keyed by field name. */
-  errors: Readonly<Partial<Record<string, string>>>;
+  errors: Readonly<Partial<Record<string, string | undefined>>>;
   /** Field names in registration order; the last one gets `returnKeyType="done"`. */
   order: readonly string[];
 }
 
 /** `null` outside of a Form so Button and Input work standalone. */
-export const FormContext = React.createContext<FormContextValue | null>(null);
+export const FormContext: React.Context<FormContextValue | null> = React.createContext<FormContextValue | null>(null);
 
 export function useFormContext(): FormContextValue | null {
   return React.useContext(FormContext);

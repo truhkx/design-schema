@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Breadcrumb } from './Breadcrumb';
 
 const shortTrail = [
@@ -16,7 +16,7 @@ const longTrail = [
   { label: 'Keyboard' },
 ];
 
-const meta = {
+const meta: Meta<typeof Breadcrumb> = {
   title: 'Breadcrumb/React',
   component: Breadcrumb,
   args: {
@@ -27,7 +27,7 @@ const meta = {
   argTypes: {
     onNavigate: { action: 'onNavigate' },
   },
-} satisfies Meta<typeof Breadcrumb>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

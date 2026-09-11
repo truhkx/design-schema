@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Tabs, TabPanel, type TabsItem } from './Tabs';
 
 const TABS: TabsItem[] = [
@@ -15,7 +15,7 @@ const panels = [
   <TabPanel key="settings" id="settings">Project settings.</TabPanel>,
 ];
 
-const meta = {
+const meta: Meta<typeof Tabs> = {
   title: 'Tabs/React',
   component: Tabs,
   args: {
@@ -31,7 +31,7 @@ const meta = {
     onChange: { action: 'onChange' },
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof Tabs>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Combobox.js';
@@ -9,18 +9,18 @@ interface ComboboxArgs {
   label: string;
   name: string;
   options: ListboxOption[];
-  value?: ComboboxValue;
-  defaultValue?: ComboboxValue;
-  inputValue?: string;
+  value?: ComboboxValue | undefined;
+  defaultValue?: ComboboxValue | undefined;
+  inputValue?: string | undefined;
   multiple: boolean;
   allowCustom: boolean;
   filter: ComboboxFilter;
-  placeholder?: string;
-  description?: string;
+  placeholder?: string | undefined;
+  description?: string | undefined;
   required: boolean;
   disabled: boolean;
   invalid: boolean;
-  error?: string;
+  error?: string | undefined;
   loading: boolean;
   clearable: boolean;
 }

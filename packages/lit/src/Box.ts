@@ -1,4 +1,4 @@
-import { LitElement, css, html, type PropertyValues } from 'lit';
+import { LitElement, css, html, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 
@@ -17,7 +17,7 @@ export type BoxOverridableBinding =
   | 'radius';
 
 /** Sectioning `element` values and the implicit landmark role each maps to. `div`/`section` set no role. */
-const SECTIONING_ROLES: Partial<Record<BoxElement, string>> = {
+const SECTIONING_ROLES: Partial<Record<BoxElement, string | undefined>> = {
   article: 'article',
   aside: 'complementary',
   header: 'banner',
@@ -58,7 +58,7 @@ const HOOKS: Record<BoxOverridableBinding, string> = {
  */
 @customElement('ds-box')
 export class DsBox extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       box-sizing: border-box;
@@ -175,22 +175,22 @@ export class DsBox extends LitElement {
   `;
 
   /** Padding on all sides. Use `insetBlock`/`insetInline` when the axes differ. */
-  @property({ reflect: true }) inset: BoxInset = 'none';
+  @property({ reflect: true }) accessor inset: BoxInset = 'none';
 
   /** Vertical padding, overriding `inset` on that axis. */
-  @property({ reflect: true, attribute: 'inset-block' }) insetBlock?: BoxInset;
+  @property({ reflect: true, attribute: 'inset-block' }) accessor insetBlock: BoxInset | undefined;
 
   /** Horizontal padding, overriding `inset` on that axis. */
-  @property({ reflect: true, attribute: 'inset-inline' }) insetInline?: BoxInset;
+  @property({ reflect: true, attribute: 'inset-inline' }) accessor insetInline: BoxInset | undefined;
 
   /** Background. `none` is transparent; `default`/`subtle`/`strong` step up. */
-  @property({ reflect: true }) surface: BoxSurface = 'none';
+  @property({ reflect: true }) accessor surface: BoxSurface = 'none';
 
   /** A thin default border. */
-  @property({ type: Boolean, reflect: true }) border = false;
+  @property({ type: Boolean, reflect: true }) accessor border = false;
 
   /** Corner radius from the theme's presets. */
-  @property({ reflect: true }) radius: BoxRadius = 'none';
+  @property({ reflect: true }) accessor radius: BoxRadius = 'none';
 
   /**
    * Element to render. The host is always the element in the DOM; sectioning
@@ -198,10 +198,10 @@ export class DsBox extends LitElement {
    * matching landmark role on the host through `ElementInternals`. `div` and
    * `section` set no role. Prefer Landmark for page regions.
    */
-  @property() element: BoxElement = 'div';
+  @property() accessor element: BoxElement = 'div';
 
   /** Per-instance style overrides: `{ background: 'color.status.danger.background' }`. */
-  @property({ attribute: false }) overrides?: Partial<Record<BoxOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
 
   private readonly internals: ElementInternals;
 
@@ -224,7 +224,7 @@ export class DsBox extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`<slot></slot>`;
   }
 

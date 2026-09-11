@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Listbox, type ListboxOption } from './Listbox';
 
 const FRUITS: ListboxOption[] = [
@@ -33,7 +33,7 @@ const GROUPED: ListboxOption[] = [
   },
 ];
 
-const meta = {
+const meta: Meta<typeof Listbox> = {
   title: 'Listbox/React',
   component: Listbox,
   args: {
@@ -45,7 +45,7 @@ const meta = {
     onActiveChange: { action: 'onActiveChange' },
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof Listbox>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

@@ -1,7 +1,6 @@
 import {
   Children,
   cloneElement,
-  forwardRef,
   isValidElement,
   useEffect,
   useId,
@@ -13,6 +12,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactElement,
   type ReactNode,
+  type Ref,
   type RefAttributes,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -60,7 +60,7 @@ const OVERRIDE_HOOK: Record<CarouselOverridableBinding, string> = {
   transition: '--ds-carousel-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<CarouselOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<CarouselOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as CarouselOverridableBinding[]) {
     const ref = overrides[binding];
@@ -103,15 +103,12 @@ export interface CarouselSlideProps extends ComponentPropsWithoutRef<'div'> {
    * Short name for this slide ("Plans", "Pricing"), shown as its tab text when `picker: tabs`.
    * Falls back to the slide's position when omitted.
    */
-  label?: string;
+  label?: string | undefined;
   children: ReactNode;
 }
 
 /** One slide's content — a direct child of `Carousel`, one per slide, in the same order. */
-export const CarouselSlide = forwardRef<HTMLDivElement, CarouselSlideProps>(function CarouselSlide(
-  { label: _label, children, className, ...rest },
-  ref,
-) {
+export const CarouselSlide = function CarouselSlide({ ref, label: _label, children, className, ...rest }: CarouselSlideProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   return (
     <div
       {...rest}
@@ -123,7 +120,7 @@ export const CarouselSlide = forwardRef<HTMLDivElement, CarouselSlideProps>(func
       {children}
     </div>
   );
-});
+};
 
 export interface CarouselProps
   extends Omit<ComponentPropsWithoutRef<'section'>, 'children' | 'aria-label' | 'onChange' | 'role'> {
@@ -135,30 +132,30 @@ export interface CarouselProps
    * How many slides are visible at once at the widest layout; fewer are shown as the viewport
    * narrows (one below the prose width).
    */
-  perView?: number;
+  perView?: number | undefined;
   /** Next from the last returns to the first. Off by default so users can tell where the end is. */
-  loop?: boolean;
+  loop?: boolean | undefined;
   /**
    * Rotate automatically every `interval`. Starts only when the user has not asked for reduced
    * motion; stops on hover, focus, touch, or the play/pause button; never restarts on its own
    * after the user pauses it.
    */
-  autoplay?: boolean;
+  autoplay?: boolean | undefined;
   /** Milliseconds between automatic advances. Below 5000 is refused in development. */
-  interval?: number;
+  interval?: number | undefined;
   /**
    * How slides are chosen directly: small dot buttons, tabs with each slide's label (for few,
    * meaningful slides), or none (arrows only).
    */
-  picker?: CarouselPicker;
+  picker?: CarouselPicker | undefined;
   /** Controlled current slide (zero-based). Omit for uncontrolled. */
-  activeIndex?: number;
+  activeIndex?: number | undefined;
   /** Swiping or scrolling snaps to slide boundaries. */
-  snap?: boolean;
+  snap?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<CarouselOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<CarouselOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the current slide changes, with the new index and the reason. */
-  onChange?: (index: number, reason: CarouselChangeReason) => void;
+  onChange?: ((index: number, reason: CarouselChangeReason) => void) | undefined;
 }
 
 /**
@@ -171,25 +168,23 @@ export interface CarouselProps
  * for images. Leave `autoplay` off unless the content is ambient (a hero of photographs) and even
  * then keep the pause control visible.
  */
-export const Carousel = forwardRef<HTMLElement, CarouselProps>(function Carousel(
-  {
-    label,
-    children,
-    perView = 1,
-    loop = false,
-    autoplay = false,
-    interval = 6000,
-    picker = 'dots',
-    activeIndex,
-    snap = true,
-    overrides,
-    onChange,
-    className,
-    style,
-    ...rest
-  },
+export const Carousel = function Carousel({
   ref,
-) {
+  label,
+  children,
+  perView = 1,
+  loop = false,
+  autoplay = false,
+  interval = 6000,
+  picker = 'dots',
+  activeIndex,
+  snap = true,
+  overrides,
+  onChange,
+  className,
+  style,
+  ...rest
+}: CarouselProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const generatedId = useId();
   const baseId = `ds-carousel${generatedId}`;
 
@@ -482,4 +477,4 @@ export const Carousel = forwardRef<HTMLElement, CarouselProps>(function Carousel
       </div>
     </section>
   );
-});
+};

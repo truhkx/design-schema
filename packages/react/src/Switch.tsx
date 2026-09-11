@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -9,6 +8,7 @@ import {
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type MouseEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text } from './Text';
@@ -51,7 +51,7 @@ const OVERRIDE_HOOK: Record<SwitchOverridableBinding, string> = {
   transition: '--ds-switch-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<SwitchOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<SwitchOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as SwitchOverridableBinding[]) {
     const ref = overrides[binding];
@@ -78,21 +78,21 @@ export interface SwitchProps
   /** Visible label naming the thing being turned on or off. Also the accessible name. */
   label: string;
   /** Optional field name. When inside a Form the checked state is collected as a boolean; most switches are not in forms. */
-  name?: string;
+  name?: string | undefined;
   /** Controlled state. Omit for an uncontrolled control. */
-  checked?: boolean;
+  checked?: boolean | undefined;
   /** Initial state for an uncontrolled control. */
-  defaultChecked?: boolean;
+  defaultChecked?: boolean | undefined;
   /** Cannot be toggled. Stays visible, readable and focusable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Persistent helper text below the label explaining the effect. */
-  description?: string;
+  description?: string | undefined;
   /** Where the label sits relative to the track. `start` is the settings-list convention; `end` matches Checkbox. */
-  labelPosition?: SwitchLabelPosition;
+  labelPosition?: SwitchLabelPosition | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<SwitchOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SwitchOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the state changes, with the new boolean. The change is already in effect; there is nothing to submit. */
-  onChange?: (checked: boolean, event: ChangeEvent<HTMLInputElement>) => void;
+  onChange?: ((checked: boolean, event: ChangeEvent<HTMLInputElement>) => void) | undefined;
 }
 
 /**
@@ -104,25 +104,23 @@ export interface SwitchProps
  * and preference panels, with `labelPosition: start` so the labels line up and the switches sit
  * at the row end.
  */
-export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
-  {
-    label,
-    name,
-    checked,
-    defaultChecked = false,
-    disabled = false,
-    description,
-    labelPosition = 'start',
-    overrides,
-    onChange,
-    onClick,
-    id: idProp,
-    className,
-    style,
-    ...rest
-  },
+export const Switch = function Switch({
   ref,
-) {
+  label,
+  name,
+  checked,
+  defaultChecked = false,
+  disabled = false,
+  description,
+  labelPosition = 'start',
+  overrides,
+  onChange,
+  onClick,
+  id: idProp,
+  className,
+  style,
+  ...rest
+}: SwitchProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
   const form = useFormContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase && name ? `${form.idBase}-${name}` : `ds-switch${generatedId}`);
@@ -229,4 +227,4 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
       />
     </div>
   );
-});
+};

@@ -1,4 +1,4 @@
-import { LitElement, css, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { html, literal, type StaticValue } from 'lit/static-html.js';
@@ -88,7 +88,7 @@ export class DsDisclosure extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       --ds-disclosure-trigger-padding-block: var(--space-sm);
@@ -190,30 +190,30 @@ export class DsDisclosure extends LitElement {
   `;
 
   /** The trigger's label. Also its accessible name. Says what will be revealed. */
-  @property() summary = '';
+  @property() accessor summary = '';
 
   /** Controlled open state. Omit for an uncontrolled disclosure. */
-  @property({ type: Boolean, reflect: true }) open?: boolean;
+  @property({ type: Boolean, reflect: true }) accessor open: boolean | undefined;
 
   /** Initial state for an uncontrolled disclosure. */
-  @property({ type: Boolean, attribute: 'default-open' }) defaultOpen = false;
+  @property({ type: Boolean, attribute: 'default-open' }) accessor defaultOpen = false;
 
   /** The trigger cannot be activated. Stays focusable and is announced as disabled. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Keep the panel in the tree while closed (hidden, not unmounted). Required when the panel contains form fields. */
-  @property({ type: Boolean, reflect: true, attribute: 'keep-mounted' }) keepMounted = false;
+  @property({ type: Boolean, reflect: true, attribute: 'keep-mounted' }) accessor keepMounted = false;
 
   /** When set, the trigger is wrapped in a heading of this level so it appears in the outline. */
-  @property({ attribute: 'heading-level' }) headingLevel?: DisclosureHeadingLevel;
+  @property({ attribute: 'heading-level' }) accessor headingLevel: DisclosureHeadingLevel | undefined;
 
   /** Per-instance style overrides: `{ triggerRadius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<DisclosureOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<DisclosureOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled open state (seeded from `defaultOpen`). */
-  @state() private internalOpen = false;
+  @state() private accessor internalOpen = false;
 
-  @query('#trigger') private readonly triggerEl!: HTMLButtonElement;
+  @query('#trigger') private accessor triggerEl!: HTMLButtonElement;
 
   /** Whether the panel is currently open. */
   get currentOpen(): boolean {
@@ -238,7 +238,7 @@ export class DsDisclosure extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const isOpen = this.currentOpen;
     const panelExists = isOpen || this.keepMounted;
     const trigger = html`

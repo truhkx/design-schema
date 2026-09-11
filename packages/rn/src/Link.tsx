@@ -18,36 +18,36 @@ export interface LinkProps {
   /** The link text. Also the accessible name. Says where the link goes, not "click here". */
   label: string;
   /** Marks a destination outside the product: appends `copy.externalSuffix` to the accessible name, with a decorative trailing icon. `onPress` still fires, but navigation always goes through `Linking`. */
-  external?: boolean;
+  external?: boolean | undefined;
   /** `default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone. */
-  tone?: LinkTone;
+  tone?: LinkTone | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<LinkOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<LinkOverridableBinding, TokenRef | undefined>> | undefined;
   /**
    * Overrides the computed accessible name (`label`, plus `copy.externalSuffix` when
    * `external`). Set by a wrapping parent such as Tooltip that needs to fold its own
    * content into this link's name.
    */
-  accessibilityLabel?: string;
+  accessibilityLabel?: string | undefined;
   /** Forwarded to the native element untouched — set by a wrapping parent such as Tooltip. */
-  accessibilityHint?: string;
+  accessibilityHint?: string | undefined;
   /** Forwarded to the native element untouched — lets a wrapping parent such as Tooltip attach hover/focus behavior. */
-  onFocus?: (event: unknown) => void;
+  onFocus?: ((event: unknown) => void) | undefined;
   /** Forwarded to the native element untouched — lets a wrapping parent such as Tooltip attach hover/focus behavior. */
-  onBlur?: (event: unknown) => void;
+  onBlur?: ((event: unknown) => void) | undefined;
   /** Forwarded to the native element untouched (react-native-web only — no touch hover). */
-  onHoverIn?: (event: unknown) => void;
+  onHoverIn?: ((event: unknown) => void) | undefined;
   /** Forwarded to the native element untouched (react-native-web only — no touch hover). */
-  onHoverOut?: (event: unknown) => void;
+  onHoverOut?: ((event: unknown) => void) | undefined;
   /** Forwarded to the native element untouched — set by a wrapping parent such as Tooltip. */
-  onLongPress?: (event: GestureResponderEvent) => void;
+  onLongPress?: ((event: GestureResponderEvent) => void) | undefined;
   /**
    * Fired when the link is activated, with `href`. On native the consumer's handler
    * is the navigation; when no handler is given the system opens the URL with `Linking`.
    * For `external` links `onPress` fires first but `Linking` always performs the
    * navigation, since a consumer-side router cannot leave the app.
    */
-  onPress?: (href: string) => void;
+  onPress?: ((href: string) => void) | undefined;
 }
 
 const COPY = {
@@ -55,7 +55,7 @@ const COPY = {
 } as const;
 
 /** `copy.externalSuffix`, exposed so composites (e.g. `Card`) can reproduce a Link's accessible name when they move it onto a wrapping element. */
-export const LINK_EXTERNAL_SUFFIX = COPY.externalSuffix;
+export const LINK_EXTERNAL_SUFFIX: ' (opens in new tab)' = COPY.externalSuffix;
 
 /**
  * Link — takes people somewhere. Buttons do things; links navigate.

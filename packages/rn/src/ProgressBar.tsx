@@ -28,23 +28,23 @@ export interface ProgressBarProps {
   /** What is progressing ("Uploading photos", "Importing contacts"). Visible unless `hideLabel`; always the accessible name. */
   label: string;
   /** Progress so far, between `min` and `max`. Omit for an indeterminate bar (the end is unknown). */
-  value?: number;
+  value?: number | undefined;
   /** Start of the range. */
-  min?: number;
+  min?: number | undefined;
   /** End of the range. */
-  max?: number;
+  max?: number | undefined;
   /** Renders the value text ("42%", "3 of 12 files"). Defaults to a percentage. */
-  formatValue?: (value: number, min: number, max: number) => string;
+  formatValue?: ((value: number, min: number, max: number) => string) | undefined;
   /** Show the value text beside the label. Ignored when indeterminate. */
-  showValue?: boolean;
+  showValue?: boolean | undefined;
   /** Visually hide the label (it remains the accessible name). For bars inside a Card whose heading already says what is happening. */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** Neutral while running; `success` at completion, `danger` when the task failed part-way. Paired with a text status elsewhere: the color is never the only signal. */
-  tone?: ProgressBarTone;
+  tone?: ProgressBarTone | undefined;
   /** What a screen reader hears without focusing the bar: nothing, every 25%, or only completion. */
-  announce?: ProgressBarAnnounce;
+  announce?: ProgressBarAnnounce | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<ProgressBarOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ProgressBarOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const FILL_TOKEN = {
@@ -275,7 +275,7 @@ export function ProgressBar({
     overflow: 'hidden',
   };
 
-  const fillStyle: Animated.WithAnimatedObject<ViewStyle> = indeterminate
+  const fillStyle: Animated.WithAnimatedValue<ViewStyle> = indeterminate
     ? reducedMotion
       ? {
           height: trackHeight,

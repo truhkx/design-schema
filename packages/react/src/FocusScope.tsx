@@ -1,12 +1,12 @@
 import {
-  forwardRef,
   useEffect,
   useImperativeHandle,
   useRef,
   type ComponentPropsWithoutRef,
   type KeyboardEvent,
   type ReactNode,
-  type RefObject,
+  type Ref,
+  type RefObject, type ReactElement,
 } from 'react';
 import './FocusScope.css';
 
@@ -22,33 +22,33 @@ export interface FocusScopeProps
    * is pulled back in. False turns the scope into a plain "move focus in and restore on exit"
    * helper, for non-modal panels.
    */
-  trapped?: boolean;
+  trapped?: boolean | undefined;
   /**
    * Where focus goes on mount: the first focusable descendant, the last, the scope's own wrapper
    * (made focusable with tabindex -1, for reading-first dialogs), or nowhere.
    */
-  autoFocus?: FocusScopeAutoFocus;
+  autoFocus?: FocusScopeAutoFocus | undefined;
   /**
    * On unmount, focus returns to the element that was focused when the scope mounted, or to the
    * next focusable element in the document if that one is gone.
    */
-  restoreFocus?: boolean;
+  restoreFocus?: boolean | undefined;
   /**
    * Explicit element to restore focus to instead of the recorded opener. Required on native when
    * the opener is not a TextInput (React Native exposes no generic "currently focused element"),
    * so every overlay passes its trigger ref.
    */
-  returnFocusTo?: RefObject<HTMLElement>;
+  returnFocusTo?: RefObject<HTMLElement | null> | undefined;
   /**
    * Pause the scope without unmounting it — used while a nested scope (a Menu inside a Dialog) is
    * open, so the innermost active scope owns Tab.
    */
-  active?: boolean;
+  active?: boolean | undefined;
   /**
    * Fired when trapped focus would have left the scope (Tab from the last element, Shift+Tab from
    * the first) just before it wraps, with the direction. Diagnostic; components do not need it.
    */
-  onEscapeAttempt?: (direction: FocusScopeEscapeDirection) => void;
+  onEscapeAttempt?: ((direction: FocusScopeEscapeDirection) => void) | undefined;
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -119,20 +119,18 @@ const scopeStack: Array<{ active: boolean }> = [];
  * panel that should still move focus in and restore it on close (a slide-in filter drawer that
  * keeps the page usable).
  */
-export const FocusScope = forwardRef<HTMLDivElement, FocusScopeProps>(function FocusScope(
-  {
-    children,
-    trapped = true,
-    autoFocus = 'first',
-    restoreFocus = true,
-    returnFocusTo,
-    active = true,
-    onEscapeAttempt,
-    className,
-    ...rest
-  },
+export const FocusScope = function FocusScope({
   ref,
-) {
+  children,
+  trapped = true,
+  autoFocus = 'first',
+  restoreFocus = true,
+  returnFocusTo,
+  active = true,
+  onEscapeAttempt,
+  className,
+  ...rest
+}: FocusScopeProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const containerRef = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => containerRef.current as HTMLDivElement, []);
 
@@ -231,11 +229,11 @@ export const FocusScope = forwardRef<HTMLDivElement, FocusScopeProps>(function F
     if (!event.shiftKey && activeElement === last) {
       latest.current.onEscapeAttempt?.('forward');
       event.preventDefault();
-      first.focus();
+      first!.focus();
     } else if (event.shiftKey && activeElement === first) {
       latest.current.onEscapeAttempt?.('backward');
       event.preventDefault();
-      last.focus();
+      last!.focus();
     }
   };
 
@@ -286,4 +284,4 @@ export const FocusScope = forwardRef<HTMLDivElement, FocusScopeProps>(function F
       ) : null}
     </div>
   );
-});
+};

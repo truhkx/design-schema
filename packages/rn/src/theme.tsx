@@ -22,7 +22,7 @@ export interface Theme {
 
 export interface ThemeProviderProps {
   /** Which mode to apply. Defaults to `system`. */
-  mode?: ThemeModeSetting;
+  mode?: ThemeModeSetting | undefined;
   children: React.ReactNode;
 }
 

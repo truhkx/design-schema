@@ -19,11 +19,11 @@ export type TreeHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
 export interface TreeNode {
   id: string;
   label: string;
-  icon?: IconName;
-  badge?: string;
-  disabled?: boolean;
-  href?: string;
-  children?: TreeNode[] | 'lazy';
+  icon?: IconName | undefined;
+  badge?: string | undefined;
+  disabled?: boolean | undefined;
+  href?: string | undefined;
+  children?: TreeNode[] | 'lazy' | undefined;
 }
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
@@ -55,37 +55,37 @@ export interface TreeProps {
   /** What the tree lists ("Folders", "Categories"). The accessible name; visible only with `showLabel`. */
   label: string;
   /** Show `label` as a heading above the tree. */
-  showLabel?: boolean;
+  showLabel?: boolean | undefined;
   /** Heading level of the visible label in the page outline; its size is `headingSize` regardless. */
-  headingLevel?: TreeHeadingLevel;
+  headingLevel?: TreeHeadingLevel | undefined;
   /** The hierarchy. */
   nodes: TreeNode[];
   /** Controlled expanded ids. */
-  expanded?: string[];
+  expanded?: string[] | undefined;
   /** Initially expanded ids; `["*"]` for all. */
-  defaultExpanded?: string[];
+  defaultExpanded?: string[] | undefined;
   /** `single`: one current node. `multiple`: checkbox selection, cascading to descendants when `selectChildren`. `none`: expand/collapse only. */
-  selectable?: TreeSelectable;
+  selectable?: TreeSelectable | undefined;
   /** Controlled selected ids. */
-  selected?: string[];
+  selected?: string[] | undefined;
   /** Initially selected ids. */
-  defaultSelected?: string[];
+  defaultSelected?: string[] | undefined;
   /** With `multiple`, selecting a parent selects its (loaded) descendants; parents show indeterminate when only some are selected. */
-  selectChildren?: boolean;
+  selectChildren?: boolean | undefined;
   /** With `single`, moving focus to a node (an external keyboard, or assistive-technology navigation) also selects it. Off by default. */
-  selectOnFocus?: boolean;
+  selectOnFocus?: boolean | undefined;
   /** Vertical guide lines under open parents. */
-  showGuides?: boolean;
+  showGuides?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<TreeOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<TreeOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired with the selected ids. */
-  onSelectionChange?: (selected: string[]) => void;
+  onSelectionChange?: ((selected: string[]) => void) | undefined;
   /** Fired with the expanded ids. */
-  onExpandChange?: (expanded: string[]) => void;
+  onExpandChange?: ((expanded: string[]) => void) | undefined;
   /** Fired when a `children: "lazy"` node is expanded for the first time, with its id; the caller loads and replaces `children`. */
-  onExpand?: (id: string) => void;
+  onExpand?: ((id: string) => void) | undefined;
   /** Fired when a node is activated by tap; nodes with `href` navigate instead. */
-  onActivate?: (id: string) => void;
+  onActivate?: ((id: string) => void) | undefined;
 }
 
 const COPY = {

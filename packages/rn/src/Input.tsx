@@ -2,9 +2,9 @@ import * as React from 'react';
 import { AccessibilityInfo, Platform, TextInput, View, findNodeHandle } from 'react-native';
 import type {
   KeyboardTypeOptions,
-  NativeSyntheticEvent,
   ReturnKeyTypeOptions,
-  TextInputFocusEventData,
+  TextInputFocusEvent,
+  TextInputInstance,
   TextInputProps,
   TextStyle,
   ViewStyle,
@@ -46,35 +46,35 @@ export interface InputProps {
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
   /** Controlled value. Omit for an uncontrolled field. */
-  value?: string;
+  value?: string | undefined;
   /** Initial value for an uncontrolled field. */
-  defaultValue?: string;
+  defaultValue?: string | undefined;
   /** Example input shown while empty. Never the only description of what to enter. */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /** Persistent helper text below the label explaining format or purpose. Also the field's `accessibilityHint`. */
-  description?: string;
+  description?: string | undefined;
   /** Input type. Drives the keyboard (`keyboardType`, `textContentType`, `secureTextEntry`). */
-  type?: InputType;
+  type?: InputType | undefined;
   /** The field must have a value to submit. Shown in the label, not only by color. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Visually hide the label (it remains the field's `accessibilityLabel`). Only for a field whose context already names it. */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
-  size?: InputSize;
+  size?: InputSize | undefined;
   /** Not editable and not submitted. Stays visible and readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Marks the field as failing validation. Usually set by the Form; can be set directly. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** The error message. Setting it implies `invalid`. Explain what is wrong and how to fix it. */
-  error?: string;
+  error?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<InputOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<InputOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired on every value change with the new string value. */
-  onChange?: (value: string) => void;
+  onChange?: ((value: string) => void) | undefined;
   /** Fired when the field receives focus. */
-  onFocus?: (event: NativeSyntheticEvent<TextInputFocusEventData>) => void;
+  onFocus?: ((event: TextInputFocusEvent) => void) | undefined;
   /** Fired when the field loses focus. The usual moment to validate. */
-  onBlur?: (event: NativeSyntheticEvent<TextInputFocusEventData>) => void;
+  onBlur?: ((event: TextInputFocusEvent) => void) | undefined;
 }
 
 const KEYBOARD_TYPE: Record<InputType, KeyboardTypeOptions> = {
@@ -154,7 +154,7 @@ export function Input({
   const { tokens: t } = useTheme();
   const form = useFormContext();
   const fieldset = useFieldsetContext();
-  const inputRef = React.useRef<TextInput>(null);
+  const inputRef = React.useRef<TextInputInstance>(null);
   const [internalValue, setInternalValue] = React.useState<string>(defaultValue ?? '');
   const [focused, setFocused] = React.useState(false);
 
@@ -197,7 +197,7 @@ export function Input({
         }
         input.focus();
         const node = findNodeHandle(input);
-        if (node !== null) {
+        if (node != null) {
           AccessibilityInfo.setAccessibilityFocus(node);
         }
       },
@@ -232,12 +232,12 @@ export function Input({
     }
   };
 
-  const handleFocus = (event: NativeSyntheticEvent<TextInputFocusEventData>): void => {
+  const handleFocus = (event: TextInputFocusEvent): void => {
     setFocused(true);
     onFocus?.(event);
   };
 
-  const handleBlur = (event: NativeSyntheticEvent<TextInputFocusEventData>): void => {
+  const handleBlur = (event: TextInputFocusEvent): void => {
     setFocused(false);
     onBlur?.(event);
     if (form !== null && form.validateMode === 'blur') {

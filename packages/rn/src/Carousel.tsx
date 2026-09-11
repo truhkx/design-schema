@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, FlatList, Platform, Pressable, Text as RNText, View } from 'react-native';
-import type { AccessibilityActionEvent, LayoutChangeEvent, ListRenderItemInfo, TextStyle, ViewStyle, ViewToken } from 'react-native';
+import type { AccessibilityActionEvent, LayoutChangeEvent, ListRenderItemInfo, ListViewToken, TextStyle, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -46,23 +46,23 @@ export interface CarouselProps {
   /** One `CarouselSlide` per slide. */
   children: React.ReactNode;
   /** How many slides are visible at once at the widest layout. */
-  perView?: number;
+  perView?: number | undefined;
   /** Next from the last returns to the first. Off by default so users can tell where the end is. */
-  loop?: boolean;
+  loop?: boolean | undefined;
   /** Rotate automatically every `interval`. Never starts under reduced motion; stops for good on touch or the pause button. */
-  autoplay?: boolean;
+  autoplay?: boolean | undefined;
   /** Milliseconds between automatic advances. Below 5000 warns in development. */
-  interval?: number;
+  interval?: number | undefined;
   /** How slides are chosen directly. */
-  picker?: CarouselPicker;
+  picker?: CarouselPicker | undefined;
   /** Controlled current slide (zero-based). Omit for uncontrolled. */
-  activeIndex?: number;
+  activeIndex?: number | undefined;
   /** Swiping or scrolling snaps to slide boundaries. */
-  snap?: boolean;
+  snap?: boolean | undefined;
   /** Fired when the current slide changes, with the new index and the reason. */
-  onChange?: (index: number, reason: CarouselChangeReason) => void;
+  onChange?: ((index: number, reason: CarouselChangeReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<CarouselOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<CarouselOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 interface CollectedSlide {
@@ -268,7 +268,7 @@ export function Carousel({
   };
 
   const viewabilityConfig = React.useRef({ itemVisiblePercentThreshold: 60 }).current;
-  const onViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: ViewToken[] }): void => {
+  const onViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: ListViewToken[] }): void => {
     const first = viewableItems.find((entry) => entry.isViewable);
     if (!first || first.index === null || first.index === undefined || first.index === latest.current.currentIndex) {
       return;

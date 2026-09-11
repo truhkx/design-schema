@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -8,7 +7,8 @@ import {
   useState,
   type ComponentPropsWithoutRef,
   type CSSProperties,
-  type SyntheticEvent,
+  type Ref,
+  type SyntheticEvent, type ReactPortal,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -60,10 +60,10 @@ const OVERRIDE_HOOK: Record<AlertDialogOverridableBinding, string> = {
 };
 
 /** `iconSize` and `footerGap` also drive the composed Icon's and Stack's own sizing hooks, since each owns its own. */
-function overridesToStyle(overrides: Partial<Record<AlertDialogOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<AlertDialogOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  iconSizeRef?: TokenRef;
-  footerGapRef?: TokenRef;
+  iconSizeRef?: TokenRef | undefined;
+  footerGapRef?: TokenRef | undefined;
 } {
   const style: Record<string, string> = {};
   let iconSizeRef: TokenRef | undefined;
@@ -107,21 +107,21 @@ export interface AlertDialogProps
   /** What will happen and whether it can be undone, in one or two sentences. Required: a decision without consequences stated is not a decision. */
   description: string;
   /** The nature of the decision. Sets the status icon and the confirm button's variant (danger → danger Button; warning and info → primary). */
-  tone?: AlertDialogTone;
+  tone?: AlertDialogTone | undefined;
   /** The confirming action, restating it ("Delete files"). Never "OK" or "Yes". */
   confirmLabel: string;
   /** The declining action. Defaults to `copy.cancelLabel`. */
-  cancelLabel?: string;
+  cancelLabel?: string | undefined;
   /** Blocks confirm while a precondition is unmet (a typed confirmation, a loading state). Cancel always works. */
-  confirmDisabled?: boolean;
+  confirmDisabled?: boolean | undefined;
   /** The user chose the confirming action. The consumer performs it and closes. */
-  onConfirm?: () => void;
+  onConfirm?: (() => void) | undefined;
   /** The user declined, by the cancel button or Escape. Fired with reason `cancel` or `escape`. A scrim click does nothing. */
-  onCancel?: (reason: AlertDialogCancelReason) => void;
+  onCancel?: ((reason: AlertDialogCancelReason) => void) | undefined;
   /** Portal target for the dialog's DOM node. Defaults to `document.body`. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<AlertDialogOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<AlertDialogOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -139,25 +139,23 @@ export interface AlertDialogProps
  * collect input beyond a single typed confirmation (Dialog with a Form), or as a general "are you
  * sure" habit — if a team finds itself adding many, the actions need undo.
  */
-export const AlertDialog = forwardRef<HTMLDialogElement, AlertDialogProps>(function AlertDialog(
-  {
-    open,
-    heading,
-    description,
-    tone = 'danger',
-    confirmLabel,
-    cancelLabel,
-    confirmDisabled = false,
-    onConfirm,
-    onCancel,
-    container,
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const AlertDialog = function AlertDialog({
   ref,
-) {
+  open,
+  heading,
+  description,
+  tone = 'danger',
+  confirmLabel,
+  cancelLabel,
+  confirmDisabled = false,
+  onConfirm,
+  onCancel,
+  container,
+  overrides,
+  className,
+  style,
+  ...rest
+}: AlertDialogProps & { ref?: Ref<HTMLDialogElement> | undefined }): ReactPortal | null {
   const generatedId = useId();
   const headingId = `ds-alert-dialog${generatedId}-heading`;
   const descriptionId = `ds-alert-dialog${generatedId}-description`;
@@ -326,4 +324,4 @@ export const AlertDialog = forwardRef<HTMLDialogElement, AlertDialogProps>(funct
   );
 
   return createPortal(node, container ?? document.body);
-});
+};

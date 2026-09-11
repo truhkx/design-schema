@@ -22,22 +22,22 @@ export interface IconProps {
    */
   name: IconName;
   /** Rendered size, from the font-size scale so icons line up with text of the same size. */
-  size?: IconSize;
+  size?: IconSize | undefined;
   /** Size the glyph at 1em of the surrounding text and align it to the text baseline, ignoring `size`. For icons inside Text, Link and Button labels. */
-  inline?: boolean;
+  inline?: boolean | undefined;
   /**
    * Accessible name. When set (non-empty), the icon is meaningful and exposed as an
    * image with this name; when omitted or empty, it is decorative and hidden from
    * assistive technology. Most icons sit next to text and should have no label.
    */
-  label?: string;
+  label?: string | undefined;
   /**
    * React Native only: the color the parent passes, because there is no
    * `currentColor`. Falls back to `color.foreground`.
    */
-  color?: string;
+  color?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<IconOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<IconOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const SIZE_TOKEN = {
@@ -125,11 +125,11 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
       viewBox="0 0 16 16"
       fill="none"
       stroke={resolvedColor}
-      strokeWidth={strokeWidth}
+      strokeWidth={strokeWidth!}
       strokeLinecap="round"
       strokeLinejoin="round"
       accessibilityRole={decorative ? undefined : 'image'}
-      accessibilityLabel={decorative ? undefined : label}
+      accessibilityLabel={(decorative ? undefined : label)!}
       accessibilityElementsHidden={decorative}
       importantForAccessibility={decorative ? 'no' : 'auto'}
     >

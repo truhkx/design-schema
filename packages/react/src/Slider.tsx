@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useRef,
@@ -8,6 +7,7 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
@@ -17,7 +17,7 @@ import './Slider.css';
 export type SliderShowValue = 'always' | 'hover' | 'never';
 export type SliderValue = number | [number, number];
 /** One tick mark. Values snap to `step`; marks are decoration plus PageUp/PageDown stops. */
-export type SliderMark = { value: number; label?: string };
+export type SliderMark = { value: number; label?: string | undefined };
 
 /** copy.* — used verbatim; `{label}`/`{low}`/`{high}` are replaced as noted. */
 const COPY = {
@@ -55,7 +55,7 @@ export type SliderOverridableBinding =
 /** Bindings owned by the root; fontSize/labelWeight/valueSize/helperSize/fontFamily/errorText are
  * forwarded into the composed Text elements' own `overrides` contract instead, since Text already
  * exposes them (the same split Meter and RadioGroup use). */
-const ROOT_OVERRIDE_HOOK: Partial<Record<SliderOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<SliderOverridableBinding, string | undefined>> = {
   track: '--ds-slider-track',
   trackHeight: '--ds-slider-track-height',
   trackRadius: '--ds-slider-track-radius',
@@ -73,18 +73,18 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<SliderOverridableBinding, string>> = {
   transition: '--ds-slider-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<SliderOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<SliderOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  descriptionTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  errorTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  descriptionTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  errorTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const descriptionTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const errorTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const descriptionTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const errorTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
 
   for (const binding of Object.keys(overrides) as SliderOverridableBinding[]) {
     const ref = overrides[binding];
@@ -129,41 +129,41 @@ export interface SliderProps extends Omit<ComponentPropsWithoutRef<'div'>, 'chil
   /** Field name for the Form. A range contributes `[min, max]`. */
   name: string;
   /** Lower bound. */
-  min?: number;
+  min?: number | undefined;
   /** Upper bound. */
-  max?: number;
+  max?: number | undefined;
   /** Arrow-key increment and snapping granularity. */
-  step?: number;
+  step?: number | undefined;
   /** With `marks`, snap drag and click to the marks instead of `step` (keys still move by step, PageUp/Down by mark). */
-  snapToMarks?: boolean;
+  snapToMarks?: boolean | undefined;
   /** Must have a value other than the default to submit (`copy.required`). */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Marks the slider invalid (`copy.invalid` when no `error`). */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Controlled value; for a range, a two-number array. */
-  value?: SliderValue;
+  value?: SliderValue | undefined;
   /** Initial value (or pair). Defaults to `min` (or `[min, max]`). */
-  defaultValue?: SliderValue;
+  defaultValue?: SliderValue | undefined;
   /** Two thumbs choosing a minimum and a maximum; the thumbs cannot cross. */
-  range?: boolean;
+  range?: boolean | undefined;
   /** Renders the displayed and announced value ("$40", "3 h 20 min"). Defaults to the number. */
-  formatValue?: (value: number) => string;
+  formatValue?: ((value: number) => string) | undefined;
   /** Where the value text appears: always beside the label, only while dragging or focused (as a bubble above the thumb), or not at all (when a NumberInput beside the slider shows it). */
-  showValue?: SliderShowValue;
+  showValue?: SliderShowValue | undefined;
   /** Tick marks on the track, optionally labelled. */
-  marks?: SliderMark[];
+  marks?: SliderMark[] | undefined;
   /** Not adjustable, still readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Helper text. */
-  description?: string;
+  description?: string | undefined;
   /** Error message. */
-  error?: string;
+  error?: string | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<SliderOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SliderOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired on every value change while dragging or with keys (number or pair). */
-  onChange?: (value: SliderValue) => void;
+  onChange?: ((value: SliderValue) => void) | undefined;
   /** Fired once when the interaction ends (pointer up, key released). Use for expensive effects. */
-  onChangeEnd?: (value: SliderValue) => void;
+  onChangeEnd?: ((value: SliderValue) => void) | undefined;
 }
 
 /* Only declared when the bundler defines it; never assumed. */
@@ -190,35 +190,33 @@ interface ThumbDescriptor {
  * filters (price, dates as numbers). Add `marks` when a few values are meaningful stops. Pair it
  * with a NumberInput (`showValue: never`) when exact entry also matters.
  */
-export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
-  {
-    label,
-    name,
-    min = 0,
-    max = 100,
-    step = 1,
-    snapToMarks = false,
-    required = false,
-    invalid = false,
-    value,
-    defaultValue,
-    range = false,
-    formatValue,
-    showValue = 'always',
-    marks,
-    disabled = false,
-    description,
-    error,
-    overrides,
-    onChange,
-    onChangeEnd,
-    id: idProp,
-    className,
-    style,
-    ...rest
-  },
+export const Slider = function Slider({
   ref,
-) {
+  label,
+  name,
+  min = 0,
+  max = 100,
+  step = 1,
+  snapToMarks = false,
+  required = false,
+  invalid = false,
+  value,
+  defaultValue,
+  range = false,
+  formatValue,
+  showValue = 'always',
+  marks,
+  disabled = false,
+  description,
+  error,
+  overrides,
+  onChange,
+  onChangeEnd,
+  id: idProp,
+  className,
+  style,
+  ...rest
+}: SliderProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const form = useFormContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-slider${generatedId}`);
@@ -309,7 +307,7 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
     const values = sortedMarkValues();
     if (values.length === 0) return snapValue(raw);
     let nearest = values[0];
-    let bestDistance = Math.abs(raw - nearest);
+    let bestDistance = Math.abs(raw - nearest!);
     for (const candidate of values) {
       const distance = Math.abs(raw - candidate);
       if (distance < bestDistance) {
@@ -317,7 +315,7 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
         bestDistance = distance;
       }
     }
-    return nearest;
+    return nearest!;
   }
 
   /** Drag/click snapping: marks when `snapToMarks`, otherwise `step`. Keys always snap to `step` (see `handleThumbKeyDown`). */
@@ -330,11 +328,11 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
     if (values.length === 0) return from + direction * step * 10;
     if (direction === 1) {
       const next = values.find((v) => v > from);
-      return next ?? values[values.length - 1];
+      return (next ?? values[values.length - 1])!;
     }
     const reversed = [...values].reverse();
     const prev = reversed.find((v) => v < from);
-    return prev ?? values[0];
+    return (prev ?? values[0])!;
   }
 
   function commitValue(next: SliderValue) {
@@ -609,4 +607,4 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
       ) : null}
     </div>
   );
-});
+};

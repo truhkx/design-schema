@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Table, type TableColumn, type TableRow } from './Table';
 import { Button } from './Button';
 import { Icon } from './Icon';
@@ -32,7 +32,7 @@ const COLUMNS: TableColumn[] = [
   { key: 'due', header: 'Due date', hideBelow: 'prose' },
 ];
 
-const meta = {
+const meta: Meta<typeof Table> = {
   title: 'Table/React',
   component: Table,
   args: {
@@ -41,7 +41,7 @@ const meta = {
     data: DATA,
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof Table>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

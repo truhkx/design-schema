@@ -98,7 +98,7 @@ class TestMain:
     def test_missing_generated_file_is_a_clear_failure(self, tmp_path, monkeypatch, capsys):
         monkeypatch.setattr(cc, "GENERATED", tmp_path / "nope.json")
         assert cc.main() == 1
-        assert "run tools/parse.py first" in capsys.readouterr().err
+        assert "run tools/parse.ts first" in capsys.readouterr().err
 
     def test_a_passing_pair_returns_zero(self, sandbox, capsys):
         sandbox(self._component([{"foreground": "color.foreground.muted",

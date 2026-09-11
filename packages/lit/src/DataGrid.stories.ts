@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import './DataGrid.js';
 import type {
@@ -20,14 +20,14 @@ interface DataGridArgs {
   hideCaption: boolean;
   columns: DataGridColumn[];
   data: DataGridRow[];
-  rowCount?: number;
+  rowCount?: number | undefined;
   selectable: DataGridSelectable;
   editable: boolean;
   density: DataGridDensity;
   stickyHeader: boolean;
   height: DataGridHeight;
   loading: boolean;
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
   showStatusBar: boolean;
 }
 

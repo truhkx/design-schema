@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View } from 'react-native';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './Button';
 import type { ButtonVariant } from './Button';
 import { Icon } from './Icon';
@@ -60,8 +60,8 @@ function GlyphIcon({
   inverse = false,
 }: {
   name: IconName;
-  variant?: ButtonVariant;
-  inverse?: boolean;
+  variant?: ButtonVariant | undefined;
+  inverse?: boolean | undefined;
 }): React.JSX.Element {
   const { tokens } = useTheme();
   const color = variant === 'ghost' && inverse ? tokens.colorInverseLink : (tokens[FOREGROUND_TOKEN[variant]] as string);

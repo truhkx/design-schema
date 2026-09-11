@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AlertDialog, type AlertDialogProps } from './AlertDialog';
 import { Button } from './Button';
 
@@ -29,7 +29,7 @@ function AlertDialogHarness({ onConfirm, onCancel, ...rest }: Partial<AlertDialo
   );
 }
 
-const meta = {
+const meta: Meta<typeof AlertDialog> = {
   title: 'AlertDialog/React',
   component: AlertDialog,
   args: {
@@ -42,7 +42,7 @@ const meta = {
   },
   render: (args) => <AlertDialogHarness {...args} />,
   tags: ['autodocs'],
-} satisfies Meta<typeof AlertDialog>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

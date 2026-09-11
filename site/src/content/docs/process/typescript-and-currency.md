@@ -20,7 +20,7 @@ The second is currency. The packages are pinned to majors that are one to three 
 | storybook | ^8.3 | 10.6 | Single `storybook` package with framework subpaths; `@storybook/addon-essentials` is gone (core); CSF factories; Vitest addon for browser tests. |
 | vite | ^5.4 | 8.3 | Rolldown + Oxc; `esbuild` options become `oxc`. |
 | vitest | ^3.2 | 5.0 (Sep 3 2026) | Node 22+, Vite ≥ 6.4; browser mode is the Lit/keyboard runner. |
-| lit | ^3.2 | 3.3.3 | Standard decorators (`accessor`) — drop `experimentalDecorators` / `useDefineForClassFields: false`. |
+| lit | ^3.2 | 3.3.3 | Standard decorators (`accessor`) — drop `experimentalDecorators` / `useDefineForClassFields: false`. Oxc (Vite 8, rolldown) parses but does not lower them, so `packages/lit/decorators.plugin.mjs` runs Babel's decorators plugin in the build, the browser tests and Storybook. |
 | react-native | ^0.74 | 0.87 (Aug 11 2026) | Bundles React 19.2; strict TypeScript API default; Node 22; SwiftPM (experimental). |
 | tsup | 8.5 | — | Superseded by **tsdown** (Rolldown); `isolatedDeclarations` emits `.d.ts` without the TS API, which is what TS 7 needs. |
 
@@ -30,7 +30,7 @@ Node 22 LTS is the floor (Vitest 5 and RN 0.87 both require it); Node 24 runs th
 
 One tool per job, in dependency order, each job replacing a Python file with a `.ts` file that produces byte-identical output on the current docs before the Python file is deleted. The Zod schema in `schema/component.ts` becomes the single source of truth: `parse.ts` validates with it, and `schema/component.schema.json` is regenerated from it (`z.toJSONSchema`) so the two can never drift.
 
-1. `tools/parse.ts` — YAML frontmatter → `generated/components.json`, prompts, the same `DocError` messages. Runs with `node tools/parse.ts` (Node 24 type stripping; `tsx` fallback for Node 22).
+1. `tools/parse.ts` — YAML frontmatter → `generated/components.json`, prompts, the same `DocError` messages. Runs with `node tools/parse.ts` (Node 24 type stripping; `tsx` fallback for Node 22). **Done 2026-09-11**: byte-identical `generated/` on the current docs (593 files, stdout, exit code), then `tools/parse.py` deleted. The YAML the prompts embed is written by `tools/lib/pyyaml.ts`, a port of PyYAML's dumper, so the generation lock hashes did not move; `tools/schema.ts` derives `schema/component.schema.json` from the Zod schema (`pnpm schema`, checked by `pnpm check`); the tests are `tools/__tests__/*.test.ts` (`pnpm test:tools`).
 2. `tools/check_contrast.ts` (+ `oklch.ts`) — same pairs, same numbers to two decimals.
 3. `tools/keyboard_tests.ts`, `tools/lint_literals.ts`, `tools/behavior_tests.ts`, `tools/spec_sheet.ts`, `tools/checks.ts`.
 4. `tools/theme.ts` / `tools/tokens.ts` — delete the Python token fallback; Style Dictionary 4 (`tokens/build.mjs`) is the only token build, extended with the Swift format the iOS plan needs.
@@ -53,9 +53,9 @@ Order matters because each step's gate is the previous step's toolchain.
 
 ## Workstream C — stay current automatically
 
-- `renovate.json` extends `config:best-practices`; minor and patch updates automerge once CI is green; majors are grouped weekly (one PR per ecosystem: react, storybook, vite+vitest, typescript, react-native) so a breaking change arrives with its friends.
-- CI job `currency`: `pnpm outdated --format json` fails the build when any production or dev dependency is more than one minor behind its latest tag. Exceptions live in `.currency-allow.json` with an expiry date and a reason.
-- CI job `next` (allowed to fail, reported): React canary, TypeScript nightly, Storybook next — so the day a major lands the breakage is already known.
+- `renovate.json` extends `config:best-practices` with `rangeStrategy: "bump"` and lockfile maintenance; minor and patch updates automerge (`automergeType: "pr"`) once CI is green; majors are grouped weekly (one PR per ecosystem: react, storybook, vite+vitest+playwright, typescript+tsdown, react-native+expo+svg, lit) so a breaking change arrives with its friends.
+- CI job `currency`: `pnpm outdated --recursive --format json` is parsed by `tools/currency.ts` (run directly by Node's type stripping, no build step) and the job fails when any dependency is more than one minor behind its `latest` tag. Exceptions live in `.currency-allow.json` as `{ "name", "until": "YYYY-MM-DD", "reason" }` entries, and an entry past its `until` date fails the job on its own; `node tools/currency.ts` gives the same report locally.
+- CI job `next` (`continue-on-error: true`): copies the workspace to a temp directory, installs `react@canary`, `typescript@next` and `storybook@next` there, runs typecheck and the package tests, and writes the outcome to the job summary — so the day a major lands the breakage is already known.
 - Templates and conventions carry the versions as facts, not aspirations: `prompts/templates/*.md` say "Storybook 10 CSF3", "React 19 (`ref` prop)", "TypeScript 7 isolatedDeclarations". Job 260 rewrites those lines; the next regeneration then emits current idioms.
 
 ## Jobs for Claude Code

@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Landmark } from './Landmark';
 import { Heading } from './Heading';
 import { Text } from './Text';
 import { Stack } from './Stack';
 
-const meta = {
+const meta: Meta<typeof Landmark> = {
   title: 'Landmark/React',
   component: Landmark,
   args: {
@@ -12,7 +12,7 @@ const meta = {
     label: 'Related articles',
     children: <Text>Content of the region.</Text>,
   },
-} satisfies Meta<typeof Landmark>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

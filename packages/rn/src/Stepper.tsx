@@ -16,8 +16,8 @@ export type StepperStepStatus = 'complete' | 'current' | 'upcoming' | 'error';
 export type StepperStep = {
   id: string;
   label: string;
-  description?: string;
-  status?: StepperStepStatus;
+  description?: string | undefined;
+  status?: StepperStepStatus | undefined;
 };
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
@@ -42,21 +42,21 @@ export type StepperOverridableBinding =
 
 export interface StepperProps {
   /** Accessible name of the navigation landmark. Defaults to `copy.navLabel`. */
-  label?: string;
+  label?: string | undefined;
   /** The steps in order. */
   steps: StepperStep[];
   /** The id of the current step. */
   current: string;
   /** Vertical shows descriptions under each label and suits a side column; horizontal collapses to `compact` below the prose width. */
-  orientation?: StepperOrientation;
+  orientation?: StepperOrientation | undefined;
   /** Which steps are Pressables: `none` (display only), `completed` steps (the usual — you can go back, not skip ahead), or `all` (a settings-style flow where order does not matter). */
-  navigable?: StepperNavigable;
+  navigable?: StepperNavigable | undefined;
   /** Show only the current step's label and "Step 2 of 5"; the indicators stay. Automatic on narrow viewports for horizontal steppers. Has no effect on `vertical`. */
-  compact?: boolean;
+  compact?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<StepperOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a navigable step is chosen, with its id. The container changes `current`; the stepper never changes it itself. */
-  onStepSelect?: (id: string) => void;
+  onStepSelect?: ((id: string) => void) | undefined;
 }
 
 const COPY = {
@@ -109,20 +109,20 @@ interface StepStyleTokens {
   indicatorBackground: string;
   indicatorBorderWidth: number;
   indicatorFontSize: number;
-  indicatorFontSizeRef?: TokenRef;
+  indicatorFontSizeRef?: TokenRef | undefined;
   indicatorFontWeight: number;
   stepHoverColor: string;
   stepRadius: number;
   partGap: number;
   fontFamily: string;
-  fontFamilyRef?: TokenRef;
+  fontFamilyRef?: TokenRef | undefined;
   minTarget: number;
   focusRingColor: string;
   focusRingWidth: number;
-  labelWeightRef?: TokenRef;
-  labelCurrentWeightRef?: TokenRef;
-  labelSizeRef?: TokenRef;
-  descriptionSizeRef?: TokenRef;
+  labelWeightRef?: TokenRef | undefined;
+  labelCurrentWeightRef?: TokenRef | undefined;
+  labelSizeRef?: TokenRef | undefined;
+  descriptionSizeRef?: TokenRef | undefined;
 }
 
 /**
@@ -468,7 +468,7 @@ function Connector({
   // Centers the line on the indicator's midpoint since the connector is a sibling, not a child, of the step it follows.
   const offset = indicatorSize / 2 - width / 2; // literal-ok: geometry derived from token-based sizes, not a design literal
 
-  const style: Animated.WithAnimatedObject<ViewStyle> = isHorizontal
+  const style: Animated.WithAnimatedValue<ViewStyle> = isHorizontal
     ? { width: gap, height: width, backgroundColor, marginTop: offset }
     : { width, height: gap, backgroundColor, marginLeft: offset };
 

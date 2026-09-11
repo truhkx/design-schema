@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Disclosure.js';
@@ -10,7 +10,7 @@ interface DisclosureArgs {
   summary: string;
   defaultOpen: boolean;
   disabled: boolean;
-  headingLevel?: DisclosureHeadingLevel;
+  headingLevel?: DisclosureHeadingLevel | undefined;
 }
 
 const meta: Meta<DisclosureArgs> = {

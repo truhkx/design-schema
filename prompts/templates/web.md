@@ -8,6 +8,7 @@ Write `packages/react/src/{{NAME}}.tsx` exporting a typed React function compone
 
 ## Rules
 
+- React 19: `ref` is a prop; no forwardRef; `useId`; Actions are not used by components. Type the component as `function {{NAME}}({ ref, …rest }: {{NAME}}Props & { ref?: Ref<HTMLElement> })` (the root element's type in place of `HTMLElement`) and attach `ref` to the root; generated ids come from `useId()`; never `useActionState`, `useFormStatus`, or a form `action` prop.
 - Render the element and attributes declared under `platforms.web`. Map each event to its `platforms.web` name.
 - Style ONLY through the CSS custom properties generated from tokens (`--color-…`, `--space-…`, `--font-…`, `--radius-…`). Never hard-code a color, size, or font. A style binding like `color.action.{variant}.background` becomes `var(--color-action-${variant}-background)`.
 - Implement every item in `a11y.requires`:
@@ -31,7 +32,9 @@ Write `packages/react/src/{{NAME}}.tsx` exporting a typed React function compone
 - Stories are named after the prop and value in PascalCase (`ToneInfo`, `RoleBanner`); demo stories are titled `Demo/<Name>/<Platform>`.
 - Icons: use the system `Icon` component for every glyph the docs name (`<Icon name="external" inline />`, `<ds-icon name="close">`, `<Icon name="check" color={…} />`); never draw an inline SVG or a Unicode glyph by hand. Decorative icons take no label; a glyph that carries meaning gets one.
 - Enum props whose values are quoted digits (Heading `level`, Stack `gap`) accept both the string and the number.
-- Stories: Storybook 8 CSF3 with `@storybook/react`; title `'<Name>/React'`; one story per enum value plus Default.
+- Stories: Storybook 10 CSF3 with `@storybook/react-vite`; title `'<Name>/React'`; one story per enum value plus Default.
+- TypeScript 7 with `isolatedDeclarations`: every exported symbol carries an explicit type annotation and no export type is inferred — the component returns `ReactElement` (`ReactElement | null` when it can render nothing), exported constants, contexts and helpers are annotated, and `const meta: Meta<typeof {{NAME}}> = …` in stories. `exactOptionalPropertyTypes` (`name?: T | undefined`), `noUncheckedIndexedAccess` and `verbatimModuleSyntax` (`import type`) are on.
+- Tests run on Vitest 5 over Vite 8 (jsdom, `@testing-library/react`); the behavior scenarios below become `{{NAME}}.test.tsx`.
 - Add a short JSDoc block that includes the "When to use" guidance verbatim.
 
 ## Component schema

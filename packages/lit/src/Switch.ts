@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
@@ -80,7 +80,7 @@ export class DsSwitch extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--ds-switch-font-family);
@@ -221,36 +221,36 @@ export class DsSwitch extends LitElement {
   `;
 
   /** Visible label naming the thing being turned on or off. Also the accessible name. */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** Optional field name. When inside a Form the checked state is collected; most switches are not in forms. */
-  @property() name = '';
+  @property() accessor name = '';
 
   /** Controlled state. Omit for an uncontrolled control. The attribute is the initial state only; not reflected. */
-  @property({ type: Boolean }) checked?: boolean;
+  @property({ type: Boolean }) accessor checked: boolean | undefined;
 
   /** Initial state for an uncontrolled control. */
-  @property({ type: Boolean, attribute: 'default-checked' }) defaultChecked = false;
+  @property({ type: Boolean, attribute: 'default-checked' }) accessor defaultChecked = false;
 
   /** Cannot be toggled. Stays visible, readable and focusable. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Persistent helper text below the label explaining the effect. */
-  @property() description?: string;
+  @property() accessor description: string | undefined;
 
   /** Where the label sits relative to the track. `start` is the settings-list convention. */
-  @property({ reflect: true, attribute: 'label-position' }) labelPosition: SwitchLabelPosition = 'start';
+  @property({ reflect: true, attribute: 'label-position' }) accessor labelPosition: SwitchLabelPosition = 'start';
 
   /** Per-instance style overrides: `{ trackWidth: 'space.12' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<SwitchOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<SwitchOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled checked state (seeded from `defaultChecked`). */
-  @state() private internalChecked = false;
+  @state() private accessor internalChecked = false;
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
-  @state() private formDisabled = false;
+  @state() private accessor formDisabled = false;
 
-  @query('#control') private readonly inputEl!: HTMLInputElement;
+  @query('#control') private accessor inputEl!: HTMLInputElement;
 
   private readonly internals: ElementInternals;
 
@@ -319,7 +319,7 @@ export class DsSwitch extends LitElement {
     this.syncInternals();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const isDisabled = this.disabled || this.formDisabled;
     return html`
       <div class="row" @click=${this.handleRowClick}>

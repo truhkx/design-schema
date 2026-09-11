@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Heading.js';
@@ -6,7 +6,7 @@ import type { HeadingAlign, HeadingLevel, HeadingSize } from './Heading.js';
 
 interface HeadingArgs {
   level: HeadingLevel;
-  size?: HeadingSize;
+  size?: HeadingSize | undefined;
   align: HeadingAlign;
   text: string;
 }

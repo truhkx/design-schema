@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -12,7 +12,7 @@ export type SliderShowValue = 'always' | 'hover' | 'never';
 /** Shape of each entry in `marks`. */
 export interface SliderMark {
   value: number;
-  label?: string;
+  label?: string | undefined;
 }
 
 /** A single value, or `[min, max]` for `range`. */
@@ -135,7 +135,7 @@ export class DsSlider extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--ds-slider-font-family);
@@ -325,60 +325,60 @@ export class DsSlider extends LitElement {
   `;
 
   /** Visible label naming the quantity. Also the accessible name (or its basis, for a range). */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** Field name for the Form. A range contributes two entries under this name. */
-  @property() name = '';
+  @property() accessor name = '';
 
   /** Lower bound. */
-  @property({ type: Number }) min = 0;
+  @property({ type: Number }) accessor min = 0;
 
   /** Upper bound. */
-  @property({ type: Number }) max = 100;
+  @property({ type: Number }) accessor max = 100;
 
   /** Arrow-key increment and snapping granularity. */
-  @property({ type: Number }) step = 1;
+  @property({ type: Number }) accessor step = 1;
 
   /** With `marks`, snap drag and click to the marks instead of `step` (keys still move by step, PageUp/Down by mark). */
-  @property({ type: Boolean }) snapToMarks = false;
+  @property({ type: Boolean }) accessor snapToMarks = false;
 
   /** Must have a value other than the default to submit. */
-  @property({ type: Boolean }) required = false;
+  @property({ type: Boolean }) accessor required = false;
 
   /** Controlled value; for a range, `[min, max]`. Omit for an uncontrolled slider. */
-  @property({ attribute: false }) value?: SliderValue;
+  @property({ attribute: false }) accessor value: SliderValue | undefined;
 
   /** Initial value (or pair) for an uncontrolled slider. Defaults to `min` (or `[min, max]`). */
-  @property({ attribute: false }) defaultValue?: SliderValue;
+  @property({ attribute: false }) accessor defaultValue: SliderValue | undefined;
 
   /** Two thumbs choosing a minimum and a maximum; the thumbs cannot cross. */
-  @property({ type: Boolean, reflect: true }) range = false;
+  @property({ type: Boolean, reflect: true }) accessor range = false;
 
   /** Renders the displayed and announced value. Defaults to the plain number. */
-  @property({ attribute: false }) formatValue?: (value: number) => string;
+  @property({ attribute: false }) accessor formatValue: ((value: number) => string) | undefined;
 
   /** Where the value text appears: beside the label, as a bubble while dragging/focused, or never (visually). */
-  @property({ reflect: true, attribute: 'show-value' }) showValue: SliderShowValue = 'always';
+  @property({ reflect: true, attribute: 'show-value' }) accessor showValue: SliderShowValue = 'always';
 
   /** Tick marks on the track, optionally labelled. */
-  @property({ attribute: false }) marks: SliderMark[] = [];
+  @property({ attribute: false }) accessor marks: SliderMark[] = [];
 
   /** Not adjustable. Stays visible, readable and focusable (WCAG 2.1.1); interaction is guarded, not removed. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Persistent helper text. */
-  @property() description?: string;
+  @property() accessor description: string | undefined;
 
   /** Per-instance style overrides: `{ trackRadius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<SliderOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<SliderOverridableBinding, TokenRef | undefined>> | undefined;
 
-  private errorValue?: string;
+  private errorValue?: string | undefined;
 
   /** The error message. Setting it implies `invalid`. */
-  @property()
   get error(): string | undefined {
     return this.errorValue;
   }
+  @property()
   set error(value: string | undefined) {
     const old = this.errorValue;
     this.errorValue = value;
@@ -388,26 +388,26 @@ export class DsSlider extends LitElement {
   }
 
   /** Marks the slider as failing validation. Usually set by the Form; can be set directly. */
-  @property({ type: Boolean, reflect: true }) invalid = false;
+  @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
   /** Uncontrolled value (seeded from `defaultValue`, or the current bounds, when nothing else is set). */
-  @state() private internalValue?: SliderValue;
+  @state() private accessor internalValue: SliderValue | undefined;
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
-  @state() private formDisabled = false;
+  @state() private accessor formDisabled = false;
 
   /** Index of the thumb currently being dragged (halo + bubble). */
-  @state() private draggingIndex: number | null = null;
+  @state() private accessor draggingIndex: number | null = null;
 
   /** Index of the thumb currently focused (bubble in `showValue: hover`). */
-  @state() private focusedIndex: number | null = null;
+  @state() private accessor focusedIndex: number | null = null;
 
   /** Set by `keydown` so the matching `keyup` knows to fire `change-end`. */
   private pendingEndIndex: number | null = null;
 
   private readonly instanceId = nextSliderId();
 
-  @query('.track') private readonly trackEl!: HTMLDivElement;
+  @query('.track') private accessor trackEl!: HTMLDivElement;
 
   private readonly internals: ElementInternals;
 
@@ -488,7 +488,7 @@ export class DsSlider extends LitElement {
     this.syncInternals();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const value = this.currentValue;
     const displayText = this.formatDisplay(value);
     const describedBy =
@@ -619,7 +619,7 @@ export class DsSlider extends LitElement {
   }
 
   private thumbValue(index: number): number {
-    return this.range ? this.pairValue()[index] : (this.currentValue as number);
+    return this.range ? this.pairValue()[index]! : (this.currentValue as number);
   }
 
   private formatOne(value: number): string {
@@ -667,7 +667,7 @@ export class DsSlider extends LitElement {
   private snapToNearestMark(value: number): number {
     return this.marks.reduce(
       (nearest, mark) => (Math.abs(mark.value - value) < Math.abs(nearest - value) ? mark.value : nearest),
-      this.marks[0].value,
+      this.marks[0]!.value,
     );
   }
 
@@ -820,8 +820,8 @@ export class DsSlider extends LitElement {
     );
   }
 
-  private get labelTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef>> {
-    const result: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  private get labelTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
+    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
     if (this.overrides?.fontFamily) {
       result.fontFamily = this.overrides.fontFamily;
     }
@@ -834,8 +834,8 @@ export class DsSlider extends LitElement {
     return result;
   }
 
-  private get valueTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef>> {
-    const result: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  private get valueTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
+    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
     if (this.overrides?.fontFamily) {
       result.fontFamily = this.overrides.fontFamily;
     }
@@ -845,8 +845,8 @@ export class DsSlider extends LitElement {
     return result;
   }
 
-  private get descriptionTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef>> {
-    const result: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  private get descriptionTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
+    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
     if (this.overrides?.fontFamily) {
       result.fontFamily = this.overrides.fontFamily;
     }
@@ -857,7 +857,7 @@ export class DsSlider extends LitElement {
   }
 
   /** bubbleText: color.inverse.foreground, locked — forwarded as a fixed override, like Tooltip's popup text. */
-  private get bubbleTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef>> {
+  private get bubbleTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
     return { color: 'color.inverse.foreground' };
   }
 

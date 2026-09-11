@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './DatePicker.js';
@@ -7,22 +7,22 @@ import type { DatePickerValue } from './DatePicker.js';
 interface DatePickerArgs {
   label: string;
   name: string;
-  value?: DatePickerValue;
-  defaultValue?: DatePickerValue;
-  open?: boolean;
+  value?: DatePickerValue | undefined;
+  defaultValue?: DatePickerValue | undefined;
+  open?: boolean | undefined;
   range: boolean;
-  min?: string;
-  max?: string;
-  locale?: string;
+  min?: string | undefined;
+  max?: string | undefined;
+  locale?: string | undefined;
   showWeekNumbers: boolean;
-  placeholder?: string;
-  description?: string;
+  placeholder?: string | undefined;
+  description?: string | undefined;
   required: boolean;
   hideLabel: boolean;
   size: 'sm' | 'md';
   disabled: boolean;
   invalid: boolean;
-  error?: string;
+  error?: string | undefined;
 }
 
 const meta: Meta<DatePickerArgs> = {

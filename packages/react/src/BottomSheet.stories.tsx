@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { BottomSheet, type BottomSheetProps } from './BottomSheet';
 import { Button } from './Button';
 import { Input } from './Input';
@@ -45,7 +45,7 @@ const defaultBody = (
   </Stack>
 );
 
-const meta = {
+const meta: Meta<typeof BottomSheet> = {
   title: 'BottomSheet/React',
   component: BottomSheet,
   args: {
@@ -59,7 +59,7 @@ const meta = {
   },
   render: (args) => <BottomSheetHarness {...args} />,
   tags: ['autodocs'],
-} satisfies Meta<typeof BottomSheet>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

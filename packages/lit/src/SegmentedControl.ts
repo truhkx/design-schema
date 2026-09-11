@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -12,8 +12,8 @@ export type SegmentedControlSize = 'sm' | 'md';
 export interface SegmentedControlOption {
   value: string;
   label: string;
-  icon?: IconName;
-  disabled?: boolean;
+  icon?: IconName | undefined;
+  disabled?: boolean | undefined;
 }
 
 /** Detail carried by the `change` CustomEvent. */
@@ -107,7 +107,7 @@ export class DsSegmentedControl extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: inline-flex;
       max-inline-size: 100%;
@@ -249,39 +249,39 @@ export class DsSegmentedControl extends LitElement {
   `;
 
   /** Accessible name of the control ("View mode"). Not shown. */
-  @property() label!: string;
+  @property() accessor label!: string;
 
   /** Two to five options in display order. A property, not an attribute. */
-  @property({ attribute: false }) options: SegmentedControlOption[] = [];
+  @property({ attribute: false }) accessor options: SegmentedControlOption[] = [];
 
   /** Controlled selected value. Omit for uncontrolled. */
-  @property({ reflect: true }) value?: string;
+  @property({ reflect: true }) accessor value: string | undefined;
 
   /** Initially selected value. Defaults to the first enabled option. */
-  @property({ attribute: 'default-value' }) defaultValue?: string;
+  @property({ attribute: 'default-value' }) accessor defaultValue: string | undefined;
 
   /** Show icons only; every option must have one. Labels become accessible names. */
-  @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) iconOnly = false;
+  @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) accessor iconOnly = false;
 
   /** Toolbar (`sm`) or standard (`md`) height. */
-  @property({ reflect: true }) size: SegmentedControlSize = 'md';
+  @property({ reflect: true }) accessor size: SegmentedControlSize = 'md';
 
   /** Stretch to the container width with equal segments. */
-  @property({ type: Boolean, reflect: true }) fill = false;
+  @property({ type: Boolean, reflect: true }) accessor fill = false;
 
   /** Per-instance style overrides: `{ segmentRadius: 'radius.md' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<SegmentedControlOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<SegmentedControlOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled selection, seeded from `defaultValue` (or the first enabled option) on first update. */
-  @state() private internalValue?: string;
+  @state() private accessor internalValue: string | undefined;
 
   /** The segment currently carrying the roving tabindex and (usually) real focus. */
-  @state() private focusedValue: string | null = null;
+  @state() private accessor focusedValue: string | null = null;
 
-  @query('.group') private readonly groupEl?: HTMLElement;
-  @query('.indicator') private readonly indicatorEl?: HTMLElement;
+  @query('.group') private accessor groupEl!: HTMLElement | null;
+  @query('.indicator') private accessor indicatorEl!: HTMLElement | null;
 
-  private resizeObserver?: ResizeObserver;
+  private resizeObserver?: ResizeObserver | undefined;
 
   /** The currently selected value, controlled or not. */
   get currentValue(): string | null {
@@ -320,7 +320,7 @@ export class DsSegmentedControl extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const selected = this.currentValue;
     return html`
       <div class="group" part="group" role="radiogroup" aria-label=${this.label} @keydown=${this.handleKeydown}>
@@ -396,7 +396,7 @@ export class DsSegmentedControl extends LitElement {
     } else if (nextIndex >= items.length) {
       nextIndex = 0;
     }
-    this.focusAndSelect(items[nextIndex].value);
+    this.focusAndSelect(items[nextIndex]!.value);
   }
 
   private selectEdge(edge: 'first' | 'last'): void {
@@ -404,7 +404,7 @@ export class DsSegmentedControl extends LitElement {
     if (items.length === 0) {
       return;
     }
-    this.focusAndSelect(edge === 'first' ? items[0].value : items[items.length - 1].value);
+    this.focusAndSelect(edge === 'first' ? items[0]!.value : items[items.length - 1]!.value);
   }
 
   private focusAndSelect(value: string): void {

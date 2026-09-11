@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
@@ -96,7 +96,7 @@ export class DsInput extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--font-family-body);
@@ -249,31 +249,31 @@ export class DsInput extends LitElement {
   `;
 
   /** Visible label. Always rendered; never replaced by a placeholder. */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** Field name used by the enclosing Form when collecting values. */
-  @property() name = '';
+  @property() accessor name = '';
 
   /**
    * Controlled value. Omit for an uncontrolled field. Reading it after the user
    * types returns the current value (like a native input's `.value`).
    */
-  @property() value?: string;
+  @property() accessor value: string | undefined;
 
   /** Initial value for an uncontrolled field. */
-  @property({ attribute: 'default-value' }) defaultValue?: string;
+  @property({ attribute: 'default-value' }) accessor defaultValue: string | undefined;
 
   /** Example input shown while empty. Never the only description of what to enter. */
-  @property() placeholder?: string;
+  @property() accessor placeholder: string | undefined;
 
   /** Persistent helper text below the label explaining format or purpose. */
-  @property() description?: string;
+  @property() accessor description: string | undefined;
 
   /** Input type. Drives the keyboard on touch platforms and browser validation on web. */
-  @property({ reflect: true }) type: InputType = 'text';
+  @property({ reflect: true }) accessor type: InputType = 'text';
 
   /** Visually hide the label (it remains the accessible name via the native `<label for>`). */
-  @property({ type: Boolean, attribute: 'hide-label' }) hideLabel = false;
+  @property({ type: Boolean, attribute: 'hide-label' }) accessor hideLabel = false;
 
   /**
    * sm swaps paddingBlock/paddingInline/minTarget for their Sm bindings and the
@@ -281,24 +281,24 @@ export class DsInput extends LitElement {
    * component's `platforms.lit.reflect`, but reflected anyway since the size
    * variants are expressed as CSS attribute selectors, matching Search's `size`.
    */
-  @property({ reflect: true }) size: InputSize = 'md';
+  @property({ reflect: true }) accessor size: InputSize = 'md';
 
   /** The field must have a value to submit. Shown in the label, not only by color. */
-  @property({ type: Boolean, reflect: true }) required = false;
+  @property({ type: Boolean, reflect: true }) accessor required = false;
 
   /** Not editable and not submitted. Stays visible and readable. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Marks the field as failing validation. Usually set by the Form; can be set directly. */
-  @property({ type: Boolean, reflect: true }) invalid = false;
+  @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
-  private errorValue?: string;
+  private errorValue?: string | undefined;
 
   /** The error message. Setting it implies `invalid`. Explain what is wrong and how to fix it. */
-  @property()
   get error(): string | undefined {
     return this.errorValue;
   }
+  @property()
   set error(value: string | undefined) {
     const old = this.errorValue;
     this.errorValue = value;
@@ -309,15 +309,15 @@ export class DsInput extends LitElement {
   }
 
   /** HTML autocomplete token (e.g. `email`, `given-name`). */
-  @property() autocomplete?: string;
+  @property() accessor autocomplete: string | undefined;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<InputOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<InputOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
-  @state() private formDisabled = false;
+  @state() private accessor formDisabled = false;
 
-  @query('#field') private readonly inputEl!: HTMLInputElement;
+  @query('#field') private accessor inputEl!: HTMLInputElement;
 
   private readonly internals: ElementInternals;
 
@@ -385,7 +385,7 @@ export class DsInput extends LitElement {
     this.syncInternals();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const isDisabled = this.disabled || this.formDisabled;
     const describedBy =
       [this.description ? 'description' : '', this.error ? 'error' : '']

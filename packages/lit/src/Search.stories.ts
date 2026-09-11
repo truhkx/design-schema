@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Search.js';
@@ -8,11 +8,11 @@ interface SearchArgs {
   label: string;
   showLabel: boolean;
   name: string;
-  value?: string;
-  defaultValue?: string;
-  placeholder?: string;
-  action?: string;
-  suggestions?: SearchSuggestion[];
+  value?: string | undefined;
+  defaultValue?: string | undefined;
+  placeholder?: string | undefined;
+  action?: string | undefined;
+  suggestions?: SearchSuggestion[] | undefined;
   loading: boolean;
   landmark: boolean;
   size: SearchSize;

@@ -48,23 +48,23 @@ export interface BottomSheetProps {
   /** The sheet's title and accessible name. May be visually hidden with `hideHeading` when the content is self-explanatory (a share sheet). */
   heading: string;
   /** Keep the heading for assistive technology but do not render it. The accessible name is required regardless. */
-  hideHeading?: boolean;
+  hideHeading?: boolean | undefined;
   /** The body. Scrolls inside the sheet when taller than the sheet's height. */
   children: React.ReactNode;
   /** Action row, pinned to the bottom of the sheet above the safe area. */
   footer?: React.ReactNode;
   /** `content` sizes to the body up to 90% of the viewport; `half` is a fixed half-height; `full` is a near-full-screen sheet with the top gutter visible so the scrim still shows. */
-  height?: BottomSheetHeight;
+  height?: BottomSheetHeight | undefined;
   /** Escape, the close button, a scrim tap and the drag gesture all request close. When false, only the footer actions close it; Escape still reports. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** Drag the handle (or the header) downward to dismiss, with a velocity threshold. Purely additive: the close button and Escape always exist. */
-  dragToDismiss?: boolean;
+  dragToDismiss?: boolean | undefined;
   /** Requested close with reason: `escape`, `close-button`, `scrim`, `drag`, or `action`. */
-  onClose?: (reason: BottomSheetCloseReason) => void;
+  onClose?: ((reason: BottomSheetCloseReason) => void) | undefined;
   /** The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag; provided so analytics can distinguish gestures. */
-  onDragDismiss?: () => void;
+  onDragDismiss?: (() => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<BottomSheetOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const COPY = {
@@ -74,7 +74,7 @@ const COPY = {
 // The bindings BottomSheet shares with Dialog's own overrides contract, forwarded
 // when the sheet presents as a Dialog above `maxWidth`; `handleHeight`, `handleWidth`
 // and `maxWidth` have no Dialog equivalent and are dropped.
-const SHARED_DIALOG_BINDING: Partial<Record<BottomSheetOverridableBinding, DialogOverridableBinding>> = {
+const SHARED_DIALOG_BINDING: Partial<Record<BottomSheetOverridableBinding, DialogOverridableBinding | undefined>> = {
   scrim: 'scrim',
   shadow: 'shadow',
   radius: 'radius',
@@ -291,7 +291,7 @@ export function BottomSheet({
           Object.entries(overrides)
             .map(([key, value]) => [SHARED_DIALOG_BINDING[key as BottomSheetOverridableBinding], value] as const)
             .filter((entry): entry is [DialogOverridableBinding, TokenRef] => entry[0] !== undefined),
-        ) as Partial<Record<DialogOverridableBinding, TokenRef>>)
+        ) as Partial<Record<DialogOverridableBinding, TokenRef | undefined>>)
       : undefined;
     return (
       <Dialog
@@ -311,8 +311,8 @@ export function BottomSheet({
 
   const hostStyle: ViewStyle = { flex: 1 };
 
-  const scrimStyle: Animated.WithAnimatedObject<ViewStyle> = {
-    ...StyleSheet.absoluteFillObject,
+  const scrimStyle: Animated.WithAnimatedValue<ViewStyle> = {
+    ...StyleSheet.absoluteFill,
     backgroundColor: scrimColor,
     opacity: progress,
   };
@@ -323,7 +323,7 @@ export function BottomSheet({
 
   const fixedHeight = height === 'half' ? windowHeight * 0.5 : height === 'full' ? windowHeight - t.layoutGutter : undefined;
 
-  const surfaceStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
     height: fixedHeight,
     maxHeight: height === 'content' ? windowHeight * 0.9 : undefined, // literal-ok: proportion of viewport per spec ("up to 90%")
@@ -370,7 +370,7 @@ export function BottomSheet({
       <View style={hostStyle}>
         <Animated.View style={scrimStyle} />
         <Pressable
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           onPress={handleScrimPress}
           accessible={false}
           testID="BottomSheet.scrim"

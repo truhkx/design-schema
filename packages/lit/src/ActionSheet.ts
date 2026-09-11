@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -18,9 +18,9 @@ export type ActionSheetCloseReason = 'escape' | 'scrim' | 'cancel' | 'drag';
 export interface ActionSheetAction {
   id: string;
   label: string;
-  icon?: IconName;
-  tone?: ActionSheetActionTone;
-  disabled?: boolean;
+  icon?: IconName | undefined;
+  tone?: ActionSheetActionTone | undefined;
+  disabled?: boolean | undefined;
 }
 
 /** Detail carried by the `action` CustomEvent. */
@@ -59,7 +59,7 @@ export type ActionSheetOverridableBinding =
   | 'enter'
   | 'exit';
 
-const HOOKS: Partial<Record<ActionSheetOverridableBinding, string>> = {
+const HOOKS: Partial<Record<ActionSheetOverridableBinding, string | undefined>> = {
   scrim: '--ds-action-sheet-scrim',
   shadow: '--ds-action-sheet-shadow',
   radius: '--ds-action-sheet-radius',
@@ -169,7 +169,7 @@ export class DsActionSheet extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       --ds-action-sheet-scrim: var(--color-overlay-scrim);
@@ -355,20 +355,20 @@ export class DsActionSheet extends LitElement {
   `;
 
   /** Controlled visibility. */
-  @property({ type: Boolean, reflect: true }) open = false;
+  @property({ type: Boolean, reflect: true }) accessor open = false;
 
   /**
    * What the actions apply to ("Photo.jpg"), shown muted above the list. Also the accessible name;
    * when omitted the name is `copy.defaultLabel`. Named `heading`, not `title` — `HTMLElement`
    * already defines `title` as the tooltip attribute.
    */
-  @property() heading?: string;
+  @property() accessor heading: string | undefined;
 
   /** Two to about eight actions. `danger` actions are visually distinct and grouped last. */
-  @property({ attribute: false }) actions: ActionSheetAction[] = [];
+  @property({ attribute: false }) accessor actions: ActionSheetAction[] = [];
 
   /** Label of the explicit cancel row on phones. Defaults to `copy.cancelLabel`. */
-  @property({ attribute: 'cancel-label' }) cancelLabel?: string;
+  @property({ attribute: 'cancel-label' }) accessor cancelLabel: string | undefined;
 
   /**
    * Escape, the scrim, the cancel row and the drag all request close; Escape still reports
@@ -376,22 +376,22 @@ export class DsActionSheet extends LitElement {
    * `no-dismiss`, because a boolean attribute cannot express `false` for a prop that defaults `true`.
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  dismissible = true;
+  accessor dismissible = true;
 
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<ActionSheetOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<ActionSheetOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Above `layout.maxWidth.prose` the sheet renders as `<ds-menu>` anchored to the opener instead. */
-  @state() private isWide = false;
+  @state() private accessor isWide = false;
 
   /** Whether the exit transition is playing (kept present a beat past the `open` flip to animate out). */
-  @state() private closing = false;
+  @state() private accessor closing = false;
 
   /** The action currently carrying the roving tabindex and real focus (narrow presentation only). */
-  @state() private activeId: string | null = null;
+  @state() private accessor activeId: string | null = null;
 
-  @query('dialog') private readonly dialogEl!: HTMLDialogElement;
-  @query('.cancel-button') private readonly cancelButtonEl!: HTMLElement;
+  @query('dialog') private accessor dialogEl!: HTMLDialogElement;
+  @query('.cancel-button') private accessor cancelButtonEl!: HTMLElement;
 
   private openerElement: Element | null = null;
   private wideQuery: MediaQueryList | null = null;
@@ -444,7 +444,7 @@ export class DsActionSheet extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult | typeof nothing {
     return this.isWide ? this.renderWide() : this.renderNarrow();
   }
 
@@ -565,12 +565,12 @@ export class DsActionSheet extends LitElement {
     return items;
   }
 
-  private titleOverrides(): Partial<Record<TextOverridableBinding, TokenRef>> | undefined {
+  private titleOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
     const overrides = this.overrides;
     if (!overrides) {
       return undefined;
     }
-    const result: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
     if (overrides.titleSize) {
       result.fontSize = overrides.titleSize;
     }
@@ -762,7 +762,7 @@ export class DsActionSheet extends LitElement {
     if (items.length === 0) {
       return;
     }
-    const id = target === 'first' ? items[0].id : target === 'last' ? items[items.length - 1].id : target;
+    const id = target === 'first' ? items[0]!.id : target === 'last' ? items[items.length - 1]!.id : target;
     this.activeId = id;
     await this.updateComplete;
     this.renderRoot.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`)?.focus();
@@ -780,7 +780,7 @@ export class DsActionSheet extends LitElement {
     } else if (nextIndex >= items.length) {
       nextIndex = 0;
     }
-    void this.focusAction(items[nextIndex].id);
+    void this.focusAction(items[nextIndex]!.id);
   }
 
   private activateActiveAction(): void {

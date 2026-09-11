@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Toast, ToastRegion, toast } from './Toast';
 
-const meta = {
+const meta: Meta<typeof Toast> = {
   title: 'Toast/React',
   component: Toast,
   args: {
@@ -22,7 +22,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof Toast>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

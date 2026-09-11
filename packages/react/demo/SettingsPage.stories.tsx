@@ -1,11 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SettingsPage } from './SettingsPage';
 
-const meta = {
+const meta: Meta<typeof SettingsPage> = {
   title: 'Patterns/SettingsPage',
   component: SettingsPage,
   tags: ['autodocs'],
-} satisfies Meta<typeof SettingsPage>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

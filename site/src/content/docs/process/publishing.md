@@ -18,14 +18,14 @@ The allowed runtime dependencies are fixed in `tools/check_deps.py`, and the `de
 
 ## Build
 
-`main`, `types` and `exports` point at `dist/`, which `tsup` emits from `src/index.ts` as ESM with type declarations. Stories, tests and demos are not entries, so they never ship; `files` limits the tarball to `dist/`.
+`main`, `types` and `exports` point at `dist/`, which `tsdown` emits from `src/index.ts` as ESM with type declarations. The declarations come from isolated declarations (every exported symbol carries an explicit type, so no TypeScript compiler run is needed at build time). Stories, tests and demos are not entries, so they never ship; `files` limits the tarball to `dist/`.
 
 ```sh
-pnpm build:packages     # tsup in react, lit and rn; tokens are built by `pnpm themes` / `pnpm tokens`
-pnpm release:check      # build, then `npm pack --dry-run` per package: the exact file list that would ship
+pnpm build:packages     # tsdown in react, lit and rn; tokens are built by `pnpm themes` / `pnpm tokens`
+pnpm release:check      # build, then publint, attw --pack and `npm pack --dry-run` per package
 ```
 
-Read the `release:check` output before every publish. It is the whole point of the script: no file reaches npm that was not in that list.
+`release:check` runs three checks per package after the build: `publint` (the `package.json` `exports`, `types` and `files` fields are consistent with what is on disk), `attw --pack` ("are the types wrong": the declarations resolve under every module resolution mode a consumer might use), and `npm pack --dry-run`, the exact file list that would ship. Read that output before every publish. It is the whole point of the script: no file reaches npm that was not in that list.
 
 `@design-schema/tokens` is a normal dependency of the three component packages, declared as `workspace:^`. pnpm rewrites that to the tokens package's version range when it publishes, so consumers get a real semver dependency and the workspace keeps a single copy.
 

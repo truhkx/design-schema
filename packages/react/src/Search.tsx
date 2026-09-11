@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -12,6 +11,7 @@ import {
   type FocusEvent as ReactFocusEvent,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -27,7 +27,7 @@ export type SearchSize = 'md' | 'lg';
 export interface SearchSuggestion {
   value: string;
   label: string;
-  description?: string;
+  description?: string | undefined;
 }
 
 /** copy.* — used verbatim; `{count}` is replaced by the suggestion count. */
@@ -69,7 +69,7 @@ const ROOT_OVERRIDE_HOOK: Record<Exclude<SearchOverridableBinding, 'suggestionsO
 };
 
 /** The suggestions popup is portaled, so its own hook — read by the sanctioned CSS custom-property escape hatch — is set on the popup node itself. */
-function resolveOverrides(overrides: Partial<Record<SearchOverridableBinding, TokenRef>>): {
+function resolveOverrides(overrides: Partial<Record<SearchOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
   popupStyle: CSSProperties;
 } {
@@ -139,41 +139,41 @@ export interface SearchProps
   /** The accessible name ("Search products", "Search this site"). Visually hidden by default — the glyph and placeholder are the visible cue. */
   label: string;
   /** Show the label above the field, as in a search page rather than a header. */
-  showLabel?: boolean;
+  showLabel?: boolean | undefined;
   /** Field name; the query key when the form submits to a URL. */
-  name?: string;
+  name?: string | undefined;
   /** Controlled query. */
-  value?: string;
+  value?: string | undefined;
   /** Initial query. */
-  defaultValue?: string;
+  defaultValue?: string | undefined;
   /** Example query, not a label ("Try "invoices from March""). */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /** URL to submit to with GET; when omitted, `onSubmit` handles it and nothing navigates. */
-  action?: string;
+  action?: string | undefined;
   /**
    * Suggestions for the current query, shown in a Listbox under the field; choosing one fills the
    * query and submits. Provide them from `onChange` (debounced by the caller). With suggestions
    * the field becomes a Combobox: same keys, `aria-activedescendant`.
    */
-  suggestions?: SearchSuggestion[];
+  suggestions?: SearchSuggestion[] | undefined;
   /** Suggestions are being fetched; announced through `copy.loading`. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** Wrap in the `search` landmark role. Turn off when the Search sits inside another search landmark. */
-  landmark?: boolean;
+  landmark?: boolean | undefined;
   /** lg for a search page's hero field. */
-  size?: SearchSize;
+  size?: SearchSize | undefined;
   /** Not editable, still readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Portal target for the suggestions popup's DOM node. Defaults to `document.body`. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<SearchOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SearchOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired on every keystroke with the query; the caller fetches suggestions here. */
-  onChange?: (value: string) => void;
+  onChange?: ((value: string) => void) | undefined;
   /** Fired on Enter, the submit button, or choosing a suggestion, with the (trimmed) query. */
-  onSubmit?: (value: string) => void;
+  onSubmit?: ((value: string) => void) | undefined;
   /** Fired when the clear button empties the field. */
-  onClear?: () => void;
+  onClear?: (() => void) | undefined;
 }
 
 /**
@@ -190,34 +190,32 @@ export interface SearchProps
  * already on screen (an Input labelled "Filter" is honest about what it does). Do not put two
  * search landmarks on a page.
  */
-export const Search = forwardRef<HTMLInputElement, SearchProps>(function Search(
-  {
-    label,
-    showLabel = false,
-    name = 'q',
-    value,
-    defaultValue,
-    placeholder,
-    action,
-    suggestions,
-    loading = false,
-    landmark = true,
-    size = 'md',
-    disabled = false,
-    container,
-    overrides,
-    onChange,
-    onSubmit,
-    onClear,
-    id: idProp,
-    className,
-    style,
-    onFocus,
-    onBlur,
-    ...rest
-  },
+export const Search = function Search({
   ref,
-) {
+  label,
+  showLabel = false,
+  name = 'q',
+  value,
+  defaultValue,
+  placeholder,
+  action,
+  suggestions,
+  loading = false,
+  landmark = true,
+  size = 'md',
+  disabled = false,
+  container,
+  overrides,
+  onChange,
+  onSubmit,
+  onClear,
+  id: idProp,
+  className,
+  style,
+  onFocus,
+  onBlur,
+  ...rest
+}: SearchProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
   const generatedId = useId();
   const id = idProp ?? `ds-search${generatedId}`;
   const labelId = `${id}-label`;
@@ -564,4 +562,4 @@ export const Search = forwardRef<HTMLInputElement, SearchProps>(function Search(
         : null}
     </form>
   );
-});
+};

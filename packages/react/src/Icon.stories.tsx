@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Icon } from './Icon';
 import { Text } from './Text';
 
-const meta = {
+const meta: Meta<typeof Icon> = {
   title: 'Icon/React',
   component: Icon,
   args: {
@@ -10,7 +10,7 @@ const meta = {
     size: 'md',
     inline: false,
   },
-} satisfies Meta<typeof Icon>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

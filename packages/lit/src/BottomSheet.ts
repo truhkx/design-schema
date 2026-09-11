@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -168,7 +168,7 @@ export class DsBottomSheet extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       --ds-bottom-sheet-scrim: var(--color-overlay-scrim);
@@ -329,20 +329,20 @@ export class DsBottomSheet extends LitElement {
   `;
 
   /** Controlled visibility, as in Dialog. */
-  @property({ type: Boolean, reflect: true }) open = false;
+  @property({ type: Boolean, reflect: true }) accessor open = false;
 
   /**
    * The sheet's title and accessible name. Named `heading`, not `title` —
    * `HTMLElement` already defines `title` as the tooltip attribute (see
    * Dialog and AlertDialog).
    */
-  @property() heading!: string;
+  @property() accessor heading!: string;
 
   /** Keep the heading for assistive technology but do not render it. The accessible name is required regardless. */
-  @property({ type: Boolean, attribute: 'hide-heading' }) hideHeading = false;
+  @property({ type: Boolean, attribute: 'hide-heading' }) accessor hideHeading = false;
 
   /** `content` sizes to the body up to 90% of the viewport; `half` is a fixed half-height; `full` is near-full-screen. */
-  @property({ reflect: true }) height: BottomSheetHeight = 'content';
+  @property({ reflect: true }) accessor height: BottomSheetHeight = 'content';
 
   /**
    * Escape, the close button, a scrim tap and the drag gesture all request close. `false` for a
@@ -351,27 +351,27 @@ export class DsBottomSheet extends LitElement {
    * defaults `true` (see Dialog).
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  dismissible = true;
+  accessor dismissible = true;
 
   /**
    * Drag the handle (or header) downward to dismiss. Purely additive: the close button and
    * Escape always exist. `platforms.lit.reflect` lists this attribute in its direct (non-negated)
    * form, unlike `dismissible`'s `no-dismiss` — kept literal per the doc; see the generation gap notes.
    */
-  @property({ type: Boolean, attribute: 'drag-to-dismiss', reflect: true }) dragToDismiss = true;
+  @property({ type: Boolean, attribute: 'drag-to-dismiss', reflect: true }) accessor dragToDismiss = true;
 
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings (surface, handle, focusRing, focusRingWidth) are ignored. Only applied below the wide-viewport breakpoint; above it the sheet renders as Dialog and uses Dialog's own overrides contract. */
-  @property({ attribute: false }) overrides?: Partial<Record<BottomSheetOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Above `layout.maxWidth.prose` the sheet renders as a centered `<ds-dialog size="md">` instead. */
-  @state() private isWide = false;
+  @state() private accessor isWide = false;
 
   /** Whether the exit transition is playing (kept open a beat past the `open` flip so it can animate out). */
-  @state() private closing = false;
+  @state() private accessor closing = false;
 
-  @query('dialog') private readonly dialogEl!: HTMLDialogElement;
-  @query('#heading') private readonly headingEl!: HTMLElement;
-  @query('.close') private readonly closeButtonEl!: HTMLElement;
+  @query('dialog') private accessor dialogEl!: HTMLDialogElement;
+  @query('#heading') private accessor headingEl!: HTMLElement;
+  @query('.close') private accessor closeButtonEl!: HTMLElement;
 
   private openerElement: Element | null = null;
   private closingProgrammatically = false;
@@ -423,7 +423,7 @@ export class DsBottomSheet extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     if (this.isWide) {
       return this.renderAsDialog();
     }
@@ -515,7 +515,7 @@ export class DsBottomSheet extends LitElement {
   }
 
   /** Forwards the sheet-and-Dialog-shared bindings to `<ds-dialog>` in the wide presentation; sheet-only bindings (handle, edge radius, drag) have no Dialog equivalent. */
-  private dialogOverrides(): Partial<Record<DialogOverridableBinding, TokenRef>> | undefined {
+  private dialogOverrides(): Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined {
     const { inset, radius, partGap, footerGap } = this.overrides ?? {};
     if (inset === undefined && radius === undefined && partGap === undefined && footerGap === undefined) {
       return undefined;

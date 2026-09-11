@@ -1,4 +1,4 @@
-import { forwardRef, type ComponentPropsWithoutRef, type CSSProperties, type ElementType, type ReactNode, type Ref } from 'react';
+import { type ComponentPropsWithoutRef, type CSSProperties, type ElementType, type ReactNode, type Ref, type ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Heading.css';
 
@@ -18,7 +18,7 @@ const OVERRIDE_HOOK: Record<HeadingOverridableBinding, string> = {
   marginBlockEnd: '--ds-heading-margin-block-end',
 };
 
-function overridesToStyle(overrides: Partial<Record<HeadingOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as HeadingOverridableBinding[]) {
     const ref = overrides[binding];
@@ -31,13 +31,13 @@ export interface HeadingProps extends Omit<ComponentPropsWithoutRef<'h1'>, 'chil
   /** Position in the document outline. Controls the semantic element, not the visual size. */
   level: HeadingLevel;
   /** Visual size, independent of level. Defaults to the size that matches the level. */
-  size?: HeadingSize;
+  size?: HeadingSize | undefined;
   /** The heading text. Keep it short and descriptive; it is what appears in the page outline. */
   children: ReactNode;
   /** Horizontal text alignment. */
-  align?: HeadingAlign;
+  align?: HeadingAlign | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<HeadingOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const ELEMENT_BY_LEVEL = {
@@ -68,10 +68,7 @@ const SIZE_BY_LEVEL: Record<keyof typeof ELEMENT_BY_LEVEL, HeadingSize> = {
  * layout. Decoupling level from size is the whole point of this component: it lets designers pick
  * the right look without breaking the outline.
  */
-export const Heading = forwardRef<HTMLHeadingElement, HeadingProps>(function Heading(
-  { level, size, children, align = 'start', overrides, className, style, ...rest },
-  ref,
-) {
+export const Heading = function Heading({ ref, level, size, children, align = 'start', overrides, className, style, ...rest }: HeadingProps & { ref?: Ref<HTMLHeadingElement> | undefined }): ReactElement {
   const key = String(level) as keyof typeof ELEMENT_BY_LEVEL;
   const Tag: ElementType = ELEMENT_BY_LEVEL[key];
   const resolvedSize = size ?? SIZE_BY_LEVEL[key];
@@ -88,4 +85,4 @@ export const Heading = forwardRef<HTMLHeadingElement, HeadingProps>(function Hea
       {children}
     </Tag>
   );
-});
+};

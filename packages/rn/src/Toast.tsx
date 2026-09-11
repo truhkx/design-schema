@@ -42,25 +42,25 @@ export interface ToastProps {
   /** One sentence saying what happened ("Message sent", "3 files deleted"). */
   message: string;
   /** Sets the leading icon; `neutral` has none. Toasts do not use tinted backgrounds — the icon and message carry the tone. */
-  tone?: ToastTone;
+  tone?: ToastTone | undefined;
   /** Label for a single action button ("Undo", "View"). When present the toast stays longer and pauses on hover and focus. */
-  actionLabel?: string;
+  actionLabel?: string | undefined;
   /**
    * `short` ≈ 5s, `long` ≈ 10s (both computed from `motion.duration.loop` so themes without motion
    * still get sensible times), `persistent` until dismissed. When `actionLabel` is set or `tone` is
    * `danger` the toast is persistent regardless of this prop (a dev warning notes the override).
    */
-  duration?: ToastDuration;
+  duration?: ToastDuration | undefined;
   /** Shows a dismiss button. Persistent toasts are always dismissible regardless of this prop. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** Stable identity; a `ToastProvider` showing a toast with the same toastId replaces the previous one instead of stacking. Unused by a standalone `Toast`. */
-  toastId?: string;
+  toastId?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<ToastOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ToastOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the action button is activated. The toast then dismisses with reason `action`. */
-  onAction?: () => void;
+  onAction?: (() => void) | undefined;
   /** Fired once the toast has finished leaving the screen, with the reason it left. */
-  onDismiss?: (reason: ToastDismissReason) => void;
+  onDismiss?: ((reason: ToastDismissReason) => void) | undefined;
 }
 
 const COPY = {
@@ -263,7 +263,7 @@ export function Toast({
     requestDismiss('action');
   };
 
-  const containerStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const containerStyle: Animated.WithAnimatedValue<ViewStyle> = {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
@@ -351,7 +351,7 @@ export interface ToastContextValue {
 export interface ToastProviderProps {
   children: React.ReactNode;
   /** Region-level overrides (`stackGap`, `regionInset`, `layer`). Bindings for the toasts themselves belong on each `toast()` call's own `overrides`. */
-  overrides?: Partial<Record<ToastOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ToastOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const ToastContext = React.createContext<ToastContextValue | null>(null);

@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -8,6 +7,7 @@ import {
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type FocusEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
@@ -47,7 +47,7 @@ export type InputOverridableBinding =
  * error Text elements' own `overrides` instead (they render the helper text, not the root), and
  * `fontFamily`/`lineHeight` are forwarded to those Text elements *and* kept on the root for the
  * label and the raw `<input>`, neither of which is a Text. */
-const ROOT_OVERRIDE_HOOK: Partial<Record<InputOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<InputOverridableBinding, string | undefined>> = {
   borderFocus: '--ds-input-border-focus',
   borderInvalid: '--ds-input-border-invalid',
   borderWidth: '--ds-input-border-width',
@@ -65,14 +65,14 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<InputOverridableBinding, string>> = {
   disabledOpacity: '--ds-input-disabled-opacity',
 };
 
-function resolveOverrides(overrides: Partial<Record<InputOverridableBinding, TokenRef>>): {
+function resolveOverrides(overrides: Partial<Record<InputOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  errorOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  errorOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const errorOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const errorOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
 
   for (const binding of Object.keys(overrides) as InputOverridableBinding[]) {
     const ref = overrides[binding];
@@ -127,39 +127,39 @@ export interface InputProps
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
   /** Controlled value. Omit for an uncontrolled field. */
-  value?: string;
+  value?: string | undefined;
   /** Initial value for an uncontrolled field. */
-  defaultValue?: string;
+  defaultValue?: string | undefined;
   /** Example input shown while empty. Never the only description of what to enter. */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /** Persistent helper text below the label explaining format or purpose. */
-  description?: string;
+  description?: string | undefined;
   /** Input type. Drives the keyboard on touch platforms and browser validation on web. */
-  type?: InputType;
+  type?: InputType | undefined;
   /** The field must have a value to submit. Shown in the label, not only by color. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Visually hide the label (it remains the accessible name). Only for a field whose context
    * already names it: a DataGrid cell editor, a Search. */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small
    * type. */
-  size?: InputSize;
+  size?: InputSize | undefined;
   /** Not editable and not submitted. Stays visible and readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Marks the field as failing validation. Usually set by the Form; can be set directly. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** The error message. Setting it implies `invalid`. Explain what is wrong and how to fix it. */
-  error?: string;
+  error?: string | undefined;
   /** HTML autocomplete token (e.g. `email`, `given-name`). Enables WCAG 1.3.5 input-purpose identification. */
-  autocomplete?: string;
+  autocomplete?: string | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<InputOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<InputOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired on every value change with the new string value. */
-  onChange?: (value: string, event: ChangeEvent<HTMLInputElement>) => void;
+  onChange?: ((value: string, event: ChangeEvent<HTMLInputElement>) => void) | undefined;
   /** Fired when the field receives focus. */
-  onFocus?: (event: FocusEvent<HTMLInputElement>) => void;
+  onFocus?: ((event: FocusEvent<HTMLInputElement>) => void) | undefined;
   /** Fired when the field loses focus. The usual moment to validate. */
-  onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
+  onBlur?: ((event: FocusEvent<HTMLInputElement>) => void) | undefined;
 }
 
 /**
@@ -171,33 +171,31 @@ export interface InputProps
  * format matters ("Use the email you signed up with"). Set `autocomplete` on web whenever the
  * value is personal data so browsers and assistive tools can fill it.
  */
-export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  {
-    label,
-    name,
-    value,
-    defaultValue,
-    placeholder,
-    description,
-    type = 'text',
-    required = false,
-    hideLabel = false,
-    size = 'md',
-    disabled = false,
-    invalid = false,
-    error,
-    autocomplete,
-    overrides,
-    onChange,
-    onFocus,
-    onBlur,
-    id: idProp,
-    className,
-    style,
-    ...rest
-  },
+export const Input = function Input({
   ref,
-) {
+  label,
+  name,
+  value,
+  defaultValue,
+  placeholder,
+  description,
+  type = 'text',
+  required = false,
+  hideLabel = false,
+  size = 'md',
+  disabled = false,
+  invalid = false,
+  error,
+  autocomplete,
+  overrides,
+  onChange,
+  onFocus,
+  onBlur,
+  id: idProp,
+  className,
+  style,
+  ...rest
+}: InputProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
   const form = useFormContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-input${generatedId}`);
@@ -329,4 +327,4 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       ) : null}
     </div>
   );
-});
+};

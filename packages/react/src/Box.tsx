@@ -1,10 +1,9 @@
 import {
-  forwardRef,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type ElementType,
   type ReactNode,
-  type Ref,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Box.css';
@@ -26,7 +25,7 @@ const OVERRIDE_HOOK: Record<BoxOverridableBinding, string> = {
   radius: '--ds-box-radius',
 };
 
-function overridesToStyle(overrides: Partial<Record<BoxOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<BoxOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as BoxOverridableBinding[]) {
     const ref = overrides[binding];
@@ -39,21 +38,21 @@ export interface BoxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childre
   /** Any content. Box does not space its children; put a Stack inside for that. */
   children: ReactNode;
   /** Padding on all sides, from the layout inset presets. Use `insetBlock`/`insetInline` when the axes differ. */
-  inset?: BoxInset;
+  inset?: BoxInset | undefined;
   /** Vertical padding, overriding `inset` on that axis. */
-  insetBlock?: BoxInset;
+  insetBlock?: BoxInset | undefined;
   /** Horizontal padding, overriding `inset` on that axis. */
-  insetInline?: BoxInset;
+  insetInline?: BoxInset | undefined;
   /** Background. `none` is transparent; `default` is the page background (use to lift content off a subtle parent); `subtle` and `strong` step up. */
-  surface?: BoxSurface;
+  surface?: BoxSurface | undefined;
   /** A thin default border. */
-  border?: boolean;
+  border?: boolean | undefined;
   /** Corner radius from the theme's presets. */
-  radius?: BoxRadius;
+  radius?: BoxRadius | undefined;
   /** Element to render. Sectioning elements only when the box is a semantic region; prefer Landmark for page regions. */
-  element?: BoxElement;
+  element?: BoxElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<BoxOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -66,23 +65,21 @@ export interface BoxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childre
  * for most panels, `lg` for page-level containers, `xl` for hero bands — and let the theme's
  * rhythm decide the numbers.
  */
-export const Box = forwardRef<HTMLElement, BoxProps>(function Box(
-  {
-    children,
-    inset = 'none',
-    insetBlock,
-    insetInline,
-    surface = 'none',
-    border = false,
-    radius = 'none',
-    element = 'div',
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const Box = function Box({
   ref,
-) {
+  children,
+  inset = 'none',
+  insetBlock,
+  insetInline,
+  surface = 'none',
+  border = false,
+  radius = 'none',
+  element = 'div',
+  overrides,
+  className,
+  style,
+  ...rest
+}: BoxProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const Tag = element as ElementType;
 
   const classes = [
@@ -106,4 +103,4 @@ export const Box = forwardRef<HTMLElement, BoxProps>(function Box(
       {children}
     </Tag>
   );
-});
+};

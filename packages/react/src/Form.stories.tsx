@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Form } from './Form';
 import { Input } from './Input';
 import { Button } from './Button';
@@ -26,7 +26,7 @@ const actions = (
   </Stack>
 );
 
-const meta = {
+const meta: Meta<typeof Form> = {
   title: 'Form/React',
   component: Form,
   args: {
@@ -42,7 +42,7 @@ const meta = {
     onSubmit: { action: 'onSubmit' },
     onInvalid: { action: 'onInvalid' },
   },
-} satisfies Meta<typeof Form>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

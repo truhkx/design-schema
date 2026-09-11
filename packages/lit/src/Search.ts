@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
@@ -17,7 +17,7 @@ export type SearchSize = 'md' | 'lg';
 export interface SearchSuggestion {
   value: string;
   label: string;
-  description?: string;
+  description?: string | undefined;
 }
 
 /** Detail carried by the `change` CustomEvent. */
@@ -85,7 +85,7 @@ const STATUS_DEBOUNCE_MS = 500;
 const POPOVER_SUPPORTED = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
 
 /** `input` or `internals.ariaActiveDescendantElement`-capable element, for the cross-shadow-root activedescendant reflection Chromium ships. */
-type ActiveDescendantHost = HTMLInputElement & { ariaActiveDescendantElement?: Element | null };
+type ActiveDescendantHost = HTMLInputElement & { ariaActiveDescendantElement?: Element | null | undefined };
 
 /**
  * `<ds-search>` — Search (category: input, APG pattern: combobox).
@@ -138,7 +138,7 @@ export class DsSearch extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: inline-block;
       inline-size: 100%;
@@ -330,25 +330,25 @@ export class DsSearch extends LitElement {
   `;
 
   /** Accessible name ("Search products"). Visually hidden unless `showLabel`. */
-  @property() label!: string;
+  @property() accessor label!: string;
 
   /** Show the label above the field, as in a search page rather than a header. */
-  @property({ type: Boolean, reflect: true, attribute: 'show-label' }) showLabel = false;
+  @property({ type: Boolean, reflect: true, attribute: 'show-label' }) accessor showLabel = false;
 
   /** Field name; the query key when the form submits to a URL. */
-  @property() name = 'q';
+  @property() accessor name = 'q';
 
   /** Controlled query. Omit for uncontrolled. */
-  @property() value?: string;
+  @property() accessor value: string | undefined;
 
   /** Initial query for an uncontrolled field. */
-  @property({ attribute: 'default-value' }) defaultValue?: string;
+  @property({ attribute: 'default-value' }) accessor defaultValue: string | undefined;
 
   /** Example query, not a label ("Try "invoices from March""). */
-  @property() placeholder?: string;
+  @property() accessor placeholder: string | undefined;
 
   /** URL to submit to with GET. When omitted, `submit` handles it and nothing navigates. */
-  @property() action?: string;
+  @property() accessor action: string | undefined;
 
   /**
    * Suggestions for the current query, shown in a Listbox under the field.
@@ -356,10 +356,10 @@ export class DsSearch extends LitElement {
    * fetching) to turn the field into a combobox. A property, not an
    * attribute — provide it from `change` (debounced by the caller).
    */
-  @property({ attribute: false }) suggestions?: SearchSuggestion[];
+  @property({ attribute: false }) accessor suggestions: SearchSuggestion[] | undefined;
 
   /** Suggestions are being fetched; announced through `copy.loading`. */
-  @property({ type: Boolean, reflect: true }) loading = false;
+  @property({ type: Boolean, reflect: true }) accessor loading = false;
 
   /**
    * Wrap in the `search` Landmark. Boolean attributes cannot express `false`
@@ -374,37 +374,37 @@ export class DsSearch extends LitElement {
       toAttribute: (value: boolean): string | null => (value ? null : ''),
     },
   })
-  landmark = true;
+  accessor landmark = true;
 
   /** `lg` for a search page's hero field. */
-  @property({ reflect: true }) size: SearchSize = 'md';
+  @property({ reflect: true }) accessor size: SearchSize = 'md';
 
   /** Not editable, still readable. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<SearchOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<SearchOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Whether the suggestions popup is open. Not exposed as a property — see the generator's gap notes. */
-  @state() private isOpen = false;
+  @state() private accessor isOpen = false;
 
   /** Id (within the composed Listbox's own shadow root) of the active suggestion, mirrored onto the input's `aria-activedescendant`. */
-  @state() private activeDescendantId?: string;
+  @state() private accessor activeDescendantId: string | undefined;
 
   /** Debounced text for the `status` live region. */
-  @state() private announcedStatus = '';
+  @state() private accessor announcedStatus = '';
 
-  @query('#input') private readonly inputEl?: HTMLInputElement;
-  @query('#listbox') private readonly listboxEl?: DsListbox;
-  @query('#popup') private readonly popupEl?: HTMLElement;
+  @query('#input') private accessor inputEl!: HTMLInputElement | null;
+  @query('#listbox') private accessor listboxEl!: DsListbox | null;
+  @query('#popup') private accessor popupEl!: HTMLElement | null;
 
   private readonly popoverSupported = POPOVER_SUPPORTED;
   private wasOpen = false;
   private activateFirstOnOpen = false;
-  private statusTimer?: ReturnType<typeof setTimeout>;
+  private statusTimer?: ReturnType<typeof setTimeout> | undefined;
 
   /** Light-DOM `<form>` this element creates on demand to navigate to `action` (a shadow-root form does not participate in the page). */
-  private navigationForm?: HTMLFormElement;
+  private navigationForm?: HTMLFormElement | undefined;
 
   /** The current string value of the field. */
   get currentValue(): string {
@@ -458,7 +458,7 @@ export class DsSearch extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const isDisabled = this.disabled;
     const value = this.currentValue;
     const showClear = value !== '';
@@ -745,7 +745,7 @@ export class DsSearch extends LitElement {
     const active = this.listboxEl?.activeValue ?? null;
     const index = active !== null ? items.findIndex((item) => item.value === active) : -1;
     if (this.listboxEl) {
-      this.listboxEl.activeValue = index <= 0 ? null : items[index - 1].value;
+      this.listboxEl.activeValue = index <= 0 ? null : items[index - 1]!.value;
     }
   }
 

@@ -29,7 +29,7 @@ export type IconName =
 /** One glyph: an SVG path `d` on the shared 16×16 grid. Line glyphs stroke; `filled` glyphs fill (fillRule evenodd) and draw no stroke. */
 export interface IconGlyph {
   readonly d: string;
-  readonly filled?: boolean;
+  readonly filled?: boolean | undefined;
 }
 
 /**

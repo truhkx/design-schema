@@ -198,4 +198,4 @@ class TestMain:
     def test_missing_components_json_is_a_clear_failure(self, sandbox, monkeypatch, capsys):
         monkeypatch.setattr(ss, "GENERATED", sandbox.parent / "nope.json")
         assert ss.main(["--theme", "fake"]) == 1
-        assert "run tools/parse.py first" in capsys.readouterr().err
+        assert "run tools/parse.ts first" in capsys.readouterr().err

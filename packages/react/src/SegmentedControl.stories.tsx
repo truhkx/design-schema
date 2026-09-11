@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SegmentedControl, type SegmentedControlOption } from './SegmentedControl';
 
 const OPTIONS: SegmentedControlOption[] = [
@@ -13,7 +13,7 @@ const ICON_OPTIONS: SegmentedControlOption[] = [
   { value: 'grid', label: 'Grid view', icon: 'ellipsis' },
 ];
 
-const meta = {
+const meta: Meta<typeof SegmentedControl> = {
   title: 'SegmentedControl/React',
   component: SegmentedControl,
   args: {
@@ -27,7 +27,7 @@ const meta = {
     onChange: { action: 'onChange' },
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof SegmentedControl>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

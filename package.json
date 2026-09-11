@@ -4,12 +4,18 @@
   "version": "0.0.1",
   "description": "Documentation-first, schema-driven, cross-platform design system generator.",
   "type": "module",
-  "packageManager": "pnpm@10.17.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.34.5",
   "scripts": {
     "themes": "node tools/py.mjs tools/theme.py && node tools/py.mjs tools/tokens.py",
     "tokens": "node tokens/build.mjs",
-    "parse": "node tools/py.mjs tools/parse.py",
-    "check": "node tools/py.mjs tools/theme.py && node tools/py.mjs tools/tokens.py && node tools/py.mjs tools/parse.py && node tools/py.mjs tools/check_contrast.py && node tools/py.mjs tools/spec_sheet.py",
+    "parse": "node --import tsx tools/parse.ts",
+    "schema": "node --import tsx tools/schema.ts",
+    "check": "node tools/py.mjs tools/theme.py && node tools/py.mjs tools/tokens.py && node --import tsx tools/schema.ts --check && node --import tsx tools/parse.ts && node tools/py.mjs tools/check_contrast.py && node tools/py.mjs tools/spec_sheet.py",
+    "test:tools": "vitest run",
+    "typecheck:tools": "tsc -p tools",
     "docs": "pnpm --filter site dev",
     "build": "pnpm check && pnpm tokens && pnpm lint:literals && pnpm generate:check && pnpm --filter site build",
     "storybook": "pnpm --filter storybook-root storybook",
@@ -27,14 +33,22 @@
     "gates:behavior": "node tools/py.mjs tools/behavior_tests.py && pnpm --filter @design-schema/react run test generated/behavior && pnpm --filter @design-schema/lit run test generated/behavior && pnpm --filter @design-schema/rn run test generated/behavior",
     "spec-sheet": "node tools/py.mjs tools/spec_sheet.py",
     "build:packages": "pnpm -r --filter \"@design-schema/*\" run build",
-    "release:check": "pnpm build:packages && pnpm -r --filter \"@design-schema/*\" exec npm pack --dry-run",
+    "release:check": "pnpm build:packages && pnpm -r --filter \"@design-schema/*\" exec publint && pnpm -r --filter \"@design-schema/*\" exec attw --pack && pnpm -r --filter \"@design-schema/*\" exec npm pack --dry-run",
+    "currency": "node tools/currency.ts",
     "storybook:device": "pnpm --filter rn-storybook start"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
     "@axe-core/playwright": "^4.10.0",
-    "@playwright/test": "^1.48.0",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.5.0",
+    "publint": "^0.3.24",
     "style-dictionary": "^4.4.0",
-    "tsup": "8.5.1"
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0",
+    "yaml": "^2.9.0",
+    "zod": "^4.5.4"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

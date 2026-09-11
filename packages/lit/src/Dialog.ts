@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
@@ -170,7 +170,7 @@ export class DsDialog extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       --ds-dialog-scrim: var(--color-overlay-scrim);
@@ -317,23 +317,23 @@ export class DsDialog extends LitElement {
   `;
 
   /** Controlled visibility. The consumer owns it; the dialog requests changes through `close`. */
-  @property({ type: Boolean, reflect: true }) open = false;
+  @property({ type: Boolean, reflect: true }) accessor open = false;
 
   /**
    * The dialog's title, rendered as a level-2 Heading and used as the
    * accessible name. Named `heading`, not `title` — `HTMLElement` already
    * defines `title` as the tooltip attribute.
    */
-  @property() heading!: string;
+  @property() accessor heading!: string;
 
   /** One sentence under the title explaining the task or consequence. Becomes the accessible description. */
-  @property() description?: string;
+  @property() accessor description: string | undefined;
 
   /** Visually hides the heading while it remains the accessible name (BottomSheet forwards its own hideHeading here above the breakpoint). */
-  @property({ type: Boolean, attribute: 'hide-heading' }) hideHeading = false;
+  @property({ type: Boolean, attribute: 'hide-heading' }) accessor hideHeading = false;
 
   /** Surface width on wide viewports. Full-width below the content measure on every size. */
-  @property({ reflect: true }) size: DialogSize = 'md';
+  @property({ reflect: true }) accessor size: DialogSize = 'md';
 
   /**
    * Escape, the close button and a scrim click all request close. `false` for a dialog
@@ -343,20 +343,20 @@ export class DsDialog extends LitElement {
    * that defaults `true`.
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  dismissible = true;
+  accessor dismissible = true;
 
   /** Where focus lands on open: the first focusable control in the body (default), the title, or the close button. */
-  @property({ attribute: 'initial-focus', reflect: true }) initialFocus: DialogInitialFocus = 'first';
+  @property({ attribute: 'initial-focus', reflect: true }) accessor initialFocus: DialogInitialFocus = 'first';
 
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings (surface, focusRing, focusRingWidth) are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<DialogOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined;
 
-  @query('dialog') private readonly dialogEl!: HTMLDialogElement;
-  @query('#heading') private readonly headingEl!: HTMLElement;
-  @query('.close') private readonly closeButtonEl!: HTMLElement;
+  @query('dialog') private accessor dialogEl!: HTMLDialogElement;
+  @query('#heading') private accessor headingEl!: HTMLElement;
+  @query('.close') private accessor closeButtonEl!: HTMLElement;
 
   /** Whether the exit transition is playing (kept open a beat past the `open` flip so it can animate out). */
-  @state() private closing = false;
+  @state() private accessor closing = false;
 
   private openerElement: Element | null = null;
   private closingProgrammatically = false;
@@ -395,7 +395,7 @@ export class DsDialog extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const hasDescription = Boolean(this.description);
     const hasFooter = this.querySelector('[slot="footer"]') !== null;
     const headingClasses = classMap({ 'heading--hidden': this.hideHeading });

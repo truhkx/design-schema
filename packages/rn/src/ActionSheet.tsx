@@ -11,7 +11,7 @@ import {
   findNodeHandle,
   useWindowDimensions,
 } from 'react-native';
-import type { LayoutChangeEvent, TextStyle, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -27,9 +27,9 @@ export type ActionSheetActionTone = 'default' | 'danger';
 export type ActionSheetAction = {
   id: string;
   label: string;
-  icon?: IconName;
-  tone?: ActionSheetActionTone;
-  disabled?: boolean;
+  icon?: IconName | undefined;
+  tone?: ActionSheetActionTone | undefined;
+  disabled?: boolean | undefined;
 };
 
 /** Why `onClose` fired. */
@@ -59,19 +59,19 @@ export interface ActionSheetProps {
   /** Controlled visibility. */
   open: boolean;
   /** What the actions apply to ("Photo.jpg"), shown muted above the list. Also the accessible name; when omitted the name is `copy.defaultLabel`. */
-  heading?: string;
+  heading?: string | undefined;
   /** Two to about eight actions. `danger` actions are visually distinct and grouped last. */
   actions: ActionSheetAction[];
   /** Escape, the scrim, the cancel row and the drag all request close; Escape still reports through `onClose` when false, as in Dialog. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** Label of the explicit cancel row. Defaults to `copy.cancelLabel`. */
-  cancelLabel?: string;
+  cancelLabel?: string | undefined;
   /** An action was chosen; receives its `id`. The consumer performs it and closes. */
-  onAction?: (id: string) => void;
+  onAction?: ((id: string) => void) | undefined;
   /** Dismissed without choosing: reason `escape`, `scrim`, `cancel`, or `drag`. */
-  onClose?: (reason: ActionSheetCloseReason) => void;
+  onClose?: ((reason: ActionSheetCloseReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<ActionSheetOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ActionSheetOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const COPY = {
@@ -152,7 +152,7 @@ export function ActionSheet({
   const progress = React.useRef(new Animated.Value(open ? 1 : 0)).current;
   const dragY = React.useRef(new Animated.Value(0)).current;
   const surfaceHeightRef = React.useRef(0);
-  const itemRefs = React.useRef(new Map<string, View>());
+  const itemRefs = React.useRef(new Map<string, ViewInstance>());
 
   const scrimColor = overrides?.scrim ? (resolveToken(t, overrides.scrim) as string) : t.colorOverlayScrim;
   const surfaceColor = t.colorOverlaySurface;
@@ -189,7 +189,7 @@ export function ActionSheet({
     }
   }, [open]);
 
-  const registerItemRef = (id: string) => (node: View | null): void => {
+  const registerItemRef = (id: string) => (node: ViewInstance | null): void => {
     if (node) itemRefs.current.set(id, node);
     else itemRefs.current.delete(id);
   };
@@ -198,7 +198,7 @@ export function ActionSheet({
     const target = actions.find((action) => action.disabled !== true);
     const node = target ? itemRefs.current.get(target.id) : null;
     const handle = node ? findNodeHandle(node) : null;
-    if (handle !== null) {
+    if (handle != null) {
       AccessibilityInfo.setAccessibilityFocus(handle);
     }
   }, [actions]);
@@ -337,8 +337,8 @@ export function ActionSheet({
 
   const hostStyle: ViewStyle = { flex: 1 };
 
-  const scrimStyle: Animated.WithAnimatedObject<ViewStyle> = {
-    ...StyleSheet.absoluteFillObject,
+  const scrimStyle: Animated.WithAnimatedValue<ViewStyle> = {
+    ...StyleSheet.absoluteFill,
     backgroundColor: scrimColor,
     opacity: progress,
   };
@@ -347,7 +347,7 @@ export function ActionSheet({
 
   const entryTranslateY = progress.interpolate({ inputRange: [0, 1], outputRange: [windowHeight, 0] });
 
-  const surfaceStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
     maxHeight: windowHeight * 0.9, // literal-ok: proportion of viewport, matching BottomSheet's "content" sizing
     borderTopLeftRadius: radius,
@@ -423,7 +423,7 @@ export function ActionSheet({
       <View style={hostStyle}>
         <Animated.View style={scrimStyle} />
         <Pressable
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           onPress={handleScrimPress}
           accessible={false}
           testID="ActionSheet.scrim"
@@ -474,7 +474,7 @@ export function ActionSheet({
 
 interface ActionSheetItemRowProps {
   action: ActionSheetAction;
-  registerRef: (node: View | null) => void;
+  registerRef: (node: ViewInstance | null) => void;
   rowStyle: (focused: boolean, disabled: boolean) => ViewStyle;
   labelStyle: TextStyle;
   iconColor: string;

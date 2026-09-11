@@ -1,7 +1,6 @@
 import {
   Children,
   cloneElement,
-  forwardRef,
   isValidElement,
   useEffect,
   useId,
@@ -13,6 +12,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactElement,
   type ReactNode,
+  type Ref,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Icon, type IconName } from './Icon';
@@ -23,7 +23,7 @@ export type TabsOrientation = 'horizontal' | 'vertical';
 export type TabsFit = 'start' | 'fill';
 
 /** One tab. `badge` is a short count or status shown after the label ("3", "New"). */
-export type TabsItem = { id: string; label: string; icon?: IconName; disabled?: boolean; badge?: string };
+export type TabsItem = { id: string; label: string; icon?: IconName | undefined; disabled?: boolean | undefined; badge?: string | undefined };
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type TabsOverridableBinding =
@@ -63,7 +63,7 @@ const OVERRIDE_HOOK: Record<TabsOverridableBinding, string> = {
   disabledOpacity: '--ds-tabs-disabled-opacity',
 };
 
-function overridesToStyle(overrides: Partial<Record<TabsOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<TabsOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as TabsOverridableBinding[]) {
     const ref = overrides[binding];
@@ -87,10 +87,7 @@ export interface TabPanelProps extends Omit<ComponentPropsWithoutRef<'div'>, 'id
 }
 
 /** The wrapper for one tab's content — a direct child of `Tabs`, one per tab, in the same order. */
-export const TabPanel = forwardRef<HTMLDivElement, TabPanelProps>(function TabPanel(
-  { id, children, className, ...rest },
-  ref,
-) {
+export const TabPanel = function TabPanel({ ref, id, children, className, ...rest }: TabPanelProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   return (
     <div
       {...rest}
@@ -105,7 +102,7 @@ export const TabPanel = forwardRef<HTMLDivElement, TabPanelProps>(function TabPa
       {children}
     </div>
   );
-});
+};
 
 export interface TabsProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'onChange'> {
   /** The tabs in order. `badge` is a short count or status shown after the label ("3", "New"). */
@@ -118,24 +115,24 @@ export interface TabsProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   /** Accessible name of the tab list ("Account sections"). Not shown visually. */
   label: string;
   /** Controlled selected tab id. Omit for uncontrolled. */
-  value?: string;
+  value?: string | undefined;
   /** Initially selected tab id. Defaults to the first enabled tab. */
-  defaultValue?: string;
+  defaultValue?: string | undefined;
   /**
    * `automatic` selects a tab as arrow keys move to it (fine when panels are cheap); `manual`
    * moves focus only and selects on Enter/Space (use when a panel loads data).
    */
-  activation?: TabsActivation;
+  activation?: TabsActivation | undefined;
   /** Vertical tab lists sit beside their panels and use Up/Down arrows. */
-  orientation?: TabsOrientation;
+  orientation?: TabsOrientation | undefined;
   /** `start` packs tabs at the start; `fill` stretches them across the width (phones, two to four tabs). */
-  fit?: TabsFit;
+  fit?: TabsFit | undefined;
   /** Keep unselected panels in the tree (hidden) so their state survives switching. */
-  keepMounted?: boolean;
+  keepMounted?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<TabsOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<TabsOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selected tab changes, with the new id. */
-  onChange?: (id: string) => void;
+  onChange?: ((id: string) => void) | undefined;
 }
 
 /**
@@ -147,25 +144,23 @@ export interface TabsProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
  * preview. Use `manual` activation when a panel is expensive to show. Use `vertical` when there are
  * many tabs and horizontal room is short. Use `fill` on phones for two to four tabs.
  */
-export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
-  {
-    tabs,
-    children,
-    label,
-    value,
-    defaultValue,
-    activation = 'automatic',
-    orientation = 'horizontal',
-    fit = 'start',
-    keepMounted = false,
-    overrides,
-    onChange,
-    className,
-    style,
-    ...rest
-  },
+export const Tabs = function Tabs({
   ref,
-) {
+  tabs,
+  children,
+  label,
+  value,
+  defaultValue,
+  activation = 'automatic',
+  orientation = 'horizontal',
+  fit = 'start',
+  keepMounted = false,
+  overrides,
+  onChange,
+  className,
+  style,
+  ...rest
+}: TabsProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const baseId = `ds-tabs${generatedId}`;
 
@@ -262,19 +257,19 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     switch (event.key) {
       case nextKey:
         event.preventDefault();
-        moveTo(enabled[(currentIndex + 1) % enabled.length].id);
+        moveTo(enabled[(currentIndex + 1) % enabled.length]!.id);
         break;
       case prevKey:
         event.preventDefault();
-        moveTo(enabled[(currentIndex - 1 + enabled.length) % enabled.length].id);
+        moveTo(enabled[(currentIndex - 1 + enabled.length) % enabled.length]!.id);
         break;
       case 'Home':
         event.preventDefault();
-        moveTo(enabled[0].id);
+        moveTo(enabled[0]!.id);
         break;
       case 'End':
         event.preventDefault();
-        moveTo(enabled[enabled.length - 1].id);
+        moveTo(enabled[enabled.length - 1]!.id);
         break;
       case 'Enter':
       case ' ':
@@ -362,4 +357,4 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
       </div>
     </div>
   );
-});
+};

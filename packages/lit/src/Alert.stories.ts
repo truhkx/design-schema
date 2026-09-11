@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Alert.js';
@@ -8,7 +8,7 @@ import type { AlertLive, AlertTone } from './Alert.js';
 
 interface AlertArgs {
   tone: AlertTone;
-  heading?: string;
+  heading?: string | undefined;
   live: AlertLive;
   dismissible: boolean;
   body: string;

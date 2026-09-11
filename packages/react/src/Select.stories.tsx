@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Select } from './Select';
 import type { ListboxOption } from './Listbox';
 
@@ -28,7 +28,7 @@ const ROLES: ListboxOption[] = [
   },
 ];
 
-const meta = {
+const meta: Meta<typeof Select> = {
   title: 'Select/React',
   component: Select,
   args: {
@@ -37,7 +37,7 @@ const meta = {
     options: COUNTRIES,
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof Select>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

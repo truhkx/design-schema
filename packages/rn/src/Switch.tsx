@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, Pressable, Switch as RNSwitch, View, findNodeHandle } from 'react-native';
-import type { ViewStyle } from 'react-native';
+import type { SwitchInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
@@ -30,21 +30,21 @@ export interface SwitchProps {
   /** Visible label naming the thing being turned on or off. Also the accessible name. */
   label: string;
   /** Optional field name. When inside a Form the checked state is collected as a boolean; most switches are not in forms. */
-  name?: string;
+  name?: string | undefined;
   /** Controlled state. Omit for an uncontrolled control. */
-  checked?: boolean;
+  checked?: boolean | undefined;
   /** Initial state for an uncontrolled control. */
-  defaultChecked?: boolean;
+  defaultChecked?: boolean | undefined;
   /** Cannot be toggled. Stays visible, readable and focusable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Persistent helper text below the label explaining the effect. Also the `accessibilityHint`. */
-  description?: string;
+  description?: string | undefined;
   /** Where the label sits relative to the track. `start` (label, then switch at the row end) is the settings-list convention; `end` matches Checkbox. */
-  labelPosition?: SwitchLabelPosition;
+  labelPosition?: SwitchLabelPosition | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<SwitchOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SwitchOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the state changes, with the new boolean (`events.onChange` → `onValueChange` on React Native, mirroring the native Switch). The change is already in effect; there is nothing to submit. */
-  onValueChange?: (checked: boolean) => void;
+  onValueChange?: ((checked: boolean) => void) | undefined;
 }
 
 /**
@@ -80,7 +80,7 @@ export function Switch({
 }: SwitchProps): React.JSX.Element {
   const { tokens } = useTheme();
   const form = useFormContext();
-  const switchRef = React.useRef<RNSwitch>(null);
+  const switchRef = React.useRef<SwitchInstance>(null);
   const [internalChecked, setInternalChecked] = React.useState<boolean>(defaultChecked);
 
   const isChecked = checked ?? internalChecked;
@@ -94,7 +94,7 @@ export function Switch({
       validate: () => null,
       focus: () => {
         const node = switchRef.current === null ? null : findNodeHandle(switchRef.current);
-        if (node !== null) {
+        if (node != null) {
           AccessibilityInfo.setAccessibilityFocus(node);
         }
       },

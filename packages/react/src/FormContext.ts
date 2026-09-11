@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, type Context } from 'react';
 
 /** When field-level validation runs. Mirrors the Form `validate` prop. */
 export type FormValidateMode = 'submit' | 'blur' | 'change';
@@ -46,7 +46,7 @@ export interface FormContextValue {
   validateField(name: string): void;
 }
 
-export const FormContext = createContext<FormContextValue | null>(null);
+export const FormContext: Context<FormContextValue | null> = createContext<FormContextValue | null>(null);
 
 /** Returns the enclosing Form's context, or `null` outside a Form. */
 export function useFormContext(): FormContextValue | null {

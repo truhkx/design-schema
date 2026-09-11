@@ -28,7 +28,7 @@ export interface FieldsetContextValue {
 }
 
 /** `null` outside of a Fieldset so every field works standalone. */
-export const FieldsetContext = React.createContext<FieldsetContextValue | null>(null);
+export const FieldsetContext: React.Context<FieldsetContextValue | null> = React.createContext<FieldsetContextValue | null>(null);
 
 export function useFieldsetContext(): FieldsetContextValue | null {
   return React.useContext(FieldsetContext);
@@ -40,15 +40,15 @@ export interface FieldsetProps {
   /** The fields, usually Inputs, Checkboxes or Switches. Laid out in a `Stack` with `gap`. */
   children: React.ReactNode;
   /** Persistent helper text under the legend. Also the group's `accessibilityHint`. */
-  description?: string;
+  description?: string | undefined;
   /** A group-level error (cross-field validation such as "End date must be after start date"). Field-level errors stay on the fields. */
-  error?: string;
+  error?: string | undefined;
   /** Disables every field inside. Fields keep their own `disabled` for finer control. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Gap between the fields, from the layout rhythm. */
-  gap?: FieldsetGap;
+  gap?: FieldsetGap | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<FieldsetOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<FieldsetOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const COPY = {
@@ -85,7 +85,7 @@ export function Fieldset({ legend, children, description, error, disabled = fals
     }
   }, [error]);
 
-  const fieldElements = React.Children.toArray(children).filter(React.isValidElement) as React.ReactElement<{ required?: boolean }>[];
+  const fieldElements = React.Children.toArray(children).filter(React.isValidElement) as React.ReactElement<{ required?: boolean | undefined }>[];
   const allRequired = fieldElements.length > 0 && fieldElements.every((child) => child.props.required === true);
   const visibleLegend = allRequired ? `${legend}${COPY.requiredIndicator}` : legend;
 
@@ -94,7 +94,7 @@ export function Fieldset({ legend, children, description, error, disabled = fals
   // Fallback until Input, Checkbox, Switch and RadioGroup read FieldsetContext themselves: force every direct field's own `disabled`.
   const renderedChildren = disabled
     ? React.Children.map(children, (child) =>
-        React.isValidElement(child) ? React.cloneElement(child as React.ReactElement<{ disabled?: boolean }>, { disabled: true }) : child,
+        React.isValidElement(child) ? React.cloneElement(child as React.ReactElement<{ disabled?: boolean | undefined }>, { disabled: true }) : child,
       )
     : children;
 

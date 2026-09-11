@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import './Accordion.js';
 import './Text.js';
@@ -9,7 +9,7 @@ interface AccordionArgs {
   exclusive: boolean;
   divided: boolean;
   keepMounted: boolean;
-  defaultValue?: string | string[];
+  defaultValue?: string | string[] | undefined;
 }
 
 const FAQ = [

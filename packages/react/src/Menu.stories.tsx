@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Menu, type MenuItem } from './Menu';
 
 const ITEMS: MenuItem[] = [
@@ -18,7 +18,7 @@ const ITEMS: MenuItem[] = [
   { id: 'delete', label: 'Delete', tone: 'danger' },
 ];
 
-const meta = {
+const meta: Meta<typeof Menu> = {
   title: 'Menu/React',
   component: Menu,
   args: {
@@ -26,7 +26,7 @@ const meta = {
     items: ITEMS,
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof Menu>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

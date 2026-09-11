@@ -1,4 +1,4 @@
-import { forwardRef, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from 'react';
+import { type ComponentPropsWithoutRef, type CSSProperties, type ReactNode, type Ref, type ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Icon.css';
 
@@ -40,7 +40,7 @@ const OVERRIDE_HOOK: Record<IconOverridableBinding, string> = {
   strokeWidth: '--ds-icon-stroke-width',
 };
 
-function overridesToStyle(overrides: Partial<Record<IconOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<IconOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as IconOverridableBinding[]) {
     const ref = overrides[binding];
@@ -164,20 +164,20 @@ export interface IconProps
    */
   name: IconName;
   /** Rendered size, from the font-size scale so icons line up with text of the same size. */
-  size?: IconSize;
+  size?: IconSize | undefined;
   /**
    * Size the glyph at 1em of the surrounding text and align it to the text baseline, ignoring
    * `size`. For icons inside Text, Link and Button labels.
    */
-  inline?: boolean;
+  inline?: boolean | undefined;
   /**
    * Accessible name. When set (non-empty), the icon is meaningful and exposed as an image with
    * this name; when omitted or empty, it is decorative and hidden from assistive technology. Most
    * icons sit next to text and should have no label.
    */
-  label?: string;
+  label?: string | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<IconOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<IconOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -194,10 +194,7 @@ export interface IconProps
  * icon with no colored ancestor falls back to `color.foreground`. Line glyphs use the focus-ring
  * width as their stroke.
  */
-export const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon(
-  { name, size = 'md', inline = false, label, overrides, className, style, ...rest },
-  ref,
-) {
+export const Icon = function Icon({ ref, name, size = 'md', inline = false, label, overrides, className, style, ...rest }: IconProps & { ref?: Ref<SVGSVGElement> | undefined }): ReactElement {
   const labelled = label !== undefined && label !== '';
   const glyph = paths[name];
 
@@ -235,4 +232,4 @@ export const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon(
       {glyph}
     </svg>
   );
-});
+};

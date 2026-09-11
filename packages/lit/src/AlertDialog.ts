@@ -1,4 +1,4 @@
-import { LitElement, css, html, type PropertyValues } from 'lit';
+import { LitElement, css, html, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Heading.js';
@@ -129,7 +129,7 @@ export class DsAlertDialog extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       --ds-alert-dialog-scrim: var(--color-overlay-scrim);
@@ -256,35 +256,35 @@ export class DsAlertDialog extends LitElement {
   `;
 
   /** Controlled visibility, as in Dialog. The consumer owns it. */
-  @property({ type: Boolean, reflect: true }) open = false;
+  @property({ type: Boolean, reflect: true }) accessor open = false;
 
   /**
    * The question or statement, as a level-2 Heading and the accessible name.
    * Named `heading`, not `title` — `HTMLElement` already defines `title` as
    * the tooltip attribute.
    */
-  @property() heading!: string;
+  @property() accessor heading!: string;
 
   /** What will happen and whether it can be undone. Becomes the accessible description. */
-  @property() description!: string;
+  @property() accessor description!: string;
 
   /** The nature of the decision. Sets the status icon and the confirm button's variant. */
-  @property({ reflect: true }) tone: AlertDialogTone = 'danger';
+  @property({ reflect: true }) accessor tone: AlertDialogTone = 'danger';
 
   /** The confirming action, restating it. Never "OK" or "Yes". */
-  @property({ attribute: 'confirm-label' }) confirmLabel!: string;
+  @property({ attribute: 'confirm-label' }) accessor confirmLabel!: string;
 
   /** The declining action. Defaults to "Cancel". */
-  @property({ attribute: 'cancel-label' }) cancelLabel?: string;
+  @property({ attribute: 'cancel-label' }) accessor cancelLabel: string | undefined;
 
   /** Blocks confirm while a precondition is unmet. Cancel always works. */
-  @property({ type: Boolean, reflect: true, attribute: 'confirm-disabled' }) confirmDisabled = false;
+  @property({ type: Boolean, reflect: true, attribute: 'confirm-disabled' }) accessor confirmDisabled = false;
 
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings (surface, icon, focusRing, focusRingWidth) are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<AlertDialogOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<AlertDialogOverridableBinding, TokenRef | undefined>> | undefined;
 
-  @query('dialog') private readonly dialogEl!: HTMLDialogElement;
-  @query('.cancel') private readonly cancelButtonEl!: HTMLElement;
+  @query('dialog') private accessor dialogEl!: HTMLDialogElement;
+  @query('.cancel') private accessor cancelButtonEl!: HTMLElement;
 
   private closing = false;
   private openerElement: Element | null = null;
@@ -318,7 +318,7 @@ export class DsAlertDialog extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const cancelLabel = this.cancelLabel ?? COPY_CANCEL_LABEL;
     const confirmVariant = this.tone === 'danger' ? 'danger' : 'primary';
 

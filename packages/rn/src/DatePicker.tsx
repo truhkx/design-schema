@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, Pressable, TextInput, View, findNodeHandle } from 'react-native';
-import type { NativeSyntheticEvent, TextInputKeyPressEventData, TextStyle, ViewStyle } from 'react-native';
+import type { TextInputInstance, TextInputKeyPressEvent, TextStyle, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { BottomSheet } from './BottomSheet';
@@ -57,43 +57,43 @@ export interface DatePickerProps {
   /** Field name for the Form. A range registers two fields, `name` and `name-end`. */
   name: string;
   /** Controlled value (ISO date, or a range). */
-  value?: DatePickerValue;
+  value?: DatePickerValue | undefined;
   /** Initial value. */
-  defaultValue?: DatePickerValue;
+  defaultValue?: DatePickerValue | undefined;
   /** Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default. */
-  open?: boolean;
+  open?: boolean | undefined;
   /** Pick a start and an end date in one calendar; two inputs in the field. */
-  range?: boolean;
+  range?: boolean | undefined;
   /** Earliest selectable date (ISO). Earlier days are disabled and the error uses `copy.tooEarly`. */
-  min?: string;
+  min?: string | undefined;
   /** Latest selectable date (ISO). */
-  max?: string;
+  max?: string | undefined;
   /** Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden. */
-  isDateDisabled?: (isoDate: string) => boolean;
+  isDateDisabled?: ((isoDate: string) => boolean) | undefined;
   /** BCP 47 locale for month/weekday names, the first day of the week, and the typed format. Defaults to the device locale. */
-  locale?: string;
+  locale?: string | undefined;
   /** An ISO week-number column at the start of each row. */
-  showWeekNumbers?: boolean;
+  showWeekNumbers?: boolean | undefined;
   /** Defaults to the locale's pattern ("MM/DD/YYYY", "DD.MM.YYYY"). */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /** Helper text. */
-  description?: string;
+  description?: string | undefined;
   /** Must have a value to submit. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Visually hide the label (it remains the accessible name). */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
-  size?: DatePickerSize;
+  size?: DatePickerSize | undefined;
   /** Not editable, still readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Error message; implies invalid. */
-  error?: string;
+  error?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<DatePickerOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<DatePickerOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a complete valid date (or range) is typed or picked, with the ISO value; with `undefined` when cleared. */
-  onChange?: (value: DatePickerValue | undefined) => void;
+  onChange?: ((value: DatePickerValue | undefined) => void) | undefined;
   /** Fired when the calendar opens or closes. */
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: ((open: boolean) => void) | undefined;
 }
 
 const COPY = {
@@ -173,7 +173,7 @@ function getISOWeek(y: number, m: number, d: number): number {
 // engines; falls back to Sunday, matching the web generator's own fallback.
 function getLocaleFirstDay(locale: string | undefined): number {
   try {
-    const info = (new Intl.Locale(locale ?? 'en-US') as unknown as { getWeekInfo?: () => { firstDay: number } }).getWeekInfo?.();
+    const info = (new Intl.Locale(locale ?? 'en-US') as unknown as { getWeekInfo?: (() => { firstDay: number }) | undefined }).getWeekInfo?.();
     if (info) {
       return info.firstDay % 7;
     }
@@ -241,7 +241,7 @@ function parseTyped(text: string, locale: string | undefined): string | null {
     return null;
   }
   const order = getPatternOrder(locale);
-  const values: Partial<Record<'year' | 'month' | 'day', number>> = {};
+  const values: Partial<Record<'year' | 'month' | 'day', number | undefined>> = {};
   let cursor = 0;
   for (const part of order) {
     const length = part === 'year' ? 4 : 2;
@@ -311,9 +311,9 @@ export function DatePicker({
 }: DatePickerProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const form = useFormContext();
-  const singleInputRef = React.useRef<TextInput>(null);
-  const startInputRef = React.useRef<TextInput>(null);
-  const endInputRef = React.useRef<TextInput>(null);
+  const singleInputRef = React.useRef<TextInputInstance>(null);
+  const startInputRef = React.useRef<TextInputInstance>(null);
+  const endInputRef = React.useRef<TextInputInstance>(null);
 
   const [internalValue, setInternalValue] = React.useState<DatePickerValue | undefined>(defaultValue);
   const isControlled = value !== undefined;
@@ -440,14 +440,14 @@ export function DatePicker({
   const latest = React.useRef({ currentValue, currentSingle, currentStart, currentEnd, validateValue });
   latest.current = { currentValue, currentSingle, currentStart, currentEnd, validateValue };
 
-  const focusInput = (ref: { current: TextInput | null }): void => {
+  const focusInput = (ref: { current: TextInputInstance | null }): void => {
     const input = ref.current;
     if (input === null) {
       return;
     }
     input.focus();
     const node = findNodeHandle(input);
-    if (node !== null) {
+    if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
     }
   };
@@ -568,7 +568,7 @@ export function DatePicker({
   // ArrowDown is only reachable via a hardware keyboard or react-native-web; on-screen
   // keyboards do not emit it, so opening the calendar from the field is otherwise done
   // with the calendar button (see the platform notes' acknowledged limit).
-  const handleInputKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>): void => {
+  const handleInputKeyPress = (event: TextInputKeyPressEvent): void => {
     if (event.nativeEvent.key === 'ArrowDown') {
       changeOpen(true);
     }

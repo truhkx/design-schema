@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Heading } from './Heading';
 
-const meta = {
+const meta: Meta<typeof Heading> = {
   title: 'Heading/React',
   component: Heading,
   args: {
@@ -9,7 +9,7 @@ const meta = {
     children: 'Account settings',
     align: 'start',
   },
-} satisfies Meta<typeof Heading>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

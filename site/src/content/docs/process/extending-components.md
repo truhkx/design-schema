@@ -56,7 +56,7 @@ Rules the parser enforces:
 
 ## What the generator sees
 
-`tools/parse.py` merges every extension into its component, marks each merged item with `source: extensions/<file>` in `generated/components.json`, and adds an **Extensions** section to the prompt: the merged props/events/etc. are already in place in the schema tables, and the section carries the prose plus the module contracts ("import `trackPress` from `./custom/analytics`; call it from onPress when `track` is set"). The prompt hash includes the extension docs, so editing an extension makes exactly its component stale.
+`tools/parse.ts` merges every extension into its component, marks each merged item with `source: extensions/<file>` in `generated/components.json`, and adds an **Extensions** section to the prompt: the merged props/events/etc. are already in place in the schema tables, and the section carries the prose plus the module contracts ("import `trackPress` from `./custom/analytics`; call it from onPress when `track` is set"). The prompt hash includes the extension docs, so editing an extension makes exactly its component stale.
 
 The generated component imports modules by relative path and calls them at the declared points. It does not read, copy or "improve" their bodies. If a module's signature changes, the extension doc changes with it, the parser regenerates the stub, and the component is stale — the normal loop.
 

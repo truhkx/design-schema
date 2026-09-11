@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import './Stepper.js';
 import type { StepperNavigable, StepperOrientation, StepperStep, StepperStepSelectDetail } from './Stepper.js';

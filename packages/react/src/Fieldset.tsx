@@ -1,13 +1,13 @@
 import {
   Children,
   cloneElement,
-  forwardRef,
   isValidElement,
   useId,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type ReactElement,
   type ReactNode,
+  type Ref,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text } from './Text';
@@ -43,7 +43,7 @@ const OVERRIDE_HOOK: Record<FieldsetOverridableBinding, string> = {
   lineHeight: '--ds-fieldset-line-height',
 };
 
-function overridesToStyle(overrides: Partial<Record<FieldsetOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<FieldsetOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as FieldsetOverridableBinding[]) {
     const ref = overrides[binding];
@@ -64,17 +64,17 @@ export interface FieldsetProps
   /** The fields, usually a Stack of Inputs, Checkboxes or Switches. */
   children: ReactNode;
   /** Persistent helper text under the legend. Linked with aria-describedby on the group. */
-  description?: string;
+  description?: string | undefined;
   /** A group-level error (cross-field validation such as "End date must be after start date").
    * Field-level errors stay on the fields. Rendered once under the group with role=alert and
    * linked with aria-describedby. */
-  error?: string;
+  error?: string | undefined;
   /** Disables every field inside. Fields keep their own `disabled` for finer control. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Gap between the fields, from the layout rhythm. */
-  gap?: FieldsetGap;
+  gap?: FieldsetGap | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<FieldsetOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<FieldsetOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -86,16 +86,13 @@ export interface FieldsetProps
  * the group needs a rule ("We only ship within the EU") and put cross-field errors on the group
  * rather than on one field.
  */
-export const Fieldset = forwardRef<HTMLFieldSetElement, FieldsetProps>(function Fieldset(
-  { legend, children, description, error, disabled = false, gap = 'normal', overrides, id: idProp, className, style, ...rest },
-  ref,
-) {
+export const Fieldset = function Fieldset({ ref, legend, children, description, error, disabled = false, gap = 'normal', overrides, id: idProp, className, style, ...rest }: FieldsetProps & { ref?: Ref<HTMLFieldSetElement> | undefined }): ReactElement {
   const generatedId = useId();
   const id = idProp ?? `ds-fieldset${generatedId}`;
   const descriptionId = `${id}-description`;
   const errorId = `${id}-error`;
 
-  const fieldElements = Children.toArray(children).filter(isValidElement) as ReactElement<{ required?: boolean }>[];
+  const fieldElements = Children.toArray(children).filter(isValidElement) as ReactElement<{ required?: boolean | undefined }>[];
   const allRequired = fieldElements.length > 0 && fieldElements.every((field) => field.props.required === true);
 
   // Group `disabled` overrides every field; a field's own `disabled` only matters while the group is not disabled.
@@ -154,4 +151,4 @@ export const Fieldset = forwardRef<HTMLFieldSetElement, FieldsetProps>(function 
       ) : null}
     </fieldset>
   );
-});
+};

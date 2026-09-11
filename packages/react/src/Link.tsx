@@ -1,4 +1,4 @@
-import { forwardRef, type ComponentPropsWithoutRef, type CSSProperties, type MouseEvent } from 'react';
+import { type ComponentPropsWithoutRef, type CSSProperties, type MouseEvent, type Ref, type ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Icon } from './Icon';
 import './Link.css';
@@ -18,7 +18,7 @@ const OVERRIDE_HOOK: Record<LinkOverridableBinding, string> = {
   transition: '--ds-link-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<LinkOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<LinkOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as LinkOverridableBinding[]) {
     const ref = overrides[binding];
@@ -34,15 +34,15 @@ export interface LinkProps
   /** The link text. Also the accessible name. Says where the link goes, not "click here". */
   label: string;
   /** Opens the destination in a new tab and appends the external suffix to the accessible name, with a decorative trailing icon. */
-  external?: boolean;
+  external?: boolean | undefined;
   /** `default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone. */
-  tone?: LinkTone;
+  tone?: LinkTone | undefined;
   /** Downloads the resource instead of navigating. Web only. */
-  download?: boolean;
+  download?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<LinkOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<LinkOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the link is activated. The default navigation still happens unless the consumer prevents it. */
-  onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onClick?: ((event: MouseEvent<HTMLAnchorElement>) => void) | undefined;
 }
 
 /**
@@ -54,10 +54,7 @@ export interface LinkProps
  * by default) and standalone in navigation lists. Use `external` whenever the destination leaves
  * the product, so people are warned before they lose their place.
  */
-export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
-  { href, label, external = false, tone = 'default', download = false, overrides, onClick, className, style, ...rest },
-  ref,
-) {
+export const Link = function Link({ ref, href, label, external = false, tone = 'default', download = false, overrides, onClick, className, style, ...rest }: LinkProps & { ref?: Ref<HTMLAnchorElement> | undefined }): ReactElement {
   const classes = ['ds-link', `ds-link--tone-${tone}`, external ? 'ds-link--external' : null, className ?? null]
     .filter(Boolean)
     .join(' ');
@@ -90,4 +87,4 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
       ) : null}
     </a>
   );
-});
+};

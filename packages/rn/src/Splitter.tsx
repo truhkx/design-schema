@@ -25,37 +25,37 @@ export interface SplitterProps {
   /** What the divider resizes ("Sidebar width", "Preview height"). The separator's accessible name. */
   label: string;
   /** `horizontal` places panes side by side (the separator is vertical); `vertical` stacks them. */
-  orientation?: SplitterOrientation;
+  orientation?: SplitterOrientation | undefined;
   /** The first pane (start or top). Its size is what the separator controls and reports. */
   primary: React.ReactNode;
   /** The second pane, which takes the remaining space. */
   secondary: React.ReactNode;
   /** Controlled size of the primary pane as a percentage of the container (0-100). */
-  size?: number;
+  size?: number | undefined;
   /** Initial primary size, percent. */
-  defaultSize?: number;
+  defaultSize?: number | undefined;
   /** Smallest primary size, percent. Below this the pane collapses instead (when `collapsible`). */
-  minSize?: number;
+  minSize?: number | undefined;
   /** Largest primary size, percent. */
-  maxSize?: number;
+  maxSize?: number | undefined;
   /** Arrow-key (accessibility increment/decrement action) increment, percent. */
-  step?: number;
+  step?: number | undefined;
   /** The primary pane can collapse to nothing: drag past the minimum, the separator's activate action, or the collapse button. Activating again restores the last size. */
-  collapsible?: boolean;
+  collapsible?: boolean | undefined;
   /** Controlled collapsed state. */
-  collapsed?: boolean;
+  collapsed?: boolean | undefined;
   /** When set, the size and collapsed state are remembered per session under this key, so a sidebar stays where it was left across remounts. */
-  persistKey?: string;
+  persistKey?: string | undefined;
   /** Below this layout width a horizontal splitter stacks its panes and the separator becomes inert (a phone has no room for two panes side by side). Ignored when `orientation` is `vertical`, which is already stacked. */
-  stackBelow?: SplitterStackBelow;
+  stackBelow?: SplitterStackBelow | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<SplitterOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SplitterOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired continuously while dragging and on each accessibility step action, with the primary size in percent. */
-  onSizeChange?: (size: number) => void;
+  onSizeChange?: ((size: number) => void) | undefined;
   /** Fired once when a drag ends, with the final size. */
-  onSizeChangeEnd?: (size: number) => void;
+  onSizeChangeEnd?: ((size: number) => void) | undefined;
   /** Fired when the primary pane collapses or restores. */
-  onCollapseChange?: (collapsed: boolean) => void;
+  onCollapseChange?: ((collapsed: boolean) => void) | undefined;
 }
 
 const COPY = {
@@ -316,7 +316,7 @@ export function Splitter({
     );
   }
 
-  const primaryPaneStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const primaryPaneStyle: Animated.WithAnimatedValue<ViewStyle> = {
     flexBasis: sizeAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }),
     flexGrow: 0,
     flexShrink: 0,

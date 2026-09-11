@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Tree, type TreeNode } from './Tree';
 
 const NODES: TreeNode[] = [
@@ -30,7 +30,7 @@ const LAZY_NODES: TreeNode[] = [
   { id: 'recent', label: 'Recent', children: 'lazy' },
 ];
 
-const meta = {
+const meta: Meta<typeof Tree> = {
   title: 'Tree/React',
   component: Tree,
   args: {
@@ -39,7 +39,7 @@ const meta = {
     defaultExpanded: ['inbox'],
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof Tree>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

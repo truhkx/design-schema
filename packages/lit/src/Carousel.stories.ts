@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Carousel.js';
@@ -12,7 +12,7 @@ interface CarouselArgs {
   autoplay: boolean;
   interval: number;
   picker: CarouselPicker;
-  activeIndex?: number;
+  activeIndex?: number | undefined;
   snap: boolean;
 }
 

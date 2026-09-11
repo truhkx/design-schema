@@ -8,14 +8,14 @@ Open source, for two people: an **adopter** (a business owner and their AI engin
 site/src/content/docs/themes/*.md      Stage 1: theme docs — frontmatter = the decisions, body = the feel
 tokens/themes/<id>/                    Stages 2–3: DERIVED base.json + light.json/dark.json (do not edit)
 tokens/build.mjs                       Style Dictionary → packages/tokens/dist/<id>/{css,js,rn,json}
-schema/                                component.* and theme.* — Zod (Starlight) + JSON Schema (Python tools)
+schema/                                component.ts (Zod, the source of truth; tools/schema.ts derives component.schema.json) + theme.*
 site/src/content/docs/components/*.md  Stage 4: component docs — frontmatter = schema, body = guidance
 prompts/templates/                     theme.md (the "feel" skill) + web/lit/rn.md (per-component generators)
 packages/{tokens,react,lit,rn}/        built tokens + GENERATED components, stories and a sign-in demo per platform
 storybook/                             root Storybook composing the three platform Storybooks side by side
 tools/theme.py                         theme doc → OKLCH ramps, scales, contrast-aware semantic mapping
 tools/tokens.py                        pure-Python token resolver (theme × mode); fallback CSS for the site
-tools/parse.py                         validates docs → generated/{components,themes}.json + generated/prompts/*.md
+tools/parse.ts                         validates docs → generated/{components,themes}.json + generated/prompts/*.md (TypeScript; `node --import tsx`)
 tools/check_contrast.py                WCAG contrast for every declared pair × theme × mode × variant
 tools/generate.py + generate.ps1       doc → platform code + tests via Claude Code headless, gated by tools/checks.py; lockfile in generated/
 tools/checks.py                        the gates: parse, contrast, literals, typecheck, tests (Vitest / Vitest browser / Jest per platform)
@@ -53,7 +53,8 @@ pnpm docs         # run the docs site locally (http://localhost:4321)
 pnpm storybook    # React (6007) + Lit (6008) + React Native via react-native-web (6009), composed at http://localhost:6006
 pnpm storybook:device # the same React Native stories on a phone (Expo Go) for VoiceOver / TalkBack; see below
 pnpm typecheck    # tsc --noEmit in every package
-pnpm test         # pytest: color math, token resolver, theme derivation, doc parser, behavior scenarios, MCP tools
+pytest            # color math, token resolver, theme derivation, contrast, MCP tools (the Python tools)
+pnpm test:tools   # Vitest: the doc parser, behavior scenarios, extensions, patterns, the derived JSON schema (tools/*.ts)
 pnpm test:packages # the generated components' behavior tests on all three platforms (Lit needs `npx playwright install chromium` once)
 pnpm gates        # every code gate on committed code, no model
 pnpm build        # tokens + parse + static site build
@@ -63,7 +64,7 @@ pnpm build        # tokens + parse + static site build
 
 ## Storybook on a device
 
-`packages/rn` is verified in the browser through react-native-web, which is what the gates use. Screen readers are not: VoiceOver and TalkBack only exist on a phone. `apps/rn-storybook` is an Expo (SDK 51, matching the workspace's React Native 0.74) app running `@storybook/react-native` on the device, over the same story files.
+`packages/rn` is verified in the browser through react-native-web, which is what the gates use. Screen readers are not: VoiceOver and TalkBack only exist on a phone. `apps/rn-storybook` is an Expo app (SDK 57, the latest stable; it pins React Native 0.86.3 while `packages/rn` builds and tests against 0.87, because the native modules inside Expo Go have to match the SDK) running `@storybook/react-native` 10 on the device, over the same story files.
 
 ```sh
 pnpm storybook:device        # starts Expo and prints a QR code
@@ -94,6 +95,6 @@ If the phone cannot reach the machine, start with `pnpm --filter rn-storybook st
 - [x] `packages/react`, `packages/lit`, `packages/rn` generated from the prompts, with Storybook (first run; see the Generation log on the site)
 - [x] Type-check and run the generated packages against real dependencies (typecheck + tests gates)
 - [ ] Behavior scenarios and generated tests for every component (Switch and Checkbox author them; run `generate.ps1 -Stale -Extra "--tests-only"` for the rest)
-- [ ] Generate `component.schema.json` from `component.ts` (single source)
+- [x] Generate `component.schema.json` from `component.ts` (single source; `pnpm schema`)
 - [ ] FastMCP server (`mcp/`) exposing components, sections, tokens, contrast check, and `generate(component, platform)`
 - [ ] SwiftUI and Compose templates

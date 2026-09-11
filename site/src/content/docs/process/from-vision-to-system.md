@@ -71,7 +71,7 @@ Component *choices* — which components exist, which props they have, what the 
 
 ## Stage 5 — Generation
 
-`tools/parse.py` validates every component and theme doc and assembles prompts from `prompts/templates/` into `generated/prompts/`. There are two kinds. `theme.<id>.md` is the standing "feel" instruction for a theme: identity, the decisions, the resolved semantic tokens, and the guidance body — a skill an AI reads before touching anything. `<Component>.<platform>.md` is self-contained per component and platform: rules for the platform, the full schema, the platform notes, and the guidance. Running one produces the component file for that platform. Together they are the "mini-skills"; the MCP server will expose them as tools so any AI client can call `generate(component, platform, theme)`.
+`tools/parse.ts` validates every component and theme doc and assembles prompts from `prompts/templates/` into `generated/prompts/`. There are two kinds. `theme.<id>.md` is the standing "feel" instruction for a theme: identity, the decisions, the resolved semantic tokens, and the guidance body — a skill an AI reads before touching anything. `<Component>.<platform>.md` is self-contained per component and platform: rules for the platform, the full schema, the platform notes, and the guidance. Running one produces the component file for that platform. Together they are the "mini-skills"; the MCP server will expose them as tools so any AI client can call `generate(component, platform, theme)`.
 
 ## Why documentation comes first
 

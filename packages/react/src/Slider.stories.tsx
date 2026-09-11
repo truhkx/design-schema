@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Slider } from './Slider';
 
-const meta = {
+const meta: Meta<typeof Slider> = {
   title: 'Slider/React',
   component: Slider,
   args: {
@@ -26,7 +26,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof Slider>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

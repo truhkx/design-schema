@@ -18,7 +18,7 @@ Gates today:
   axe        tests/gates/axe.spec.ts + Playwright   axe over every story, light and dark                                (--with axe)
   behavior   tools/behavior_tests.py + pnpm test    every `behavior` scenario, against the real component module        (--with behavior)
   contrast   tools/check_contrast.py           every declared pair, every theme × mode (doc-level, cheap, run anyway)
-  parse      tools/parse.py                    the docs still validate (a generator may not edit docs, but be sure)
+  parse      tools/parse.ts                    the docs still validate (a generator may not edit docs, but be sure)
 
 Planned (see process/generation-pipeline.md): axe over Storybook stories; Playwright keyboard tests
 derived from a11y.requires; a "no new dependencies" diff on package.json.
@@ -61,6 +61,10 @@ def pnpm() -> str:
     return shutil.which("pnpm") or shutil.which("pnpm.cmd") or "pnpm"
 
 
+def node() -> str:
+    return shutil.which("node") or "node"
+
+
 BROWSER_GATES = {"keyboard", "axe"}  # need Playwright + browsers; opt in with --with
 
 
@@ -69,7 +73,8 @@ def gates_for(platform: str, skip: set[str] | None = None, extra: set[str] | Non
     extra = extra or set()
     pkg = PKG[platform]
     all_gates = [
-        Gate("parse", [PY, str(ROOT / "tools" / "parse.py")]),
+        # The parser is TypeScript: `--import tsx` runs the .ts file on any Node ≥ 22 (native type stripping needs 22.18+).
+        Gate("parse", [node(), "--import", "tsx", str(ROOT / "tools" / "parse.ts")]),
         Gate("contrast", [PY, str(ROOT / "tools" / "check_contrast.py")]),
         Gate("literals", [PY, str(ROOT / "tools" / "lint_literals.py"), "--platform", platform]),
         Gate("typecheck", [pnpm(), "--filter", f"@design-schema/{pkg}", "typecheck"]),

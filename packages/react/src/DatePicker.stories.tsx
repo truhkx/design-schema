@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DatePicker } from './DatePicker';
 
-const meta = {
+const meta: Meta<typeof DatePicker> = {
   title: 'DatePicker/React',
   component: DatePicker,
   args: {
@@ -9,7 +9,7 @@ const meta = {
     name: 'due-date',
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof DatePicker>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -46,7 +46,7 @@ export const WithDisabledDates: Story = {
     description: 'Weekends are unavailable.',
     isDateDisabled: (isoDate: string) => {
       const [year, month, day] = isoDate.split('-').map(Number);
-      const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+      const weekday = new Date(Date.UTC(year!, month! - 1, day!)).getUTCDay();
       return weekday === 0 || weekday === 6;
     },
   },

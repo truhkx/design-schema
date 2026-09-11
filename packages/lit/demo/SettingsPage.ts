@@ -1,4 +1,4 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, css, html, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, query, state } from 'lit/decorators.js';
 
 import '../src/Landmark.js';
@@ -63,19 +63,19 @@ const DENSITY_OPTIONS: RadioGroupOption[] = [
  */
 @customElement('ds-pattern-settings-page')
 export class DsPatternSettingsPage extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
     }
   `;
 
-  @state() private pushEnabled = false;
+  @state() private accessor pushEnabled = false;
 
-  @state() private deleteDialogOpen = false;
+  @state() private accessor deleteDialogOpen = false;
 
-  @query('ds-form') private readonly profileFormEl?: DsForm;
+  @query('ds-form') private accessor profileFormEl!: DsForm | null;
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`
       <ds-landmark role="main">
         <ds-container width="content">

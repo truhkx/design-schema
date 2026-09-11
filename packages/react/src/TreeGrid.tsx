@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -10,7 +9,8 @@ import {
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
-  type UIEvent,
+  type Ref,
+  type UIEvent, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -37,7 +37,7 @@ export type TreeGridChildren = TreeGridRow[] | 'lazy';
 /** A nested row. `id` must be stable — expansion, selection and React keys all use it. */
 export interface TreeGridRow {
   id: string;
-  children?: TreeGridChildren;
+  children?: TreeGridChildren | undefined;
   [key: string]: unknown;
 }
 
@@ -114,7 +114,7 @@ const ROOT_OVERRIDE_HOOK: Record<TreeGridOverridableBinding, string> = {
   transition: '--ds-tree-grid-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<TreeGridOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<TreeGridOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as TreeGridOverridableBinding[]) {
     const ref = overrides[binding];
@@ -168,7 +168,7 @@ interface VisibleRow {
   setsize: number;
   hasChildren: boolean;
   parentId: string | null;
-  isPlaceholder?: boolean;
+  isPlaceholder?: boolean | undefined;
 }
 
 function flattenTree(rows: TreeGridRow[], expandedSet: Set<string>, sort: TreeGridSortState | undefined): VisibleRow[] {
@@ -256,51 +256,51 @@ export interface TreeGridProps extends Omit<ComponentPropsWithoutRef<'div'>, 'ch
   /** What the tree grid holds ("Chart of accounts"). The accessible name; visually hidden with `hideCaption`. */
   caption: string;
   /** Visually hide the caption; it remains the accessible name. */
-  hideCaption?: boolean;
+  hideCaption?: boolean | undefined;
   /** Column model. The `isRowHeader` column is required: it carries the indent and expand button,
    * and must come first after the selection column. */
   columns: DataGridColumn[];
   /** Nested rows. `children: "lazy"` marks a row loaded on first expand through `onExpand`. */
   data: TreeGridRow[];
   /** Controlled ids of expanded rows. */
-  expanded?: string[];
+  expanded?: string[] | undefined;
   /** Initially expanded ids. `["*"]` expands every loaded row. */
-  defaultExpanded?: string[];
+  defaultExpanded?: string[] | undefined;
   /** Controlled sort state. Sorting orders siblings within each level; hierarchy is kept. */
-  sort?: TreeGridSortState;
+  sort?: TreeGridSortState | undefined;
   /** `row` adds a checkbox column; `cell` selects one cell. `row` selection of a parent does not
    * select its descendants unless `selectChildren`. */
-  selectable?: TreeGridSelectable;
+  selectable?: TreeGridSelectable | undefined;
   /** Selecting a parent row selects its descendants; the parent shows indeterminate when only some
    * are selected. */
-  selectChildren?: boolean;
+  selectChildren?: boolean | undefined;
   /** Master switch: cells whose column is `editable` can be edited. */
-  editable?: boolean;
+  editable?: boolean | undefined;
   /** Row height: compact suits the grid's purpose; comfortable for touch. */
-  density?: TreeGridDensity;
+  density?: TreeGridDensity | undefined;
   /** `viewport` fills the height available under the header; `content` grows with rows (no
    * virtualization); `fixed` uses `overrides.fixedHeight`. */
-  height?: TreeGridHeight;
+  height?: TreeGridHeight | undefined;
   /** Sets aria-busy and shows `copy.loading` in the status bar; existing rows stay. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** A footer line with row count and, while editing, the validation message. */
-  showStatusBar?: boolean;
+  showStatusBar?: boolean | undefined;
   /** Portal target for editors that open a popup (Select, DatePicker). Defaults to `document.body`.
    * Not part of the schema; added so those composed editors can be portaled per their own contract. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<TreeGridOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<TreeGridOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired with the new array of expanded ids. */
-  onExpandChange?: (expanded: string[]) => void;
+  onExpandChange?: ((expanded: string[]) => void) | undefined;
   /** Fired when a `children: "lazy"` row is expanded for the first time, with its id; the caller
    * loads and replaces `children`. */
-  onExpand?: (id: string) => void;
+  onExpand?: ((id: string) => void) | undefined;
   /** Fired when a sortable header is activated, with the new sort state. */
-  onSortChange?: (sort: TreeGridSortState) => void;
+  onSortChange?: ((sort: TreeGridSortState) => void) | undefined;
   /** Fired with the selection: row ids, or one cell. */
-  onSelectionChange?: (selection: TreeGridSelectionChangeDetail) => void;
+  onSelectionChange?: ((selection: TreeGridSelectionChangeDetail) => void) | undefined;
   /** Fired when an edit commits. The caller updates `data`; the grid shows the old value until it does. */
-  onCellChange?: (detail: TreeGridCellChangeDetail) => void;
+  onCellChange?: ((detail: TreeGridCellChangeDetail) => void) | undefined;
 }
 
 type ActiveCell = { row: number; col: number };
@@ -315,35 +315,33 @@ type ActiveCell = { row: number; col: number };
  * trees so the first paint is fast. Use `selectChildren` when selection means "this and everything
  * in it" (a folder to export).
  */
-export const TreeGrid = forwardRef<HTMLDivElement, TreeGridProps>(function TreeGrid(
-  {
-    caption,
-    hideCaption = false,
-    columns,
-    data,
-    expanded,
-    defaultExpanded,
-    sort,
-    selectable = 'none',
-    selectChildren = false,
-    editable = false,
-    density = 'compact',
-    height = 'viewport',
-    loading = false,
-    showStatusBar = true,
-    container,
-    overrides,
-    onExpandChange,
-    onExpand,
-    onSortChange,
-    onSelectionChange,
-    onCellChange,
-    className,
-    style,
-    ...rest
-  },
+export const TreeGrid = function TreeGrid({
   ref,
-) {
+  caption,
+  hideCaption = false,
+  columns,
+  data,
+  expanded,
+  defaultExpanded,
+  sort,
+  selectable = 'none',
+  selectChildren = false,
+  editable = false,
+  density = 'compact',
+  height = 'viewport',
+  loading = false,
+  showStatusBar = true,
+  container,
+  overrides,
+  onExpandChange,
+  onExpand,
+  onSortChange,
+  onSelectionChange,
+  onCellChange,
+  className,
+  style,
+  ...rest
+}: TreeGridProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const baseId = `ds-tree-grid${generatedId}`;
   const captionId = `${baseId}-caption`;
@@ -466,7 +464,7 @@ export const TreeGrid = forwardRef<HTMLDivElement, TreeGridProps>(function TreeG
   const [editing, setEditing] = useState<TreeGridCellRef | undefined>();
   const [editingValue, setEditingValue] = useState<unknown>();
   const [editingError, setEditingError] = useState<string | undefined>();
-  const editingValueRef = useRef<unknown>();
+  const editingValueRef = useRef<unknown>(undefined);
   const isEditingRef = useRef(false);
   isEditingRef.current = editing !== undefined;
 
@@ -534,7 +532,7 @@ export const TreeGrid = forwardRef<HTMLDivElement, TreeGridProps>(function TreeG
   useLayoutEffect(() => {
     const sizer = sizerRef.current;
     if (!sizer || typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(([entry]) => setRowHeightPx(entry.contentRect.height || 32));
+    const observer = new ResizeObserver(([entry]) => setRowHeightPx(entry!.contentRect.height || 32));
     observer.observe(sizer);
     return () => observer.disconnect();
   }, [density]);
@@ -546,7 +544,7 @@ export const TreeGrid = forwardRef<HTMLDivElement, TreeGridProps>(function TreeG
   useLayoutEffect(() => {
     const region = scrollRegionRef.current;
     if (!region || typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(([entry]) => setViewportHeight(entry.contentRect.height));
+    const observer = new ResizeObserver(([entry]) => setViewportHeight(entry!.contentRect.height));
     observer.observe(region);
     return () => observer.disconnect();
   }, []);
@@ -1136,4 +1134,4 @@ export const TreeGrid = forwardRef<HTMLDivElement, TreeGridProps>(function TreeG
       )}
     </div>
   );
-});
+};

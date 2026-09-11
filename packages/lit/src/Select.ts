@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -166,7 +166,7 @@ export class DsSelect extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--font-family-body);
@@ -413,54 +413,54 @@ export class DsSelect extends LitElement {
   `;
 
   /** Visible label. Always rendered. */
-  @property() label!: string;
+  @property() accessor label!: string;
 
   /** Field name for the Form. */
-  @property() name!: string;
+  @property() accessor name!: string;
 
   /** The options, passed through to the composed Listbox. A property, not an attribute. */
-  @property({ attribute: false }) options: ListboxOption[] = [];
+  @property({ attribute: false }) accessor options: ListboxOption[] = [];
 
   /** Controlled value (array with `multiple`). Omit for uncontrolled. */
-  @property({ attribute: false }) value?: SelectValue;
+  @property({ attribute: false }) accessor value: SelectValue | undefined;
 
   /** Initial value (array with `multiple`) for an uncontrolled field. */
-  @property({ attribute: false }) defaultValue?: SelectValue;
+  @property({ attribute: false }) accessor defaultValue: SelectValue | undefined;
 
   /** Shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. Not a substitute for `label`. */
-  @property() placeholder?: string;
+  @property() accessor placeholder: string | undefined;
 
   /** Visually hide the label (it remains the accessible name), for compact pickers such as DatePicker's month and year. */
-  @property({ type: Boolean, attribute: 'hide-label' }) hideLabel = false;
+  @property({ type: Boolean, attribute: 'hide-label' }) accessor hideLabel = false;
 
   /** sm for pickers inside toolbars and calendar headers. Not listed under this component's `platforms.lit.reflect`, but the fontSize/triggerPaddingBlockSm/minTargetSm bindings resolve per value and need an attribute selector, matching Button/Input's reflected `size` in this package — see the generator's gap notes. */
-  @property({ reflect: true }) size: SelectSize = 'md';
+  @property({ reflect: true }) accessor size: SelectSize = 'md';
 
   /** Controlled popup state, for programmatic opening and for stories and tests. Omit for the trigger-driven default. */
-  @property({ type: Boolean, reflect: true }) open?: boolean;
+  @property({ type: Boolean, reflect: true }) accessor open: boolean | undefined;
 
   /** Pick any number. The trigger shows the count (or the labels when two or fewer); the popup stays open while toggling. */
-  @property({ type: Boolean, reflect: true }) multiple = false;
+  @property({ type: Boolean, reflect: true }) accessor multiple = false;
 
   /** Helper text under the label. */
-  @property() description?: string;
+  @property() accessor description: string | undefined;
 
   /** Must have a value to submit. Shown in the label, not only by color. */
-  @property({ type: Boolean, reflect: true }) required = false;
+  @property({ type: Boolean, reflect: true }) accessor required = false;
 
   /** Not openable and not submitted. Stays visible and focusable. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Marks the field invalid. Usually set by the Form. */
-  @property({ type: Boolean, reflect: true }) invalid = false;
+  @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
-  private errorValue?: string;
+  private errorValue?: string | undefined;
 
   /** Error message. Setting it implies `invalid`. */
-  @property()
   get error(): string | undefined {
     return this.errorValue;
   }
+  @property()
   set error(value: string | undefined) {
     const old = this.errorValue;
     this.errorValue = value;
@@ -476,24 +476,24 @@ export class DsSelect extends LitElement {
    * JS); `never` forces the popup everywhere. `auto` and `never` render
    * identically on this platform.
    */
-  @property({ reflect: true }) native: SelectNative = 'auto';
+  @property({ reflect: true }) accessor native: SelectNative = 'auto';
 
   /** Per-instance style overrides: `{ triggerRadius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<SelectOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<SelectOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled value (seeded from `defaultValue`). */
-  @state() private internalValue?: SelectValue;
+  @state() private accessor internalValue: SelectValue | undefined;
 
   /** Uncontrolled popup open state, used when `open` is omitted. */
-  @state() private internalOpen = false;
+  @state() private accessor internalOpen = false;
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
-  @state() private formDisabled = false;
+  @state() private accessor formDisabled = false;
 
-  @query('#trigger') private readonly triggerEl?: HTMLButtonElement;
-  @query('#native-select') private readonly nativeSelectEl?: HTMLSelectElement;
-  @query('#listbox') private readonly listboxEl?: DsListbox;
-  @query('#popup') private readonly popupEl?: HTMLElement;
+  @query('#trigger') private accessor triggerEl!: HTMLButtonElement | null;
+  @query('#native-select') private accessor nativeSelectEl!: HTMLSelectElement | null;
+  @query('#listbox') private accessor listboxEl!: DsListbox | null;
+  @query('#popup') private accessor popupEl!: HTMLElement | null;
 
   private readonly popoverSupported = POPOVER_SUPPORTED;
   private wasOpen = false;
@@ -624,7 +624,7 @@ export class DsSelect extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const isDisabled = this.isDisabled;
     const describedBy =
       [this.description ? 'description' : '', this.error ? 'error-message' : '']
@@ -898,7 +898,7 @@ export class DsSelect extends LitElement {
     }
     const selected = this.selectedSet;
     const match = items.find((item) => selected.has(item.value));
-    return (match ?? items[0]).value;
+    return (match ?? items[0])!.value;
   }
 
   private hidePopupImmediately(): void {
@@ -987,11 +987,11 @@ export class DsSelect extends LitElement {
     }
     const anchor = this.triggerEl ?? this.nativeSelectEl;
     if (this.error) {
-      this.internals.setValidity({ customError: true }, this.error, anchor);
+      this.internals.setValidity({ customError: true }, this.error, anchor!);
     } else if (this.invalid) {
-      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), anchor);
+      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), anchor!);
     } else if (this.required && value === null) {
-      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor);
+      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor!);
     } else {
       this.internals.setValidity({});
     }

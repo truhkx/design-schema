@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Alert } from './Alert';
 import { Link } from './Link';
 
-const meta = {
+const meta: Meta<typeof Alert> = {
   title: 'Alert/React',
   component: Alert,
   args: {
@@ -22,7 +22,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof Alert>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

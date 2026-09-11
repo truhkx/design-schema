@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, unsafeCSS, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, unsafeCSS, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -125,7 +125,7 @@ export class DsSplitter extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       container-type: inline-size;
@@ -321,62 +321,62 @@ export class DsSplitter extends LitElement {
   `;
 
   /** What the divider resizes ("Sidebar width", "Preview height"). The separator's accessible name. */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** `horizontal` places panes side by side (the separator is vertical); `vertical` stacks them. */
-  @property({ reflect: true }) orientation: SplitterOrientation = 'horizontal';
+  @property({ reflect: true }) accessor orientation: SplitterOrientation = 'horizontal';
 
   /** Controlled size of the primary pane, percent (0-100). Omit for an uncontrolled splitter. */
-  @property({ type: Number }) size?: number;
+  @property({ type: Number }) accessor size: number | undefined;
 
   /** Initial primary size, percent, for an uncontrolled splitter. */
-  @property({ type: Number, attribute: 'default-size' }) defaultSize = 30;
+  @property({ type: Number, attribute: 'default-size' }) accessor defaultSize = 30;
 
   /** Smallest primary size, percent. Below this the pane collapses instead, when `collapsible`. */
-  @property({ type: Number, attribute: 'min-size' }) minSize = 10;
+  @property({ type: Number, attribute: 'min-size' }) accessor minSize = 10;
 
   /** Largest primary size, percent. */
-  @property({ type: Number, attribute: 'max-size' }) maxSize = 90;
+  @property({ type: Number, attribute: 'max-size' }) accessor maxSize = 90;
 
   /** Arrow-key increment, percent. */
-  @property({ type: Number }) step = 2;
+  @property({ type: Number }) accessor step = 2;
 
   /** The primary pane can collapse to nothing: drag past `minSize`, press Enter on the separator, or use the
       collapse button. Enter again (or the button) restores the last size. */
-  @property({ type: Boolean, reflect: true }) collapsible = false;
+  @property({ type: Boolean, reflect: true }) accessor collapsible = false;
 
   /** Collapsed state. Two-way: set initially to start collapsed, or read/set at any time; the component keeps it
       current as the user drags, presses Enter, or uses the collapse button. */
-  @property({ type: Boolean, reflect: true }) collapsed = false;
+  @property({ type: Boolean, reflect: true }) accessor collapsed = false;
 
   /** When set, the size and collapsed state are remembered in `localStorage` under this key across mounts. */
-  @property({ attribute: 'persist-key' }) persistKey?: string;
+  @property({ attribute: 'persist-key' }) accessor persistKey: string | undefined;
 
   /** Below this layout width a horizontal splitter stacks its panes and the separator becomes inert. */
-  @property({ reflect: true, attribute: 'stack-below' }) stackBelow: SplitterStackBelow = 'prose';
+  @property({ reflect: true, attribute: 'stack-below' }) accessor stackBelow: SplitterStackBelow = 'prose';
 
   /** Per-instance style overrides: `{ separatorSize: 'space.2' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<SplitterOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<SplitterOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled size (seeded from `defaultSize`, or restored via `persistKey`, when nothing else is set). */
-  @state() private internalSize?: number;
+  @state() private accessor internalSize: number | undefined;
 
   /** Active while the pointer is dragging the separator (drives `separatorActive`). */
-  @state() private dragging = false;
+  @state() private accessor dragging = false;
 
   /** `true` below `stackBelow`, on a horizontal splitter: the separator loses its `tabindex` and `role`. */
-  @state() private stacked = false;
+  @state() private accessor stacked = false;
 
   private readonly instanceId = nextSplitterId();
 
-  private resizeObserver?: ResizeObserver;
+  private resizeObserver?: ResizeObserver | undefined;
 
-  @query('.container') private readonly containerEl!: HTMLDivElement;
-  @query('.separator') private readonly separatorEl!: HTMLDivElement;
-  @query('.primary-pane') private readonly primaryPaneEl!: HTMLDivElement;
-  @query('.secondary-pane') private readonly secondaryPaneEl!: HTMLDivElement;
-  @query('slot[name="primary"]') private readonly primarySlotEl?: HTMLSlotElement;
-  @query('slot[name="secondary"]') private readonly secondarySlotEl?: HTMLSlotElement;
+  @query('.container') private accessor containerEl!: HTMLDivElement;
+  @query('.separator') private accessor separatorEl!: HTMLDivElement;
+  @query('.primary-pane') private accessor primaryPaneEl!: HTMLDivElement;
+  @query('.secondary-pane') private accessor secondaryPaneEl!: HTMLDivElement;
+  @query('slot[name="primary"]') private accessor primarySlotEl!: HTMLSlotElement | null;
+  @query('slot[name="secondary"]') private accessor secondarySlotEl!: HTMLSlotElement | null;
 
   /** The current primary size (percent), resolved from `size`, `internalSize`, then `defaultSize`, clamped. */
   private get currentSize(): number {
@@ -427,7 +427,7 @@ export class DsSplitter extends LitElement {
     this.warnInDev(changed);
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const horizontal = this.orientation === 'horizontal';
     const size = this.effectiveSize;
     const collapseLabel = this.collapsed ? COPY_EXPAND(this.label) : COPY_COLLAPSE(this.label);
@@ -713,7 +713,7 @@ export class DsSplitter extends LitElement {
       if (!raw) {
         return;
       }
-      const parsed = JSON.parse(raw) as { size?: number; collapsed?: boolean };
+      const parsed = JSON.parse(raw) as { size?: number | undefined; collapsed?: boolean | undefined };
       if (this.size === undefined && typeof parsed.size === 'number') {
         this.internalSize = parsed.size;
       }

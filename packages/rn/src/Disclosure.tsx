@@ -37,23 +37,23 @@ export interface DisclosureProps {
   /** The content of the panel. Rendered only while open (not merely hidden). */
   children: React.ReactNode;
   /** Controlled open state. Omit for an uncontrolled disclosure. */
-  open?: boolean;
+  open?: boolean | undefined;
   /** Initial state for an uncontrolled disclosure. */
-  defaultOpen?: boolean;
+  defaultOpen?: boolean | undefined;
   /** The trigger cannot be activated. Stays focusable and is announced as disabled; the panel keeps its current state. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Keep the panel in the tree while closed (hidden, not unmounted). Required when the panel contains form fields, so the Form still collects them while the disclosure is closed. */
-  keepMounted?: boolean;
+  keepMounted?: boolean | undefined;
   /**
    * When set, the summary is marked as a heading so the disclosure appears in the
    * screen reader's heading list. Native has no heading levels, so the value only
    * documents the outline.
    */
-  headingLevel?: DisclosureHeadingLevel;
+  headingLevel?: DisclosureHeadingLevel | undefined;
   /** Fired after the state changes, with the new boolean `open` and a reason. */
-  onToggle?: (open: boolean, reason: DisclosureToggleReason) => void;
+  onToggle?: ((open: boolean, reason: DisclosureToggleReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<DisclosureOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<DisclosureOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /** Chevron rotation in degrees: pointing right when closed, down when open. */
@@ -215,7 +215,7 @@ export function Disclosure({
   // shape `chevron-right` reaches at +90deg.
   const chevronName = rtl ? 'chevron-left' : 'chevron-right';
   const chevronOpenAngle = rtl ? '-90deg' : CHEVRON_OPEN;
-  const chevronFrameStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const chevronFrameStyle: Animated.WithAnimatedValue<ViewStyle> = {
     transform: [
       {
         rotate: rotation.interpolate({ inputRange: [0, 1], outputRange: [CHEVRON_CLOSED, chevronOpenAngle] }),

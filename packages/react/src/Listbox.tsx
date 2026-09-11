@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -12,6 +11,7 @@ import {
   type FocusEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Icon, type IconName } from './Icon';
@@ -21,10 +21,10 @@ import './Listbox.css';
 
 /** One selectable row, or a labelled cluster of rows. Export used verbatim from the schema shape. */
 export type ListboxOption =
-  | { value: string; label: string; description?: string; icon?: IconName; disabled?: boolean }
+  | { value: string; label: string; description?: string | undefined; icon?: IconName | undefined; disabled?: boolean | undefined }
   | { group: string; options: ListboxOption[] };
 
-type ListboxRow = { value: string; label: string; description?: string; icon?: IconName; disabled?: boolean };
+type ListboxRow = { value: string; label: string; description?: string | undefined; icon?: IconName | undefined; disabled?: boolean | undefined };
 
 /** A value, or with `multiple` an array of values. */
 export type ListboxValue = string | string[];
@@ -81,7 +81,7 @@ const OVERRIDE_HOOK: Record<ListboxOverridableBinding, string> = {
   disabledOpacity: '--ds-listbox-disabled-opacity',
 };
 
-function overridesToStyle(overrides: Partial<Record<ListboxOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<ListboxOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as ListboxOverridableBinding[]) {
     const ref = overrides[binding];
@@ -112,7 +112,7 @@ export interface ListboxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'chi
   /** Accessible name of the list. When a visible Text label exists, pass its id via `labelledBy` instead and this is ignored. */
   label: string;
   /** Id of a visible element that labels the list. */
-  labelledBy?: string;
+  labelledBy?: string | undefined;
   /** Flat or grouped options. */
   options: ListboxOption[];
   /**
@@ -120,42 +120,42 @@ export interface ListboxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'chi
    * indicator; selection toggles rather than moves. This is the same engine Combobox uses for
    * multi-select.
    */
-  multiple?: boolean;
+  multiple?: boolean | undefined;
   /** Controlled selection: a value, or with `multiple` an array. Omit for uncontrolled. */
-  value?: ListboxValue;
+  value?: ListboxValue | undefined;
   /** Initial selection (or array). */
-  defaultValue?: ListboxValue;
+  defaultValue?: ListboxValue | undefined;
   /**
    * Single-select only: arrow keys select as they move (the common picker feel). Set false when
    * selection has side effects, so arrows only move and Space selects.
    */
-  selectionFollowsFocus?: boolean;
+  selectionFollowsFocus?: boolean | undefined;
   /** At least one option must be selected to submit when inside a Form. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Marks the list invalid (aria-invalid). */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Error message rendered below the list and linked by aria-describedby; implies invalid. */
-  error?: string;
+  error?: string | undefined;
   /** The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; the list draws none of its own. */
-  embedded?: boolean;
+  embedded?: boolean | undefined;
   /** The option that is active when the list first receives focus. Defaults to the first selected, else the first enabled option. */
-  defaultActiveValue?: string;
+  defaultActiveValue?: string | undefined;
   /** Options are being fetched (async Combobox); the list shows `copy.loading` in place of the empty message and is aria-busy. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** The whole list is inert but readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Field name for Form collection. Multiple values are collected as an array. */
-  name?: string;
+  name?: string | undefined;
   /** Shown when `options` is empty (a filtered Combobox with no matches). Defaults to `copy.empty`. */
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
   /** Height in rows before the list scrolls; `all` never scrolls. */
-  maxVisible?: ListboxMaxVisible;
+  maxVisible?: ListboxMaxVisible | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<ListboxOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ListboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selection changes, with the new value (array when `multiple`). */
-  onChange?: (value: ListboxValue) => void;
+  onChange?: ((value: ListboxValue) => void) | undefined;
   /** Fired as the focused (active) option changes, with its value. */
-  onActiveChange?: (value: string | null) => void;
+  onActiveChange?: ((value: string | null) => void) | undefined;
 }
 
 /**
@@ -169,37 +169,35 @@ export interface ListboxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'chi
  * Select (short lists, form fields) or Combobox (long lists, typing to filter) — both open a
  * Listbox.
  */
-export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox(
-  {
-    label,
-    labelledBy,
-    options,
-    multiple = false,
-    value,
-    defaultValue,
-    selectionFollowsFocus = true,
-    required = false,
-    invalid = false,
-    error,
-    embedded = false,
-    defaultActiveValue,
-    loading = false,
-    disabled = false,
-    name,
-    emptyMessage,
-    maxVisible = '8',
-    overrides,
-    onChange,
-    onActiveChange,
-    onBlur,
-    onFocus,
-    id: idProp,
-    className,
-    style,
-    ...rest
-  },
+export const Listbox = function Listbox({
   ref,
-) {
+  label,
+  labelledBy,
+  options,
+  multiple = false,
+  value,
+  defaultValue,
+  selectionFollowsFocus = true,
+  required = false,
+  invalid = false,
+  error,
+  embedded = false,
+  defaultActiveValue,
+  loading = false,
+  disabled = false,
+  name,
+  emptyMessage,
+  maxVisible = '8',
+  overrides,
+  onChange,
+  onActiveChange,
+  onBlur,
+  onFocus,
+  id: idProp,
+  className,
+  style,
+  ...rest
+}: ListboxProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const form = useFormContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase && name ? `${form.idBase}-${name}` : `ds-listbox${generatedId}`);
@@ -303,8 +301,8 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
     const startIndex = currentIndex === -1 ? 0 : currentIndex;
     for (let offset = 1; offset <= enabledRows.length; offset++) {
       const candidate = enabledRows[(startIndex + offset) % enabledRows.length];
-      if (candidate.label.toLowerCase().startsWith(state.buffer)) {
-        moveActive(candidate.value);
+      if (candidate!.label.toLowerCase().startsWith(state.buffer)) {
+        moveActive(candidate!.value);
         return;
       }
     }
@@ -312,9 +310,9 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
       const single = state.buffer.slice(-1);
       for (let offset = 0; offset < enabledRows.length; offset++) {
         const candidate = enabledRows[(startIndex + offset) % enabledRows.length];
-        if (candidate.label.toLowerCase().startsWith(single)) {
+        if (candidate!.label.toLowerCase().startsWith(single)) {
           state.buffer = single;
-          moveActive(candidate.value);
+          moveActive(candidate!.value);
           return;
         }
       }
@@ -330,11 +328,11 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
         event.preventDefault();
         const target = currentIndex === -1 ? enabledRows[0] : enabledRows[Math.min(currentIndex + 1, enabledRows.length - 1)];
         if (multiple && event.shiftKey) {
-          setActiveValue(target.value);
+          setActiveValue(target!.value);
           const current = toArray(selected);
-          if (!current.includes(target.value)) commitValue([...current, target.value]);
+          if (!current.includes(target!.value)) commitValue([...current, target!.value]);
         } else {
-          moveActive(target.value);
+          moveActive(target!.value);
         }
         break;
       }
@@ -342,30 +340,30 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
         event.preventDefault();
         const target = currentIndex === -1 ? enabledRows[enabledRows.length - 1] : enabledRows[Math.max(currentIndex - 1, 0)];
         if (multiple && event.shiftKey) {
-          setActiveValue(target.value);
+          setActiveValue(target!.value);
           const current = toArray(selected);
-          if (!current.includes(target.value)) commitValue([...current, target.value]);
+          if (!current.includes(target!.value)) commitValue([...current, target!.value]);
         } else {
-          moveActive(target.value);
+          moveActive(target!.value);
         }
         break;
       }
       case 'Home':
         event.preventDefault();
-        moveActive(enabledRows[0].value);
+        moveActive(enabledRows[0]!.value);
         break;
       case 'End':
         event.preventDefault();
-        moveActive(enabledRows[enabledRows.length - 1].value);
+        moveActive(enabledRows[enabledRows.length - 1]!.value);
         break;
       case ' ':
         event.preventDefault();
-        if (currentIndex !== -1) activateRow(enabledRows[currentIndex]);
+        if (currentIndex !== -1) activateRow(enabledRows[currentIndex]!);
         break;
       case 'Enter':
         if (!multiple && currentIndex !== -1) {
           event.preventDefault();
-          commitValue(enabledRows[currentIndex].value);
+          commitValue(enabledRows[currentIndex]!.value);
         }
         break;
       case 'PageDown':
@@ -375,7 +373,7 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
         const direction = event.key === 'PageDown' ? 1 : -1;
         const base = currentIndex === -1 ? (direction === 1 ? -1 : enabledRows.length) : currentIndex;
         const targetIndex = Math.min(Math.max(base + direction * pageRows, 0), enabledRows.length - 1);
-        moveActive(enabledRows[targetIndex].value);
+        moveActive(enabledRows[targetIndex]!.value);
         break;
       }
       default:
@@ -433,7 +431,7 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
       setMaxHeight(undefined);
       return;
     }
-    const firstRow = optionRefs.current.get(rows[0].value);
+    const firstRow = optionRefs.current.get(rows[0]!.value);
     const listEl = rootRef.current;
     if (!firstRow || !listEl) {
       setMaxHeight(undefined);
@@ -565,4 +563,4 @@ export const Listbox = forwardRef<HTMLDivElement, ListboxProps>(function Listbox
       ) : null}
     </div>
   );
-});
+};

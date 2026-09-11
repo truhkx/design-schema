@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Splitter.js';
@@ -13,7 +13,7 @@ interface SplitterArgs {
   maxSize: number;
   step: number;
   collapsible: boolean;
-  persistKey?: string;
+  persistKey?: string | undefined;
   stackBelow: SplitterStackBelow;
 }
 

@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
@@ -136,7 +136,7 @@ export class DsNumberInput extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--ds-number-input-font-family);
@@ -274,31 +274,31 @@ export class DsNumberInput extends LitElement {
   `;
 
   /** Visible label naming the quantity. Its accessible-name basis (via `aria-labelledby`; see class doc). */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** Field name for the Form. The collected value is a number, or undefined when empty. */
-  @property() name = '';
+  @property() accessor name = '';
 
   /** Lower bound. Clamps on blur/Enter; disables the decrement stepper at it. */
-  @property({ type: Number }) min?: number;
+  @property({ type: Number }) accessor min: number | undefined;
 
   /** Upper bound. Clamps on blur/Enter; disables the increment stepper at it. */
-  @property({ type: Number }) max?: number;
+  @property({ type: Number }) accessor max: number | undefined;
 
   /** Increment for the steppers and arrow keys, and the rounding granularity when `precision` is omitted. */
-  @property({ type: Number }) step = 1;
+  @property({ type: Number }) accessor step = 1;
 
   /** Decimal places to keep and display. Defaults to the decimals in `step`. */
-  @property({ type: Number }) precision?: number;
+  @property({ type: Number }) accessor precision: number | undefined;
 
   /** Locale formatting of the displayed value. The underlying value is always a plain number. */
-  @property({ reflect: true }) format: NumberInputFormat = 'decimal';
+  @property({ reflect: true }) accessor format: NumberInputFormat = 'decimal';
 
   /** ISO 4217 code for `format: currency`. */
-  @property() currency?: string;
+  @property() accessor currency: string | undefined;
 
   /** Intl unit identifier for `format: unit`, or a literal shown as `suffix` when it is not one. */
-  @property() unit?: string;
+  @property() accessor unit: string | undefined;
 
   /**
    * Static text before the value, for cases `format` cannot express. Typed
@@ -306,43 +306,43 @@ export class DsNumberInput extends LitElement {
    * readonly `Element.prefix` (namespace prefix) that `DsNumberInput`
    * inherits; `null` means no prefix.
    */
-  @property({ type: String }) prefix: string | null = null;
+  @property({ type: String }) accessor prefix: string | null = null;
 
   /** Static text after the value. */
-  @property() suffix?: string;
+  @property() accessor suffix: string | undefined;
 
   /** Shows the increment/decrement steppers. Arrow keys work regardless. Exposed as the negated `hide-steppers` attribute (a boolean attribute cannot express `false` for a prop that defaults `true`). */
   @property({ attribute: 'hide-steppers', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  showSteppers = true;
+  accessor showSteppers = true;
 
   /** Example value shown while empty. */
-  @property() placeholder?: string;
+  @property() accessor placeholder: string | undefined;
 
   /** Helper text. */
-  @property() description?: string;
+  @property() accessor description: string | undefined;
 
   /** Controlled numeric value. `undefined` means empty. */
-  @property({ attribute: false }) value?: number;
+  @property({ attribute: false }) accessor value: number | undefined;
 
   /** Initial value for an uncontrolled field. */
-  @property({ attribute: false }) defaultValue?: number;
+  @property({ attribute: false }) accessor defaultValue: number | undefined;
 
   /** Must have a value to submit. Shown in the label, not only by color. */
-  @property({ type: Boolean, reflect: true }) required = false;
+  @property({ type: Boolean, reflect: true }) accessor required = false;
 
   /** Not editable, not submitted, still readable. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Marks the field invalid. Usually set by the Form; can be set directly. */
-  @property({ type: Boolean, reflect: true }) invalid = false;
+  @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
-  private errorValue?: string;
+  private errorValue?: string | undefined;
 
   /** Error message; implies `invalid`. */
-  @property()
   get error(): string | undefined {
     return this.errorValue;
   }
+  @property()
   set error(value: string | undefined) {
     const old = this.errorValue;
     this.errorValue = value;
@@ -352,26 +352,26 @@ export class DsNumberInput extends LitElement {
   }
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<NumberInputOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<NumberInputOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled value, seeded from `defaultValue` through the `currentValue` fallback chain. */
-  @state() private internalValue?: number;
+  @state() private accessor internalValue: number | undefined;
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
-  @state() private formDisabled = false;
+  @state() private accessor formDisabled = false;
 
   /** Whether the input currently has focus; drives raw-text vs. formatted display. */
-  @state() private isFocused = false;
+  @state() private accessor isFocused = false;
 
   /** The uncommitted, sanitized text shown while focused. */
-  @state() private rawText = '';
+  @state() private accessor rawText = '';
 
   private readonly instanceId = nextNumberInputId();
 
-  private repeatTimeoutId?: number;
-  private repeatIntervalId?: number;
+  private repeatTimeoutId?: number | undefined;
+  private repeatIntervalId?: number | undefined;
 
-  @query('#input') private readonly inputEl!: HTMLInputElement;
+  @query('#input') private accessor inputEl!: HTMLInputElement;
 
   private readonly internals: ElementInternals;
 
@@ -455,7 +455,7 @@ export class DsNumberInput extends LitElement {
     this.syncInternals();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const isDisabled = this.disabled || this.formDisabled;
     const value = this.currentValue;
     const displayText = this.isFocused ? this.rawText : value !== undefined ? this.formatDisplay(value) : '';
@@ -622,7 +622,7 @@ export class DsNumberInput extends LitElement {
       this.commit();
       // Light-DOM ancestor: `<ds-form>` collects fields by querying its own subtree, so this
       // reaches it directly without crossing a shadow boundary.
-      const form = this.closest('ds-form') as (HTMLElement & { submit?: () => void }) | null;
+      const form = this.closest('ds-form') as (HTMLElement & { submit?: (() => void) | undefined }) | null;
       form?.submit?.();
     }
   }
@@ -812,8 +812,8 @@ export class DsNumberInput extends LitElement {
     }
   }
 
-  private get labelTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef>> {
-    const result: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  private get labelTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
+    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
     if (this.overrides?.fontFamily) {
       result.fontFamily = this.overrides.fontFamily;
     }
@@ -826,8 +826,8 @@ export class DsNumberInput extends LitElement {
     return result;
   }
 
-  private get descriptionTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef>> {
-    const result: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  private get descriptionTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
+    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
     if (this.overrides?.fontFamily) {
       result.fontFamily = this.overrides.fontFamily;
     }

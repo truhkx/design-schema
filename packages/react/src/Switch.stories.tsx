@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Switch } from './Switch';
 
-const meta = {
+const meta: Meta<typeof Switch> = {
   title: 'Switch/React',
   component: Switch,
   args: {
@@ -20,7 +20,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof Switch>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

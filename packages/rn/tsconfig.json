@@ -3,19 +3,21 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": [
-      "ES2022"
-    ],
+    "lib": ["ES2022"],
     "jsx": "react-native",
+    "rootDir": ".",
+    "types": ["jest"],
     "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "declaration": true,
+    "isolatedDeclarations": true,
+    "verbatimModuleSyntax": true,
+    // src/test-setup.ts side-effect-imports Testing Library's pre-13 `extend-expect` path, which
+    // jest.config.cjs maps to the current `matchers` entry; the path itself no longer exists.
+    "noUncheckedSideEffectImports": false,
     "skipLibCheck": true,
-    "noEmit": true,
-    "types": [
-      "jest"
-    ]
+    "noEmit": true
   },
-  "include": [
-    "src",
-    "demo"
-  ]
+  "include": ["src", "demo"]
 }

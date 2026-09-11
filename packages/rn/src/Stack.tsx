@@ -1,6 +1,9 @@
 import * as React from 'react';
 import { View } from 'react-native';
-import type { FlexAlignType, ViewStyle } from 'react-native';
+import type { ViewStyle } from 'react-native';
+
+/** The strict TypeScript API (RN ≥ 0.87) no longer exports `FlexAlignType`; the union lives on the style property. */
+type FlexAlignType = NonNullable<ViewStyle['alignItems']>;
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { useTheme } from './theme';
@@ -18,17 +21,17 @@ export interface StackProps {
   /** Any components. Stack does not style its children; it only positions them. */
   children: React.ReactNode;
   /** Main axis. `horizontal` follows writing direction (start→end), not left→right. */
-  direction?: StackDirection;
+  direction?: StackDirection | undefined;
   /** Space between children, from the layout rhythm. The only way to set spacing between siblings. */
-  gap?: StackGap;
+  gap?: StackGap | undefined;
   /** Cross-axis alignment. */
-  align?: StackAlign;
+  align?: StackAlign | undefined;
   /** Main-axis distribution. */
-  justify?: StackJustify;
+  justify?: StackJustify | undefined;
   /** Allow horizontal stacks to wrap onto new lines instead of overflowing. */
-  wrap?: boolean;
+  wrap?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<StackOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const GAP_TOKEN = {

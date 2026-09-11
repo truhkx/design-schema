@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, Animated, PanResponder, Platform, View, findNodeHandle } from 'react-native';
-import type { AccessibilityActionEvent, LayoutChangeEvent, ViewStyle } from 'react-native';
+import type { AccessibilityActionEvent, LayoutChangeEvent, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
@@ -13,7 +13,7 @@ export type SliderShowValue = 'always' | 'hover' | 'never';
 
 export interface SliderMark {
   value: number;
-  label?: string;
+  label?: string | undefined;
 }
 
 export type SliderValue = number | [number, number];
@@ -48,41 +48,41 @@ export interface SliderProps {
   /** Field name for the Form. A range contributes `[min, max]`. */
   name: string;
   /** Lower bound. */
-  min?: number;
+  min?: number | undefined;
   /** Upper bound. */
-  max?: number;
+  max?: number | undefined;
   /** Arrow-key increment and snapping granularity for drag, click and keys. */
-  step?: number;
+  step?: number | undefined;
   /** With `marks`, snap drag and click to the marks instead of `step` (keys still move by `step`, PageUp/Down by mark). */
-  snapToMarks?: boolean;
+  snapToMarks?: boolean | undefined;
   /** Must have a value other than the default to submit (`copy.required`). */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Marks the slider invalid (`copy.invalid` when no `error`). */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Controlled value; for a range, a two-number array. */
-  value?: SliderValue;
+  value?: SliderValue | undefined;
   /** Initial value (or pair). Defaults to `min` (or `[min, max]`). */
-  defaultValue?: SliderValue;
+  defaultValue?: SliderValue | undefined;
   /** Two thumbs choosing a minimum and a maximum; the thumbs cannot cross. */
-  range?: boolean;
+  range?: boolean | undefined;
   /** Renders the displayed and announced value ("$40", "3 h 20 min"). Defaults to the number. */
-  formatValue?: (value: number) => string;
+  formatValue?: ((value: number) => string) | undefined;
   /** Where the value text appears: always beside the label, only while dragging (as a bubble above the thumb), or not at all. */
-  showValue?: SliderShowValue;
+  showValue?: SliderShowValue | undefined;
   /** Tick marks on the track, optionally labelled. */
-  marks?: SliderMark[];
+  marks?: SliderMark[] | undefined;
   /** Not adjustable, still readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Helper text. */
-  description?: string;
+  description?: string | undefined;
   /** Error message. */
-  error?: string;
+  error?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<SliderOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SliderOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired on every value change while dragging or via an accessibility action (number or pair). */
-  onValueChange?: (value: SliderValue) => void;
+  onValueChange?: ((value: SliderValue) => void) | undefined;
   /** Fired once when the interaction ends (drag release, accessibility action). Use for expensive effects. */
-  onSlidingComplete?: (value: SliderValue) => void;
+  onSlidingComplete?: ((value: SliderValue) => void) | undefined;
 }
 
 const COPY = {
@@ -128,7 +128,7 @@ function snapValue(
 ): number {
   const clamped = clamp(raw, min, max);
   if (snapToMarks && marks !== undefined && marks.length > 0) {
-    let nearest = marks[0].value;
+    let nearest = marks[0]!.value;
     let nearestDistance = Math.abs(clamped - nearest);
     for (const mark of marks) {
       const distance = Math.abs(clamped - mark.value);
@@ -217,7 +217,7 @@ interface SliderThumbProps {
  * re-renders without recreating the `PanResponder` (which must stay stable for a
  * gesture in progress).
  */
-const SliderThumb = React.forwardRef<View, SliderThumbProps>(function SliderThumb(
+const SliderThumb = React.forwardRef<ViewInstance, SliderThumbProps>(function SliderThumb(
   {
     kind,
     value,
@@ -336,7 +336,7 @@ const SliderThumb = React.forwardRef<View, SliderThumbProps>(function SliderThum
     justifyContent: 'center',
   };
 
-  const haloStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const haloStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     width: haloSize,
     height: haloSize,
@@ -519,9 +519,9 @@ export function Slider({
     trackWidthRef.current = event.nativeEvent.layout.width;
   };
 
-  const minThumbRef = React.useRef<View>(null);
-  const maxThumbRef = React.useRef<View>(null);
-  const singleThumbRef = React.useRef<View>(null);
+  const minThumbRef = React.useRef<ViewInstance>(null);
+  const maxThumbRef = React.useRef<ViewInstance>(null);
+  const singleThumbRef = React.useRef<ViewInstance>(null);
 
   const formError = form?.errors[name];
   const displayedError = error !== undefined && error !== '' ? error : formError;
@@ -543,7 +543,7 @@ export function Slider({
       focus: () => {
         const node = range ? minThumbRef.current : singleThumbRef.current;
         const handleNode = node === null ? null : findNodeHandle(node);
-        if (handleNode !== null) {
+        if (handleNode != null) {
           AccessibilityInfo.setAccessibilityFocus(handleNode);
         }
       },

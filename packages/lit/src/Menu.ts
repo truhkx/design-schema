@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -14,10 +14,10 @@ export type MenuPlacement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-e
 export interface MenuActionItem {
   id: string;
   label: string;
-  icon?: IconName;
-  shortcut?: string;
-  tone?: 'default' | 'danger';
-  disabled?: boolean;
+  icon?: IconName | undefined;
+  shortcut?: string | undefined;
+  tone?: 'default' | 'danger' | undefined;
+  disabled?: boolean | undefined;
 }
 
 /** A labelled group of entries (anatomy: group, groupLabel). */
@@ -175,7 +175,7 @@ export class DsMenu extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: inline-block;
       --ds-menu-border: var(--color-border);
@@ -335,25 +335,25 @@ export class DsMenu extends LitElement {
   `;
 
   /** The trigger's label and the menu's accessible name. */
-  @property() label!: string;
+  @property() accessor label!: string;
 
   /** Actions, optionally grouped with a label or divided by separators. */
-  @property({ attribute: false }) items: MenuItem[] = [];
+  @property({ attribute: false }) accessor items: MenuItem[] = [];
 
   /** Variant of the trigger Button. */
-  @property({ attribute: 'trigger-variant' }) triggerVariant: MenuTriggerVariant = 'ghost';
+  @property({ attribute: 'trigger-variant' }) accessor triggerVariant: MenuTriggerVariant = 'ghost';
 
   /** Trailing icon on the trigger. */
-  @property({ attribute: 'trigger-icon' }) triggerIcon: MenuTriggerIcon = 'chevron-down';
+  @property({ attribute: 'trigger-icon' }) accessor triggerIcon: MenuTriggerIcon = 'chevron-down';
 
   /** Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. */
-  @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) iconOnly = false;
+  @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) accessor iconOnly = false;
 
   /** Preferred position of the popup relative to the trigger; flips automatically when it would overflow the viewport. */
-  @property({ reflect: true }) placement: MenuPlacement = 'bottom-start';
+  @property({ reflect: true }) accessor placement: MenuPlacement = 'bottom-start';
 
   /** Controlled open state. Omit for an uncontrolled menu. */
-  @property({ type: Boolean, reflect: true }) open?: boolean;
+  @property({ type: Boolean, reflect: true }) accessor open: boolean | undefined;
 
   /**
    * Position the popup relative to this element instead of rendering a
@@ -361,25 +361,25 @@ export class DsMenu extends LitElement {
    * by ActionSheet above its breakpoint and by context menus. Lit has no ref
    * concept, so this takes the element directly rather than a `RefObject`.
    */
-  @property({ attribute: false }) anchor?: HTMLElement | null;
+  @property({ attribute: false }) accessor anchor: HTMLElement | null | undefined;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<MenuOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<MenuOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled open state, used when `open` is omitted. */
-  @state() private internalOpen = false;
+  @state() private accessor internalOpen = false;
 
   /** The item currently carrying the roving tabindex and real focus. */
-  @state() private activeId: string | null = null;
+  @state() private accessor activeId: string | null = null;
 
-  @query('#trigger') private readonly triggerButtonEl?: HTMLElement;
-  @query('.popup') private readonly popupEl!: HTMLElement;
+  @query('#trigger') private accessor triggerButtonEl!: HTMLElement | null;
+  @query('.popup') private accessor popupEl!: HTMLElement;
 
   private readonly popoverSupported = POPOVER_SUPPORTED;
   private wasOpen = false;
   private pendingFocus: 'first' | 'last' = 'first';
   private typeaheadQuery = '';
-  private typeaheadTimer?: ReturnType<typeof setTimeout>;
+  private typeaheadTimer?: ReturnType<typeof setTimeout> | undefined;
 
   /** Whether the menu is currently open, controlled or not. */
   get currentOpen(): boolean {
@@ -416,7 +416,7 @@ export class DsMenu extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     let groupCounter = 0;
     const renderList = (items: MenuItem[]): unknown[] =>
       items.map((item) => {
@@ -659,7 +659,7 @@ export class DsMenu extends LitElement {
     if (items.length === 0) {
       return;
     }
-    const id = target === 'first' ? items[0].id : target === 'last' ? items[items.length - 1].id : target;
+    const id = target === 'first' ? items[0]!.id : target === 'last' ? items[items.length - 1]!.id : target;
     this.activeId = id;
     await this.updateComplete;
     this.renderRoot.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`)?.focus();
@@ -677,7 +677,7 @@ export class DsMenu extends LitElement {
     } else if (nextIndex >= items.length) {
       nextIndex = 0;
     }
-    void this.focusItem(items[nextIndex].id);
+    void this.focusItem(items[nextIndex]!.id);
   }
 
   private activateActiveItem(): void {

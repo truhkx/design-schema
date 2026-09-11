@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useId, type ComponentPropsWithoutRef, type CSSProperties } from 'react';
+import { useEffect, useId, type ComponentPropsWithoutRef, type CSSProperties, type Ref, type ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
 import './Meter.css';
@@ -20,7 +20,7 @@ export type MeterOverridableBinding =
 
 /** Bindings owned by the root; `labelSize`/`labelWeight`/`valueSize`/`fontFamily`/`lineHeight` are forwarded
  * into the composed Text elements' own `overrides` contract instead, since Text already exposes them. */
-const ROOT_OVERRIDE_HOOK: Partial<Record<MeterOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<MeterOverridableBinding, string | undefined>> = {
   trackHeight: '--ds-meter-track-height',
   radius: '--ds-meter-radius',
   partGap: '--ds-meter-part-gap',
@@ -28,14 +28,14 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<MeterOverridableBinding, string>> = {
   transition: '--ds-meter-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<MeterOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<MeterOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
 
   for (const binding of Object.keys(overrides) as MeterOverridableBinding[]) {
     const ref = overrides[binding];
@@ -73,19 +73,19 @@ export interface MeterProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   /** The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. */
   value: number;
   /** Lower bound of the range. */
-  min?: number;
+  min?: number | undefined;
   /** Upper bound of the range. Must be greater than `min`. */
-  max?: number;
+  max?: number | undefined;
   /** Visible label naming the measurement ("Storage used"). Also the accessible name. */
   label: string;
   /** Human-readable value shown at the end of the label row and announced instead of the raw number ("3.2 GB of 10 GB", "Strong"). Omit to show and announce the percentage, rounded to a whole number ("32%"). */
-  valueText?: string;
+  valueText?: string | undefined;
   /** Fill color. `info` is the neutral brand fill; the consumer sets `success`/`warning`/`danger` from thresholds it owns — the meter does not decide what is "too full". */
-  tone?: MeterTone;
+  tone?: MeterTone | undefined;
   /** Hides the visible value text (a boolean attribute can only turn things on, so the flag is the hiding one). The accessible value is always exposed. */
-  hideValue?: boolean;
+  hideValue?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<MeterOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<MeterOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /* Only declared when the bundler defines it; never assumed. */
@@ -101,23 +101,21 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
  * thresholds it understands ("over 90% is `danger`"); the meter just paints. Provide `valueText`
  * whenever the raw percentage is not what a person would say.
  */
-export const Meter = forwardRef<HTMLDivElement, MeterProps>(function Meter(
-  {
-    value,
-    min = 0,
-    max = 100,
-    label,
-    valueText,
-    tone = 'info',
-    hideValue = false,
-    overrides,
-    id: idProp,
-    className,
-    style,
-    ...rest
-  },
+export const Meter = function Meter({
   ref,
-) {
+  value,
+  min = 0,
+  max = 100,
+  label,
+  valueText,
+  tone = 'info',
+  hideValue = false,
+  overrides,
+  id: idProp,
+  className,
+  style,
+  ...rest
+}: MeterProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const id = idProp ?? `ds-meter${generatedId}`;
   const labelId = `${id}-label`;
@@ -181,4 +179,4 @@ export const Meter = forwardRef<HTMLDivElement, MeterProps>(function Meter(
       </div>
     </div>
   );
-});
+};

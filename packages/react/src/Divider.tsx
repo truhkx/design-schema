@@ -1,4 +1,4 @@
-import { forwardRef, type ComponentPropsWithoutRef, type CSSProperties, type Ref } from 'react';
+import { type ComponentPropsWithoutRef, type CSSProperties, type Ref, type ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
 import './Divider.css';
@@ -17,19 +17,19 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
  */
 export type DividerOverridableBinding = 'color' | 'thickness' | 'spacing' | 'labelSize' | 'labelGap' | 'fontFamily';
 
-const ROOT_OVERRIDE_HOOK: Partial<Record<DividerOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<DividerOverridableBinding, string | undefined>> = {
   color: '--ds-divider-color',
   thickness: '--ds-divider-thickness',
   spacing: '--ds-divider-spacing',
   labelGap: '--ds-divider-label-gap',
 };
 
-function overridesToStyle(overrides: Partial<Record<DividerOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<DividerOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  textOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const textOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
   for (const binding of Object.keys(overrides) as DividerOverridableBinding[]) {
     const ref = overrides[binding];
     if (!ref) continue;
@@ -47,22 +47,22 @@ function overridesToStyle(overrides: Partial<Record<DividerOverridableBinding, T
 
 export interface DividerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'aria-orientation'> {
   /** Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height. */
-  orientation?: DividerOrientation;
+  orientation?: DividerOrientation | undefined;
   /**
    * Optional text in the middle of a horizontal divider ("or", "Earlier today"). Turns the divider
    * from decorative into a labelled separator. Meaningful on `horizontal` dividers only.
    */
-  label?: string;
+  label?: string | undefined;
   /**
    * Expose as a separator to assistive technology. Leave false for purely visual lines between
    * list rows; set true (or provide a label) when the divider marks a real boundary between
    * sections that a screen-reader user should hear.
    */
-  semantic?: boolean;
+  semantic?: boolean | undefined;
   /** Space on both sides, from the layout rhythm, for dividers used outside a Stack that already spaces them. */
-  spacing?: DividerSpacing;
+  spacing?: DividerSpacing | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook (or the composed label's own override) to that token. */
-  overrides?: Partial<Record<DividerOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<DividerOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -74,10 +74,7 @@ export interface DividerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'chi
  * `label` as an "or" between alternatives (sign in with email — or — with a provider) or a date
  * heading in a feed. Use `spacing` when the divider stands outside a Stack.
  */
-export const Divider = forwardRef<HTMLElement, DividerProps>(function Divider(
-  { orientation = 'horizontal', label, semantic = false, spacing = 'none', overrides, className, style, ...rest },
-  ref,
-) {
+export const Divider = function Divider({ ref, orientation = 'horizontal', label, semantic = false, spacing = 'none', overrides, className, style, ...rest }: DividerProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const showLabel = Boolean(label) && orientation === 'horizontal';
   const isSemantic = semantic || showLabel;
 
@@ -132,4 +129,4 @@ export const Divider = forwardRef<HTMLElement, DividerProps>(function Divider(
       aria-orientation={isSemantic ? orientation : undefined}
     />
   );
-});
+};

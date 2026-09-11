@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -8,6 +7,7 @@ import {
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type MouseEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text } from './Text';
@@ -59,7 +59,7 @@ const OVERRIDE_HOOK: Record<CheckboxOverridableBinding, string> = {
   transition: '--ds-checkbox-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<CheckboxOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as CheckboxOverridableBinding[]) {
     const ref = overrides[binding];
@@ -89,31 +89,31 @@ export interface CheckboxProps
   label: string;
   /** Visually hide the label (it remains the accessible name): a selection column in a Table,
    * where the row name is the label. */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
   /** The value submitted when checked. Lets several checkboxes share a `name` to form a multi-select. */
-  value?: string;
+  value?: string | undefined;
   /** Controlled checked state. Omit for an uncontrolled control. */
-  checked?: boolean;
+  checked?: boolean | undefined;
   /** Initial state for an uncontrolled control. */
-  defaultChecked?: boolean;
+  defaultChecked?: boolean | undefined;
   /** Shows the mixed indicator, for a parent checkbox whose children are partly selected. Visual and announced only. */
-  indeterminate?: boolean;
+  indeterminate?: boolean | undefined;
   /** Cannot be toggled and is not submitted. Stays visible, readable and focusable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Must be checked to submit — for consent and agreement. Shown in the label, not only by color. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Marks the control as failing validation. Usually set by the Form; can be set directly. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Persistent helper text below the label. */
-  description?: string;
+  description?: string | undefined;
   /** The error message. Setting it marks the control invalid. Say what to do ("Accept the terms to continue"). */
-  error?: string;
+  error?: string | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<CheckboxOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the checked state changes, with the new boolean. */
-  onChange?: (checked: boolean, event: ChangeEvent<HTMLInputElement>) => void;
+  onChange?: ((checked: boolean, event: ChangeEvent<HTMLInputElement>) => void) | undefined;
 }
 
 /**
@@ -124,30 +124,28 @@ export interface CheckboxProps
  * or several with the same `name` when the user may pick any number of items. Use
  * `indeterminate` on a "select all" parent when only some of its children are checked.
  */
-export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
-  {
-    label,
-    hideLabel = false,
-    name,
-    value = 'on',
-    checked,
-    defaultChecked = false,
-    indeterminate = false,
-    disabled = false,
-    required = false,
-    invalid = false,
-    description,
-    error,
-    overrides,
-    onChange,
-    onClick,
-    id: idProp,
-    className,
-    style,
-    ...rest
-  },
+export const Checkbox = function Checkbox({
   ref,
-) {
+  label,
+  hideLabel = false,
+  name,
+  value = 'on',
+  checked,
+  defaultChecked = false,
+  indeterminate = false,
+  disabled = false,
+  required = false,
+  invalid = false,
+  description,
+  error,
+  overrides,
+  onChange,
+  onClick,
+  id: idProp,
+  className,
+  style,
+  ...rest
+}: CheckboxProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
   const form = useFormContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-checkbox${generatedId}`);
@@ -291,4 +289,4 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
       ) : null}
     </div>
   );
-});
+};

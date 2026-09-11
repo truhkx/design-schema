@@ -18,17 +18,17 @@ export interface TextProps {
   /** The text content. Inline formatting (nested Text) is allowed; block elements are not. */
   children: React.ReactNode;
   /** Maps to the font size scale. `md` is body copy; `xs` is the smallest readable size and is reserved for captions and metadata. */
-  size?: TextSize;
+  size?: TextSize | undefined;
   /** Emphasis without changing size. Prefer weight over color for hierarchy. */
-  weight?: TextWeight;
+  weight?: TextWeight | undefined;
   /** Semantic color. `onAction` is only for text placed on an action background. */
-  tone?: TextTone;
+  tone?: TextTone | undefined;
   /** Horizontal alignment. `start`/`end` follow writing direction. */
-  align?: TextAlign;
+  align?: TextAlign | undefined;
   /** Clip to one line with an ellipsis. Screen readers still read the full text. */
-  truncate?: boolean;
+  truncate?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<TextOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const SIZE_TOKEN = {
@@ -68,7 +68,7 @@ export interface TextStyleContextValue {
 
 const DEFAULT_TEXT_STYLE_CONTEXT: TextStyleContextValue = { fontSize: 0, color: '', nested: false };
 
-export const TextStyleContext = React.createContext<TextStyleContextValue>(DEFAULT_TEXT_STYLE_CONTEXT);
+export const TextStyleContext: React.Context<TextStyleContextValue> = React.createContext<TextStyleContextValue>(DEFAULT_TEXT_STYLE_CONTEXT);
 
 /** Resolves `start`/`end` against the current writing direction, since RN's `textAlign` has no logical values. */
 export function toTextAlign(align: TextAlign): TextStyle['textAlign'] {

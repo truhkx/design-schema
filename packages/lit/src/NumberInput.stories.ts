@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './NumberInput.js';
@@ -7,24 +7,24 @@ import type { NumberInputFormat } from './NumberInput.js';
 interface NumberInputArgs {
   label: string;
   name: string;
-  min?: number;
-  max?: number;
+  min?: number | undefined;
+  max?: number | undefined;
   step: number;
-  precision?: number;
+  precision?: number | undefined;
   format: NumberInputFormat;
-  currency?: string;
-  unit?: string;
-  prefix?: string;
-  suffix?: string;
+  currency?: string | undefined;
+  unit?: string | undefined;
+  prefix?: string | undefined;
+  suffix?: string | undefined;
   showSteppers: boolean;
-  placeholder?: string;
-  description?: string;
-  value?: number;
-  defaultValue?: number;
+  placeholder?: string | undefined;
+  description?: string | undefined;
+  value?: number | undefined;
+  defaultValue?: number | undefined;
   required: boolean;
   disabled: boolean;
   invalid: boolean;
-  error?: string;
+  error?: string | undefined;
 }
 
 const meta: Meta<NumberInputArgs> = {

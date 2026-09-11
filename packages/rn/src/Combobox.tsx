@@ -11,7 +11,7 @@ import {
   findNodeHandle,
   useWindowDimensions,
 } from 'react-native';
-import type { LayoutChangeEvent, NativeSyntheticEvent, TextInputKeyPressEventData, TextStyle, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, TextInputInstance, TextInputKeyPressEvent, TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { BottomSheet } from './BottomSheet';
@@ -67,41 +67,41 @@ export interface ComboboxProps {
   /** The full option set, or the current page of results when `filter` is `async`. Passed through to the Listbox after filtering. */
   options: ListboxItem[];
   /** Controlled selected value(s) (array with `multiple`). With `allowCustom`, a value not in `options` is a custom entry. */
-  value?: ComboboxValue;
+  value?: ComboboxValue | undefined;
   /** Initial selected value(s). */
-  defaultValue?: ComboboxValue;
+  defaultValue?: ComboboxValue | undefined;
   /** Controlled text of the input. Usually uncontrolled; controlled by consumers driving `async` filtering. */
-  inputValue?: string;
+  inputValue?: string | undefined;
   /** Pick many: selected options appear as chips before the input, each removable; the list stays open while toggling; Backspace in an empty input removes the last chip. */
-  multiple?: boolean;
+  multiple?: boolean | undefined;
   /** Typed text that matches no option can be committed as a value. Enter commits it; the list shows `copy.addCustom` as the first row. */
-  allowCustom?: boolean;
+  allowCustom?: boolean | undefined;
   /** How typing narrows `options`. */
-  filter?: ComboboxFilter;
+  filter?: ComboboxFilter | undefined;
   /** Example input shown while empty. Never the only description. */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /** Helper text under the label. Also the field's `accessibilityHint`. */
-  description?: string;
+  description?: string | undefined;
   /** Must have a value to submit. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Not editable, not submitted, still readable and focusable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Marks the field invalid. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Error message; implies invalid. */
-  error?: string;
+  error?: string | undefined;
   /** For `async`: show the loading row and announce it. The consumer sets it around its request. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** Show a clear button when there is a value or text. */
-  clearable?: boolean;
+  clearable?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<ComboboxOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ComboboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selected value(s) change (array with `multiple`; custom entries included when `allowCustom`). */
-  onChange?: (value: ComboboxValue) => void;
+  onChange?: ((value: ComboboxValue) => void) | undefined;
   /** Fired on every keystroke with the input text. The hook for `async` filtering. */
-  onInputChange?: (value: string) => void;
+  onInputChange?: ((value: string) => void) | undefined;
   /** Fired when the list opens or closes. */
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: ((open: boolean) => void) | undefined;
 }
 
 const COPY = {
@@ -203,8 +203,8 @@ export function Combobox({
   const reducedMotion = useReducedMotion();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
-  const fieldRef = React.useRef<View>(null);
-  const inputRef = React.useRef<TextInput>(null);
+  const fieldRef = React.useRef<ViewInstance>(null);
+  const inputRef = React.useRef<TextInputInstance>(null);
 
   const emptyValue: ComboboxValue = multiple ? [] : '';
   const [internalValue, setInternalValue] = React.useState<ComboboxValue>(defaultValue ?? emptyValue);
@@ -295,7 +295,7 @@ export function Combobox({
 
   const focusFieldA11y = React.useCallback((): void => {
     const node = fieldRef.current ? findNodeHandle(fieldRef.current) : null;
-    if (node !== null) {
+    if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
     }
   }, []);
@@ -324,7 +324,7 @@ export function Combobox({
         }
         input.focus();
         const node = findNodeHandle(input);
-        if (node !== null) {
+        if (node != null) {
           AccessibilityInfo.setAccessibilityFocus(node);
         }
       },
@@ -465,7 +465,7 @@ export function Combobox({
     commitCustomFromText();
   };
 
-  const handleKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>): void => {
+  const handleKeyPress = (event: TextInputKeyPressEvent): void => {
     const key = event.nativeEvent.key;
     if (key === 'Backspace' && multiple && currentInputText === '' && selectedValues.length > 0) {
       commitValue(selectedValues.slice(0, -1));
@@ -725,7 +725,7 @@ export function Combobox({
 
   const hostStyle: ViewStyle = { flex: 1 };
 
-  const popupOuterStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const popupOuterStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     top: popupTop,
     left: popupLeft,
@@ -829,7 +829,7 @@ export function Combobox({
       ) : (
         <Modal visible={popupMounted} transparent animationType="none" onRequestClose={() => closePopup(true)} statusBarTranslucent>
           <View style={hostStyle}>
-            <Pressable style={StyleSheet.absoluteFillObject} onPress={() => closePopup(true)} accessible={false} testID="Combobox.scrim" />
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => closePopup(true)} accessible={false} testID="Combobox.scrim" />
             {fieldRect !== null ? (
               <Animated.View style={popupOuterStyle} onLayout={handlePopupLayout} testID="Combobox.popup">
                 <View style={popupInnerStyle}>{listbox}</View>

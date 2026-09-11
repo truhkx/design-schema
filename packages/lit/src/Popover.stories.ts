@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Popover.js';
@@ -9,13 +9,13 @@ import './Link.js';
 import type { PopoverHeadingLevel, PopoverPlacement } from './Popover.js';
 
 interface PopoverArgs {
-  heading?: string;
+  heading?: string | undefined;
   headingLevel: PopoverHeadingLevel;
   placement: PopoverPlacement;
   modal: boolean;
   showArrow: boolean;
   dismissible: boolean;
-  open?: boolean;
+  open?: boolean | undefined;
 }
 
 const meta: Meta<PopoverArgs> = {

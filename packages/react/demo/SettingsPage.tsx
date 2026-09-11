@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   Alert,
   AlertDialog,
@@ -52,7 +52,7 @@ const DENSITY_OPTIONS = [
  * Container → Tabs (Profile, Notifications, Appearance, Account), each panel built only from
  * Form, Fieldset, Input, Checkbox, Switch, RadioGroup, SegmentedControl, Card, Alert and Button.
  */
-export function SettingsPage() {
+export function SettingsPage(): ReactElement {
   const profileFormRef = useRef<HTMLFormElement>(null);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [colorMode, setColorMode] = useState('system');

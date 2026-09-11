@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useRef,
   useState,
@@ -7,6 +6,7 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Disclosure, type DisclosureHeadingLevel, type DisclosureOverridableBinding } from './Disclosure';
@@ -14,7 +14,7 @@ import { Divider, type DividerOverridableBinding } from './Divider';
 import './Accordion.css';
 
 /** One section. `content` is the panel body. */
-export type AccordionItem = { id: string; summary: string; content: ReactNode; disabled?: boolean };
+export type AccordionItem = { id: string; summary: string; content: ReactNode; disabled?: boolean | undefined };
 
 /** Accepts the schema's string values and their numeric equivalents. */
 export type AccordionHeadingLevel = '2' | '3' | '4' | '5' | '6' | 2 | 3 | 4 | 5 | 6;
@@ -45,12 +45,12 @@ export type AccordionOverridableBinding =
   | 'triggerFontSize'
   | 'triggerFontWeight';
 
-const ROOT_OVERRIDE_HOOK: Partial<Record<AccordionOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<AccordionOverridableBinding, string | undefined>> = {
   itemGap: '--ds-accordion-item-gap',
 };
 
 /** triggerPaddingBlock/fontFamily/triggerFontSize/triggerFontWeight are Disclosure's own bindings; roomier padding than a lone Disclosure, since accordion triggers are section headings. */
-const DEFAULT_DISCLOSURE_OVERRIDES: Partial<Record<DisclosureOverridableBinding, TokenRef>> = {
+const DEFAULT_DISCLOSURE_OVERRIDES: Partial<Record<DisclosureOverridableBinding, TokenRef | undefined>> = {
   triggerPaddingBlock: 'space.md',
   triggerFontFamily: 'font.family.body',
   triggerFontSize: 'font.size.md',
@@ -58,7 +58,7 @@ const DEFAULT_DISCLOSURE_OVERRIDES: Partial<Record<DisclosureOverridableBinding,
 };
 
 /** divider/dividerWidth are the composed Divider's own bindings. */
-const DEFAULT_DIVIDER_OVERRIDES: Partial<Record<DividerOverridableBinding, TokenRef>> = {
+const DEFAULT_DIVIDER_OVERRIDES: Partial<Record<DividerOverridableBinding, TokenRef | undefined>> = {
   color: 'color.border',
   thickness: 'border.width.thin',
 };
@@ -89,7 +89,7 @@ function firstEnabledIndex(items: AccordionItem[]): number {
 
 function lastEnabledIndex(items: AccordionItem[]): number {
   for (let index = items.length - 1; index >= 0; index -= 1) {
-    if (!items[index].disabled) return index;
+    if (!items[index]!.disabled) return index;
   }
   return -1;
 }
@@ -98,30 +98,30 @@ export interface AccordionProps extends Omit<ComponentPropsWithoutRef<'div'>, 'c
   /** The sections in order. `content` is the panel body (a slot per item on Lit). */
   items: AccordionItem[];
   /** Heading level for every trigger, so sections appear in the page outline. */
-  headingLevel?: AccordionHeadingLevel;
+  headingLevel?: AccordionHeadingLevel | undefined;
   /**
    * Opening one section closes the others. Off by default: users usually want to compare, and
    * forced-closing is a common frustration.
    */
-  exclusive?: boolean;
+  exclusive?: boolean | undefined;
   /** Controlled open ids (array; a single id when `exclusive`). */
-  value?: string | string[];
+  value?: string | string[] | undefined;
   /** Initially open ids. */
-  defaultValue?: string | string[];
+  defaultValue?: string | string[] | undefined;
   /** A hairline between items. */
-  divided?: boolean;
+  divided?: boolean | undefined;
   /** Passed to every Disclosure; required when panels contain form fields. */
-  keepMounted?: boolean;
+  keepMounted?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook, or the composed Disclosure/Divider's own override, to that token. */
-  overrides?: Partial<Record<AccordionOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<AccordionOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the set of open sections changes, with the open ids. */
-  onChange?: (openIds: string[]) => void;
+  onChange?: ((openIds: string[]) => void) | undefined;
   /**
    * Fired per section as it opens or closes. The per-item trigger for analytics, lazy loading of a
    * panel's content, or scrolling the opened section into view; `onChange` remains the set-level
    * event for state.
    */
-  onOpenChange?: (detail: AccordionOpenChangeDetail) => void;
+  onOpenChange?: ((detail: AccordionOpenChangeDetail) => void) | undefined;
 }
 
 /**
@@ -133,24 +133,22 @@ export interface AccordionProps extends Omit<ComponentPropsWithoutRef<'div'>, 'c
  * optional. Set `headingLevel` to fit the page outline. Leave `exclusive` off unless the panels are
  * heavy or mutually exclusive by nature (a wizard-like "choose one plan to see details").
  */
-export const Accordion = forwardRef<HTMLDivElement, AccordionProps>(function Accordion(
-  {
-    items,
-    headingLevel = '3',
-    exclusive = false,
-    value,
-    defaultValue,
-    divided = true,
-    keepMounted = false,
-    overrides,
-    onChange,
-    onOpenChange,
-    className,
-    style,
-    ...rest
-  },
+export const Accordion = function Accordion({
   ref,
-) {
+  items,
+  headingLevel = '3',
+  exclusive = false,
+  value,
+  defaultValue,
+  divided = true,
+  keepMounted = false,
+  overrides,
+  onChange,
+  onOpenChange,
+  className,
+  style,
+  ...rest
+}: AccordionProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const triggerRefs = useRef(new Map<string, HTMLButtonElement>());
   const setTriggerRef = (id: string) => (el: HTMLButtonElement | null) => {
     if (el) triggerRefs.current.set(id, el);
@@ -229,13 +227,13 @@ export const Accordion = forwardRef<HTMLDivElement, AccordionProps>(function Acc
     const currentIndex = items.findIndex((item) => triggerRefs.current.get(item.id) === target);
     if (currentIndex === -1) return;
 
-    const focusAt = (index: number) => triggerRefs.current.get(items[index].id)?.focus();
+    const focusAt = (index: number) => triggerRefs.current.get(items[index]!.id)?.focus();
 
     const findEnabled = (from: number, step: number): number => {
       let index = from;
       for (let i = 0; i < items.length; i += 1) {
         index = (index + step + items.length) % items.length;
-        if (!items[index].disabled) return index;
+        if (!items[index]!.disabled) return index;
       }
       return -1;
     };
@@ -263,7 +261,7 @@ export const Accordion = forwardRef<HTMLDivElement, AccordionProps>(function Acc
     focusAt(nextIndex);
   };
 
-  const disclosureOverrides: Partial<Record<DisclosureOverridableBinding, TokenRef>> = {
+  const disclosureOverrides: Partial<Record<DisclosureOverridableBinding, TokenRef | undefined>> = {
     ...DEFAULT_DISCLOSURE_OVERRIDES,
     ...(overrides?.triggerPaddingBlock ? { triggerPaddingBlock: overrides.triggerPaddingBlock } : null),
     ...(overrides?.fontFamily ? { triggerFontFamily: overrides.fontFamily } : null),
@@ -271,7 +269,7 @@ export const Accordion = forwardRef<HTMLDivElement, AccordionProps>(function Acc
     ...(overrides?.triggerFontWeight ? { triggerFontWeight: overrides.triggerFontWeight } : null),
   };
 
-  const dividerOverrides: Partial<Record<DividerOverridableBinding, TokenRef>> = {
+  const dividerOverrides: Partial<Record<DividerOverridableBinding, TokenRef | undefined>> = {
     ...DEFAULT_DIVIDER_OVERRIDES,
     ...(overrides?.divider ? { color: overrides.divider } : null),
     ...(overrides?.dividerWidth ? { thickness: overrides.dividerWidth } : null),
@@ -315,4 +313,4 @@ export const Accordion = forwardRef<HTMLDivElement, AccordionProps>(function Acc
       {children}
     </div>
   );
-});
+};

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Select.js';
@@ -9,18 +9,18 @@ interface SelectArgs {
   label: string;
   name: string;
   options: ListboxOption[];
-  value?: SelectValue;
-  defaultValue?: SelectValue;
-  placeholder?: string;
+  value?: SelectValue | undefined;
+  defaultValue?: SelectValue | undefined;
+  placeholder?: string | undefined;
   hideLabel: boolean;
   size: SelectSize;
-  open?: boolean;
+  open?: boolean | undefined;
   multiple: boolean;
-  description?: string;
+  description?: string | undefined;
   required: boolean;
   disabled: boolean;
   invalid: boolean;
-  error?: string;
+  error?: string | undefined;
   native: SelectNative;
 }
 

@@ -66,7 +66,7 @@ def expand(token_ref: str, props: dict) -> list[str]:
 
 def main() -> int:
     if not GENERATED.exists():
-        print("✖ generated/components.json missing — run tools/parse.py first", file=sys.stderr)
+        print("✖ generated/components.json missing — run tools/parse.ts first", file=sys.stderr)
         return 1
     components = json.loads(GENERATED.read_text())
     palettes = {

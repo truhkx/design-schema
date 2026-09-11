@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Popover } from './Popover';
 import { Button } from './Button';
 import { Input } from './Input';
@@ -18,7 +18,7 @@ const defaultBody = (
   </Stack>
 );
 
-const meta = {
+const meta: Meta<typeof Popover> = {
   title: 'Popover/React',
   component: Popover,
   args: {
@@ -30,7 +30,7 @@ const meta = {
     dismissible: true,
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof Popover>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

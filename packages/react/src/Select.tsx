@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -13,6 +12,7 @@ import {
   type FocusEventHandler,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -65,7 +65,7 @@ export type SelectOverridableBinding =
   | 'disabledOpacity'
   | 'enter';
 
-const ROOT_OVERRIDE_HOOK: Partial<Record<SelectOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<SelectOverridableBinding, string | undefined>> = {
   triggerBorderFocus: '--ds-select-trigger-border-focus',
   triggerBorderInvalid: '--ds-select-trigger-border-invalid',
   triggerBorderWidth: '--ds-select-trigger-border-width',
@@ -87,7 +87,7 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<SelectOverridableBinding, string>> = {
  * the root. The composed Listbox renders `embedded` (it draws no surface/border/radius of its
  * own), so `popupSurface`/`popupBorder`/`popupRadius` are drawn by this wrapper alone.
  */
-const POPUP_OVERRIDE_HOOK: Partial<Record<SelectOverridableBinding, string>> = {
+const POPUP_OVERRIDE_HOOK: Partial<Record<SelectOverridableBinding, string | undefined>> = {
   popupSurface: '--ds-select-popup-surface',
   popupBorder: '--ds-select-popup-border',
   popupShadow: '--ds-select-popup-shadow',
@@ -97,16 +97,16 @@ const POPUP_OVERRIDE_HOOK: Partial<Record<SelectOverridableBinding, string>> = {
   enter: '--ds-select-enter',
 };
 
-function resolveOverrides(overrides: Partial<Record<SelectOverridableBinding, TokenRef>>): {
+function resolveOverrides(overrides: Partial<Record<SelectOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
   popupStyle: CSSProperties;
-  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
   const popupStyle: Record<string, string> = {};
-  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
   for (const binding of Object.keys(overrides) as SelectOverridableBinding[]) {
     const ref = overrides[binding];
     if (!ref) continue;
@@ -145,7 +145,7 @@ function prefersReducedMotion(): boolean {
     : false;
 }
 
-type SelectRow = { value: string; label: string; disabled?: boolean };
+type SelectRow = { value: string; label: string; disabled?: boolean | undefined };
 
 function isGroup(option: ListboxOption): option is { group: string; options: ListboxOption[] } {
   return 'group' in option;
@@ -248,50 +248,50 @@ export interface SelectProps
   /** The options, passed through to the Listbox. */
   options: ListboxOption[];
   /** Controlled value (array with `multiple`). */
-  value?: SelectValue;
+  value?: SelectValue | undefined;
   /** Initial value (array with `multiple`). */
-  defaultValue?: SelectValue;
+  defaultValue?: SelectValue | undefined;
   /** Text shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. Not a substitute for the label. */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /** Visually hide the label (it remains the accessible name), for compact pickers such as
    * DatePicker's month and year. */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** sm for pickers inside toolbars and calendar headers. */
-  size?: SelectSize;
+  size?: SelectSize | undefined;
   /**
    * Controlled popup state, for programmatic opening and for stories and tests (the Keyboard
    * story renders it open). Omit for the trigger-driven default.
    */
-  open?: boolean;
+  open?: boolean | undefined;
   /**
    * Pick any number. The trigger shows `copy.selectedCount` (or the labels when two or fewer);
    * the popup stays open while toggling and closes on Escape or outside click.
    */
-  multiple?: boolean;
+  multiple?: boolean | undefined;
   /** Helper text under the label. */
-  description?: string;
+  description?: string | undefined;
   /** Must have a value to submit. Shown in the label, not only by color. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Not openable and not submitted. Stays visible and focusable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Marks the field invalid. Usually set by the Form. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Error message; implies invalid. */
-  error?: string;
+  error?: string | undefined;
   /**
    * Use the platform's own picker instead of the popup Listbox: `auto` never uses a native
    * `<select>` on web (the styled popup); `always` forces a native `<select>` (forms that must
    * work without JS); `never` forces the popup. `auto` and `never` behave identically on web.
    */
-  native?: SelectNative;
+  native?: SelectNative | undefined;
   /** Portal target for the popup's DOM node. Defaults to `document.body`. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<SelectOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SelectOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the value changes (array with `multiple`). */
-  onChange?: (value: SelectValue) => void;
+  onChange?: ((value: SelectValue) => void) | undefined;
   /** Fired when the popup opens or closes. */
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: ((open: boolean) => void) | undefined;
 }
 
 /**
@@ -304,39 +304,37 @@ export interface SelectProps
  * that must work without JavaScript. Use Combobox instead when the list is long enough that typing
  * to filter is faster than scrolling, or when free text is allowed.
  */
-export const Select = forwardRef<HTMLButtonElement | HTMLSelectElement, SelectProps>(function Select(
-  {
-    label,
-    name,
-    options,
-    value,
-    defaultValue,
-    placeholder,
-    hideLabel = false,
-    size = 'md',
-    open: openProp,
-    multiple = false,
-    description,
-    required = false,
-    disabled = false,
-    invalid = false,
-    error,
-    native = 'auto',
-    container,
-    overrides,
-    onChange,
-    onOpenChange,
-    id: idProp,
-    className,
-    style,
-    onClick: onClickProp,
-    onKeyDown: onKeyDownProp,
-    onFocus,
-    onBlur,
-    ...rest
-  },
+export const Select = function Select({
   ref,
-) {
+  label,
+  name,
+  options,
+  value,
+  defaultValue,
+  placeholder,
+  hideLabel = false,
+  size = 'md',
+  open: openProp,
+  multiple = false,
+  description,
+  required = false,
+  disabled = false,
+  invalid = false,
+  error,
+  native = 'auto',
+  container,
+  overrides,
+  onChange,
+  onOpenChange,
+  id: idProp,
+  className,
+  style,
+  onClick: onClickProp,
+  onKeyDown: onKeyDownProp,
+  onFocus,
+  onBlur,
+  ...rest
+}: SelectProps & { ref?: Ref<HTMLButtonElement | HTMLSelectElement> | undefined }): ReactElement {
   const form = useFormContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-select${generatedId}`);
@@ -722,4 +720,4 @@ export const Select = forwardRef<HTMLButtonElement | HTMLSelectElement, SelectPr
         : null}
     </div>
   );
-});
+};

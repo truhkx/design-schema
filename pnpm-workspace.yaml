@@ -3,3 +3,4 @@ packages:
   - packages/*
   - storybook
   - apps/*
+engineStrict: true

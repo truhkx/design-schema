@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -178,7 +178,7 @@ export class DsSidePanel extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       --ds-side-panel-scrim: var(--color-overlay-scrim);
       --ds-side-panel-shadow: var(--shadow-overlay);
@@ -375,43 +375,43 @@ export class DsSidePanel extends LitElement {
   `;
 
   /** Controlled visibility. Omit for uncontrolled (the trigger toggles it). */
-  @property({ type: Boolean, reflect: true }) open?: boolean;
+  @property({ type: Boolean, reflect: true }) accessor open: boolean | undefined;
 
   /**
    * The panel's title and accessible name. Named `heading`, not `title` —
    * `HTMLElement` already defines `title` as the tooltip attribute (see
    * Dialog and BottomSheet).
    */
-  @property() heading!: string;
+  @property() accessor heading!: string;
 
   /** Keep the title for assistive technology but do not render it. The accessible name is required regardless. */
-  @property({ type: Boolean, attribute: 'hide-heading' }) hideHeading = false;
+  @property({ type: Boolean, attribute: 'hide-heading' }) accessor hideHeading = false;
 
   /** The edge the panel slides from; `start`/`end` follow the writing direction. */
-  @property({ reflect: true }) side: SidePanelSide = 'start';
+  @property({ reflect: true }) accessor side: SidePanelSide = 'start';
 
   /** Panel width on wide screens. On phones the panel is the viewport width minus `edgeGutter`. */
-  @property({ reflect: true }) width: SidePanelWidth = 'default';
+  @property({ reflect: true }) accessor width: SidePanelWidth = 'default';
 
   /** Above this layout width the panel becomes a fixed sidebar: always visible, no scrim, no trap, no trigger. */
-  @property({ reflect: true }) persistent: SidePanelPersistent = 'never';
+  @property({ reflect: true }) accessor persistent: SidePanelPersistent = 'never';
 
   /**
    * The landmark role the panel exposes, in persistent mode and as the shadow
    * region's role when open. Named `landmark`, not `role` — `Element` already
    * defines `role` via ARIA reflection.
    */
-  @property({ attribute: 'landmark' }) landmark: SidePanelLandmark = 'complementary';
+  @property({ attribute: 'landmark' }) accessor landmark: SidePanelLandmark = 'complementary';
 
   /** `false` (default, the disclosure pattern): no trap, focus stays on the trigger. `true`: a modal Dialog at the edge. */
-  @property({ type: Boolean }) modal = false;
+  @property({ type: Boolean }) accessor modal = false;
 
   /**
    * Show the scrim in non-modal mode too (modal always has one). Attribute
    * is the negation, `no-scrim`, because a boolean attribute cannot express
    * `false` for a prop that defaults `true`.
    */
-  @property({ attribute: 'no-scrim', converter: NEGATED_BOOLEAN_CONVERTER }) scrim = true;
+  @property({ attribute: 'no-scrim', converter: NEGATED_BOOLEAN_CONVERTER }) accessor scrim = true;
 
   /**
    * Escape, the close button, a scrim tap / outside click, and the swipe
@@ -419,33 +419,33 @@ export class DsSidePanel extends LitElement {
    * actions close it. Attribute is the negation, `no-dismiss`.
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  dismissible = true;
+  accessor dismissible = true;
 
   /**
    * On touch, a swipe toward the edge dismisses (native only — not wired up
    * on the web platform). Attribute is the negation, `no-swipe`.
    */
   @property({ attribute: 'no-swipe', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  swipeable = true;
+  accessor swipeable = true;
 
   /** Per-instance style overrides: `{ inset: 'layout.inset.md' }`. Locked bindings (surface, focusRing, focusRingWidth) are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<SidePanelOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<SidePanelOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled open state, used when `open` is omitted. */
-  @state() private internalOpen = false;
+  @state() private accessor internalOpen = false;
 
   /** Whether the persistent breakpoint currently matches. */
-  @state() private isPersistent = false;
+  @state() private accessor isPersistent = false;
 
   /** Whether the exit transition is playing. */
-  @state() private closing = false;
+  @state() private accessor closing = false;
 
   /** Whether the default slot currently has assigned content, for the dev warning. */
-  @state() private hasBodyContent = false;
+  @state() private accessor hasBodyContent = false;
 
-  @query('dialog') private readonly dialogEl?: HTMLDialogElement;
-  @query('#heading') private readonly headingEl?: HTMLElement;
-  @query('.close') private readonly closeButtonEl?: HTMLElement;
+  @query('dialog') private accessor dialogEl!: HTMLDialogElement | null;
+  @query('#heading') private accessor headingEl!: HTMLElement | null;
+  @query('.close') private accessor closeButtonEl!: HTMLElement | null;
 
   private triggerEl: HTMLElement | null = null;
   private persistentQuery: MediaQueryList | null = null;
@@ -511,7 +511,7 @@ export class DsSidePanel extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const isOpen = this.currentOpen;
     const isPersistent = this.isPersistent;
     const hasFooter = this.querySelector('[slot="footer"]') !== null;

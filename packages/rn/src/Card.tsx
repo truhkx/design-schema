@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Linking, Pressable, View } from 'react-native';
-import type { PressableStateCallbackType, ViewStyle } from 'react-native';
+import type { PressableStateCallbackType, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -34,27 +34,27 @@ export interface CardProps {
   /** The body. Usually a Stack of Text and controls. */
   children: React.ReactNode;
   /** The card's title, rendered as a Heading at the card's level. Omit for cards that are a single piece of content. */
-  heading?: string;
+  heading?: string | undefined;
   /**
    * Heading level for `heading`, so cards fit the page outline. Cards in a list
    * share a level. Native has no heading levels; this controls only the default
    * typography, and the header trait is set regardless.
    */
-  headingLevel?: CardHeadingLevel;
+  headingLevel?: CardHeadingLevel | undefined;
   /** Controls at the end of the header row — a ghost icon-only Button, a Link. At most two. */
   headerActions?: React.ReactNode;
   /** The action row. Buttons in a horizontal row, primary first, following Form's action-order rule. */
   footer?: React.ReactNode;
   /** Padding inside the card from the layout inset presets. `sm` for dense grids, `lg` for a single featured card. */
-  inset?: CardInset;
+  inset?: CardInset | undefined;
   /** `default` is the page background with a border — the calm option; `subtle` is a tinted surface without a border. */
-  surface?: CardSurface;
+  surface?: CardSurface | undefined;
   /**
    * The whole card is one link or button target. Requires exactly one interactive
    * child (a Link or Button) whose action the card extends to its full area; the
    * card itself is not focusable — its single child is the target.
    */
-  interactive?: boolean;
+  interactive?: boolean | undefined;
   /**
    * The card root takes `tabIndex={-1}` so a container (Feed) can move focus to it
    * by calling `.focus()` on the forwarded ref, and draws its own focus ring when
@@ -62,9 +62,9 @@ export interface CardProps {
    * Has no effect while `interactive` is set — the child link/button is already the
    * sole focus target.
    */
-  focusable?: boolean;
+  focusable?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<CardOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<CardOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 interface InteractiveTarget {
@@ -101,11 +101,11 @@ const SURFACE_HOVER_TOKEN = {
  * supports them; this typed alias documents that gap instead of reaching for `any`.
  */
 type FocusableViewProps = React.ComponentProps<typeof View> & {
-  onFocus?: () => void;
-  onBlur?: () => void;
+  onFocus?: (() => void) | undefined;
+  onBlur?: (() => void) | undefined;
 };
 const FocusableView = View as unknown as React.ForwardRefExoticComponent<
-  FocusableViewProps & React.RefAttributes<View>
+  FocusableViewProps & React.RefAttributes<ViewInstance>
 >;
 
 /**
@@ -205,7 +205,7 @@ function extendInteractiveChild(node: React.ReactNode, state: InteractiveScanSta
  * doc's PageUp/PageDown scripted paging), so this wires up the mechanism for a
  * future caller without one yet.
  */
-export const Card = React.forwardRef<View, CardProps>(function Card(
+export const Card: React.ForwardRefExoticComponent<CardProps & React.RefAttributes<ViewInstance>> = React.forwardRef<ViewInstance, CardProps>(function Card(
   {
     children,
     heading,
@@ -260,7 +260,8 @@ export const Card = React.forwardRef<View, CardProps>(function Card(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interactive, children]);
 
-  const surfaceStyle: ViewStyle = {
+  // ViewStyle is read-only in React Native's strict TypeScript API; this one is built up in place.
+  const surfaceStyle: { -readonly [K in keyof ViewStyle]: ViewStyle[K] } = {
     paddingVertical: paddingBlock,
     paddingHorizontal: paddingInline,
     gap: partGap,

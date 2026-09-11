@@ -1,4 +1,4 @@
-import { forwardRef, useId, type ComponentPropsWithoutRef, type CSSProperties } from 'react';
+import { useId, type ComponentPropsWithoutRef, type CSSProperties, type Ref, type ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
 import { Icon } from './Icon';
@@ -9,8 +9,8 @@ export type StepperStepStatus = 'complete' | 'current' | 'upcoming' | 'error';
 export type StepperStep = {
   id: string;
   label: string;
-  description?: string;
-  status?: StepperStepStatus;
+  description?: string | undefined;
+  status?: StepperStepStatus | undefined;
 };
 
 export type StepperOrientation = 'horizontal' | 'vertical';
@@ -48,7 +48,7 @@ export type StepperOverridableBinding =
 /** Bindings owned by the root; labelWeight/labelCurrentWeight/labelSize/descriptionSize are forwarded
  * into the composed Text elements' own `overrides` instead, since Text already exposes them.
  * fontFamily does both: it sets the root hook (for the indicator's own number/glyph) and forwards. */
-const ROOT_OVERRIDE_HOOK: Partial<Record<StepperOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<StepperOverridableBinding, string | undefined>> = {
   indicatorSize: '--ds-stepper-indicator-size',
   indicatorBackground: '--ds-stepper-indicator-background',
   indicatorBorderWidth: '--ds-stepper-indicator-border-width',
@@ -64,16 +64,16 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<StepperOverridableBinding, string>> = {
   fontFamily: '--ds-stepper-font-family', // literal-ok: CSS custom-property hook name, not a font stack
 };
 
-function overridesToStyle(overrides: Partial<Record<StepperOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<StepperOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  currentLabelOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  currentLabelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const currentLabelOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const currentLabelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
 
   for (const binding of Object.keys(overrides) as StepperOverridableBinding[]) {
     const ref = overrides[binding];
@@ -114,23 +114,23 @@ export interface StepperProps extends Omit<ComponentPropsWithoutRef<'nav'>, 'chi
   /** The id of the current step. */
   current: string;
   /** Vertical shows descriptions under each label and suits a side column; horizontal collapses to `compact` below the prose width. */
-  orientation?: StepperOrientation;
+  orientation?: StepperOrientation | undefined;
   /**
    * Which steps are Buttons: none (display only), completed steps (the usual — you can go back,
    * not skip ahead), or all (a settings-style flow where order does not matter).
    */
-  navigable?: StepperNavigable;
+  navigable?: StepperNavigable | undefined;
   /**
    * Show only the current step's label and "Step 2 of 5"; the indicators stay. Automatic on
    * narrow viewports for horizontal steppers. Has no effect when `orientation` is `vertical`.
    */
-  compact?: boolean;
+  compact?: boolean | undefined;
   /** Accessible name of the navigation landmark. Defaults to `copy.navLabel`. */
-  label?: string;
+  label?: string | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook, or the composed Text's own override, to that token. */
-  overrides?: Partial<Record<StepperOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a navigable step is chosen, with its id. The container changes `current`; the stepper never changes it itself. */
-  onStepSelect?: (id: string) => void;
+  onStepSelect?: ((id: string) => void) | undefined;
 }
 
 function resolveStatus(step: StepperStep, index: number, currentIndex: number): StepperStepStatus {
@@ -164,22 +164,20 @@ function statusWordFor(status: StepperStepStatus): string | undefined {
  * short, familiar ones. Leave `navigable: completed` so people can correct earlier answers without
  * losing later ones (the container keeps the later steps' state).
  */
-export const Stepper = forwardRef<HTMLElement, StepperProps>(function Stepper(
-  {
-    steps,
-    current,
-    orientation = 'horizontal',
-    navigable = 'completed',
-    compact = false,
-    label = COPY.navLabel,
-    overrides,
-    onStepSelect,
-    className,
-    style,
-    ...rest
-  },
+export const Stepper = function Stepper({
   ref,
-) {
+  steps,
+  current,
+  orientation = 'horizontal',
+  navigable = 'completed',
+  compact = false,
+  label = COPY.navLabel,
+  overrides,
+  onStepSelect,
+  className,
+  style,
+  ...rest
+}: StepperProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const generatedId = useId();
   const currentIndex = steps.findIndex((step) => step.id === current);
   const total = steps.length;
@@ -305,4 +303,4 @@ export const Stepper = forwardRef<HTMLElement, StepperProps>(function Stepper(
       </Text>
     </nav>
   );
-});
+};

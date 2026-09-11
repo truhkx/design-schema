@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, TextInput, View, findNodeHandle } from 'react-native';
-import type { NativeSyntheticEvent, TextInputKeyPressEventData, TextStyle, ViewStyle } from 'react-native';
+import type { TextInputInstance, TextInputKeyPressEvent, TextStyle, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -15,7 +15,7 @@ import type { Tokens } from './theme';
 export type SearchSize = 'md' | 'lg';
 
 /** One row offered under the field while typing. */
-export type SearchSuggestion = { value: string; label: string; description?: string };
+export type SearchSuggestion = { value: string; label: string; description?: string | undefined };
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type SearchOverridableBinding =
@@ -41,45 +41,45 @@ export interface SearchProps {
   /** Accessible name ("Search products"). Visually hidden unless `showLabel`. */
   label: string;
   /** Show the label above the field, as on a search page rather than in a header. */
-  showLabel?: boolean;
+  showLabel?: boolean | undefined;
   /**
    * Field name; the query key a web form submits to `action`. Has no runtime effect
    * on this platform, which has no navigable forms — kept for API parity.
    */
-  name?: string;
+  name?: string | undefined;
   /** Controlled query. */
-  value?: string;
+  value?: string | undefined;
   /** Initial query. */
-  defaultValue?: string;
+  defaultValue?: string | undefined;
   /** Example query, not a label. */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /**
    * URL a web form submits to with GET. Has no runtime effect on this
    * platform — there is no navigation to perform — kept for API parity.
    */
-  action?: string;
+  action?: string | undefined;
   /**
    * Suggestions for the current query, shown in a Listbox under the field. Provide
    * them from `onChange` (debounced by the caller). Setting this at all — even to an
    * empty array — turns on suggestions mode.
    */
-  suggestions?: SearchSuggestion[];
+  suggestions?: SearchSuggestion[] | undefined;
   /** Suggestions are being fetched; announced through `copy.loading`. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** Wrap in the `search` Landmark. Turn off when nested inside another search landmark. */
-  landmark?: boolean;
+  landmark?: boolean | undefined;
   /** `lg` for a search page's hero field. */
-  size?: SearchSize;
+  size?: SearchSize | undefined;
   /** Not editable, still readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<SearchOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SearchOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired on every keystroke with the query. */
-  onChange?: (value: string) => void;
+  onChange?: ((value: string) => void) | undefined;
   /** Fired on Enter, the submit button, or choosing a suggestion, with the trimmed query. Never fires for an empty query. */
-  onSubmit?: (value: string) => void;
+  onSubmit?: ((value: string) => void) | undefined;
   /** Fired when the clear button, or an Escape that empties the field, clears the query. */
-  onClear?: () => void;
+  onClear?: (() => void) | undefined;
 }
 
 const COPY = {
@@ -137,7 +137,7 @@ export function Search({
   onClear,
 }: SearchProps): React.JSX.Element {
   const { tokens: t } = useTheme();
-  const inputRef = React.useRef<TextInput>(null);
+  const inputRef = React.useRef<TextInputInstance>(null);
 
   const [internalValue, setInternalValue] = React.useState<string>(defaultValue ?? '');
   const [open, setOpen] = React.useState(false);
@@ -165,7 +165,7 @@ export function Search({
 
   const focusFieldA11y = (): void => {
     const node = inputRef.current ? findNodeHandle(inputRef.current) : null;
-    if (node !== null) {
+    if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
     }
   };
@@ -210,7 +210,7 @@ export function Search({
 
   // Only reachable via a hardware keyboard or react-native-web; on-screen keyboards
   // do not emit an Escape key.
-  const handleKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>): void => {
+  const handleKeyPress = (event: TextInputKeyPressEvent): void => {
     if (event.nativeEvent.key !== 'Escape') {
       return;
     }

@@ -12,7 +12,7 @@ import { useTheme } from './theme';
 export type AccordionHeadingLevel = '2' | '3' | '4' | '5' | '6' | 2 | 3 | 4 | 5 | 6;
 
 /** One section. `content` is the panel body. */
-export type AccordionItem = { id: string; summary: string; content: React.ReactNode; disabled?: boolean };
+export type AccordionItem = { id: string; summary: string; content: React.ReactNode; disabled?: boolean | undefined };
 
 /** Controlled/uncontrolled open ids: a single id under `exclusive`, otherwise the full set. */
 export type AccordionValue = string | string[];
@@ -34,23 +34,23 @@ export interface AccordionProps {
   /** The sections in order. */
   items: AccordionItem[];
   /** Heading level for every trigger, so sections appear in the page outline. Native has no heading levels; the value only documents the outline (see `Disclosure`). */
-  headingLevel?: AccordionHeadingLevel;
+  headingLevel?: AccordionHeadingLevel | undefined;
   /** Opening one section closes the others. Off by default: users usually want to compare, and forced-closing is a common frustration. */
-  exclusive?: boolean;
+  exclusive?: boolean | undefined;
   /** Controlled open ids. Omit for an uncontrolled accordion. */
-  value?: AccordionValue;
+  value?: AccordionValue | undefined;
   /** Initially open ids. */
-  defaultValue?: AccordionValue;
+  defaultValue?: AccordionValue | undefined;
   /** A hairline between items. */
-  divided?: boolean;
+  divided?: boolean | undefined;
   /** Passed to every Disclosure; required when panels contain form fields. */
-  keepMounted?: boolean;
+  keepMounted?: boolean | undefined;
   /** Fired when the set of open sections changes, with the full list of open ids. */
-  onChange?: (openIds: string[]) => void;
+  onChange?: ((openIds: string[]) => void) | undefined;
   /** Fired per section as it opens or closes. The per-item trigger for analytics, lazy loading of a panel's content, or scrolling the opened section into view; `onChange` remains the set-level event for state. */
-  onOpenChange?: (detail: { id: string; open: boolean; reason: AccordionOpenChangeReason }) => void;
+  onOpenChange?: ((detail: { id: string; open: boolean; reason: AccordionOpenChangeReason }) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<AccordionOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<AccordionOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 function normalizeIds(value: AccordionValue | undefined): string[] {
@@ -126,7 +126,7 @@ export function Accordion({
   const itemGap = overrides?.itemGap ? (resolveToken(t, overrides.itemGap) as number) : t.layoutGapNone;
   const triggerPaddingBlockRef: TokenRef = overrides?.triggerPaddingBlock ?? 'space.md';
 
-  const disclosureOverrides: Partial<Record<DisclosureOverridableBinding, TokenRef>> = { triggerPaddingBlock: triggerPaddingBlockRef };
+  const disclosureOverrides: Partial<Record<DisclosureOverridableBinding, TokenRef | undefined>> = { triggerPaddingBlock: triggerPaddingBlockRef };
   if (overrides?.fontFamily) {
     disclosureOverrides.triggerFontFamily = overrides.fontFamily;
   }

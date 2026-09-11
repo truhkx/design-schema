@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useId, useRef, useState, type ComponentPropsWithoutRef, type CSSProperties } from 'react';
+import { useEffect, useId, useRef, useState, type ComponentPropsWithoutRef, type CSSProperties, type Ref, type ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
 import './ProgressBar.css';
@@ -28,7 +28,7 @@ export type ProgressBarOverridableBinding =
 
 /** Bindings owned by the root; the label/value sizing bindings are forwarded into the composed Text
  * elements' own `overrides` contract instead, since Text already exposes them. */
-const ROOT_OVERRIDE_HOOK: Partial<Record<ProgressBarOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<ProgressBarOverridableBinding, string | undefined>> = {
   track: '--ds-progress-bar-track',
   trackHeight: '--ds-progress-bar-track-height',
   radius: '--ds-progress-bar-radius',
@@ -37,14 +37,14 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<ProgressBarOverridableBinding, string>>
   indeterminateLoop: '--ds-progress-bar-indeterminate-loop',
 };
 
-function overridesToStyle(overrides: Partial<Record<ProgressBarOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<ProgressBarOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
 
   for (const binding of Object.keys(overrides) as ProgressBarOverridableBinding[]) {
     const ref = overrides[binding];
@@ -82,23 +82,23 @@ export interface ProgressBarProps extends Omit<ComponentPropsWithoutRef<'div'>, 
   /** What is progressing ("Uploading photos", "Importing contacts"). Visible unless `hideLabel`. */
   label: string;
   /** Progress so far, between `min` and `max`. Omit for an indeterminate bar (the end is unknown). */
-  value?: number;
+  value?: number | undefined;
   /** Start of the range. */
-  min?: number;
+  min?: number | undefined;
   /** End of the range. */
-  max?: number;
+  max?: number | undefined;
   /** Renders the value text ("42%", "3 of 12 files"). Defaults to a percentage. */
-  formatValue?: (value: number, min: number, max: number) => string;
+  formatValue?: ((value: number, min: number, max: number) => string) | undefined;
   /** Show the value text beside the label. Ignored when indeterminate. */
-  showValue?: boolean;
+  showValue?: boolean | undefined;
   /** Visually hide the label (it remains the accessible name). For bars inside a Card whose heading already says what is happening. */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** Neutral while running; `success` at completion, `danger` when the task failed part-way. Paired with a text status elsewhere: the color is never the only signal. */
-  tone?: ProgressBarTone;
+  tone?: ProgressBarTone | undefined;
   /** What a screen reader hears without focusing the bar: nothing, every 25%, or only completion. Each announcement uses `copy.progress` / `copy.complete`. */
-  announce?: ProgressBarAnnounce;
+  announce?: ProgressBarAnnounce | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<ProgressBarOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ProgressBarOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const TONE_CLASS: Record<ProgressBarTone, string> = {
@@ -117,25 +117,23 @@ const TONE_CLASS: Record<ProgressBarTone, string> = {
  * switch. Set `announce: milestones` for long tasks the user may leave and come back to;
  * `complete` (the default) is right for anything under a minute.
  */
-export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(function ProgressBar(
-  {
-    label,
-    value,
-    min = 0,
-    max = 100,
-    formatValue,
-    showValue = true,
-    hideLabel = false,
-    tone = 'neutral',
-    announce = 'complete',
-    overrides,
-    id: idProp,
-    className,
-    style,
-    ...rest
-  },
+export const ProgressBar = function ProgressBar({
   ref,
-) {
+  label,
+  value,
+  min = 0,
+  max = 100,
+  formatValue,
+  showValue = true,
+  hideLabel = false,
+  tone = 'neutral',
+  announce = 'complete',
+  overrides,
+  id: idProp,
+  className,
+  style,
+  ...rest
+}: ProgressBarProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const id = idProp ?? `ds-progress-bar${generatedId}`;
   const labelId = `${id}-label`;
@@ -245,4 +243,4 @@ export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(function
       </div>
     </div>
   );
-});
+};

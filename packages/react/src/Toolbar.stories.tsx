@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Toolbar, ToolbarGroup } from './Toolbar';
 import { Button } from './Button';
 import { SegmentedControl } from './SegmentedControl';
 import { Icon } from './Icon';
 
-const meta = {
+const meta: Meta<typeof Toolbar> = {
   title: 'Toolbar/React',
   component: Toolbar,
   args: {
@@ -33,7 +33,7 @@ const meta = {
     ),
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof Toolbar>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

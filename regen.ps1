@@ -16,7 +16,7 @@
 #   Windows running in parallel take turns folding through generated\fold.lock; each folds only gap files newer than folded.json.
 #
 # Between phases (unless -NoPause) the script writes generated\gaps\SUMMARY.md (via tools/gap_digest.py when present,
-# else a concatenation), commits, and exits with code 3. Fold the gaps into the docs, run `node tools/py.mjs tools/parse.py`,
+# else a concatenation), commits, and exits with code 3. Fold the gaps into the docs, run `pnpm parse`,
 # then resume with -From <next phase>. Targets whose docs changed become stale automatically (prompt hash), so the
 # next phase regenerates only what the folded gaps touched plus its own components.
 param(
@@ -76,7 +76,7 @@ Log "== pnpm themes =="
 pnpm themes 2>&1 | ForEach-Object { Log "$_" }
 if ($LASTEXITCODE -ne 0) { Log "themes failed"; exit 1 }
 Log "== parse =="
-node tools/py.mjs tools/parse.py 2>&1 | ForEach-Object { Log "$_" }
+pnpm parse 2>&1 | ForEach-Object { Log "$_" }
 if ($LASTEXITCODE -ne 0) { Log "parse failed: fix the docs above before regenerating"; exit 1 }
 if ($Gates) { pnpm exec playwright install chromium 2>&1 | ForEach-Object { Log "$_" } }
 
@@ -109,7 +109,7 @@ function AutoFold($phaseName) {
     Log "== auto-fold ($FoldModel) after $phaseName =="
     $prompt = Get-Content prompts\fold-gaps.md -Raw -Encoding utf8
     $prompt | claude -p --model $FoldModel --permission-mode acceptEdits --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(node tools/*),Bash(py *),Bash(python *),Bash(powershell *),Bash(git *)" 2>&1 | ForEach-Object { Log "$_" }
-    node tools/py.mjs tools/parse.py 2>&1 | ForEach-Object { Log "$_" }
+    pnpm parse 2>&1 | ForEach-Object { Log "$_" }
     if ($LASTEXITCODE -ne 0) {
       Log "auto-fold left the docs unparseable: stopping so a human can look (git diff site/src/content/docs)."
       Remove-Item $lock -ErrorAction SilentlyContinue

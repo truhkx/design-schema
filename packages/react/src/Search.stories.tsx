@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Search } from './Search';
 import type { SearchSuggestion } from './Search';
 
@@ -9,7 +9,7 @@ const SUGGESTIONS: SearchSuggestion[] = [
   { value: 'invoice template', label: 'invoice template' },
 ];
 
-const meta = {
+const meta: Meta<typeof Search> = {
   title: 'Search/React',
   component: Search,
   args: {
@@ -17,7 +17,7 @@ const meta = {
     name: 'q',
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof Search>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Fieldset } from './Fieldset';
 import { Input } from './Input';
 import { Checkbox } from './Checkbox';
@@ -32,7 +32,7 @@ const notificationFields = (
   </>
 );
 
-const meta = {
+const meta: Meta<typeof Fieldset> = {
   title: 'Fieldset/React',
   component: Fieldset,
   args: {
@@ -41,7 +41,7 @@ const meta = {
     disabled: false,
     children: addressFields,
   },
-} satisfies Meta<typeof Fieldset>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

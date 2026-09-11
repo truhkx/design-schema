@@ -1,4 +1,4 @@
-import { LitElement, css, html, type PropertyValues } from 'lit';
+import { LitElement, css, html, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 
@@ -47,7 +47,7 @@ export class DsStack extends LitElement {
     slotAssignment: 'manual',
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: flex;
       flex-direction: column;
@@ -127,25 +127,25 @@ export class DsStack extends LitElement {
   `;
 
   /** Main axis. `horizontal` follows writing direction (start→end), not left→right. */
-  @property({ reflect: true }) direction: StackDirection = 'vertical';
+  @property({ reflect: true }) accessor direction: StackDirection = 'vertical';
 
   /** Space between children, from the layout rhythm. The only way to set spacing between siblings. */
-  @property({ reflect: true }) gap: StackGap = 'normal';
+  @property({ reflect: true }) accessor gap: StackGap = 'normal';
 
   /** Cross-axis alignment. */
-  @property({ reflect: true }) align: StackAlign = 'stretch';
+  @property({ reflect: true }) accessor align: StackAlign = 'stretch';
 
   /** Main-axis distribution. */
-  @property({ reflect: true }) justify: StackJustify = 'start';
+  @property({ reflect: true }) accessor justify: StackJustify = 'start';
 
   /** Allow horizontal stacks to wrap onto new lines instead of overflowing. */
-  @property({ type: Boolean, reflect: true }) wrap = false;
+  @property({ type: Boolean, reflect: true }) accessor wrap = false;
 
   /** Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an `li`. */
-  @property() element: StackElement = 'div';
+  @property() accessor element: StackElement = 'div';
 
   /** Per-instance style overrides: `{ gap: 'layout.gap.loose' }`. */
-  @property({ attribute: false }) overrides?: Partial<Record<StackOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined;
 
   private readonly observer = new MutationObserver(() => this.requestUpdate());
 
@@ -170,7 +170,7 @@ export class DsStack extends LitElement {
     return Array.from(this.childNodes).filter(isRenderable);
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     switch (this.element) {
       case 'ul':
         return html`<ul part="container" role="list">

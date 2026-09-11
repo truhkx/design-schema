@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Animated, AccessibilityInfo, Platform, Pressable, View, findNodeHandle } from 'react-native';
-import type { PressableStateCallbackType, ViewStyle } from 'react-native';
+import type { PressableStateCallbackType, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
@@ -32,31 +32,31 @@ export interface CheckboxProps {
   /** Visible label. Tapping it toggles the control. Also the `accessibilityLabel`. */
   label: string;
   /** Visually hide the label (it remains the accessible name via `accessibilityLabel`): a selection column in a Table, where the row name is the label. */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
   /** The value submitted when checked. Lets several checkboxes share a `name` to form a multi-select. */
-  value?: string;
+  value?: string | undefined;
   /** Controlled checked state. Omit for an uncontrolled control. */
-  checked?: boolean;
+  checked?: boolean | undefined;
   /** Initial state for an uncontrolled control. */
-  defaultChecked?: boolean;
+  defaultChecked?: boolean | undefined;
   /** Shows the mixed indicator, for a parent checkbox whose children are partly selected. Visual and announced only; the submitted value still follows `checked`. */
-  indeterminate?: boolean;
+  indeterminate?: boolean | undefined;
   /** Cannot be toggled and is not submitted. Stays visible, readable and focusable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Must be checked to submit — for consent and agreement. Shown in the label, not only by color. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Marks the control as failing validation. Usually set by the Form; can be set directly. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Persistent helper text below the label. Also the `accessibilityHint`. */
-  description?: string;
+  description?: string | undefined;
   /** The error message. Setting it marks the control invalid. Say what to do ("Accept the terms to continue"). */
-  error?: string;
+  error?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<CheckboxOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the checked state changes, with the new boolean. */
-  onChange?: (checked: boolean) => void;
+  onChange?: ((checked: boolean) => void) | undefined;
 }
 
 const COPY = {
@@ -108,7 +108,7 @@ export function Checkbox({
   const { tokens: t } = useTheme();
   const form = useFormContext();
   const reducedMotion = useReducedMotion();
-  const pressableRef = React.useRef<View>(null);
+  const pressableRef = React.useRef<ViewInstance>(null);
   const [internalChecked, setInternalChecked] = React.useState<boolean>(defaultChecked);
   const [focused, setFocused] = React.useState(false);
 
@@ -144,7 +144,7 @@ export function Checkbox({
       validate: () => latest.current.validateValue(latest.current.isChecked),
       focus: () => {
         const node = pressableRef.current === null ? null : findNodeHandle(pressableRef.current);
-        if (node !== null) {
+        if (node != null) {
           AccessibilityInfo.setAccessibilityFocus(node);
         }
       },
@@ -225,7 +225,7 @@ export function Checkbox({
     opacity: isDisabled ? disabledOpacity : 1,
   };
 
-  const boxStyle = ({ pressed }: PressableStateCallbackType): Animated.WithAnimatedObject<ViewStyle> => ({
+  const boxStyle = ({ pressed }: PressableStateCallbackType): Animated.WithAnimatedValue<ViewStyle> => ({
     width: controlSize,
     height: controlSize,
     borderRadius: controlRadius,
@@ -237,7 +237,7 @@ export function Checkbox({
     justifyContent: 'center',
   });
 
-  const indicatorStyle: Animated.WithAnimatedObject<ViewStyle> = { opacity: fillAnim };
+  const indicatorStyle: Animated.WithAnimatedValue<ViewStyle> = { opacity: fillAnim };
 
   const textColumnStyle: ViewStyle = {
     flex: 1,

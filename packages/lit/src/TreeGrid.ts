@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -26,7 +26,7 @@ import type { DataGridColumn, DataGridSortDirection, DataGridCellRef } from './D
     is updated with a real array. */
 export interface TreeGridRow {
   id: string;
-  children?: TreeGridRow[] | 'lazy';
+  children?: TreeGridRow[] | 'lazy' | undefined;
   [key: string]: unknown;
 }
 
@@ -41,8 +41,8 @@ export interface TreeGridSort {
 
 /** Detail carried by the `selection-change` CustomEvent; exactly one of `rows`/`cell` is set, matching `selectable`. */
 export interface TreeGridSelectionChangeDetail {
-  rows?: string[];
-  cell?: DataGridCellRef | null;
+  rows?: string[] | undefined;
+  cell?: DataGridCellRef | null | undefined;
 }
 
 /** Detail carried by the `cell-change` CustomEvent. */
@@ -137,7 +137,7 @@ interface EditingState {
   column: string;
   value: unknown;
   previous: unknown;
-  error?: string;
+  error?: string | undefined;
 }
 
 /** A row flattened out of the tree for rendering: its ancestry position plus whether it has (loadable) children. */
@@ -148,9 +148,9 @@ interface VisibleRow {
   setsize: number;
   hasChildren: boolean;
   lazy: boolean;
-  parentId?: string;
+  parentId?: string | undefined;
   /** A synthetic loading placeholder rendered under a `children: "lazy"` row that was just expanded. */
-  placeholder?: boolean;
+  placeholder?: boolean | undefined;
 }
 
 /**
@@ -195,9 +195,9 @@ interface VisibleRow {
  */
 @customElement('ds-tree-grid')
 export class DsTreeGrid extends LitElement {
-  static override shadowRootOptions = { ...LitElement.shadowRootOptions, delegatesFocus: true };
+  static override shadowRootOptions: ShadowRootInit = { ...LitElement.shadowRootOptions, delegatesFocus: true };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--font-family-body);
@@ -497,90 +497,90 @@ export class DsTreeGrid extends LitElement {
   `;
 
   /** What the tree grid holds ("Chart of accounts"). The accessible name; visually hidden with `hideCaption`. */
-  @property() caption!: string;
+  @property() accessor caption!: string;
 
   /** Visually hides the caption; it remains the accessible name. */
-  @property({ type: Boolean, reflect: true, attribute: 'hide-caption' }) hideCaption = false;
+  @property({ type: Boolean, reflect: true, attribute: 'hide-caption' }) accessor hideCaption = false;
 
   /** DataGrid's column model. The `isRowHeader` column is required: it carries the indent and expand button. */
-  @property({ attribute: false }) columns: DataGridColumn[] = [];
+  @property({ attribute: false }) accessor columns: DataGridColumn[] = [];
 
   /** Nested rows. A property, not an attribute. */
-  @property({ attribute: false }) data: TreeGridRow[] = [];
+  @property({ attribute: false }) accessor data: TreeGridRow[] = [];
 
   /** Controlled ids of expanded rows. */
-  @property({ attribute: false }) expanded?: string[];
+  @property({ attribute: false }) accessor expanded: string[] | undefined;
 
   /** Initially expanded ids. `["*"]` expands every loaded row with children. */
-  @property({ attribute: false }) defaultExpanded?: string[];
+  @property({ attribute: false }) accessor defaultExpanded: string[] | undefined;
 
   /** Controlled sort; applies within each level, siblings ordered, hierarchy kept. */
-  @property({ attribute: false }) sort?: TreeGridSort;
+  @property({ attribute: false }) accessor sort: TreeGridSort | undefined;
 
   /** Initial sort; the grid sorts `data` itself when `sort` is not supplied. */
-  @property({ attribute: false }) defaultSort?: TreeGridSort;
+  @property({ attribute: false }) accessor defaultSort: TreeGridSort | undefined;
 
   /** `row` adds a checkbox column; `cell` selects one cell. */
-  @property({ reflect: true }) selectable: TreeGridSelectable = 'none';
+  @property({ reflect: true }) accessor selectable: TreeGridSelectable = 'none';
 
   /** Controlled selected row ids (row mode). */
-  @property({ attribute: false }) selected?: string[];
+  @property({ attribute: false }) accessor selected: string[] | undefined;
 
   /** Initially selected row ids (row mode), when `selected` is not supplied. */
-  @property({ attribute: false }) defaultSelected?: string[];
+  @property({ attribute: false }) accessor defaultSelected: string[] | undefined;
 
   /** Selecting a parent row selects its loaded descendants; the parent shows indeterminate when only some are selected. */
-  @property({ type: Boolean, reflect: true, attribute: 'select-children' }) selectChildren = false;
+  @property({ type: Boolean, reflect: true, attribute: 'select-children' }) accessor selectChildren = false;
 
   /** Master switch: cells whose column is `editable` can be edited. */
-  @property({ type: Boolean, reflect: true }) editable = false;
+  @property({ type: Boolean, reflect: true }) accessor editable = false;
 
   /** Row height. */
-  @property({ reflect: true }) density: TreeGridDensity = 'compact';
+  @property({ reflect: true }) accessor density: TreeGridDensity = 'compact';
 
   /** The header stays visible while the body scrolls. Exposed as the negated `no-sticky-header` attribute;
       always true when `height` is `viewport` or `fixed`. */
   @property({ attribute: 'no-sticky-header', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  stickyHeader = true;
+  accessor stickyHeader = true;
 
   /** `viewport` fills the height under the header and scrolls internally; `content` grows with rows; `fixed`
       uses a fixed block size. */
-  @property({ reflect: true }) height: TreeGridHeight = 'viewport';
+  @property({ reflect: true }) accessor height: TreeGridHeight = 'viewport';
 
   /** Data is being fetched: sets `aria-busy` and shows `copy.loading` in the status bar. Existing rows stay. */
-  @property({ type: Boolean, reflect: true }) loading = false;
+  @property({ type: Boolean, reflect: true }) accessor loading = false;
 
   /** Shown in place of the body when `data` is empty. Defaults to `copy.empty`. */
-  @property({ attribute: 'empty-message' }) emptyMessage?: string;
+  @property({ attribute: 'empty-message' }) accessor emptyMessage: string | undefined;
 
   /** A footer line with row count and selection count. Exposed as the negated `no-status-bar` attribute
       (the doc's default is `true`, so per the negated-boolean-attribute convention this can't be a positively
       named attribute — see gaps). */
   @property({ attribute: 'no-status-bar', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  showStatusBar = true;
+  accessor showStatusBar = true;
 
   /** Per-instance style overrides: `{ indent: 'space.6' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<TreeGridOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<TreeGridOverridableBinding, TokenRef | undefined>> | undefined;
 
-  @state() private internalSelectedRows: string[] = [];
-  @state() private internalSelectedCell: DataGridCellRef | null = null;
-  @state() private internalExpanded: string[] = [];
-  @state() private internalSort?: TreeGridSort;
-  @state() private activeRowIndex = -1;
-  @state() private activeColKey = '';
-  @state() private editing?: EditingState;
-  @state() private columnWidths: Record<string, number> = {};
-  @state() private bodyScrollTop = 0;
-  @state() private viewportPx = 0;
-  @state() private liveMessage = '';
+  @state() private accessor internalSelectedRows: string[] = [];
+  @state() private accessor internalSelectedCell: DataGridCellRef | null = null;
+  @state() private accessor internalExpanded: string[] = [];
+  @state() private accessor internalSort: TreeGridSort | undefined;
+  @state() private accessor activeRowIndex = -1;
+  @state() private accessor activeColKey = '';
+  @state() private accessor editing: EditingState | undefined;
+  @state() private accessor columnWidths: Record<string, number> = {};
+  @state() private accessor bodyScrollTop = 0;
+  @state() private accessor viewportPx = 0;
+  @state() private accessor liveMessage = '';
 
   private readonly instanceId = nextTreeGridId();
   private rowHeightPx = 0;
-  private resizeObserver?: ResizeObserver;
-  private activeDrag?: { column: string; pointerId: number; startX: number; startWidth: number };
-  private selectionAnchorId?: string;
+  private resizeObserver?: ResizeObserver | undefined;
+  private activeDrag?: { column: string; pointerId: number; startX: number; startWidth: number } | undefined;
+  private selectionAnchorId?: string | undefined;
 
-  @query('.grid-scroll') private readonly gridEl?: HTMLElement;
+  @query('.grid-scroll') private accessor gridEl!: HTMLElement | null;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -628,7 +628,7 @@ export class DsTreeGrid extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const rows = this.visibleRows();
     const total = rows.length;
     const columnKeys = this.effectiveColumnKeys();
@@ -1759,7 +1759,7 @@ export class DsTreeGrid extends LitElement {
 
   /* ---------- overrides / dev warnings ---------- */
 
-  private get captionOverrides(): Partial<Record<HeadingOverridableBinding, TokenRef>> {
+  private get captionOverrides(): Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> {
     return { marginBlockEnd: 'space.0' };
   }
 

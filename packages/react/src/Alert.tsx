@@ -1,4 +1,4 @@
-import { forwardRef, useId, useImperativeHandle, useRef, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from 'react';
+import { useId, useImperativeHandle, useRef, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode, type Ref, type ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Icon } from './Icon';
@@ -43,9 +43,9 @@ const OVERRIDE_HOOK: Record<AlertOverridableBinding, string> = {
 };
 
 /** `iconSize` also drives the composed Icon's own `size` override, since Icon owns its own sizing hook. */
-function overridesToStyle(overrides: Partial<Record<AlertOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<AlertOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  iconSizeRef?: TokenRef;
+  iconSizeRef?: TokenRef | undefined;
 } {
   const style: Record<string, string> = {};
   let iconSizeRef: TokenRef | undefined;
@@ -74,19 +74,19 @@ function focusOutside(root: HTMLElement) {
 
 export interface AlertProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'title'> {
   /** What kind of message this is. Sets the colors and the icon, which together convey the tone without relying on color. */
-  tone?: AlertTone;
+  tone?: AlertTone | undefined;
   /** A short bold first line for the message. Optional for one-line messages. Not the native `title` attribute. */
-  heading?: string;
+  heading?: string | undefined;
   /** The message body. Text and Links; no headings or form controls. */
   children: ReactNode;
   /** How the alert is announced when it appears. `status` is polite, `alert` interrupts, `off` for alerts present at load. */
-  live?: AlertLive;
+  live?: AlertLive | undefined;
   /** Shows a dismiss button at the end of the alert. Activating it fires `onDismiss`; the consumer removes the alert. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** Fired when the user activates the dismiss button. The consumer removes the alert. */
-  onDismiss?: () => void;
+  onDismiss?: (() => void) | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<AlertOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<AlertOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -100,10 +100,7 @@ export interface AlertProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
  * something. Use `dismissible` for messages the user can safely put away; leave persistent
  * problems undismissable.
  */
-export const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
-  { tone = 'info', heading, children, live = 'status', dismissible = false, onDismiss, overrides, className, style, ...rest },
-  ref,
-) {
+export const Alert = function Alert({ ref, tone = 'info', heading, children, live = 'status', dismissible = false, onDismiss, overrides, className, style, ...rest }: AlertProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const rootRef = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => rootRef.current as HTMLDivElement, []);
 
@@ -160,4 +157,4 @@ export const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
       ) : null}
     </div>
   );
-});
+};

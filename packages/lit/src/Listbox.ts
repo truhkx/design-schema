@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -14,9 +14,9 @@ export type ListboxMaxVisible = '5' | '8' | '12' | 'all';
 export interface ListboxItem {
   value: string;
   label: string;
-  description?: string;
-  icon?: IconName;
-  disabled?: boolean;
+  description?: string | undefined;
+  icon?: IconName | undefined;
+  disabled?: boolean | undefined;
 }
 
 /** A labelled group of entries (anatomy: group, groupLabel). */
@@ -177,7 +177,7 @@ export class DsListbox extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       --ds-listbox-border: var(--color-border-strong);
@@ -342,22 +342,22 @@ export class DsListbox extends LitElement {
   `;
 
   /** Accessible name of the list. Ignored when `labelledBy` is set. */
-  @property() label!: string;
+  @property() accessor label!: string;
 
   /** Id of a visible element (in this shadow root) that labels the list, taking priority over `label`. */
-  @property() labelledBy?: string;
+  @property() accessor labelledBy: string | undefined;
 
   /** Flat or grouped options in display order. A property, not an attribute. */
-  @property({ attribute: false }) options: ListboxOption[] = [];
+  @property({ attribute: false }) accessor options: ListboxOption[] = [];
 
   /** Allow any number of selections; the value becomes an array. */
-  @property({ type: Boolean, reflect: true }) multiple = false;
+  @property({ type: Boolean, reflect: true }) accessor multiple = false;
 
   /** Controlled selection: a value, or with `multiple` an array. Omit for uncontrolled. */
-  @property({ attribute: false }) value?: ListboxValue;
+  @property({ attribute: false }) accessor value: ListboxValue | undefined;
 
   /** Initial selection (or array) for an uncontrolled list. */
-  @property({ attribute: false }) defaultValue?: ListboxValue;
+  @property({ attribute: false }) accessor defaultValue: ListboxValue | undefined;
 
   /**
    * Single-select only: arrow keys select as they move. Boolean attributes
@@ -371,10 +371,10 @@ export class DsListbox extends LitElement {
       toAttribute: (value: boolean): string | null => (value ? null : ''),
     },
   })
-  selectionFollowsFocus = true;
+  accessor selectionFollowsFocus = true;
 
   /** At least one option must be selected to submit when inside a Form. */
-  @property({ type: Boolean, reflect: true }) required = false;
+  @property({ type: Boolean, reflect: true }) accessor required = false;
 
   /**
    * Marks the list invalid. Usually set by the Form; can be set directly.
@@ -382,15 +382,15 @@ export class DsListbox extends LitElement {
    * reflected to a host attribute — style consumers read the `.error` text
    * instead, as the schema defines no invalid-specific style binding.
    */
-  @property({ type: Boolean }) invalid = false;
+  @property({ type: Boolean }) accessor invalid = false;
 
-  private errorValue?: string;
+  private errorValue?: string | undefined;
 
   /** Error message rendered below the list and linked by aria-describedby. Setting it implies `invalid`. */
-  @property()
   get error(): string | undefined {
     return this.errorValue;
   }
+  @property()
   set error(value: string | undefined) {
     const old = this.errorValue;
     this.errorValue = value;
@@ -401,47 +401,47 @@ export class DsListbox extends LitElement {
   }
 
   /** The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; this list draws none of its own. */
-  @property({ type: Boolean }) embedded = false;
+  @property({ type: Boolean }) accessor embedded = false;
 
   /** The whole list is inert but readable. Individual options use `options[].disabled`. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Field name for Form collection. Multiple values are collected as an array. */
-  @property() name = '';
+  @property() accessor name = '';
 
   /** Shown when `options` is empty. Defaults to `copy.empty`. */
-  @property({ attribute: 'empty-message' }) emptyMessage?: string;
+  @property({ attribute: 'empty-message' }) accessor emptyMessage: string | undefined;
 
   /** Height in rows before the list scrolls; `all` never scrolls. */
-  @property({ attribute: 'max-visible' }) maxVisible: ListboxMaxVisible = '8';
+  @property({ attribute: 'max-visible' }) accessor maxVisible: ListboxMaxVisible = '8';
 
   /** The option active when the list first receives focus. Defaults to the first selected item, else the first enabled item. */
-  @property({ attribute: 'default-active-value' }) defaultActiveValue?: string;
+  @property({ attribute: 'default-active-value' }) accessor defaultActiveValue: string | undefined;
 
   /** Options are being fetched (async Combobox); shows `copy.loading` in place of the empty message and marks the list aria-busy. */
-  @property({ type: Boolean }) loading = false;
+  @property({ type: Boolean }) accessor loading = false;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<ListboxOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<ListboxOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled selection (seeded from `defaultValue`). */
-  @state() private internalValue?: ListboxValue;
+  @state() private accessor internalValue: ListboxValue | undefined;
 
   /**
    * The option currently carrying `aria-activedescendant`, public so a
    * composing `<ds-combobox>` can read it and keep its own activedescendant
    * in sync.
    */
-  @state() activeValue: string | null = null;
+  @state() accessor activeValue: string | null = null;
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
-  @state() private formDisabled = false;
+  @state() private accessor formDisabled = false;
 
-  @query('.list') private readonly listEl?: HTMLElement;
+  @query('.list') private accessor listEl!: HTMLElement | null;
 
   private readonly instanceId = `ds-listbox-${++listboxInstanceCount}`;
   private typeaheadQuery = '';
-  private typeaheadTimer?: ReturnType<typeof setTimeout>;
+  private typeaheadTimer?: ReturnType<typeof setTimeout> | undefined;
 
   private readonly internals: ElementInternals;
 
@@ -539,7 +539,7 @@ export class DsListbox extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const items = this.flatItems;
     const isEmpty = items.length === 0;
     const optionIds = new Map<string, string>();
@@ -701,7 +701,7 @@ export class DsListbox extends LitElement {
         ? items.find((item) => item.value === this.defaultActiveValue)
         : undefined;
     const selected = items.find((item) => this.selectedSet.has(item.value));
-    this.setActive((preferred ?? selected ?? items[0]).value);
+    this.setActive((preferred ?? selected ?? items[0])!.value);
   };
 
   private handleOptionClick(item: ListboxItem): void {
@@ -732,9 +732,9 @@ export class DsListbox extends LitElement {
       nextIndex = 0;
     }
     const item = items[nextIndex];
-    this.setActive(item.value);
+    this.setActive(item!.value);
     if (!this.multiple && this.selectionFollowsFocus) {
-      this.commitValue(item.value);
+      this.commitValue(item!.value);
     }
   }
 
@@ -744,7 +744,7 @@ export class DsListbox extends LitElement {
       return;
     }
     const item = edge === 'first' ? items[0] : items[items.length - 1];
-    this.setActive(item.value);
+    this.setActive(item!.value);
   }
 
   private pageActive(direction: 1 | -1): void {
@@ -760,7 +760,7 @@ export class DsListbox extends LitElement {
         : items.length;
     let nextIndex = currentIndex + direction * pageSize;
     nextIndex = Math.max(0, Math.min(items.length - 1, nextIndex));
-    this.setActive(items[nextIndex].value);
+    this.setActive(items[nextIndex]!.value);
   }
 
   private extendSelection(delta: number): void {
@@ -771,9 +771,9 @@ export class DsListbox extends LitElement {
     const currentIndex = this.activeValue ? items.findIndex((item) => item.value === this.activeValue) : -1;
     const nextIndex = Math.max(0, Math.min(items.length - 1, currentIndex + delta));
     const item = items[nextIndex];
-    this.setActive(item.value);
+    this.setActive(item!.value);
     const set = this.selectedSet;
-    set.add(item.value);
+    set.add(item!.value);
     this.commitValue(this.orderValues(set));
   }
 
@@ -887,11 +887,11 @@ export class DsListbox extends LitElement {
     }
 
     if (this.error) {
-      this.internals.setValidity({ customError: true }, this.error, this.listEl);
+      this.internals.setValidity({ customError: true }, this.error, this.listEl!);
     } else if (this.invalid) {
-      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), this.listEl);
+      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), this.listEl!);
     } else if (this.required && value === null) {
-      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), this.listEl);
+      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), this.listEl!);
     } else {
       this.internals.setValidity({});
     }

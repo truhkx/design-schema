@@ -144,7 +144,7 @@ class TestEveryDeclaredPairPassesOnSand:
     def test_all_components(self, root, theme):
         components_json = root / "generated" / "components.json"
         if not components_json.exists():
-            pytest.skip("run tools/parse.py first")
+            pytest.skip("run tools/parse.ts first")
         components = json.loads(components_json.read_text(encoding="utf-8"))
         base = th.derive_base(two_seed(theme))
         palettes = {mode: resolved(base, th.derive_mode(base, mode, ink=True)) for mode in ("light", "dark")}

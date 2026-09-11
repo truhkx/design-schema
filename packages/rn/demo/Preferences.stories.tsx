@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Preferences } from './Preferences';
 import { withTheme } from '../src/decorators';
 

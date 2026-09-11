@@ -1,4 +1,4 @@
-import { LitElement, css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import { LitElement, css, html, unsafeCSS, type PropertyValues, type TemplateResult, type CSSResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Link.js';
@@ -8,7 +8,7 @@ import './Icon.js';
 /** Shape of each entry in `items`. */
 export interface BreadcrumbItem {
   label: string;
-  href?: string;
+  href?: string | undefined;
 }
 
 /** Detail carried by the `navigate` CustomEvent. `preventDefault()` on `originalEvent` cancels navigation. */
@@ -74,7 +74,7 @@ export class DsBreadcrumb extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       --ds-breadcrumb-gap: var(--space-2);
@@ -131,19 +131,19 @@ export class DsBreadcrumb extends LitElement {
   `;
 
   /** The trail from root to current page, in order. A property, not an attribute. */
-  @property({ attribute: false }) items: BreadcrumbItem[] = [];
+  @property({ attribute: false }) accessor items: BreadcrumbItem[] = [];
 
   /** Accessible name of the navigation landmark. Change it only if the page has another breadcrumb. */
-  @property() label = 'Breadcrumb';
+  @property() accessor label = 'Breadcrumb';
 
   /** When there are more than four items, show the first, an ellipsis, and the last two. */
-  @property({ type: Boolean, reflect: true }) collapse = true;
+  @property({ type: Boolean, reflect: true }) accessor collapse = true;
 
   /** Per-instance style overrides: `{ gap: 'space.3' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<BreadcrumbOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<BreadcrumbOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Whether the user has revealed the collapsed items. */
-  @state() private expanded = false;
+  @state() private accessor expanded = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -156,7 +156,7 @@ export class DsBreadcrumb extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const items = this.items;
     const last = items.length - 1;
     const collapsed = this.collapse && !this.expanded && items.length > COLLAPSE_ABOVE;

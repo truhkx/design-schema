@@ -1,0 +1,86 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Workstream C (process/typescript-and-currency.md): every dependency tracks its latest stable release. Minor and patch updates automerge once CI is green; majors arrive weekly, one PR per ecosystem, so a breaking change comes with its friends. tools/currency.ts fails CI when anything is more than one minor behind.",
+  "extends": ["config:best-practices"],
+  "rangeStrategy": "bump",
+  "automerge": true,
+  "automergeType": "pr",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
+  "packageRules": [
+    {
+      "description": "config:best-practices pins devDependencies; this repo bumps ranges everywhere so package.json states the release CI ran.",
+      "matchDepTypes": ["devDependencies"],
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "Peer ranges stay wide: the consumer, not this repo, picks the React / Lit / React Native release.",
+      "matchDepTypes": ["peerDependencies"],
+      "rangeStrategy": "widen"
+    },
+    {
+      "description": "Majors are never automerged; they wait for the weekly window and the ecosystem groups below.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "description": "A 0.x minor is a breaking change (Starlight, sharp, react-native-worklets): treat it like a major.",
+      "matchCurrentVersion": "<1.0.0",
+      "matchUpdateTypes": ["minor"],
+      "automerge": false,
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "react-test-renderer",
+        "@types/react",
+        "@types/react-dom",
+        "@testing-library/react",
+        "@testing-library/dom",
+        "@testing-library/user-event"
+      ],
+      "groupName": "react (major)"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": ["storybook", "@storybook/**"],
+      "groupName": "storybook (major)"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": ["vite", "vitest", "@vitest/**", "playwright", "@playwright/**", "@axe-core/playwright"],
+      "groupName": "vite + vitest + playwright (major)"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": ["typescript", "@typescript/**", "tsdown", "@tsdown/**"],
+      "groupName": "typescript + tsdown (major)"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "react-native",
+        "react-native-**",
+        "@react-native/**",
+        "@react-native-community/**",
+        "@testing-library/react-native",
+        "@gorhom/**",
+        "expo",
+        "expo-**",
+        "babel-preset-expo"
+      ],
+      "groupName": "react-native + expo + svg (major)"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": ["lit", "@lit/**", "@lit-labs/**"],
+      "groupName": "lit (major)"
+    }
+  ]
+}

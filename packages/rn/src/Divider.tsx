@@ -15,15 +15,15 @@ export type DividerOverridableBinding = 'color' | 'thickness' | 'spacing' | 'lab
 
 export interface DividerProps {
   /** `vertical` sits between inline siblings (toolbar groups) and stretches to the row height. */
-  orientation?: DividerOrientation;
+  orientation?: DividerOrientation | undefined;
   /** Optional text in the middle of a horizontal divider ("or", "Earlier today"). Turns the line into a labelled separator. */
-  label?: string;
+  label?: string | undefined;
   /** Expose as a separator to assistive technology. Leave `false` for purely visual lines between list rows. */
-  semantic?: boolean;
+  semantic?: boolean | undefined;
   /** Space on both sides, from the layout rhythm, for dividers used outside a Stack that already spaces them. */
-  spacing?: DividerSpacing;
+  spacing?: DividerSpacing | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<DividerOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<DividerOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const SPACING_TOKEN = {

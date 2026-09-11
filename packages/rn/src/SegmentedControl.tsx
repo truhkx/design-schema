@@ -11,7 +11,7 @@ import type { Tokens } from './theme';
 export type SegmentedControlSize = 'sm' | 'md';
 
 /** One option. `value` is a short identifier. */
-export type SegmentedControlOption = { value: string; label: string; icon?: IconName; disabled?: boolean };
+export type SegmentedControlOption = { value: string; label: string; icon?: IconName | undefined; disabled?: boolean | undefined };
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type SegmentedControlOverridableBinding =
@@ -38,19 +38,19 @@ export interface SegmentedControlProps {
   /** Two to five options. Labels are one word; with `iconOnly` the label becomes the accessible name. */
   options: SegmentedControlOption[];
   /** Controlled selected value. Omit for uncontrolled. */
-  value?: string;
+  value?: string | undefined;
   /** Initially selected value. Defaults to the first enabled option — a segmented control always has a selection. */
-  defaultValue?: string;
+  defaultValue?: string | undefined;
   /** Show icons only (every option must have one); labels become accessible names. */
-  iconOnly?: boolean;
+  iconOnly?: boolean | undefined;
   /** Toolbar (`sm`) or standard (`md`) height. */
-  size?: SegmentedControlSize;
+  size?: SegmentedControlSize | undefined;
   /** Stretch to the container width with equal segments. */
-  fill?: boolean;
+  fill?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<SegmentedControlOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SegmentedControlOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selection changes, with the new value. The change takes effect immediately. */
-  onChange?: (value: string) => void;
+  onChange?: ((value: string) => void) | undefined;
 }
 
 const FONT_SIZE_TOKEN = {
@@ -215,7 +215,7 @@ export function SegmentedControl({
     padding: groupPadding,
   };
 
-  const indicatorStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const indicatorStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     top: 0,
     bottom: 0,

@@ -12,7 +12,7 @@ import {
   findNodeHandle,
   useWindowDimensions,
 } from 'react-native';
-import type { LayoutChangeEvent, TextStyle, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { ActionSheet } from './ActionSheet';
@@ -36,10 +36,10 @@ export type MenuOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'action' |
 export type MenuAction = {
   id: string;
   label: string;
-  icon?: IconName;
-  shortcut?: string;
-  tone?: MenuItemTone;
-  disabled?: boolean;
+  icon?: IconName | undefined;
+  shortcut?: string | undefined;
+  tone?: MenuItemTone | undefined;
+  disabled?: boolean | undefined;
 };
 /** A labelled cluster of items, rendered with a non-interactive heading row. */
 export type MenuGroup = { group: string; items: MenuItem[] };
@@ -79,21 +79,21 @@ export interface MenuProps {
   /** Actions, optionally grouped with a label or divided by separators. Groups render their label as a non-interactive heading row. */
   items: MenuItem[];
   /** Variant of the trigger Button. */
-  triggerVariant?: MenuTriggerVariant;
+  triggerVariant?: MenuTriggerVariant | undefined;
   /** Trailing icon on the trigger: `ellipsis` for an icon-only overflow button (the label becomes the accessible name), `chevron-down` for a labelled dropdown, `none`. */
-  triggerIcon?: MenuTriggerIcon;
+  triggerIcon?: MenuTriggerIcon | undefined;
   /** Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. */
-  iconOnly?: boolean;
+  iconOnly?: boolean | undefined;
   /** Preferred position of the popup relative to the trigger; flips automatically when it would overflow the viewport. */
-  placement?: MenuPlacement;
+  placement?: MenuPlacement | undefined;
   /** Controlled open state. Omit for an uncontrolled menu. */
-  open?: boolean;
+  open?: boolean | undefined;
   /** An item was chosen; receives its `id`. The menu closes itself first. */
-  onAction?: (id: string) => void;
+  onAction?: ((id: string) => void) | undefined;
   /** Fired when the menu opens or closes, with the new state and why. */
-  onOpenChange?: (state: { open: boolean; reason: MenuOpenChangeReason }) => void;
+  onOpenChange?: ((state: { open: boolean; reason: MenuOpenChangeReason }) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<MenuOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<MenuOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const TRIGGER_FOREGROUND = {
@@ -237,8 +237,8 @@ export function Menu({
   const windowSize = useWindowDimensions();
   const isPhoneWidth = windowSize.width <= t.layoutMaxWidthProse;
 
-  const triggerRef = React.useRef<View>(null);
-  const itemRefs = React.useRef(new Map<string, View>());
+  const triggerRef = React.useRef<ViewInstance>(null);
+  const itemRefs = React.useRef(new Map<string, ViewInstance>());
   const hasFocusedInitialRef = React.useRef(false);
   const latestItemsRef = React.useRef(items);
   latestItemsRef.current = items;
@@ -320,7 +320,7 @@ export function Menu({
     }
   }, [iconOnly, triggerIcon]);
 
-  const registerItemRef = (id: string) => (node: View | null): void => {
+  const registerItemRef = (id: string) => (node: ViewInstance | null): void => {
     if (node) itemRefs.current.set(id, node);
     else itemRefs.current.delete(id);
   };
@@ -330,14 +330,14 @@ export function Menu({
     const target = enabled[0];
     const node = target ? itemRefs.current.get(target.id) : null;
     const handle = node ? findNodeHandle(node) : null;
-    if (handle !== null) {
+    if (handle != null) {
       AccessibilityInfo.setAccessibilityFocus(handle);
     }
   }, []);
 
   const focusTrigger = React.useCallback(() => {
     const handle = triggerRef.current ? findNodeHandle(triggerRef.current) : null;
-    if (handle !== null) {
+    if (handle != null) {
       AccessibilityInfo.setAccessibilityFocus(handle);
     }
   }, []);
@@ -478,7 +478,7 @@ export function Menu({
 
   const hostStyle: ViewStyle = { flex: 1 };
 
-  const popupOuterStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const popupOuterStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     top: position.top,
     left: position.left,
@@ -596,7 +596,7 @@ export function Menu({
       <Modal visible={isOpen} transparent animationType="none" onRequestClose={handleRequestClose} statusBarTranslucent>
         <View style={hostStyle}>
           <Pressable
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
             onPress={handleScrimPress}
             accessible={false}
             testID="Menu.scrim"
@@ -628,7 +628,7 @@ export function Menu({
 interface MenuActionRowProps {
   action: MenuAction;
   disabled: boolean;
-  registerRef: (node: View | null) => void;
+  registerRef: (node: ViewInstance | null) => void;
   rowStyle: (focused: boolean, disabled: boolean) => ViewStyle;
   labelStyle: TextStyle;
   shortcutStyle: TextStyle;

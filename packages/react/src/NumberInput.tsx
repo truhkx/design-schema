@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -11,6 +10,7 @@ import {
   type FocusEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
@@ -64,7 +64,7 @@ export type NumberInputOverridableBinding =
  * fontFamily/lineHeight are forwarded to Text *and* kept on the root for the raw `<input>`, which
  * has no Text of its own. `fontSize` stays root-only: it tracks the field's own `size` prop, not
  * the label's. */
-const ROOT_OVERRIDE_HOOK: Partial<Record<NumberInputOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<NumberInputOverridableBinding, string | undefined>> = {
   borderFocus: '--ds-number-input-border-focus',
   borderInvalid: '--ds-number-input-border-invalid',
   borderWidth: '--ds-number-input-border-width',
@@ -81,16 +81,16 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<NumberInputOverridableBinding, string>>
   disabledOpacity: '--ds-number-input-disabled-opacity',
 };
 
-function resolveOverrides(overrides: Partial<Record<NumberInputOverridableBinding, TokenRef>>): {
+function resolveOverrides(overrides: Partial<Record<NumberInputOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  errorOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  errorOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const errorOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const errorOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
 
   for (const binding of Object.keys(overrides) as NumberInputOverridableBinding[]) {
     const ref = overrides[binding];
@@ -225,53 +225,53 @@ export interface NumberInputProps
   /** Field name for the Form. The collected value is a number (or undefined when empty). */
   name: string;
   /** Controlled numeric value. Omit for an uncontrolled field. */
-  value?: number;
+  value?: number | undefined;
   /** Initial value for an uncontrolled field. */
-  defaultValue?: number;
+  defaultValue?: number | undefined;
   /** Lower bound; values are clamped on blur and the decrement button disables at it. */
-  min?: number;
+  min?: number | undefined;
   /** Upper bound. */
-  max?: number;
+  max?: number | undefined;
   /** Increment for the buttons and arrow keys. Also the rounding granularity when `precision` is omitted. */
-  step?: number;
+  step?: number | undefined;
   /** Decimal places to keep and display. Defaults to the decimals in `step`. */
-  precision?: number;
+  precision?: number | undefined;
   /** Locale formatting of the displayed value: thousands separators, currency symbol (`currency`), percent, or a unit (`unit`). The underlying value is always a plain number. */
-  format?: NumberInputFormat;
+  format?: NumberInputFormat | undefined;
   /** ISO 4217 code for `format: currency` (e.g. USD). */
-  currency?: string;
+  currency?: string | undefined;
   /** Intl unit identifier for `format: unit` (e.g. kilogram, hour), or a literal shown as `trailingText`. */
-  unit?: string;
+  unit?: string | undefined;
   /** Static text before the value inside the field ("$"), when `format` cannot express it. (Not
    * `prefix`: that name is a native Element member.) */
-  leadingText?: string;
+  leadingText?: string | undefined;
   /** Static text after the value inside the field ("kg", "%"). Also the literal shown when `unit`
    * is not a valid Intl unit. */
-  trailingText?: string;
+  trailingText?: string | undefined;
   /** Hide the increment/decrement buttons. Arrow keys work regardless. */
-  hideSteppers?: boolean;
+  hideSteppers?: boolean | undefined;
   /** Example value shown while empty. */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /** Helper text. */
-  description?: string;
+  description?: string | undefined;
   /** Must have a value to submit. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Visually hide the label (it remains the accessible name). Only for a field whose context
    * already names it: a DataGrid cell editor, a Search. */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small
    * type. */
-  size?: NumberInputSize;
+  size?: NumberInputSize | undefined;
   /** Not editable, not submitted, still readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Marks the field invalid. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Error message; implies invalid. */
-  error?: string;
+  error?: string | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<NumberInputOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<NumberInputOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the numeric value changes (on each valid keystroke, step, and on blur after clamping/rounding), with the number or undefined. */
-  onChange?: (value: number | undefined) => void;
+  onChange?: ((value: number | undefined) => void) | undefined;
 }
 
 /**
@@ -283,39 +283,37 @@ export interface NumberInputProps
  * `unit`). Set `min`, `max` and `step` whenever they exist; they drive the buttons, the arrow keys
  * and the out-of-range message. Pair with a Slider when a feel for the scale helps.
  */
-export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(function NumberInput(
-  {
-    label,
-    name,
-    value,
-    defaultValue,
-    min,
-    max,
-    step = 1,
-    precision,
-    format = 'decimal',
-    currency,
-    unit,
-    leadingText,
-    trailingText,
-    hideSteppers = false,
-    placeholder,
-    description,
-    required = false,
-    hideLabel = false,
-    size = 'md',
-    disabled = false,
-    invalid = false,
-    error,
-    overrides,
-    onChange,
-    id: idProp,
-    className,
-    style,
-    ...rest
-  },
+export const NumberInput = function NumberInput({
   ref,
-) {
+  label,
+  name,
+  value,
+  defaultValue,
+  min,
+  max,
+  step = 1,
+  precision,
+  format = 'decimal',
+  currency,
+  unit,
+  leadingText,
+  trailingText,
+  hideSteppers = false,
+  placeholder,
+  description,
+  required = false,
+  hideLabel = false,
+  size = 'md',
+  disabled = false,
+  invalid = false,
+  error,
+  overrides,
+  onChange,
+  id: idProp,
+  className,
+  style,
+  ...rest
+}: NumberInputProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
   const form = useFormContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-number-input${generatedId}`);
@@ -673,4 +671,4 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
       ) : null}
     </div>
   );
-});
+};

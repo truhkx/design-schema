@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SignIn } from './SignIn';
 
-const meta = {
+const meta: Meta<typeof SignIn> = {
   title: 'Demo/Sign in/React',
   component: SignIn,
   argTypes: {
@@ -16,7 +16,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof SignIn>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

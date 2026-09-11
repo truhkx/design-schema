@@ -1,4 +1,4 @@
-import { LitElement, css, type PropertyValues } from 'lit';
+import { LitElement, css, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { html, literal, type StaticValue } from 'lit/static-html.js';
@@ -52,7 +52,7 @@ function isTextElement(value: unknown): value is TextElement {
  */
 @customElement('ds-text')
 export class DsText extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       --ds-text-font-family: var(--font-family-body);
@@ -156,28 +156,28 @@ export class DsText extends LitElement {
   `;
 
   /** Maps to the font size scale. `md` is body copy; `xs` is the smallest readable size. */
-  @property({ reflect: true }) size: TextSize = 'md';
+  @property({ reflect: true }) accessor size: TextSize = 'md';
 
   /** Emphasis without changing size. Prefer weight over color for hierarchy. */
-  @property({ reflect: true }) weight: TextWeight = 'regular';
+  @property({ reflect: true }) accessor weight: TextWeight = 'regular';
 
   /** Semantic color. `onAction` is only for text placed on an action background. */
-  @property({ reflect: true }) tone: TextTone = 'default';
+  @property({ reflect: true }) accessor tone: TextTone = 'default';
 
   /** Horizontal alignment. `start`/`end` follow writing direction. */
-  @property({ reflect: true }) align: TextAlign = 'start';
+  @property({ reflect: true }) accessor align: TextAlign = 'start';
 
   /** Clip to one line with an ellipsis. The full text remains available as `title`. */
-  @property({ type: Boolean, reflect: true }) truncate = false;
+  @property({ type: Boolean, reflect: true }) accessor truncate = false;
 
   /** The HTML element to render. Choose by meaning, not by layout. */
-  @property() element: TextElement = 'p';
+  @property() accessor element: TextElement = 'p';
 
   /** Per-instance style overrides: `{ color: 'color.foreground.danger' }`. Nothing is locked. */
-  @property({ attribute: false }) overrides?: Partial<Record<TextOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Plain-text content of the default slot, used for `title` when truncated. */
-  @state() private fullText = '';
+  @state() private accessor fullText = '';
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -193,7 +193,7 @@ export class DsText extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const tag = isTextElement(this.element) ? TAGS[this.element] : TAGS.p;
     const title = this.truncate && this.fullText !== '' ? this.fullText : undefined;
     return html`<${tag} class="text" part="text" title=${ifDefined(title)}

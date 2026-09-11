@@ -10,7 +10,7 @@ deterministic gates everywhere else.
     python3 tools/generate.py ... --skip typecheck                      # when node_modules is not available
 
 How it works
-  1. The prompt is generated/prompts/<Name>.<platform>.md (tools/parse.py builds it from the doc).
+  1. The prompt is generated/prompts/<Name>.<platform>.md (tools/parse.ts builds it from the doc).
      Its sha256 is the identity of the spec. generated/generate.lock.<platform>.json remembers the hash
      that produced the committed code, so generation only runs when the doc changed.
   2. Round 1: the model gets the prompt plus a short task wrapper (read these files for
@@ -40,6 +40,7 @@ import os
 import re
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -242,6 +243,52 @@ Rules reminder: tokens only (no hex/px/ms/font literals — mark a sanctioned on
 
 # ---------------------------------------------------------------- runners
 
+# A runner failure is the API or the CLI, not the spec, so it never counts against the target's rounds. An API
+# hiccup (`is_error` with an empty result, a rate limit, an overload, a dropped connection) is retried with a
+# backoff; any other runner error gets one retry; an error the model itself reported is recorded straight away.
+TRANSIENT = re.compile(r"rate.?limit|overloaded|\b529\b|ECONNRESET", re.I)
+TRANSIENT_BACKOFF_S = (30, 90)
+RUNNER_RETRY_S = (30,)
+RUNNER_ERRORS = (RuntimeError, subprocess.SubprocessError, OSError)
+
+
+class ModelError(RuntimeError):
+    """`claude -p` returned is_error. Empty text or a rate-limit / overload message is the API failing, not the task."""
+
+    def __init__(self, result: str):
+        result = result or ""
+        self.transient = not result.strip() or bool(TRANSIENT.search(result))
+        super().__init__(f"claude reported an error: {result.strip()[:500] or '(empty result)'}")
+
+
+def retry_schedule(exc: BaseException) -> tuple[int, ...]:
+    """Seconds to wait before each further attempt at the same round; empty means record and move on."""
+    if isinstance(exc, ModelError):
+        return TRANSIENT_BACKOFF_S if exc.transient else ()
+    return TRANSIENT_BACKOFF_S if TRANSIENT.search(str(exc)) else RUNNER_RETRY_S
+
+
+def run_with_retry(runner: "Runner", prompt: str, resume: str | None, key: str, round_no: int) -> tuple[str, str | None, float]:
+    """One model call, repeated on the schedule its error earns. Re-raises the last error once that is exhausted."""
+    attempt = 0
+    while True:
+        try:
+            return runner.run(prompt, resume)
+        except RUNNER_ERRORS as e:
+            delays = retry_schedule(e)
+            if attempt >= len(delays):
+                raise
+            wait = delays[attempt]
+            attempt += 1
+            print(f"  round {round_no}: runner error — {error_line(e)} — retrying {key} in {wait} s ({attempt}/{len(delays)})", flush=True)
+            time.sleep(wait)
+
+
+def error_line(exc: BaseException) -> str:
+    text = str(exc).strip()
+    return (text.splitlines()[0][:300] if text else type(exc).__name__)
+
+
 class Runner:
     def run(self, prompt: str, resume: str | None) -> tuple[str, str | None, float]:
         """→ (result_text, session_id, cost_usd)"""
@@ -273,7 +320,7 @@ class CliRunner(Runner):
         except json.JSONDecodeError:
             raise RuntimeError(f"unexpected claude output: {p.stdout[-2000:]}\n{p.stderr[-1000:]}")
         if data.get("is_error"):
-            raise RuntimeError(f"claude reported an error: {data.get('result', '')[:500]}")
+            raise ModelError(str(data.get("result") or ""))
         if data.get("permission_denials"):
             print(f"  ! {len(data['permission_denials'])} tool call(s) were denied — widen --allowedTools if the model needed them:")
             for d in data["permission_denials"][:8]:
@@ -402,7 +449,7 @@ def generate_one(name: str, platform: str, args, lock: dict) -> bool:
     key = f"{name}.{platform}"
     pp = prompt_path(name, platform)
     if not pp.exists():
-        print(f"✖ {key}: no prompt at {pp.relative_to(ROOT)} (run tools/parse.py)")
+        print(f"✖ {key}: no prompt at {pp.relative_to(ROOT)} (run tools/parse.ts)")
         return False
     h = sha(pp.read_text(encoding="utf-8"))
     if not args.force and lock.get(key, {}).get("hash") == h:
@@ -419,7 +466,7 @@ def generate_one(name: str, platform: str, args, lock: dict) -> bool:
     # pair in another component). Costs nothing; saves the whole run when the docs are the problem.
     pre = [r for r in checks.run_all(platform, skip | {"typecheck", "literals", "keyboard", "keyboard-run", "axe"}, verbose=False) if not r.ok]
     if pre:
-        print(f"  ✖ {key}: preflight failed before any model call — fix the docs and re-run tools/parse.py:")
+        print(f"  ✖ {key}: preflight failed before any model call — fix the docs and re-run tools/parse.ts:")
         for r in pre:
             print("    " + "\n    ".join(r.output.strip().splitlines()[-6:]))
         return False
@@ -430,19 +477,34 @@ def generate_one(name: str, platform: str, args, lock: dict) -> bool:
     for round_no in range(1, args.max_rounds + 1):
         print(f"  round {round_no}: model …", flush=True)
         custom_before = custom_snapshot(platform)
-        text, session, c = runner.run(prompt, session if args.runner == "cli" else None)
-        custom_changed = restore_custom(platform, custom_before)
-        cost += c
-        rep = parse_report(text)
-        if not rep["files"] and NO_REPORT in rep["gaps"] and args.runner == "cli" and session:
-            # The model finished without the trailing report (Text.lit did). One cheap resumed turn asks for it, so
-            # the files it touched reach the lock; the original gap line stays if the second reply has none either.
-            print(f"  round {round_no}: no JSON report — asking once more for it", flush=True)
-            text2, session, c2 = runner.run(REPORT_NUDGE, session)
-            cost += c2
-            rep2 = parse_report(text2)
-            if rep2["files"] or NO_REPORT not in rep2["gaps"]:
-                rep = {"files": rep2["files"], "gaps": rep2["gaps"] + ["(report recovered after a second request)"]}
+        try:
+            text, session, c = run_with_retry(runner, prompt, session if args.runner == "cli" else None, key, round_no)
+            custom_changed = restore_custom(platform, custom_before)
+            cost += c
+            rep = parse_report(text)
+            if not rep["files"] and NO_REPORT in rep["gaps"] and args.runner == "cli" and session:
+                # The model finished without the trailing report (Text.lit did). One cheap resumed turn asks for it, so
+                # the files it touched reach the lock; the original gap line stays if the second reply has none either.
+                print(f"  round {round_no}: no JSON report — asking once more for it", flush=True)
+                text2, session, c2 = run_with_retry(runner, REPORT_NUDGE, session, key, round_no)
+                cost += c2
+                rep2 = parse_report(text2)
+                if rep2["files"] or NO_REPORT not in rep2["gaps"]:
+                    rep = {"files": rep2["files"], "gaps": rep2["gaps"] + ["(report recovered after a second request)"]}
+        except RUNNER_ERRORS as e:
+            # The runner, not the spec, gave up: no hash (stays stale for the next pass), the message in the lock,
+            # and on to the next target — one dead API call must not abort the phase.
+            restore_custom(platform, custom_before)
+            message = error_line(e)
+            lock[key] = {
+                "hash": None, "lastAttemptHash": h, "error": message,
+                "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+                "model": args.model, "runner": args.runner, "rounds": round_no, "costUsd": round(cost, 4),
+                "files": files, "gaps": len(all_gaps), "gates": {},
+            }
+            save_lock(lock, platform)
+            print(f"  ? {key}: runner error, will retry on the next pass\n    {message}", flush=True)
+            return False
         files = sorted(set(files) | set(rep["files"]))  # union across rounds: fix rounds often touch other files
         all_gaps += rep["gaps"]
         record_gaps(name, platform, rep["gaps"], round_no)

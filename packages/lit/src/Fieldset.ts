@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -67,7 +67,7 @@ const HOOKS: Record<Exclude<FieldsetOverridableBinding, 'fieldsGap'>, string> = 
  */
 @customElement('ds-fieldset')
 export class DsFieldset extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--ds-fieldset-font-family);
@@ -130,22 +130,22 @@ export class DsFieldset extends LitElement {
   `;
 
   /** The group's name — what the fields together describe. Always visible. */
-  @property() legend = '';
+  @property() accessor legend = '';
 
   /** Persistent helper text under the legend. Linked with aria-describedby. */
-  @property() description?: string;
+  @property() accessor description: string | undefined;
 
   /** A group-level error (cross-field validation). Field-level errors stay on the fields. */
-  @property() error?: string;
+  @property() accessor error: string | undefined;
 
   /** Disables every field inside. Fields keep their own `disabled` for finer control. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Gap between the fields, from the layout rhythm. Fieldset renders the Stack itself; children are the raw fields. */
-  @property({ reflect: true }) gap: FieldsetGap = 'normal';
+  @property({ reflect: true }) accessor gap: FieldsetGap = 'normal';
 
   /** Per-instance style overrides: `{ fieldsGap: 'layout.gap.loose' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<FieldsetOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<FieldsetOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Fields this Fieldset disabled itself, so re-enabling never touches one already disabled by the consumer. */
   private readonly disabledByFieldset = new WeakSet<HTMLElement & { disabled: boolean }>();
@@ -167,7 +167,7 @@ export class DsFieldset extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const describedBy =
       [this.description ? 'description' : '', this.error ? 'error' : '']
         .filter((id) => id !== '')
@@ -197,7 +197,7 @@ export class DsFieldset extends LitElement {
   }
 
   /** `overrides.fieldsGap` forwarded to the composed `<ds-stack>`'s own `overrides.gap`; Fieldset never styles the Stack directly. */
-  private get stackOverrides(): Partial<Record<StackOverridableBinding, TokenRef>> | undefined {
+  private get stackOverrides(): Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined {
     const ref = this.overrides?.fieldsGap;
     return ref === undefined ? undefined : { gap: ref };
   }
@@ -205,7 +205,7 @@ export class DsFieldset extends LitElement {
   /** True once at least one field is found and every one of them is `required`. */
   private get allFieldsRequired(): boolean {
     const fields = this.queryFields();
-    return fields.length > 0 && fields.every((field) => (field as unknown as { required?: boolean }).required === true);
+    return fields.length > 0 && fields.every((field) => (field as unknown as { required?: boolean | undefined }).required === true);
   }
 
   private queryFields(): HTMLElement[] {

@@ -16,7 +16,7 @@ export interface LandmarkProps {
   /** Which landmark this is. `banner` (site header), `navigation`, `main` (exactly one per page), `complementary` (sidebar), `contentinfo` (site footer), `region` (a labelled section that deserves a jump point), `search`, `form`. */
   role: LandmarkRole;
   /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Not shown visually. */
-  label?: string;
+  label?: string | undefined;
   /** The region's content. */
   children: React.ReactNode;
 }

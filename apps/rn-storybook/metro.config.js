@@ -1,10 +1,10 @@
 // Metro for a pnpm workspace: watch the whole repo (the stories live in packages/rn/src), resolve through
 // both node_modules folders, follow pnpm's symlinks, and force one copy of React so hooks inside
-// @design-schema/rn and the app never see two renderers. withStorybook regenerates
-// .storybook/storybook.requires.ts on start.
+// @design-schema/rn and the app never see two renderers. withStorybook (a named export since
+// @storybook/react-native 10) regenerates .storybook/storybook.requires.ts on start.
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
-const withStorybook = require('@storybook/react-native/metro/withStorybook');
+const { withStorybook } = require('@storybook/react-native/metro/withStorybook');
 
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '../..');

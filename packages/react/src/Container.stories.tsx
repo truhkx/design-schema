@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Container } from './Container';
 import { Text } from './Text';
 
 const content = <Text element="p">Container content.</Text>;
 
-const meta = {
+const meta: Meta<typeof Container> = {
   title: 'Container/React',
   component: Container,
   args: {
@@ -14,7 +14,7 @@ const meta = {
     element: 'div',
     children: content,
   },
-} satisfies Meta<typeof Container>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

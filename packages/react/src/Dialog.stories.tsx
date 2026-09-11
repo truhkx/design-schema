@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Dialog, type DialogProps } from './Dialog';
 import { Button } from './Button';
 import { Input } from './Input';
@@ -44,7 +44,7 @@ const defaultBody = (
   </Stack>
 );
 
-const meta = {
+const meta: Meta<typeof Dialog> = {
   title: 'Dialog/React',
   component: Dialog,
   args: {
@@ -59,7 +59,7 @@ const meta = {
   },
   render: (args) => <DialogHarness {...args} />,
   tags: ['autodocs'],
-} satisfies Meta<typeof Dialog>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

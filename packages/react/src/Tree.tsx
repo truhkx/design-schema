@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -10,6 +9,7 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -31,11 +31,11 @@ export type TreeNodeChildren = TreeNode[] | 'lazy';
 export interface TreeNode {
   id: string;
   label: string;
-  icon?: IconName;
-  badge?: string;
-  disabled?: boolean;
-  href?: string;
-  children?: TreeNodeChildren;
+  icon?: IconName | undefined;
+  badge?: string | undefined;
+  disabled?: boolean | undefined;
+  href?: string | undefined;
+  children?: TreeNodeChildren | undefined;
 }
 
 /** copy.* — used verbatim; placeholders are replaced with the running values. */
@@ -77,7 +77,7 @@ export type TreeOverridableBinding =
   | 'disabledOpacity'
   | 'transition';
 
-const ROOT_OVERRIDE_HOOK: Partial<Record<TreeOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<TreeOverridableBinding, string | undefined>> = {
   indent: '--ds-tree-indent',
   rowHeight: '--ds-tree-row-height',
   rowPaddingInline: '--ds-tree-row-padding-inline',
@@ -99,16 +99,16 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<TreeOverridableBinding, string>> = {
   transition: '--ds-tree-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<TreeOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<TreeOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  headingOverrides: Partial<Record<HeadingOverridableBinding, TokenRef>>;
-  badgeOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  headingOverrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>>;
+  badgeOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const headingOverrides: Partial<Record<HeadingOverridableBinding, TokenRef>> = {};
-  const badgeOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const headingOverrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> = {};
+  const badgeOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
   for (const binding of Object.keys(overrides) as TreeOverridableBinding[]) {
     const ref = overrides[binding];
     if (!ref) continue;
@@ -142,7 +142,7 @@ interface VisibleNode {
   setsize: number;
   hasChildren: boolean;
   parentId: string | null;
-  isPlaceholder?: boolean;
+  isPlaceholder?: boolean | undefined;
 }
 
 function flattenTree(nodes: TreeNode[], expandedSet: Set<string>): VisibleNode[] {
@@ -218,42 +218,42 @@ export interface TreeProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   /** What the tree lists ("Folders", "Categories"). Not visible unless `showLabel`. */
   label: string;
   /** Show the label as a heading above the tree. */
-  showLabel?: boolean;
+  showLabel?: boolean | undefined;
   /** Heading level of the visible label in the page outline; its size is `headingSize` regardless. */
-  headingLevel?: TreeHeadingLevel;
+  headingLevel?: TreeHeadingLevel | undefined;
   /** The hierarchy. `href` makes a node a Link (navigation trees); `badge` is a short trailing count
    * or status; `children: "lazy"` loads on first expand through `onExpand`. */
   nodes: TreeNode[];
   /** Controlled expanded ids. */
-  expanded?: string[];
+  expanded?: string[] | undefined;
   /** Initially expanded ids; `["*"]` for all. */
-  defaultExpanded?: string[];
+  defaultExpanded?: string[] | undefined;
   /** `single`: one current node (the usual for navigation and pickers). `multiple`: checkbox-like
    * selection with Space, Shift+arrows and Ctrl+A; parents are checkboxes that cascade when
    * `selectChildren`. `none`: expand/collapse only. */
-  selectable?: TreeSelectable;
+  selectable?: TreeSelectable | undefined;
   /** Controlled selected ids. */
-  selected?: string[];
+  selected?: string[] | undefined;
   /** Initially selected ids. */
-  defaultSelected?: string[];
+  defaultSelected?: string[] | undefined;
   /** With `multiple`, selecting a parent selects its descendants and parents show indeterminate. */
-  selectChildren?: boolean;
+  selectChildren?: boolean | undefined;
   /** With `single`, moving focus also selects (a settings sidebar where the tree drives a panel).
    * Off by default: focus moves, Enter or Space selects. */
-  selectOnFocus?: boolean;
+  selectOnFocus?: boolean | undefined;
   /** Vertical guide lines under open parents. */
-  showGuides?: boolean;
+  showGuides?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<TreeOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<TreeOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired with the selected ids. */
-  onSelectionChange?: (ids: string[]) => void;
+  onSelectionChange?: ((ids: string[]) => void) | undefined;
   /** Fired with the expanded ids. */
-  onExpandChange?: (ids: string[]) => void;
+  onExpandChange?: ((ids: string[]) => void) | undefined;
   /** Fired when a lazy node is expanded for the first time, with its id. */
-  onExpand?: (id: string) => void;
+  onExpand?: ((id: string) => void) | undefined;
   /** Fired on Enter or double-click on a node (open the file, navigate), with its id. Nodes with
    * `href` navigate instead. */
-  onActivate?: (id: string) => void;
+  onActivate?: ((id: string) => void) | undefined;
 }
 
 /**
@@ -265,31 +265,29 @@ export interface TreeProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
  * `multiple` with `selectChildren` is a picker (choose folders to sync). Use `selectOnFocus` only
  * when the tree drives a panel beside it and moving through nodes should preview them.
  */
-export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
-  {
-    label,
-    showLabel = false,
-    headingLevel = '2',
-    nodes,
-    expanded,
-    defaultExpanded,
-    selectable = 'single',
-    selected,
-    defaultSelected,
-    selectChildren = false,
-    selectOnFocus = false,
-    showGuides = true,
-    overrides,
-    onSelectionChange,
-    onExpandChange,
-    onExpand,
-    onActivate,
-    className,
-    style,
-    ...rest
-  },
+export const Tree = function Tree({
   ref,
-) {
+  label,
+  showLabel = false,
+  headingLevel = '2',
+  nodes,
+  expanded,
+  defaultExpanded,
+  selectable = 'single',
+  selected,
+  defaultSelected,
+  selectChildren = false,
+  selectOnFocus = false,
+  showGuides = true,
+  overrides,
+  onSelectionChange,
+  onExpandChange,
+  onExpand,
+  onActivate,
+  className,
+  style,
+  ...rest
+}: TreeProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const baseId = `ds-tree${generatedId}`;
   const labelId = `${baseId}-label`;
@@ -415,8 +413,8 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
     const startIndex = currentIndex === -1 ? 0 : currentIndex;
     for (let offset = 1; offset <= navigable.length; offset++) {
       const candidate = navigable[(startIndex + offset) % navigable.length];
-      if (candidate.node.label.toLowerCase().startsWith(state.buffer)) {
-        moveFocus(candidate.id);
+      if (candidate!.node.label.toLowerCase().startsWith(state.buffer)) {
+        moveFocus(candidate!.id);
         return;
       }
     }
@@ -424,9 +422,9 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
       const single = state.buffer.slice(-1);
       for (let offset = 0; offset < navigable.length; offset++) {
         const candidate = navigable[(startIndex + offset) % navigable.length];
-        if (candidate.node.label.toLowerCase().startsWith(single)) {
+        if (candidate!.node.label.toLowerCase().startsWith(single)) {
           state.buffer = single;
-          moveFocus(candidate.id);
+          moveFocus(candidate!.id);
           return;
         }
       }
@@ -444,10 +442,10 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
         event.preventDefault();
         const next = navigable[Math.min(currentIndex + 1, navigable.length - 1)];
         if (selectable === 'multiple' && event.shiftKey) {
-          focusNode(next.id);
-          if (!selectedIds.includes(next.id)) commitSelection([...selectedIds, next.id]);
+          focusNode(next!.id);
+          if (!selectedIds.includes(next!.id)) commitSelection([...selectedIds, next!.id]);
         } else {
-          moveFocus(next.id);
+          moveFocus(next!.id);
         }
         return;
       }
@@ -455,54 +453,54 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
         event.preventDefault();
         const prev = navigable[Math.max(currentIndex - 1, 0)];
         if (selectable === 'multiple' && event.shiftKey) {
-          focusNode(prev.id);
-          if (!selectedIds.includes(prev.id)) commitSelection([...selectedIds, prev.id]);
+          focusNode(prev!.id);
+          if (!selectedIds.includes(prev!.id)) commitSelection([...selectedIds, prev!.id]);
         } else {
-          moveFocus(prev.id);
+          moveFocus(prev!.id);
         }
         return;
       }
       case 'ArrowRight': {
         event.preventDefault();
-        if (!current.hasChildren) return;
-        if (!expandedSet.has(current.id)) {
-          toggleExpand(current.id);
+        if (!current!.hasChildren) return;
+        if (!expandedSet.has(current!.id)) {
+          toggleExpand(current!.id);
         } else {
-          const child = navigable.find((v, i) => i > currentIndex && v.parentId === current.id);
+          const child = navigable.find((v, i) => i > currentIndex && v.parentId === current!.id);
           if (child) moveFocus(child.id);
         }
         return;
       }
       case 'ArrowLeft': {
         event.preventDefault();
-        if (current.hasChildren && expandedSet.has(current.id)) {
-          toggleExpand(current.id);
-        } else if (current.parentId) {
-          moveFocus(current.parentId);
+        if (current!.hasChildren && expandedSet.has(current!.id)) {
+          toggleExpand(current!.id);
+        } else if (current!.parentId) {
+          moveFocus(current!.parentId);
         }
         return;
       }
       case 'Home':
         event.preventDefault();
-        moveFocus(navigable[0].id);
+        moveFocus(navigable[0]!.id);
         return;
       case 'End':
         event.preventDefault();
-        moveFocus(navigable[navigable.length - 1].id);
+        moveFocus(navigable[navigable.length - 1]!.id);
         return;
       case 'Enter':
         event.preventDefault();
-        activateNode(current);
+        activateNode(current!);
         return;
       case ' ':
         if (selectable !== 'none') {
           event.preventDefault();
-          selectFocused(current);
+          selectFocused(current!);
         }
         return;
       case '*':
         event.preventDefault();
-        expandSiblings(current);
+        expandSiblings(current!);
         return;
       case 'a':
       case 'A':
@@ -719,4 +717,4 @@ export const Tree = forwardRef<HTMLDivElement, TreeProps>(function Tree(
       </div>
     </div>
   );
-});
+};

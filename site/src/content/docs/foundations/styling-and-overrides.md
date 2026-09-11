@@ -17,7 +17,7 @@ Every visual value in a generated component is a token reference. The question t
 
 ## What cannot be overridden
 
-Bindings that carry an accessibility guarantee are **locked**: any color that appears in the component's declared contrast pairs, the focus ring color and width, and minimum target sizes. `tools/parse.py` computes this from the schema, so it cannot be forgotten, and a doc can lock more with `locked: true` on a binding. Locked bindings are absent from the `overrides` type and ignored if passed, and their hooks are not exposed on web either. The effect is that an override can change how much room a button has, but not whether its text is readable or its focus visible. A team that needs a different button color makes a variant in the schema, where the contrast checker sees it.
+Bindings that carry an accessibility guarantee are **locked**: any color that appears in the component's declared contrast pairs, the focus ring color and width, and minimum target sizes. `tools/parse.ts` computes this from the schema, so it cannot be forgotten, and a doc can lock more with `locked: true` on a binding. Locked bindings are absent from the `overrides` type and ignored if passed, and their hooks are not exposed on web either. The effect is that an override can change how much room a button has, but not whether its text is readable or its focus visible. A team that needs a different button color makes a variant in the schema, where the contrast checker sees it.
 
 ## Overrides change values, never presence
 
@@ -45,7 +45,7 @@ On React Native there is no cascade, so the component resolves overrides through
 
 ## What this means for the generator
 
-The rules above are in the platform templates, so every regenerated component carries the contract, and `tools/parse.py` writes the overridable and locked binding lists into each prompt. Components generated before this decision (Tiers 0 and 1) do not have the hooks yet; they gain them the next time their doc changes and they regenerate, or in one deliberate pass.
+The rules above are in the platform templates, so every regenerated component carries the contract, and `tools/parse.ts` writes the overridable and locked binding lists into each prompt. Components generated before this decision (Tiers 0 and 1) do not have the hooks yet; they gain them the next time their doc changes and they regenerate, or in one deliberate pass.
 
 ## What it does not do
 

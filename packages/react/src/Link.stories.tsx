@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Link } from './Link';
 import { Text } from './Text';
 
-const meta = {
+const meta: Meta<typeof Link> = {
   title: 'Link/React',
   component: Link,
   args: {
@@ -15,7 +15,7 @@ const meta = {
   argTypes: {
     onClick: { action: 'onClick' },
   },
-} satisfies Meta<typeof Link>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

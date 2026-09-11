@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { DataGridColumn } from './DataGrid';
 import { TreeGrid, type TreeGridRow } from './TreeGrid';
 
@@ -53,7 +53,7 @@ const COLUMNS: DataGridColumn[] = [
   },
 ];
 
-const meta = {
+const meta: Meta<typeof TreeGrid> = {
   title: 'TreeGrid/React',
   component: TreeGrid,
   args: {
@@ -63,7 +63,7 @@ const meta = {
     defaultExpanded: ['assets', 'liabilities'],
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof TreeGrid>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

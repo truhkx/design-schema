@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -213,7 +213,7 @@ export class DsPopover extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: inline-block;
       --ds-popover-border: var(--color-border);
@@ -356,22 +356,22 @@ export class DsPopover extends LitElement {
   `;
 
   /** Optional heading at the top of the panel; also the accessible name when set. */
-  @property() heading?: string;
+  @property() accessor heading: string | undefined;
 
   /** Heading level of the panel heading, so it fits the page outline. */
-  @property({ attribute: 'heading-level', reflect: true }) headingLevel: PopoverHeadingLevel = '3';
+  @property({ attribute: 'heading-level', reflect: true }) accessor headingLevel: PopoverHeadingLevel = '3';
 
   /** Controlled open state. Omit for uncontrolled (the trigger toggles it). */
-  @property({ type: Boolean, reflect: true }) open?: boolean;
+  @property({ type: Boolean, reflect: true }) accessor open: boolean | undefined;
 
   /** Preferred side and alignment; flips and shifts to stay in the viewport. */
-  @property({ reflect: true }) placement: PopoverPlacement = 'bottom';
+  @property({ reflect: true }) accessor placement: PopoverPlacement = 'bottom';
 
   /** `false` (default): the page stays interactive. `true`: a small trapped, inert Dialog anchored to the trigger. */
-  @property({ type: Boolean, reflect: true }) modal = false;
+  @property({ type: Boolean, reflect: true }) accessor modal = false;
 
   /** A small pointer toward the trigger. Off by default. */
-  @property({ type: Boolean, reflect: true, attribute: 'show-arrow' }) showArrow = false;
+  @property({ type: Boolean, reflect: true, attribute: 'show-arrow' }) accessor showArrow = false;
 
   /**
    * Shows the close button. Escape and outside click (non-modal) always
@@ -379,27 +379,27 @@ export class DsPopover extends LitElement {
    * boolean attribute cannot express `false` for a prop that defaults `true`.
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  dismissible = true;
+  accessor dismissible = true;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings (surface, focusRing, focusRingWidth) are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<PopoverOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<PopoverOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled open state, used when `open` is omitted. */
-  @state() private internalOpen = false;
+  @state() private accessor internalOpen = false;
 
   /** Whether the modal exit transition is playing. */
-  @state() private closing = false;
+  @state() private accessor closing = false;
 
   /** Whether the default slot currently has assigned content, for the dev warning. */
-  @state() private hasBodyContent = false;
+  @state() private accessor hasBodyContent = false;
 
-  @query('.panel') private readonly panelEl!: HTMLElement;
-  @query('#heading') private readonly headingEl?: HTMLElement;
-  @query('.close') private readonly closeButtonEl?: HTMLElement;
-  @query('.arrow') private readonly arrowEl?: HTMLElement;
+  @query('.panel') private accessor panelEl!: HTMLElement;
+  @query('#heading') private accessor headingEl!: HTMLElement | null;
+  @query('.close') private accessor closeButtonEl!: HTMLElement | null;
+  @query('.arrow') private accessor arrowEl!: HTMLElement | null;
 
   /** Copied from the trigger's own accessible text, for the panel's `aria-label` fallback when `heading` is unset. */
-  @state() private triggerAccessibleName = '';
+  @state() private accessor triggerAccessibleName = '';
 
   private readonly popoverSupported = POPOVER_SUPPORTED;
   private triggerEl: HTMLElement | null = null;
@@ -448,7 +448,7 @@ export class DsPopover extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const isOpen = this.currentOpen;
     const ariaLabel = this.heading || this.triggerAccessibleName || undefined;
     const hasHeading = Boolean(this.heading);

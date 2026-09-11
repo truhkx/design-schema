@@ -1,0 +1,77 @@
+[
+  {
+    "name": "@babel/core",
+    "until": "2026-12-31",
+    "reason": "Babel 8: @react-native/babel-preset 0.87, babel-preset-expo 57 and packages/lit/decorators.plugin.mjs are written for Babel 7; moves with the next RN / Expo SDK."
+  },
+  {
+    "name": "@babel/plugin-proposal-decorators",
+    "until": "2026-12-31",
+    "reason": "Babel 8: same tree as @babel/core (the Lit decorators plugin); moves together."
+  },
+  {
+    "name": "@babel/plugin-transform-runtime",
+    "until": "2026-12-31",
+    "reason": "Babel 8: same tree as @babel/core; moves together."
+  },
+  {
+    "name": "@babel/plugin-transform-typescript",
+    "until": "2026-12-31",
+    "reason": "Babel 8: same tree as @babel/core; moves together."
+  },
+  {
+    "name": "@babel/runtime",
+    "until": "2026-12-31",
+    "reason": "Babel 8: same tree as @babel/core; moves together."
+  },
+  {
+    "name": "@testing-library/react-native",
+    "until": "2026-12-31",
+    "reason": "Testing Library 14 is async-only; the generated RN tests use the sync render/fireEvent API and change only through regeneration. Stay on 13.x until the templates emit the async API."
+  },
+  {
+    "name": "react-native-gesture-handler",
+    "until": "2026-12-31",
+    "reason": "Expo SDK 57 gallery app (apps/rn-storybook) pins the SDK's bundled release; moves with the next SDK."
+  },
+  {
+    "name": "react-native-safe-area-context",
+    "until": "2026-12-31",
+    "reason": "Expo SDK 57 gallery app pins the SDK's bundled release; moves with the next SDK."
+  },
+  {
+    "name": "react-native-worklets",
+    "until": "2026-12-31",
+    "reason": "Expo SDK 57 gallery app pins the SDK's bundled release; moves with the next SDK."
+  },
+  {
+    "name": "style-dictionary",
+    "until": "2026-11-30",
+    "reason": "tokens/build.mjs targets the v4 API; Style Dictionary 5 lands with job 304-port-tokens."
+  },
+  {
+    "name": "astro",
+    "until": "2026-11-30",
+    "reason": "Site upgrade (Astro 7 + Starlight 0.42 move together) is its own job; not part of the packages' toolchain."
+  },
+  {
+    "name": "@astrojs/starlight",
+    "until": "2026-11-30",
+    "reason": "Moves with astro (see above)."
+  },
+  {
+    "name": "@testing-library/jest-dom",
+    "until": "2026-10-31",
+    "reason": "Major awaiting the first weekly Renovate group PR (job 250 enabled Renovate on 2026-09-11)."
+  },
+  {
+    "name": "concurrently",
+    "until": "2026-10-31",
+    "reason": "Major awaiting the first weekly Renovate group PR (job 250 enabled Renovate on 2026-09-11)."
+  },
+  {
+    "name": "jsdom",
+    "until": "2026-10-31",
+    "reason": "Major awaiting the first weekly Renovate group PR (job 250 enabled Renovate on 2026-09-11)."
+  }
+]

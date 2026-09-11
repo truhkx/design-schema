@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import './Table.js';
 import './Button.js';
@@ -29,7 +29,7 @@ interface TableArgs {
   density: TableDensity;
   striped: boolean;
   loading: boolean;
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
 }
 
 const invoiceColumns: TableColumn[] = [

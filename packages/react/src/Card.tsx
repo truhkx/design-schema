@@ -1,7 +1,6 @@
 import {
   Children,
   cloneElement,
-  forwardRef,
   isValidElement,
   useId,
   type ComponentPropsWithoutRef,
@@ -48,7 +47,7 @@ const OVERRIDE_HOOK: Record<CardOverridableBinding, string> = {
   transition: '--ds-card-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<CardOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<CardOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as CardOverridableBinding[]) {
     const ref = overrides[binding];
@@ -65,30 +64,30 @@ export interface CardProps extends Omit<ComponentPropsWithoutRef<'article'>, 'ch
   /** The body. Usually a Stack of Text and controls. */
   children: ReactNode;
   /** The card's title, rendered as a Heading at the card's level. Omit for cards that are a single piece of content. */
-  heading?: string;
+  heading?: string | undefined;
   /** Heading level for `heading`, so cards fit the page outline. Cards in a list share a level. */
-  headingLevel?: CardHeadingLevel;
+  headingLevel?: CardHeadingLevel | undefined;
   /** Controls at the end of the header row — a ghost icon-only Button, a Link. At most two. */
   headerActions?: ReactNode;
   /** The action row. Buttons in a horizontal Stack, primary first, following Form's action-order rule. */
   footer?: ReactNode;
   /** Padding inside the card from the layout inset presets. `sm` for dense grids, `lg` for a single featured card. */
-  inset?: CardInset;
+  inset?: CardInset | undefined;
   /** `default` is the page background with a border — the calm option; `subtle` is a tinted surface without a border. */
-  surface?: CardSurface;
+  surface?: CardSurface | undefined;
   /**
    * The whole card is one link or button target. Requires exactly one interactive child (a Link
    * or Button) whose action the card extends to its full area; the card itself is not focusable.
    */
-  interactive?: boolean;
+  interactive?: boolean | undefined;
   /**
    * The card root takes tabindex=-1 so a container (Feed) can move focus to it by script, and
    * draws its own focus ring when focused that way. Not a tab stop; not for making cards
    * clickable (`interactive`).
    */
-  focusable?: boolean;
+  focusable?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<CardOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<CardOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -100,24 +99,22 @@ export interface CardProps extends Omit<ComponentPropsWithoutRef<'article'>, 'ch
  * a list (the heading is what a screen reader jumps to) and set `headingLevel` to fit the page.
  * Use `interactive` when the entire card leads somewhere and it contains exactly one Link or Button.
  */
-export const Card = forwardRef<HTMLElement, CardProps>(function Card(
-  {
-    children,
-    heading,
-    headingLevel = '3',
-    headerActions,
-    footer,
-    inset = 'md',
-    surface = 'default',
-    interactive = false,
-    focusable = false,
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const Card = function Card({
   ref,
-) {
+  children,
+  heading,
+  headingLevel = '3',
+  headerActions,
+  footer,
+  inset = 'md',
+  surface = 'default',
+  interactive = false,
+  focusable = false,
+  overrides,
+  className,
+  style,
+  ...rest
+}: CardProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const generatedId = useId();
   const headingId = heading ? `ds-card${generatedId}-heading` : undefined;
 
@@ -147,7 +144,7 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
   // Interactive: the single child link/button gets a class that grows its own ::after to cover
   // the card, so the hit area extends without adding a focus stop of the card's own.
   const body =
-    interactive && isValidElement<{ className?: string }>(children)
+    interactive && isValidElement<{ className?: string | undefined }>(children)
       ? cloneElement(children, {
           className: ['ds-card__interactive-target', children.props.className].filter(Boolean).join(' '),
         })
@@ -188,4 +185,4 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
       ) : null}
     </Tag>
   );
-});
+};

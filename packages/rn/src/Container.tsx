@@ -17,13 +17,13 @@ export interface ContainerProps {
   /** The page or region content, usually a Stack with `gap: section` between regions. */
   children: React.ReactNode;
   /** `prose` for reading (a 65-character measure), `content` for most screens, `page` for full-bleed layouts with wide grids, `full` for no cap (gutters only). */
-  width?: ContainerWidth;
+  width?: ContainerWidth | undefined;
   /** Horizontal padding at the viewport edge. `default` is responsive: narrow below the content width and wide above the page width. `none` for a nested container inside a padded parent. */
-  gutter?: ContainerGutter;
+  gutter?: ContainerGutter | undefined;
   /** Where the capped column sits in a wider viewport. */
-  align?: ContainerAlign;
+  align?: ContainerAlign | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<ContainerOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const MAX_WIDTH_TOKEN = {
@@ -50,7 +50,8 @@ export function Container({
   const { width: viewportWidth } = useWindowDimensions();
 
   const style = React.useMemo<ViewStyle>(() => {
-    const next: ViewStyle = {
+    // ViewStyle is read-only in React Native's strict TypeScript API; this one is built up in place.
+    const next: { -readonly [K in keyof ViewStyle]: ViewStyle[K] } = {
       width: '100%',
       alignSelf: align === 'start' ? 'flex-start' : 'center',
     };

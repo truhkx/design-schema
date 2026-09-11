@@ -1,4 +1,4 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, css, html, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 
 export type FocusScopeAutoFocus = 'first' | 'last' | 'container' | 'none';
@@ -117,7 +117,7 @@ export class DsFocusScope extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
     }
@@ -139,27 +139,27 @@ export class DsFocusScope extends LitElement {
   `;
 
   /** Tab and Shift+Tab wrap within the scope; focus outside is pulled back in. */
-  @property({ type: Boolean, reflect: true }) trapped = true;
+  @property({ type: Boolean, reflect: true }) accessor trapped = true;
 
   /** Where focus goes on mount. */
-  @property({ attribute: 'auto-focus' }) autoFocus: FocusScopeAutoFocus = 'first';
+  @property({ attribute: 'auto-focus' }) accessor autoFocus: FocusScopeAutoFocus = 'first';
 
   /** On unmount, return focus to the opener (or the next focusable element if it is gone). */
-  @property({ type: Boolean, attribute: 'restore-focus' }) restoreFocus = true;
+  @property({ type: Boolean, attribute: 'restore-focus' }) accessor restoreFocus = true;
 
   /** Pauses the scope without unmounting it, so a nested scope can own Tab instead. */
-  @property({ type: Boolean, reflect: true }) active = true;
+  @property({ type: Boolean, reflect: true }) accessor active = true;
 
   /**
    * Explicit element to restore focus to instead of the recorded opener. Not
    * an attribute — set the property directly (there is no React ref concept
    * in Lit; this is a plain element reference).
    */
-  @property({ attribute: false }) returnFocusTo?: HTMLElement | null;
+  @property({ attribute: false }) accessor returnFocusTo: HTMLElement | null | undefined;
 
-  @query('[data-focus-scope-anchor]') private readonly anchorEl!: HTMLElement;
+  @query('[data-focus-scope-anchor]') private accessor anchorEl!: HTMLElement;
 
-  @query('[data-focus-sentinel="start"]') private readonly startSentinelEl!: HTMLElement;
+  @query('[data-focus-sentinel="start"]') private accessor startSentinelEl!: HTMLElement;
 
   private openerElement: HTMLElement | null = null;
   private documentFocusableSnapshot: HTMLElement[] = [];
@@ -179,11 +179,11 @@ export class DsFocusScope extends LitElement {
     if (!event.shiftKey && active === last) {
       event.preventDefault();
       this.dispatchEscapeAttempt('forward');
-      first.focus();
+      first!.focus();
     } else if (event.shiftKey && active === first) {
       event.preventDefault();
       this.dispatchEscapeAttempt('backward');
-      last.focus();
+      last!.focus();
     }
   };
 
@@ -212,9 +212,9 @@ export class DsFocusScope extends LitElement {
       return;
     }
     if (event.target === this.startSentinelEl) {
-      focusable[0].focus();
+      focusable[0]!.focus();
     } else {
-      focusable[focusable.length - 1].focus();
+      focusable[focusable.length - 1]!.focus();
     }
   };
 
@@ -246,7 +246,7 @@ export class DsFocusScope extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`
       <span class="visually-hidden" tabindex="-1" data-focus-scope-anchor></span>
       <span
@@ -306,14 +306,14 @@ export class DsFocusScope extends LitElement {
     }
     const isUsable = (el: HTMLElement): boolean => el !== opener && el.isConnected && isFocusable(el);
     for (let i = openerIndex + 1; i < snapshot.length; i += 1) {
-      if (isUsable(snapshot[i])) {
-        snapshot[i].focus();
+      if (isUsable(snapshot[i]!)) {
+        snapshot[i]!.focus();
         return;
       }
     }
     for (let i = openerIndex - 1; i >= 0; i -= 1) {
-      if (isUsable(snapshot[i])) {
-        snapshot[i].focus();
+      if (isUsable(snapshot[i]!)) {
+        snapshot[i]!.focus();
         return;
       }
     }

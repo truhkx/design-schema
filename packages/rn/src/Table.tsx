@@ -31,13 +31,13 @@ export interface TableRow {
 export interface TableColumn {
   key: string;
   header: string;
-  abbr?: string;
-  align?: TableColumnAlign;
-  sortable?: boolean;
-  width?: TableColumnWidth;
-  isRowHeader?: boolean;
-  hideBelow?: TableHideBelow;
-  render?: (row: TableRow) => React.ReactNode;
+  abbr?: string | undefined;
+  align?: TableColumnAlign | undefined;
+  sortable?: boolean | undefined;
+  width?: TableColumnWidth | undefined;
+  isRowHeader?: boolean | undefined;
+  hideBelow?: TableHideBelow | undefined;
+  render?: ((row: TableRow) => React.ReactNode) | undefined;
 }
 
 /** Sort state: which column, and which way. */
@@ -81,9 +81,9 @@ export interface TableProps {
   /** What the table lists ("Open invoices"). Rendered as the caption and the accessible name. */
   caption: string;
   /** Heading level of the caption in the page outline; its size is `captionSize` regardless. */
-  captionLevel?: TableCaptionLevel;
+  captionLevel?: TableCaptionLevel | undefined;
   /** Visually hides the caption; it remains the accessible name. Use when a Heading directly above already says it. */
-  hideCaption?: boolean;
+  hideCaption?: boolean | undefined;
   /** Content below the table: a row count, pagination, a total. Rendered in the `footer` part with the table's font. */
   footer?: React.ReactNode;
   /** Column definitions in display order. Exactly one column may be `isRowHeader`. */
@@ -91,39 +91,39 @@ export interface TableProps {
   /** The rows. `id` must be stable. */
   data: TableRow[];
   /** Controlled sort state. The table shows it; the caller sorts `data`. */
-  sort?: TableSort;
+  sort?: TableSort | undefined;
   /** Initial sort for uncontrolled use; the table then sorts `data` itself. */
-  defaultSort?: TableSort;
+  defaultSort?: TableSort | undefined;
   /** Adds a selection column: a Checkbox per row (radio-like for `single`), plus select-all for `multiple`. */
-  selectable?: TableSelectable;
+  selectable?: TableSelectable | undefined;
   /** Controlled selected row ids. */
-  selected?: string[];
+  selected?: string[] | undefined;
   /** Initially selected ids. */
-  defaultSelected?: string[];
+  defaultSelected?: string[] | undefined;
   /** Below the prose width: `stack` repeats the column header as a label before each value; `scroll` keeps every column and scrolls horizontally. */
-  responsive?: TableResponsive;
+  responsive?: TableResponsive | undefined;
   /** The header row stays visible while the body scrolls. */
-  stickyHeader?: boolean;
+  stickyHeader?: boolean | undefined;
   /** `viewport` caps the table at the viewport height and scrolls the body; `none` lets the page scroll. */
-  maxHeight?: TableMaxHeight;
+  maxHeight?: TableMaxHeight | undefined;
   /** Cell padding: compact or comfortable. */
-  density?: TableDensity;
+  density?: TableDensity | undefined;
   /** Alternate row backgrounds. */
-  striped?: boolean;
+  striped?: boolean | undefined;
   /** Shown in place of the body when `data` is empty. Defaults to `copy.empty`. */
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
   /** Data is being fetched: existing rows stay visible, `copy.loading` is shown when there is nothing yet. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** Renders a trailing actions cell for each row. */
-  rowActions?: (row: TableRow) => React.ReactNode;
+  rowActions?: ((row: TableRow) => React.ReactNode) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<TableOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<TableOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a sortable header is activated, with the new sort state. */
-  onSortChange?: (sort: TableSort) => void;
+  onSortChange?: ((sort: TableSort) => void) | undefined;
   /** Fired with the new array of selected ids. */
-  onSelectionChange?: (selected: string[]) => void;
+  onSelectionChange?: ((selected: string[]) => void) | undefined;
   /** Fired when a row is activated (its row-header cell), with its id. */
-  onRowPress?: (id: string) => void;
+  onRowPress?: ((id: string) => void) | undefined;
 }
 
 const COPY = {

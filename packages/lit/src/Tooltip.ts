@@ -1,4 +1,4 @@
-import { LitElement, css, html, render as litRender, type PropertyValues } from 'lit';
+import { LitElement, css, html, render as litRender, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Text.js';
@@ -172,7 +172,7 @@ function ensurePopupStyle(root: Document | ShadowRoot): void {
  */
 @customElement('ds-tooltip')
 export class DsTooltip extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: contents;
       --ds-tooltip-radius: var(--radius-sm);
@@ -195,26 +195,26 @@ export class DsTooltip extends LitElement {
   `;
 
   /** The tooltip text. One short phrase; no markup, links or line breaks. */
-  @property() content!: string;
+  @property() accessor content!: string;
 
   /** Preferred side; flips when it would overflow the viewport. */
-  @property({ reflect: true }) placement: TooltipPlacement = 'top';
+  @property({ reflect: true }) accessor placement: TooltipPlacement = 'top';
 
   /** `true`: supplementary, linked as the child's `aria-describedby`. `false`: linked as `aria-labelledby` — the tooltip IS the child's name. */
-  @property({ type: Boolean, reflect: true }) describes = true;
+  @property({ type: Boolean, reflect: true }) accessor describes = true;
 
   /** Hover delay before showing: `default` (motion.duration.base × 3) or `none` for a warm toolbar item. */
-  @property() delay: TooltipDelay = 'default';
+  @property() accessor delay: TooltipDelay = 'default';
 
   /**
    * Controlled visibility, for stories and tests only (the `Keyboard` story
    * renders the tooltip open with it). Product code never sets this: a
    * tooltip is hover and focus driven.
    */
-  @property({ type: Boolean }) open?: boolean;
+  @property({ type: Boolean }) accessor open: boolean | undefined;
 
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<TooltipOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<TooltipOverridableBinding, TokenRef | undefined>> | undefined;
 
   private popupEl!: HTMLDivElement;
   private popupId!: string;
@@ -223,8 +223,8 @@ export class DsTooltip extends LitElement {
   private pointerOverTrigger = false;
   private pointerOverPopup = false;
   private triggerFocused = false;
-  private showTimerId?: ReturnType<typeof setTimeout>;
-  private hideGraceTimerId?: ReturnType<typeof setTimeout>;
+  private showTimerId?: ReturnType<typeof setTimeout> | undefined;
+  private hideGraceTimerId?: ReturnType<typeof setTimeout> | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -284,7 +284,7 @@ export class DsTooltip extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`<slot @slotchange=${this.handleSlotChange}></slot>`;
   }
 
@@ -527,7 +527,7 @@ export class DsTooltip extends LitElement {
     if (!this.popupEl) {
       return;
     }
-    const textOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {
+    const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
       color: 'color.inverse.foreground',
     };
     if (this.overrides?.fontFamily) {

@@ -23,13 +23,13 @@ export interface HeadingProps {
    */
   level: HeadingLevel;
   /** Visual size, independent of level. Defaults to the size that matches the level. */
-  size?: HeadingSize;
+  size?: HeadingSize | undefined;
   /** The heading text. Keep it short and descriptive; it is what appears in the page outline. */
   children: React.ReactNode;
   /** Horizontal text alignment. */
-  align?: TextAlign;
+  align?: TextAlign | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<HeadingOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const LEVEL_SIZE: Record<'1' | '2' | '3' | '4' | '5' | '6', HeadingSize> = {

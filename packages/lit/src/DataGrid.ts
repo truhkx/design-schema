@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -39,20 +39,20 @@ export interface DataGridColumnOption {
 export interface DataGridColumn {
   key: string;
   header: string;
-  abbr?: string;
-  align?: DataGridColumnAlign;
-  sortable?: boolean;
+  abbr?: string | undefined;
+  align?: DataGridColumnAlign | undefined;
+  sortable?: boolean | undefined;
   /** Pixel width; a multiple of space.1 (e.g. 160). Grid columns do not auto-size. */
-  width?: number;
-  minWidth?: number;
-  resizable?: boolean;
-  isRowHeader?: boolean;
-  pinned?: DataGridColumnPinned;
-  editable?: boolean;
-  editor?: DataGridEditorKind;
-  options?: DataGridColumnOption[];
-  render?: (row: DataGridRow) => unknown;
-  validate?: (value: unknown, row: DataGridRow) => string | undefined;
+  width?: number | undefined;
+  minWidth?: number | undefined;
+  resizable?: boolean | undefined;
+  isRowHeader?: boolean | undefined;
+  pinned?: DataGridColumnPinned | undefined;
+  editable?: boolean | undefined;
+  editor?: DataGridEditorKind | undefined;
+  options?: DataGridColumnOption[] | undefined;
+  render?: ((row: DataGridRow) => unknown) | undefined;
+  validate?: ((value: unknown, row: DataGridRow) => string | undefined) | undefined;
 }
 
 export type DataGridSortDirection = 'ascending' | 'descending';
@@ -84,9 +84,9 @@ export interface DataGridSortChangeDetail {
 
 /** Detail carried by the `selection-change` CustomEvent; exactly one of `rows`/`cell`/`range` is set, matching `selectable`. */
 export interface DataGridSelectionChangeDetail {
-  rows?: string[];
-  cell?: DataGridCellRef | null;
-  range?: DataGridRangeRef | null;
+  rows?: string[] | undefined;
+  cell?: DataGridCellRef | null | undefined;
+  range?: DataGridRangeRef | null | undefined;
 }
 
 /** Detail carried by the `cell-change` CustomEvent. */
@@ -225,7 +225,7 @@ interface EditingState {
   column: string;
   value: unknown;
   previous: unknown;
-  error?: string;
+  error?: string | undefined;
 }
 
 /**
@@ -272,9 +272,9 @@ interface EditingState {
  */
 @customElement('ds-data-grid')
 export class DsDataGrid extends LitElement {
-  static override shadowRootOptions = { ...LitElement.shadowRootOptions, delegatesFocus: true };
+  static override shadowRootOptions: ShadowRootInit = { ...LitElement.shadowRootOptions, delegatesFocus: true };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--ds-data-grid-font-family);
@@ -586,82 +586,82 @@ export class DsDataGrid extends LitElement {
   `;
 
   /** What the grid holds ("Price list"). The accessible name; visually hidden with `hideCaption`. */
-  @property() caption!: string;
+  @property() accessor caption!: string;
 
   /** Visually hides the caption; it remains the accessible name. */
-  @property({ type: Boolean, reflect: true, attribute: 'hide-caption' }) hideCaption = false;
+  @property({ type: Boolean, reflect: true, attribute: 'hide-caption' }) accessor hideCaption = false;
 
   /** Column definitions in display order. A property, not an attribute. */
-  @property({ attribute: false }) columns: DataGridColumn[] = [];
+  @property({ attribute: false }) accessor columns: DataGridColumn[] = [];
 
   /** The rows. `id` must be stable. A property, not an attribute. */
-  @property({ attribute: false }) data: DataGridRow[] = [];
+  @property({ attribute: false }) accessor data: DataGridRow[] = [];
 
   /** Total rows when `data` is a window of a larger set (server paging). */
-  @property({ type: Number, attribute: 'row-count' }) rowCount?: number;
+  @property({ type: Number, attribute: 'row-count' }) accessor rowCount: number | undefined;
 
   /** Controlled sort state. */
-  @property({ attribute: false }) sort?: DataGridSort;
+  @property({ attribute: false }) accessor sort: DataGridSort | undefined;
 
   /** Initial sort; the grid sorts `data` itself when `rowCount` is not set. */
-  @property({ attribute: false }) defaultSort?: DataGridSort;
+  @property({ attribute: false }) accessor defaultSort: DataGridSort | undefined;
 
   /** `row` adds a checkbox column; `cell` selects one cell; `range` allows rectangle selection. */
-  @property({ reflect: true }) selectable: DataGridSelectable = 'none';
+  @property({ reflect: true }) accessor selectable: DataGridSelectable = 'none';
 
   /** Controlled selected row ids (row mode). */
-  @property({ attribute: false }) selected?: string[];
+  @property({ attribute: false }) accessor selected: string[] | undefined;
 
   /** Master switch: cells whose column is `editable` can be edited. */
-  @property({ type: Boolean, reflect: true }) editable = false;
+  @property({ type: Boolean, reflect: true }) accessor editable = false;
 
   /** Row height. */
-  @property({ reflect: true }) density: DataGridDensity = 'compact';
+  @property({ reflect: true }) accessor density: DataGridDensity = 'compact';
 
   /** The header stays visible while the body scrolls. Exposed as the negated `no-sticky-header` attribute;
       always true when `height` is `viewport` or `fixed`. */
   @property({ attribute: 'no-sticky-header', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  stickyHeader = true;
+  accessor stickyHeader = true;
 
   /** `viewport` fills the height under the header and scrolls internally; `content` grows with rows;
       `fixed` uses `overrides.fixedHeight`. */
-  @property({ reflect: true }) height: DataGridHeight = 'viewport';
+  @property({ reflect: true }) accessor height: DataGridHeight = 'viewport';
 
   /** Data is being fetched: sets `aria-busy` and shows `copy.loading` in the status bar. Existing rows stay. */
-  @property({ type: Boolean, reflect: true }) loading = false;
+  @property({ type: Boolean, reflect: true }) accessor loading = false;
 
   /** Shown in place of the body when `data` is empty. Defaults to `copy.empty`. */
-  @property({ attribute: 'empty-message' }) emptyMessage?: string;
+  @property({ attribute: 'empty-message' }) accessor emptyMessage: string | undefined;
 
   /** A footer line with row count, selection count and validation messages. Exposed as the negated
       `no-status-bar` attribute. */
   @property({ attribute: 'no-status-bar', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  showStatusBar = true;
+  accessor showStatusBar = true;
 
   /** Per-instance style overrides: `{ captionSize: 'font.size.lg' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<DataGridOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<DataGridOverridableBinding, TokenRef | undefined>> | undefined;
 
-  @state() private internalSort?: DataGridSort;
-  @state() private internalSelectedRows: string[] = [];
-  @state() private internalSelectedCell: DataGridCellRef | null = null;
-  @state() private internalRange: DataGridRangeRef | null = null;
-  @state() private activeRowIndex = -1;
-  @state() private activeColKey = '';
-  @state() private editing?: EditingState;
-  @state() private columnWidths: Record<string, number> = {};
-  @state() private bodyScrollTop = 0;
-  @state() private bodyScrollLeft = 0;
-  @state() private viewportPx = 0;
-  @state() private liveMessage = '';
+  @state() private accessor internalSort: DataGridSort | undefined;
+  @state() private accessor internalSelectedRows: string[] = [];
+  @state() private accessor internalSelectedCell: DataGridCellRef | null = null;
+  @state() private accessor internalRange: DataGridRangeRef | null = null;
+  @state() private accessor activeRowIndex = -1;
+  @state() private accessor activeColKey = '';
+  @state() private accessor editing: EditingState | undefined;
+  @state() private accessor columnWidths: Record<string, number> = {};
+  @state() private accessor bodyScrollTop = 0;
+  @state() private accessor bodyScrollLeft = 0;
+  @state() private accessor viewportPx = 0;
+  @state() private accessor liveMessage = '';
 
   private readonly instanceId = nextDataGridId();
   private rowHeightPx = 0;
-  private resizeObserver?: ResizeObserver;
+  private resizeObserver?: ResizeObserver | undefined;
   private lastRequestedEnd = -1;
-  private activeDrag?: { column: string; pointerId: number; startX: number; startWidth: number };
-  private rangeAnchor?: { rowIndex: number; colKey: string };
+  private activeDrag?: { column: string; pointerId: number; startX: number; startWidth: number } | undefined;
+  private rangeAnchor?: { rowIndex: number; colKey: string } | undefined;
 
-  @query('.grid-scroll') private readonly gridEl?: HTMLElement;
+  @query('.grid-scroll') private accessor gridEl!: HTMLElement | null;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -699,7 +699,7 @@ export class DsDataGrid extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const rows = this.sortedRows();
     const total = this.rowCount ?? rows.length;
     const columnKeys = this.effectiveColumnKeys();
@@ -1865,8 +1865,8 @@ export class DsDataGrid extends LitElement {
 
   /* ---------- overrides / dev warnings ---------- */
 
-  private get captionOverrides(): Partial<Record<HeadingOverridableBinding, TokenRef>> {
-    const result: Partial<Record<HeadingOverridableBinding, TokenRef>> = { marginBlockEnd: 'space.0' };
+  private get captionOverrides(): Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> {
+    const result: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> = { marginBlockEnd: 'space.0' };
     if (this.overrides?.captionSize) {
       result.fontSize = this.overrides.captionSize;
     }

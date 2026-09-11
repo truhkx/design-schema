@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Accordion, type AccordionItem } from './Accordion';
 import { Text } from './Text';
 
@@ -31,7 +31,7 @@ const ITEMS: AccordionItem[] = [
   },
 ];
 
-const meta = {
+const meta: Meta<typeof Accordion> = {
   title: 'Accordion/React',
   component: Accordion,
   args: {
@@ -53,7 +53,7 @@ const meta = {
     ),
   ],
   tags: ['autodocs'],
-} satisfies Meta<typeof Accordion>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, Text as RNText, View, findNodeHandle } from 'react-native';
-import type { TextStyle, ViewStyle } from 'react-native';
+import type { TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -14,15 +14,15 @@ export type BreadcrumbOverridableBinding = 'gap' | 'fontFamily' | 'fontSize' | '
 
 export interface BreadcrumbProps {
   /** The trail from root to current page, in order. Every item but the last needs an `href`; an ancestor without one renders as plain text (never an empty link). The last is the current page and its `href` is ignored. */
-  items: { label: string; href?: string }[];
+  items: { label: string; href?: string | undefined }[];
   /** Accessible name of the navigation landmark. Change it only if the page has another breadcrumb. */
-  label?: string;
+  label?: string | undefined;
   /** When there are more than four items, show the first, an ellipsis, and the last two; the ellipsis is a button that reveals the rest. */
-  collapse?: boolean;
+  collapse?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<BreadcrumbOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<BreadcrumbOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a non-current item is activated, as `(item, index)`. On native the handler is the navigation; without one the Link falls back to `Linking.openURL`. */
-  onNavigate?: (item: { label: string; href?: string }, index: number) => void;
+  onNavigate?: ((item: { label: string; href?: string | undefined }, index: number) => void) | undefined;
 }
 
 /** One item of the trail — the element type of the schema's `items` shape. */
@@ -67,7 +67,7 @@ export function Breadcrumb({
 }: BreadcrumbProps): React.JSX.Element {
   const { tokens } = useTheme();
   const [expanded, setExpanded] = React.useState(false);
-  const firstRevealedRef = React.useRef<View>(null);
+  const firstRevealedRef = React.useRef<ViewInstance>(null);
   const [pendingFocus, setPendingFocus] = React.useState(false);
 
   const collapsed = collapse && !expanded && items.length > COLLAPSE_ABOVE;
@@ -80,7 +80,7 @@ export function Breadcrumb({
     }
     setPendingFocus(false);
     const node = firstRevealedRef.current === null ? null : findNodeHandle(firstRevealedRef.current);
-    if (node !== null) {
+    if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
     }
   }, [pendingFocus]);

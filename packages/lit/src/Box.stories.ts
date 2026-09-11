@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Box.js';
@@ -7,8 +7,8 @@ import type { BoxElement, BoxInset, BoxRadius, BoxSurface } from './Box.js';
 
 interface BoxArgs {
   inset: BoxInset;
-  insetBlock?: BoxInset;
-  insetInline?: BoxInset;
+  insetBlock?: BoxInset | undefined;
+  insetInline?: BoxInset | undefined;
   surface: BoxSurface;
   border: boolean;
   radius: BoxRadius;

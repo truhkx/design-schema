@@ -35,18 +35,18 @@ export interface ToolbarProps {
    */
   children: React.ReactNode;
   /** Vertical toolbars sit beside a canvas. Arrow-key axis swapping is a web keyboard model; see the component doc. */
-  orientation?: ToolbarOrientation;
+  orientation?: ToolbarOrientation | undefined;
   /** What happens when controls do not fit. See the component doc for the native fallback on `menu`. */
-  overflow?: ToolbarOverflow;
+  overflow?: ToolbarOverflow | undefined;
   /** Passed to the child controls that accept a `size` prop, unless a child already sets its own. */
-  size?: ToolbarSize;
+  size?: ToolbarSize | undefined;
   /** Gap between controls: tight or normal rhythm. */
-  density?: ToolbarDensity;
+  density?: ToolbarDensity | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<ToolbarOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ToolbarOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
-function isDividerElement(node: React.ReactNode): node is React.ReactElement {
+function isDividerElement(node: React.ReactNode): node is React.ReactElement<any> {
   return React.isValidElement(node) && node.type === Divider;
 }
 
@@ -140,7 +140,7 @@ export function Toolbar({
         : { height: separatorLength, justifyContent: 'center' };
       content = <View style={lengthStyle}>{child}</View>;
     } else if (React.isValidElement(child)) {
-      const element = child as React.ReactElement<{ size?: ToolbarSize }>;
+      const element = child as React.ReactElement<{ size?: ToolbarSize | undefined }>;
       if (element.props.size === undefined) {
         content = React.cloneElement(element, { size });
       }

@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useCallback,
   useEffect,
   useId,
@@ -12,6 +11,7 @@ import {
   type FormEvent,
   type MouseEvent,
   type ReactNode,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import {
@@ -45,7 +45,7 @@ const OVERRIDE_HOOK: Record<FormOverridableBinding, string> = {
   errorSummaryBorder: '--ds-form-error-summary-border',
 };
 
-function overridesToStyle(overrides: Partial<Record<FormOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<FormOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as FormOverridableBinding[]) {
     const ref = overrides[binding];
@@ -65,23 +65,23 @@ export interface FormProps
    * rule). Rendered after the fields with the form gap. */
   actions: ReactNode;
   /** Identifier for the form, used for analytics and as the base of generated ids. */
-  name?: string;
+  name?: string | undefined;
   /** Accessible name for the form landmark, e.g. "Sign in". Required when a page has more than one form and `labelledBy` is not set. */
-  label?: string;
+  label?: string | undefined;
   /** Id of a visible Heading that names the form. Wins over `label` when both are set. */
-  labelledBy?: string;
+  labelledBy?: string | undefined;
   /** When field-level validation runs. `submit` is the least noisy; `blur` is the usual choice for longer forms. */
-  validate?: FormValidateMode;
+  validate?: FormValidateMode | undefined;
   /** Disables every field and action inside. Use while submitting. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** When submission fails validation, render a summary of errors above the fields that links to each field. */
-  errorSummary?: boolean;
+  errorSummary?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<FormOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<FormOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the form is submitted and every field is valid. Receives the collected values keyed by field name. */
-  onSubmit?: (values: FormValues) => void;
+  onSubmit?: ((values: FormValues) => void) | undefined;
   /** Fired when submission is blocked by validation. Receives the errors keyed by field name. */
-  onInvalid?: (errors: FormErrors) => void;
+  onInvalid?: ((errors: FormErrors) => void) | undefined;
 }
 
 function shallowEqual(a: Readonly<FormErrors>, b: Readonly<FormErrors>): boolean {
@@ -99,25 +99,23 @@ function shallowEqual(a: Readonly<FormErrors>, b: Readonly<FormErrors>): boolean
  * submission has consequences (sign-in, search with side effects). Place actions (submit, cancel)
  * at the end in a Stack. Give the form a `label` when the page contains more than one.
  */
-export const Form = forwardRef<HTMLFormElement, FormProps>(function Form(
-  {
-    children,
-    actions,
-    name,
-    label,
-    labelledBy,
-    validate = 'submit',
-    disabled = false,
-    errorSummary = true,
-    overrides,
-    onSubmit,
-    onInvalid,
-    className,
-    style,
-    ...rest
-  },
+export const Form = function Form({
   ref,
-) {
+  children,
+  actions,
+  name,
+  label,
+  labelledBy,
+  validate = 'submit',
+  disabled = false,
+  errorSummary = true,
+  overrides,
+  onSubmit,
+  onInvalid,
+  className,
+  style,
+  ...rest
+}: FormProps & { ref?: Ref<HTMLFormElement> | undefined }): ReactElement {
   const formRef = useRef<HTMLFormElement | null>(null);
   useImperativeHandle(ref, () => formRef.current as HTMLFormElement, []);
 
@@ -276,4 +274,4 @@ export const Form = forwardRef<HTMLFormElement, FormProps>(function Form(
       </form>
     </FormContext.Provider>
   );
-});
+};

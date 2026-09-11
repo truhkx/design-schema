@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Stepper, type StepperStep } from './Stepper';
 
 const steps: StepperStep[] = [
@@ -22,7 +22,7 @@ const stepsWithError: StepperStep[] = [
   { id: 'confirm', label: 'Confirmation' },
 ];
 
-const meta = {
+const meta: Meta<typeof Stepper> = {
   title: 'Stepper/React',
   component: Stepper,
   args: {
@@ -36,7 +36,7 @@ const meta = {
   argTypes: {
     onStepSelect: { action: 'onStepSelect' },
   },
-} satisfies Meta<typeof Stepper>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

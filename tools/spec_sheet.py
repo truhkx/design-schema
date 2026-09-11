@@ -313,7 +313,7 @@ def main(argv: list[str] | None = None) -> int:
               f"(available: {', '.join(available) or 'none'}) — run `pnpm themes` first", file=sys.stderr)
         return 1
     if not GENERATED.exists():
-        print("✖ generated/components.json missing — run tools/parse.py first", file=sys.stderr)
+        print("✖ generated/components.json missing — run tools/parse.ts first", file=sys.stderr)
         return 1
 
     modes = {m: load_tokens(args.theme, m) for m in MODES}

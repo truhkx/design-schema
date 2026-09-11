@@ -11,7 +11,7 @@ import {
   View,
   findNodeHandle,
 } from 'react-native';
-import type { ViewStyle } from 'react-native';
+import type { ScrollViewInstance, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Box } from './Box';
@@ -51,25 +51,25 @@ export interface DialogProps {
   /** The dialog's title, rendered as a level-2 Heading and used as the accessible name. Says what the task is ("Rename project"). */
   heading: string;
   /** One sentence under the title explaining the task or consequence. Becomes the accessible description. */
-  description?: string;
+  description?: string | undefined;
   /** The body — a Form, Text, or controls. Scrolls inside the surface when taller than the viewport; header and footer stay put. */
   children: React.ReactNode;
   /** The action row. Primary action first, then one secondary; follows Form's action-order rule. A dialog with no footer must be dismissable from its body. */
   footer?: React.ReactNode;
   /** Visually hide the heading while it remains the accessible name (BottomSheet forwards its own hideHeading here above the breakpoint). */
-  hideHeading?: boolean;
+  hideHeading?: boolean | undefined;
   /** Surface width on wide viewports. Full-width below the content measure on every size. */
-  size?: DialogSize;
+  size?: DialogSize | undefined;
   /** Escape, the close button and a scrim click all request close. Set `false` for a dialog that must be answered (then provide the answers in the footer); Escape still fires `onClose` with reason `escape` so the consumer can decide. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** Where focus lands on open: the first focusable control in the body (default), the title (for long or reading dialogs), or the close button. */
-  initialFocus?: DialogInitialFocus;
+  initialFocus?: DialogInitialFocus | undefined;
   /** Fired when the user requests to close, with a reason. The consumer sets `open` to false (or not). */
-  onClose?: (reason: DialogCloseReason) => void;
+  onClose?: ((reason: DialogCloseReason) => void) | undefined;
   /** Fired after the open transition ends and focus has moved in. Use to start work that needs the dialog visible. */
-  onOpened?: () => void;
+  onOpened?: (() => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<DialogOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const COPY = {
@@ -127,9 +127,9 @@ export function Dialog({
   const [mounted, setMounted] = React.useState(open);
   const progress = React.useRef(new Animated.Value(open ? 1 : 0)).current;
 
-  const titleGroupRef = React.useRef<View>(null);
-  const closeButtonRef = React.useRef<View>(null);
-  const bodyRef = React.useRef<ScrollView>(null);
+  const titleGroupRef = React.useRef<ViewInstance>(null);
+  const closeButtonRef = React.useRef<ViewInstance>(null);
+  const bodyRef = React.useRef<ScrollViewInstance>(null);
 
   const scrimColor = overrides?.scrim ? (resolveToken(t, overrides.scrim) as string) : t.colorOverlayScrim;
   const surfaceColor = t.colorOverlaySurface;
@@ -157,7 +157,7 @@ export function Dialog({
   const focusInitial = React.useCallback(() => {
     const targetRef = initialFocus === 'title' ? titleGroupRef : initialFocus === 'close' ? closeButtonRef : bodyRef;
     const node = targetRef.current ? findNodeHandle(targetRef.current) : null;
-    if (node !== null) {
+    if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
     }
   }, [initialFocus]);
@@ -238,8 +238,8 @@ export function Dialog({
 
   const hostStyle: ViewStyle = { flex: 1 };
 
-  const scrimStyle: Animated.WithAnimatedObject<ViewStyle> = {
-    ...StyleSheet.absoluteFillObject,
+  const scrimStyle: Animated.WithAnimatedValue<ViewStyle> = {
+    ...StyleSheet.absoluteFill,
     backgroundColor: scrimColor,
     opacity: progress,
   };
@@ -252,7 +252,7 @@ export function Dialog({
     zIndex: layer,
   };
 
-  const outerSurfaceStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const outerSurfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
     maxWidth: sizeWidth[size],
     maxHeight: '90%', // literal-ok: a proportion of the viewport, not a design token
@@ -305,7 +305,7 @@ export function Dialog({
       <View style={hostStyle}>
         <Animated.View style={scrimStyle} />
         <Pressable
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           onPress={handleScrimPress}
           accessible={false}
           testID="Dialog.scrim"

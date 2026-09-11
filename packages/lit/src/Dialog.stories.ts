@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Dialog.js';
@@ -10,7 +10,7 @@ import type { DialogInitialFocus, DialogSize } from './Dialog.js';
 interface DialogArgs {
   open: boolean;
   heading: string;
-  description?: string;
+  description?: string | undefined;
   hideHeading: boolean;
   size: DialogSize;
   dismissible: boolean;

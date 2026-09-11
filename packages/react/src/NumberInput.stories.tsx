@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { NumberInput } from './NumberInput';
 
-const meta = {
+const meta: Meta<typeof NumberInput> = {
   title: 'NumberInput/React',
   component: NumberInput,
   args: {
@@ -29,7 +29,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof NumberInput>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

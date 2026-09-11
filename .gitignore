@@ -5,6 +5,7 @@ node_modules/
 site/dist/
 site/.astro/
 packages/*/dist/
+packages/*/storybook-static/
 packages/*/.modules-check/
 apps/*/.expo/
 site/src/content/docs/foundations/spec-sheet.md

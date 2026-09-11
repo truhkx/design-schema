@@ -1,6 +1,5 @@
 import {
   Children,
-  forwardRef,
   isValidElement,
   useLayoutEffect,
   useRef,
@@ -11,6 +10,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactElement,
   type ReactNode,
+  type Ref,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Divider } from './Divider';
@@ -48,7 +48,7 @@ const OVERRIDE_HOOK: Record<ToolbarOverridableBinding, string> = {
   fadeWidth: '--ds-toolbar-fade-width',
 };
 
-function overridesToStyle(overrides: Partial<Record<ToolbarOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<ToolbarOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as ToolbarOverridableBinding[]) {
     const ref = overrides[binding];
@@ -82,7 +82,7 @@ function applyRovingTabIndex(controls: HTMLElement[], currentIndex: number) {
 }
 
 /** Best-effort accessible name for a collapsed control, reused as its overflow Menu row label. */
-function actionFromElement(element: ReactElement, id: string): MenuAction {
+function actionFromElement(element: ReactElement<any>, id: string): MenuAction {
   const props = element.props as Record<string, unknown>;
   const overflowLabel = props.overflowLabel;
   const ariaLabel = props['aria-label'];
@@ -99,12 +99,12 @@ function actionFromElement(element: ReactElement, id: string): MenuAction {
 }
 
 type ToolbarEntry =
-  | { kind: 'control'; element: ReactElement; key: string }
+  | { kind: 'control'; element: ReactElement<any>; key: string }
   | { kind: 'group'; element: ReactElement<ToolbarGroupProps>; key: string }
   | { kind: 'separator'; key: string };
 
 function buildEntries(children: ReactNode): ToolbarEntry[] {
-  const elements = Children.toArray(children).filter(isValidElement) as ReactElement[];
+  const elements = Children.toArray(children).filter(isValidElement) as ReactElement<any>[];
   const entries: ToolbarEntry[] = [];
   elements.forEach((element, index) => {
     const isGroup = element.type === ToolbarGroup;
@@ -123,16 +123,13 @@ function buildEntries(children: ReactNode): ToolbarEntry[] {
 
 export interface ToolbarGroupProps extends Omit<ComponentPropsWithoutRef<'div'>, 'role'> {
   /** Accessible name for the cluster, when it isn't obvious from its controls alone. Also becomes its heading if the group overflows into the "More" menu. */
-  label?: string;
+  label?: string | undefined;
   /** The group's controls, in order. */
   children: ReactNode;
 }
 
 /** Groups related controls inside a Toolbar; a Divider is drawn automatically between adjacent groups. */
-export const ToolbarGroup = forwardRef<HTMLDivElement, ToolbarGroupProps>(function ToolbarGroup(
-  { label, children, className, ...rest },
-  ref,
-) {
+export const ToolbarGroup = function ToolbarGroup({ ref, label, children, className, ...rest }: ToolbarGroupProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   return (
     <div
       {...rest}
@@ -146,7 +143,7 @@ export const ToolbarGroup = forwardRef<HTMLDivElement, ToolbarGroupProps>(functi
       {children}
     </div>
   );
-});
+};
 
 export interface ToolbarProps
   extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'aria-label' | 'aria-orientation'> {
@@ -159,19 +156,19 @@ export interface ToolbarProps
    */
   children: ReactNode;
   /** Vertical toolbars sit beside a canvas; arrow keys swap axes. */
-  orientation?: ToolbarOrientation;
+  orientation?: ToolbarOrientation | undefined;
   /**
    * What happens when controls do not fit: wrap onto more rows, collapse trailing controls into a
    * "More" Menu (each control must provide `overflowLabel`), or scroll horizontally with the edges
    * faded.
    */
-  overflow?: ToolbarOverflow;
+  overflow?: ToolbarOverflow | undefined;
   /** Passed to the child controls that accept it. */
-  size?: ToolbarSize;
+  size?: ToolbarSize | undefined;
   /** Gap between controls: tight or normal rhythm. */
-  density?: ToolbarDensity;
+  density?: ToolbarDensity | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<ToolbarOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ToolbarOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -184,26 +181,24 @@ export interface ToolbarProps
  * toolbars whose width the layout cannot guarantee; give every control an `overflowLabel` so it
  * reads well as a menu item.
  */
-export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar(
-  {
-    label,
-    children,
-    orientation = 'horizontal',
-    overflow = 'menu',
-    size = 'md',
-    density = 'comfortable',
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const Toolbar = function Toolbar({
   ref,
-) {
+  label,
+  children,
+  orientation = 'horizontal',
+  overflow = 'menu',
+  size = 'md',
+  density = 'comfortable',
+  overrides,
+  className,
+  style,
+  ...rest
+}: ToolbarProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const currentIndexRef = useRef(0);
   const itemNodesRef = useRef<Array<HTMLElement | null>>([]);
   const moreItemRef = useRef<HTMLElement | null>(null);
-  const overflowElementsRef = useRef(new Map<string, ReactElement>());
+  const overflowElementsRef = useRef(new Map<string, ReactElement<any>>());
 
   const isMenuOverflow = overflow === 'menu';
   const [renderCount, setRenderCount] = useState<number | null>(null);
@@ -240,7 +235,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
       const limit = container.clientWidth - moreWidth;
       let fit = total;
       for (let i = 0; i < total; i++) {
-        if (nodes[i].offsetLeft + nodes[i].offsetWidth > limit) {
+        if (nodes[i]!.offsetLeft + nodes[i]!.offsetWidth > limit) {
           fit = i;
           break;
         }
@@ -268,7 +263,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
       const controls = getControls(container);
       if (controls.length === 0) return;
       if (currentIndexRef.current >= controls.length) currentIndexRef.current = 0;
-      if (isControlDisabled(controls[currentIndexRef.current])) {
+      if (isControlDisabled(controls[currentIndexRef.current]!)) {
         const firstEnabled = controls.findIndex((control) => !isControlDisabled(control));
         if (firstEnabled !== -1) currentIndexRef.current = firstEnabled;
       }
@@ -316,12 +311,12 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
     const moveTo = (index: number) => {
       currentIndexRef.current = index;
       applyRovingTabIndex(controls, index);
-      controls[index].focus();
+      controls[index]!.focus();
     };
 
     if (event.key === nextKey) {
       for (let i = currentIndex + 1; i < controls.length; i++) {
-        if (!isControlDisabled(controls[i])) {
+        if (!isControlDisabled(controls[i]!)) {
           event.preventDefault();
           moveTo(i);
           break;
@@ -329,7 +324,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
       }
     } else if (event.key === prevKey) {
       for (let i = currentIndex - 1; i >= 0; i--) {
-        if (!isControlDisabled(controls[i])) {
+        if (!isControlDisabled(controls[i]!)) {
           event.preventDefault();
           moveTo(i);
           break;
@@ -343,7 +338,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
       }
     } else if (event.key === 'End') {
       for (let i = controls.length - 1; i >= 0; i--) {
-        if (!isControlDisabled(controls[i])) {
+        if (!isControlDisabled(controls[i]!)) {
           event.preventDefault();
           moveTo(i);
           break;
@@ -354,7 +349,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
 
   const handleOverflowAction = (id: string) => {
     const element = overflowElementsRef.current.get(id);
-    const onClickProp = (element?.props as { onClick?: (event: unknown) => void } | undefined)?.onClick;
+    const onClickProp = (element?.props as { onClick?: ((event: unknown) => void) | undefined } | undefined)?.onClick;
     onClickProp?.({});
   };
 
@@ -369,7 +364,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
   if (isMenuOverflow) {
     const count = renderCount === null ? entries.length : Math.min(renderCount, entries.length);
     visibleEntries = entries.slice(0, count);
-    while (visibleEntries.length > 0 && visibleEntries[visibleEntries.length - 1].kind === 'separator') {
+    while (visibleEntries.length > 0 && visibleEntries[visibleEntries.length - 1]!.kind === 'separator') {
       visibleEntries = visibleEntries.slice(0, -1);
     }
   }
@@ -379,7 +374,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
   const menuItems: MenuItem[] = hiddenEntries.flatMap((entry): MenuItem[] => {
     if (entry.kind === 'group') {
       const groupProps = entry.element.props;
-      const groupChildren = Children.toArray(groupProps.children).filter(isValidElement) as ReactElement[];
+      const groupChildren = Children.toArray(groupProps.children).filter(isValidElement) as ReactElement<any>[];
       const actions = groupChildren.map((child, childIndex) => {
         const id = `${entry.key}-${childIndex}`;
         overflowElementsRef.current.set(id, child);
@@ -451,4 +446,4 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
       ) : null}
     </div>
   );
-});
+};

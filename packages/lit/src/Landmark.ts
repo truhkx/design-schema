@@ -46,10 +46,10 @@ export class DsLandmark extends LitElement {
    * Which landmark this is. Exposed as the host's `role` attribute; the
    * property is named `landmark` because `HTMLElement` already defines `role`.
    */
-  @property({ reflect: true, attribute: 'role' }) landmark?: LandmarkRole;
+  @property({ reflect: true, attribute: 'role' }) accessor landmark: LandmarkRole | undefined;
 
   /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Reflects to `aria-label`. */
-  @property({ reflect: true, attribute: 'aria-label' }) label?: string;
+  @property({ reflect: true, attribute: 'aria-label' }) accessor label: string | undefined;
 
   /** No shadow root: children stay in the light DOM and the host is the landmark. */
   protected override createRenderRoot(): HTMLElement {
@@ -72,7 +72,7 @@ export class DsLandmark extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): symbol {
     return nothing;
   }
 

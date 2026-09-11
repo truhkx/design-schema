@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -10,7 +9,8 @@ import {
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
-  type SyntheticEvent,
+  type Ref,
+  type SyntheticEvent, type ReactPortal,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -61,7 +61,7 @@ const OVERRIDE_HOOK: Record<DialogOverridableBinding, string> = {
   exit: '--ds-dialog-exit',
 };
 
-function overridesToStyle(overrides: Partial<Record<DialogOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<DialogOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as DialogOverridableBinding[]) {
     const ref = overrides[binding];
@@ -100,27 +100,27 @@ export interface DialogProps
   /** The dialog's title, rendered as a level-2 Heading and used as the accessible name. Says what the task is ("Rename project"). */
   heading: string;
   /** One sentence under the title explaining the task or consequence. Becomes the accessible description. */
-  description?: string;
+  description?: string | undefined;
   /** The body — a Form, Text, or controls. Scrolls inside the surface when taller than the viewport; header and footer stay put. */
   children: ReactNode;
   /** The action row. Primary action first, then one secondary; follows Form's action-order rule. A dialog with no footer must be dismissable from its body. */
   footer?: ReactNode;
   /** Visually hide the heading while it remains the accessible name (BottomSheet forwards its own hideHeading here above the breakpoint). */
-  hideHeading?: boolean;
+  hideHeading?: boolean | undefined;
   /** Surface width on wide viewports. Full-width below the content measure on every size. */
-  size?: DialogSize;
+  size?: DialogSize | undefined;
   /** Escape, the close button and a scrim click all request close. Set false for a dialog that must be answered (then provide the answers in the footer); Escape still fires `onClose` with reason `escape` so the consumer can decide. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** Where focus lands on open: the first focusable control in the body (default), the title (for long or reading dialogs), or the close button. */
-  initialFocus?: DialogInitialFocus;
+  initialFocus?: DialogInitialFocus | undefined;
   /** Fired when the user requests to close, with a reason: `escape`, `close-button`, `scrim`, or `action`. The consumer sets `open` to false (or not). */
-  onClose?: (reason: DialogCloseReason) => void;
+  onClose?: ((reason: DialogCloseReason) => void) | undefined;
   /** Fired after the open transition ends and focus has moved in. Use to start work that needs the dialog visible. */
-  onOpened?: () => void;
+  onOpened?: (() => void) | undefined;
   /** Portal target for the dialog's DOM node. Defaults to `document.body`. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<DialogOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -133,27 +133,25 @@ export interface DialogProps
  * scrolls much is a page. Give it a `heading` that names the task and a `footer` with the completing
  * action first.
  */
-export const Dialog = forwardRef<HTMLDialogElement, DialogProps>(function Dialog(
-  {
-    open,
-    heading,
-    description,
-    children,
-    footer,
-    hideHeading = false,
-    size = 'md',
-    dismissible = true,
-    initialFocus = 'first',
-    onClose,
-    onOpened,
-    container,
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const Dialog = function Dialog({
   ref,
-) {
+  open,
+  heading,
+  description,
+  children,
+  footer,
+  hideHeading = false,
+  size = 'md',
+  dismissible = true,
+  initialFocus = 'first',
+  onClose,
+  onOpened,
+  container,
+  overrides,
+  className,
+  style,
+  ...rest
+}: DialogProps & { ref?: Ref<HTMLDialogElement> | undefined }): ReactPortal | null {
   const generatedId = useId();
   const headingId = `ds-dialog${generatedId}-heading`;
   const descriptionId = `ds-dialog${generatedId}-description`;
@@ -354,4 +352,4 @@ export const Dialog = forwardRef<HTMLDialogElement, DialogProps>(function Dialog
   );
 
   return createPortal(node, container ?? document.body);
-});
+};

@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
@@ -89,7 +89,7 @@ export class DsCheckbox extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--ds-checkbox-font-family);
@@ -259,45 +259,45 @@ export class DsCheckbox extends LitElement {
   `;
 
   /** Visible label. Clicking or tapping it toggles the control. */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** Field name used by the enclosing Form when collecting values. */
-  @property() name = '';
+  @property() accessor name = '';
 
   /** The value submitted when checked. Lets several checkboxes share a `name`. */
-  @property() value = 'on';
+  @property() accessor value = 'on';
 
   /** Controlled checked state. Omit for an uncontrolled control. The attribute is the initial state only; not reflected. */
-  @property({ type: Boolean }) checked?: boolean;
+  @property({ type: Boolean }) accessor checked: boolean | undefined;
 
   /** Initial state for an uncontrolled control. */
-  @property({ type: Boolean, attribute: 'default-checked' }) defaultChecked = false;
+  @property({ type: Boolean, attribute: 'default-checked' }) accessor defaultChecked = false;
 
   /** Shows the mixed indicator. Visual and announced only; the submitted value still follows `checked`. */
-  @property({ type: Boolean, reflect: true }) indeterminate = false;
+  @property({ type: Boolean, reflect: true }) accessor indeterminate = false;
 
   /** Cannot be toggled and is not submitted. Stays visible, readable and focusable. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Must be checked to submit. Shown in the label, not only by color. */
-  @property({ type: Boolean, reflect: true }) required = false;
+  @property({ type: Boolean, reflect: true }) accessor required = false;
 
   /** Persistent helper text below the label. */
-  @property() description?: string;
+  @property() accessor description: string | undefined;
 
   /** Marks the control as failing validation. Usually set by the Form; can be set directly. */
-  @property({ type: Boolean, reflect: true }) invalid = false;
+  @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
   /** Per-instance style overrides: `{ controlRadius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<CheckboxOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>> | undefined;
 
-  private errorValue?: string;
+  private errorValue?: string | undefined;
 
   /** The error message. Setting it implies `invalid`. Say what to do. */
-  @property()
   get error(): string | undefined {
     return this.errorValue;
   }
+  @property()
   set error(value: string | undefined) {
     const old = this.errorValue;
     this.errorValue = value;
@@ -307,12 +307,12 @@ export class DsCheckbox extends LitElement {
   }
 
   /** Uncontrolled checked state (seeded from `defaultChecked`). */
-  @state() private internalChecked = false;
+  @state() private accessor internalChecked = false;
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
-  @state() private formDisabled = false;
+  @state() private accessor formDisabled = false;
 
-  @query('#control') private readonly inputEl!: HTMLInputElement;
+  @query('#control') private accessor inputEl!: HTMLInputElement;
 
   private readonly internals: ElementInternals;
 
@@ -391,7 +391,7 @@ export class DsCheckbox extends LitElement {
     this.syncInternals();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const isDisabled = this.disabled || this.formDisabled;
     const describedBy =
       [this.description ? 'description' : '', this.error ? 'error' : '']

@@ -30,19 +30,19 @@ export type AlertOverridableBinding =
 
 export interface AlertProps {
   /** What kind of message this is. Sets the colors and the icon, which together convey the tone without relying on color. */
-  tone?: AlertTone;
+  tone?: AlertTone | undefined;
   /** A short bold first line for the message. Optional for one-line messages. Named `heading`, not `title`, because `title` is a native attribute on every platform element. */
-  heading?: string;
+  heading?: string | undefined;
   /** The message body. Text and Links; no headings or form controls. */
   children: React.ReactNode;
   /** How the alert is announced when it appears. `status` is polite, `alert` interrupts (only for errors that block the user), `off` for alerts already present when the view loads. Never use `alert` for success or info. */
-  live?: AlertLive;
+  live?: AlertLive | undefined;
   /** Shows a dismiss button at the end of the alert. Activating it fires `onDismiss`; the consumer removes the alert. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<AlertOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<AlertOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the user activates the dismiss button. The consumer removes the alert. */
-  onDismiss?: () => void;
+  onDismiss?: (() => void) | undefined;
 }
 
 const COPY = {

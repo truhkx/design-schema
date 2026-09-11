@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Divider.js';
@@ -50,7 +50,7 @@ type OverflowTarget = HTMLElement;
  */
 @customElement('ds-toolbar-group')
 export class DsToolbarGroup extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: flex;
       align-items: center;
@@ -73,7 +73,7 @@ export class DsToolbarGroup extends LitElement {
     this.setAttribute('role', 'group');
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`<slot></slot>`;
   }
 }
@@ -115,7 +115,7 @@ export class DsToolbarGroup extends LitElement {
  */
 @customElement('ds-toolbar')
 export class DsToolbar extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: flex;
       box-sizing: border-box;
@@ -210,28 +210,28 @@ export class DsToolbar extends LitElement {
   `;
 
   /** What the toolbar controls ("Formatting", "Table actions"). Not visible; the toolbar's accessible name. */
-  @property() label!: string;
+  @property() accessor label!: string;
 
   /** Vertical toolbars sit beside a canvas; arrow keys swap axes. */
-  @property({ reflect: true }) orientation: ToolbarOrientation = 'horizontal';
+  @property({ reflect: true }) accessor orientation: ToolbarOrientation = 'horizontal';
 
   /** Trailing-control behavior when the toolbar does not fit: wrap onto more rows, collapse into a "More" menu, or scroll with faded edges. */
-  @property({ reflect: true }) overflow: ToolbarOverflow = 'menu';
+  @property({ reflect: true }) accessor overflow: ToolbarOverflow = 'menu';
 
   /** Default size passed to child controls that have not set their own `size`. */
-  @property({ reflect: true }) size: ToolbarSize = 'md';
+  @property({ reflect: true }) accessor size: ToolbarSize = 'md';
 
   /** Gap between controls: tight (`compact`) or normal (`comfortable`) rhythm. */
-  @property({ reflect: true }) density: ToolbarDensity = 'comfortable';
+  @property({ reflect: true }) accessor density: ToolbarDensity = 'comfortable';
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<ToolbarOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<ToolbarOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Controls currently collapsed into the overflow menu, built from their `overflow-label` attribute. */
-  @state() private overflowItems: MenuActionItem[] = [];
+  @state() private accessor overflowItems: MenuActionItem[] = [];
 
-  @query('.container') private readonly containerEl?: HTMLDivElement;
-  @query('.overflow') private readonly overflowMenuEl?: HTMLElement;
+  @query('.container') private accessor containerEl!: HTMLDivElement | null;
+  @query('.overflow') private accessor overflowMenuEl!: HTMLElement | null;
 
   /** The control that currently carries the roving tabindex (and, usually, real focus). */
   private focusedControl: HTMLElement | null = null;
@@ -239,7 +239,7 @@ export class DsToolbar extends LitElement {
   /** In the same order as `overflowItems`, so choosing an item can `click()` the original element. */
   private overflowTargets: OverflowTarget[] = [];
 
-  private resizeObserver?: ResizeObserver;
+  private resizeObserver?: ResizeObserver | undefined;
 
   /** Watches the whole light-DOM subtree: a control added inside an existing `<ds-toolbar-group>` does not
       fire the default slot's `slotchange`, since it is assigned to that group's own inner slot instead. */
@@ -298,7 +298,7 @@ export class DsToolbar extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const showOverflow = this.overflow === 'menu';
     return html`
       <div class="container" part="container">
@@ -396,12 +396,12 @@ export class DsToolbar extends LitElement {
     if (controls.length === 0) {
       return;
     }
-    const currentIndex = controls.indexOf(this.focusedControl ?? controls[0]);
+    const currentIndex = controls.indexOf((this.focusedControl ?? controls[0])!);
     const nextIndex = currentIndex + delta;
     if (nextIndex < 0 || nextIndex >= controls.length) {
       return;
     }
-    this.focusTo(controls[nextIndex]);
+    this.focusTo(controls[nextIndex]!);
   }
 
   private focusEdge(edge: 'first' | 'last'): void {
@@ -409,7 +409,7 @@ export class DsToolbar extends LitElement {
     if (controls.length === 0) {
       return;
     }
-    this.focusTo(edge === 'first' ? controls[0] : controls[controls.length - 1]);
+    this.focusTo((edge === 'first' ? controls[0] : controls[controls.length - 1])!);
   }
 
   private focusTo(el: HTMLElement): void {
@@ -458,7 +458,7 @@ export class DsToolbar extends LitElement {
       return;
     }
     if (!this.focusedControl || !controls.includes(this.focusedControl)) {
-      this.focusedControl = controls[0];
+      this.focusedControl = controls[0]!;
     }
     for (const el of controls) {
       el.tabIndex = el === this.focusedControl ? 0 : -1;
@@ -593,8 +593,8 @@ export class DsToolbar extends LitElement {
     const budget = available - reserved;
     const hidden: HTMLElement[] = [];
     for (let i = controls.length - 1; i >= 0 && total > budget; i -= 1) {
-      hidden.unshift(controls[i]);
-      total -= sizes[i] + gap;
+      hidden.unshift(controls[i]!);
+      total -= sizes[i]! + gap;
     }
 
     for (const el of controls) {

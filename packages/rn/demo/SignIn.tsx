@@ -6,11 +6,11 @@ import type { FormValues } from '../src';
 
 export interface SignInProps {
   /** Receives `{ email, password }` once both fields pass validation. */
-  onSubmit?: (values: FormValues) => void;
+  onSubmit?: ((values: FormValues) => void) | undefined;
   /** Activated by the low-emphasis "Forgot password?" action. */
-  onForgotPassword?: () => void;
+  onForgotPassword?: (() => void) | undefined;
   /** Disables the form while a sign-in request is in flight. */
-  submitting?: boolean;
+  submitting?: boolean | undefined;
 }
 
 /**

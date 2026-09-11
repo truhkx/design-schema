@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Listbox.js';
@@ -8,18 +8,18 @@ interface ListboxArgs {
   label: string;
   options: ListboxOption[];
   multiple: boolean;
-  value?: ListboxValue;
-  defaultValue?: ListboxValue;
+  value?: ListboxValue | undefined;
+  defaultValue?: ListboxValue | undefined;
   selectionFollowsFocus: boolean;
   required: boolean;
   invalid: boolean;
-  error?: string;
+  error?: string | undefined;
   embedded: boolean;
   disabled: boolean;
   name: string;
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
   maxVisible: ListboxMaxVisible;
-  defaultActiveValue?: string;
+  defaultActiveValue?: string | undefined;
   loading: boolean;
 }
 

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './SegmentedControl.js';
@@ -7,8 +7,8 @@ import type { SegmentedControlOption, SegmentedControlSize } from './SegmentedCo
 interface SegmentedControlArgs {
   label: string;
   options: SegmentedControlOption[];
-  value?: string;
-  defaultValue?: string;
+  value?: string | undefined;
+  defaultValue?: string | undefined;
   iconOnly: boolean;
   size: SegmentedControlSize;
   fill: boolean;

@@ -15,18 +15,19 @@ import {
   type FormErrors,
   type FormValues,
 } from '../src/index';
+import type { ReactElement } from 'react';
 
 export interface PreferencesProps {
   /** Called with the collected values when the form passes validation. Defaults to logging the values. */
-  onSubmit?: (values: FormValues) => void;
+  onSubmit?: ((values: FormValues) => void) | undefined;
   /** Called with the errors keyed by field name when submission is blocked. */
-  onInvalid?: (errors: FormErrors) => void;
+  onInvalid?: ((errors: FormErrors) => void) | undefined;
   /** Called when "Cancel" is activated. */
-  onCancel?: () => void;
+  onCancel?: (() => void) | undefined;
   /** Called when the info alert is dismissed. */
-  onDismissAlert?: () => void;
+  onDismissAlert?: (() => void) | undefined;
   /** Storage used, in GB, out of 10. Drives the meter. */
-  storageUsedGb?: number;
+  storageUsedGb?: number | undefined;
 }
 
 const DIGEST_OPTIONS = [
@@ -42,7 +43,7 @@ const STORAGE_MAX_GB = 10;
  * Landmark (main) → Breadcrumb + Heading + Alert + Form → RadioGroup, Checkboxes, Switch, Meter,
  * Disclosure with advanced options, and the Save / Cancel actions.
  */
-export function Preferences({ onSubmit, onInvalid, onCancel, onDismissAlert, storageUsedGb = 8.2 }: PreferencesProps) {
+export function Preferences({ onSubmit, onInvalid, onCancel, onDismissAlert, storageUsedGb = 8.2 }: PreferencesProps): ReactElement {
   const handleSubmit = (values: FormValues) => {
     if (onSubmit) {
       onSubmit(values);

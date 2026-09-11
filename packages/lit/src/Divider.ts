@@ -1,4 +1,4 @@
-import { LitElement, css, html, type PropertyValues } from 'lit';
+import { LitElement, css, html, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Text.js';
@@ -45,7 +45,7 @@ const HOOKS: Record<DividerOverridableBinding, string> = {
  */
 @customElement('ds-divider')
 export class DsDivider extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: flex;
       align-items: center;
@@ -107,7 +107,7 @@ export class DsDivider extends LitElement {
   `;
 
   /** Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height. */
-  @property({ reflect: true }) orientation: DividerOrientation = 'horizontal';
+  @property({ reflect: true }) accessor orientation: DividerOrientation = 'horizontal';
 
   /**
    * Optional text in the middle of a horizontal divider ("or", "Earlier
@@ -115,16 +115,16 @@ export class DsDivider extends LitElement {
    * divider (a dev warning is logged): a vertical line has no room for
    * centered text.
    */
-  @property() label?: string;
+  @property() accessor label: string | undefined;
 
   /** Expose as role="separator" to assistive technology. Leave false for purely visual lines between list rows. */
-  @property({ type: Boolean, reflect: true }) semantic = false;
+  @property({ type: Boolean, reflect: true }) accessor semantic = false;
 
   /** Space on both sides, from the layout rhythm, for dividers used outside a Stack that already spaces them. */
-  @property({ reflect: true }) spacing: DividerSpacing = 'none';
+  @property({ reflect: true }) accessor spacing: DividerSpacing = 'none';
 
   /** Per-instance style overrides: `{ spacing: 'layout.gap.tight' }`. `labelColor` is locked and ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<DividerOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<DividerOverridableBinding, TokenRef | undefined>> | undefined;
 
   private readonly internals: ElementInternals;
 
@@ -159,7 +159,7 @@ export class DsDivider extends LitElement {
     return this.orientation === 'vertical' ? undefined : this.label;
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const label = this.effectiveLabel;
     if (!label) {
       return html`<span class="line" part="line"></span>`;

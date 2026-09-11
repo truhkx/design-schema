@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import './Text.js';
 import type { TextAlign, TextElement, TextSize, TextTone, TextWeight } from './Text.js';

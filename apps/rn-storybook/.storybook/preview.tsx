@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { View } from 'react-native';
 import type { Preview } from '@storybook/react';
-import { addons } from '@storybook/preview-api';
+import { addons } from 'storybook/preview-api';
 import { ThemeProvider, useTheme } from '@design-schema/rn';
 import { THEME_EVENT, current } from './theme';
 import type { ThemeSelection } from './theme';

@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Input } from './Input';
 
-const meta = {
+const meta: Meta<typeof Input> = {
   title: 'Input/React',
   component: Input,
   args: {
@@ -17,7 +17,7 @@ const meta = {
     onFocus: { action: 'onFocus' },
     onBlur: { action: 'onBlur' },
   },
-} satisfies Meta<typeof Input>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

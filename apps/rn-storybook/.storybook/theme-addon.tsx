@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { addons, types } from '@storybook/manager-api';
+import { addons, types } from 'storybook/manager-api';
 import { DEFAULT_SELECTION, MODES, THEMES, THEME_EVENT, current } from './theme';
 import type { ModeSetting, ThemeId, ThemeSelection } from './theme';
 

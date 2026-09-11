@@ -604,7 +604,7 @@ def write_theme(id: str, answers: dict, overwrite: bool = False) -> dict:
         result["contrast"] = {"ok": check.returncode == 0 and not failures, "failures": failures,
                               "summary": ((check.stdout or "").strip().splitlines() or [""])[-1]}
         result["next"] = ("Contrast failures name a token pair; change the seed's lightness or an override rather than the component. "
-                          "Then run tools/parse.py so generated/prompts/theme.<id>.md exists and get_theme_skill can serve it.")
+                          "Then run tools/parse.ts so generated/prompts/theme.<id>.md exists and get_theme_skill can serve it.")
     return result
 
 

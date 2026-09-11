@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, Platform, Pressable, View, findNodeHandle } from 'react-native';
-import type { ViewStyle } from 'react-native';
+import type { ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { FormContext } from './FormContext';
@@ -19,25 +19,25 @@ export interface FormProps {
   /** The action row: at least one Button with `type: submit`, primary first. Rendered after the fields with the form gap; the `actions` anatomy part. */
   actions: React.ReactNode;
   /** Identifier for the form, used for analytics and as the base of generated ids. */
-  name?: string;
+  name?: string | undefined;
   /** Accessible name for the form landmark, e.g. "Sign in". Required when a page has more than one form. */
-  label?: string;
+  label?: string | undefined;
   /** When field-level validation runs. `submit` is the least noisy; `blur` is the usual choice for longer forms. */
-  validate?: FormValidateMode;
+  validate?: FormValidateMode | undefined;
   /** Disables every field and action inside. Use while submitting. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** When submission fails validation, render a summary of errors above the fields that links to each field. */
-  errorSummary?: boolean;
+  errorSummary?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<FormOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<FormOverridableBinding, TokenRef | undefined>> | undefined;
   /**
    * Fired when the form is submitted and every field is valid. Receives the collected
    * values keyed by field name: strings from Input, RadioGroup and checked Checkboxes,
    * booleans from Switch. An unchecked Checkbox contributes no key.
    */
-  onSubmit?: (values: FormValues) => void;
+  onSubmit?: ((values: FormValues) => void) | undefined;
   /** Fired when submission is blocked by validation. Receives the errors keyed by field name. */
-  onInvalid?: (errors: Record<string, string>) => void;
+  onInvalid?: ((errors: Record<string, string>) => void) | undefined;
 }
 
 function summaryTitle(count: number): string {
@@ -78,9 +78,9 @@ export function Form({
   const handles = React.useRef<Map<string, FormFieldHandle>>(new Map());
   const orderRef = React.useRef<string[]>([]);
   const [order, setOrder] = React.useState<readonly string[]>([]);
-  const [errors, setErrors] = React.useState<Readonly<Partial<Record<string, string>>>>({});
+  const [errors, setErrors] = React.useState<Readonly<Partial<Record<string, string | undefined>>>>({});
   const [submissionAttempt, setSubmissionAttempt] = React.useState(0);
-  const summaryRef = React.useRef<View>(null);
+  const summaryRef = React.useRef<ViewInstance>(null);
 
   const latest = React.useRef({ disabled, errorSummary, onSubmit, onInvalid });
   latest.current = { disabled, errorSummary, onSubmit, onInvalid };
@@ -167,7 +167,7 @@ export function Form({
       return;
     }
     const node = findNodeHandle(summaryRef.current);
-    if (node !== null) {
+    if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
     }
   }, [submissionAttempt]);

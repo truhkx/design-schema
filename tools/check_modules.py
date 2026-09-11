@@ -3,7 +3,7 @@ Deterministic gate: every module an extension declares exists, exports its name,
 declared signature.
 
 Extension docs (site/src/content/docs/extensions/*.md) may declare hand-written modules under
-packages/<platform>/src/custom/. tools/parse.py writes a .d.ts stub per module from the declared
+packages/<platform>/src/custom/. tools/parse.ts writes a .d.ts stub per module from the declared
 signature into generated/modules/<platform>/; this gate checks, for one platform:
 
   1. packages/<pkg>/src/<path> exists
@@ -89,8 +89,10 @@ def check_program(modules: list[dict], platform: str, check_dir: Path, stubs_dir
 
 
 def tsconfig() -> dict:
+    # rootDir widens to the repo root: check.ts imports the stubs under generated/modules/, outside the
+    # package's own rootDir.
     return {"extends": "../tsconfig.json",
-            "compilerOptions": {"noEmit": True, "composite": False, "incremental": False},
+            "compilerOptions": {"noEmit": True, "composite": False, "incremental": False, "rootDir": "../.."},
             "include": ["check.ts"]}
 
 
@@ -103,7 +105,7 @@ def run(platform: str, typecheck: bool = True, components: list[dict] | None = N
     if components is None:
         cj = generated / "components.json"
         if not cj.exists():
-            return ["generated/components.json missing — run tools/parse.py"]
+            return ["generated/components.json missing — run tools/parse.ts"]
         components = json.loads(cj.read_text(encoding="utf-8"))
     modules = declared_modules(components, platform)
     if not modules:

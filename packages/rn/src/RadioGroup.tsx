@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, Animated, Platform, Pressable, View, findNodeHandle } from 'react-native';
-import type { ViewStyle } from 'react-native';
+import type { ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
@@ -11,7 +11,7 @@ import { toEasing, useReducedMotion, useTheme } from './theme';
 export type RadioGroupOrientation = 'vertical' | 'horizontal';
 
 /** One option. `value` is a short identifier (letters, digits, dashes). */
-export type RadioGroupOption = { value: string; label: string; description?: string; disabled?: boolean };
+export type RadioGroupOption = { value: string; label: string; description?: string | undefined; disabled?: boolean | undefined };
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type RadioGroupOverridableBinding =
@@ -40,25 +40,25 @@ export interface RadioGroupProps {
   /** The options in display order. Two to about seven; more than that is a Select (planned). */
   options: RadioGroupOption[];
   /** Controlled selected value. Omit for an uncontrolled group. */
-  value?: string;
+  value?: string | undefined;
   /** Initial selection for an uncontrolled group. Omit to start with nothing selected. */
-  defaultValue?: string;
+  defaultValue?: string | undefined;
   /** Layout of the options. Horizontal only for two or three short labels; it wraps rather than overflows. */
-  orientation?: RadioGroupOrientation;
+  orientation?: RadioGroupOrientation | undefined;
   /** An option must be selected to submit. Shown in the legend, not only by color. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Marks the group as failing validation. Usually set by the Form; can be set directly. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Disables every option. Individual options use `options[].disabled`. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Persistent helper text under the legend. Also the group's `accessibilityHint`. */
-  description?: string;
+  description?: string | undefined;
   /** The group's error message. Setting it marks the group invalid. */
-  error?: string;
+  error?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<RadioGroupOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<RadioGroupOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selection changes, with the new option value. */
-  onChange?: (value: string) => void;
+  onChange?: ((value: string) => void) | undefined;
 }
 
 const COPY = {
@@ -112,8 +112,8 @@ export function RadioGroup({
   const { tokens: t } = useTheme();
   const form = useFormContext();
   const reducedMotion = useReducedMotion();
-  const groupRef = React.useRef<View>(null);
-  const firstEnabledRef = React.useRef<View>(null);
+  const groupRef = React.useRef<ViewInstance>(null);
+  const firstEnabledRef = React.useRef<ViewInstance>(null);
   const [internalValue, setInternalValue] = React.useState<string | undefined>(defaultValue);
   const [focusedValue, setFocusedValue] = React.useState<string | null>(null);
 
@@ -151,7 +151,7 @@ export function RadioGroup({
         // Focus the first enabled radio (the one a Tab would land on), falling back to the group.
         const target = firstEnabledRef.current ?? groupRef.current;
         const node = target === null ? null : findNodeHandle(target);
-        if (node !== null) {
+        if (node != null) {
           AccessibilityInfo.setAccessibilityFocus(node);
         }
       },
@@ -257,7 +257,7 @@ export function RadioGroup({
     opacity: optionDisabled && !isDisabled ? disabledOpacity : 1,
   });
 
-  const controlStyle = (anim: Animated.Value, focused: boolean): Animated.WithAnimatedObject<ViewStyle> => ({
+  const controlStyle = (anim: Animated.Value, focused: boolean): Animated.WithAnimatedValue<ViewStyle> => ({
     width: controlSize,
     height: controlSize,
     borderRadius: controlRadius,
@@ -272,7 +272,7 @@ export function RadioGroup({
     justifyContent: 'center',
   });
 
-  const dotStyle = (anim: Animated.Value): Animated.WithAnimatedObject<ViewStyle> => ({
+  const dotStyle = (anim: Animated.Value): Animated.WithAnimatedValue<ViewStyle> => ({
     width: dotSize,
     height: dotSize,
     borderRadius: controlRadius,

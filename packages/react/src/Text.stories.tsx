@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Text } from './Text';
 
-const meta = {
+const meta: Meta<typeof Text> = {
   title: 'Text/React',
   component: Text,
   args: {
@@ -13,7 +13,7 @@ const meta = {
     truncate: false,
     element: 'p',
   },
-} satisfies Meta<typeof Text>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

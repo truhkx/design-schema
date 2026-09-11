@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './ProgressBar.js';
@@ -7,7 +7,7 @@ import type { ProgressBarAnnounce, ProgressBarTone } from './ProgressBar.js';
 
 interface ProgressBarArgs {
   label: string;
-  value?: number;
+  value?: number | undefined;
   min: number;
   max: number;
   showValue: boolean;

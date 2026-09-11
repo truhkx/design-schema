@@ -1,19 +1,20 @@
 import { Button, Form, Heading, Input, Stack, Text, type FormErrors, type FormValues } from '../src/index';
+import type { ReactElement } from 'react';
 
 export interface SignInProps {
   /** Called with `{ email, password }` when the form passes validation. Defaults to logging the values. */
-  onSubmit?: (values: FormValues) => void;
+  onSubmit?: ((values: FormValues) => void) | undefined;
   /** Called with the errors keyed by field name when submission is blocked. */
-  onInvalid?: (errors: FormErrors) => void;
+  onInvalid?: ((errors: FormErrors) => void) | undefined;
   /** Called when "Forgot password?" is activated. */
-  onForgotPassword?: () => void;
+  onForgotPassword?: (() => void) | undefined;
 }
 
 /**
  * Sign-in screen composed from the Calm & precise React components:
  * Stack → Heading (level 1) + Text + Form → two Inputs + actions.
  */
-export function SignIn({ onSubmit, onInvalid, onForgotPassword }: SignInProps) {
+export function SignIn({ onSubmit, onInvalid, onForgotPassword }: SignInProps): ReactElement {
   const handleSubmit = (values: FormValues) => {
     if (onSubmit) {
       onSubmit(values);

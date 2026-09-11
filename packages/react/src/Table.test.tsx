@@ -89,6 +89,6 @@ describe('Table', () => {
   /* derived: a11y.requires.accessible-name */
   it('has-accessible-name', () => {
     setup();
-    expect(screen.getByRole('table', { name: meta.args.caption })).toHaveAccessibleName();
+    expect(screen.getByRole('table', { name: meta.args!.caption! })).toHaveAccessibleName();
   });
 });

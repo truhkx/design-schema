@@ -1,6 +1,5 @@
 import {
   cloneElement,
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -84,7 +83,7 @@ const OVERRIDE_HOOK: Record<SidePanelOverridableBinding, string> = {
   exit: '--ds-side-panel-exit',
 };
 
-function overridesToStyle(overrides: Partial<Record<SidePanelOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<SidePanelOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as SidePanelOverridableBinding[]) {
     const ref = overrides[binding];
@@ -162,59 +161,59 @@ export interface SidePanelProps {
    * the APG disclosure button: the panel adds aria-expanded and aria-controls to it, and it stays a
    * toggle — pressing it again closes. Omit to control `open` from elsewhere (a Toolbar).
    */
-  trigger?: ReactElement;
+  trigger?: ReactElement<any> | undefined;
   /** Controlled visibility. Omit for uncontrolled (the trigger toggles it). */
-  open?: boolean;
+  open?: boolean | undefined;
   /** The panel's title and accessible name ("Menu", "Filters", "Your cart"). May be visually hidden with `hideHeading`. */
   heading: string;
   /** Keep the title for assistive technology but do not render it (a navigation panel whose List is self-explanatory). The accessible name is required regardless. */
-  hideHeading?: boolean;
+  hideHeading?: boolean | undefined;
   /** The body: a List or Tree of Links for navigation, a Form of filters, a Stack of Cards. Scrolls inside the panel when taller than the viewport. */
   children: ReactNode;
   /** Pinned to the bottom of the panel above the safe area. */
   footer?: ReactNode;
   /** The edge the panel slides from: `start` is left in left-to-right languages and right in right-to-left; `end` the opposite. */
-  side?: SidePanelSide;
+  side?: SidePanelSide | undefined;
   /** Panel width on wide screens: `narrow` for a list of links, `wide` for a form or a detail. */
-  width?: SidePanelWidth;
+  width?: SidePanelWidth | undefined;
   /**
    * Above this layout width the panel stops being an overlay and becomes a fixed sidebar beside the
    * content: always visible, no scrim, no trap, part of the page's tab order, and the trigger is
    * hidden. `content` switches at layout.maxWidth.content, `page` at layout.maxWidth.page.
    */
-  persistent?: SidePanelPersistent;
+  persistent?: SidePanelPersistent | undefined;
   /**
    * The landmark the panel exposes (in persistent mode, and as the region's role while open in
    * non-modal mode): `navigation` for a menu of Links, `complementary` for filters, a cart, a
    * detail. On web this selects the Landmark component's element (`nav` or `aside`). Not used when
    * `modal` — a modal panel is a dialog, not a landmark.
    */
-  role?: SidePanelRole;
+  role?: SidePanelRole | undefined;
   /**
    * False (the default, the disclosure pattern): no scrim by default, the page stays live and in
    * the tab order, focus stays on the trigger when it opens, and Escape or an outside click closes
    * it. True: the panel is a modal Dialog at the edge — scrim, focus trapped, page inert.
    */
-  modal?: boolean;
+  modal?: boolean | undefined;
   /** Show the scrim in non-modal mode too (modal always has one). */
-  scrim?: boolean;
+  scrim?: boolean | undefined;
   /**
    * Escape, the close button, a scrim tap / outside click, and the swipe gesture all request
    * close. When false, the close button is not rendered and taps outside do nothing; Escape still
    * reports through `onOpenChange` with reason `escape` (the consumer decides), as in Dialog.
    */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** On touch, a swipe toward the edge dismisses. Purely additive: the trigger and close button always exist. */
-  swipeable?: boolean;
+  swipeable?: boolean | undefined;
   /**
    * Fired when the panel opens or closes, with the new state and a reason: `trigger`, `escape`,
    * `close-button`, `scrim`, `swipe`, `action`, `navigation` (a Link inside was followed).
    */
-  onOpenChange?: (open: boolean, reason: SidePanelOpenChangeReason) => void;
+  onOpenChange?: ((open: boolean, reason: SidePanelOpenChangeReason) => void) | undefined;
   /** Portal target for the panel's DOM node. Defaults to `document.body`. Not used in persistent mode. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<SidePanelOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SidePanelOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -227,28 +226,26 @@ export interface SidePanelProps {
  * become the permanent sidebar on desktop; leave it `never` for panels that are always a temporary
  * overlay (a cart).
  */
-export const SidePanel = forwardRef<HTMLDivElement, SidePanelProps>(function SidePanel(
-  {
-    trigger,
-    open: openProp,
-    heading,
-    hideHeading = false,
-    children,
-    footer,
-    side = 'start',
-    width = 'default',
-    persistent = 'never',
-    role = 'complementary',
-    modal = false,
-    scrim = true,
-    dismissible = true,
-    swipeable = true,
-    onOpenChange,
-    container,
-    overrides,
-  },
+export const SidePanel = function SidePanel({
   ref,
-) {
+  trigger,
+  open: openProp,
+  heading,
+  hideHeading = false,
+  children,
+  footer,
+  side = 'start',
+  width = 'default',
+  persistent = 'never',
+  role = 'complementary',
+  modal = false,
+  scrim = true,
+  dismissible = true,
+  swipeable = true,
+  onOpenChange,
+  container,
+  overrides,
+}: SidePanelProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const breakpointVar =
     persistent === 'content' ? '--layout-max-width-content' : persistent === 'page' ? '--layout-max-width-page' : null;
   const isPersistentActive = useBreakpoint(breakpointVar);
@@ -482,7 +479,7 @@ export const SidePanel = forwardRef<HTMLDivElement, SidePanelProps>(function Sid
     if (pastThreshold) requestClose('swipe');
   };
 
-  const triggerElement = trigger as ReactElement<{ onClick?: (event: ReactMouseEvent) => void }> | undefined;
+  const triggerElement = trigger as ReactElement<{ onClick?: ((event: ReactMouseEvent) => void) | undefined }> | undefined;
   const clonedTrigger = triggerElement
     ? cloneElement(triggerElement, {
         ref: triggerRef,
@@ -647,4 +644,4 @@ export const SidePanel = forwardRef<HTMLDivElement, SidePanelProps>(function Sid
       {createPortal(portalNode, container ?? document.body)}
     </div>
   );
-});
+};

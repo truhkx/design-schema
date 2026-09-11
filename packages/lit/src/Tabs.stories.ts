@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Tabs.js';
@@ -7,8 +7,8 @@ import type { TabsActivation, TabsFit, TabsOrientation, TabsTab } from './Tabs.j
 interface TabsArgs {
   label: string;
   tabs: TabsTab[];
-  value?: string;
-  defaultValue?: string;
+  value?: string | undefined;
+  defaultValue?: string | undefined;
   activation: TabsActivation;
   orientation: TabsOrientation;
   fit: TabsFit;

@@ -21,25 +21,25 @@ import type { FormValues } from '../src';
 
 export interface PreferencesProps {
   /** Starting digest frequency. */
-  digest?: 'daily' | 'weekly' | 'never';
+  digest?: 'daily' | 'weekly' | 'never' | undefined;
   /** Whether mentions are on to begin with. */
-  mentions?: boolean;
+  mentions?: boolean | undefined;
   /** Whether comment notifications are on to begin with. */
-  comments?: boolean;
+  comments?: boolean | undefined;
   /** Whether the "pause all" switch starts on. */
-  paused?: boolean;
+  paused?: boolean | undefined;
   /** Storage used, in GB, for the quota meter. */
-  storageUsedGb?: number;
+  storageUsedGb?: number | undefined;
   /** Storage quota, in GB. */
-  storageQuotaGb?: number;
+  storageQuotaGb?: number | undefined;
   /** Receives the collected values once the form passes validation. */
-  onSubmit?: (values: FormValues) => void;
+  onSubmit?: ((values: FormValues) => void) | undefined;
   /** Activated by the secondary "Cancel" action; discards the edits. */
-  onCancel?: () => void;
+  onCancel?: (() => void) | undefined;
   /** Fired when an ancestor in the breadcrumb is activated. */
-  onNavigate?: (href: string) => void;
+  onNavigate?: ((href: string) => void) | undefined;
   /** Disables the form while the save request is in flight. */
-  submitting?: boolean;
+  submitting?: boolean | undefined;
 }
 
 /**

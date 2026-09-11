@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Animated, I18nManager, Pressable, ScrollView, Text as RNText, View } from 'react-native';
-import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, PressableStateCallbackType, TextStyle, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, PressableStateCallbackType, ScrollViewInstance, TextStyle, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Icon } from './Icon';
@@ -12,7 +12,7 @@ export type TabsOrientation = 'horizontal' | 'vertical';
 export type TabsFit = 'start' | 'fill';
 
 /** One tab. `badge` is a short count or status shown after the label ("3", "New"). */
-export type TabsTab = { id: string; label: string; icon?: IconName; disabled?: boolean; badge?: string };
+export type TabsTab = { id: string; label: string; icon?: IconName | undefined; disabled?: boolean | undefined; badge?: string | undefined };
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type TabsOverridableBinding =
@@ -41,26 +41,26 @@ export interface TabsProps {
   /** Accessible name of the tab list ("Account sections"). Not shown visually. */
   label: string;
   /** Controlled selected tab id. Omit for uncontrolled. */
-  value?: string;
+  value?: string | undefined;
   /** Initially selected tab id. Defaults to the first enabled tab. */
-  defaultValue?: string;
+  defaultValue?: string | undefined;
   /**
    * `automatic` selects a tab as arrow keys move to it; `manual` moves focus only and
    * selects on Enter/Space. Native has no arrow-key focus movement (see the
    * component doc), so this has no observable effect on this platform; it is still
    * accepted and typed for parity with the other platforms.
    */
-  activation?: TabsActivation;
+  activation?: TabsActivation | undefined;
   /** Vertical tab lists sit beside their panels and use Up/Down arrows on a hardware keyboard. */
-  orientation?: TabsOrientation;
+  orientation?: TabsOrientation | undefined;
   /** `start` packs tabs at the start; `fill` stretches them across the width (phones, two to four tabs). */
-  fit?: TabsFit;
+  fit?: TabsFit | undefined;
   /** Keep unselected panels in the tree (hidden) so their state survives switching. */
-  keepMounted?: boolean;
+  keepMounted?: boolean | undefined;
   /** Fired when the selected tab changes, with the new id. */
-  onChange?: (id: string) => void;
+  onChange?: ((id: string) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<TabsOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<TabsOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 export interface TabPanelProps {
@@ -189,7 +189,7 @@ export function Tabs({
   const hasMeasuredIndicatorRef = React.useRef(false);
   const indicatorOffset = React.useRef(new Animated.Value(0)).current;
   const indicatorExtent = React.useRef(new Animated.Value(0)).current;
-  const scrollRef = React.useRef<ScrollView>(null);
+  const scrollRef = React.useRef<ScrollViewInstance>(null);
   const scrollOffsetRef = React.useRef(0);
   const viewportSizeRef = React.useRef(0);
 
@@ -308,7 +308,7 @@ export function Tabs({
     borderColor: listBorderColor,
   };
 
-  const indicatorStyle: Animated.WithAnimatedObject<ViewStyle> = isHorizontal
+  const indicatorStyle: Animated.WithAnimatedValue<ViewStyle> = isHorizontal
     ? {
         position: 'absolute',
         bottom: 0,

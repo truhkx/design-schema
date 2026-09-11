@@ -10,7 +10,7 @@ import {
   findNodeHandle,
   useWindowDimensions,
 } from 'react-native';
-import type { LayoutChangeEvent, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { BottomSheet } from './BottomSheet';
@@ -67,41 +67,41 @@ export interface SelectProps {
   /** The options, passed through to the Listbox. */
   options: ListboxItem[];
   /** Controlled value (array with `multiple`). */
-  value?: SelectValue;
+  value?: SelectValue | undefined;
   /** Initial value (array with `multiple`). */
-  defaultValue?: SelectValue;
+  defaultValue?: SelectValue | undefined;
   /** Text shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /** Visually hide the label (it remains the accessible name), for compact pickers such as DatePicker's month and year. */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** `sm` for pickers inside toolbars and calendar headers. */
-  size?: SelectSize;
+  size?: SelectSize | undefined;
   /** Controlled popup state, for programmatic opening and for stories and tests. Omit for the trigger-driven default. */
-  open?: boolean;
+  open?: boolean | undefined;
   /** Pick any number. The trigger shows `copy.selectedCount` (or the labels when two or fewer); the popup stays open while toggling. */
-  multiple?: boolean;
+  multiple?: boolean | undefined;
   /** Helper text under the label. Also the trigger's `accessibilityHint`. */
-  description?: string;
+  description?: string | undefined;
   /** Must have a value to submit. Shown in the label, not only by color. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Not openable and not submitted. Stays visible and focusable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Marks the field invalid. Usually set by the Form. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Error message; implies invalid. */
-  error?: string;
+  error?: string | undefined;
   /**
    * `auto` (default): a `BottomSheet` on phone-width screens, the positioned popup on
    * tablets and react-native-web. `always` and `never` both fall back to that same
    * choice — see the doc comment for why.
    */
-  native?: SelectNative;
+  native?: SelectNative | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<SelectOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SelectOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the value changes (array with `multiple`). */
-  onChange?: (value: SelectValue) => void;
+  onChange?: ((value: SelectValue) => void) | undefined;
   /** Fired when the popup opens or closes. */
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: ((open: boolean) => void) | undefined;
 }
 
 const COPY = {
@@ -195,7 +195,7 @@ export function Select({
   const reducedMotion = useReducedMotion();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
-  const triggerRef = React.useRef<View>(null);
+  const triggerRef = React.useRef<ViewInstance>(null);
   const [internalValue, setInternalValue] = React.useState<SelectValue | undefined>(defaultValue);
   const [focused, setFocused] = React.useState(false);
   const [internalOpen, setInternalOpen] = React.useState(false);
@@ -250,7 +250,7 @@ export function Select({
 
   const focusTriggerA11y = React.useCallback((): void => {
     const node = triggerRef.current ? findNodeHandle(triggerRef.current) : null;
-    if (node !== null) {
+    if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
     }
   }, []);
@@ -501,7 +501,7 @@ export function Select({
 
   const hostStyle: ViewStyle = { flex: 1 };
 
-  const popupOuterStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const popupOuterStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     top: popupTop,
     left: popupLeft,
@@ -569,7 +569,7 @@ export function Select({
       ) : (
         <Modal visible={popupMounted} transparent animationType="none" onRequestClose={closePopup} statusBarTranslucent>
           <View style={hostStyle}>
-            <Pressable style={StyleSheet.absoluteFillObject} onPress={closePopup} accessible={false} testID="Select.scrim" />
+            <Pressable style={StyleSheet.absoluteFill} onPress={closePopup} accessible={false} testID="Select.scrim" />
             {triggerRect !== null ? (
               <FocusScope trapped active={popupMounted} autoFocus="first" restoreFocus={false}>
                 <Animated.View

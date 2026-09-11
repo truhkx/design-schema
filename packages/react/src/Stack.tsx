@@ -1,11 +1,10 @@
 import {
   Children,
-  forwardRef,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type ElementType,
   type ReactNode,
-  type Ref,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Stack.css';
@@ -23,7 +22,7 @@ const OVERRIDE_HOOK: Record<StackOverridableBinding, string> = {
   gap: '--ds-stack-gap',
 };
 
-function overridesToStyle(overrides: Partial<Record<StackOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as StackOverridableBinding[]) {
     const ref = overrides[binding];
@@ -36,21 +35,21 @@ export interface StackProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   /** Any components. Stack does not style its children; it only positions them. */
   children: ReactNode;
   /** Main axis. `horizontal` follows writing direction (start→end), not left→right. */
-  direction?: StackDirection;
+  direction?: StackDirection | undefined;
   /** Space between children, from the layout rhythm (`layout.gap.*`), not the raw spacing scale: tight
    * for related controls, normal for fields in a form, loose for groups, section between page sections.
    * The only way to set spacing between siblings. */
-  gap?: StackGap;
+  gap?: StackGap | undefined;
   /** Cross-axis alignment. */
-  align?: StackAlign;
+  align?: StackAlign | undefined;
   /** Main-axis distribution. */
-  justify?: StackJustify;
+  justify?: StackJustify | undefined;
   /** Allow horizontal stacks to wrap onto new lines instead of overflowing. */
-  wrap?: boolean;
+  wrap?: boolean | undefined;
   /** Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an `li`. */
-  element?: StackElement;
+  element?: StackElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<StackOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -62,22 +61,20 @@ export interface StackProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
  * Choose `element` when the group has meaning — `nav` for navigation, `ul` for a list of like
  * items — so the structure is exposed to assistive technology.
  */
-export const Stack = forwardRef<HTMLElement, StackProps>(function Stack(
-  {
-    children,
-    direction = 'vertical',
-    gap = 'normal',
-    align = 'stretch',
-    justify = 'start',
-    wrap = false,
-    element = 'div',
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const Stack = function Stack({
   ref,
-) {
+  children,
+  direction = 'vertical',
+  gap = 'normal',
+  align = 'stretch',
+  justify = 'start',
+  wrap = false,
+  element = 'div',
+  overrides,
+  className,
+  style,
+  ...rest
+}: StackProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const Tag = element as ElementType;
   const isList = element === 'ul' || element === 'ol';
 
@@ -111,4 +108,4 @@ export const Stack = forwardRef<HTMLElement, StackProps>(function Stack(
         : children}
     </Tag>
   );
-});
+};

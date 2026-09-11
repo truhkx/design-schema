@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -8,6 +7,7 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button, type ButtonOverridableBinding } from './Button';
@@ -27,7 +27,7 @@ export interface FeedItem {
   timestamp: string;
   content: ReactNode;
   actions?: ReactNode;
-  unread?: boolean;
+  unread?: boolean | undefined;
 }
 
 const COPY = {
@@ -55,7 +55,7 @@ export type FeedOverridableBinding =
  * and `timestampSize`/`endMessageSize`/`fontFamily` forward into the composed Text (and, for
  * `fontFamily`, the new-items Button) instances' own `overrides`, since those components already
  * own that hook. */
-const ROOT_OVERRIDE_HOOK: Partial<Record<FeedOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<FeedOverridableBinding, string | undefined>> = {
   itemGap: '--ds-feed-item-gap',
   unreadBorderWidth: '--ds-feed-unread-border-width',
   newItemsOffset: '--ds-feed-new-items-offset',
@@ -63,18 +63,18 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<FeedOverridableBinding, string>> = {
   endMessageInset: '--ds-feed-end-message-inset',
 };
 
-function overridesToStyle(overrides: Partial<Record<FeedOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<FeedOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  articleOverrides: Partial<Record<CardOverridableBinding, TokenRef>>;
-  timestampOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  endMessageOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  newItemsButtonOverrides: Partial<Record<ButtonOverridableBinding, TokenRef>>;
+  articleOverrides: Partial<Record<CardOverridableBinding, TokenRef | undefined>>;
+  timestampOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  endMessageOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  newItemsButtonOverrides: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const articleOverrides: Partial<Record<CardOverridableBinding, TokenRef>> = {};
-  const timestampOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const endMessageOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const newItemsButtonOverrides: Partial<Record<ButtonOverridableBinding, TokenRef>> = {};
+  const articleOverrides: Partial<Record<CardOverridableBinding, TokenRef | undefined>> = {};
+  const timestampOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const endMessageOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const newItemsButtonOverrides: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> = {};
 
   for (const binding of Object.keys(overrides) as FeedOverridableBinding[]) {
     const tokenRef = overrides[binding];
@@ -166,27 +166,27 @@ export interface FeedProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   /** Articles, newest first. */
   items: FeedItem[];
   /** More items exist beyond the last; the feed asks for them with `onLoadMore` as the end approaches. */
-  hasMore?: boolean;
+  hasMore?: boolean | undefined;
   /** More items are being fetched; a loading indicator is shown after the last article and the feed is `aria-busy`. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /**
    * Number of newer items available above (from polling or a socket). The feed does not insert
    * them — that would shift what the reader is looking at — it shows a "Show {count} new" button
    * at the top which prepends and scrolls.
    */
-  newItemsCount?: number;
+  newItemsCount?: number | undefined;
   /** Heading level for article headings, matching the page outline. */
-  headingLevel?: FeedHeadingLevel;
+  headingLevel?: FeedHeadingLevel | undefined;
   /** Shown after the last item when `hasMore` is false. Defaults to `copy.end`. */
-  endMessage?: string;
+  endMessage?: string | undefined;
   /** Fired when the last rendered article is within one screen of view (or on Ctrl+End with `hasMore`). */
-  onLoadMore?: () => void;
+  onLoadMore?: (() => void) | undefined;
   /** Fired when the new-items button is pressed; the caller prepends the items and clears `newItemsCount`. */
-  onShowNew?: () => void;
+  onShowNew?: (() => void) | undefined;
   /** Fired with an item id when it has been substantially visible for a moment (mark as read). */
-  onItemVisible?: (id: string) => void;
+  onItemVisible?: ((id: string) => void) | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<FeedOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<FeedOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -198,25 +198,23 @@ export interface FeedProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
  * time. Use `newItemsCount` with `onShowNew` for live streams rather than inserting items while the
  * reader is looking; use `onItemVisible` to mark things read.
  */
-export const Feed = forwardRef<HTMLDivElement, FeedProps>(function Feed(
-  {
-    label,
-    items,
-    hasMore = false,
-    loading = false,
-    newItemsCount,
-    headingLevel = '3',
-    endMessage,
-    onLoadMore,
-    onShowNew,
-    onItemVisible,
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const Feed = function Feed({
   ref,
-) {
+  label,
+  items,
+  hasMore = false,
+  loading = false,
+  newItemsCount,
+  headingLevel = '3',
+  endMessage,
+  onLoadMore,
+  onShowNew,
+  onItemVisible,
+  overrides,
+  className,
+  style,
+  ...rest
+}: FeedProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const baseId = `ds-feed${generatedId}`;
 
@@ -261,7 +259,7 @@ export const Feed = forwardRef<HTMLDivElement, FeedProps>(function Feed(
   // Loads more as the last article nears view.
   useEffect(() => {
     if (!hasMore || loading || items.length === 0 || typeof IntersectionObserver === 'undefined') return undefined;
-    const node = articleRefs.current.get(items[items.length - 1].id);
+    const node = articleRefs.current.get(items[items.length - 1]!.id);
     if (!node) return undefined;
     const observer = new IntersectionObserver(
       (entries) => {
@@ -446,4 +444,4 @@ export const Feed = forwardRef<HTMLDivElement, FeedProps>(function Feed(
       ) : null}
     </div>
   );
-});
+};

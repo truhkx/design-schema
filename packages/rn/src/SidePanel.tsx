@@ -11,9 +11,9 @@ import {
   StyleSheet,
   View,
   findNodeHandle,
-  useWindowDimensions,
+  useWindowDimensions, type PanResponderInstance,
 } from 'react-native';
-import type { LayoutChangeEvent, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Box } from './Box';
@@ -53,35 +53,35 @@ export interface SidePanelProps {
   /** The Button that shows and hides the panel (usually `iconOnly` with the `menu` Icon). It is the APG disclosure button: pressing it again closes the panel. Omit to control `open` from elsewhere (a Toolbar); hidden entirely once `persistent` takes over. */
   trigger?: React.ReactNode;
   /** Controlled visibility. Omit for uncontrolled (the trigger toggles it). Ignored once `persistent` takes over — the panel is then always present. */
-  open?: boolean;
+  open?: boolean | undefined;
   /** The panel's title and accessible name. May be visually hidden with `hideHeading`. */
   heading: string;
   /** Keep the heading for assistive technology but do not render it. The accessible name is required regardless. */
-  hideHeading?: boolean;
+  hideHeading?: boolean | undefined;
   /** The body. Scrolls inside the panel when taller than the viewport. */
   children: React.ReactNode;
   /** Pinned to the bottom of the panel above the safe area. */
   footer?: React.ReactNode;
   /** The physical edge the panel slides from, flipped by `I18nManager.isRTL`. */
-  side?: SidePanelSide;
+  side?: SidePanelSide | undefined;
   /** Panel width: `narrow` for a list of links, `wide` for a form or detail. Clamped to the viewport minus `edgeGutter` on narrow screens. */
-  width?: SidePanelWidth;
+  width?: SidePanelWidth | undefined;
   /** Above the chosen breakpoint the panel renders as a fixed sidebar beside the content instead of an overlay: always visible regardless of `open`, no scrim, no trap, trigger hidden. `content` switches at `layout.maxWidth.content`, `page` at `layout.maxWidth.page`. */
-  persistent?: SidePanelPersistent;
+  persistent?: SidePanelPersistent | undefined;
   /** The landmark role the panel exposes as a persistent sidebar: `navigation` for a menu of Links, `complementary` for filters, a cart, a detail. Native has no `<aside>`/landmark equivalent for the overlay surface, so this reaches only the persistent sidebar's `role`. */
-  role?: SidePanelRole;
+  role?: SidePanelRole | undefined;
   /** `false` (default, the disclosure pattern): focus stays on the trigger when it opens, the panel is not trapped. `true`: a modal Dialog at the edge — focus moves in and is trapped, always shows a scrim. */
-  modal?: boolean;
+  modal?: boolean | undefined;
   /** Show the scrim in non-modal mode too. Modal always has one regardless of this prop. */
-  scrim?: boolean;
+  scrim?: boolean | undefined;
   /** Escape, the close button, a scrim tap and the swipe gesture all request close. When false, only the trigger and footer actions close it. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** A swipe toward the edge dismisses the panel. Purely additive: the close button and (when `dismissible`) Escape always exist. Edge-swipe-to-open is not automatic — see `useSidePanelEdgeSwipe`. */
-  swipeable?: boolean;
+  swipeable?: boolean | undefined;
   /** Fired when the panel opens or closes, with the new state and a reason. */
-  onOpenChange?: (open: boolean, reason: SidePanelCloseReason) => void;
+  onOpenChange?: ((open: boolean, reason: SidePanelCloseReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<SidePanelOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SidePanelOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const COPY = {
@@ -166,7 +166,7 @@ export function SidePanel({
   const reducedMotion = useReducedMotion();
   const { width: windowWidth } = useWindowDimensions();
 
-  const triggerRef = React.useRef<View>(null);
+  const triggerRef = React.useRef<ViewInstance>(null);
   const surfaceWidthRef = React.useRef(0);
 
   const isControlled = open !== undefined;
@@ -269,7 +269,7 @@ export function SidePanel({
 
   const focusTrigger = React.useCallback(() => {
     const node = triggerRef.current ? findNodeHandle(triggerRef.current) : null;
-    if (node !== null) {
+    if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
     }
   }, []);
@@ -447,8 +447,8 @@ export function SidePanel({
 
   const hostStyle: ViewStyle = { flex: 1 };
 
-  const scrimStyle: Animated.WithAnimatedObject<ViewStyle> = {
-    ...StyleSheet.absoluteFillObject,
+  const scrimStyle: Animated.WithAnimatedValue<ViewStyle> = {
+    ...StyleSheet.absoluteFill,
     backgroundColor: scrimColor,
     opacity: showScrim ? progress : 0,
   };
@@ -465,7 +465,7 @@ export function SidePanel({
     outputRange: [isPhysicalLeft ? -overlayPanelWidth : overlayPanelWidth, 0],
   });
 
-  const surfaceStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: overlayPanelWidth,
     height: '100%',
     ...shadow,
@@ -503,7 +503,7 @@ export function SidePanel({
         <View style={hostStyle}>
           <Animated.View style={scrimStyle} />
           <Pressable
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
             onPress={handleScrimPress}
             accessible={false}
             testID="SidePanel.scrim"
@@ -566,9 +566,9 @@ export function SidePanel({
 
 export interface UseSidePanelEdgeSwipeOptions {
   /** Must match the SidePanel's own `side`; the hook flips it for RTL the same way. */
-  side?: SidePanelSide;
+  side?: SidePanelSide | undefined;
   /** Turn the gesture off, e.g. while the panel is already open. */
-  enabled?: boolean;
+  enabled?: boolean | undefined;
   /** Fired when an edge swipe crosses the open threshold. The consumer sets its own `open` state — this hook has no knowledge of the panel it opens. */
   onOpen: () => void;
 }
@@ -581,7 +581,7 @@ export interface UseSidePanelEdgeSwipeOptions {
  * hook the consumer wires onto their own root view rather than an automatic behavior
  * `SidePanel` could silently opt every screen into.
  */
-export function useSidePanelEdgeSwipe({ side = 'start', enabled = true, onOpen }: UseSidePanelEdgeSwipeOptions) {
+export function useSidePanelEdgeSwipe({ side = 'start', enabled = true, onOpen }: UseSidePanelEdgeSwipeOptions): { panHandlers: PanResponderInstance['panHandlers']; } {
   const { tokens: t } = useTheme();
   const { width: windowWidth } = useWindowDimensions();
   const rtl = I18nManager.isRTL;

@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -10,6 +9,7 @@ import {
   type ElementType,
   type MouseEvent,
   type ReactNode,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Disclosure.css';
@@ -48,7 +48,7 @@ const OVERRIDE_HOOK: Record<DisclosureOverridableBinding, string> = {
   transition: '--ds-disclosure-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<DisclosureOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<DisclosureOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as DisclosureOverridableBinding[]) {
     const ref = overrides[binding];
@@ -67,22 +67,22 @@ export interface DisclosureProps
   /** The content of the panel. Rendered only while open (not merely hidden) unless `keepMounted`. */
   children: ReactNode;
   /** Controlled open state. Omit for an uncontrolled disclosure. */
-  open?: boolean;
+  open?: boolean | undefined;
   /** Initial state for an uncontrolled disclosure. */
-  defaultOpen?: boolean;
+  defaultOpen?: boolean | undefined;
   /** The trigger cannot be activated. Stays focusable and is announced as disabled; the panel keeps its current state. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Keep the panel in the tree while closed (hidden, not unmounted). Required when the panel contains form fields. */
-  keepMounted?: boolean;
+  keepMounted?: boolean | undefined;
   /** When set, the trigger is wrapped in a heading of this level so the disclosure appears in the document outline. */
-  headingLevel?: DisclosureHeadingLevel;
+  headingLevel?: DisclosureHeadingLevel | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<DisclosureOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<DisclosureOverridableBinding, TokenRef | undefined>> | undefined;
   /**
    * Fired after the state changes, with the new boolean `open` and a reason: `pointer`,
    * `keyboard`, or `controlled` (Accordion relies on it).
    */
-  onToggle?: (open: boolean, reason: DisclosureToggleReason) => void;
+  onToggle?: ((open: boolean, reason: DisclosureToggleReason) => void) | undefined;
 }
 
 /**
@@ -95,24 +95,22 @@ export interface DisclosureProps
  * `headingLevel` when the summaries are section titles so they appear in the outline and
  * screen-reader heading lists.
  */
-export const Disclosure = forwardRef<HTMLButtonElement, DisclosureProps>(function Disclosure(
-  {
-    summary,
-    children,
-    open,
-    defaultOpen = false,
-    disabled = false,
-    keepMounted = false,
-    headingLevel,
-    overrides,
-    onToggle,
-    id: idProp,
-    className,
-    style,
-    ...rest
-  },
+export const Disclosure = function Disclosure({
   ref,
-) {
+  summary,
+  children,
+  open,
+  defaultOpen = false,
+  disabled = false,
+  keepMounted = false,
+  headingLevel,
+  overrides,
+  onToggle,
+  id: idProp,
+  className,
+  style,
+  ...rest
+}: DisclosureProps & { ref?: Ref<HTMLButtonElement> | undefined }): ReactElement {
   const generatedId = useId();
   const id = idProp ?? `ds-disclosure${generatedId}`;
   const panelId = `${id}-panel`;
@@ -222,4 +220,4 @@ export const Disclosure = forwardRef<HTMLButtonElement, DisclosureProps>(functio
       ) : null}
     </div>
   );
-});
+};

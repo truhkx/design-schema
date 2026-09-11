@@ -6,15 +6,15 @@ import type { FormValues } from '../src';
 
 export interface ProfileSettingsProps {
   /** Current display name, used as the field's starting value. */
-  displayName?: string;
+  displayName?: string | undefined;
   /** Current email address, used as the field's starting value. */
-  email?: string;
+  email?: string | undefined;
   /** Receives `{ displayName, email }` once both fields pass validation. */
-  onSubmit?: (values: FormValues) => void;
+  onSubmit?: ((values: FormValues) => void) | undefined;
   /** Activated by the secondary "Cancel" action; discards the edits. */
-  onCancel?: () => void;
+  onCancel?: (() => void) | undefined;
   /** Disables the form while the save request is in flight. */
-  submitting?: boolean;
+  submitting?: boolean | undefined;
 }
 
 /**

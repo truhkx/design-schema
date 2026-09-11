@@ -1,4 +1,4 @@
-import type { Preview } from '@storybook/web-components';
+import type { Preview } from '@storybook/web-components-vite';
 import '@design-schema/tokens/calm-precise/css';
 import { withMode, modeGlobal } from '../../../storybook/shared/mode';
 import '../src/index';

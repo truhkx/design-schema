@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SegmentedControl } from './SegmentedControl';
 import type { SegmentedControlOption } from './SegmentedControl';
 import { withTheme } from './decorators';

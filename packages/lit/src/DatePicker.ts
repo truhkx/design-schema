@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
@@ -125,7 +125,7 @@ const COPY_REQUIRED_INDICATOR = ' (required)';
 
 function parseISO(iso: string): { y: number; m: number; d: number } {
   const [y, m, d] = iso.split('-').map(Number);
-  return { y, m: m - 1, d };
+  return { y: y!, m: m! - 1, d: d! };
 }
 
 function toISO(y: number, m: number, d: number): string {
@@ -184,8 +184,8 @@ function isoWeekNumber(iso: string): number {
 function firstDayOfWeek(locale: string | undefined): number {
   try {
     const resolved = new Intl.Locale(locale ?? navigator.language) as Intl.Locale & {
-      getWeekInfo?: () => { firstDay: number };
-      weekInfo?: { firstDay: number };
+      getWeekInfo?: (() => { firstDay: number }) | undefined;
+      weekInfo?: { firstDay: number } | undefined;
     };
     const info = resolved.getWeekInfo?.() ?? resolved.weekInfo;
     if (info?.firstDay) {
@@ -252,13 +252,13 @@ function parseTypedDate(text: string, locale: string | undefined): string | null
     return null;
   }
   const order = dateFieldOrder(locale);
-  const values: Partial<Record<'day' | 'month' | 'year', number>> = {};
+  const values: Partial<Record<'day' | 'month' | 'year', number | undefined>> = {};
   for (let i = 0; i < 3; i += 1) {
     const raw = groups[i];
-    if (order[i] === 'year' && raw.length !== 4) {
+    if (order[i] === 'year' && raw!.length !== 4) {
       return null;
     }
-    values[order[i]] = Number(raw);
+    values[order[i]!] = Number(raw);
   }
   const { day, month, year } = values;
   if (!day || !month || !year || month < 1 || month > 12) {
@@ -344,7 +344,7 @@ export class DsDatePicker extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--font-family-body);
@@ -621,16 +621,16 @@ export class DsDatePicker extends LitElement {
   `;
 
   /** Visible label. Always rendered. */
-  @property() label!: string;
+  @property() accessor label!: string;
 
   /** Field name for the Form. The value is an ISO date string, or (`range`) `{ start, end }` of them. */
-  @property() name!: string;
+  @property() accessor name!: string;
 
   /** Controlled value (ISO date, or a range). Omit for uncontrolled. */
-  @property({ attribute: false }) value?: DatePickerValue;
+  @property({ attribute: false }) accessor value: DatePickerValue | undefined;
 
   /** Initial value for an uncontrolled field. */
-  @property({ attribute: false }) defaultValue?: DatePickerValue;
+  @property({ attribute: false }) accessor defaultValue: DatePickerValue | undefined;
 
   /**
    * Controlled calendar state, for programmatic use and for stories and
@@ -638,37 +638,37 @@ export class DsDatePicker extends LitElement {
    * component's `platforms.lit.reflect`, but reflected anyway, matching
    * Popover's `open`.
    */
-  @property({ type: Boolean, reflect: true }) open?: boolean;
+  @property({ type: Boolean, reflect: true }) accessor open: boolean | undefined;
 
   /** Pick a start and an end date in one calendar; two inputs in the field. */
-  @property({ type: Boolean, reflect: true }) range = false;
+  @property({ type: Boolean, reflect: true }) accessor range = false;
 
   /** Earliest selectable date (ISO). Earlier days are disabled; the error uses `copy.tooEarly`. */
-  @property() min?: string;
+  @property() accessor min: string | undefined;
 
   /** Latest selectable date (ISO). */
-  @property() max?: string;
+  @property() accessor max: string | undefined;
 
   /** Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden, and are skipped by keyboard movement. */
-  @property({ attribute: false }) isDateDisabled?: (isoDate: string) => boolean;
+  @property({ attribute: false }) accessor isDateDisabled: ((isoDate: string) => boolean) | undefined;
 
   /** BCP 47 locale for month/weekday names, the first day of the week, and the typed format. Defaults to the device locale. */
-  @property({ reflect: true }) locale?: string;
+  @property({ reflect: true }) accessor locale: string | undefined;
 
   /** An ISO week-number column at the start of each row. */
-  @property({ type: Boolean, reflect: true, attribute: 'show-week-numbers' }) showWeekNumbers = false;
+  @property({ type: Boolean, reflect: true, attribute: 'show-week-numbers' }) accessor showWeekNumbers = false;
 
   /** Defaults to the locale's pattern ("MM/DD/YYYY", "DD.MM.YYYY"). */
-  @property() placeholder?: string;
+  @property() accessor placeholder: string | undefined;
 
   /** Helper text. */
-  @property() description?: string;
+  @property() accessor description: string | undefined;
 
   /** Must have a value to submit. */
-  @property({ type: Boolean, reflect: true }) required = false;
+  @property({ type: Boolean, reflect: true }) accessor required = false;
 
   /** Visually hide the label (it remains the accessible name). Only for a field whose context already names it. */
-  @property({ type: Boolean, attribute: 'hide-label' }) hideLabel = false;
+  @property({ type: Boolean, attribute: 'hide-label' }) accessor hideLabel = false;
 
   /**
    * `sm` for fields inside grid cells and toolbars: minimum target height,
@@ -676,21 +676,21 @@ export class DsDatePicker extends LitElement {
    * `platforms.lit.reflect`, but reflected anyway since the size variant is
    * expressed as a CSS attribute selector, matching Input's `size`.
    */
-  @property({ reflect: true }) size: DatePickerSize = 'md';
+  @property({ reflect: true }) accessor size: DatePickerSize = 'md';
 
   /** Not editable, still readable. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Marks the field invalid. Usually set by the Form. */
-  @property({ type: Boolean, reflect: true }) invalid = false;
+  @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
-  private errorValue?: string;
+  private errorValue?: string | undefined;
 
   /** Error message; implies invalid. */
-  @property()
   get error(): string | undefined {
     return this.errorValue;
   }
+  @property()
   set error(value: string | undefined) {
     const old = this.errorValue;
     this.errorValue = value;
@@ -701,38 +701,38 @@ export class DsDatePicker extends LitElement {
   }
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<DatePickerOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<DatePickerOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled value / start (seeded from `value` ?? `defaultValue`, and re-seeded whenever a controlled `value` changes). */
-  @state() private internalStart?: string;
+  @state() private accessor internalStart: string | undefined;
 
   /** Uncontrolled range end. Unused outside `range`. */
-  @state() private internalEnd?: string;
+  @state() private accessor internalEnd: string | undefined;
 
   /** Raw typed text of the start (or single) input. */
-  @state() private textStart = '';
+  @state() private accessor textStart = '';
 
   /** Raw typed text of the end input. `range` only. */
-  @state() private textEnd = '';
+  @state() private accessor textEnd = '';
 
   /** Uncontrolled open state, used when `open` is omitted. */
-  @state() private internalOpen = false;
+  @state() private accessor internalOpen = false;
 
   /** The visible month, 0-based. */
-  @state() private viewYear = new Date().getFullYear();
+  @state() private accessor viewYear = new Date().getFullYear();
 
-  @state() private viewMonth = new Date().getMonth();
+  @state() private accessor viewMonth = new Date().getMonth();
 
   /** The roving-tabindex day. Cleared on close so the next open recomputes it. */
-  @state() private focusedDate = '';
+  @state() private accessor focusedDate = '';
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
-  @state() private formDisabled = false;
+  @state() private accessor formDisabled = false;
 
-  @query('#input') private readonly startInputEl?: HTMLInputElement;
-  @query('#input-end') private readonly endInputEl?: HTMLInputElement;
-  @query('#popover') private readonly popoverEl?: DsPopover;
-  @query('#calendar-button') private readonly calendarButtonEl?: HTMLElement;
+  @query('#input') private accessor startInputEl!: HTMLInputElement | null;
+  @query('#input-end') private accessor endInputEl!: HTMLInputElement | null;
+  @query('#popover') private accessor popoverEl!: DsPopover | null;
+  @query('#calendar-button') private accessor calendarButtonEl!: HTMLElement | null;
 
   private wasOpen = false;
   /** The last value a `change` event was fired for, so a no-op mutation never re-dispatches it. */
@@ -896,7 +896,7 @@ export class DsDatePicker extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const isDisabled = this.isDisabled;
     const describedBy =
       [this.description ? 'description' : '', this.error ? 'error-message' : '']
@@ -1051,7 +1051,7 @@ export class DsDatePicker extends LitElement {
                 ${this.calendarWeeks.map(
                   (week) => html`
                     <tr>
-                      ${this.showWeekNumbers ? html`<td class="week-number">${isoWeekNumber(week[0])}</td>` : nothing}
+                      ${this.showWeekNumbers ? html`<td class="week-number">${isoWeekNumber(week[0]!)}</td>` : nothing}
                       ${week.map((iso) => this.renderDay(iso))}
                     </tr>
                   `,
@@ -1437,26 +1437,26 @@ export class DsDatePicker extends LitElement {
     const endText = this.textEnd.trim();
 
     if (this.error) {
-      this.internals.setValidity({ customError: true }, this.error, anchor);
+      this.internals.setValidity({ customError: true }, this.error, anchor!);
     } else if (this.invalid) {
-      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label, pattern), anchor);
+      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label, pattern), anchor!);
     } else if (this.required && value === null) {
-      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor);
+      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor!);
     } else if (startText !== '' && parseTypedDate(this.textStart, this.locale) === null) {
-      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label, pattern), anchor);
+      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label, pattern), anchor!);
     } else if (this.range && endText !== '' && parseTypedDate(this.textEnd, this.locale) === null) {
-      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label, pattern), anchor);
+      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label, pattern), anchor!);
     } else if (this.min && this.internalStart !== undefined && this.internalStart < this.min) {
-      this.internals.setValidity({ rangeUnderflow: true }, COPY_TOO_EARLY(this.label, this.min), anchor);
+      this.internals.setValidity({ rangeUnderflow: true }, COPY_TOO_EARLY(this.label, this.min), anchor!);
     } else if (this.max && ((this.range ? this.internalEnd : this.internalStart) ?? '') > this.max) {
-      this.internals.setValidity({ rangeOverflow: true }, COPY_TOO_LATE(this.label, this.max), anchor);
+      this.internals.setValidity({ rangeOverflow: true }, COPY_TOO_LATE(this.label, this.max), anchor!);
     } else if (
       this.range &&
       this.internalStart !== undefined &&
       this.internalEnd !== undefined &&
       this.internalEnd < this.internalStart
     ) {
-      this.internals.setValidity({ customError: true }, COPY_RANGE_ORDER, anchor);
+      this.internals.setValidity({ customError: true }, COPY_RANGE_ORDER, anchor!);
     } else {
       this.internals.setValidity({});
     }

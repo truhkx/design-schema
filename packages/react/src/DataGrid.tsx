@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -12,7 +11,8 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
-  type UIEvent,
+  type Ref,
+  type UIEvent, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -52,19 +52,19 @@ export interface DataGridColumnOption {
 export interface DataGridColumn {
   key: string;
   header: string;
-  abbr?: string;
-  align?: DataGridColumnAlign;
-  sortable?: boolean;
-  width?: number;
-  minWidth?: number;
-  resizable?: boolean;
-  isRowHeader?: boolean;
-  pinned?: DataGridColumnPinned;
-  editable?: boolean;
-  editor?: DataGridEditorKind;
-  options?: DataGridColumnOption[];
-  render?: (row: DataGridRow) => ReactNode;
-  validate?: (value: unknown, row: DataGridRow) => string | undefined;
+  abbr?: string | undefined;
+  align?: DataGridColumnAlign | undefined;
+  sortable?: boolean | undefined;
+  width?: number | undefined;
+  minWidth?: number | undefined;
+  resizable?: boolean | undefined;
+  isRowHeader?: boolean | undefined;
+  pinned?: DataGridColumnPinned | undefined;
+  editable?: boolean | undefined;
+  editor?: DataGridEditorKind | undefined;
+  options?: DataGridColumnOption[] | undefined;
+  render?: ((row: DataGridRow) => ReactNode) | undefined;
+  validate?: ((value: unknown, row: DataGridRow) => string | undefined) | undefined;
 }
 
 export type DataGridCellRef = { rowId: string; column: string };
@@ -156,7 +156,7 @@ export type DataGridOverridableBinding =
 
 /** `captionSize`/`captionWeight` are forwarded to the composed caption Heading's own overrides
  * (it already owns `fontSize`/`fontWeight`); every other binding is a root CSS hook. */
-const ROOT_OVERRIDE_HOOK: Partial<Record<DataGridOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<DataGridOverridableBinding, string | undefined>> = {
   headerWeight: '--ds-data-grid-header-weight',
   headerSize: '--ds-data-grid-header-size',
   headerBorder: '--ds-data-grid-header-border',
@@ -186,12 +186,12 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<DataGridOverridableBinding, string>> = 
   transition: '--ds-data-grid-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<DataGridOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<DataGridOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  captionOverrides: Partial<Record<HeadingOverridableBinding, TokenRef>>;
+  captionOverrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const captionOverrides: Partial<Record<HeadingOverridableBinding, TokenRef>> = { marginBlockEnd: 'space.0' };
+  const captionOverrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> = { marginBlockEnd: 'space.0' };
   for (const binding of Object.keys(overrides) as DataGridOverridableBinding[]) {
     const ref = overrides[binding];
     if (!ref) continue;
@@ -258,55 +258,55 @@ export interface DataGridProps extends Omit<ComponentPropsWithoutRef<'div'>, 'ch
   /** What the grid holds ("Price list"). The accessible name; visually hidden with `hideCaption`. */
   caption: string;
   /** Visually hide the caption; it remains the accessible name. */
-  hideCaption?: boolean;
+  hideCaption?: boolean | undefined;
   /** Column model. Exactly one column may be `isRowHeader`. */
   columns: DataGridColumn[];
   /** The rows. `id` must be stable. Large arrays are fine; only visible rows are rendered. */
   data: DataGridRow[];
   /** Total rows when `data` is a window of a larger set (server paging). Sets aria-rowcount;
    * `onRangeNeeded` asks for more. */
-  rowCount?: number;
+  rowCount?: number | undefined;
   /** Controlled sort state. */
-  sort?: DataGridSortState;
+  sort?: DataGridSortState | undefined;
   /** Initial sort; the grid sorts `data` itself when `rowCount` is not set. */
-  defaultSort?: DataGridSortState;
+  defaultSort?: DataGridSortState | undefined;
   /** `row` adds a checkbox column and Shift/Ctrl row selection; `cell` selects one cell; `range`
    * allows Shift+arrow / drag rectangles (copy as TSV). Selection is separate from focus. */
-  selectable?: DataGridSelectable;
+  selectable?: DataGridSelectable | undefined;
   /** Controlled selected row ids (row mode). */
-  selected?: string[];
+  selected?: string[] | undefined;
   /** Master switch: cells whose column is `editable` can be edited. */
-  editable?: boolean;
+  editable?: boolean | undefined;
   /** Row height: compact suits the grid's purpose; comfortable for touch. */
-  density?: DataGridDensity;
+  density?: DataGridDensity | undefined;
   /** The header stays visible while the body scrolls. Always true when virtualized. */
-  stickyHeader?: boolean;
+  stickyHeader?: boolean | undefined;
   /** `viewport` fills the height available under the header; `content` grows with rows (no
    * virtualization); `fixed` uses `overrides.fixedHeight`. */
-  height?: DataGridHeight;
+  height?: DataGridHeight | undefined;
   /** Sets aria-busy and shows `copy.loading` in the status bar; existing rows stay. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** Shown when `data` is empty. */
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
   /** A footer line with row count, selection count and, while editing, the validation message. */
-  showStatusBar?: boolean;
+  showStatusBar?: boolean | undefined;
   /** Portal target for editors that open a popup (Select, DatePicker). Defaults to `document.body`.
    * Not part of the schema; added so those composed editors can be portaled per their own contract. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<DataGridOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<DataGridOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a sortable header is activated, with the new sort state. */
-  onSortChange?: (sort: DataGridSortState) => void;
+  onSortChange?: ((sort: DataGridSortState) => void) | undefined;
   /** Fired with the selection: row ids, one cell, or a range. */
-  onSelectionChange?: (selection: DataGridSelectionChangeDetail) => void;
+  onSelectionChange?: ((selection: DataGridSelectionChangeDetail) => void) | undefined;
   /** Fired when an edit commits. The caller updates `data`; the grid shows the old value until it does. */
-  onCellChange?: (detail: DataGridCellChangeDetail) => void;
+  onCellChange?: ((detail: DataGridCellChangeDetail) => void) | undefined;
   /** Fired when an editor opens; return `false` to refuse editing that cell. */
-  onEditStart?: (detail: DataGridEditStartDetail) => boolean | void;
+  onEditStart?: ((detail: DataGridEditStartDetail) => boolean | void) | undefined;
   /** Fired when the visible window approaches the end of `data` and `rowCount` says there is more. */
-  onRangeNeeded?: (range: DataGridRangeNeededDetail) => void;
+  onRangeNeeded?: ((range: DataGridRangeNeededDetail) => void) | undefined;
   /** Fired with the new width when the user finishes dragging a resizable column edge. */
-  onColumnResize?: (detail: DataGridColumnResizeDetail) => void;
+  onColumnResize?: ((detail: DataGridColumnResizeDetail) => void) | undefined;
 }
 
 type ActiveCell = { row: number; col: number };
@@ -321,38 +321,36 @@ type ActiveCell = { row: number; col: number };
  * mark the columns that may change; give every editable column a `validate`. Use `height: viewport`
  * (the default) so the grid, not the page, scrolls.
  */
-export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataGrid(
-  {
-    caption,
-    hideCaption = false,
-    columns,
-    data,
-    rowCount,
-    sort,
-    defaultSort,
-    selectable = 'none',
-    selected,
-    editable = false,
-    density = 'compact',
-    stickyHeader = true,
-    height = 'viewport',
-    loading = false,
-    emptyMessage,
-    showStatusBar = true,
-    container,
-    overrides,
-    onSortChange,
-    onSelectionChange,
-    onCellChange,
-    onEditStart,
-    onRangeNeeded,
-    onColumnResize,
-    className,
-    style,
-    ...rest
-  },
+export const DataGrid = function DataGrid({
   ref,
-) {
+  caption,
+  hideCaption = false,
+  columns,
+  data,
+  rowCount,
+  sort,
+  defaultSort,
+  selectable = 'none',
+  selected,
+  editable = false,
+  density = 'compact',
+  stickyHeader = true,
+  height = 'viewport',
+  loading = false,
+  emptyMessage,
+  showStatusBar = true,
+  container,
+  overrides,
+  onSortChange,
+  onSelectionChange,
+  onCellChange,
+  onEditStart,
+  onRangeNeeded,
+  onColumnResize,
+  className,
+  style,
+  ...rest
+}: DataGridProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const baseId = `ds-data-grid${generatedId}`;
   const captionId = `${baseId}-caption`;
@@ -450,7 +448,7 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
   const [editing, setEditing] = useState<DataGridCellRef | undefined>();
   const [editingValue, setEditingValue] = useState<unknown>();
   const [editingError, setEditingError] = useState<string | undefined>();
-  const editingValueRef = useRef<unknown>();
+  const editingValueRef = useRef<unknown>(undefined);
   const isEditingRef = useRef(false);
   isEditingRef.current = editing !== undefined;
 
@@ -547,8 +545,8 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
     let sum = 0;
     for (let i = columns.length - 1; i >= 0; i -= 1) {
       const column = columns[i];
-      if (column.key === key) break;
-      if (column.pinned === 'end') sum += columnWidths[column.key] ?? 0;
+      if (column!.key === key) break;
+      if (column!.pinned === 'end') sum += columnWidths[column!.key] ?? 0;
     }
     return sum;
   };
@@ -589,7 +587,7 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
   useLayoutEffect(() => {
     const sizer = sizerRef.current;
     if (!sizer || typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(([entry]) => setRowHeightPx(entry.contentRect.height || 32));
+    const observer = new ResizeObserver(([entry]) => setRowHeightPx(entry!.contentRect.height || 32));
     observer.observe(sizer);
     return () => observer.disconnect();
   }, [density]);
@@ -600,7 +598,7 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
   useLayoutEffect(() => {
     const sizer = resizeStepSizerRef.current;
     if (!sizer || typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(([entry]) => setResizeStepPx(entry.contentRect.width || DEFAULT_RESIZE_STEP_PX));
+    const observer = new ResizeObserver(([entry]) => setResizeStepPx(entry!.contentRect.width || DEFAULT_RESIZE_STEP_PX));
     observer.observe(sizer);
     return () => observer.disconnect();
   }, [overrides]);
@@ -613,7 +611,7 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
   useLayoutEffect(() => {
     const region = scrollRegionRef.current;
     if (!region || typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(([entry]) => setViewportHeight(entry.contentRect.height));
+    const observer = new ResizeObserver(([entry]) => setViewportHeight(entry!.contentRect.height));
     observer.observe(region);
     return () => observer.disconnect();
   }, []);
@@ -817,7 +815,7 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
         }
         if (column && column !== 'select') {
           if (editable && column.editable) {
-            openEditor(sortedData[row].id, column.key);
+            openEditor(sortedData[row]!.id, column.key);
           } else {
             activateCellControl(row, col);
           }
@@ -826,7 +824,7 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
       case 'F2':
         event.preventDefault();
         if (row >= 0 && column && column !== 'select' && editable && column.editable) {
-          openEditor(sortedData[row].id, column.key);
+          openEditor(sortedData[row]!.id, column.key);
         }
         return;
       case 'Escape':
@@ -853,7 +851,7 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
               toggleRow(rowId);
             }
           } else if (event.ctrlKey && column && column !== 'select') {
-            commitRangeSelection({ from: { rowId: sortedData[0].id, column: column.key }, to: { rowId: sortedData[sortedData.length - 1].id, column: column.key } });
+            commitRangeSelection({ from: { rowId: sortedData[0]!.id, column: column.key }, to: { rowId: sortedData[sortedData.length - 1]!.id, column: column.key } });
           }
         }
         return;
@@ -864,8 +862,8 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
           if (selectable === 'row') commitRowSelection(allIds);
           else if (columns.length > 0 && sortedData.length > 0) {
             commitRangeSelection({
-              from: { rowId: sortedData[0].id, column: columns[0].key },
-              to: { rowId: sortedData[sortedData.length - 1].id, column: columns[columns.length - 1].key },
+              from: { rowId: sortedData[0]!.id, column: columns[0]!.key },
+              to: { rowId: sortedData[sortedData.length - 1]!.id, column: columns[columns.length - 1]!.key },
             });
           }
         }
@@ -1245,7 +1243,7 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
 
   const { rootStyle, captionOverrides } = overrides
     ? overridesToStyle(overrides)
-    : { rootStyle: undefined, captionOverrides: { marginBlockEnd: 'space.0' } as Partial<Record<HeadingOverridableBinding, TokenRef>> };
+    : { rootStyle: undefined, captionOverrides: { marginBlockEnd: 'space.0' } as Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> };
   const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
 
   const visibleRows = sortedData.slice(startIndex, endIndex + 1);
@@ -1354,7 +1352,7 @@ export const DataGrid = forwardRef<HTMLDivElement, DataGridProps>(function DataG
       )}
     </div>
   );
-});
+};
 
 function isWithinRange(
   data: DataGridRow[],

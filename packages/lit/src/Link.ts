@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -46,7 +46,7 @@ export class DsLink extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: inline;
       --ds-link-underline-thickness: var(--border-width-thin);
@@ -121,22 +121,22 @@ export class DsLink extends LitElement {
   `;
 
   /** The destination URL. */
-  @property() href = '';
+  @property() accessor href = '';
 
   /** The link text. Also the accessible name. Says where the link goes, not "click here". */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** Opens in a new tab and appends the external suffix to the accessible name, with a decorative trailing icon. */
-  @property({ type: Boolean, reflect: true }) external = false;
+  @property({ type: Boolean, reflect: true }) accessor external = false;
 
   /** `default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone. */
-  @property({ reflect: true }) tone: LinkTone = 'default';
+  @property({ reflect: true }) accessor tone: LinkTone = 'default';
 
   /** Downloads the resource instead of navigating. */
-  @property({ type: Boolean, reflect: true }) download = false;
+  @property({ type: Boolean, reflect: true }) accessor download = false;
 
   /** Per-instance style overrides: `{ underlineOffset: 'space.2' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<LinkOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<LinkOverridableBinding, TokenRef | undefined>> | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -149,7 +149,7 @@ export class DsLink extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`
       <a
         part="anchor"

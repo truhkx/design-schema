@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import './Landmark.js';
 import './Heading.js';
@@ -9,7 +9,7 @@ import type { LandmarkRole } from './Landmark.js';
 
 interface LandmarkArgs {
   role: LandmarkRole;
-  label?: string;
+  label?: string | undefined;
 }
 
 const meta: Meta<LandmarkArgs> = {

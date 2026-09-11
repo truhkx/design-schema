@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, Animated, Modal, StyleSheet, View, findNodeHandle } from 'react-native';
-import type { ViewStyle } from 'react-native';
+import type { ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -44,19 +44,19 @@ export interface AlertDialogProps {
   /** What will happen and whether it can be undone, in one or two sentences. */
   description: string;
   /** The nature of the decision. Sets the status icon and the confirm button's variant (danger → danger Button; warning and info → primary). */
-  tone?: AlertDialogTone;
+  tone?: AlertDialogTone | undefined;
   /** The confirming action, restating it ("Delete files"). Never "OK" or "Yes". */
   confirmLabel: string;
   /** The declining action. Defaults to `copy.cancelLabel`. */
-  cancelLabel?: string;
+  cancelLabel?: string | undefined;
   /** Blocks confirm while a precondition is unmet. Cancel always works. */
-  confirmDisabled?: boolean;
+  confirmDisabled?: boolean | undefined;
   /** The user chose the confirming action. The consumer performs it and closes. */
-  onConfirm?: () => void;
+  onConfirm?: (() => void) | undefined;
   /** The user declined, by the cancel button or Escape/back. A scrim tap does nothing. */
-  onCancel?: (reason: AlertDialogCancelReason) => void;
+  onCancel?: ((reason: AlertDialogCancelReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<AlertDialogOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<AlertDialogOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const COPY = {
@@ -113,7 +113,7 @@ export function AlertDialog({
 
   const [mounted, setMounted] = React.useState(open);
   const progress = React.useRef(new Animated.Value(open ? 1 : 0)).current;
-  const titleRef = React.useRef<View>(null);
+  const titleRef = React.useRef<ViewInstance>(null);
 
   const scrimColor = overrides?.scrim ? (resolveToken(t, overrides.scrim) as string) : t.colorOverlayScrim;
   const surfaceColor = t.colorOverlaySurface;
@@ -133,7 +133,7 @@ export function AlertDialog({
 
   const focusTitle = React.useCallback(() => {
     const node = titleRef.current ? findNodeHandle(titleRef.current) : null;
-    if (node !== null) {
+    if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
     }
   }, []);
@@ -204,8 +204,8 @@ export function AlertDialog({
 
   const hostStyle: ViewStyle = { flex: 1 };
 
-  const scrimStyle: Animated.WithAnimatedObject<ViewStyle> = {
-    ...StyleSheet.absoluteFillObject,
+  const scrimStyle: Animated.WithAnimatedValue<ViewStyle> = {
+    ...StyleSheet.absoluteFill,
     backgroundColor: scrimColor,
     opacity: progress,
   };
@@ -218,7 +218,7 @@ export function AlertDialog({
     zIndex: layer,
   };
 
-  const outerSurfaceStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const outerSurfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
     maxWidth: width,
     maxHeight: '90%', // literal-ok: a proportion of the viewport, not a design token

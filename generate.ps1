@@ -27,7 +27,7 @@ else { Write-Host "Give -Component NAME, -Stale or -Check"; exit 1 }
 if ($Force) { $pyargs += "--force" }
 if ($Extra -ne "") { $pyargs += $Extra.Split(" ") }
 Log "== parse (refresh prompts from docs) =="
-node tools/py.mjs tools/parse.py 2>&1 | ForEach-Object { Log "$_" }
+pnpm parse 2>&1 | ForEach-Object { Log "$_" }
 if ($LASTEXITCODE -ne 0) {
   Log "== parse failed: nothing generated (a doc that does not parse would fail every gate round). Fix the doc(s) above and rerun. =="
   exit 2

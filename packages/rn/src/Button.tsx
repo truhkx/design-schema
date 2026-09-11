@@ -37,54 +37,54 @@ export interface ButtonProps {
   /** The button's text. Also its accessible name. */
   label: string;
   /** Visual emphasis. One primary button per view. */
-  variant?: ButtonVariant;
+  variant?: ButtonVariant | undefined;
   /** Controls padding and font size. Touch targets never drop below the minimum regardless of size. */
-  size?: ButtonSize;
+  size?: ButtonSize | undefined;
   /** `submit` submits the enclosing Form. Everything else is `button`. */
-  type?: ButtonType;
+  type?: ButtonType | undefined;
   /**
    * Set by a parent that the button discloses (Menu, Popover, SidePanel, Disclosure):
    * reflected to `accessibilityState.expanded`. `undefined` (the default) means this
    * button does not disclose anything, so `expanded` is omitted from the state object
    * rather than sent as `false`. Consumers rarely set it directly.
    */
-  expanded?: boolean;
+  expanded?: boolean | undefined;
   /** Prevents activation. The button stays in the accessibility tree and is announced as disabled. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Icon before the label. Decorative — hidden from assistive technology; the label carries the meaning. */
   leadingIcon?: React.ReactNode;
   /** Icon after the label. Decorative, like `leadingIcon`. */
   trailingIcon?: React.ReactNode;
   /** Hides the visible label and shows only `leadingIcon`. `label` is still required and becomes the accessible name. Padding becomes equal on all sides (`space.sm`). */
-  iconOnly?: boolean;
+  iconOnly?: boolean | undefined;
   /** Replaces the icon slot with a ring spinner, keeps the label in place, and blocks repeat activation while an action is pending. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /**
    * The button sits on an inverse surface (Toast, tooltip-like panels). Only
    * meaningful on `ghost`, whose text switches to `color.inverse.link`; every
    * variant's focus ring switches to `color.inverse.focus` since that ring must
    * read against the inverse surface regardless of the button's own fill.
    */
-  inverse?: boolean;
+  inverse?: boolean | undefined;
   /**
    * Overrides the accessible name when it must say more than the visible label ("Sort
    * by Amount, ascending" on a header that shows "Amount"). The visible label must be
    * the start of it (WCAG 2.5.3 label-in-name). Maps to `accessibilityLabel`.
    */
-  accessibleName?: string;
+  accessibleName?: string | undefined;
   /**
    * Text used for this button when a Toolbar collapses it into its overflow Menu. Not
    * rendered by Button itself — read by the collapsing parent.
    */
-  overflowLabel?: string;
+  overflowLabel?: string | undefined;
   /** An event name sent to analytics when the button is pressed. Omit for no tracking. */
-  track?: string;
+  track?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<ButtonOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the button is activated by touch, keyboard, or assistive technology. */
-  onPress?: () => void;
+  onPress?: (() => void) | undefined;
   /** Fired after `onPress` with the `track` name and the button's label, only when `track` is set. */
-  onTrack?: (event: ButtonTrackEvent) => void;
+  onTrack?: ((event: ButtonTrackEvent) => void) | undefined;
 }
 
 const VARIANT_TOKENS = {
@@ -302,7 +302,7 @@ export function Button({
 
   // A separate fill behind the content, since the border's own color is fixed
   // (transparent or the focus ring) and cannot also carry the animated background.
-  const backgroundFillStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const backgroundFillStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     top: 0,
     right: 0,
@@ -327,7 +327,7 @@ export function Button({
 
   // A 1em ring: a circle stroked in the foreground color with one side transparent,
   // rotating to read as a spinner.
-  const spinnerStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const spinnerStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: fontSize,
     height: fontSize,
     borderRadius: fontSize / 2, // literal-ok: halves a token-derived size into a radius

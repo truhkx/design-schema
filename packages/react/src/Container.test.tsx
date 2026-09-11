@@ -6,11 +6,12 @@ import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { Container, type ContainerProps } from './Container';
 import meta from './Container.stories';
+import type { ComponentProps } from 'react';
 
 /** The Default story's args plus the scenario's `given`. */
 function setup(given: Partial<ContainerProps> = {}) {
   const props = { ...meta.args, ...given };
-  return render(<Container {...props} />);
+  return render(<Container {...(props as ComponentProps<typeof Container>)} />);
 }
 
 describe('Container', () => {

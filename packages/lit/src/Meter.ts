@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -58,7 +58,7 @@ const HOOKS: Record<MeterOverridableBinding, string> = {
  */
 @customElement('ds-meter')
 export class DsMeter extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--ds-meter-font-family);
@@ -142,28 +142,28 @@ export class DsMeter extends LitElement {
   `;
 
   /** The current measurement. Clamped to `min`…`max`. */
-  @property({ type: Number, reflect: true }) value = 0;
+  @property({ type: Number, reflect: true }) accessor value = 0;
 
   /** Lower bound of the range. */
-  @property({ type: Number, reflect: true }) min = 0;
+  @property({ type: Number, reflect: true }) accessor min = 0;
 
   /** Upper bound of the range. Must be greater than `min`. */
-  @property({ type: Number, reflect: true }) max = 100;
+  @property({ type: Number, reflect: true }) accessor max = 100;
 
   /** Visible label naming the measurement ("Storage used"). Also the accessible name. */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** Human-readable value shown at the end of the label row and announced instead of the raw number. */
-  @property({ attribute: 'value-text' }) valueText?: string;
+  @property({ attribute: 'value-text' }) accessor valueText: string | undefined;
 
   /** Fill color. `info` is the neutral fill; the consumer sets the others from thresholds it owns. */
-  @property({ reflect: true }) tone: MeterTone = 'info';
+  @property({ reflect: true }) accessor tone: MeterTone = 'info';
 
   /** Hides the visible value text. The accessible value is always exposed. */
-  @property({ type: Boolean, reflect: true, attribute: 'hide-value' }) hideValue = false;
+  @property({ type: Boolean, reflect: true, attribute: 'hide-value' }) accessor hideValue = false;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings (track, fill, labelColor, valueColor) are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<MeterOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<MeterOverridableBinding, TokenRef | undefined>> | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -200,7 +200,7 @@ export class DsMeter extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const percent = Math.round(this.percent);
     const displayed = this.valueText ?? `${percent}%`;
 

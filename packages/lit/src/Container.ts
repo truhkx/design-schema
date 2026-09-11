@@ -1,4 +1,4 @@
-import { LitElement, css, html, type PropertyValues } from 'lit';
+import { LitElement, css, html, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 
@@ -39,7 +39,7 @@ const HOOKS: Record<ContainerOverridableBinding, string> = {
  */
 @customElement('ds-container')
 export class DsContainer extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       box-sizing: border-box;
@@ -104,19 +104,19 @@ export class DsContainer extends LitElement {
   `;
 
   /** `prose` for reading, `content` for most screens, `page` for wide layouts, `full` for no cap. */
-  @property({ reflect: true }) width: ContainerWidth = 'content';
+  @property({ reflect: true }) accessor width: ContainerWidth = 'content';
 
   /** Horizontal padding at the viewport edge. `default` is responsive; `none` for a nested container. */
-  @property({ reflect: true }) gutter: ContainerGutter = 'default';
+  @property({ reflect: true }) accessor gutter: ContainerGutter = 'default';
 
   /** Where the capped column sits in a wider viewport. */
-  @property({ reflect: true }) align: ContainerAlign = 'center';
+  @property({ reflect: true }) accessor align: ContainerAlign = 'center';
 
   /** Use `main` for the page's main column when no Landmark wraps it. */
-  @property() element: ContainerElement = 'div';
+  @property() accessor element: ContainerElement = 'div';
 
   /** Per-instance style overrides: `{ maxWidth: 'layout.maxWidth.page' }`. */
-  @property({ attribute: false }) overrides?: Partial<Record<ContainerOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>> | undefined;
 
   private readonly internals: ElementInternals;
 
@@ -139,7 +139,7 @@ export class DsContainer extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`<slot></slot>`;
   }
 

@@ -8,6 +8,7 @@ import type { StorybookConfig } from '@storybook/react-vite';
 const config: StorybookConfig = {
   framework: { name: '@storybook/react-vite', options: {} },
   stories: ['./welcome.stories.tsx'],
+  addons: ['@storybook/addon-mcp'],
   // `type: 'server-checked'` makes the manager fetch index.json with credentials omitted; the child dev
   // servers answer with `Access-Control-Allow-Origin: *`, which browsers refuse when credentials are included.
   refs: {

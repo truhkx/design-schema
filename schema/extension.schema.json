@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://design-schema.dev/schema/extension.schema.json",
   "title": "Extension frontmatter",
-  "description": "The `extension:` block of site/src/content/docs/extensions/<Component>.<name>.md. Adds props, events, unlocked style bindings, copy, keyboard rules, behavior scenarios and hand-written modules to a system component; tools/parse.py merges it into the component's schema. Prop/event/style/keyboard/behavior shapes are the component schema's own ($ref across files; tools/parse.py resolves them with a registry). Mirrors schema/extension.ts.",
+  "description": "The `extension:` block of site/src/content/docs/extensions/<Component>.<name>.md. Adds props, events, unlocked style bindings, copy, keyboard rules, behavior scenarios and hand-written modules to a system component; tools/parse.ts merges it into the component's schema. Prop/event/style/keyboard/behavior shapes are the component schema's own ($ref across files; tools/parse.ts validates against the Zod schema in schema/component.ts). Mirrors schema/extension.ts.",
   "type": "object",
   "required": ["extension"],
   "properties": {

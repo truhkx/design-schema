@@ -1,4 +1,4 @@
-import { createElement, forwardRef, useEffect, type HTMLAttributes, type ReactNode } from 'react';
+import { createElement, useEffect, type HTMLAttributes, type ReactNode, type Ref, type DetailedReactHTMLElement } from 'react';
 import './Landmark.css';
 
 export type LandmarkRole =
@@ -16,11 +16,11 @@ export interface LandmarkProps extends Omit<HTMLAttributes<HTMLElement>, 'role' 
   /** Which landmark this is. `main` exactly once per page; `region` and `form` only with a `label`. */
   role: LandmarkRole;
   /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Not shown visually. */
-  label?: string;
+  label?: string | undefined;
   /** The region's content. */
   children: ReactNode;
   /** Web element override. Set this only when the native element would be wrong, e.g. a `banner` that is not the page header. */
-  as?: LandmarkElement;
+  as?: LandmarkElement | undefined;
 }
 
 /* Only declared when the bundler defines it; never assumed. */
@@ -50,7 +50,7 @@ function defaultElement(role: LandmarkRole): LandmarkElement {
 }
 
 /** The roles these elements imply on their own, when not nested in sectioning content. */
-const IMPLIED_ROLE: Partial<Record<LandmarkElement, LandmarkRole>> = {
+const IMPLIED_ROLE: Partial<Record<LandmarkElement, LandmarkRole | undefined>> = {
   header: 'banner',
   nav: 'navigation',
   main: 'main',
@@ -77,10 +77,7 @@ const registry = new Map<LandmarkRole, Map<string | undefined, number>>();
  * want to jump to — a "Related articles" block, a dashboard panel. Every page should have exactly
  * one `main`.
  */
-export const Landmark = forwardRef<HTMLElement, LandmarkProps>(function Landmark(
-  { role, label, children, as, className, ...rest },
-  ref,
-) {
+export const Landmark = function Landmark({ ref, role, label, children, as, className, ...rest }: LandmarkProps & { ref?: Ref<HTMLElement> | undefined }): DetailedReactHTMLElement<HTMLAttributes<HTMLElement> & { 'data-ds': string; }, HTMLElement> {
   const tagName: LandmarkElement = as ?? defaultElement(role);
 
   // Add the explicit role when `as` overrides the element, when the element does not imply it
@@ -127,4 +124,4 @@ export const Landmark = forwardRef<HTMLElement, LandmarkProps>(function Landmark
     },
     children,
   );
-});
+};

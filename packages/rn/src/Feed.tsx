@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { FlatList, View } from 'react-native';
-import type { ListRenderItemInfo, ViewStyle, ViewToken } from 'react-native';
+import type { ListRenderItemInfo, ListViewToken, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -25,7 +25,7 @@ export interface FeedItem {
   /** At most two Buttons, primary first. */
   actions?: React.ReactNode;
   /** Marks an item the user has not seen: a start-edge bar plus a hidden "unread" word. */
-  unread?: boolean;
+  unread?: boolean | undefined;
 }
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
@@ -46,27 +46,27 @@ export interface FeedProps {
   /** Articles, newest first. The feed renders them in the order given; it never re-sorts. */
   items: FeedItem[];
   /** More items exist beyond the last; the feed asks for them with `onEndReached` as the end approaches. */
-  hasMore?: boolean;
+  hasMore?: boolean | undefined;
   /** More items are being fetched; a loading indicator is shown after the last article and the feed is marked busy. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** Number of newer items available above. Shows a "Show {count} new" button at the top; the feed never inserts them itself. */
-  newItemsCount?: number;
+  newItemsCount?: number | undefined;
   /** Heading level for article headings, matching the page outline. Native has no heading levels; this controls only the default typography. */
-  headingLevel?: FeedHeadingLevel;
+  headingLevel?: FeedHeadingLevel | undefined;
   /** Shown after the last item when `hasMore` is false. Defaults to `copy.end`. */
-  endMessage?: string;
+  endMessage?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<FeedOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<FeedOverridableBinding, TokenRef | undefined>> | undefined;
   /**
    * Fired when the last rendered article is within one screen of view and `hasMore`
    * is set, and once on mount when `items` is empty and not `loading` (so an empty
    * feed fetches its first page itself).
    */
-  onEndReached?: () => void;
+  onEndReached?: (() => void) | undefined;
   /** Fired when the new-items button is pressed; the caller prepends the items and clears `newItemsCount`. */
-  onShowNew?: () => void;
+  onShowNew?: (() => void) | undefined;
   /** Fired with an item id once it has been substantially visible for a moment (mark as read). */
-  onViewableItemsChanged?: (itemId: string) => void;
+  onViewableItemsChanged?: ((itemId: string) => void) | undefined;
 }
 
 const COPY = {
@@ -153,11 +153,11 @@ export function Feed({
   const loadingInset = overrides?.loadingInset ? (resolveToken(t, overrides.loadingInset) as number) : t.layoutInsetMd;
   const endMessageInset = overrides?.endMessageInset ? (resolveToken(t, overrides.endMessageInset) as number) : t.layoutInsetMd;
 
-  const cardOverrides: Partial<Record<CardOverridableBinding, TokenRef>> | undefined = overrides?.articleInset
+  const cardOverrides: Partial<Record<CardOverridableBinding, TokenRef | undefined>> | undefined = overrides?.articleInset
     ? { paddingBlock: overrides.articleInset, paddingInline: overrides.articleInset }
     : undefined;
 
-  const timestampTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>> | undefined =
+  const timestampTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined =
     overrides?.timestampSize || overrides?.fontFamily
       ? {
           ...(overrides?.timestampSize ? { fontSize: overrides.timestampSize } : {}),
@@ -165,7 +165,7 @@ export function Feed({
         }
       : undefined;
 
-  const endMessageTextOverrides: Partial<Record<TextOverridableBinding, TokenRef>> | undefined =
+  const endMessageTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined =
     overrides?.endMessageSize || overrides?.fontFamily
       ? {
           ...(overrides?.endMessageSize ? { fontSize: overrides.endMessageSize } : {}),
@@ -200,7 +200,7 @@ export function Feed({
 
   // A stable identity, since FlatList warns when `onViewableItemsChanged` changes
   // across renders; fresh state is read through the ref instead.
-  const handleViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: ViewToken[] }): void => {
+  const handleViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: ListViewToken[] }): void => {
     for (const entry of viewableItems) {
       if (entry.isViewable && entry.item) {
         latestOnViewable.current?.((entry.item as FeedItem).id);
@@ -260,7 +260,7 @@ export function Feed({
         {endMessage ?? COPY.end}
       </Text>
     </View>
-  ) : null;
+  ) : undefined; // FlatList's strict prop type takes an element or undefined, not null
 
   // Suppressed while `loading` so a freshly mounted, empty feed shows the loading
   // indicator rather than `copy.empty`.

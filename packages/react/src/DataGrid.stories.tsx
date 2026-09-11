@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DataGrid, type DataGridColumn, type DataGridRow } from './DataGrid';
 
 interface Product extends DataGridRow {
@@ -49,7 +49,7 @@ const COLUMNS: DataGridColumn[] = [
   },
 ];
 
-const meta = {
+const meta: Meta<typeof DataGrid> = {
   title: 'DataGrid/React',
   component: DataGrid,
   args: {
@@ -58,7 +58,7 @@ const meta = {
     data: DATA,
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof DataGrid>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -101,9 +101,9 @@ export const Editable: Story = { args: { editable: true, selectable: 'cell' } };
 export const PinnedColumns: Story = {
   args: {
     columns: [
-      { ...COLUMNS[0], pinned: 'start' },
+      { ...COLUMNS[0]!, pinned: 'start' },
       ...COLUMNS.slice(1, -1),
-      { ...COLUMNS[COLUMNS.length - 1], pinned: 'end' },
+      { ...COLUMNS[COLUMNS.length - 1]!, pinned: 'end' },
     ],
   },
 };

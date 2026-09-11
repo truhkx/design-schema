@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { TreeGrid } from './TreeGrid';
 import type { TreeGridRow } from './TreeGrid';
 import type { DataGridColumn } from './DataGrid';

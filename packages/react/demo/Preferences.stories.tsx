@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Preferences } from './Preferences';
 
-const meta = {
+const meta: Meta<typeof Preferences> = {
   title: 'Demo/Preferences/React',
   component: Preferences,
   args: {
@@ -20,7 +20,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof Preferences>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

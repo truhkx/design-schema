@@ -25,19 +25,19 @@ export interface MeterProps {
   /** The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. */
   value: number;
   /** Lower bound of the range. */
-  min?: number;
+  min?: number | undefined;
   /** Upper bound of the range. Must be greater than `min`. */
-  max?: number;
+  max?: number | undefined;
   /** Visible label naming the measurement ("Storage used"). Also the accessible name. */
   label: string;
   /** Human-readable value shown at the end of the label row and announced instead of the raw number ("3.2 GB of 10 GB"). Omit to show and announce the percentage. */
-  valueText?: string;
+  valueText?: string | undefined;
   /** Fill color. `info` is the neutral brand fill; the consumer sets `success`/`warning`/`danger` from thresholds it owns. */
-  tone?: MeterTone;
+  tone?: MeterTone | undefined;
   /** Hides the visible value text. The accessible value is always exposed. */
-  hideValue?: boolean;
+  hideValue?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<MeterOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<MeterOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const FILL_TOKEN = {
@@ -171,7 +171,7 @@ export function Meter({
     overflow: 'hidden',
   };
 
-  const fillStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const fillStyle: Animated.WithAnimatedValue<ViewStyle> = {
     height: trackHeight,
     borderRadius: radius,
     backgroundColor: tokens[FILL_TOKEN[tone]],

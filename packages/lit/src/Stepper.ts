@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, unsafeCSS, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, unsafeCSS, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -14,8 +14,8 @@ export type StepperStepStatus = 'complete' | 'current' | 'upcoming' | 'error';
 export interface StepperStep {
   id: string;
   label: string;
-  description?: string;
-  status?: StepperStepStatus;
+  description?: string | undefined;
+  status?: StepperStepStatus | undefined;
 }
 
 /** Detail carried by the `step-select` CustomEvent. */
@@ -138,7 +138,7 @@ export class DsStepper extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       container-type: inline-size;
@@ -372,25 +372,25 @@ export class DsStepper extends LitElement {
   `;
 
   /** The steps in order. A property, not an attribute. */
-  @property({ attribute: false }) steps: StepperStep[] = [];
+  @property({ attribute: false }) accessor steps: StepperStep[] = [];
 
   /** The id of the current step. */
-  @property({ reflect: true }) current = '';
+  @property({ reflect: true }) accessor current = '';
 
   /** Vertical shows descriptions under each label; horizontal collapses to `compact` below the prose width. */
-  @property({ reflect: true }) orientation: StepperOrientation = 'horizontal';
+  @property({ reflect: true }) accessor orientation: StepperOrientation = 'horizontal';
 
   /** Which steps are focusable controls: `none`, `completed` (the usual — go back, not skip ahead), or `all`. */
-  @property({ reflect: true }) navigable: StepperNavigable = 'completed';
+  @property({ reflect: true }) accessor navigable: StepperNavigable = 'completed';
 
   /** Show only the current step's label and "Step n of m"; the indicators stay. Automatic on narrow horizontal steppers. */
-  @property({ type: Boolean, reflect: true }) compact = false;
+  @property({ type: Boolean, reflect: true }) accessor compact = false;
 
   /** Accessible name of the navigation landmark. */
-  @property() label = 'Progress';
+  @property() accessor label = 'Progress';
 
   /** Per-instance style overrides: `{ transition: 'motion.duration.slow' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<StepperOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -407,7 +407,7 @@ export class DsStepper extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const steps = this.steps;
     const total = steps.length;
     const currentIndex = steps.findIndex((step) => step.id === this.current);
@@ -534,12 +534,12 @@ export class DsStepper extends LitElement {
   private textOverrides(
     kind: 'label' | 'description',
     isCurrentStep: boolean,
-  ): Partial<Record<TextOverridableBinding, TokenRef>> | undefined {
+  ): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
     const source = this.overrides;
     if (!source) {
       return undefined;
     }
-    const result: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
     if (source.fontFamily) {
       result.fontFamily = source.fontFamily;
     }

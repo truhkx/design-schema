@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Checkbox.js';
@@ -12,8 +12,8 @@ interface CheckboxArgs {
   indeterminate: boolean;
   disabled: boolean;
   required: boolean;
-  description?: string;
-  error?: string;
+  description?: string | undefined;
+  error?: string | undefined;
 }
 
 const meta: Meta<CheckboxArgs> = {

@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Heading.js';
@@ -67,7 +67,7 @@ function ensureHitAreaStyle(root: Document | ShadowRoot): void {
 }
 
 /** `ElementInternals` with the cross-root ARIA reflection Chromium ships; not yet in every DOM lib. */
-type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[] | null };
+type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[] | null | undefined };
 
 /**
  * `<ds-card>` — Card (category: container).
@@ -106,7 +106,7 @@ type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[]
  */
 @customElement('ds-card')
 export class DsCard extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       box-sizing: border-box;
@@ -215,33 +215,33 @@ export class DsCard extends LitElement {
   `;
 
   /** The card's title, rendered as a Heading at `headingLevel`. Omit for a card that is a single piece of content. */
-  @property() heading?: string;
+  @property() accessor heading: string | undefined;
 
   /** Heading level for `heading`, so cards fit the page outline. Cards in a list share a level. */
-  @property({ reflect: true, attribute: 'heading-level' }) headingLevel: CardHeadingLevel = '3';
+  @property({ reflect: true, attribute: 'heading-level' }) accessor headingLevel: CardHeadingLevel = '3';
 
   /** Padding inside the card from the layout inset presets. `sm` for dense grids, `lg` for a single featured card. */
-  @property({ reflect: true }) inset: CardInset = 'md';
+  @property({ reflect: true }) accessor inset: CardInset = 'md';
 
   /** `default` is the page background with a border — the calm option; `subtle` is a tinted surface without a border. */
-  @property({ reflect: true }) surface: CardSurface = 'default';
+  @property({ reflect: true }) accessor surface: CardSurface = 'default';
 
   /**
    * The whole card is one link or button target. Requires exactly one
    * interactive child (a `ds-link` or `ds-button`) whose action the card
    * extends to its full area; the card itself is not focusable.
    */
-  @property({ type: Boolean, reflect: true }) interactive = false;
+  @property({ type: Boolean, reflect: true }) accessor interactive = false;
 
   /**
    * The card root takes `tabindex="-1"` so a container (Feed) can move focus
    * to it by script, and draws its own focus ring when focused that way. Not
    * a tab stop; not for making cards clickable (`interactive`).
    */
-  @property({ type: Boolean }) focusable = false;
+  @property({ type: Boolean }) accessor focusable = false;
 
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings (background, focusRing, focusRingWidth) are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<CardOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<CardOverridableBinding, TokenRef | undefined>> | undefined;
 
   private readonly internals: ElementInternals;
   private hitAreaTarget: Element | null = null;
@@ -269,7 +269,7 @@ export class DsCard extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const hasHeading = Boolean(this.heading);
     const hasHeaderActions = this.querySelector('[slot="header-actions"]') !== null;
     const hasHeader = hasHeading || hasHeaderActions;

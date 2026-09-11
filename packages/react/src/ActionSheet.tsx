@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -11,7 +10,8 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
-  type SyntheticEvent,
+  type Ref,
+  type SyntheticEvent, type ReactElement,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -29,9 +29,9 @@ export type ActionSheetCloseReason = 'escape' | 'scrim' | 'cancel' | 'drag';
 export type ActionSheetAction = {
   id: string;
   label: string;
-  icon?: IconName;
-  tone?: ActionSheetActionTone;
-  disabled?: boolean;
+  icon?: IconName | undefined;
+  tone?: ActionSheetActionTone | undefined;
+  disabled?: boolean | undefined;
 };
 
 /**
@@ -61,7 +61,7 @@ export type ActionSheetOverridableBinding =
   | 'enter'
   | 'exit';
 
-const ROOT_OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string | undefined>> = {
   scrim: '--ds-action-sheet-scrim',
   shadow: '--ds-action-sheet-shadow',
   radius: '--ds-action-sheet-radius',
@@ -80,12 +80,12 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string>>
   exit: '--ds-action-sheet-exit',
 };
 
-function overridesToStyle(overrides: Partial<Record<ActionSheetOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<ActionSheetOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  textOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const textOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
   for (const binding of Object.keys(overrides) as ActionSheetOverridableBinding[]) {
     const ref = overrides[binding];
     if (!ref) continue;
@@ -157,21 +157,21 @@ export interface ActionSheetProps
    * What the actions apply to ("Photo.jpg"), shown muted above the list. Also the accessible name;
    * when omitted the name is `copy.defaultLabel`.
    */
-  heading?: string;
+  heading?: string | undefined;
   /** Two to about eight actions. `danger` actions are visually distinct and grouped last. */
   actions: ActionSheetAction[];
   /** Escape, the scrim, the cancel row and the drag all request close; Escape still reports through onClose when false, as in Dialog. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** Label of the explicit cancel row on phones. Defaults to `copy.cancelLabel`. */
-  cancelLabel?: string;
+  cancelLabel?: string | undefined;
   /** An action was chosen; receives its `id`. The consumer performs it and closes. */
-  onAction?: (id: string) => void;
+  onAction?: ((id: string) => void) | undefined;
   /** Dismissed without choosing: reason `escape`, `scrim`, `cancel`, or `drag`. */
-  onClose?: (reason: ActionSheetCloseReason) => void;
+  onClose?: ((reason: ActionSheetCloseReason) => void) | undefined;
   /** Portal target for the sheet's DOM node. Defaults to `document.body`. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<ActionSheetOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ActionSheetOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -183,23 +183,21 @@ export interface ActionSheetProps
  * without scrolling; more than eight actions means the item needs its own screen. Put destructive
  * actions last with `tone: danger`.
  */
-export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(function ActionSheet(
-  {
-    open,
-    heading,
-    actions,
-    dismissible = true,
-    cancelLabel,
-    onAction,
-    onClose,
-    container,
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const ActionSheet = function ActionSheet({
   ref,
-) {
+  open,
+  heading,
+  actions,
+  dismissible = true,
+  cancelLabel,
+  onAction,
+  onClose,
+  container,
+  overrides,
+  className,
+  style,
+  ...rest
+}: ActionSheetProps & { ref?: Ref<HTMLDialogElement> | undefined }): ReactElement | null {
   const isWide = useIsWideViewport();
 
   const generatedId = useId();
@@ -369,24 +367,24 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        focusAction(enabled[(currentIndex + 1) % enabled.length].id);
+        focusAction(enabled[(currentIndex + 1) % enabled.length]!.id);
         break;
       case 'ArrowUp':
         event.preventDefault();
-        focusAction(enabled[(currentIndex - 1 + enabled.length) % enabled.length].id);
+        focusAction(enabled[(currentIndex - 1 + enabled.length) % enabled.length]!.id);
         break;
       case 'Home':
         event.preventDefault();
-        focusAction(enabled[0].id);
+        focusAction(enabled[0]!.id);
         break;
       case 'End':
         event.preventDefault();
-        focusAction(enabled[enabled.length - 1].id);
+        focusAction(enabled[enabled.length - 1]!.id);
         break;
       case 'Enter':
       case ' ':
         event.preventDefault();
-        if (currentIndex !== -1) activateAction(enabled[currentIndex]);
+        if (currentIndex !== -1) activateAction(enabled[currentIndex]!);
         break;
       default:
         break;
@@ -545,4 +543,4 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
   );
 
   return createPortal(node, container ?? document.body);
-});
+};

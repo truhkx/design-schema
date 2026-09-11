@@ -10,7 +10,7 @@ import {
   findNodeHandle,
   useWindowDimensions,
 } from 'react-native';
-import type { LayoutChangeEvent, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Box } from './Box';
@@ -45,23 +45,23 @@ export interface PopoverProps {
   /** The panel content. May contain controls, links and a short Form; keep it to what fits without scrolling — the panel does not scroll on this platform. */
   children: React.ReactNode;
   /** Optional heading at the top of the panel, also the accessible name. Without it, the panel falls back to the trigger's own `label` when it has one. */
-  heading?: string;
+  heading?: string | undefined;
   /** Heading level of the panel heading, so it fits the page outline. RN has no native heading levels — this only controls the `Heading`'s default typographic size. */
-  headingLevel?: PopoverHeadingLevel;
+  headingLevel?: PopoverHeadingLevel | undefined;
   /** Controlled open state. Omit for uncontrolled (the trigger toggles it). */
-  open?: boolean;
+  open?: boolean | undefined;
   /** Preferred side and alignment; flips and shifts to stay within the window. */
-  placement?: PopoverPlacement;
+  placement?: PopoverPlacement | undefined;
   /** `false` (default): outside taps and Escape close the panel, focus moves in but is not trapped. `true`: behaves as a small Dialog anchored to the trigger — focus trapped, outside taps do nothing. */
-  modal?: boolean;
+  modal?: boolean | undefined;
   /** A small pointer toward the trigger. Off by default. */
-  showArrow?: boolean;
+  showArrow?: boolean | undefined;
   /** Show the close button. Escape and, when not `modal`, an outside tap still close the popover regardless. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** Fired when the popover opens or closes, with the new state and the reason. */
-  onOpenChange?: (open: boolean, reason: PopoverCloseReason) => void;
+  onOpenChange?: ((open: boolean, reason: PopoverCloseReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<PopoverOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<PopoverOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const COPY = {
@@ -190,8 +190,8 @@ export function Popover({
   const reducedMotion = useReducedMotion();
   const windowSize = useWindowDimensions();
 
-  const triggerRef = React.useRef<View>(null);
-  const bodyRef = React.useRef<View>(null);
+  const triggerRef = React.useRef<ViewInstance>(null);
+  const bodyRef = React.useRef<ViewInstance>(null);
   const hasFocusedInitialRef = React.useRef(false);
 
   const isControlled = open !== undefined;
@@ -239,14 +239,14 @@ export function Popover({
 
   const focusTrigger = React.useCallback(() => {
     const handle = triggerRef.current ? findNodeHandle(triggerRef.current) : null;
-    if (handle !== null) {
+    if (handle != null) {
       AccessibilityInfo.setAccessibilityFocus(handle);
     }
   }, []);
 
   const focusBody = React.useCallback(() => {
     const handle = bodyRef.current ? findNodeHandle(bodyRef.current) : null;
-    if (handle !== null) {
+    if (handle != null) {
       AccessibilityInfo.setAccessibilityFocus(handle);
     }
   }, []);
@@ -391,7 +391,7 @@ export function Popover({
   const hostStyle: ViewStyle = { flex: 1 };
 
   const backdropStyle: ViewStyle = {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: modal ? scrimColor : 'transparent',
   };
 
@@ -415,7 +415,7 @@ export function Popover({
 
   const slideInterpolation = progress.interpolate({ inputRange: [0, 1], outputRange: [slideFrom, 0] });
 
-  const panelOuterStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const panelOuterStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     top: position?.top ?? 0,
     left: position?.left ?? 0,

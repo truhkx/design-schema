@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Button.js';
@@ -13,7 +13,7 @@ export type AlertDismissDetail = void;
 /** copy.dismissLabel */
 const COPY_DISMISS_LABEL = 'Dismiss';
 
-type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[] | null };
+type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[] | null | undefined };
 
 /** Overridable style hooks; see the `overrides` property. `background`, `foreground`, `bodyColor` and `icon` are locked and excluded. */
 export type AlertOverridableBinding =
@@ -86,7 +86,7 @@ const FOCUSABLE =
  */
 @customElement('ds-alert')
 export class DsAlert extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       --ds-alert-border-width: var(--border-width-thin);
@@ -213,19 +213,19 @@ export class DsAlert extends LitElement {
   `;
 
   /** What kind of message this is. Sets the colors, the icon, and (with `live`) the announcement. */
-  @property({ reflect: true }) tone: AlertTone = 'info';
+  @property({ reflect: true }) accessor tone: AlertTone = 'info';
 
   /** A short bold heading for the message. Optional for one-line messages. Never forwarded as the native `title`. */
-  @property() heading?: string;
+  @property() accessor heading: string | undefined;
 
   /** How the alert is announced when it appears. `status` is polite; `alert` interrupts; `off` for alerts present at load. */
-  @property({ reflect: true }) live: AlertLive = 'status';
+  @property({ reflect: true }) accessor live: AlertLive = 'status';
 
   /** Shows a dismiss button at the end of the alert. */
-  @property({ type: Boolean, reflect: true }) dismissible = false;
+  @property({ type: Boolean, reflect: true }) accessor dismissible = false;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings (background, foreground, bodyColor, icon) are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<AlertOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<AlertOverridableBinding, TokenRef | undefined>> | undefined;
 
   private readonly internals: ElementInternals;
 
@@ -253,7 +253,7 @@ export class DsAlert extends LitElement {
     this.syncAccessibleName();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const hasHeading = Boolean(this.heading) || this.querySelector('[slot="heading"]') !== null;
     return html`
       <div class="container" part="container">

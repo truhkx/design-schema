@@ -7,9 +7,9 @@ import type { ThemeModeSetting } from './theme';
 
 export interface WithThemeOptions {
   /** Color mode for the story. Defaults to the Storybook "Mode" toolbar global (light/dark), falling back to `system`. */
-  mode?: ThemeModeSetting;
+  mode?: ThemeModeSetting | undefined;
   /** When `true`, children take their natural width instead of stretching (for buttons). */
-  fit?: boolean;
+  fit?: boolean | undefined;
 }
 
 function Frame({ children, fit }: { children: React.ReactNode; fit: boolean }): React.JSX.Element {

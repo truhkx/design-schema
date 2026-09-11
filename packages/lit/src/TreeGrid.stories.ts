@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './TreeGrid.js';
@@ -21,7 +21,7 @@ interface TreeGridArgs {
   hideCaption: boolean;
   columns: DataGridColumn[];
   data: TreeGridRow[];
-  defaultExpanded?: string[];
+  defaultExpanded?: string[] | undefined;
   selectable: TreeGridSelectable;
   selectChildren: boolean;
   editable: boolean;
@@ -30,7 +30,7 @@ interface TreeGridArgs {
   stickyHeader: boolean;
   loading: boolean;
   showStatusBar: boolean;
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
 }
 
 const accountColumns: DataGridColumn[] = [

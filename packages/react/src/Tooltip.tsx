@@ -1,7 +1,6 @@
 import {
   Children,
   cloneElement,
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -13,6 +12,7 @@ import {
   type FocusEvent as ReactFocusEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactElement,
+  type Ref,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -51,7 +51,7 @@ const OVERRIDE_HOOK: Record<TooltipOverridableBinding, string> = {
   exit: '--ds-tooltip-exit',
 };
 
-function overridesToStyle(overrides: Partial<Record<TooltipOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<TooltipOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as TooltipOverridableBinding[]) {
     const ref = overrides[binding];
@@ -161,22 +161,22 @@ export interface TooltipProps {
   /** The tooltip text. One short phrase or sentence; no markup, no links, no line breaks. */
   content: string;
   /** Exactly one focusable element (a Button, Link, Input). The tooltip attaches to it; a non-focusable child is an error, because keyboard users could never see the tooltip. */
-  children: ReactElement;
+  children: ReactElement<any>;
   /** Preferred side; flips when it would overflow the viewport. */
-  placement?: TooltipPlacement;
+  placement?: TooltipPlacement | undefined;
   /**
    * `true`: the tooltip is supplementary and becomes the child's accessible description
    * (aria-describedby). `false`: the tooltip IS the child's name (an icon-only button whose label
    * equals the tooltip) and is linked as aria-labelledby instead.
    */
-  describes?: boolean;
+  describes?: boolean | undefined;
   /**
    * Hover delay before showing: `default` uses `motion.duration.base` × 3 (roughly 600ms); `none`
    * for toolbars where a sibling tooltip is already open.
    */
-  delay?: TooltipDelay;
+  delay?: TooltipDelay | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<TooltipOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<TooltipOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -195,10 +195,7 @@ export interface TooltipProps {
  * it. Do not use it on touch-first screens to explain controls; on native the text becomes a hint
  * and is not visible.
  */
-export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(function Tooltip(
-  { content, children, placement = 'top', describes = true, delay = 'default', overrides },
-  ref,
-) {
+export const Tooltip = function Tooltip({ ref, content, children, placement = 'top', describes = true, delay = 'default', overrides }: TooltipProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const tooltipId = `ds-tooltip${generatedId}`;
 
@@ -377,12 +374,12 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(function Tooltip
   };
 
   const child = Children.only(children) as ReactElement<{
-    'aria-describedby'?: string;
-    'aria-labelledby'?: string;
-    onPointerEnter?: (event: ReactPointerEvent) => void;
-    onPointerLeave?: (event: ReactPointerEvent) => void;
-    onFocus?: (event: ReactFocusEvent) => void;
-    onBlur?: (event: ReactFocusEvent) => void;
+    'aria-describedby'?: string | undefined;
+    'aria-labelledby'?: string | undefined;
+    onPointerEnter?: ((event: ReactPointerEvent) => void) | undefined;
+    onPointerLeave?: ((event: ReactPointerEvent) => void) | undefined;
+    onFocus?: ((event: ReactFocusEvent) => void) | undefined;
+    onBlur?: ((event: ReactFocusEvent) => void) | undefined;
   }>;
 
   // `children` is an arbitrary, unknown element type, so there is no generic-safe way to type a
@@ -448,4 +445,4 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(function Tooltip
         : null}
     </>
   );
-});
+};

@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useLayoutEffect,
@@ -9,7 +8,8 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
-  type RefObject,
+  type Ref,
+  type RefObject, type ReactElement,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -30,10 +30,10 @@ export type MenuOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'action' |
 export type MenuAction = {
   id: string;
   label: string;
-  icon?: IconName;
-  shortcut?: string;
-  tone?: MenuItemTone;
-  disabled?: boolean;
+  icon?: IconName | undefined;
+  shortcut?: string | undefined;
+  tone?: MenuItemTone | undefined;
+  disabled?: boolean | undefined;
 };
 /** A labelled cluster of items, rendered with a non-interactive heading row. */
 export type MenuGroup = { group: string; items: MenuItem[] };
@@ -93,7 +93,7 @@ const OVERRIDE_HOOK: Record<MenuOverridableBinding, string> = {
   enter: '--ds-menu-enter',
 };
 
-function overridesToStyle(overrides: Partial<Record<MenuOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<MenuOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as MenuOverridableBinding[]) {
     const ref = overrides[binding];
@@ -210,35 +210,35 @@ export interface MenuProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   /** Actions, optionally grouped with a label or divided by separators. Groups render their label as a non-interactive heading row. */
   items: MenuItem[];
   /** Variant of the trigger Button. */
-  triggerVariant?: MenuTriggerVariant;
+  triggerVariant?: MenuTriggerVariant | undefined;
   /**
    * Trailing icon on the trigger: `ellipsis` for an icon-only overflow button (the label becomes
    * the accessible name), `chevron-down` for a labelled dropdown, `none`.
    */
-  triggerIcon?: MenuTriggerIcon;
+  triggerIcon?: MenuTriggerIcon | undefined;
   /** Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. */
-  iconOnly?: boolean;
+  iconOnly?: boolean | undefined;
   /** Preferred position of the popup relative to the trigger; flips automatically when it would overflow the viewport. */
-  placement?: MenuPlacement;
+  placement?: MenuPlacement | undefined;
   /** Controlled open state (the parent flips it from onOpenChange). Omit for an uncontrolled menu. */
-  open?: boolean;
+  open?: boolean | undefined;
   /**
    * Position the popup relative to this element instead of rendering a trigger; the trigger part
    * is omitted and `open` must be controlled. Used by ActionSheet above its breakpoint and by
    * context menus.
    */
-  anchor?: RefObject<HTMLElement>;
+  anchor?: RefObject<HTMLElement | null> | undefined;
   /** An item was chosen; receives its `id`. The menu closes itself first. */
-  onAction?: (id: string) => void;
+  onAction?: ((id: string) => void) | undefined;
   /**
    * Fired when the menu opens or closes, with `{ open, reason }` — reason: `trigger`, `escape`,
    * `outside`, `action` (an item was chosen; fired before onAction), `controlled`.
    */
-  onOpenChange?: (state: { open: boolean; reason: MenuOpenChangeReason }) => void;
+  onOpenChange?: ((state: { open: boolean; reason: MenuOpenChangeReason }) => void) | undefined;
   /** Portal target for the popup's DOM node. Defaults to `document.body`. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<MenuOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<MenuOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -251,26 +251,24 @@ export interface MenuProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
  * On phones, Menu presents as an ActionSheet on its own, so use Menu wherever the interaction is
  * "pick an action" and let the platform decide the surface.
  */
-export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
-  {
-    label,
-    items,
-    triggerVariant = 'ghost',
-    triggerIcon = 'chevron-down',
-    iconOnly = false,
-    placement = 'bottom-start',
-    open: openProp,
-    anchor,
-    onAction,
-    onOpenChange,
-    container,
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const Menu = function Menu({
   ref,
-) {
+  label,
+  items,
+  triggerVariant = 'ghost',
+  triggerIcon = 'chevron-down',
+  iconOnly = false,
+  placement = 'bottom-start',
+  open: openProp,
+  anchor,
+  onAction,
+  onOpenChange,
+  container,
+  overrides,
+  className,
+  style,
+  ...rest
+}: MenuProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const triggerId = `ds-menu${generatedId}-trigger`;
   const listId = `ds-menu${generatedId}-list`;
@@ -432,8 +430,8 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     const startIndex = currentIndex === -1 ? 0 : currentIndex;
     for (let offset = 1; offset <= enabled.length; offset++) {
       const candidate = enabled[(startIndex + offset) % enabled.length];
-      if (candidate.label.toLowerCase().startsWith(state.buffer)) {
-        focusAction(candidate.id);
+      if (candidate!.label.toLowerCase().startsWith(state.buffer)) {
+        focusAction(candidate!.id);
         return;
       }
     }
@@ -442,9 +440,9 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
       const single = state.buffer.slice(-1);
       for (let offset = 0; offset < enabled.length; offset++) {
         const candidate = enabled[(startIndex + offset) % enabled.length];
-        if (candidate.label.toLowerCase().startsWith(single)) {
+        if (candidate!.label.toLowerCase().startsWith(single)) {
           state.buffer = single;
-          focusAction(candidate.id);
+          focusAction(candidate!.id);
           return;
         }
       }
@@ -459,26 +457,26 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     switch (event.key) {
       case 'ArrowDown': {
         event.preventDefault();
-        focusAction(enabled[(currentIndex + 1) % enabled.length].id);
+        focusAction(enabled[(currentIndex + 1) % enabled.length]!.id);
         break;
       }
       case 'ArrowUp': {
         event.preventDefault();
-        focusAction(enabled[(currentIndex - 1 + enabled.length) % enabled.length].id);
+        focusAction(enabled[(currentIndex - 1 + enabled.length) % enabled.length]!.id);
         break;
       }
       case 'Home':
         event.preventDefault();
-        focusAction(enabled[0].id);
+        focusAction(enabled[0]!.id);
         break;
       case 'End':
         event.preventDefault();
-        focusAction(enabled[enabled.length - 1].id);
+        focusAction(enabled[enabled.length - 1]!.id);
         break;
       case 'Enter':
       case ' ':
         event.preventDefault();
-        if (currentIndex !== -1) activateAction(enabled[currentIndex]);
+        if (currentIndex !== -1) activateAction(enabled[currentIndex]!);
         break;
       case 'Escape':
         event.preventDefault();
@@ -614,4 +612,4 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
         : null}
     </div>
   );
-});
+};

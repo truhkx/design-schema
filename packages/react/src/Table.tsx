@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -10,7 +9,8 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
-  type UIEvent,
+  type Ref,
+  type UIEvent, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -43,13 +43,13 @@ export interface TableSortState {
 export interface TableColumn {
   key: string;
   header: string;
-  abbr?: string;
-  align?: TableColumnAlign;
-  sortable?: boolean;
-  width?: TableColumnWidth;
-  isRowHeader?: boolean;
-  hideBelow?: TableColumnHideBelow;
-  render?: (row: TableRow) => ReactNode;
+  abbr?: string | undefined;
+  align?: TableColumnAlign | undefined;
+  sortable?: boolean | undefined;
+  width?: TableColumnWidth | undefined;
+  isRowHeader?: boolean | undefined;
+  hideBelow?: TableColumnHideBelow | undefined;
+  render?: ((row: TableRow) => ReactNode) | undefined;
 }
 
 /** copy.* — used verbatim; placeholders are replaced with the running values. */
@@ -100,7 +100,7 @@ export type TableOverridableBinding =
 
 /** `captionSize`/`captionWeight` are forwarded to the composed caption Heading's own overrides
  * (it already owns `fontSize`/`fontWeight`); every other binding is a root CSS hook. */
-const ROOT_OVERRIDE_HOOK: Partial<Record<TableOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<TableOverridableBinding, string | undefined>> = {
   headerWeight: '--ds-table-header-weight',
   headerSize: '--ds-table-header-size',
   headerBorder: '--ds-table-header-border',
@@ -129,12 +129,12 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<TableOverridableBinding, string>> = {
   transition: '--ds-table-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<TableOverridableBinding, TokenRef>>): {
+function overridesToStyle(overrides: Partial<Record<TableOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  captionOverrides: Partial<Record<HeadingOverridableBinding, TokenRef>>;
+  captionOverrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
-  const captionOverrides: Partial<Record<HeadingOverridableBinding, TokenRef>> = { marginBlockEnd: 'space.0' };
+  const captionOverrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> = { marginBlockEnd: 'space.0' };
   for (const binding of Object.keys(overrides) as TableOverridableBinding[]) {
     const ref = overrides[binding];
     if (!ref) continue;
@@ -205,50 +205,50 @@ export interface TableProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   /** What the table lists ("Open invoices"). Rendered as the `<caption>` and the table's accessible name. */
   caption: string;
   /** Heading level of the caption in the page outline; its size is `captionSize` regardless. */
-  captionLevel?: TableCaptionLevel;
+  captionLevel?: TableCaptionLevel | undefined;
   /** Visually hide the caption; it remains the accessible name. */
-  hideCaption?: boolean;
+  hideCaption?: boolean | undefined;
   /** Column definitions in display order. Exactly one should set `isRowHeader`. */
   columns: TableColumn[];
   /** The rows. `id` must be stable; it is what selection and keys use. */
   data: TableRow[];
   /** Controlled sort state. The table shows it; the caller sorts `data`. */
-  sort?: TableSortState;
+  sort?: TableSortState | undefined;
   /** Initial sort for uncontrolled use; the table then sorts `data` itself. */
-  defaultSort?: TableSortState;
+  defaultSort?: TableSortState | undefined;
   /** Adds a selection column: `single` (radio-like) or `multiple` (with select-all). */
-  selectable?: TableSelectable;
+  selectable?: TableSelectable | undefined;
   /** Controlled selected row ids. */
-  selected?: string[];
+  selected?: string[] | undefined;
   /** Initially selected ids. */
-  defaultSelected?: string[];
+  defaultSelected?: string[] | undefined;
   /** Below the prose width: `stack` turns rows into labelled blocks, `scroll` keeps columns and scrolls horizontally. */
-  responsive?: TableResponsive;
+  responsive?: TableResponsive | undefined;
   /** The header row stays visible while the body scrolls. */
-  stickyHeader?: boolean;
+  stickyHeader?: boolean | undefined;
   /** `viewport` caps the table at the viewport height and scrolls the body. */
-  maxHeight?: TableMaxHeight;
+  maxHeight?: TableMaxHeight | undefined;
   /** Cell padding: comfortable or compact. */
-  density?: TableDensity;
+  density?: TableDensity | undefined;
   /** Alternate row backgrounds. */
-  striped?: boolean;
+  striped?: boolean | undefined;
   /** Shown in place of the body when `data` is empty. Defaults to `copy.empty`. */
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
   /** Data is being fetched: the body shows `copy.loading` and `aria-busy` is set. Existing rows stay visible. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** Renders a trailing actions cell for each row (Buttons or a Menu). */
-  rowActions?: (row: TableRow) => ReactNode;
+  rowActions?: ((row: TableRow) => ReactNode) | undefined;
   /** Content below the table (pagination, a summary row). The schema names a `footer` anatomy part
    * without further contract; this is its React slot. */
   footer?: ReactNode;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<TableOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<TableOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a sortable header is activated, with the new sort state. */
-  onSortChange?: (sort: TableSortState) => void;
+  onSortChange?: ((sort: TableSortState) => void) | undefined;
   /** Fired with the new array of selected ids. */
-  onSelectionChange?: (selected: string[]) => void;
+  onSelectionChange?: ((selected: string[]) => void) | undefined;
   /** Fired when a row is activated, with its id. Only when the row-header column has no custom `render`. */
-  onRowPress?: (id: string) => void;
+  onRowPress?: ((id: string) => void) | undefined;
 }
 
 /**
@@ -262,37 +262,35 @@ export interface TableProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
  * exist (put them in a Toolbar above the table that appears with the selection count). Put the
  * row's identity in the `isRowHeader` column, usually as a Link to its detail page.
  */
-export const Table = forwardRef<HTMLDivElement, TableProps>(function Table(
-  {
-    caption,
-    captionLevel = '2',
-    hideCaption = false,
-    columns,
-    data,
-    sort,
-    defaultSort,
-    selectable = 'none',
-    selected,
-    defaultSelected,
-    responsive = 'stack',
-    stickyHeader = true,
-    maxHeight = 'none',
-    density = 'comfortable',
-    striped = false,
-    emptyMessage,
-    loading = false,
-    rowActions,
-    footer,
-    overrides,
-    onSortChange,
-    onSelectionChange,
-    onRowPress,
-    className,
-    style,
-    ...rest
-  },
+export const Table = function Table({
   ref,
-) {
+  caption,
+  captionLevel = '2',
+  hideCaption = false,
+  columns,
+  data,
+  sort,
+  defaultSort,
+  selectable = 'none',
+  selected,
+  defaultSelected,
+  responsive = 'stack',
+  stickyHeader = true,
+  maxHeight = 'none',
+  density = 'comfortable',
+  striped = false,
+  emptyMessage,
+  loading = false,
+  rowActions,
+  footer,
+  overrides,
+  onSortChange,
+  onSelectionChange,
+  onRowPress,
+  className,
+  style,
+  ...rest
+}: TableProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const baseId = `ds-table${generatedId}`;
   const captionId = `${baseId}-caption`;
@@ -366,7 +364,7 @@ export const Table = forwardRef<HTMLDivElement, TableProps>(function Table(
       setScrolledUnderHeader(false);
       return undefined;
     }
-    const observer = new IntersectionObserver(([entry]) => setScrolledUnderHeader(!entry.isIntersecting), {
+    const observer = new IntersectionObserver(([entry]) => setScrolledUnderHeader(!entry!.isIntersecting), {
       root: maxHeight === 'viewport' ? rootRef.current : null,
       threshold: 0,
     });
@@ -403,7 +401,7 @@ export const Table = forwardRef<HTMLDivElement, TableProps>(function Table(
 
   const { rootStyle, captionOverrides } = overrides
     ? overridesToStyle(overrides)
-    : { rootStyle: undefined, captionOverrides: { marginBlockEnd: 'space.0' } as Partial<Record<HeadingOverridableBinding, TokenRef>> };
+    : { rootStyle: undefined, captionOverrides: { marginBlockEnd: 'space.0' } as Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> };
   const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
 
   const renderColumnHeaderContent = (column: TableColumn) => {
@@ -601,4 +599,4 @@ export const Table = forwardRef<HTMLDivElement, TableProps>(function Table(
       </div>
     </div>
   );
-});
+};

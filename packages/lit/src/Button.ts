@@ -1,4 +1,4 @@
-import { LitElement, css, html, type PropertyValues } from 'lit';
+import { LitElement, css, html, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -87,7 +87,7 @@ export class DsButton extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: inline-flex;
       vertical-align: middle;
@@ -274,16 +274,16 @@ export class DsButton extends LitElement {
   `;
 
   /** The button's text. Also its accessible name. */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** Visual emphasis. One primary button per view. */
-  @property({ reflect: true }) variant: ButtonVariant = 'primary';
+  @property({ reflect: true }) accessor variant: ButtonVariant = 'primary';
 
   /** Controls padding and font size. Touch targets never drop below the minimum regardless of size. */
-  @property({ reflect: true }) size: ButtonSize = 'md';
+  @property({ reflect: true }) accessor size: ButtonSize = 'md';
 
   /** `submit` submits the enclosing Form. Everything else is `button`. */
-  @property({ reflect: true }) type: ButtonType = 'button';
+  @property({ reflect: true }) accessor type: ButtonType = 'button';
 
   /**
    * Set by a parent that the button discloses (Menu, Popover, SidePanel,
@@ -291,35 +291,35 @@ export class DsButton extends LitElement {
    * (the default) means this button does not disclose anything, so no
    * `aria-expanded` is rendered. Consumers rarely set it directly.
    */
-  @property({ type: Boolean, attribute: false }) expanded?: boolean;
+  @property({ type: Boolean, attribute: false }) accessor expanded: boolean | undefined;
 
   /** Prevents activation. The button stays in the tab order and is announced as disabled. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Hides the visible label and shows only the icon. `label` is still required and becomes the accessible name. */
-  @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) iconOnly = false;
+  @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) accessor iconOnly = false;
 
   /** Shows progress and blocks repeat activation while an action is pending. */
-  @property({ type: Boolean, reflect: true }) loading = false;
+  @property({ type: Boolean, reflect: true }) accessor loading = false;
 
   /** The button sits on an inverse surface (Toast, Tooltip-like panels). Only meaningful on `ghost`. */
-  @property({ type: Boolean, reflect: true }) inverse = false;
+  @property({ type: Boolean, reflect: true }) accessor inverse = false;
 
   /**
    * Overrides the accessible name when it must say more than the visible label
    * ("Sort by Amount, ascending" on a header that shows "Amount"). The visible
    * label must be the start of it. Maps to `aria-label`.
    */
-  @property({ attribute: 'accessible-name' }) accessibleName?: string;
+  @property({ attribute: 'accessible-name' }) accessor accessibleName: string | undefined;
 
   /** Text used for this button when a Toolbar collapses it into its overflow Menu. */
-  @property({ attribute: 'overflow-label' }) overflowLabel?: string;
+  @property({ attribute: 'overflow-label' }) accessor overflowLabel: string | undefined;
 
   /** Analytics event name sent on press. Omit for no tracking. */
-  @property() track?: string;
+  @property() accessor track: string | undefined;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<ButtonOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -332,7 +332,7 @@ export class DsButton extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`
       <button
         part="container"

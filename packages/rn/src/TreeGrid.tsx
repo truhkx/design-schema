@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Animated, FlatList, PanResponder, Pressable, ScrollView, TextInput, View } from 'react-native';
-import type { AccessibilityActionEvent, ListRenderItemInfo, NativeSyntheticEvent, TextInputKeyPressEventData, TextStyle, ViewStyle } from 'react-native';
+import type { AccessibilityActionEvent, ListRenderItemInfo, TextInputKeyPressEvent, TextStyle, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { BottomSheet } from './BottomSheet';
@@ -21,7 +21,7 @@ export type TreeGridHeight = 'content' | 'viewport' | 'fixed';
 /** A nested record. `id` must be stable. `children: "lazy"` marks a subtree not yet loaded. */
 export interface TreeGridRow {
   id: string;
-  children?: TreeGridRow[] | 'lazy';
+  children?: TreeGridRow[] | 'lazy' | undefined;
   [key: string]: unknown;
 }
 
@@ -54,57 +54,57 @@ export interface TreeGridProps {
   /** What the tree grid holds ("Chart of accounts"). The accessible name; visually hidden with `hideCaption`. */
   caption: string;
   /** Visually hide the caption; it remains the accessible name. */
-  hideCaption?: boolean;
+  hideCaption?: boolean | undefined;
   /** DataGrid's column model. The `isRowHeader` column is required and carries the indent and expand button; it must come first after the selection column. */
   columns: DataGridColumn[];
   /** Nested rows. `children: "lazy"` marks a row whose children load on first expand through `onExpand`. */
   data: TreeGridRow[];
   /** Controlled ids of expanded rows. */
-  expanded?: string[];
+  expanded?: string[] | undefined;
   /** Initially expanded ids. `["*"]` expands every loaded (non-lazy) row with children. */
-  defaultExpanded?: string[];
+  defaultExpanded?: string[] | undefined;
   /** Controlled sort state; the caller sorts `data`. Applies within each level. */
-  sort?: TreeGridSort;
+  sort?: TreeGridSort | undefined;
   /** Initial sort; the grid sorts `data` itself. */
-  defaultSort?: TreeGridSort;
+  defaultSort?: TreeGridSort | undefined;
   /** `row` adds a checkbox column and toggles rows; `cell` selects one cell. */
-  selectable?: TreeGridSelectable;
+  selectable?: TreeGridSelectable | undefined;
   /** Controlled selected row ids (row mode). */
-  selected?: string[];
+  selected?: string[] | undefined;
   /** Initially selected row ids. */
-  defaultSelected?: string[];
+  defaultSelected?: string[] | undefined;
   /** Toggling a parent sets or clears its own id and every loaded descendant; a parent's shown state derives from its loaded descendants. */
-  selectChildren?: boolean;
+  selectChildren?: boolean | undefined;
   /** Master switch: cells whose column is `editable` can be edited by tapping them. */
-  editable?: boolean;
+  editable?: boolean | undefined;
   /** Row height: compact suits the grid's purpose; comfortable for touch. */
-  density?: TreeGridDensity;
+  density?: TreeGridDensity | undefined;
   /** The header stays visible while the body scrolls. Always true unless `height="content"`. */
-  stickyHeader?: boolean;
+  stickyHeader?: boolean | undefined;
   /** `viewport` fills the height available under the header; `content` grows with rows; `fixed` uses a fixed height. */
-  height?: TreeGridHeight;
+  height?: TreeGridHeight | undefined;
   /** Data is being fetched: existing rows stay, `copy.loading` shows in the status bar. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** Shown when `data` is empty. Defaults to `copy.empty`. */
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
   /** A footer line with row count, selection count and, while editing, the validation message. */
-  showStatusBar?: boolean;
+  showStatusBar?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<TreeGridOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<TreeGridOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired with the new array of expanded ids. */
-  onExpandChange?: (expanded: string[]) => void;
+  onExpandChange?: ((expanded: string[]) => void) | undefined;
   /** Fired with its id each time a row whose `children` is still `"lazy"` is expanded, so a failed load can retry. */
-  onExpand?: (id: string) => void;
+  onExpand?: ((id: string) => void) | undefined;
   /** Fired when a sortable header is activated, with the new sort state. */
-  onSortChange?: (sort: TreeGridSort) => void;
+  onSortChange?: ((sort: TreeGridSort) => void) | undefined;
   /** Fired with the new selection: row ids or one cell. */
-  onSelectionChange?: (selection: TreeGridSelection) => void;
+  onSelectionChange?: ((selection: TreeGridSelection) => void) | undefined;
   /** Fired when an edit commits, with the new and previous value. The caller updates `data`. */
-  onCellChange?: (change: TreeGridCellChange) => void;
+  onCellChange?: ((change: TreeGridCellChange) => void) | undefined;
   /** Fired when an editor is about to open; return `false` to refuse editing that cell. */
-  onEditStart?: (target: TreeGridCellSelection) => boolean | void;
+  onEditStart?: ((target: TreeGridCellSelection) => boolean | void) | undefined;
   /** Fired with the column and its new width when a resizable column finishes being dragged. */
-  onColumnResize?: (resize: DataGridColumnResize) => void;
+  onColumnResize?: ((resize: DataGridColumnResize) => void) | undefined;
 }
 
 const COPY = {
@@ -137,8 +137,8 @@ interface FlatRow {
   key: string;
   level: number;
   hasChildren: boolean;
-  loading?: boolean;
-  row?: TreeGridRow;
+  loading?: boolean | undefined;
+  row?: TreeGridRow | undefined;
 }
 
 function cellValue(row: TreeGridRow, key: string): string {
@@ -259,7 +259,7 @@ function TreeGridChevron({ expanded, color, duration, easing }: TreeGridChevronP
     Animated.timing(rotate, { toValue, duration, easing: toEasing(easing), useNativeDriver: false }).start();
   }, [expanded, reducedMotion, rotate, duration, easing]);
 
-  const style: Animated.WithAnimatedObject<ViewStyle> = {
+  const style: Animated.WithAnimatedValue<ViewStyle> = {
     transform: [{ rotate: rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '90deg'] }) }],
   };
 
@@ -677,7 +677,7 @@ export function TreeGrid({
       paddingVertical: t.space1,
     };
 
-    const handleKeyPress = (event: NativeSyntheticEvent<TextInputKeyPressEventData>): void => {
+    const handleKeyPress = (event: TextInputKeyPressEvent): void => {
       if (event.nativeEvent.key === 'Enter') {
         commitEdit(row, column, editingValue);
       } else if (event.nativeEvent.key === 'Escape') {

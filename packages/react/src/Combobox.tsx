@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -12,6 +11,7 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -75,7 +75,7 @@ export type ComboboxOverridableBinding =
   | 'disabledOpacity'
   | 'enter';
 
-const ROOT_OVERRIDE_HOOK: Partial<Record<ComboboxOverridableBinding, string>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<ComboboxOverridableBinding, string | undefined>> = {
   fieldBorderFocus: '--ds-combobox-field-border-focus',
   fieldBorderInvalid: '--ds-combobox-field-border-invalid',
   fieldBorderWidth: '--ds-combobox-field-border-width',
@@ -97,7 +97,7 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<ComboboxOverridableBinding, string>> = 
 
 /** The popup is portaled, so its own bindings — and the ones its nested Listbox reads via the
  * sanctioned CSS custom-property escape hatch — are set on the popup node itself. */
-const POPUP_OVERRIDE_HOOK: Partial<Record<ComboboxOverridableBinding, string>> = {
+const POPUP_OVERRIDE_HOOK: Partial<Record<ComboboxOverridableBinding, string | undefined>> = {
   popupSurface: '--ds-combobox-popup-surface',
   popupBorder: '--ds-combobox-popup-border',
   popupShadow: '--ds-combobox-popup-shadow',
@@ -107,16 +107,16 @@ const POPUP_OVERRIDE_HOOK: Partial<Record<ComboboxOverridableBinding, string>> =
   enter: '--ds-combobox-enter',
 };
 
-function resolveOverrides(overrides: Partial<Record<ComboboxOverridableBinding, TokenRef>>): {
+function resolveOverrides(overrides: Partial<Record<ComboboxOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
   popupStyle: CSSProperties;
-  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
-  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 } {
   const rootStyle: Record<string, string> = {};
   const popupStyle: Record<string, string> = {};
-  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
-  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
   for (const binding of Object.keys(overrides) as ComboboxOverridableBinding[]) {
     const ref = overrides[binding];
     if (!ref) continue;
@@ -155,7 +155,7 @@ function prefersReducedMotion(): boolean {
     : false;
 }
 
-type ComboboxRow = { value: string; label: string; disabled?: boolean };
+type ComboboxRow = { value: string; label: string; disabled?: boolean | undefined };
 
 function isGroup(option: ListboxOption): option is { group: string; options: ListboxOption[] } {
   return 'group' in option;
@@ -267,52 +267,52 @@ export interface ComboboxProps
   /** The full option set, or the current page of results when `filter` is `async`. Passed through to the Listbox after filtering. */
   options: ListboxOption[];
   /** Controlled selected value(s). With `multiple`, an array. With `allowCustom`, a value not in `options` is a custom entry. */
-  value?: ComboboxValue;
+  value?: ComboboxValue | undefined;
   /** Initial value(s). */
-  defaultValue?: ComboboxValue;
+  defaultValue?: ComboboxValue | undefined;
   /** Controlled text of the input. Usually uncontrolled; controlled by consumers driving `async` filtering. */
-  inputValue?: string;
+  inputValue?: string | undefined;
   /**
    * Pick many: selected options appear as chips before the input, each removable; the list stays
    * open while toggling; Backspace in an empty input removes the last chip.
    */
-  multiple?: boolean;
+  multiple?: boolean | undefined;
   /**
    * Typed text that matches no option can be committed as a value (tags, emails). Enter or a
    * separator (comma) commits it; the list shows `copy.addCustom` as the first row.
    */
-  allowCustom?: boolean;
+  allowCustom?: boolean | undefined;
   /**
    * How typing narrows `options`: by prefix, by substring (default), not at all (the list is a
    * picker; typing only moves the active option), or by the consumer (`async`).
    */
-  filter?: ComboboxFilter;
+  filter?: ComboboxFilter | undefined;
   /** Example input shown while empty. Never the only description. */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /** Helper text under the label. */
-  description?: string;
+  description?: string | undefined;
   /** Must have a value to submit. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Not editable, not submitted, still readable and focusable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Marks the field invalid. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Error message; implies invalid. */
-  error?: string;
+  error?: string | undefined;
   /** For `async`: show the loading row and announce it. The consumer sets it around its request. */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** Show a clear button when there is a value or text. */
-  clearable?: boolean;
+  clearable?: boolean | undefined;
   /** Portal target for the popup's DOM node. Defaults to `document.body`. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<ComboboxOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ComboboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selected value(s) change (array with `multiple`; custom entries included when `allowCustom`). */
-  onChange?: (value: ComboboxValue) => void;
+  onChange?: ((value: ComboboxValue) => void) | undefined;
   /** Fired on every keystroke with the input text. The hook for `async` filtering. */
-  onInputChange?: (text: string) => void;
+  onInputChange?: ((text: string) => void) | undefined;
   /** Fired when the list opens or closes. */
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: ((open: boolean) => void) | undefined;
 }
 
 /**
@@ -329,39 +329,37 @@ export interface ComboboxProps
  * it as a search box that navigates to results. Do not use it to pick a date. Do not disable
  * typing to get a Select; use Select.
  */
-export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Combobox(
-  {
-    label,
-    name,
-    options,
-    value,
-    defaultValue,
-    inputValue,
-    multiple = false,
-    allowCustom = false,
-    filter = 'contains',
-    placeholder,
-    description,
-    required = false,
-    disabled = false,
-    invalid = false,
-    error,
-    loading = false,
-    clearable = true,
-    container,
-    overrides,
-    onChange,
-    onInputChange,
-    onOpenChange,
-    id: idProp,
-    className,
-    style,
-    onFocus,
-    onBlur,
-    ...rest
-  },
+export const Combobox = function Combobox({
   ref,
-) {
+  label,
+  name,
+  options,
+  value,
+  defaultValue,
+  inputValue,
+  multiple = false,
+  allowCustom = false,
+  filter = 'contains',
+  placeholder,
+  description,
+  required = false,
+  disabled = false,
+  invalid = false,
+  error,
+  loading = false,
+  clearable = true,
+  container,
+  overrides,
+  onChange,
+  onInputChange,
+  onOpenChange,
+  id: idProp,
+  className,
+  style,
+  onFocus,
+  onBlur,
+  ...rest
+}: ComboboxProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
   const form = useFormContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-combobox${generatedId}`);
@@ -639,7 +637,7 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
         for (const part of toCommit) if (!next.includes(part)) next.push(part);
         commitValue(next);
       }
-      updateText(remainder);
+      updateText(remainder!);
     } else {
       updateText(raw);
     }
@@ -908,4 +906,4 @@ export const Combobox = forwardRef<HTMLInputElement, ComboboxProps>(function Com
         : null}
     </div>
   );
-});
+};

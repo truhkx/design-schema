@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
@@ -141,7 +141,7 @@ function flattenOptions(options: ListboxOption[]): ListboxItem[] {
 }
 
 /** `input` or `internals.ariaActiveDescendantElement`-capable element, for the cross-shadow-root activedescendant reflection Chromium ships. */
-type ActiveDescendantHost = HTMLInputElement & { ariaActiveDescendantElement?: Element | null };
+type ActiveDescendantHost = HTMLInputElement & { ariaActiveDescendantElement?: Element | null | undefined };
 
 /**
  * `<ds-combobox>` — Combobox (category: input, APG pattern: combobox).
@@ -199,7 +199,7 @@ export class DsCombobox extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--font-family-body);
@@ -428,54 +428,54 @@ export class DsCombobox extends LitElement {
   `;
 
   /** Visible label. Always rendered. */
-  @property() label!: string;
+  @property() accessor label!: string;
 
   /** Field name for the Form. */
-  @property() name!: string;
+  @property() accessor name!: string;
 
   /** The full option set, or the current page of results when `filter` is `async`. A property, not an attribute. */
-  @property({ attribute: false }) options: ListboxOption[] = [];
+  @property({ attribute: false }) accessor options: ListboxOption[] = [];
 
   /** Controlled selected value(s). Omit for uncontrolled. */
-  @property({ attribute: false }) value?: ComboboxValue;
+  @property({ attribute: false }) accessor value: ComboboxValue | undefined;
 
   /** Initial selected value(s) for an uncontrolled field. */
-  @property({ attribute: false }) defaultValue?: ComboboxValue;
+  @property({ attribute: false }) accessor defaultValue: ComboboxValue | undefined;
 
   /** Controlled text of the input. Usually uncontrolled; set it to drive `async` filtering. */
-  @property({ attribute: 'input-value' }) inputValue?: string;
+  @property({ attribute: 'input-value' }) accessor inputValue: string | undefined;
 
   /** Pick any number. Selections render as removable chips before the input; the list stays open while toggling. */
-  @property({ type: Boolean, reflect: true }) multiple = false;
+  @property({ type: Boolean, reflect: true }) accessor multiple = false;
 
   /** Typed text matching no option can be committed as a value. Enter or a comma commits it. */
-  @property({ type: Boolean, reflect: true, attribute: 'allow-custom' }) allowCustom = false;
+  @property({ type: Boolean, reflect: true, attribute: 'allow-custom' }) accessor allowCustom = false;
 
   /** How typing narrows `options`. */
-  @property({ reflect: true }) filter: ComboboxFilter = 'contains';
+  @property({ reflect: true }) accessor filter: ComboboxFilter = 'contains';
 
   /** Example input shown while empty. Never the only description. */
-  @property() placeholder?: string;
+  @property() accessor placeholder: string | undefined;
 
   /** Helper text under the label. */
-  @property() description?: string;
+  @property() accessor description: string | undefined;
 
   /** Must have a value to submit. */
-  @property({ type: Boolean, reflect: true }) required = false;
+  @property({ type: Boolean, reflect: true }) accessor required = false;
 
   /** Not editable, not submitted, still readable and focusable. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Marks the field invalid. Usually set by the Form. */
-  @property({ type: Boolean, reflect: true }) invalid = false;
+  @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
-  private errorValue?: string;
+  private errorValue?: string | undefined;
 
   /** Error message. Setting it implies `invalid`. */
-  @property()
   get error(): string | undefined {
     return this.errorValue;
   }
+  @property()
   set error(value: string | undefined) {
     const old = this.errorValue;
     this.errorValue = value;
@@ -486,7 +486,7 @@ export class DsCombobox extends LitElement {
   }
 
   /** For `async`: show the loading row and announce it. Set by the consumer around its request. */
-  @property({ type: Boolean, reflect: true }) loading = false;
+  @property({ type: Boolean, reflect: true }) accessor loading = false;
 
   /**
    * Show a clear button when there is a value or text. Boolean attributes
@@ -501,40 +501,40 @@ export class DsCombobox extends LitElement {
       toAttribute: (value: boolean): string | null => (value ? null : ''),
     },
   })
-  clearable = true;
+  accessor clearable = true;
 
   /** Per-instance style overrides: `{ fieldRadius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<ComboboxOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<ComboboxOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled value (seeded from `defaultValue`). */
-  @state() private internalValue?: ComboboxValue;
+  @state() private accessor internalValue: ComboboxValue | undefined;
 
   /** Uncontrolled input text (seeded from the initial single value's label). */
-  @state() private internalText = '';
+  @state() private accessor internalText = '';
 
   /** Whether the popup is open. Not exposed as a property — see the generator's gap notes. */
-  @state() private isOpen = false;
+  @state() private accessor isOpen = false;
 
   /** Set by the toggle button so the list shows every option, ignoring any currently-typed filter query, until the next keystroke. */
-  @state() private showAllOnOpen = false;
+  @state() private accessor showAllOnOpen = false;
 
   /** Id (within the composed Listbox's own shadow root) of the active option, mirrored onto the input's `aria-activedescendant`. */
-  @state() private activeDescendantId?: string;
+  @state() private accessor activeDescendantId: string | undefined;
 
   /** Debounced text for the `status` live region. */
-  @state() private announcedStatus = '';
+  @state() private accessor announcedStatus = '';
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
-  @state() private formDisabled = false;
+  @state() private accessor formDisabled = false;
 
-  @query('#input') private readonly inputEl?: HTMLInputElement;
-  @query('#listbox') private readonly listboxEl?: DsListbox;
-  @query('#popup') private readonly popupEl?: HTMLElement;
+  @query('#input') private accessor inputEl!: HTMLInputElement | null;
+  @query('#listbox') private accessor listboxEl!: DsListbox | null;
+  @query('#popup') private accessor popupEl!: HTMLElement | null;
 
   private readonly popoverSupported = POPOVER_SUPPORTED;
   private wasOpen = false;
   private pendingActivate: 'first' | 'last' | null = null;
-  private statusTimer?: ReturnType<typeof setTimeout>;
+  private statusTimer?: ReturnType<typeof setTimeout> | undefined;
 
   private readonly internals: ElementInternals;
 
@@ -719,7 +719,7 @@ export class DsCombobox extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const isDisabled = this.isDisabled;
     const describedBy =
       [this.description ? 'description' : '', this.error ? 'error-message' : '']
@@ -1280,11 +1280,11 @@ export class DsCombobox extends LitElement {
     }
     const anchor = this.inputEl;
     if (this.error) {
-      this.internals.setValidity({ customError: true }, this.error, anchor);
+      this.internals.setValidity({ customError: true }, this.error, anchor!);
     } else if (this.invalid) {
-      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), anchor);
+      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), anchor!);
     } else if (this.required && value === null) {
-      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor);
+      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor!);
     } else {
       this.internals.setValidity({});
     }

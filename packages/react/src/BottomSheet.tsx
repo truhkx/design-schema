@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -11,7 +10,8 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
-  type SyntheticEvent,
+  type Ref,
+  type SyntheticEvent, type ReactElement,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -57,7 +57,7 @@ const OVERRIDE_HOOK: Record<BottomSheetOverridableBinding, string> = {
   exit: '--ds-bottom-sheet-exit',
 };
 
-function overridesToStyle(overrides: Partial<Record<BottomSheetOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as BottomSheetOverridableBinding[]) {
     const ref = overrides[binding];
@@ -117,29 +117,29 @@ export interface BottomSheetProps
   /** The sheet's title and accessible name. May be visually hidden with `hideHeading` when the content is self-explanatory (a share sheet). */
   heading: string;
   /** Keep the heading for assistive technology but do not render it (forwarded to Dialog above the breakpoint). The accessible name is required regardless; visually hidden is fine, absent is not. */
-  hideHeading?: boolean;
+  hideHeading?: boolean | undefined;
   /** The body. Scrolls inside the sheet when taller than the sheet's height. */
   children: ReactNode;
   /** Action row, pinned to the bottom of the sheet above the safe area. */
   footer?: ReactNode;
   /** `content` sizes to the body up to 90% of the viewport; `half` is a fixed half-height; `full` is a near-full-screen sheet with the top gutter visible so the scrim still shows. */
-  height?: BottomSheetHeight;
+  height?: BottomSheetHeight | undefined;
   /** Escape, the close button, a scrim tap and the drag gesture all request close. When false, only the footer actions close it; Escape still reports. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /**
    * Drag the handle (or the header) downward to dismiss: release past 25% of the sheet height, or
    * faster than 1.5 px/ms, dismisses; otherwise the sheet springs back. Purely additive: the close
    * button and Escape always exist.
    */
-  dragToDismiss?: boolean;
+  dragToDismiss?: boolean | undefined;
   /** Requested close with reason: `escape`, `close-button`, `scrim`, `drag`, or `action`. */
-  onClose?: (reason: BottomSheetCloseReason) => void;
+  onClose?: ((reason: BottomSheetCloseReason) => void) | undefined;
   /** The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag; provided so analytics can distinguish gestures. */
-  onDragDismiss?: () => void;
+  onDragDismiss?: (() => void) | undefined;
   /** Portal target for the sheet's DOM node. Defaults to `document.body`. Only used below the wide-viewport breakpoint; the Dialog presentation manages its own container. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. Only applied to the bottom-edge presentation; above the wide breakpoint the sheet renders as Dialog and uses Dialog's own overrides contract. */
-  overrides?: Partial<Record<BottomSheetOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -152,26 +152,24 @@ export interface BottomSheetProps
  * dismissable; `half` for a browsable list where seeing the page behind matters (a map with
  * results). For a flat list of actions, ActionSheet is the lighter component.
  */
-export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(function BottomSheet(
-  {
-    open,
-    heading,
-    hideHeading = false,
-    children,
-    footer,
-    height = 'content',
-    dismissible = true,
-    dragToDismiss = true,
-    onClose,
-    onDragDismiss,
-    container,
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const BottomSheet = function BottomSheet({
   ref,
-) {
+  open,
+  heading,
+  hideHeading = false,
+  children,
+  footer,
+  height = 'content',
+  dismissible = true,
+  dragToDismiss = true,
+  onClose,
+  onDragDismiss,
+  container,
+  overrides,
+  className,
+  style,
+  ...rest
+}: BottomSheetProps & { ref?: Ref<HTMLDialogElement> | undefined }): ReactElement | null {
   const isWide = useIsWideViewport();
 
   const generatedId = useId();
@@ -410,4 +408,4 @@ export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(funct
   );
 
   return createPortal(node, container ?? document.body);
-});
+};

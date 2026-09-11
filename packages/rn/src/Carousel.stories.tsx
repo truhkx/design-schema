@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Carousel, CarouselSlide } from './Carousel';
 import { Button } from './Button';
 import { Text } from './Text';

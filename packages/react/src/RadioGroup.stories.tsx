@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { RadioGroup } from './RadioGroup';
 
 const shipping = [
@@ -7,7 +7,7 @@ const shipping = [
   { value: 'pickup', label: 'Pick up in store', description: 'Free, ready in 2 hours' },
 ];
 
-const meta = {
+const meta: Meta<typeof RadioGroup> = {
   title: 'RadioGroup/React',
   component: RadioGroup,
   args: {
@@ -22,7 +22,7 @@ const meta = {
   argTypes: {
     onChange: { action: 'onChange' },
   },
-} satisfies Meta<typeof RadioGroup>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

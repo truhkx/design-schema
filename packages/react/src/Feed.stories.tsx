@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './Button';
 import { Feed, type FeedItem } from './Feed';
 import { Link } from './Link';
@@ -35,7 +35,7 @@ const SAMPLE_ITEMS: FeedItem[] = [
   },
 ];
 
-const meta = {
+const meta: Meta<typeof Feed> = {
   title: 'Feed/React',
   component: Feed,
   args: {
@@ -50,7 +50,7 @@ const meta = {
     onShowNew: { action: 'onShowNew' },
     onItemVisible: { action: 'onItemVisible' },
   },
-} satisfies Meta<typeof Feed>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

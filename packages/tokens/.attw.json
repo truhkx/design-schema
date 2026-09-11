@@ -1,0 +1,4 @@
+{
+  "profile": "esm-only",
+  "excludeEntrypoints": ["./calm-precise/css", "./warm-friendly/css", "./warm-sleek/css"]
+}

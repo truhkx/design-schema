@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import './Feed.js';
 import './Text.js';
@@ -11,8 +11,8 @@ interface FeedArgs {
   headingLevel: FeedHeadingLevel;
   hasMore: boolean;
   loading: boolean;
-  newItemsCount?: number;
-  endMessage?: string;
+  newItemsCount?: number | undefined;
+  endMessage?: string | undefined;
   items: FeedItem[];
 }
 

@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Icon.js';
@@ -12,9 +12,9 @@ export type TabsFit = 'start' | 'fill';
 export interface TabsTab {
   id: string;
   label: string;
-  icon?: IconName;
-  disabled?: boolean;
-  badge?: string;
+  icon?: IconName | undefined;
+  disabled?: boolean | undefined;
+  badge?: string | undefined;
 }
 
 /** Detail carried by the `change` CustomEvent. */
@@ -71,7 +71,7 @@ const HOOKS: Record<TabsOverridableBinding, string> = {
  */
 @customElement('ds-tab-panel')
 export class DsTabPanel extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       min-inline-size: 0;
@@ -87,7 +87,7 @@ export class DsTabPanel extends LitElement {
     this.setAttribute('data-ds', 'TabPanel');
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`<slot></slot>`;
   }
 }
@@ -136,7 +136,7 @@ export class DsTabs extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: flex;
       flex-direction: column;
@@ -296,44 +296,44 @@ export class DsTabs extends LitElement {
   `;
 
   /** The tabs in order. Two to about seven. A property, not an attribute. */
-  @property({ attribute: false }) tabs: TabsTab[] = [];
+  @property({ attribute: false }) accessor tabs: TabsTab[] = [];
 
   /** Accessible name of the tab list. Not shown visually. */
-  @property() label!: string;
+  @property() accessor label!: string;
 
   /** Controlled selected tab id. Omit for uncontrolled. */
-  @property({ reflect: true }) value?: string;
+  @property({ reflect: true }) accessor value: string | undefined;
 
   /** Initially selected tab id. Defaults to the first enabled tab. */
-  @property({ attribute: 'default-value' }) defaultValue?: string;
+  @property({ attribute: 'default-value' }) accessor defaultValue: string | undefined;
 
   /** `automatic` selects a tab as arrow keys move to it; `manual` moves focus only, selecting on Enter/Space. */
-  @property({ reflect: true }) activation: TabsActivation = 'automatic';
+  @property({ reflect: true }) accessor activation: TabsActivation = 'automatic';
 
   /** Vertical tab lists sit beside their panels and use Up/Down arrows. */
-  @property({ reflect: true }) orientation: TabsOrientation = 'horizontal';
+  @property({ reflect: true }) accessor orientation: TabsOrientation = 'horizontal';
 
   /** `fill` stretches tabs across the width; `start` packs them at the start. */
-  @property({ reflect: true }) fit: TabsFit = 'start';
+  @property({ reflect: true }) accessor fit: TabsFit = 'start';
 
   /** Keep unselected panels in the light DOM (hidden) so their state survives switching. */
-  @property({ type: Boolean, reflect: true, attribute: 'keep-mounted' }) keepMounted = false;
+  @property({ type: Boolean, reflect: true, attribute: 'keep-mounted' }) accessor keepMounted = false;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<TabsOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<TabsOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled selection, seeded from `defaultValue` (or the first enabled tab) on first update. */
-  @state() private internalValue?: string;
+  @state() private accessor internalValue: string | undefined;
 
   /** The tab currently carrying the roving tabindex and (usually) real focus. */
-  @state() private focusedId: string | null = null;
+  @state() private accessor focusedId: string | null = null;
 
-  @query('.tablist') private readonly tablistEl?: HTMLElement;
-  @query('.indicator') private readonly indicatorEl?: HTMLElement;
+  @query('.tablist') private accessor tablistEl!: HTMLElement | null;
+  @query('.indicator') private accessor indicatorEl!: HTMLElement | null;
 
   /** Panels detached from the light DOM while unselected (default, non-`keepMounted` behaviour). */
   private readonly detachedPanels = new Map<string, HTMLElement>();
-  private resizeObserver?: ResizeObserver;
+  private resizeObserver?: ResizeObserver | undefined;
   private lastScrolledId: string | null = null;
 
   /** The currently selected tab id, controlled or not. */
@@ -375,7 +375,7 @@ export class DsTabs extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const selected = this.currentValue;
     return html`
       <div
@@ -464,7 +464,7 @@ export class DsTabs extends LitElement {
     } else if (nextIndex >= items.length) {
       nextIndex = 0;
     }
-    this.focusTab(items[nextIndex].id);
+    this.focusTab(items[nextIndex]!.id);
   }
 
   private focusEdge(edge: 'first' | 'last'): void {
@@ -472,7 +472,7 @@ export class DsTabs extends LitElement {
     if (items.length === 0) {
       return;
     }
-    this.focusTab(edge === 'first' ? items[0].id : items[items.length - 1].id);
+    this.focusTab(edge === 'first' ? items[0]!.id : items[items.length - 1]!.id);
   }
 
   private focusTab(id: string): void {

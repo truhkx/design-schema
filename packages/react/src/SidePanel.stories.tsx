@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SidePanel } from './SidePanel';
 import { Button } from './Button';
 import { Link } from './Link';
@@ -13,7 +13,7 @@ const defaultBody = (
   </Stack>
 );
 
-const meta = {
+const meta: Meta<typeof SidePanel> = {
   title: 'SidePanel/React',
   component: SidePanel,
   args: {
@@ -31,7 +31,7 @@ const meta = {
     swipeable: true,
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof SidePanel>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

@@ -1,10 +1,9 @@
 import {
-  forwardRef,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type ElementType,
   type ReactNode,
-  type Ref,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Container.css';
@@ -22,7 +21,7 @@ const OVERRIDE_HOOK: Record<ContainerOverridableBinding, string> = {
   paddingInline: '--ds-container-padding-inline',
 };
 
-function overridesToStyle(overrides: Partial<Record<ContainerOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as ContainerOverridableBinding[]) {
     const ref = overrides[binding];
@@ -36,17 +35,17 @@ export interface ContainerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'c
   children: ReactNode;
   /** `prose` for reading (a 65-character measure), `content` for most screens, `page` for full-bleed
    * layouts with wide grids, `full` for no cap (gutters only). */
-  width?: ContainerWidth;
+  width?: ContainerWidth | undefined;
   /** Horizontal padding at the viewport edge. Responsive: `default` uses the narrow gutter under the
    * content width and the wide gutter above the page width. `none` for a nested container inside a
    * padded parent. */
-  gutter?: ContainerGutter;
+  gutter?: ContainerGutter | undefined;
   /** Where the capped column sits in a wider viewport. */
-  align?: ContainerAlign;
+  align?: ContainerAlign | undefined;
   /** Use `main` for the page's main column when no Landmark wraps it. */
-  element?: ContainerElement;
+  element?: ContainerElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<ContainerOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -59,20 +58,18 @@ export interface ContainerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'c
  * inner Container. Nest a `gutter: none` Container inside a padded parent when a section needs a
  * narrower measure than the page.
  */
-export const Container = forwardRef<HTMLElement, ContainerProps>(function Container(
-  {
-    children,
-    width = 'content',
-    gutter = 'default',
-    align = 'center',
-    element = 'div',
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const Container = function Container({
   ref,
-) {
+  children,
+  width = 'content',
+  gutter = 'default',
+  align = 'center',
+  element = 'div',
+  overrides,
+  className,
+  style,
+  ...rest
+}: ContainerProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const Tag = element as ElementType;
 
   const classes = [
@@ -93,4 +90,4 @@ export const Container = forwardRef<HTMLElement, ContainerProps>(function Contai
       {children}
     </Tag>
   );
-});
+};

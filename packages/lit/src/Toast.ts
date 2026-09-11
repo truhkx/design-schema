@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Icon.js';
@@ -140,7 +140,7 @@ function readDurationMs(el: HTMLElement, varName: string): number {
  */
 @customElement('ds-toast')
 export class DsToast extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       box-sizing: border-box;
@@ -227,33 +227,33 @@ export class DsToast extends LitElement {
   `;
 
   /** One sentence, past tense, saying what happened ("Message sent", "3 files deleted"). Also the toast's accessible name. */
-  @property() message!: string;
+  @property() accessor message!: string;
 
   /** Sets the leading icon; `neutral` has none. Toasts never use tinted backgrounds — the icon and message carry the tone. */
-  @property({ reflect: true }) tone: ToastTone = 'neutral';
+  @property({ reflect: true }) accessor tone: ToastTone = 'neutral';
 
   /** Label for a single action button ("Undo", "View"). Recommended as `persistent` so there is time to use it. */
-  @property({ attribute: 'action-label' }) actionLabel?: string;
+  @property({ attribute: 'action-label' }) accessor actionLabel: string | undefined;
 
   /** `short` ≈ 5s, `long` ≈ 10s (motion.duration.loop × 6 / × 12), `persistent` until dismissed. */
-  @property({ reflect: true }) duration: ToastDuration = 'short';
+  @property({ reflect: true }) accessor duration: ToastDuration = 'short';
 
   /** Stable identity; showing a toast with the same `toastId` replaces this one instead of stacking. Named `toastId` (attribute `toast-id`) so it does not collide with the DOM `id`. */
-  @property({ attribute: 'toast-id' }) toastId?: string;
+  @property({ attribute: 'toast-id' }) accessor toastId: string | undefined;
 
   /** Shows a dismiss button. Persistent toasts are always dismissible regardless of this value. Exposed as the negated `no-dismiss` attribute (a boolean attribute cannot express `false` for a prop that defaults `true`). */
-  @property({ attribute: 'no-dismiss', converter: NEGATED_BOOLEAN_CONVERTER }) dismissible = true;
+  @property({ attribute: 'no-dismiss', converter: NEGATED_BOOLEAN_CONVERTER }) accessor dismissible = true;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<ToastOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<ToastOverridableBinding, TokenRef | undefined>> | undefined;
 
-  @query('.container') private readonly containerEl!: HTMLElement;
+  @query('.container') private accessor containerEl!: HTMLElement;
 
-  @state() private closing = false;
+  @state() private accessor closing = false;
 
   private readonly internals: ElementInternals;
   private dismissed = false;
-  private timerId?: ReturnType<typeof setTimeout>;
+  private timerId?: ReturnType<typeof setTimeout> | undefined;
   private remainingMs: number | null = null;
   private timerStartedAt = 0;
   private pointerOver = false;
@@ -315,8 +315,8 @@ export class DsToast extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
-    const textOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {
+  protected override render(): TemplateResult {
+    const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
       color: 'color.inverse.foreground',
     };
     if (this.overrides?.fontFamily) {
@@ -563,7 +563,7 @@ export class DsToast extends LitElement {
  */
 @customElement('ds-toast-region')
 export class DsToastRegion extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       position: fixed;
       inset-inline: var(--ds-toast-region-inset);
@@ -597,7 +597,7 @@ export class DsToastRegion extends LitElement {
   `;
 
   /** Per-instance style overrides: `{ regionInset: 'layout.gutter.wide' }`. */
-  @property({ attribute: false }) overrides?: Partial<Record<ToastRegionOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<ToastRegionOverridableBinding, TokenRef | undefined>> | undefined;
 
   private readonly internals: ElementInternals;
 
@@ -629,7 +629,7 @@ export class DsToastRegion extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`<slot></slot>`;
   }
 
@@ -674,12 +674,12 @@ export class DsToastRegion extends LitElement {
 /** Options for `toast()`. */
 export interface ToastOptions {
   message: string;
-  tone?: ToastTone;
-  actionLabel?: string;
-  duration?: ToastDuration;
-  dismissible?: boolean;
+  tone?: ToastTone | undefined;
+  actionLabel?: string | undefined;
+  duration?: ToastDuration | undefined;
+  dismissible?: boolean | undefined;
   /** Stable identity; showing a toast with the same toastId replaces the previous one instead of stacking. */
-  toastId?: string;
+  toastId?: string | undefined;
 }
 
 /** Resolution of the promise `toast()` returns, once the toast leaves the screen. */

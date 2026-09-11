@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Splitter } from './Splitter';
 import { Stack } from './Stack';
 import { Text } from './Text';
@@ -25,7 +25,7 @@ const secondaryContent = (
   </Stack>
 );
 
-const meta = {
+const meta: Meta<typeof Splitter> = {
   title: 'Splitter/React',
   component: Splitter,
   args: {
@@ -40,7 +40,7 @@ const meta = {
     collapsible: false,
     stackBelow: 'prose',
   },
-} satisfies Meta<typeof Splitter>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

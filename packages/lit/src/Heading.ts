@@ -1,4 +1,4 @@
-import { LitElement, css, type PropertyValues } from 'lit';
+import { LitElement, css, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { html, literal, type StaticValue } from 'lit/static-html.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -53,7 +53,7 @@ function isHeadingLevel(value: unknown): value is HeadingLevel {
  */
 @customElement('ds-heading')
 export class DsHeading extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       --ds-heading-font-family: var(--font-family-heading);
@@ -134,16 +134,16 @@ export class DsHeading extends LitElement {
    * Position in the document outline. Controls the semantic element, not the
    * visual size. Required; a missing or unknown level falls back to `<h2>`.
    */
-  @property({ reflect: true }) level!: HeadingLevel;
+  @property({ reflect: true }) accessor level!: HeadingLevel;
 
   /** Visual size, independent of level. Defaults to the size that matches the level. */
-  @property({ reflect: true }) size?: HeadingSize;
+  @property({ reflect: true }) accessor size: HeadingSize | undefined;
 
   /** Horizontal text alignment. */
-  @property({ reflect: true }) align: HeadingAlign = 'start';
+  @property({ reflect: true }) accessor align: HeadingAlign = 'start';
 
   /** Per-instance style overrides: `{ fontSize: 'font.size.lg' }`. `color` is locked and ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<HeadingOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -156,7 +156,7 @@ export class DsHeading extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const tag = isHeadingLevel(this.level) ? TAGS[this.level] : TAGS['2'];
     return html`<${tag} class="heading" part="heading"><slot></slot></${tag}>`;
   }

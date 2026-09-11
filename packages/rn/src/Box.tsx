@@ -17,19 +17,19 @@ export interface BoxProps {
   /** Any content. Box does not space its children; put a Stack inside for that. */
   children: React.ReactNode;
   /** Padding on all sides, from the layout inset presets. Use `insetBlock`/`insetInline` when the axes differ. */
-  inset?: BoxInset;
+  inset?: BoxInset | undefined;
   /** Vertical padding, overriding `inset` on that axis. */
-  insetBlock?: BoxInset;
+  insetBlock?: BoxInset | undefined;
   /** Horizontal padding, overriding `inset` on that axis. */
-  insetInline?: BoxInset;
+  insetInline?: BoxInset | undefined;
   /** Background. `none` is transparent; `default` is the page background; `subtle` and `strong` step up. */
-  surface?: BoxSurface;
+  surface?: BoxSurface | undefined;
   /** A thin default border. */
-  border?: boolean;
+  border?: boolean | undefined;
   /** Corner radius from the theme's presets. */
-  radius?: BoxRadius;
+  radius?: BoxRadius | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<BoxOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const INSET_TOKEN = {
@@ -78,7 +78,8 @@ export function Box({
     const blockInset = insetBlock ?? inset;
     const inlineInset = insetInline ?? inset;
 
-    const next: ViewStyle = {
+    // ViewStyle is read-only in React Native's strict TypeScript API; this one is built up in place.
+    const next: { -readonly [K in keyof ViewStyle]: ViewStyle[K] } = {
       paddingVertical: overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t[INSET_TOKEN[blockInset]],
       paddingHorizontal: overrides?.paddingInline
         ? (resolveToken(t, overrides.paddingInline) as number)

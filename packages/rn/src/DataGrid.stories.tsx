@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DataGrid } from './DataGrid';
 import type { DataGridColumn, DataGridRow } from './DataGrid';
 import { withTheme } from './decorators';
@@ -80,7 +80,7 @@ export const Resizable: Story = {
 
 export const Pinned: Story = {
   args: {
-    columns: [{ ...columns[0], pinned: 'start' }, ...columns.slice(1)],
+    columns: [{ ...columns[0]!, pinned: 'start' }, ...columns.slice(1)],
   },
 };
 

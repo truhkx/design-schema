@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ActionSheet } from './ActionSheet';
 import type { ActionSheetAction } from './ActionSheet';
 import { Button } from './Button';

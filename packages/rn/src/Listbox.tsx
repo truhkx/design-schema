@@ -14,9 +14,9 @@ import { toFontWeight, toLineHeight, useTheme } from './theme';
 export type ListboxOption = {
   value: string;
   label: string;
-  description?: string;
-  icon?: IconName;
-  disabled?: boolean;
+  description?: string | undefined;
+  icon?: IconName | undefined;
+  disabled?: boolean | undefined;
 };
 
 /** A labelled cluster of options, rendered with a non-interactive heading row. */
@@ -55,34 +55,34 @@ export interface ListboxProps {
   /** Flat or grouped options. */
   options: ListboxItem[];
   /** Allow any number of selections. The value becomes an array; each option shows a check indicator. */
-  multiple?: boolean;
+  multiple?: boolean | undefined;
   /** Controlled selection: a value, or with `multiple` an array. Omit for uncontrolled. */
-  value?: ListboxValue;
+  value?: ListboxValue | undefined;
   /** Initial selection (or array) for an uncontrolled list. */
-  defaultValue?: ListboxValue;
+  defaultValue?: ListboxValue | undefined;
   /**
    * Single-select only: on the web keyboard model, arrow keys select as they move.
    * Native has no arrow-key browsing to intercept — a `Pressable`'s activation is
    * already the only "move" it gets — so this flag is accepted for API parity but has
    * no runtime effect on this platform.
    */
-  selectionFollowsFocus?: boolean;
+  selectionFollowsFocus?: boolean | undefined;
   /** At least one option must be selected to submit when inside a Form. */
-  required?: boolean;
+  required?: boolean | undefined;
   /**
    * Marks the list invalid. Usually set by the Form. No dedicated border token exists
    * for this component (unlike Input/Select's own bordered fields), so this only feeds
    * the `error` → `required` → `invalid` message precedence; it has no visual
    * treatment of its own.
    */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Error message rendered below the list. Setting it implies `invalid`. */
-  error?: string;
+  error?: string | undefined;
   /**
    * The list lives inside a popup (Select, Combobox) that owns the border, surface
    * and radius; the list draws none of its own.
    */
-  embedded?: boolean;
+  embedded?: boolean | undefined;
   /**
    * The option that is active when the list first renders. Defaults to the first
    * selected option, else the first enabled option. Pre-highlights that row's active
@@ -90,26 +90,26 @@ export interface ListboxProps {
    * ahead of the user reaching it, so this is visual only — see the generation gap
    * notes.
    */
-  defaultActiveValue?: string;
+  defaultActiveValue?: string | undefined;
   /**
    * Options are being fetched (async Combobox); shows `copy.loading` in place of the
    * empty message and marks the list `accessibilityState.busy`.
    */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /** The whole list is inert but readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Field name for Form collection. Multiple values are collected as an array. */
-  name?: string;
+  name?: string | undefined;
   /** Shown when `options` is empty. Defaults to `copy.empty`. */
-  emptyMessage?: string;
+  emptyMessage?: string | undefined;
   /** Height in rows before the list scrolls; `all` never scrolls. */
-  maxVisible?: ListboxMaxVisible;
+  maxVisible?: ListboxMaxVisible | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<ListboxOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ListboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selection changes, with the new value (array when `multiple`). */
-  onChange?: (value: ListboxValue) => void;
+  onChange?: ((value: ListboxValue) => void) | undefined;
   /** Fired as the focused (active) option changes, with its value. */
-  onActiveChange?: (value: string) => void;
+  onActiveChange?: ((value: string) => void) | undefined;
 }
 
 const COPY = {
@@ -296,7 +296,7 @@ export function Listbox({
       validate: () => latest.current.validateValue(latest.current.currentValue),
       focus: () => {
         const node = listRef.current === null ? null : findNodeHandle(listRef.current);
-        if (node !== null) {
+        if (node != null) {
           AccessibilityInfo.setAccessibilityFocus(node);
         }
       },

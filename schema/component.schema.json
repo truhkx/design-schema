@@ -2,77 +2,270 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://design-schema.dev/schema/component.schema.json",
   "title": "Component frontmatter",
-  "description": "Machine-readable half of a component doc. Lives under the `component:` key of the Markdown frontmatter. Mirrors schema/component.ts.",
+  "description": "Machine-readable half of a component doc. Lives under the `component:` key of the Markdown frontmatter. Derived from schema/component.ts by tools/schema.ts — do not edit by hand.",
   "type": "object",
-  "required": ["component"],
   "properties": {
-    "component": { "$ref": "#/$defs/componentDef" }
+    "component": {
+      "$ref": "#/$defs/componentDef"
+    }
   },
+  "required": [
+    "component"
+  ],
   "$defs": {
-    "platformId": { "type": "string", "enum": ["web", "lit", "rn", "swiftui", "compose"] },
+    "componentDef": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z0-9]*$"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "action",
+            "typography",
+            "input",
+            "layout",
+            "feedback",
+            "navigation",
+            "container",
+            "overlay",
+            "data",
+            "primitive"
+          ]
+        },
+        "status": {
+          "default": "draft",
+          "type": "string",
+          "enum": [
+            "draft",
+            "review",
+            "stable",
+            "deprecated"
+          ]
+        },
+        "apg": {
+          "description": "Slug of the W3C ARIA Authoring Practices pattern this component implements, e.g. 'dialog-modal'. Behavior follows the APG when systems disagree.",
+          "type": "string"
+        },
+        "anatomy": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "props": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/propDef"
+          }
+        },
+        "events": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/eventDef"
+          }
+        },
+        "styles": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/styleBinding"
+          }
+        },
+        "a11y": {
+          "$ref": "#/$defs/a11yDef"
+        },
+        "keyboard": {
+          "description": "The keyboard model, key → action, taken from the APG pattern. Generators implement every rule; the planned keyboard gate presses every key and checks the action.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/keyboardRule"
+          }
+        },
+        "composition": {
+          "description": "Anatomy part → the system component it MUST be built from (closeButton: Button, title: Heading). Parts not listed are plain elements. The parser checks the component exists or is marked (planned).",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "behavior": {
+          "description": "Authored given/when/then scenarios the behavior gate turns into tests on every platform. Schema-derived scenarios (renders, accessible name, focusable, error identified, one per enum value) are added by the parser; author only what the schema cannot infer.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/behaviorScenario"
+          }
+        },
+        "copy": {
+          "description": "User-facing strings the component renders itself (validation messages, summary headings). Templates may use {label}, {count}. Generators must use these verbatim so copy is consistent across platforms and localizable in one place.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "platforms": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/platformId"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/platformNotes"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "category",
+        "anatomy",
+        "props",
+        "a11y",
+        "platforms"
+      ],
+      "additionalProperties": false
+    },
+    "propDef": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "enum",
+            "content",
+            "array",
+            "object",
+            "function"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "shape": {
+          "description": "For array/object/function props: the item or field shape in TypeScript-like notation, e.g. '{ value: string; label: string; description?: string; disabled?: boolean }[]'.",
+          "type": "string"
+        },
+        "required": {
+          "default": false,
+          "type": "boolean"
+        },
+        "default": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "a11y": {
+          "type": "string"
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platformId"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "description"
+      ],
+      "additionalProperties": false
+    },
+    "platformId": {
+      "type": "string",
+      "enum": [
+        "web",
+        "lit",
+        "rn",
+        "swiftui",
+        "compose"
+      ]
+    },
+    "eventDef": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "gesture": {
+          "default": false,
+          "description": "True when the natural trigger is a touch gesture (swipe, drag, long-press). Components declaring a gesture event must also list gesture-alternative in a11y.requires.",
+          "type": "boolean"
+        },
+        "platforms": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/platformId"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "description",
+        "platforms"
+      ],
+      "additionalProperties": false
+    },
+    "styleBinding": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "$ref": "#/$defs/tokenRef"
+        },
+        "description": {
+          "type": "string"
+        },
+        "locked": {
+          "default": false,
+          "description": "Not overridable per instance. Bindings whose tokens appear in a11y.contrast, and every focusRing*/minTarget binding, are locked automatically by the parser; set this for others (e.g. a size that keeps a target reachable).",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "token"
+      ],
+      "additionalProperties": false
+    },
     "tokenRef": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9]*(\\.(\\{[a-zA-Z]+\\}|[a-zA-Z0-9-]+))+$",
       "description": "Dotted token path, e.g. color.foreground.strong. Braces interpolate a prop value: space.{size}."
     },
-    "propDef": {
-      "type": "object",
-      "required": ["type", "description"],
-      "additionalProperties": false,
-      "properties": {
-        "type": { "type": "string", "enum": ["string", "number", "boolean", "enum", "content", "array", "object", "function"] },
-        "description": { "type": "string" },
-        "shape": { "type": "string", "description": "For array/object/function props: the item or field shape in TypeScript-like notation, e.g. '{ value: string; label: string; description?: string; disabled?: boolean }[]'." },
-        "required": { "type": "boolean", "default": false },
-        "default": { "type": ["string", "number", "boolean"] },
-        "values": { "type": "array", "items": { "type": "string" } },
-        "a11y": { "type": "string" },
-        "platforms": { "type": "array", "items": { "$ref": "#/$defs/platformId" } }
-      },
-      "if": { "properties": { "type": { "const": "enum" } } },
-      "then": { "required": ["values"] }
-    },
-    "eventDef": {
-      "type": "object",
-      "required": ["description", "platforms"],
-      "additionalProperties": false,
-      "properties": {
-        "description": { "type": "string" },
-        "gesture": { "type": "boolean", "default": false, "description": "True when the natural trigger is a touch gesture (swipe, drag, long-press). Components declaring a gesture event must also list gesture-alternative in a11y.requires." },
-        "platforms": {
-          "type": "object",
-          "propertyNames": { "$ref": "#/$defs/platformId" },
-          "additionalProperties": { "type": "string" }
-        }
-      }
-    },
-    "styleBinding": {
-      "type": "object",
-      "required": ["token"],
-      "additionalProperties": false,
-      "properties": {
-        "token": { "$ref": "#/$defs/tokenRef" },
-        "description": { "type": "string" },
-        "locked": { "type": "boolean", "default": false, "description": "Not overridable per instance. Bindings whose tokens appear in a11y.contrast, and every focusRing*/minTarget binding, are locked automatically by the parser; set this for others (e.g. a size that keeps a target reachable)." }
-      }
-    },
-    "contrastPair": {
-      "type": "object",
-      "required": ["foreground", "background"],
-      "additionalProperties": false,
-      "properties": {
-        "foreground": { "$ref": "#/$defs/tokenRef" },
-        "background": { "$ref": "#/$defs/tokenRef" },
-        "level": { "type": "string", "enum": ["AA", "AAA"], "default": "AA" },
-        "large": { "type": "boolean", "default": false }
-      }
-    },
     "a11yDef": {
       "type": "object",
-      "required": ["role", "requires"],
-      "additionalProperties": false,
       "properties": {
-        "role": { "type": "string" },
+        "role": {
+          "type": "string"
+        },
         "requires": {
           "type": "array",
           "items": {
@@ -105,131 +298,195 @@
             ]
           }
         },
-        "contrast": { "type": "array", "items": { "$ref": "#/$defs/contrastPair" } }
-      }
-    },
-    "platformNotes": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "element": { "type": "string" },
-        "tag": { "type": "string" },
-        "attributes": { "type": "array", "items": { "type": "string" } },
-        "props": { "type": "array", "items": { "type": "string" } },
-        "reflect": { "type": "array", "items": { "type": "string" } },
-        "supported": { "type": "boolean", "default": true },
-        "notes": { "type": "string" }
-      }
-    },
-    "behaviorScenario": {
-      "type": "object",
-      "required": ["name", "then"],
-      "additionalProperties": false,
-      "properties": {
-        "name": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "kebab-case; becomes the test name." },
-        "description": { "type": "string", "description": "Why this scenario exists, when the name is not enough." },
-        "given": { "type": "object", "description": "Props to render with (prop name → value). Omit for defaults.", "additionalProperties": true },
-        "when": {
-          "type": "object",
-          "description": "One interaction: { click: <anatomy part> }, { key: <Key> }, { type: <text> }, { focus: <part> }, { blur: true }. Omit for a pure render assertion.",
-          "additionalProperties": true
-        },
-        "then": {
+        "contrast": {
           "type": "array",
-          "minItems": 1,
-          "description": "Assertions, each one object: { event, with? | fired: false }, { state: checked|expanded|selected|disabled|invalid|pressed|open, is }, { focusable }, { focused: <part> }, { text }, { copy: <copy key> }, { role }, { name }, { attribute, is }, { renders: true }.",
-          "items": { "type": "object", "additionalProperties": true }
-        },
-        "platforms": { "type": "array", "items": { "$ref": "#/$defs/platformId" }, "description": "Restrict to these platforms (default: all)." }
-      }
+          "items": {
+            "$ref": "#/$defs/contrastPair"
+          }
+        }
+      },
+      "required": [
+        "role",
+        "requires"
+      ],
+      "additionalProperties": false
     },
-    "behaviorScenario": {
+    "contrastPair": {
       "type": "object",
-      "required": ["name", "then"],
-      "additionalProperties": false,
       "properties": {
-        "name": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "kebab-case; becomes the test name." },
-        "description": { "type": "string", "description": "Why this scenario exists, when the name is not enough." },
-        "given": { "type": "object", "description": "Props to render with (prop name -> value). Omit for defaults.", "additionalProperties": true },
-        "when": {
-          "type": "object",
-          "description": "One interaction: { click: <anatomy part> }, { key: <Key> }, { type: <text> }, { focus: <part> }, { blur: true }. Omit for a pure render assertion.",
-          "additionalProperties": true
+        "foreground": {
+          "$ref": "#/$defs/tokenRef"
         },
-        "then": {
-          "type": "array",
-          "minItems": 1,
-          "description": "Assertions, one object each: { event, with? | fired: false }, { state: checked|expanded|selected|disabled|invalid|pressed|open, is }, { focusable }, { focused: <part> }, { text }, { copy: <copy key> }, { role }, { name }, { attribute, is }, { renders: true }.",
-          "items": { "type": "object", "additionalProperties": true }
+        "background": {
+          "$ref": "#/$defs/tokenRef"
         },
-        "platforms": { "type": "array", "items": { "$ref": "#/$defs/platformId" }, "description": "Restrict to these platforms (default: all)." }
-      }
+        "level": {
+          "default": "AA",
+          "type": "string",
+          "enum": [
+            "AA",
+            "AAA"
+          ]
+        },
+        "large": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "foreground",
+        "background"
+      ],
+      "additionalProperties": false
     },
     "keyboardRule": {
       "type": "object",
-      "required": ["keys", "action"],
-      "additionalProperties": false,
       "properties": {
-        "keys": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "Key names as in KeyboardEvent.key (Escape, Enter, ' ', ArrowDown, Tab, Home, End) or 'Shift+Tab'." },
-        "action": { "type": "string", "description": "What happens, in one sentence, from the APG pattern." },
-        "when": { "type": "string", "description": "Focus location or state the rule applies in, e.g. 'focus on trigger', 'menu open'." },
-        "from": { "type": "string", "enum": ["trigger", "first", "last", "inside", "any"], "default": "inside", "description": "Where focus is before the key is pressed, for the keyboard gate: the element with aria-haspopup/aria-expanded (trigger), the first/last focusable inside the component, anywhere inside, or wherever it is." },
+        "keys": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Key names as in KeyboardEvent.key (Escape, Enter, ' ', ArrowDown, Tab, Home, End) or 'Shift+Tab'."
+        },
+        "action": {
+          "type": "string",
+          "description": "What happens, in one sentence, from the APG pattern."
+        },
+        "when": {
+          "description": "Focus location or state the rule applies in, e.g. 'focus on trigger', 'menu open'.",
+          "type": "string"
+        },
+        "from": {
+          "default": "inside",
+          "description": "Where focus is before the key is pressed, for the keyboard gate: the element with aria-haspopup/aria-expanded (trigger), the first/last focusable inside the component, anywhere inside, or wherever it is.",
+          "type": "string",
+          "enum": [
+            "trigger",
+            "first",
+            "last",
+            "inside",
+            "any"
+          ]
+        },
         "expect": {
-          "type": "string",
-          "enum": ["closes", "opens", "focus-next", "focus-prev", "focus-first", "focus-last", "focus-wraps-to-first", "focus-wraps-to-last", "focus-trigger", "focus-unchanged", "toggles", "selects", "manual"],
           "default": "manual",
-          "description": "Machine-checkable outcome the keyboard gate asserts after the key: the component's role element disappears/appears, focus moves as named, aria-expanded/aria-checked flips (toggles) or the focused item becomes checked/selected (selects). `manual` means the rule is documented but not auto-tested."
-        }
-      }
-    },
-    "componentDef": {
-      "type": "object",
-      "required": ["name", "category", "anatomy", "props", "a11y", "platforms"],
-      "additionalProperties": false,
-      "properties": {
-        "name": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$" },
-        "category": {
+          "description": "Machine-checkable outcome the keyboard gate asserts after the key: the component's role element disappears/appears, focus moves as named, aria-expanded/aria-checked flips (toggles) or the focused item becomes checked/selected (selects). `manual` means the rule is documented but not auto-tested.",
           "type": "string",
-          "enum": ["action", "typography", "input", "layout", "feedback", "navigation", "container", "overlay", "data", "primitive"]
+          "enum": [
+            "closes",
+            "opens",
+            "focus-next",
+            "focus-prev",
+            "focus-first",
+            "focus-last",
+            "focus-wraps-to-first",
+            "focus-wraps-to-last",
+            "focus-trigger",
+            "focus-unchanged",
+            "toggles",
+            "selects",
+            "manual"
+          ]
+        }
+      },
+      "required": [
+        "keys",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "behaviorScenario": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "kebab-case; becomes the test name."
         },
-        "status": { "type": "string", "enum": ["draft", "review", "stable", "deprecated"], "default": "draft" },
-        "apg": { "type": "string", "description": "Slug of the W3C ARIA Authoring Practices pattern this component implements, e.g. 'dialog-modal'. Behavior follows the APG when systems disagree." },
-        "anatomy": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-        "props": { "type": "object", "additionalProperties": { "$ref": "#/$defs/propDef" } },
-        "events": { "type": "object", "additionalProperties": { "$ref": "#/$defs/eventDef" }, "default": {} },
-        "styles": { "type": "object", "additionalProperties": { "$ref": "#/$defs/styleBinding" }, "default": {} },
-        "a11y": { "$ref": "#/$defs/a11yDef" },
-        "keyboard": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/keyboardRule" },
-          "description": "The keyboard model, key → action, taken from the APG pattern. Generators implement every rule; the planned keyboard gate presses every key and checks the action."
+        "description": {
+          "description": "Why this scenario exists, when the name is not enough.",
+          "type": "string"
         },
-        "composition": {
+        "given": {
+          "description": "Props to render with (prop name -> value). Omit for defaults.",
           "type": "object",
-          "additionalProperties": { "type": "string" },
-          "description": "Anatomy part → the system component it MUST be built from (closeButton: Button, title: Heading). Parts not listed are plain elements. The parser checks the component exists or is marked (planned)."
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
         },
-        "behavior": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/behaviorScenario" },
-          "description": "Authored given/when/then scenarios the behavior gate turns into tests on every platform. Schema-derived scenarios (renders, accessible name, focusable, error identified, one per enum value) are added by the parser; author only what the schema cannot infer."
-        },
-        "behavior": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/behaviorScenario" },
-          "description": "Authored given/when/then scenarios the behavior gate turns into tests on every platform. Schema-derived scenarios (renders, accessible name, focusable, error identified, one per enum value) are added by the parser; author only what the schema cannot infer."
-        },
-        "copy": {
+        "when": {
+          "description": "One interaction: { click: <anatomy part> }, { key: <Key> }, { type: <text> }, { focus: <part> }, { blur: true }. Omit for a pure render assertion.",
           "type": "object",
-          "description": "User-facing strings the component renders itself (validation messages, summary headings). Templates may use {label}, {count}. Generators must use these verbatim so copy is consistent across platforms and localizable in one place.",
-          "additionalProperties": { "type": "string" }
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        "then": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "description": "Assertions, one object each: { event, with? | fired: false }, { state: checked|expanded|selected|disabled|invalid|pressed|open, is }, { focusable }, { focused: <part> }, { text }, { copy: <copy key> }, { role }, { name }, { attribute, is }, { renders: true }."
         },
         "platforms": {
-          "type": "object",
-          "propertyNames": { "$ref": "#/$defs/platformId" },
-          "additionalProperties": { "$ref": "#/$defs/platformNotes" }
+          "description": "Restrict to these platforms (default: all).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platformId"
+          }
         }
-      }
+      },
+      "required": [
+        "name",
+        "then"
+      ],
+      "additionalProperties": false
+    },
+    "platformNotes": {
+      "type": "object",
+      "properties": {
+        "element": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "props": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reflect": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "supported": {
+          "default": true,
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

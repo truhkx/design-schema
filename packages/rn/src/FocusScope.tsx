@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, TextInput, View, findNodeHandle } from 'react-native';
+import type { ViewInstance } from 'react-native';
 
 export type FocusScopeAutoFocus = 'first' | 'last' | 'container' | 'none';
 export type FocusScopeEscapeDirection = 'forward' | 'backward';
@@ -8,25 +9,25 @@ export interface FocusScopeProps {
   /** The confined content. The scope renders no element of its own beyond a wrapper that is not focusable and not announced. */
   children: React.ReactNode;
   /** Tab and Shift+Tab wrap within the scope's focusable descendants, and focus that lands outside is pulled back in. `false` turns the scope into a plain "move focus in and restore on exit" helper, for non-modal panels. Native has no Tab order to confine; this only maps to `accessibilityViewIsModal`. */
-  trapped?: boolean;
+  trapped?: boolean | undefined;
   /** Where focus goes on mount: the first focusable descendant, the last, the scope's own wrapper (for reading-first dialogs), or nowhere. Native has no descendant walker, so `first`, `last` and `container` all focus the wrapper; only `none` differs. */
-  autoFocus?: FocusScopeAutoFocus;
+  autoFocus?: FocusScopeAutoFocus | undefined;
   /** On unmount, focus returns to the element that was focused when the scope mounted, if it can still be found. */
-  restoreFocus?: boolean;
+  restoreFocus?: boolean | undefined;
   /**
    * Explicit element to restore focus to instead of the recorded opener. Required on
    * native when the opener is not a `TextInput` — RN exposes no generic "currently
    * focused element" — so every overlay passes its trigger ref.
    */
-  returnFocusTo?: React.RefObject<View>;
+  returnFocusTo?: React.RefObject<ViewInstance | null> | undefined;
   /** Pause the scope without unmounting it — used while a nested scope (a Menu inside a Dialog) is open, so the innermost active scope owns modal focus. */
-  active?: boolean;
+  active?: boolean | undefined;
   /**
    * Fired when trapped focus would have left the scope just before it wraps, with
    * the direction. Diagnostic; components do not need it. Native has no Tab order
    * to confine, so this never fires on this platform.
    */
-  onEscapeAttempt?: (direction: FocusScopeEscapeDirection) => void;
+  onEscapeAttempt?: ((direction: FocusScopeEscapeDirection) => void) | undefined;
 }
 
 /**
@@ -63,7 +64,7 @@ export function FocusScope({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onEscapeAttempt,
 }: FocusScopeProps): React.JSX.Element {
-  const wrapperRef = React.useRef<View>(null);
+  const wrapperRef = React.useRef<ViewInstance>(null);
   const capturedOpenerRef = React.useRef<ReturnType<typeof TextInput.State.currentlyFocusedInput> | null>(null);
 
   React.useEffect(() => {
@@ -77,7 +78,7 @@ export function FocusScope({
 
     if (autoFocus !== 'none') {
       const node = wrapperRef.current === null ? null : findNodeHandle(wrapperRef.current);
-      if (node !== null) {
+      if (node != null) {
         AccessibilityInfo.setAccessibilityFocus(node);
       }
     }
@@ -90,7 +91,7 @@ export function FocusScope({
       // since it names a stable trigger that outlives the scope either way.
       const opener = returnFocusTo !== undefined ? returnFocusTo.current : capturedOpenerRef.current;
       const node = opener === null || opener === undefined ? null : findNodeHandle(opener);
-      if (node !== null) {
+      if (node != null) {
         AccessibilityInfo.setAccessibilityFocus(node);
       }
     };

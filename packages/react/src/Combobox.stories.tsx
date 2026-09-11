@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Combobox } from './Combobox';
 import type { ListboxOption } from './Listbox';
 
@@ -31,7 +31,7 @@ const ROLES: ListboxOption[] = [
   },
 ];
 
-const meta = {
+const meta: Meta<typeof Combobox> = {
   title: 'Combobox/React',
   component: Combobox,
   args: {
@@ -40,7 +40,7 @@ const meta = {
     options: FRUITS,
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof Combobox>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

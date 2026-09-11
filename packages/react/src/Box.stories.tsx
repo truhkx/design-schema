@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box } from './Box';
 import { Text } from './Text';
 
 const content = <Text element="p">Box content.</Text>;
 
-const meta = {
+const meta: Meta<typeof Box> = {
   title: 'Box/React',
   component: Box,
   args: {
@@ -15,7 +15,7 @@ const meta = {
     element: 'div',
     children: content,
   },
-} satisfies Meta<typeof Box>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

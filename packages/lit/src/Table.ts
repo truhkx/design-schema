@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, unsafeCSS, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, unsafeCSS, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -25,15 +25,15 @@ export type TableColumnHideBelow = 'prose' | 'content';
 export interface TableColumn {
   key: string;
   header: string;
-  abbr?: string;
-  align?: TableColumnAlign;
-  sortable?: boolean;
-  width?: TableColumnWidth;
-  isRowHeader?: boolean;
-  hideBelow?: TableColumnHideBelow;
+  abbr?: string | undefined;
+  align?: TableColumnAlign | undefined;
+  sortable?: boolean | undefined;
+  width?: TableColumnWidth | undefined;
+  isRowHeader?: boolean | undefined;
+  hideBelow?: TableColumnHideBelow | undefined;
   /** Formats the cell. Lit templates (never raw HTML) — e.g. `<ds-text tone="muted">` for a secondary value
       (`cellMutedColor`). Omitted on the row-header column enables the built-in row Button that fires `row-press`. */
-  render?: (row: TableRow) => unknown;
+  render?: ((row: TableRow) => unknown) | undefined;
 }
 
 export type TableSortDirection = 'ascending' | 'descending';
@@ -206,7 +206,7 @@ const HOOKS: Record<TableOverridableBinding, string> = {
  */
 @customElement('ds-table')
 export class DsTable extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       container-type: inline-size;
@@ -474,77 +474,77 @@ export class DsTable extends LitElement {
   `;
 
   /** What the table lists ("Open invoices"). Rendered as the `<caption>` and the accessible name. */
-  @property() caption!: string;
+  @property() accessor caption!: string;
 
   /** Heading level of the caption in the page outline; its size (`captionSize`) is fixed regardless. */
-  @property({ attribute: 'caption-level' }) captionLevel: TableCaptionLevel = '2';
+  @property({ attribute: 'caption-level' }) accessor captionLevel: TableCaptionLevel = '2';
 
   /** Visually hides the caption; it remains the accessible name. */
-  @property({ type: Boolean, reflect: true, attribute: 'hide-caption' }) hideCaption = false;
+  @property({ type: Boolean, reflect: true, attribute: 'hide-caption' }) accessor hideCaption = false;
 
   /** Column definitions in display order. A property, not an attribute. */
-  @property({ attribute: false }) columns: TableColumn[] = [];
+  @property({ attribute: false }) accessor columns: TableColumn[] = [];
 
   /** The rows. `id` must be stable. A property, not an attribute. */
-  @property({ attribute: false }) data: TableRow[] = [];
+  @property({ attribute: false }) accessor data: TableRow[] = [];
 
   /** Controlled sort state. When set, the table shows it but never sorts `data` itself. */
-  @property({ attribute: false }) sort?: TableSort;
+  @property({ attribute: false }) accessor sort: TableSort | undefined;
 
   /** Initial sort for uncontrolled use; the table then sorts `data` itself. */
-  @property({ attribute: false }) defaultSort?: TableSort;
+  @property({ attribute: false }) accessor defaultSort: TableSort | undefined;
 
   /** Adds a selection column: a Checkbox per row (radio-like for `single`) and, for `multiple`, a select-all in the header. */
-  @property({ reflect: true }) selectable: TableSelectable = 'none';
+  @property({ reflect: true }) accessor selectable: TableSelectable = 'none';
 
   /** Controlled selected row ids. */
-  @property({ attribute: false }) selected?: string[];
+  @property({ attribute: false }) accessor selected: string[] | undefined;
 
   /** Initially selected ids, for uncontrolled use. */
-  @property({ attribute: false }) defaultSelected: string[] = [];
+  @property({ attribute: false }) accessor defaultSelected: string[] = [];
 
   /** `stack` turns each row into a labelled block below the prose width; `scroll` keeps columns and scrolls horizontally. */
-  @property({ reflect: true }) responsive: TableResponsive = 'stack';
+  @property({ reflect: true }) accessor responsive: TableResponsive = 'stack';
 
   /** The header row stays visible while the body scrolls. Exposed as the negated `no-sticky-header` attribute. */
   @property({ attribute: 'no-sticky-header', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  stickyHeader = true;
+  accessor stickyHeader = true;
 
   /** `viewport` caps the table at the viewport height and scrolls the body; `none` lets the page scroll. */
-  @property({ reflect: true, attribute: 'max-height' }) maxHeight: TableMaxHeight = 'none';
+  @property({ reflect: true, attribute: 'max-height' }) accessor maxHeight: TableMaxHeight = 'none';
 
   /** Cell padding. */
-  @property({ reflect: true }) density: TableDensity = 'comfortable';
+  @property({ reflect: true }) accessor density: TableDensity = 'comfortable';
 
   /** Alternate row backgrounds. */
-  @property({ type: Boolean, reflect: true }) striped = false;
+  @property({ type: Boolean, reflect: true }) accessor striped = false;
 
   /** Shown in place of the body when `data` is empty. Defaults to `copy.empty`. */
-  @property({ attribute: 'empty-message' }) emptyMessage?: string;
+  @property({ attribute: 'empty-message' }) accessor emptyMessage: string | undefined;
 
   /** Data is being fetched: the body shows `copy.loading` and `aria-busy` is set. Existing rows stay visible. */
-  @property({ type: Boolean, reflect: true }) loading = false;
+  @property({ type: Boolean, reflect: true }) accessor loading = false;
 
   /** Renders a trailing actions cell per row. Kept out of `columns` so the header can be a visually-hidden "Actions". */
-  @property({ attribute: false }) rowActions?: (row: TableRow) => unknown;
+  @property({ attribute: false }) accessor rowActions: ((row: TableRow) => unknown) | undefined;
 
   /** Per-instance style overrides: `{ captionSize: 'font.size.lg' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<TableOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<TableOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled sort state, seeded from `defaultSort`. */
-  @state() private internalSort?: TableSort;
+  @state() private accessor internalSort: TableSort | undefined;
 
   /** Uncontrolled selection, seeded from `defaultSelected`. */
-  @state() private internalSelected: string[] = [];
+  @state() private accessor internalSelected: string[] = [];
 
   /** Text announced through the shared live region (sort or selection changes). */
-  @state() private liveMessage = '';
+  @state() private accessor liveMessage = '';
 
-  @query('.sentinel') private readonly sentinelEl?: HTMLElement;
-  @query('.wrapper') private readonly wrapperEl?: HTMLElement;
-  @query('.scroll-region') private readonly scrollRegionEl?: HTMLElement;
+  @query('.sentinel') private accessor sentinelEl!: HTMLElement | null;
+  @query('.wrapper') private accessor wrapperEl!: HTMLElement | null;
+  @query('.scroll-region') private accessor scrollRegionEl!: HTMLElement | null;
 
-  private headerObserver?: IntersectionObserver;
+  private headerObserver?: IntersectionObserver | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -575,7 +575,7 @@ export class DsTable extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const rows = this.sortedRows();
     const colCount = this.columns.length + (this.selectable !== 'none' ? 1 : 0) + (this.rowActions ? 1 : 0);
 
@@ -914,7 +914,7 @@ export class DsTable extends LitElement {
     const root = this.maxHeight === 'viewport' ? (this.wrapperEl ?? null) : null;
     this.headerObserver = new IntersectionObserver(
       ([entry]) => {
-        this.toggleAttribute('data-header-scrolled', !entry.isIntersecting);
+        this.toggleAttribute('data-header-scrolled', !entry!.isIntersecting);
       },
       { root, threshold: 0 },
     );
@@ -923,8 +923,8 @@ export class DsTable extends LitElement {
 
   /** `captionSize`/`captionWeight` overrides forwarded to the composed Heading; its own default weight and this
       fixed `size="md"` already match the caption tokens, so nothing is forwarded unless the consumer overrides them. */
-  private get captionOverrides(): Partial<Record<HeadingOverridableBinding, TokenRef>> {
-    const result: Partial<Record<HeadingOverridableBinding, TokenRef>> = { marginBlockEnd: 'space.0' };
+  private get captionOverrides(): Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> {
+    const result: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> = { marginBlockEnd: 'space.0' };
     if (this.overrides?.captionSize) {
       result.fontSize = this.overrides.captionSize;
     }

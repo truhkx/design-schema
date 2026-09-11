@@ -8,6 +8,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Switch, type SwitchProps } from './Switch';
 import meta from './Switch.stories';
+import type { ComponentProps } from 'react';
 
 const DESCRIPTION = 'Sends a daily summary at 9:00.';
 
@@ -15,7 +16,7 @@ const DESCRIPTION = 'Sends a daily summary at 9:00.';
 function setup(given: Partial<SwitchProps> = {}) {
   const onChange = vi.fn();
   const props = { ...meta.args, ...given, onChange };
-  const utils = render(<Switch {...props} />);
+  const utils = render(<Switch {...(props as ComponentProps<typeof Switch>)} />);
   const user = userEvent.setup();
   return {
     ...utils,
@@ -23,9 +24,9 @@ function setup(given: Partial<SwitchProps> = {}) {
     onChange,
     props,
     track: () => screen.getByRole('switch'),
-    label: () => screen.getByText(props.label),
+    label: () => screen.getByText(props.label!),
     description: () => screen.getByText(DESCRIPTION),
-    rerender: (next: Partial<SwitchProps>) => utils.rerender(<Switch {...props} {...next} />),
+    rerender: (next: Partial<SwitchProps>) => utils.rerender(<Switch {...(props as ComponentProps<typeof Switch>)} {...next} />),
   };
 }
 
@@ -127,7 +128,7 @@ describe('Switch', () => {
   /* derived: a11y.requires */
   it('has-accessible-name', () => {
     const s = setup();
-    expect(screen.getByRole('switch', { name: s.props.label })).toHaveAccessibleName();
+    expect(screen.getByRole('switch', { name: s.props.label! })).toHaveAccessibleName();
   });
 
   it('control-is-focusable', () => {

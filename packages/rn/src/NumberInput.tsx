@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, Platform, TextInput, View, findNodeHandle } from 'react-native';
-import type { AccessibilityActionEvent, KeyboardTypeOptions, ReturnKeyTypeOptions, TextStyle, ViewStyle } from 'react-native';
+import type { AccessibilityActionEvent, KeyboardTypeOptions, ReturnKeyTypeOptions, TextInputInstance, TextStyle, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -42,49 +42,49 @@ export interface NumberInputProps {
   /** Field name for the Form. The collected value is the number, stringified (`FormFieldValue` has no numeric variant). */
   name: string;
   /** Controlled numeric value. `undefined` means empty. */
-  value?: number;
+  value?: number | undefined;
   /** Initial value for an uncontrolled field. */
-  defaultValue?: number;
+  defaultValue?: number | undefined;
   /** Lower bound; values are clamped on blur and the decrement button disables at it. */
-  min?: number;
+  min?: number | undefined;
   /** Upper bound; the increment button disables at it. */
-  max?: number;
+  max?: number | undefined;
   /** Increment for the buttons and accessibility step actions. Also the rounding granularity when `precision` is omitted. */
-  step?: number;
+  step?: number | undefined;
   /** Decimal places to keep and display. Defaults to the decimals in `step`. */
-  precision?: number;
+  precision?: number | undefined;
   /** Locale formatting of the displayed value via `Intl.NumberFormat`. The underlying value is always a plain number. */
-  format?: NumberInputFormat;
+  format?: NumberInputFormat | undefined;
   /** ISO 4217 code for `format: currency` (e.g. USD). */
-  currency?: string;
+  currency?: string | undefined;
   /** Intl unit identifier for `format: unit` (e.g. kilogram, hour), or a literal shown as `suffix` when not a valid Intl unit. */
-  unit?: string;
+  unit?: string | undefined;
   /** Static text before the value inside the field ("$"), when `format` cannot express it. */
-  leadingText?: string;
+  leadingText?: string | undefined;
   /** Static text after the value inside the field ("kg", "%"). Also the literal shown when `unit` is not a valid Intl unit. */
-  trailingText?: string;
+  trailingText?: string | undefined;
   /** Hide the increment/decrement buttons. The accessibility step actions still work. */
-  hideSteppers?: boolean;
+  hideSteppers?: boolean | undefined;
   /** Example value shown while empty. */
-  placeholder?: string;
+  placeholder?: string | undefined;
   /** Helper text below the label. Also the field's `accessibilityHint`. */
-  description?: string;
+  description?: string | undefined;
   /** Must have a value to submit. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Visually hide the label (it remains the field's `accessibilityLabel`). Only for a field whose context already names it. */
-  hideLabel?: boolean;
+  hideLabel?: boolean | undefined;
   /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type, `sm` stepper buttons. */
-  size?: NumberInputSize;
+  size?: NumberInputSize | undefined;
   /** Not editable, not submitted, still readable. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Marks the field invalid. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Error message; implies invalid. */
-  error?: string;
+  error?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<NumberInputOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<NumberInputOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the numeric value changes (on each valid keystroke, step, and on blur after clamping/rounding), with the number or undefined. */
-  onChangeText?: (value: number | undefined) => void;
+  onChangeText?: ((value: number | undefined) => void) | undefined;
 }
 
 const FONT_SIZE_TOKEN = { sm: 'fontSizeSm', md: 'fontSizeMd' } as const satisfies Record<NumberInputSize, keyof Tokens>;
@@ -142,7 +142,7 @@ function sanitizeTyped(raw: string): string {
     } else if (ch === '.' && !seenDot) {
       seenDot = true;
       out += ch;
-    } else if (ch >= '0' && ch <= '9') {
+    } else if (ch! >= '0' && ch! <= '9') {
       out += ch;
     }
   }
@@ -222,7 +222,7 @@ export function NumberInput({
 }: NumberInputProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const form = useFormContext();
-  const inputRef = React.useRef<TextInput>(null);
+  const inputRef = React.useRef<TextInputInstance>(null);
 
   const [internalValue, setInternalValueState] = React.useState<number | undefined>(defaultValue);
   const [rawText, setRawText] = React.useState<string>('');
@@ -313,7 +313,7 @@ export function NumberInput({
         }
         input.focus();
         const node = findNodeHandle(input);
-        if (node !== null) {
+        if (node != null) {
           AccessibilityInfo.setAccessibilityFocus(node);
         }
       },

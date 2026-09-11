@@ -1,11 +1,11 @@
 import {
-  forwardRef,
   useId,
   useLayoutEffect,
   useState,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Icon, type IconName } from './Icon';
@@ -15,7 +15,7 @@ import './SegmentedControl.css';
 export type SegmentedControlSize = 'sm' | 'md';
 
 /** One segment. `label` is one word; with `iconOnly` it becomes the accessible name and Tooltip text. */
-export type SegmentedControlOption = { value: string; label: string; icon?: IconName; disabled?: boolean };
+export type SegmentedControlOption = { value: string; label: string; icon?: IconName | undefined; disabled?: boolean | undefined };
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type SegmentedControlOverridableBinding =
@@ -55,7 +55,7 @@ const OVERRIDE_HOOK: Record<SegmentedControlOverridableBinding, string> = {
   disabledOpacity: '--ds-segmented-control-disabled-opacity',
 };
 
-function overridesToStyle(overrides: Partial<Record<SegmentedControlOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<SegmentedControlOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as SegmentedControlOverridableBinding[]) {
     const ref = overrides[binding];
@@ -78,19 +78,19 @@ export interface SegmentedControlProps extends Omit<ComponentPropsWithoutRef<'di
   /** Two to five options. Labels are one word; with `iconOnly` the label becomes the accessible name. */
   options: SegmentedControlOption[];
   /** Controlled selected value. Omit for uncontrolled. */
-  value?: string;
+  value?: string | undefined;
   /** Initially selected value. Defaults to the first enabled option — a segmented control always has a selection. */
-  defaultValue?: string;
+  defaultValue?: string | undefined;
   /** Show icons only (every option must have one); labels become accessible names and Tooltips. */
-  iconOnly?: boolean;
+  iconOnly?: boolean | undefined;
   /** Toolbar (`sm`) or standard (`md`) height. */
-  size?: SegmentedControlSize;
+  size?: SegmentedControlSize | undefined;
   /** Stretch to the container width with equal segments. */
-  fill?: boolean;
+  fill?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<SegmentedControlOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<SegmentedControlOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selection changes, with the new value. The change takes effect immediately. */
-  onChange?: (value: string) => void;
+  onChange?: ((value: string) => void) | undefined;
 }
 
 /**
@@ -102,23 +102,21 @@ export interface SegmentedControlProps extends Omit<ComponentPropsWithoutRef<'di
  * toolbars where the icons are unambiguous (list/grid) and add Tooltips. Pair it with a visible
  * Text label when the group's purpose is not obvious.
  */
-export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps>(function SegmentedControl(
-  {
-    label,
-    options,
-    value,
-    defaultValue,
-    iconOnly = false,
-    size = 'md',
-    fill = false,
-    overrides,
-    onChange,
-    className,
-    style,
-    ...rest
-  },
+export const SegmentedControl = function SegmentedControl({
   ref,
-) {
+  label,
+  options,
+  value,
+  defaultValue,
+  iconOnly = false,
+  size = 'md',
+  fill = false,
+  overrides,
+  onChange,
+  className,
+  style,
+  ...rest
+}: SegmentedControlProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const baseId = `ds-segmented-control${generatedId}`;
   const segmentId = (optionValue: string) => `${baseId}-segment-${optionValue}`;
@@ -191,20 +189,20 @@ export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps
       case 'ArrowRight':
       case 'ArrowDown':
         event.preventDefault();
-        focusAndSelect(enabled[(currentIndex + 1 + enabled.length) % enabled.length].value);
+        focusAndSelect(enabled[(currentIndex + 1 + enabled.length) % enabled.length]!.value);
         break;
       case 'ArrowLeft':
       case 'ArrowUp':
         event.preventDefault();
-        focusAndSelect(enabled[(currentIndex - 1 + enabled.length) % enabled.length].value);
+        focusAndSelect(enabled[(currentIndex - 1 + enabled.length) % enabled.length]!.value);
         break;
       case 'Home':
         event.preventDefault();
-        focusAndSelect(enabled[0].value);
+        focusAndSelect(enabled[0]!.value);
         break;
       case 'End':
         event.preventDefault();
-        focusAndSelect(enabled[enabled.length - 1].value);
+        focusAndSelect(enabled[enabled.length - 1]!.value);
         break;
       default:
         break;
@@ -281,4 +279,4 @@ export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps
       <span aria-hidden="true" data-part="indicator" className="ds-segmented-control__indicator" style={indicatorStyle} />
     </div>
   );
-});
+};

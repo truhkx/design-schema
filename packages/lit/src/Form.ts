@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -55,7 +55,7 @@ const CONTROL_SELECTOR = `${FIELD_SELECTOR}, ds-button`;
 let formInstanceCount = 0;
 
 /** `ElementInternals` with the cross-root ARIA reflection Chromium ships; not yet in every DOM lib. */
-type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[] | null };
+type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[] | null | undefined };
 
 /**
  * `<ds-form>` — Form (category: container).
@@ -100,7 +100,7 @@ export class DsForm extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--font-family-body);
@@ -160,28 +160,28 @@ export class DsForm extends LitElement {
   `;
 
   /** Identifier for the form, used for analytics and as the base of generated field ids. */
-  @property() name = '';
+  @property() accessor name = '';
 
   /** Accessible name for the form landmark. Required when a page has more than one form and `labelledBy` is not set. */
-  @property() label?: string;
+  @property() accessor label: string | undefined;
 
   /** Id of a visible Heading that names the form. Wins over `label` when both are set. */
-  @property() labelledBy?: string;
+  @property() accessor labelledBy: string | undefined;
 
   /** When field-level validation runs. `submit` is the least noisy; `blur` is the usual choice for longer forms. */
-  @property() validate: FormValidate = 'submit';
+  @property() accessor validate: FormValidate = 'submit';
 
   /** Disables every field and action inside. Use while submitting. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** When submission fails validation, render a summary of errors above the fields that links to each field. */
-  @property({ type: Boolean, attribute: 'error-summary' }) errorSummary = true;
+  @property({ type: Boolean, attribute: 'error-summary' }) accessor errorSummary = true;
 
   /** Per-instance style overrides: `{ gap: 'layout.gap.normal' }`. Locked bindings (errorSummaryText, errorSummaryBackground) are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<FormOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<FormOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Field name -> message, for fields that have failed validation. */
-  @state() private errors: Record<string, string> = {};
+  @state() private accessor errors: Record<string, string> = {};
 
   /** Once a submission has failed, fields re-validate on blur/change even in `submit` mode. */
   private hasFailedSubmission = false;
@@ -238,7 +238,7 @@ export class DsForm extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const errorEntries = Object.entries(this.errors);
     const showSummary = this.errorSummary && errorEntries.length > 0;
     const fieldsByName = new Map(this.queryFields().map((field) => [field.name, field] as const));
@@ -347,7 +347,7 @@ export class DsForm extends LitElement {
   }
 
   private handlePress(event: Event): void {
-    const target = event.target as HTMLElement & { type?: string };
+    const target = event.target as HTMLElement & { type?: string | undefined };
     if (target.tagName !== 'DS-BUTTON' || target.type !== 'submit') {
       return;
     }
@@ -437,7 +437,7 @@ export class DsForm extends LitElement {
     let node = el.parentElement;
     while (node !== null && node !== this) {
       if (node.tagName === 'DS-DISCLOSURE') {
-        const disclosure = node as HTMLElement & { currentOpen?: boolean; keepMounted?: boolean };
+        const disclosure = node as HTMLElement & { currentOpen?: boolean | undefined; keepMounted?: boolean | undefined };
         if (!disclosure.keepMounted && !disclosure.currentOpen) {
           return true;
         }

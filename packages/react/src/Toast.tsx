@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useCallback,
   useEffect,
   useImperativeHandle,
@@ -8,6 +7,7 @@ import {
   useSyncExternalStore,
   type ComponentPropsWithoutRef,
   type CSSProperties,
+  type Ref, type ReactElement, type ReactPortal,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
@@ -49,7 +49,7 @@ const OVERRIDE_HOOK: Record<ToastOverridableBinding, string> = {
   exit: '--ds-toast-exit',
 };
 
-function overridesToStyle(overrides: Partial<Record<ToastOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<ToastOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as ToastOverridableBinding[]) {
     const ref = overrides[binding];
@@ -101,24 +101,24 @@ export interface ToastProps
   /** One sentence saying what happened ("Message sent", "3 files deleted"). */
   message: string;
   /** Sets the leading icon; `neutral` has none. Toasts do not use tinted backgrounds — the icon and message carry the tone. */
-  tone?: ToastTone;
+  tone?: ToastTone | undefined;
   /** Label for a single action button ("Undo", "View"). When present the toast stays longer and pauses on hover and focus. */
-  actionLabel?: string;
+  actionLabel?: string | undefined;
   /**
    * `short` ≈ 5s, `long` ≈ 10s, `persistent` until dismissed — required when there is an action
    * the user may need time to take, and for danger tone.
    */
-  duration?: ToastDuration;
+  duration?: ToastDuration | undefined;
   /** Shows a dismiss button. Persistent toasts are always dismissible. */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /** Stable identity; showing a toast with the same toastId replaces the previous one instead of stacking. */
-  toastId?: string;
+  toastId?: string | undefined;
   /** The action button was activated. The toast dismisses. */
-  onAction?: () => void;
+  onAction?: (() => void) | undefined;
   /** The toast left the screen: reason `timeout`, `dismiss-button`, `action`, or `replaced`. */
-  onDismiss?: (reason: ToastDismissReason) => void;
+  onDismiss?: ((reason: ToastDismissReason) => void) | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<ToastOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ToastOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -130,23 +130,21 @@ export interface ToastProps
  * ("Export ready" with a "View" action). Match `tone` to the outcome; use `persistent` whenever
  * there is an action, and for `danger`, so nobody misses the one they needed.
  */
-export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
-  {
-    message,
-    tone = 'neutral',
-    actionLabel,
-    duration = 'short',
-    dismissible = true,
-    toastId,
-    onAction,
-    onDismiss,
-    overrides,
-    className,
-    style,
-    ...rest
-  },
+export const Toast = function Toast({
   ref,
-) {
+  message,
+  tone = 'neutral',
+  actionLabel,
+  duration = 'short',
+  dismissible = true,
+  toastId,
+  onAction,
+  onDismiss,
+  overrides,
+  className,
+  style,
+  ...rest
+}: ToastProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const rootRef = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => rootRef.current as HTMLDivElement, []);
 
@@ -355,29 +353,29 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
       ) : null}
     </div>
   );
-});
+};
 
 /** Options for the imperative `toast()` call; the same fields as `ToastProps`, minus what only makes sense on a directly-rendered `<Toast>`. */
 export interface ToastOptions {
   message: string;
-  tone?: ToastTone;
-  actionLabel?: string;
-  duration?: ToastDuration;
-  dismissible?: boolean;
-  toastId?: string;
-  onAction?: () => void;
-  onDismiss?: (reason: ToastDismissReason) => void;
+  tone?: ToastTone | undefined;
+  actionLabel?: string | undefined;
+  duration?: ToastDuration | undefined;
+  dismissible?: boolean | undefined;
+  toastId?: string | undefined;
+  onAction?: (() => void) | undefined;
+  onDismiss?: ((reason: ToastDismissReason) => void) | undefined;
 }
 
 interface ToastEntry {
   id: string;
   message: string;
   tone: ToastTone;
-  actionLabel?: string;
+  actionLabel?: string | undefined;
   duration: ToastDuration;
   dismissible: boolean;
-  onAction?: () => void;
-  onDismiss?: (reason: ToastDismissReason) => void;
+  onAction?: (() => void) | undefined;
+  onDismiss?: ((reason: ToastDismissReason) => void) | undefined;
 }
 
 const MAX_STACKED = 3;
@@ -415,12 +413,12 @@ function pushEntry(entry: ToastEntry) {
     const next = entries.slice();
     next[existingIndex] = entry;
     entries = next;
-    previous.onDismiss?.('replaced');
+    previous!.onDismiss?.('replaced');
   } else {
     let next = [...entries, entry];
     let evicted: ToastEntry | null = null;
     if (next.length > MAX_STACKED) {
-      evicted = next[0];
+      evicted = next[0]!;
       next = next.slice(1);
     }
     entries = next;
@@ -438,7 +436,7 @@ const REGION_OVERRIDE_HOOK: Record<ToastRegionOverridableBinding, string> = {
   layer: '--ds-toast-region-layer',
 };
 
-function regionOverridesToStyle(overrides: Partial<Record<ToastRegionOverridableBinding, TokenRef>>): CSSProperties {
+function regionOverridesToStyle(overrides: Partial<Record<ToastRegionOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as ToastRegionOverridableBinding[]) {
     const ref = overrides[binding];
@@ -451,7 +449,7 @@ let regionMountCount = 0;
 
 export interface ToastRegionProps {
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<ToastRegionOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ToastRegionOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -461,7 +459,7 @@ export interface ToastRegionProps {
  * any toast so announcements fire, is reachable from anywhere with F6, and stacks up to three
  * toasts above one another, newest last.
  */
-export const ToastRegion = forwardRef<HTMLDivElement, ToastRegionProps>(function ToastRegion({ overrides }, ref) {
+export const ToastRegion = function ToastRegion({ ref, overrides }: ToastRegionProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactPortal | null {
   const list = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const regionRef = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => regionRef.current as HTMLDivElement, []);
@@ -530,7 +528,7 @@ export const ToastRegion = forwardRef<HTMLDivElement, ToastRegionProps>(function
     </div>,
     document.body,
   );
-});
+};
 
 let autoRoot: Root | null = null;
 

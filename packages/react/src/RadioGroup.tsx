@@ -1,5 +1,4 @@
 import {
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -10,6 +9,7 @@ import {
   type CSSProperties,
   type FocusEvent,
   type MouseEvent,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text } from './Text';
@@ -18,7 +18,7 @@ import './RadioGroup.css';
 
 export type RadioGroupOrientation = 'vertical' | 'horizontal';
 /** One option. `value` is a short identifier (letters, digits, dashes) — it becomes part of an element id. */
-export type RadioGroupOption = { value: string; label: string; description?: string; disabled?: boolean };
+export type RadioGroupOption = { value: string; label: string; description?: string | undefined; disabled?: boolean | undefined };
 
 /** copy.* — used verbatim; `{label}` is replaced by the legend. */
 const COPY = {
@@ -65,7 +65,7 @@ const OVERRIDE_HOOK: Record<RadioGroupOverridableBinding, string> = {
   transition: '--ds-radio-group-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<RadioGroupOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<RadioGroupOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as RadioGroupOverridableBinding[]) {
     const ref = overrides[binding];
@@ -86,25 +86,25 @@ export interface RadioGroupProps
   /** The options in display order. Two to about seven; more than that is a Select (planned). */
   options: RadioGroupOption[];
   /** Controlled selected value. Omit for an uncontrolled group. */
-  value?: string;
+  value?: string | undefined;
   /** Initial selection for an uncontrolled group. Omit to start with nothing selected. */
-  defaultValue?: string;
+  defaultValue?: string | undefined;
   /** Layout of the options. Horizontal only for two or three short labels; it wraps rather than overflows. */
-  orientation?: RadioGroupOrientation;
+  orientation?: RadioGroupOrientation | undefined;
   /** An option must be selected to submit. Shown in the legend, not only by color. */
-  required?: boolean;
+  required?: boolean | undefined;
   /** Marks the group as failing validation. Usually set by the Form; can be set directly. */
-  invalid?: boolean;
+  invalid?: boolean | undefined;
   /** Disables every option. Individual options use `options[].disabled`. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /** Persistent helper text under the legend. */
-  description?: string;
+  description?: string | undefined;
   /** The group's error message. Setting it marks the group invalid. */
-  error?: string;
+  error?: string | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<RadioGroupOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<RadioGroupOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selection changes, with the new option value. */
-  onChange?: (value: string, event: ChangeEvent<HTMLInputElement>) => void;
+  onChange?: ((value: string, event: ChangeEvent<HTMLInputElement>) => void) | undefined;
 }
 
 /**
@@ -117,29 +117,27 @@ export interface RadioGroupProps
  * there is a sensible default; leave the group unselected when the choice is consequential and
  * you want a deliberate answer.
  */
-export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(function RadioGroup(
-  {
-    label,
-    name,
-    options,
-    value,
-    defaultValue,
-    orientation = 'vertical',
-    required = false,
-    invalid = false,
-    disabled = false,
-    description,
-    error,
-    overrides,
-    onChange,
-    onBlur,
-    id: idProp,
-    className,
-    style,
-    ...rest
-  },
+export const RadioGroup = function RadioGroup({
   ref,
-) {
+  label,
+  name,
+  options,
+  value,
+  defaultValue,
+  orientation = 'vertical',
+  required = false,
+  invalid = false,
+  disabled = false,
+  description,
+  error,
+  overrides,
+  onChange,
+  onBlur,
+  id: idProp,
+  className,
+  style,
+  ...rest
+}: RadioGroupProps & { ref?: Ref<HTMLFieldSetElement> | undefined }): ReactElement {
   const form = useFormContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-radio-group${generatedId}`);
@@ -333,4 +331,4 @@ export const RadioGroup = forwardRef<HTMLFieldSetElement, RadioGroupProps>(funct
       ) : null}
     </fieldset>
   );
-});
+};

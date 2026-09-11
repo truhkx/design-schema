@@ -30,7 +30,7 @@ def theme_schema() -> dict:
     return json.loads((ROOT / "schema" / "theme.schema.json").read_text(encoding="utf-8"))
 
 
-# A component that passes schema/component.schema.json and tools/parse.py's extra
+# A component that passes schema/component.schema.json and tools/parse.ts's extra
 # rules. Tests break one rule at a time from this baseline.
 VALID_COMPONENT = {
     "name": "Widget",

@@ -1,4 +1,4 @@
-import { LitElement, css, html, type PropertyValues } from 'lit';
+import { LitElement, css, html, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Disclosure.js';
@@ -10,7 +10,7 @@ export type AccordionHeadingLevel = DisclosureHeadingLevel;
 export interface AccordionItem {
   id: string;
   summary: string;
-  disabled?: boolean;
+  disabled?: boolean | undefined;
 }
 
 /** Why a section's open state changed. */
@@ -48,7 +48,7 @@ const HOOKS: Record<AccordionOverridableBinding, string> = {
   triggerFontWeight: '--ds-accordion-trigger-font-weight',
 };
 
-function isDisclosureElement(el: Element): el is HTMLElement & { id: string; open?: boolean } {
+function isDisclosureElement(el: Element): el is HTMLElement & { id: string; open?: boolean | undefined } {
   return el.tagName === 'DS-DISCLOSURE';
 }
 
@@ -91,7 +91,7 @@ function isDisclosureElement(el: Element): el is HTMLElement & { id: string; ope
  */
 @customElement('ds-accordion')
 export class DsAccordion extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       --ds-accordion-divider: var(--color-border);
@@ -130,33 +130,33 @@ export class DsAccordion extends LitElement {
   `;
 
   /** Generates a `<ds-disclosure>` per entry instead of reading light-DOM children. Each item's panel content is a slot named after its `id`. */
-  @property({ attribute: false }) items?: AccordionItem[];
+  @property({ attribute: false }) accessor items: AccordionItem[] | undefined;
 
   /** Heading level for every trigger, so sections appear in the page outline. */
-  @property({ reflect: true, attribute: 'heading-level' }) headingLevel: AccordionHeadingLevel = '3';
+  @property({ reflect: true, attribute: 'heading-level' }) accessor headingLevel: AccordionHeadingLevel = '3';
 
   /** Opening one section closes the others. */
-  @property({ type: Boolean, reflect: true }) exclusive = false;
+  @property({ type: Boolean, reflect: true }) accessor exclusive = false;
 
   /** Controlled open ids: an array, or a single id when `exclusive`. Omit for uncontrolled. */
-  @property({ attribute: false }) value?: string | string[];
+  @property({ attribute: false }) accessor value: string | string[] | undefined;
 
   /** Initially open ids for an uncontrolled accordion. */
-  @property({ attribute: false }) defaultValue?: string | string[];
+  @property({ attribute: false }) accessor defaultValue: string | string[] | undefined;
 
   /** A hairline between items. */
-  @property({ type: Boolean, reflect: true }) divided = true;
+  @property({ type: Boolean, reflect: true }) accessor divided = true;
 
   /** Passed to every section; required when panels contain form fields. */
-  @property({ type: Boolean, reflect: true, attribute: 'keep-mounted' }) keepMounted = false;
+  @property({ type: Boolean, reflect: true, attribute: 'keep-mounted' }) accessor keepMounted = false;
 
   /** Per-instance style overrides: `{ divider: 'color.border.strong' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<AccordionOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<AccordionOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled open ids, seeded from `defaultValue`. */
-  @state() private internalOpenIds = new Set<string>();
+  @state() private accessor internalOpenIds = new Set<string>();
 
-  @query('slot:not([name])') private readonly defaultSlotEl?: HTMLSlotElement;
+  @query('slot:not([name])') private accessor defaultSlotEl!: HTMLSlotElement | null;
 
   /** The open ids last dispatched or applied, used to diff a controlled `value` change. */
   private appliedIds = new Set<string>();
@@ -192,7 +192,7 @@ export class DsAccordion extends LitElement {
     this.warnInDev();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     return html`
       <div class="list" part="list" @keydown=${this.handleKeydown}>
         ${this.usesItems
@@ -229,11 +229,11 @@ export class DsAccordion extends LitElement {
     }
     const openIds = this.currentOpenIds;
     for (const el of this.slottedDisclosures()) {
-      (el as unknown as { headingLevel?: AccordionHeadingLevel }).headingLevel = this.headingLevel;
+      (el as unknown as { headingLevel?: AccordionHeadingLevel | undefined }).headingLevel = this.headingLevel;
       (el as unknown as { keepMounted: boolean }).keepMounted = this.keepMounted;
       el.addEventListener('toggle', this.handleToggle);
       if (el.id) {
-        (el as unknown as { open?: boolean }).open = openIds.has(el.id);
+        (el as unknown as { open?: boolean | undefined }).open = openIds.has(el.id);
       }
     }
   }
@@ -292,7 +292,7 @@ export class DsAccordion extends LitElement {
     const index = enabled.indexOf(currentEl);
     const base = index === -1 ? 0 : index;
     const next = (base + delta + enabled.length) % enabled.length;
-    enabled[next].focus();
+    enabled[next]!.focus();
   }
 
   private focusEdge(items: HTMLElement[], edge: 'first' | 'last'): void {
@@ -300,7 +300,7 @@ export class DsAccordion extends LitElement {
     if (enabled.length === 0) {
       return;
     }
-    (edge === 'first' ? enabled[0] : enabled[enabled.length - 1]).focus();
+    (edge === 'first' ? enabled[0] : enabled[enabled.length - 1])!.focus();
   }
 
   /** Applies a trigger-originated toggle: updates the open set, closes siblings when `exclusive`, and dispatches events. */

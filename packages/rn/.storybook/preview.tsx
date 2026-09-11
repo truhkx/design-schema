@@ -1,4 +1,4 @@
-import type { Preview } from '@storybook/react';
+import type { Preview } from '@storybook/react-vite';
 import React from 'react';
 import { ThemeProvider } from '../src/theme';
 import { modeGlobal } from '../../../storybook/shared/mode';

@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "platforms": ["ios", "android"],
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": { "supportsTablet": true },
     "android": { "adaptiveIcon": { "backgroundColor": "#ffffff" } }
   }

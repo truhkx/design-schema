@@ -88,7 +88,7 @@ def failed_gates(lock_dir: Path) -> list[tuple[str, list[str]]]:
 
 def digest(gap_files: list[dict], failures: list[tuple[str, list[str]]], phase: str | None, now: str) -> str:
     title = f"# Gap digest — phase {phase}" if phase else "# Gap digest"
-    lines = [title, "", f"Generated {now} by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.", ""]
+    lines = [title, "", f"Generated {now} by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.", ""]
     by_component: dict[str, list[dict]] = {}
     for g in gap_files:
         by_component.setdefault(g["component"], []).append(g)

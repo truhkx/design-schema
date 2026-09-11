@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -21,7 +21,7 @@ export interface FeedItem {
   timestamp: string;
   content: unknown;
   actions?: unknown;
-  unread?: boolean;
+  unread?: boolean | undefined;
 }
 
 /** Detail carried by the `item-visible` CustomEvent. */
@@ -201,7 +201,7 @@ function findFocusableInDocument(): HTMLElement[] {
  */
 @customElement('ds-feed')
 export class DsFeed extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--ds-feed-font-family);
@@ -295,33 +295,33 @@ export class DsFeed extends LitElement {
   `;
 
   /** What the feed contains ("Activity", "Notifications"). The feed's accessible name. */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** Articles, newest first. */
-  @property({ attribute: false }) items: FeedItem[] = [];
+  @property({ attribute: false }) accessor items: FeedItem[] = [];
 
   /** More items exist beyond the last; the feed asks for them with `load-more` as the end approaches. */
-  @property({ type: Boolean, reflect: true, attribute: 'has-more' }) hasMore = false;
+  @property({ type: Boolean, reflect: true, attribute: 'has-more' }) accessor hasMore = false;
 
   /** More items are being fetched; a loading indicator is shown after the last article and the feed is `aria-busy`. */
-  @property({ type: Boolean, reflect: true }) loading = false;
+  @property({ type: Boolean, reflect: true }) accessor loading = false;
 
   /** Number of newer items available above. Shows a "Show {count} new" button that prepends and scrolls; the feed never inserts them itself. */
-  @property({ type: Number, reflect: true, attribute: 'new-items-count' }) newItemsCount?: number;
+  @property({ type: Number, reflect: true, attribute: 'new-items-count' }) accessor newItemsCount: number | undefined;
 
   /** Heading level for article headings, matching the page outline. */
-  @property({ reflect: true, attribute: 'heading-level' }) headingLevel: FeedHeadingLevel = '3';
+  @property({ reflect: true, attribute: 'heading-level' }) accessor headingLevel: FeedHeadingLevel = '3';
 
   /** Shown after the last item when `hasMore` is false. Defaults to `copy.end`. */
-  @property({ attribute: 'end-message' }) endMessage?: string;
+  @property({ attribute: 'end-message' }) accessor endMessage: string | undefined;
 
   /** Per-instance style overrides: `{ itemGap: 'layout.gap.loose' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<FeedOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<FeedOverridableBinding, TokenRef | undefined>> | undefined;
 
-  @query('.new-items-button') private readonly newItemsButtonEl?: HTMLElement;
+  @query('.new-items-button') private accessor newItemsButtonEl!: HTMLElement | null;
 
-  private loadMoreObserver?: IntersectionObserver;
-  private visibilityObserver?: IntersectionObserver;
+  private loadMoreObserver?: IntersectionObserver | undefined;
+  private visibilityObserver?: IntersectionObserver | undefined;
   private readonly visibilityTimers = new Map<string, number>();
   private pendingShowNewFocus = false;
   private checkedInitialLoadMore = false;
@@ -343,7 +343,7 @@ export class DsFeed extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const showNewItems = Boolean(this.newItemsCount && this.newItemsCount > 0);
     const isEmpty = this.items.length === 0;
 
@@ -527,7 +527,7 @@ export class DsFeed extends LitElement {
 
     if (this.hasMore && !this.loading) {
       this.loadMoreObserver = new IntersectionObserver(this.handleLoadMoreIntersect, { rootMargin: '100% 0px' });
-      this.loadMoreObserver.observe(articles[articles.length - 1]);
+      this.loadMoreObserver.observe(articles[articles.length - 1]!);
     }
 
     this.visibilityObserver = new IntersectionObserver(this.handleVisibilityIntersect, { threshold: 0.5 });

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Toast.js';
@@ -7,7 +7,7 @@ import type { ToastDuration, ToastTone } from './Toast.js';
 interface ToastArgs {
   message: string;
   tone: ToastTone;
-  actionLabel?: string;
+  actionLabel?: string | undefined;
   duration: ToastDuration;
   dismissible: boolean;
 }

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import './Menu.js';
 import type { MenuItem, MenuPlacement, MenuTriggerIcon, MenuTriggerVariant } from './Menu.js';
@@ -10,7 +10,7 @@ interface MenuArgs {
   triggerIcon: MenuTriggerIcon;
   iconOnly: boolean;
   placement: MenuPlacement;
-  open?: boolean;
+  open?: boolean | undefined;
 }
 
 const ITEMS: MenuItem[] = [

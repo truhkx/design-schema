@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Form.js';
@@ -9,7 +9,7 @@ import type { FormValidate } from './Form.js';
 
 interface FormArgs {
   name: string;
-  label?: string;
+  label?: string | undefined;
   validate: FormValidate;
   disabled: boolean;
   errorSummary: boolean;

@@ -1,7 +1,6 @@
 import {
   Children,
   cloneElement,
-  forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
@@ -73,7 +72,7 @@ const OVERRIDE_HOOK: Record<PopoverOverridableBinding, string> = {
   exit: '--ds-popover-exit',
 };
 
-function overridesToStyle(overrides: Partial<Record<PopoverOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<PopoverOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as PopoverOverridableBinding[]) {
     const ref = overrides[binding];
@@ -182,36 +181,36 @@ function computePosition(
 
 export interface PopoverProps {
   /** Exactly one focusable element — usually a Button — that opens the popover. The popover adds aria-expanded and aria-controls to it. */
-  trigger: ReactElement;
+  trigger: ReactElement<any>;
   /** The panel content. May contain controls, links and a short Form; keep it to what fits without scrolling. */
   children: ReactNode;
   /** Optional heading at the top of the panel, also the accessible name. Without it, the panel is named by the trigger. */
-  heading?: string;
+  heading?: string | undefined;
   /** Heading level of the panel heading, so it fits the page outline (a popover usually sits under a level-2 section). */
-  headingLevel?: PopoverHeadingLevel;
+  headingLevel?: PopoverHeadingLevel | undefined;
   /** Controlled open state. Omit for uncontrolled (the trigger toggles it). */
-  open?: boolean;
+  open?: boolean | undefined;
   /** Preferred side and alignment; flips and shifts to stay in the viewport. */
-  placement?: PopoverPlacement;
+  placement?: PopoverPlacement | undefined;
   /**
    * False (default): the page stays interactive; clicking outside closes; focus moves in but is
    * not trapped, and Tab out closes. True: behaves as a small Dialog anchored to the trigger —
    * focus trapped, background inert — for content that must be finished (a required form).
    */
-  modal?: boolean;
+  modal?: boolean | undefined;
   /** A small pointer toward the trigger. Off by default; Calm & precise prefers a plain edge. */
-  showArrow?: boolean;
+  showArrow?: boolean | undefined;
   /** Show the close button. Escape and outside click work regardless (non-modal). */
-  dismissible?: boolean;
+  dismissible?: boolean | undefined;
   /**
    * Fired when the popover opens or closes, with the new state and a reason: `trigger`, `escape`,
    * `outside`, `close-button`, `tab-out`.
    */
-  onOpenChange?: (open: boolean, reason: PopoverOpenChangeReason) => void;
+  onOpenChange?: ((open: boolean, reason: PopoverOpenChangeReason) => void) | undefined;
   /** Portal target for the panel's DOM node. Defaults to `document.body`. */
-  container?: HTMLElement;
+  container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<PopoverOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<PopoverOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
@@ -223,23 +222,21 @@ export interface PopoverProps {
  * with a link. Use `modal` when the panel contains a required step (a short form that must be
  * submitted or cancelled). Use `heading` when the content is not obvious from the trigger.
  */
-export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover(
-  {
-    trigger,
-    children,
-    heading,
-    headingLevel = '3',
-    open: openProp,
-    placement = 'bottom',
-    modal = false,
-    showArrow = false,
-    dismissible = true,
-    onOpenChange,
-    container,
-    overrides,
-  },
+export const Popover = function Popover({
   ref,
-) {
+  trigger,
+  children,
+  heading,
+  headingLevel = '3',
+  open: openProp,
+  placement = 'bottom',
+  modal = false,
+  showArrow = false,
+  dismissible = true,
+  onOpenChange,
+  container,
+  overrides,
+}: PopoverProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
   const triggerId = `ds-popover${generatedId}-trigger`;
   const panelId = `ds-popover${generatedId}-panel`;
@@ -436,7 +433,7 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
   const handleCloseButtonClick = () => requestClose('close-button');
 
   const triggerElement = trigger as ReactElement<{
-    onClick?: (event: ReactMouseEvent) => void;
+    onClick?: ((event: ReactMouseEvent) => void) | undefined;
   }>;
   const clonedTrigger = cloneElement(triggerElement, {
     ref: triggerRef,
@@ -531,4 +528,4 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
       {panelNode ? createPortal(panelNode, container ?? document.body) : null}
     </div>
   );
-});
+};

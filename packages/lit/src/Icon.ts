@@ -1,4 +1,4 @@
-import { LitElement, css, html, type PropertyValues, type TemplateResult } from 'lit';
+import { LitElement, css, html, type PropertyValues, type TemplateResult, type CSSResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -144,7 +144,7 @@ const GLYPHS: Record<IconName, TemplateResult> = {
  */
 @customElement('ds-icon')
 export class DsIcon extends LitElement {
-  static override styles = css`
+  static override styles: CSSResult = css`
     /* size: font.size.{size} via --ds-icon-size; color: currentColor, falling back to inherit so an ancestor (Button, Link, Alert) colors this icon for free */
     :host {
       display: inline-flex;
@@ -213,23 +213,23 @@ export class DsIcon extends LitElement {
    * needs a shape; `info`, `success`, `warning` and `danger` are the four status
    * shapes (circle-i, circle-check, triangle-!, octagon-x).
    */
-  @property({ reflect: true }) name!: IconName;
+  @property({ reflect: true }) accessor name!: IconName;
 
   /** Rendered size, from the font-size scale so icons line up with text of the same size. */
-  @property({ reflect: true }) size: IconSize = 'md';
+  @property({ reflect: true }) accessor size: IconSize = 'md';
 
   /** Size the glyph at 1em of the surrounding text and align it to the baseline, ignoring `size`. */
-  @property({ type: Boolean, reflect: true }) inline = false;
+  @property({ type: Boolean, reflect: true }) accessor inline = false;
 
   /**
    * Accessible name. When set, the icon is meaningful and exposed as an image
    * with this name; when omitted, it is decorative and hidden from assistive
    * technology. Most icons sit next to text and should have no label.
    */
-  @property() label?: string;
+  @property() accessor label: string | undefined;
 
   /** Per-instance style overrides: `{ color: 'color.status.danger.icon' }`. */
-  @property({ attribute: false }) overrides?: Partial<Record<IconOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<IconOverridableBinding, TokenRef | undefined>> | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -254,7 +254,7 @@ export class DsIcon extends LitElement {
     }
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const glyph: TemplateResult | undefined = GLYPHS[this.name];
     if (import.meta.env.DEV && glyph === undefined) {
       console.warn(

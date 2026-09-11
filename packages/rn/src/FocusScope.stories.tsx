@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { View } from 'react-native';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { ViewInstance } from 'react-native';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './Button';
 import { FocusScope } from './FocusScope';
 import type { FocusScopeProps } from './FocusScope';
@@ -11,7 +12,7 @@ import { withTheme } from './decorators';
 /** Passes an explicit trigger ref via `returnFocusTo` rather than relying on the `TextInput` fallback. */
 function ReturnFocusToDemo(): React.JSX.Element {
   const [open, setOpen] = React.useState(false);
-  const triggerRef = React.useRef<View>(null);
+  const triggerRef = React.useRef<ViewInstance>(null);
   return (
     <Stack gap="loose" align="start">
       <View ref={triggerRef} collapsable={false}>

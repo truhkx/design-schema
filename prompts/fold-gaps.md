@@ -13,7 +13,7 @@ Read generated/gaps/SUMMARY.md first (DOC lines are grouped per component with t
    - Contrast pairs are claims: add a pair only for text or a meaningful non-text element, and never one that fails.
    - A gap that reports "the file predated the convention" or "no changes needed" is NOISE: skip it. A gap about a tool (lint false positive, denied command, missing report) is TOOLING: append it to generated/gaps/TOOLING.md under today's date and skip. A gap that says a sibling component's code is wrong is CODE: append to generated/gaps/CODE.md and skip.
 2. Edit the doc: the smallest change that answers the question — a clause in a prop description, a sentence in a platform note, a new binding, a sentence in Behavior. Quote YAML flow-mapping strings containing `: ` or `, `. Do not rename or remove existing props, bindings, events or copy keys. Do not add `a11y.requires` entries. Do not touch any file outside site/src/content/docs/.
-3. After all edits run `node tools/py.mjs tools/parse.py` and `node tools/py.mjs tools/check_contrast.py`; both must report 0 errors/failures. If parse fails, fix the YAML you wrote.
+3. After all edits run `pnpm parse` and `node tools/py.mjs tools/check_contrast.py`; both must report 0 errors/failures. If parse fails, fix the YAML you wrote.
 4. Append to generated/gaps/FOLDS.md one line per decision: `<date> <Component> <platform>: <gap in ten words> → <what the doc now says>`. Update generated/gaps/folded.json with each gap file's current mtime.
 5. Commit with `powershell -ExecutionPolicy Bypass -File .\commit.ps1 -m "fold: <components>"`.
 

@@ -30,13 +30,13 @@ export interface TooltipProps {
   /** Exactly one focusable element (a Button, Link, Input). The tooltip attaches to it. */
   children: React.ReactNode;
   /** Preferred side; native has no viewport to flip against, so this is not adjusted automatically. */
-  placement?: TooltipPlacement;
+  placement?: TooltipPlacement | undefined;
   /** `true`: supplementary, becomes the child's `accessibilityHint`. `false`: it IS the child's name and becomes `accessibilityLabel` instead. */
-  describes?: boolean;
+  describes?: boolean | undefined;
   /** Hover delay (react-native-web only — there is no hover on touch): `default` waits `motion.duration.base` × 3; `none` shows instantly, as does any hover while a sibling tooltip is still "warm". */
-  delay?: TooltipDelay;
+  delay?: TooltipDelay | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
-  overrides?: Partial<Record<TooltipOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<TooltipOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 type Size = { width: number; height: number };
@@ -217,15 +217,15 @@ export function Tooltip({
     const globalWindow = (
       globalThis as {
         window?: {
-          addEventListener: (type: 'keydown', listener: (event: { key?: string }) => void) => void;
-          removeEventListener: (type: 'keydown', listener: (event: { key?: string }) => void) => void;
-        };
+          addEventListener: (type: 'keydown', listener: (event: { key?: string | undefined }) => void) => void;
+          removeEventListener: (type: 'keydown', listener: (event: { key?: string | undefined }) => void) => void;
+        } | undefined;
       }
     ).window;
     if (globalWindow === undefined) {
       return undefined;
     }
-    const handleKeyDown = (event: { key?: string }): void => {
+    const handleKeyDown = (event: { key?: string | undefined }): void => {
       if (event.key === 'Escape') {
         hide();
       }
@@ -297,7 +297,7 @@ export function Tooltip({
   const bubblePosition =
     triggerSize !== null ? computeBubbleOffset(placement, triggerSize, bubbleSize ?? { width: 0, height: 0 }, offset) : {};
 
-  const bubbleStyle: Animated.WithAnimatedObject<ViewStyle> = {
+  const bubbleStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     ...bubblePosition,
     maxWidth,

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Input.js';
@@ -7,18 +7,18 @@ import type { InputSize, InputType } from './Input.js';
 interface InputArgs {
   label: string;
   name: string;
-  value?: string;
-  defaultValue?: string;
-  placeholder?: string;
-  description?: string;
+  value?: string | undefined;
+  defaultValue?: string | undefined;
+  placeholder?: string | undefined;
+  description?: string | undefined;
   type: InputType;
   size: InputSize;
   required: boolean;
   hideLabel: boolean;
   disabled: boolean;
   invalid: boolean;
-  error?: string;
-  autocomplete?: string;
+  error?: string | undefined;
+  autocomplete?: string | undefined;
 }
 
 const meta: Meta<InputArgs> = {

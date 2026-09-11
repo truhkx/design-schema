@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Card } from './Card';
 import { Stack } from './Stack';
 import { Text } from './Text';
@@ -16,7 +16,7 @@ const body = (
 
 const footer = <Button label="Choose plan" variant="primary" size="sm" />;
 
-const meta = {
+const meta: Meta<typeof Card> = {
   title: 'Card/React',
   component: Card,
   args: {
@@ -28,7 +28,7 @@ const meta = {
     children: body,
     footer,
   },
-} satisfies Meta<typeof Card>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

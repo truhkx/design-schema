@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
@@ -10,8 +10,8 @@ export type RadioGroupOrientation = 'vertical' | 'horizontal';
 export interface RadioGroupOption {
   value: string;
   label: string;
-  description?: string;
-  disabled?: boolean;
+  description?: string | undefined;
+  disabled?: boolean | undefined;
 }
 
 /** Detail carried by the `change` CustomEvent. */
@@ -105,7 +105,7 @@ export class DsRadioGroup extends LitElement {
     delegatesFocus: true,
   };
 
-  static override styles = css`
+  static override styles: CSSResult = css`
     :host {
       display: block;
       font-family: var(--ds-radio-group-font-family);
@@ -285,45 +285,45 @@ export class DsRadioGroup extends LitElement {
   `;
 
   /** The group's legend — the question the options answer. Always visible. */
-  @property() label = '';
+  @property() accessor label = '';
 
   /** Field name used by the enclosing Form. Also links the radios into one native group. */
-  @property() name = '';
+  @property() accessor name = '';
 
   /** The options in display order. Two to about seven. A property, not an attribute. */
-  @property({ attribute: false }) options: RadioGroupOption[] = [];
+  @property({ attribute: false }) accessor options: RadioGroupOption[] = [];
 
   /** Controlled selected value. Omit for an uncontrolled group. */
-  @property() value?: string;
+  @property() accessor value: string | undefined;
 
   /** Initial selection for an uncontrolled group. Omit to start with nothing selected. */
-  @property({ attribute: 'default-value' }) defaultValue?: string;
+  @property({ attribute: 'default-value' }) accessor defaultValue: string | undefined;
 
   /** Layout of the options. Horizontal only for two or three short labels. */
-  @property({ reflect: true }) orientation: RadioGroupOrientation = 'vertical';
+  @property({ reflect: true }) accessor orientation: RadioGroupOrientation = 'vertical';
 
   /** An option must be selected to submit. Shown in the legend, not only by color. */
-  @property({ type: Boolean, reflect: true }) required = false;
+  @property({ type: Boolean, reflect: true }) accessor required = false;
 
   /** Disables every option. Individual options use `options[].disabled`. */
-  @property({ type: Boolean, reflect: true }) disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Persistent helper text under the legend. */
-  @property() description?: string;
+  @property() accessor description: string | undefined;
 
   /** Marks the group as failing validation. Usually set by the Form; can be set directly. */
-  @property({ type: Boolean, reflect: true }) invalid = false;
+  @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
   /** Per-instance style overrides: `{ controlRadius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) overrides?: Partial<Record<RadioGroupOverridableBinding, TokenRef>>;
+  @property({ attribute: false }) accessor overrides: Partial<Record<RadioGroupOverridableBinding, TokenRef | undefined>> | undefined;
 
-  private errorValue?: string;
+  private errorValue?: string | undefined;
 
   /** The group's error message. Setting it implies `invalid`. */
-  @property()
   get error(): string | undefined {
     return this.errorValue;
   }
+  @property()
   set error(value: string | undefined) {
     const old = this.errorValue;
     this.errorValue = value;
@@ -333,10 +333,10 @@ export class DsRadioGroup extends LitElement {
   }
 
   /** Uncontrolled selection (seeded from `defaultValue`). */
-  @state() private internalValue?: string;
+  @state() private accessor internalValue: string | undefined;
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
-  @state() private formDisabled = false;
+  @state() private accessor formDisabled = false;
 
   private readonly internals: ElementInternals;
 
@@ -407,7 +407,7 @@ export class DsRadioGroup extends LitElement {
     this.syncInternals();
   }
 
-  protected override render() {
+  protected override render(): TemplateResult {
     const groupDisabled = this.disabled || this.formDisabled;
     const describedBy =
       [this.description ? 'description' : '', this.error ? 'error' : '']

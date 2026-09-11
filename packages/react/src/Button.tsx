@@ -1,9 +1,9 @@
 import {
-  forwardRef,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type MouseEvent,
   type ReactNode,
+  type Ref, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
@@ -44,7 +44,7 @@ const OVERRIDE_HOOK: Record<ButtonOverridableBinding, string> = {
   spinnerStroke: '--ds-button-spinner-stroke',
 };
 
-function overridesToStyle(overrides: Partial<Record<ButtonOverridableBinding, TokenRef>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as ButtonOverridableBinding[]) {
     const ref = overrides[binding];
@@ -58,50 +58,50 @@ export interface ButtonProps
   /** The button's text. Also its accessible name. */
   label: string;
   /** Visual emphasis. One primary button per view. */
-  variant?: ButtonVariant;
+  variant?: ButtonVariant | undefined;
   /** Controls horizontal padding and font size. Touch targets never drop below the minimum regardless of size. */
-  size?: ButtonSize;
+  size?: ButtonSize | undefined;
   /** Icon before the label. Decorative — hidden from assistive technology; the label carries the meaning. */
   leadingIcon?: ReactNode;
   /** Icon after the label. Decorative, like leadingIcon. */
   trailingIcon?: ReactNode;
   /** `submit` submits the enclosing Form. Everything else is `button`. */
-  type?: ButtonType;
+  type?: ButtonType | undefined;
   /** Prevents activation. The button stays in the tab order and is announced as disabled. */
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   /**
    * Overrides the accessible name when it must say more than the visible label ("Sort by
    * Amount, ascending" on a header that shows "Amount"). The visible label must be the start of
    * it (WCAG 2.5.3 label-in-name). Maps to aria-label.
    */
-  accessibleName?: string;
+  accessibleName?: string | undefined;
   /** Text used for this button when a Toolbar collapses it into its overflow Menu. */
-  overflowLabel?: string;
+  overflowLabel?: string | undefined;
   /**
    * Hides the visible label and shows only `leadingIcon`. `label` is still required and becomes
    * the accessible name. Padding becomes equal on all sides (`space.sm`).
    */
-  iconOnly?: boolean;
+  iconOnly?: boolean | undefined;
   /**
    * Replaces the icon slot with a 1em ring spinner in `currentColor`, keeps the label space so
    * layout does not shift, and blocks repeat activation while an action is pending.
    */
-  loading?: boolean;
+  loading?: boolean | undefined;
   /**
    * The button sits on an inverse surface (Toast, Tooltip-like panels): `ghost` text uses
    * color.inverse.link and hover uses a translucent inverse foreground; the focus ring uses
    * color.inverse.focus. Only `ghost` is meaningful on inverse surfaces; other variants keep
    * their own fills.
    */
-  inverse?: boolean;
+  inverse?: boolean | undefined;
   /** An event name sent to analytics when the button is pressed. Omit for no tracking. */
-  track?: string;
+  track?: string | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<ButtonOverridableBinding, TokenRef>>;
+  overrides?: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the button is activated by pointer, keyboard (Enter/Space), or assistive technology. */
-  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
+  onClick?: ((event: MouseEvent<HTMLButtonElement>) => void) | undefined;
   /** Fired after onPress with the `track` name and the button's label. */
-  onTrack?: (name: string, label: string) => void;
+  onTrack?: ((name: string, label: string) => void) | undefined;
 }
 
 /**
@@ -115,30 +115,28 @@ export interface ButtonProps
  * the alternatives beside it, `ghost` for low-emphasis actions in dense UI such as toolbars, and
  * `danger` only for destructive, hard-to-undo actions.
  */
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  {
-    label,
-    variant = 'primary',
-    size = 'md',
-    leadingIcon,
-    trailingIcon,
-    type = 'button',
-    disabled = false,
-    accessibleName,
-    overflowLabel: _overflowLabel,
-    iconOnly = false,
-    loading = false,
-    inverse = false,
-    track,
-    overrides,
-    onClick,
-    onTrack,
-    className,
-    style,
-    ...rest
-  },
+export const Button = function Button({
   ref,
-) {
+  label,
+  variant = 'primary',
+  size = 'md',
+  leadingIcon,
+  trailingIcon,
+  type = 'button',
+  disabled = false,
+  accessibleName,
+  overflowLabel: _overflowLabel,
+  iconOnly = false,
+  loading = false,
+  inverse = false,
+  track,
+  overrides,
+  onClick,
+  onTrack,
+  className,
+  style,
+  ...rest
+}: ButtonProps & { ref?: Ref<HTMLButtonElement> | undefined }): ReactElement {
   const form = useFormContext();
   const isDisabled = disabled || (form?.disabled ?? false);
   const blocked = isDisabled || loading;
@@ -199,4 +197,4 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ) : null}
     </button>
   );
-});
+};

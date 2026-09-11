@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import './Tree.js';
 import type { TreeHeadingLevel, TreeNode, TreeSelectable } from './Tree.js';
@@ -12,8 +12,8 @@ interface TreeArgs {
   selectChildren: boolean;
   selectOnFocus: boolean;
   showGuides: boolean;
-  defaultExpanded?: string[];
-  defaultSelected?: string[];
+  defaultExpanded?: string[] | undefined;
+  defaultSelected?: string[] | undefined;
 }
 
 const FOLDER_NODES: TreeNode[] = [

@@ -1,15 +1,15 @@
 import * as React from 'react';
-import { Animated, FlatList, View } from 'react-native';
-import type { LayoutChangeEvent, ListRenderItemInfo, ViewStyle, ViewToken } from 'react-native';
+import { FlatList, View } from 'react-native';
+import type { ListRenderItemInfo, ViewStyle, ViewToken } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Card } from './Card';
 import type { CardOverridableBinding, CardHeadingLevel } from './Card';
+import { ProgressBar } from './ProgressBar';
 import { Text } from './Text';
 import type { TextOverridableBinding } from './Text';
-import { toEasing, useReducedMotion, useTheme } from './theme';
-import type { Tokens } from './theme';
+import { useTheme } from './theme';
 
 /** Heading level for each article's `Heading`. The schema declares the values as strings; numbers are accepted for ergonomics. */
 export type FeedHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
@@ -36,6 +36,7 @@ export type FeedOverridableBinding =
   | 'timestampSize'
   | 'newItemsOffset'
   | 'loadingInset'
+  | 'endMessageInset'
   | 'endMessageSize'
   | 'fontFamily';
 
@@ -56,7 +57,11 @@ export interface FeedProps {
   endMessage?: string;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<FeedOverridableBinding, TokenRef>>;
-  /** Fired when the last rendered article is within one screen of view and `hasMore` is set. */
+  /**
+   * Fired when the last rendered article is within one screen of view and `hasMore`
+   * is set, and once on mount when `items` is empty and not `loading` (so an empty
+   * feed fetches its first page itself).
+   */
   onEndReached?: () => void;
   /** Fired when the new-items button is pressed; the caller prepends the items and clears `newItemsCount`. */
   onShowNew?: () => void;
@@ -101,72 +106,6 @@ function formatRelativeTime(timestamp: string, now: number): string {
 }
 
 /**
- * A stand-in for the not-yet-generated React Native `ProgressBar`: an indeterminate
- * track with a sliding fill, frozen under reduced motion. Replace with `ProgressBar`
- * once it exists on this platform — see the component's gap notes.
- */
-function FeedLoadingIndicator({ label, tokens: t }: { label: string; tokens: Tokens }): React.JSX.Element {
-  const reducedMotion = useReducedMotion();
-  const [trackWidth, setTrackWidth] = React.useState(0);
-  const progress = React.useRef(new Animated.Value(0)).current;
-
-  React.useEffect(() => {
-    if (reducedMotion) {
-      progress.setValue(0.5);
-      return undefined;
-    }
-    const loop = Animated.loop(
-      Animated.timing(progress, {
-        toValue: 1,
-        duration: t.motionDurationLoop,
-        easing: toEasing(t.motionEasingStandard),
-        // Layout properties cannot use the native driver.
-        useNativeDriver: false,
-      }),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [reducedMotion, progress, t.motionDurationLoop, t.motionEasingStandard]);
-
-  const handleLayout = (event: LayoutChangeEvent): void => {
-    const { width } = event.nativeEvent.layout;
-    setTrackWidth((prev) => (prev === width ? prev : width));
-  };
-
-  const fillWidth = trackWidth * 0.4;
-  const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [-fillWidth, trackWidth] });
-
-  const trackStyle: ViewStyle = {
-    height: t.space2,
-    borderRadius: t.radiusFull,
-    backgroundColor: t.colorBackgroundStrong,
-    overflow: 'hidden',
-  };
-
-  return (
-    <View
-      testID="Feed.loadingIndicator"
-      accessible
-      accessibilityRole="progressbar"
-      accessibilityLabel={label}
-      style={{ gap: t.space2 }}
-    >
-      <View style={trackStyle} onLayout={handleLayout}>
-        <Animated.View
-          style={{
-            width: fillWidth,
-            height: t.space2,
-            borderRadius: t.radiusFull,
-            backgroundColor: t.colorForegroundMuted,
-            transform: [{ translateX }],
-          }}
-        />
-      </View>
-    </View>
-  );
-}
-
-/**
  * Feed — a list that never quite ends: it grows as the reader nears the bottom, and
  * newer items arrive at the top without moving what is on screen.
  *
@@ -182,11 +121,14 @@ function FeedLoadingIndicator({ label, tokens: t }: { label: string; tokens: Tok
  * composed action `Button`s and any `Link` in `content` stay individually
  * focusable, unlike the single-node grouping the web `role="article"` achieves.
  * `onEndReached` fires `hasMore`'s load request (guarded against firing while
- * already `loading`); `maintainVisibleContentPosition` keeps the reader's place
- * when `onShowNew`'s caller prepends items. The footer is an indeterminate loading
- * indicator (see `FeedLoadingIndicator`) or the end message, from `ListFooterComponent`.
- * `newItemsCount > 0` renders a `secondary`/`sm` `Button` above the list rather than
- * inside it, so it never scrolls away.
+ * already `loading`), once on mount when `items` is empty (there is no last
+ * article for `FlatList` to observe, so the first page has to be asked for
+ * directly), and again as the reader nears the bottom; `maintainVisibleContentPosition`
+ * keeps the reader's place when `onShowNew`'s caller prepends items. The footer is
+ * an indeterminate `ProgressBar` or the end message, from `ListFooterComponent`;
+ * `ListEmptyComponent` is suppressed while `loading` so the loading indicator is
+ * what shows, not `copy.empty`. `newItemsCount > 0` renders a `secondary`/`sm`
+ * `Button` above the list rather than inside it, so it never scrolls away.
  */
 export function Feed({
   label,
@@ -209,6 +151,7 @@ export function Feed({
     : t.borderWidthFocus;
   const newItemsOffset = overrides?.newItemsOffset ? (resolveToken(t, overrides.newItemsOffset) as number) : t.space3;
   const loadingInset = overrides?.loadingInset ? (resolveToken(t, overrides.loadingInset) as number) : t.layoutInsetMd;
+  const endMessageInset = overrides?.endMessageInset ? (resolveToken(t, overrides.endMessageInset) as number) : t.layoutInsetMd;
 
   const cardOverrides: Partial<Record<CardOverridableBinding, TokenRef>> | undefined = overrides?.articleInset
     ? { paddingBlock: overrides.articleInset, paddingInline: overrides.articleInset }
@@ -239,6 +182,16 @@ export function Feed({
       onEndReached?.();
     }
   };
+
+  // An empty `FlatList` has no last article for `onEndReached` to fire from, so a
+  // freshly mounted, empty feed asks for its first page directly. Intentionally
+  // runs once, on mount only — see the `onEndReached` prop doc.
+  React.useEffect(() => {
+    if (items.length === 0 && hasMore && !loading) {
+      onEndReached?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const latestOnViewable = React.useRef(onViewableItemsChanged);
   React.useEffect(() => {
@@ -276,11 +229,18 @@ export function Feed({
               <Text size="xs">{COPY.position(index + 1, items.length)}</Text>
             </View>
           ) : null}
-          <Card heading={item.heading} headingLevel={headingLevel as CardHeadingLevel} footer={item.actions} overrides={cardOverrides}>
-            <View style={{ gap: t.layoutGapTight }}>
-              <Text size="xs" tone="muted" overrides={timestampTextOverrides}>
-                {relative}
-              </Text>
+          <Card
+            heading={item.heading}
+            headingLevel={headingLevel as CardHeadingLevel}
+            footer={item.actions ? <View testID="Feed.articleActions">{item.actions}</View> : undefined}
+            overrides={cardOverrides}
+          >
+            <View testID="Feed.articleBody" style={{ gap: t.layoutGapTight }}>
+              <View testID="Feed.timestamp">
+                <Text size="xs" tone="muted" overrides={timestampTextOverrides}>
+                  {relative}
+                </Text>
+              </View>
               {item.content}
             </View>
           </Card>
@@ -291,18 +251,20 @@ export function Feed({
   );
 
   const footer = loading ? (
-    <View style={{ paddingHorizontal: loadingInset, paddingVertical: loadingInset }}>
-      <FeedLoadingIndicator label={COPY.loading} tokens={t} />
+    <View testID="Feed.loadingIndicator" style={{ paddingHorizontal: loadingInset, paddingVertical: loadingInset }}>
+      <ProgressBar label={COPY.loading} />
     </View>
-  ) : !hasMore ? (
-    <View testID="Feed.endMessage" style={{ paddingHorizontal: loadingInset, paddingVertical: loadingInset }}>
+  ) : !hasMore && items.length > 0 ? (
+    <View testID="Feed.endMessage" style={{ paddingHorizontal: endMessageInset, paddingVertical: endMessageInset }}>
       <Text size="sm" tone="muted" overrides={endMessageTextOverrides}>
         {endMessage ?? COPY.end}
       </Text>
     </View>
   ) : null;
 
-  const empty = (
+  // Suppressed while `loading` so a freshly mounted, empty feed shows the loading
+  // indicator rather than `copy.empty`.
+  const empty = loading ? undefined : (
     <View testID="Feed.emptyState" style={{ padding: t.layoutInsetMd }}>
       <Text tone="muted">{COPY.empty}</Text>
     </View>

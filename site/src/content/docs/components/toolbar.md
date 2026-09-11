@@ -85,6 +85,10 @@ component:
       element: View
       props: [accessibilityRole=toolbar, accessibilityLabel]
       notes: 'A horizontal ScrollView (overflow defaults to `scroll` on native; `menu` also works and opens an ActionSheet on phones through Menu''s own rule). accessibilityRole="toolbar" on the container. No roving focus without a hardware keyboard; every control is reachable by swipe.'
+    swiftui:
+      element: HStack
+      props: [.accessibilityElement=contain, .accessibilityLabel, .focusSection, .onMoveCommand, '@FocusState', ViewThatFits, Menu, Divider, ScrollView]
+      notes: 'An `HStack` (or `VStack`) in a `.contain` element labelled by `label`, one focus section with the roving `@FocusState` moved by arrows/Home/End on iPad. Overflow: `ViewThatFits` tries the full row, then progressively collapses trailing `Button`s (only Buttons, using each one''s `overflowLabel`) into a system `Menu` behind the `ellipsis` Button, as on web; `overflow: scroll` wraps the row in a horizontal `ScrollView` with faded edges drawn by a gradient mask. Groups are `ToolbarGroup` containers with `label` as their contained element''s label, separated by `Divider`s. `size` is cloned onto children through the environment. Not SwiftUI''s `.toolbar` (navigation-bar placement).'
 ---
 
 A toolbar keeps a set of related controls together so the keyboard treats them as one stop: Tab reaches the toolbar, arrows move within it, Tab leaves it. That is what makes an editor with thirty buttons usable without thirty Tab presses.

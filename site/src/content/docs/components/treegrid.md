@@ -100,25 +100,25 @@ component:
   events:
     onExpandChange:
       description: 'Fired with the new array of expanded ids (the bare array, as Tree; not wrapped in an object).'
-      platforms: { web: onExpandChange, lit: expand-change, rn: onExpandChange }
+      platforms: { web: onExpandChange, lit: expand-change, rn: onExpandChange, swiftui: onExpandChange }
     onExpand:
       description: 'Fired with its id (bare string) each time a row whose `children` is still `"lazy"` is expanded, so a failed load can retry; once the caller replaces `children` it never fires again for that row.'
-      platforms: { web: onExpand, lit: expand, rn: onExpand }
+      platforms: { web: onExpand, lit: expand, rn: onExpand, swiftui: onExpand }
     onSortChange:
       description: As DataGrid.
-      platforms: { web: onSortChange, lit: sort-change, rn: onSortChange }
+      platforms: { web: onSortChange, lit: sort-change, rn: onSortChange, swiftui: onSortChange }
     onSelectionChange:
       description: As DataGrid (row ids or one cell).
-      platforms: { web: onSelectionChange, lit: selection-change, rn: onSelectionChange }
+      platforms: { web: onSelectionChange, lit: selection-change, rn: onSelectionChange, swiftui: onSelectionChange }
     onCellChange:
       description: As DataGrid.
-      platforms: { web: onCellChange, lit: cell-change, rn: onCellChange }
+      platforms: { web: onCellChange, lit: cell-change, rn: onCellChange, swiftui: onCellChange }
     onEditStart:
       description: As DataGrid.
-      platforms: { web: onEditStart, lit: edit-start, rn: onEditStart }
+      platforms: { web: onEditStart, lit: edit-start, rn: onEditStart, swiftui: onEditStart }
     onColumnResize:
       description: As DataGrid.
-      platforms: { web: onColumnResize, lit: column-resize, rn: onColumnResize }
+      platforms: { web: onColumnResize, lit: column-resize, rn: onColumnResize, swiftui: onColumnResize }
   keyboard:
     - { keys: [Tab], action: 'Enters and leaves the grid — one tab stop, as DataGrid.', from: any, expect: manual }
     - { keys: [ArrowDown, ArrowUp], action: 'Next / previous visible row, same column. Collapsed descendants are skipped because they are not rendered.', from: inside, expect: manual }
@@ -180,6 +180,10 @@ component:
       element: FlatList
       props: [role=grid, accessibilityLabel, getItemLayout]
       notes: 'DataGrid''s list over the flattened visible rows (role="grid" via the ARIA-aligned `role` prop, as DataGrid); the root View exposes expandAll/collapseAll accessibility actions named from copy; each row header cell has accessibilityState={{ expanded }} when it has children, accessibilityLabel "{rowName}, level {n}, {count} items", and its own accessibilityActions expand/collapse. The expand Button is a real touch target (minimum size) since there are no arrow keys.'
+    swiftui:
+      element: ScrollView
+      props: [ScrollView=both-axes, LazyVStack, .accessibilityValue=expanded, .accessibilityAction, Button, .onMoveCommand, '@FocusState']
+      notes: 'DataGrid''s structure over the flattened visible rows; each row header cell carries `.accessibilityValue(''level {n}, {count} items, expanded/collapsed'')` from copy and custom actions `expand`/`collapse`, with the visible expand `Button` at minimum target size; the root offers `expandAll`/`collapseAll` custom actions. ArrowLeft/Right/`*` per the keyboard table on iPad; guide lines drawn as one `Rectangle` per ancestor level per row; indent by level from the token. Everything else as DataGrid.'
 ---
 
 A tree grid is a data grid where rows have rows inside them. The hierarchy lives in the row-header column — indent, a chevron, a level announced to screen readers — and everything else is DataGrid: same columns, same cell navigation, same editors. Collapsing a parent removes its descendants from the visible list, which is also the virtualized list, so a hundred thousand leaf rows cost nothing until they are opened.

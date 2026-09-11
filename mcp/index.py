@@ -120,6 +120,22 @@ def schema_summary(c: dict) -> str:
     return "\n".join(lines)
 
 
+def schema_chunks(name: str, summary: str, meta: dict) -> list[dict]:
+    """The schema summary as one chunk, or — when a component's props/events/styles outgrow the budget —
+    as a run of continuation chunks split at line boundaries, each repeating the header line so it embeds in context."""
+    if len(summary) <= MAX_CHARS:
+        return [{"id": f"schema:{name}", "text": summary, "meta": meta}]
+    header, *lines = summary.split("\n")
+    pieces, buf = [], [header]
+    for line in lines:
+        if len("\n".join(buf + [line])) > MAX_CHARS and len(buf) > 1:
+            pieces.append("\n".join(buf))
+            buf = [header]
+        buf.append(line)
+    pieces.append("\n".join(buf))
+    return [{"id": f"schema:{name}" + (f"#{i + 1}" if i else ""), "text": text, "meta": meta} for i, text in enumerate(pieces)]
+
+
 def component_chunks() -> list[dict]:
     chunks = []
     for entry in json.loads((GENERATED / "components.json").read_text(encoding="utf-8")):
@@ -127,8 +143,8 @@ def component_chunks() -> list[dict]:
         name = c["name"]
         base = {"kind": "guidance", "component": name, "category": c["category"], "status": c.get("status", "draft"),
                 "path": entry["source"], "theme": ""}
-        chunks.append({"id": f"schema:{name}", "text": schema_summary(c),
-                       "meta": {**base, "kind": "schema", "platform": "all", "section": "Schema", "granularity": "section"}})
+        chunks += schema_chunks(name, schema_summary(c),
+                                {**base, "kind": "schema", "platform": "all", "section": "Schema", "granularity": "section"})
         for section, md in entry["sections"].items():
             if section == "Platform notes":
                 for platform, text in split_platform_notes(md).items():

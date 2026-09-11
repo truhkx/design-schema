@@ -89,10 +89,10 @@ component:
   events:
     onChange:
       description: Fired when a complete valid date (or range) is typed or picked, with the ISO value; with undefined when cleared.
-      platforms: { web: onChange, lit: change, rn: onChange }
+      platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
     onOpenChange:
       description: Fired when the calendar opens or closes.
-      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange }
+      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
   keyboard:
     - { keys: [ArrowDown, Alt+ArrowDown], action: 'From the input, opens the calendar with focus on the selected day (or today).', when: focus in input, from: first, expect: manual }
     - { keys: [Enter, ' '], action: 'On the calendar button, opens; on a day, selects it (and closes for a single date; for a range, selects the start then the end).', from: inside, expect: manual }
@@ -200,6 +200,10 @@ component:
       element: TextInput
       props: [keyboardType=number-pad, accessibilityLabel, accessibilityHint]
       notes: 'No core date picker on RN, so the same calendar grid renders in a BottomSheet (height content) opened by the calendar Button; each day a Pressable with accessibilityRole="button", accessibilityState={{ selected, disabled }}, accessibilityLabel from the full formatted date plus "today"/"selected". The header month is announced on change. Typing is supported in the TextInput with the locale pattern. The community datetimepicker is deliberately not used (decision 2026-09-10: react-native-svg is the only native dependency) because it cannot take tokens, so the calendar stays the system''s own grid on every platform.'
+    swiftui:
+      element: TextField
+      props: [TextField, .keyboardType=numbersAndPunctuation, Button, .sheet, .popover, Grid, .accessibilityAddTraits=isSelected, .accessibilityValue, .onMoveCommand, '@FocusState', DateFormatter, Calendar]
+      notes: 'Input''s wrapper with the text field parsed against `Locale.current`''s pattern (`DateFormatter`, `Calendar.current` for weeks and week numbers) and the calendar `Button` opening the package''s own calendar `Grid` — not SwiftUI''s `DatePicker`, whose wheel/graphical styles cannot take the theme or ranges — in a `.sheet` (`.presentationDetents([.height(measured)])`) on phones and a `.popover` on regular width. Day cells are `Button`s with `.isSelected`, `.accessibilityValue(copy.today / selected / disabled)` and the full date as the label; month/year `Select`s at `size: sm`; arrows/PageUp/PageDown/Home/End on iPad per the table via `@FocusState` over the grid; range selection as documented. Dates are `YYYY-MM-DD` strings computed with `Calendar` in UTC, never `Date()` string parsing.'
 ---
 
 A date picker gives two ways to say the same date: type it, or find it on a calendar. People who know the date type it; people who need to see the week pick it. Both produce a plain ISO date — `2026-09-10` — and never a timestamp, because a delivery date or a birthday has no time zone to get wrong.

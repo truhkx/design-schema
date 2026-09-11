@@ -86,22 +86,22 @@ component:
   events:
     onSortChange:
       description: As Table.
-      platforms: { web: onSortChange, lit: sort-change, rn: onSortChange }
+      platforms: { web: onSortChange, lit: sort-change, rn: onSortChange, swiftui: onSortChange }
     onSelectionChange:
       description: 'Fired with the selection: row ids, one cell `{ rowId, column }`, or a range `{ from, to }`.'
-      platforms: { web: onSelectionChange, lit: selection-change, rn: onSelectionChange }
+      platforms: { web: onSelectionChange, lit: selection-change, rn: onSelectionChange, swiftui: onSelectionChange }
     onCellChange:
       description: 'Fired when an edit commits, with `{ rowId, column, value, previous }`. The caller updates `data`; the grid shows the old value until it does (a rejected edit reverts visibly).'
-      platforms: { web: onCellChange, lit: cell-change, rn: onCellChange }
+      platforms: { web: onCellChange, lit: cell-change, rn: onCellChange, swiftui: onCellChange }
     onEditStart:
       description: 'Fired when an editor opens; return false (web) or call preventDefault (lit) to refuse editing that cell.'
-      platforms: { web: onEditStart, lit: edit-start, rn: onEditStart }
+      platforms: { web: onEditStart, lit: edit-start, rn: onEditStart, swiftui: onEditStart }
     onRangeNeeded:
       description: 'Fired when the visible window (or Ctrl+End / PageDown) comes within one page of the end of `data` and `rowCount` says there is more, with `{ start, end }` row indexes to load; fired once per `end` until `data` grows.'
-      platforms: { web: onRangeNeeded, lit: range-needed, rn: onEndReached }
+      platforms: { web: onRangeNeeded, lit: range-needed, rn: onEndReached, swiftui: onRangeNeeded }
     onColumnResize:
       description: Fired with `{ column, width }` when the user finishes dragging a resizable column edge.
-      platforms: { web: onColumnResize, lit: column-resize, rn: onColumnResize }
+      platforms: { web: onColumnResize, lit: column-resize, rn: onColumnResize, swiftui: onColumnResize }
   keyboard:
     - { keys: [Tab], action: 'Enters the grid on the last-focused cell (initially the first header cell) and, from inside, leaves it — the grid is one tab stop. Inside a cell that contains a control, Tab still leaves the grid; use Enter to interact with the control. While an editor is open, Tab commits and opens the next editable cell in the row (Shift+Tab the previous); from the last editable cell it commits and leaves the grid.', from: any, expect: manual }
     - { keys: [ArrowRight], action: Next cell in the row., from: first, expect: manual }
@@ -216,6 +216,10 @@ component:
       element: FlatList
       props: [role=grid, accessibilityLabel, getItemLayout, stickyHeaderIndices, onEndReached]
       notes: 'A FlatList with fixed getItemLayout (virtualized for free). Roles use the ARIA-aligned `role` prop (grid, row, rowgroup, columnheader, rowheader, cell) — RN''s accessibilityRole has no grid member. A header row View of role="columnheader" cells, rows as horizontal Views of fixed-width cells inside a horizontal ScrollView shared by header and body (scroll positions synced). Pinned columns are not sticky on native (no position: sticky, no extra dependency for a synced second list): they scroll with the rest and only cast pinnedShadow once scrolled, as Table''s row-header column. Column resize is a PanResponder drag on the header edge plus increment/decrement accessibility actions on the header cell (by resizeStep). Ctrl+C has no native equivalent (core RN has no clipboard API and no extra dependency is allowed); copy.copied is unused there. Each cell is accessible with accessibilityLabel "{column}: {value}" and, when editable, accessibilityHint "double tap to edit"; editing opens the system control inline (or a BottomSheet on phones for select/date). Row selection via Checkbox cells; range selection is not offered on native (no keyboard model), and `selectable: range` degrades to `row`. Arrow keys apply only on react-native-web. This is the one component where a phone is a poor fit; the doc recommends Table with `responsive: stack` for phone-first screens.'
+    swiftui:
+      element: ScrollView
+      props: [ScrollView=both-axes, LazyVStack, LazyHStack, .accessibilityElement=contain, .focusable, .onMoveCommand, .onKeyPress, '@FocusState', .accessibilityAction, Checkbox, UIPasteboard, Grid]
+      notes: 'Tablets and Catalyst first, as on RN. A `ScrollView([.horizontal, .vertical])` with a `LazyVStack` of row `HStack`s of fixed-width cells; the header row is pinned with `pinnedViews: .sectionHeaders`; pinned columns are drawn in a second `LazyVStack` overlaid at the leading edge and scrolled in sync through `.scrollPosition`. The grid is one focus section: an active-cell index in `@FocusState` moved by the keyboard table on iPad (`.onMoveCommand`, `.onKeyPress` for Page/Home/End/F2/Enter/Escape/Space/Ctrl+A/C); each cell is an accessibility element labelled ''{column}: {value}'' with `.accessibilityValue(copy.position)`; VoiceOver users tap to select or edit and use custom actions (`sort`, `select row`, `edit`, `copy`). Editors are the package Input/NumberInput/Select/DatePicker/Checkbox with `hideLabel`, `size: sm` shown in place (select/date in a sheet on phones). Range selection needs a hardware keyboard or a two-finger drag and degrades to `row` on phones with a debug warning; Ctrl+C writes TSV to `UIPasteboard.general`. Column resize: a `DragGesture` on the header edge plus an adjustable action on the header cell by `resizeStep`.'
 ---
 
 A data grid is for working in data, not reading it: hundreds or thousands of rows, arrow keys from cell to cell, type to edit, select a block and copy it. It shares Table's column and data model so a screen can start as a Table and become a DataGrid when the job changes, but it is a different role with a different keyboard contract, and the two are never one component with a switch.

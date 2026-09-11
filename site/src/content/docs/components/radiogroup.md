@@ -56,7 +56,7 @@ component:
   events:
     onChange:
       description: Fired when the selection changes, with the new option value.
-      platforms: { web: onChange, lit: change, rn: onChange }
+      platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
   styles:
     controlBackground: { token: color.control.background }
     controlBorder: { token: color.control.border }
@@ -112,6 +112,10 @@ component:
       element: View
       props: [accessibilityRole=radiogroup, accessibilityLabel, accessibilityHint]
       notes: 'The group is a View with accessibilityRole="radiogroup"; each option is a Pressable with accessibilityRole="radio" and accessibilityState={{ checked, disabled }}. There is no roving tabindex or arrow movement on native — every radio is a stop for the screen reader and for hardware-keyboard focus. That is the platform convention, not a defect. Validation precedence is Input''s (error → required → invalid with copy.invalid). Individually disabled options use accessibilityState.disabled and a press guard, never the Pressable `disabled` prop, so they stay reachable.'
+    swiftui:
+      element: VStack
+      props: [.accessibilityElement=contain, .accessibilityLabel, Button, .accessibilityAddTraits=isSelected, .focusable, .onMoveCommand, '@FocusState']
+      notes: 'A container `.accessibilityElement(children: .contain)` named by the legend, holding one `Button` per option that draws the radio circle from the tokens and carries `.isSelected` for the checked option (VoiceOver: ''Email, selected, button, 1 of 3'' — the count is announced from `.accessibilityValue(copy.position)`). Arrow keys on iPad move the selection through `@FocusState` per the keyboard table (`.onMoveCommand`); the group is one focus section. `orientation` picks `VStack`/`HStack`. Registers with the Form environment as one field.'
 ---
 
 A radio group asks one question and takes one answer. Its strength is that every option is visible at once, so the user can compare before choosing; its cost is vertical space, which is why it suits short sets.

@@ -47,10 +47,10 @@ component:
   events:
     onConfirm:
       description: The user chose the confirming action. The consumer performs it and closes.
-      platforms: { web: onConfirm, lit: confirm, rn: onConfirm }
+      platforms: { web: onConfirm, lit: confirm, rn: onConfirm, swiftui: onConfirm }
     onCancel:
       description: 'The user declined, by the cancel button or Escape. Fired with reason `cancel` or `escape`. A scrim click does nothing.'
-      platforms: { web: onCancel, lit: cancel, rn: onCancel }
+      platforms: { web: onCancel, lit: cancel, rn: onCancel, swiftui: onCancel }
   keyboard:
     - { keys: [Escape], action: Cancels (onCancel with reason escape)., from: inside, expect: closes }
     - { keys: [Tab], action: From Confirm (the last button) wraps to Cancel (the first)., from: last, expect: focus-wraps-to-first }
@@ -98,6 +98,10 @@ component:
       element: Modal
       props: [visible, transparent, onRequestClose, accessibilityViewIsModal]
       notes: 'Native Modal as in Dialog; the scrim Pressable is absent (no scrim dismissal) — the scrim is a plain View. onRequestClose → onCancel reason escape. Initial accessibility focus on the title so the question is read, then the buttons follow in order Cancel, Confirm. iOS also offers Alert.alert() natively; this component does not use it, so the look matches the theme and the buttons follow the system''s order and variants. The surface uses the RN >= 0.74 `role="alertdialog"` prop with accessibilityViewIsModal. `confirmDisabled` maps to Button''s `disabled`, which on native is accessibilityState.disabled plus a press guard (the control stays focusable), per Button''s own contract.'
+    swiftui:
+      element: sheet
+      props: [.sheet, .popover, .interactiveDismissDisabled, .accessibilityAddTraits=isModal, AccessibilityNotification, Button]
+      notes: 'Dialog''s presentation with `.interactiveDismissDisabled()` always (an alert dialog never dismisses on scrim), the heading and body announced on open, initial focus on the cancel `Button` (or confirm when `destructive` is false, per the doc), Escape = cancel. Not `.alert()`: the system alert cannot take the theme or a body view. `confirmLabel`/`cancelLabel` from copy.'
 ---
 
 An alert dialog is a Dialog with one job: get a considered yes or no. It looks like a Dialog and behaves like one in every way that keeps people safe, and differs in every way that keeps them from answering by accident — no close button, no scrim dismissal, focus starting on Cancel, the confirming action named after what it does.

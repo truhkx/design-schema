@@ -52,7 +52,7 @@ component:
   events:
     onOpenChange:
       description: 'Fired when the popover opens or closes, with the new state and a reason: `trigger`, `escape`, `outside`, `close-button`, `tab-out`.'
-      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange }
+      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
   keyboard:
     - { keys: [Enter, ' '], action: Toggles the popover from the trigger., when: focus on trigger, from: trigger, expect: manual }
     - { keys: [Escape], action: Closes and returns focus to the trigger., when: open, from: inside, expect: focus-trigger }
@@ -96,6 +96,10 @@ component:
       element: Modal
       props: [visible, transparent, onRequestClose]
       notes: 'Phones: a BottomSheet with height content (a floating panel over a phone page is hard to dismiss and easy to lose). Tablets and react-native-web: a transparent Modal with the panel positioned from measureInWindow() of the trigger and a backdrop Pressable that closes. modal=true adds a scrim.'
+    swiftui:
+      element: popover
+      props: [.popover, attachmentAnchor, arrowEdge, .presentationCompactAdaptation, FocusScope, .onExitCommand]
+      notes: '`.popover(isPresented:attachmentAnchor:arrowEdge:)` with `.presentationCompactAdaptation(.popover)` so a phone shows a real popover, not a sheet; `placement` maps to `arrowEdge`. `modal` composes FocusScope with `trap`; non-modal popovers leave focus with the trigger and close on outside tap (system behavior). The panel is the package surface with `color.overlay.surface` through `.presentationBackground`. Heading names the panel.'
 ---
 
 A popover is a small panel that appears next to the thing you clicked and stays out of the way of everything else. It is for content that needs interaction but not the whole screen: pick a date, choose a color, adjust two settings, read a help note with a link. Unlike a Tooltip it can contain controls; unlike a Dialog it does not take over the page.

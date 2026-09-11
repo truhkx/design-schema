@@ -71,6 +71,10 @@ component:
       element: View
       props: [accessibilityRole, accessibilityLabel, accessibilityHint]
       notes: 'A View that is NOT `accessible` (so children stay individually reachable). The legend is plain Text — not a header trait, which would put it in the headings rotor — and each child field receives the legend as a prefix in its accessibilityLabel through a FieldsetContext ("Shipping address, Street"), which is how VoiceOver and TalkBack users learn the grouping on native. The group error is announced as in Input.'
+    swiftui:
+      element: VStack
+      props: [.accessibilityElement=contain, .accessibilityLabel, Stack, FieldsetContext=environment]
+      notes: 'A `.accessibilityElement(children: .contain)` labelled by the legend (`Heading` or `Text` per `legendLevel`) wrapping a `Stack` of fields with `gap` forwarded through `overrides`. Provides `FieldsetContext` (`disabled`, legend) through the environment so fields prefix their accessibility label with the legend (''Shipping address, Street'') — the iOS way to say what `<fieldset>` says.'
 ---
 
 A fieldset is how a form says "these belong together." A screen-reader user tabbing into "Street" hears "Shipping address, Street" and knows where they are; a sighted user sees the legend and the fields indented under it by nothing more than rhythm. It is the container RadioGroup builds on, offered for any set of fields: an address, a date range, a set of notification switches.

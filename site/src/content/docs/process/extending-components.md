@@ -30,7 +30,7 @@ extension:
   events:
     onTrack:
       description: Fired after onPress with the `track` name and the button''s label.
-      platforms: { web: onTrack, lit: track, rn: onTrack }
+      platforms: { web: onTrack, lit: track, rn: onTrack, swiftui: onTrack }
   behavior:
     - name: press-tracks
       given: { track: 'signup', label: 'Sign up' }

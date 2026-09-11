@@ -51,7 +51,7 @@ component:
   events:
     onChange:
       description: Fired when the selected tab changes, with the new id.
-      platforms: { web: onChange, lit: change, rn: onChange }
+      platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
   keyboard:
     - { keys: [Tab], action: 'Moves focus to the selected tab, then out of the tab list into the panel (the list is one tab stop).', from: any, expect: manual }
     - { keys: [ArrowRight], action: 'Moves to the next tab, wrapping; selects it under automatic activation.', when: horizontal, from: first, expect: focus-next }
@@ -108,6 +108,10 @@ component:
       element: View
       props: [accessibilityRole=tablist, accessibilityRole=tab, accessibilityState]
       notes: 'A horizontal ScrollView (or View with fill) of Pressables with accessibilityRole="tab" and accessibilityState={{ selected }}; panels are Views. Arrow keys apply with a hardware keyboard only; each tab is its own accessibility stop, as on native. Indicator animated with Animated.'
+    swiftui:
+      element: VStack
+      props: [.accessibilityElement=contain, Button, .accessibilityAddTraits=isSelected, .focusable, .onMoveCommand, '@FocusState', ScrollView, ScrollViewReader]
+      notes: 'Not `TabView` (bottom tab bar semantics). The tab list is an `HStack` in a horizontal `ScrollView` (scrolls when tabs overflow; `ScrollViewReader` keeps the selected tab visible) of `Button`s with `.isSelected` on the current one and `.accessibilityValue(copy.position)`; the list is one focus section and arrows move the roving `@FocusState` per `activation` (automatic selects on move, manual on Enter/Space). Panels are the package''s own views shown by selection, each `.accessibilityElement(children: .contain)` labelled by its tab. `orientation: vertical` swaps the stacks. Indicator and borders from the tokens with the `transition` animation.'
 ---
 
 Tabs let one region of a screen show one of several views. The tab list is a single stop in the tab order — arrow keys move between tabs — and the selected panel follows immediately. They are for views of equal standing that the user switches between often; not for steps, and not for navigation between pages.

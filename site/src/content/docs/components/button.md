@@ -63,7 +63,7 @@ component:
   events:
     onPress:
       description: Fired when the button is activated by pointer, keyboard (Enter/Space), or assistive technology.
-      platforms: { web: onClick, lit: press, rn: onPress }
+      platforms: { web: onClick, lit: press, rn: onPress, swiftui: action }
   styles:
     background: { token: 'color.action.{variant}.background' }
     backgroundHover: { token: 'color.action.{variant}.backgroundHover', description: Pointer hover and pressed state. }
@@ -104,6 +104,10 @@ component:
       element: Pressable
       props: [accessibilityRole=button, accessibilityLabel, accessibilityState, hitSlop]
       notes: 'No hover state on touch; backgroundHover is applied to the pressed state. `type: submit` calls submit() on the nearest Form context, since there is no native form. Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur` and `onLongPress` to the native element, so Tooltip can attach to it.'
+    swiftui:
+      element: Button
+      props: [action, .buttonStyle=custom, .accessibilityLabel, .accessibilityHint, .accessibilityAddTraits=isButton, .frame=minWidth-minHeight, .contentShape, .focusable, .focused, .onLongPressGesture]
+      notes: 'A SwiftUI `Button(action:)` with a package `ButtonStyle` (`DSButtonStyle`) that draws variant/size from tokens and reads `isPressed` for the pressed state; hover from `.onHover` on iPad pointer. `iconOnly` sets `.accessibilityLabel(label)` and hides the text; `accessibleName` overrides the label (and must start with the visible one); `loading` sets `.accessibilityValue(copy.loading)`, disables presses without `.disabled`, and swaps the leading icon for a `ProgressView` tinted from the foreground token. `disabled` is `.accessibilityRespondsToUserInteraction(false)` + `.opacity` + guard, keeping the button focusable per the doc. Long press forwards to Tooltip through `onLongPress`; `accessibilityHint` is forwarded verbatim. `overflowLabel` is read by Toolbar only.'
 ---
 
 Buttons let people take actions and make choices with a single tap or click. They communicate what will happen through their label, and their emphasis through their variant.

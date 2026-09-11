@@ -74,6 +74,10 @@ component:
       element: View
       props: []
       notes: 'View with paddingVertical/paddingHorizontal, backgroundColor, borderWidth/borderColor, borderRadius from the token object. `element` does not apply.'
+    swiftui:
+      element: VStack
+      props: [.padding, .background, .overlay=border, .clipShape, .frame=maxWidth, .accessibilityElement=contain]
+      notes: 'A layout container: `padding` from the inset token on all edges, `.background(RoundedRectangle)` in the surface color (nothing for `none`), a stroked overlay for `border`, `.clipShape` for radius. Children are laid out by the caller''s stack; Box itself is a single-child wrapper (`VStack(spacing: 0)`) and never spaces siblings. No accessibility semantics unless the doc says the role is a landmark (then see Landmark).'
 ---
 
 Box is the thing you reach for when a group of content needs a surface: padding around it, a background under it, a border, rounded corners. It has no opinions about what is inside and no spacing between its children — that is Stack's job — so the two compose without overlap: a Box for the inset, a Stack for the gaps.

@@ -93,6 +93,10 @@ component:
       element: View
       props: [accessibilityRole=progressbar, accessibilityLabel, accessibilityValue]
       notes: 'Drawn with Views (Animated.View width for the fill; the indeterminate sweep is an Animated loop that is not started under reduced motion). accessibilityValue={{ min, max, now, text }}; announcements via AccessibilityInfo.announceForAccessibility per `announce`.'
+    swiftui:
+      element: ProgressView
+      props: [ProgressView, .progressViewStyle=custom, .accessibilityValue, .accessibilityLabel, AccessibilityNotification, TimelineView]
+      notes: '`ProgressView(value:total:)` with a package `ProgressViewStyle` drawing the track and fill from the tokens (indeterminate when `value` is nil: a sweep driven by `TimelineView`, replaced by the static half-opacity track under reduced motion). VoiceOver gets the label and `.accessibilityValue(formatValue)` from the style''s configuration; announcements per `announce` (milestones/complete/indeterminate copy) through `AccessibilityNotification.Announcement`. `tone` recolors the fill only.'
 ---
 
 A progress bar answers "how much longer": it moves as the work moves, and it ends. If the value is a measurement that could go up or down — storage used, signal strength — it is a Meter, not a progress bar.

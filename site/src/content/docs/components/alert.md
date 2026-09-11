@@ -33,7 +33,7 @@ component:
   events:
     onDismiss:
       description: Fired when the user activates the dismiss button. The consumer removes the alert.
-      platforms: { web: onDismiss, lit: dismiss, rn: onDismiss }
+      platforms: { web: onDismiss, lit: dismiss, rn: onDismiss, swiftui: onDismiss }
   styles:
     background: { token: 'color.status.{tone}.background' }
     foreground: { token: 'color.status.{tone}.foreground', description: Heading color. }
@@ -76,6 +76,10 @@ component:
       element: View
       props: [accessibilityRole=alert, accessibilityLiveRegion, accessibilityLabel]
       notes: 'live=alert → accessibilityRole="alert" and accessibilityLiveRegion="assertive"; status → accessibilityLiveRegion="polite"; off → neither. iOS ignores live regions, so with live≠off call AccessibilityInfo.announceForAccessibility on mount and again whenever heading or body change (a changed message is a new message). The label is heading + body when body is a string; otherwise heading only — a body that is not plain text should carry its own accessible text. The dismiss button is the system Button.'
+    swiftui:
+      element: HStack
+      props: [.accessibilityElement=combine, .accessibilityAddTraits=updatesFrequently, AccessibilityNotification, Icon, Button]
+      notes: 'An `HStack` of the tone Icon (color forwarded through `overrides`), the text column (`Heading`/`Text`), and the dismiss `Button` (ghost, iconOnly, `close`). `role: alert` posts `AccessibilityNotification.Announcement` with heading + body when it appears; `status` is silent and combined into one element with the tone word from copy as the value; `banner`/`region` are `.contain`ed. Tone colors from the status tokens; never color alone — the tone word is in the accessibility label.'
 ---
 
 An alert is the system speaking to the user inside the page: "this saved", "this failed", "this is about to expire". It stays where it is until the user has dealt with it or dismissed it, unlike a Toast (planned), which leaves on its own. Its tone is set by color, by an icon, and by the announcement role, so no single channel carries the meaning.

@@ -1,0 +1,4 @@
+Generate `packages/swiftui/Sources/DesignSchema/Icon+Paths.swift` from the shared glyph path table (the source the web Icon.tsx and Lit Icon.ts use — extract it to tools/icon-paths.json if it is not already shared, and make the web/Lit generators read that file in their next regeneration by noting it in prompts/conventions).
+
+Write a small SVG path-data parser in Swift (`Support/SVGPath.swift`: M, L, H, V, C, Q, A, Z, absolute and relative) producing a `Path` on a 16×16 grid, and `Icon+Paths.swift` mapping each glyph name to `(path: String, filled: Bool)`. Add a Swift Testing case that renders each glyph into an `ImageRenderer` at 16 pt and compares against PNGs rendered from the SVG with Playwright (`tools/icon-snapshots.ts`, checked in under tests/icon-snapshots/), tolerance 2 % pixels.
+Gate: workflow green; snapshot test passes for every glyph in the Icon doc's enum. Do not modify packages/*/src (JS) or generated/.

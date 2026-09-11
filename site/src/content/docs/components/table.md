@@ -99,13 +99,13 @@ component:
   events:
     onSortChange:
       description: Fired when a sortable header is activated, with `{ column, direction }` (cycling ascending → descending on the same column, ascending on a new one).
-      platforms: { web: onSortChange, lit: sort-change, rn: onSortChange }
+      platforms: { web: onSortChange, lit: sort-change, rn: onSortChange, swiftui: onSortChange }
     onSelectionChange:
       description: Fired with the new array of selected ids.
-      platforms: { web: onSelectionChange, lit: selection-change, rn: onSelectionChange }
+      platforms: { web: onSelectionChange, lit: selection-change, rn: onSelectionChange, swiftui: onSelectionChange }
     onRowPress:
       description: 'Fired when a row is activated, with its id. Only when the row has no other interactive content; the row header cell becomes a Button and the row is styled interactive. Prefer a Link in the row header for navigation.'
-      platforms: { web: onRowPress, lit: row-press, rn: onRowPress }
+      platforms: { web: onRowPress, lit: row-press, rn: onRowPress, swiftui: onRowPress }
   keyboard:
     - { keys: [Tab], action: 'Moves through interactive content in reading order: select-all, then per row the checkbox, links, buttons and the actions cell. Cells themselves are not focusable — this is a table, not a grid.', from: any, expect: focus-next }
     - { keys: [Enter, ' '], action: 'On a sort button, sorts; on a row checkbox, toggles; on a row header button, activates the row.', from: inside, expect: manual }
@@ -187,6 +187,10 @@ component:
       element: FlatList
       props: [accessibilityRole=list, accessibilityLabel, stickyHeaderIndices]
       notes: 'No table element on native. Phones: always the stacked form — a FlatList (accessibilityRole="list", accessibilityLabel from caption) whose rows are accessible Views with an accessibilityLabel that reads "{header}: {value}" for each visible column, the row header first, plus "selected" state; selection Checkbox and rowActions inside. Tablets and react-native-web: a header row View (accessibilityRole="header" cells) and rows as horizontal Views with fixed column widths, `responsive: scroll` in a horizontal ScrollView with the row-header column rendered in a separate vertically-synced list. Sort buttons are system Buttons; announcements via AccessibilityInfo.announceForAccessibility.'
+    swiftui:
+      element: Grid
+      props: [Grid, GridRow, ScrollView, .accessibilityElement=contain, .accessibilityLabel, .accessibilityAddTraits=isHeader, Button, Checkbox, ViewThatFits]
+      notes: 'A `Grid` of `GridRow`s inside a horizontal `ScrollView` when columns overflow (`responsive: scroll`) or a `VStack` of stacked cards (`responsive: stack`) chosen through `ViewThatFits` against the prose width; not `List` and not `Table` (macOS-only). The caption `Heading` names the `.contain` element; each row is `.accessibilityElement(children: .contain)` with the row-header cell''s text as its label so VoiceOver reads a row as one unit and then its cells; header cells are `.isHeader` and column names are prefixed to cell values in stacked mode (`copy.cellLabel`). Sort `Button`s, selection `Checkbox`es, `onRowPress` on the row `Button` — as documented. `maxHeight` scrolls vertically inside a `ScrollView` with a visible header `Grid` outside it.'
 ---
 
 A table is the honest way to show records that share fields: every row the same shape, every column a comparable thing. This component keeps that honesty on a phone — where most tables quietly turn into unreadable text — by choosing, per table, whether rows stack into labelled blocks or columns scroll, and by stating every role explicitly so neither layout costs a screen-reader user the structure.

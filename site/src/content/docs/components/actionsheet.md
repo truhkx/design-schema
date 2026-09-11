@@ -35,10 +35,10 @@ component:
   events:
     onAction:
       description: An action was chosen; receives its `id`. The consumer performs it and closes.
-      platforms: { web: onAction, lit: action, rn: onAction }
+      platforms: { web: onAction, lit: action, rn: onAction, swiftui: onAction }
     onClose:
       description: 'Dismissed without choosing: reason `escape`, `scrim`, `cancel`, or `drag`.'
-      platforms: { web: onClose, lit: close, rn: onClose }
+      platforms: { web: onClose, lit: close, rn: onClose, swiftui: onClose }
   keyboard:
     - { keys: [Escape], action: Closes without choosing., from: inside, expect: closes }
     - { keys: [ArrowDown], action: Moves focus to the next action., from: first, expect: focus-next }
@@ -98,6 +98,10 @@ component:
       element: Modal
       props: [visible, transparent, onRequestClose, accessibilityViewIsModal]
       notes: 'A native Modal sheet: a View with accessibilityRole="menu" containing Pressable rows with accessibilityRole="menuitem" and a separate Cancel Button, drag-to-dismiss on the header as BottomSheet. iOS''s ActionSheetIOS is not used, so the look matches the theme on both platforms. On tablets above maxWidth, presents as Menu. The surface uses the RN >= 0.74 `role="menu"` prop with accessibilityViewIsModal; rows are `role="menuitem"`. Arrow keys do not exist on native; each row is its own focus stop.'
+    swiftui:
+      element: confirmationDialog
+      props: [.confirmationDialog, Button, role=destructive, role=cancel, titleVisibility]
+      notes: '`.confirmationDialog(title, isPresented:, titleVisibility: .visible)` with one `Button` per action (`destructive` via `role: .destructive`, cancel via `role: .cancel` from copy) — the system action sheet is the pattern users expect and VoiceOver handles it natively; the doc''s surface bindings are no-ops here (the gallery notes it), `description` becomes the message. `onAction` with the action id, `onClose` on dismissal.'
 ---
 
 An action sheet answers "what can I do with this?" — the long-press or overflow menu of mobile. It lists a handful of verbs, groups the dangerous one at the bottom, and adds an explicit Cancel because thumbs miss. On wide screens the same list is a Menu next to what was clicked.

@@ -292,7 +292,7 @@ class TestGetGenerationPrompt:
 
     def test_a_platform_without_a_prompt_raises(self):
         with pytest.raises(ValueError, match="No generation prompt"):
-            get_generation_prompt("Button", "swiftui")
+            get_generation_prompt("Button", "compose")
 
 
 class TestResources:

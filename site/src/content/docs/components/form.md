@@ -44,10 +44,10 @@ component:
   events:
     onSubmit:
       description: 'Fired when the form is submitted and every field is valid. Receives the collected values keyed by field name: `Record<string, string | boolean>` — Input and RadioGroup contribute strings, Switch a boolean, Checkbox its `value` when checked; an unchecked Checkbox, an unselected RadioGroup and a disabled field contribute no key at all.'
-      platforms: { web: onSubmit, lit: submit, rn: onSubmit }
+      platforms: { web: onSubmit, lit: submit, rn: onSubmit, swiftui: onSubmit }
     onInvalid:
       description: Fired when submission is blocked by validation. Receives the errors keyed by field name.
-      platforms: { web: onInvalid, lit: invalid, rn: onInvalid }
+      platforms: { web: onInvalid, lit: invalid, rn: onInvalid, swiftui: onInvalid }
   styles:
     gap: { token: layout.gap.loose, description: 'Vertical gap between fields and between fields and actions — the rhythm preset, so a theme''s `layout.rhythm` reaches every form.' }
     errorSummaryBorder: { token: color.border.danger }
@@ -74,6 +74,10 @@ component:
       element: View
       props: [accessibilityLabel]
       notes: 'No native form on iOS/Android. Form provides a context { register, unregister, submit, errors, validateMode, disabled, focusField }; Inputs register { name, getValue, validate, focus } in mount order; a Button with type=submit calls submit(). Non-last fields get returnKeyType="next" (focusField), the last gets "done" (submit). Disabled Inputs do not register. On failed submit the summary is announced (accessibilityLiveRegion="assertive" on Android, announceForAccessibility on iOS) and focus moves to the summary when errorSummary is on, otherwise to the first invalid field — same as web.'
+    swiftui:
+      element: VStack
+      props: [.onSubmit, .submitLabel, '@FocusState', FormContext=environment, AccessibilityNotification]
+      notes: 'A `VStack` providing `FormContext` through the environment (`\.dsForm`); fields register on appear and unregister on disappear. Submit is the submit `Button` or the keyboard''s return on the last field (`.onSubmit`); validation runs registered validators in order, the first failing field receives `@AccessibilityFocusState` focus and `copy.invalidSummary` is announced. `onInvalid` receives the failures; `onSubmit` the value map (`String | Bool | Double | [String] | ClosedRange<Double>`). Not SwiftUI''s `Form` (a grouped-list style that fights the tokens).'
 ---
 
 Form is the container that makes fields behave as a group. It knows which fields exist, collects their values, runs validation at the configured moment, shows errors in a consistent way, and only calls `onSubmit` when everything is valid.

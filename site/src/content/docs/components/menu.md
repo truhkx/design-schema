@@ -50,10 +50,10 @@ component:
   events:
     onAction:
       description: An item was chosen; receives its `id`. The menu closes itself first.
-      platforms: { web: onAction, lit: action, rn: onAction }
+      platforms: { web: onAction, lit: action, rn: onAction, swiftui: onAction }
     onOpenChange:
       description: 'Fired when the menu opens or closes, with `{ open, reason }` — reason: `trigger`, `escape`, `outside`, `action` (an item was chosen; fired before onAction), `controlled`.'
-      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange }
+      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
   keyboard:
     - { keys: [Enter, ' ', ArrowDown], action: Opens the menu and focuses the first item., when: focus on trigger, from: trigger, expect: manual }
     - { keys: [ArrowUp], action: Opens the menu and focuses the last item., when: focus on trigger, from: trigger, expect: manual }
@@ -121,6 +121,10 @@ component:
       element: Modal
       props: [visible, transparent, onRequestClose]
       notes: 'Menus on touch are ActionSheets: on phones Menu renders an ActionSheet with the same items (groups become dividers with a muted label); on tablets and react-native-web it renders a transparent Modal with an absolutely positioned popup measured from the trigger via measureInWindow(). Items are Pressables with accessibilityRole="menuitem"; the trigger Button carries accessibilityState.expanded. Typeahead and arrow keys apply only when a hardware keyboard is present. The popup uses the RN >= 0.74 `role="menu"` prop and items `role="menuitem"`; the trigger Button receives `expanded` so accessibilityState.expanded is exposed. On phones the Menu renders ActionSheet (composition, now that it exists); the anchored dropdown is the tablet and react-native-web presentation. The list scrolls within maxHeight.'
+    swiftui:
+      element: Menu
+      props: [Menu, .menuStyle, .menuOrder, Button, Divider, .accessibilityLabel, .contextMenu]
+      notes: 'SwiftUI `Menu(label:)` — the system menu is the native pattern, keyboard-navigable on iPad, VoiceOver-native, and it takes the theme through `.tint` and `.menuStyle` for the trigger only (the popup''s surface is the system''s; the doc''s popup bindings are no-ops on iOS, noted in the gallery). Items are `Button`s (destructive via `role: .destructive`), groups `Section`s with a header, separators `Divider`; disabled items `.disabled(true)` (the system menu skips them, matching the doc). `onOpenChange` fires from the label''s press and the menu''s dismissal via `.onChange` of a presentation binding on the wrapper. `trigger: contextMenu` uses `.contextMenu`.'
 ---
 
 A menu hides a handful of actions behind one button so a toolbar or a row stays quiet. It is the desktop counterpart of ActionSheet — anchored to what was clicked, gone with a click elsewhere, fully driveable from the keyboard, with typeahead for long lists.

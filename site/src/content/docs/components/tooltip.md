@@ -71,6 +71,10 @@ component:
       element: View
       props: [accessibilityHint, accessibilityLabel]
       notes: 'There is no hover on touch, so no tooltip surface is shown by default: `content` becomes the child''s accessibilityHint (or accessibilityLabel when describes=false). On long-press the text is shown in a small transient View above the child for the duration of the press, as a sighted-user aid. On react-native-web, hover and focus behave as on web. This is the acknowledged platform difference; the information is never hover-only anywhere. The child must accept `accessibilityHint`/`accessibilityLabel` and the `onHoverIn`/`onHoverOut`/`onFocus`/`onBlur`/`onLongPress` handlers Tooltip clones onto it; the system Button, Link and Input forward these to their native element. Placement flips using measureInWindow.'
+    swiftui:
+      element: Group
+      props: [.accessibilityHint, .onLongPressGesture, .popover, .onHover, .accessibilityHidden]
+      notes: 'There is no tooltip on iOS. The `content` is forwarded to the trigger as `.accessibilityHint` (VoiceOver reads it after the label), and the bubble itself shows on long-press (touch) and pointer hover (iPad) as a `.popover` with `.presentationCompactAdaptation(.popover)` so it never becomes a sheet, positioned by `placement`, dismissed on release/leave or Escape. The bubble is `.accessibilityHidden(true)` — the hint already carries the text. Delays from the timing tokens; none under reduced motion.'
 ---
 
 A tooltip is the smallest overlay: a label that appears when you point at or focus a control and disappears when you leave. It exists to name icon-only buttons and to add a hint to a control whose label cannot carry everything. It must never be the only home of information a user needs, because a touchscreen user will never see it.

@@ -74,6 +74,10 @@ component:
       element: View
       props: [role=meter, accessibilityLabel, accessibilityValue]
       notes: 'RN 0.73+ has role="meter" (react-native-web renders role=meter; iOS/Android map it to the nearest trait or a plain value). The container is `accessible` so label and value announce as one element, with accessibilityValue={{ min, max, now, text }} where text is valueText when given and omitted otherwise (the platform then reads the number). The fill animates in measured pixels from onLayout — a percentage width cannot be interpolated — and snaps on first layout and on resize.'
+    swiftui:
+      element: VStack
+      props: [.accessibilityElement=combine, .accessibilityValue, GeometryReader, Rectangle, .accessibilityAddTraits=updatesFrequently]
+      notes: 'Label row (`Text`s) and a track `Rectangle` with the fill `Rectangle` sized by `GeometryReader` to the fraction, colors per the tone thresholds. One accessibility element (`.combine`) named by the label with `.accessibilityValue(formatValue(value))`; iOS has no meter role, so the value text carries min/max words from copy. No animation: a meter reflects a measurement.'
 ---
 
 A meter shows how much of something there is against a known scale. Its shape is a bar because people read fullness at a glance, but its meaning is the number, which is why the label and value are always exposed to assistive technology and, by default, shown.

@@ -81,10 +81,10 @@ component:
   events:
     onChange:
       description: Fired when the selection changes, with the new value (array when `multiple`).
-      platforms: { web: onChange, lit: change, rn: onChange }
+      platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
     onActiveChange:
       description: 'Fired as the focused (active) option changes, with its value — Combobox uses this to keep aria-activedescendant in sync; consumers rarely need it.'
-      platforms: { web: onActiveChange, lit: active-change, rn: onActiveChange }
+      platforms: { web: onActiveChange, lit: active-change, rn: onActiveChange, swiftui: onActiveChange }
   keyboard:
     - { keys: [ArrowDown], action: Moves to the next enabled option (and selects it when selection follows focus)., from: first, expect: focus-next }
     - { keys: [ArrowUp], action: Moves to the previous enabled option., from: last, expect: focus-prev }
@@ -152,6 +152,10 @@ component:
       element: FlatList
       props: [accessibilityRole=list, accessibilityState, accessibilityRole=menuitem]
       notes: 'A FlatList (virtualised — long option lists are common) of Pressable rows with accessibilityRole="menuitem" (no listbox/option roles on native) and accessibilityState={{ selected, disabled }}; multiple: accessibilityState.checked. maxVisible → maxHeight = rows × row height measured from the first row. Each option is its own accessibility stop; typeahead and arrows apply with a hardware keyboard only.'
+    swiftui:
+      element: ScrollView
+      props: [ScrollView, LazyVStack, Button, .accessibilityAddTraits=isSelected, .focusable, .onMoveCommand, .onKeyPress, '@FocusState', ScrollViewReader, .accessibilityElement=contain]
+      notes: 'A `ScrollView` + `LazyVStack` of option rows (`Button`s with `.isSelected`, group headers as `Text` with `.isHeader`) inside a `.contain` element labelled by `label`/`labelledBy`; not `List`. The list is one focus section: arrows move the active `@FocusState` index, type-ahead via `.onKeyPress(characters:)`, Home/End via `.onKeyPress(.home/.end)`, Space/Enter select per mode; `ScrollViewReader` keeps the active option in view and `maxVisible` sets the frame height from the measured row height. `multiple` rows show the check Icon and the count is announced. `embedded` drops the surface bindings for Select/Combobox/Search hosts.'
 ---
 
 A listbox is a list you choose from. It is the part of a dropdown that actually does the work — the arrows, the typeahead, the selection — extracted so that a visible picker, a Select's popup and a Combobox's suggestions all behave identically, including for multi-select. If Select is the trigger and Combobox is the input, Listbox is the engine.

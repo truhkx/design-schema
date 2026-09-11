@@ -43,6 +43,10 @@ component:
       element: View
       props: [role, accessibilityLabel]
       notes: 'Native platforms have no landmark navigation (VoiceOver and TalkBack have no landmark rotor), so Landmark is structure for react-native-web and a labelled View on iOS and Android. Pass `role` (RN ≥ 0.73) so react-native-web renders the semantic element; on native it maps to the nearest accessibilityRole or none. Exception: RN''s `Role` union has no `search` landmark (only the `searchbox` widget), so `search` is passed as the legacy accessibilityRole="search", which react-native-web maps to the ARIA search landmark; iOS and Android have no equivalent, so it is web-parity only. The label is applied as accessibilityLabel only for `region`, `form`, and `navigation`, so screen readers get a group name without every View announcing a role.'
+    swiftui:
+      element: VStack
+      props: [.accessibilityElement=contain, .accessibilityLabel, .accessibilityAddTraits, accessibilityRotor]
+      notes: 'iOS has no landmark roles. The Landmark renders `.accessibilityElement(children: .contain)` with the `label` as its accessibility label so VoiceOver announces the region boundary when entering it, and registers an `.accessibilityRotorEntry` under a package-wide ''Landmarks'' rotor (`Support/LandmarkRotor.swift`) so users can jump between regions as they do on web. `role: main` adds `.accessibilityAddTraits(.isSummaryElement)` only when the doc asks. The element name (`nav`, `aside`) has no equivalent; `role` drives everything.'
 ---
 
 Landmarks are the page's table of contents for assistive technology. A screen-reader user arriving on a page presses one key to jump to the main content, another to list the navigations, another for the search. Without landmarks they read from the top. This component exists so that every page in the system gets the same, correct set of them without anyone remembering which element implies which role.

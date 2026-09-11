@@ -80,6 +80,10 @@ component:
       element: View
       props: [accessibilityRole, accessibilityLabel]
       notes: 'View with padding/background/border/radius from tokens; header and footer are plain row Views styled from this component''s gap bindings, not Stack. Interactive: the card wraps its content in a Pressable that forwards onPress to the single child Link/Button''s handler and takes accessibilityRole from it; the child then renders with accessible={false} so there is one element for assistive technology.'
+    swiftui:
+      element: VStack
+      props: [.padding, .background, .overlay=border, .clipShape, .accessibilityElement=contain, .accessibilityLabel, .contentShape, .focusable, .focused]
+      notes: 'Surface from the tokens, `inset` padding, header row (`Heading` + `headerActions` HStack), body, footer with the gap bindings. `.accessibilityElement(children: .contain)` labelled by the heading. `interactive`: the card is wrapped in a `Button` whose action is the single child link/button''s action (found by the child declaring itself through `CardActionPreference`), the child is `.accessibilityHidden` inside it, and hover shows `hoverBackground` on iPad pointer — one target, one focus stop. `focusable`: `.focusable()` with the focus ring drawn on the card, for Feed''s PageUp/PageDown.'
 ---
 
 A Card frames one thing so it can sit among others: a search result, a plan to choose, a setting group, a dashboard panel. It is a Box with conventions — a heading row, a body, an action row, consistent padding and gaps from the theme's rhythm — so that every card on every screen has the same internal spacing without anyone choosing it.

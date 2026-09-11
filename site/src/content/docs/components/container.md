@@ -51,6 +51,10 @@ component:
       element: View
       props: []
       notes: 'View with maxWidth, alignSelf (center → center, start → flex-start), width 100%, paddingHorizontal. The responsive gutter uses useWindowDimensions against the maxWidth tokens. On phones the cap rarely applies; on tablets and react-native-web it does.'
+    swiftui:
+      element: VStack
+      props: [.frame=maxWidth, .padding=horizontal, .frame=maxWidth-infinity, GeometryReader]
+      notes: 'Centers content at `layout.maxWidth.{width}` with horizontal gutters from the inset token: `.frame(maxWidth:)` inside `.frame(maxWidth: .infinity)`. Gutters shrink to the compact token below the prose width (a `GeometryReader` on the container''s own width, never `UIScreen`). Safe-area insets are respected by default (`ignoresSafeArea` is never applied by a component).'
 ---
 
 Container is where a screen's horizontal rhythm is decided once. It puts the gutter at the viewport edge and caps how wide content can get, so a form on a phone, a dashboard on a laptop and an article on a wide monitor all sit on the same measure — and no component ever needs to know how wide the page is.

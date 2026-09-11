@@ -76,7 +76,7 @@ component:
   events:
     onOpenChange:
       description: 'Fired when the panel opens or closes, with the new state and a reason: `trigger`, `escape`, `close-button`, `scrim`, `swipe`, `action`, `navigation` (a Link inside was followed).'
-      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange }
+      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
   keyboard:
     - { keys: [Enter, ' '], action: 'Toggles the panel from the trigger (aria-expanded flips). Non-modal: focus stays on the trigger. Modal: focus moves into the panel.', when: focus on trigger, from: trigger, expect: toggles }
     - { keys: [Tab], action: 'Non-modal: from the trigger, moves into the open panel (it is next in DOM order); from the last element in the panel, continues into the page. Modal: from the last element wraps to the first.', when: open, from: trigger, expect: manual }
@@ -123,6 +123,10 @@ component:
       element: Modal
       props: [visible, transparent, onRequestClose, accessibilityViewIsModal]
       notes: 'Native Modal with an Animated.View surface translated from the start (or end) edge, scrim Pressable to close, PanResponder for the swipe (edge-swipe to open needs a gesture on the screen root; offer it via a `useSidePanelEdgeSwipe` hook rather than assuming). onRequestClose → escape. Tablets in landscape with `persistent` set: render as a sibling View beside the content (no Modal), matching the web sidebar. RTL flips `start`/`end` via I18nManager. Non-modal ''page stays live'' cannot be reproduced under RN Modal (it intercepts all touches); only tap-outside-to-close is possible, and the doc accepts that. `role` maps to the RN >= 0.74 `role` prop on the persistent sidebar View. `navigation` as a close reason is never emitted natively (no router hook). `useSidePanelEdgeSwipe` requires the panel to be controlled (`open`).'
+    swiftui:
+      element: ZStack
+      props: [.offset, .transition, withAnimation, FocusScope, .accessibilityAddTraits=isModal, .accessibilityValue=expanded, Button, .gesture=DragGesture]
+      notes: 'A panel slid in from `side` with `.offset` animated over the motion tokens (instant under reduced motion), rendered by the app as the trailing sibling of its content (`SidePanel` is placed in the view tree where it overlays; `.dsPortalHost` is not needed). The trigger `Button` carries `.accessibilityValue(copy.expanded / collapsed)` (no expanded trait) and controls the panel; `modal` adds the scrim `Rectangle` (`color.overlay.scrim`, tap closes when `dismissOnScrim`), FocusScope trap and `.isModal`; non-modal panels push content aside (`inline`) or overlay it without a scrim. Edge-swipe to close is an addition to the visible close `Button`.'
 ---
 
 A side panel is the drawer: hidden off the edge until a button asks for it, then sliding in beside the page. It is built on the simplest APG pattern that fits — a button with `aria-expanded` that controls a region — so by default it behaves like a disclosure that happens to slide: focus stays on the button, Tab walks into the panel, Escape puts it away. Only when a panel must be finished or dismissed does it become a modal dialog at the edge. It holds whatever a page needs at hand but not on screen — the navigation List, a set of filters, the cart — and on a wide screen the same component can stay put as a sidebar, so a product has one menu, not a phone menu and a desktop one.

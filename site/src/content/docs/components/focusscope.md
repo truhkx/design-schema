@@ -35,7 +35,7 @@ component:
   events:
     onEscapeAttempt:
       description: 'Fired when trapped focus would have left the scope (Tab from the last element, Shift+Tab from the first) just before it wraps, with the direction. Diagnostic; components do not need it.'
-      platforms: { web: onEscapeAttempt, lit: escape-attempt, rn: onEscapeAttempt }
+      platforms: { web: onEscapeAttempt, lit: escape-attempt, rn: onEscapeAttempt, swiftui: onEscapeAttempt }
   keyboard:
     - { keys: [Tab], action: 'From the last focusable descendant, wraps to the first.', from: last, expect: focus-wraps-to-first }
     - { keys: [Shift+Tab], action: 'From the first focusable descendant, wraps to the last.', from: first, expect: focus-wraps-to-last }
@@ -57,6 +57,10 @@ component:
       element: View
       props: [accessibilityViewIsModal]
       notes: 'There is no Tab order to confine on native. trapped maps to accessibilityViewIsModal on the wrapper View (VoiceOver/TalkBack ignore siblings); autoFocus calls AccessibilityInfo.setAccessibilityFocus on the first accessible descendant (or the wrapper) after mount; restoreFocus stores the opener''s node handle and refocuses it on unmount. Hardware-keyboard Tab wrapping is not implemented; that is a platform limit.'
+    swiftui:
+      element: VStack
+      props: ['@FocusState', '@AccessibilityFocusState', .focusSection, .focusScope, .onExitCommand, .accessibilityAddTraits=isModal]
+      notes: 'The engine in `Support/FocusScope.swift`: `.focusSection()` bounds Tab/Shift+Tab on iPad keyboards inside the scope (`trap`), `@AccessibilityFocusState` moves VoiceOver focus to `autoFocus`''s target on appear and back to `returnFocusTo` (or the element that opened the scope) on disappear, and `.accessibilityAddTraits(.isModal)` tells VoiceOver to ignore siblings while a modal scope is up. Escape reaches the scope through `.onExitCommand`; `onEscapeAttempt` fires when the scope is asked to close and the owner decides. Wrapping is done by tracking the first/last focusable identifiers the children register through a preference.'
 ---
 
 FocusScope is the smallest possible answer to the hardest accessibility bug: focus that escapes a modal, or never comes back from one. It has no appearance and no opinion about what is inside it. It moves focus in, keeps Tab inside, and puts focus back — and because it exists once, every overlay that composes it gets those three behaviors right by construction rather than by re-implementation.

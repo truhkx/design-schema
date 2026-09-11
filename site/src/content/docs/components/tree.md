@@ -71,16 +71,16 @@ component:
   events:
     onSelectionChange:
       description: Fired with the selected ids.
-      platforms: { web: onSelectionChange, lit: selection-change, rn: onSelectionChange }
+      platforms: { web: onSelectionChange, lit: selection-change, rn: onSelectionChange, swiftui: onSelectionChange }
     onExpandChange:
       description: Fired with the expanded ids.
-      platforms: { web: onExpandChange, lit: expand-change, rn: onExpandChange }
+      platforms: { web: onExpandChange, lit: expand-change, rn: onExpandChange, swiftui: onExpandChange }
     onExpand:
       description: Fired when a lazy node is expanded for the first time, with its id.
-      platforms: { web: onExpand, lit: expand, rn: onExpand }
+      platforms: { web: onExpand, lit: expand, rn: onExpand, swiftui: onExpand }
     onActivate:
       description: 'Fired on Enter or double-click on a node (open the file, navigate), with its id. Nodes with `href` navigate instead.'
-      platforms: { web: onActivate, lit: activate, rn: onActivate }
+      platforms: { web: onActivate, lit: activate, rn: onActivate, swiftui: onActivate }
   keyboard:
     - { keys: [Tab], action: 'Moves into the tree (to the selected node, else the first) and out of it — one tab stop.', from: any, expect: manual }
     - { keys: [ArrowDown], action: Next visible node., from: first, expect: focus-next }
@@ -159,6 +159,10 @@ component:
       element: FlatList
       props: [accessibilityRole=list, accessibilityLabel]
       notes: 'A FlatList over the flattened visible nodes; each row a Pressable with accessibilityRole="button" (or "link" for href), accessibilityState={{ expanded, selected, checked, disabled }}, accessibilityLabel "{label}, level {n}" and accessibilityActions expand/collapse. Multiple mode draws the checkbox glyph (checkbox* bindings, accessibilityState.checked) inside the same Pressable — not the Checkbox component — so the row stays one target and Enter-equivalent activation and href still work: a tap toggles selection, a long press activates. `selectOnFocus` is wired to the Pressable''s onFocus (hardware keyboard and assistive-technology focus). No arrow keys, no type-ahead; the expand chevron is a real target.'
+    swiftui:
+      element: ScrollView
+      props: [ScrollView, LazyVStack, Button, .accessibilityValue=expanded, .accessibilityAddTraits=isSelected, .accessibilityAction, .focusable, .onMoveCommand, .onKeyPress, '@FocusState', Link]
+      notes: 'A `ScrollView` + `LazyVStack` over the flattened visible nodes (no nested group views), each row a `Button` (or `Link` for `href`) with indent, the chevron `Button` (`.accessibilityHidden`, real touch target), `Icon`, `Text`, badge `Text`; `.accessibilityValue` combines ''level {n}'' and expanded/collapsed, `.isSelected` for selection, `.accessibilityValue(checked/unchecked/mixed)` in `multiple` mode where the drawn checkbox glyph lives inside the same row (never the Checkbox component; a tap toggles, a long press activates). Custom actions expand/collapse; the tree is one focus section on iPad with the full keyboard table including type-ahead through `.onKeyPress(characters:)`. `selectedCount` announced in multiple mode; the optional `Heading` names the tree.'
 ---
 
 A tree is a list that knows about nesting. One field per node, arrows to move and open, Enter to act: the shape of a file browser's sidebar, a category picker, a documentation site's navigation. When nodes need several fields, it becomes a TreeGrid.

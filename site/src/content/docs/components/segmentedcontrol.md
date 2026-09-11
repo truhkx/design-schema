@@ -42,7 +42,7 @@ component:
   events:
     onChange:
       description: Fired when the selection changes, with the new value. The change takes effect immediately.
-      platforms: { web: onChange, lit: change, rn: onChange }
+      platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
   keyboard:
     - { keys: [ArrowRight, ArrowDown], action: 'Moves to and selects the next enabled segment, wrapping.', from: first, expect: focus-next }
     - { keys: [ArrowLeft, ArrowUp], action: 'Moves to and selects the previous enabled segment, wrapping.', from: last, expect: focus-prev }
@@ -92,6 +92,10 @@ component:
       element: View
       props: [accessibilityRole=radiogroup, accessibilityRole=radio, accessibilityState]
       notes: 'A View row of Pressables with accessibilityRole="radio" and accessibilityState={{ checked, disabled }}; the pill is an Animated.View. Each segment is its own accessibility stop on native. iOS''s UISegmentedControl look is approximated with the tokens rather than used, so the theme applies.'
+    swiftui:
+      element: HStack
+      props: [.accessibilityElement=contain, Button, .accessibilityAddTraits=isSelected, .focusable, .onMoveCommand, '@FocusState', matchedGeometryEffect]
+      notes: 'Not `Picker(.segmented)` (untinted, unthemeable). An `HStack` of equal-width `Button`s in a `.contain` element named by `label`, the selected one `.isSelected` with the selected surface drawn through `matchedGeometryEffect` sliding over `transition` (no slide under reduced motion). Arrows on iPad move selection immediately (radio semantics), matching the keyboard table. `iconOnly` segments carry their label as the accessibility label.'
 ---
 
 A segmented control switches a mode: list or grid, day or week, metric or imperial. Exactly one segment is always selected, choosing takes effect at once, and there is nothing to submit — which is what separates it from a RadioGroup in a form, whose semantics it borrows.

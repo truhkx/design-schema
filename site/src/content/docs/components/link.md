@@ -34,7 +34,7 @@ component:
   events:
     onPress:
       description: Fired when the link is activated. On web the default navigation still happens unless the consumer prevents it; on native the consumer must navigate (the system opens URLs with Linking when no handler is given).
-      platforms: { web: onClick, lit: 'click (native, retargeted — no CustomEvent)', rn: onPress }
+      platforms: { web: onClick, lit: 'click (native, retargeted — no CustomEvent)', rn: onPress, swiftui: action }
   styles:
     color: { token: color.link }
     colorHover: { token: color.link.hover, description: Pointer hover and active state. }
@@ -68,6 +68,10 @@ component:
       element: Text
       props: [accessibilityRole=link, accessibilityLabel, onPress]
       notes: 'Renders Text with accessibilityRole="link" so it is inline inside a parent Text. The external mark is `Icon name="external" inline` colored with the link color (with `tone: inherit` it takes the parent Text''s color from TextStyleContext); it swaps color instantly on press while the label crossfades. Of the override bindings only `transition` has an effect on native (Text cannot set underline thickness/offset). Activation calls `onPress(href)` when provided, otherwise Linking.openURL(href). `external` always uses Linking. No hover or visited state; the pressed state uses colorHover. On react-native-web this becomes a real anchor. Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur` and `onLongPress` to the native element, so Tooltip can attach to it.'
+    swiftui:
+      element: Link
+      props: [Link, Button, .accessibilityAddTraits=isLink, openURL, .underline, .accessibilityHint]
+      notes: 'SwiftUI `Link(destination:)` for `href` (opens through `@Environment(\.openURL)`, so an app can intercept in-app routes); a `Button` with `.isLink` trait when only `action` is given. Underline from the `underline` token via `.underline(true, pattern: .solid, color:)`; `external` appends the `external` Icon inline and `copy.external` to the accessibility label. Inline links inside `Text` render as `Text` concatenation with `.link` attribute for the URL, so a paragraph with a link is one accessibility element with the link as a rotor item.'
 ---
 
 Links take people somewhere. Buttons do things. That distinction is the whole reason this component exists: assistive technology lists links separately, users expect middle-click and open-in-new-tab to work on them, and the browser's history, visited state and find-in-page all depend on the element being a real link.

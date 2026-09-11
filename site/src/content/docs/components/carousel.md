@@ -52,7 +52,7 @@ component:
   events:
     onChange:
       description: Fired when the current slide changes, with the new index and the reason (`next`, `prev`, `picker`, `swipe`, `autoplay`).
-      platforms: { web: onChange, lit: change, rn: onChange }
+      platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
   keyboard:
     - { keys: [Tab], action: 'Moves through the controls (play/pause, previous, next, picker) and then into the current slide''s focusable content; hidden slides are inert.', from: any, expect: manual }
     - { keys: [ArrowRight], action: Next slide., when: focus on picker or in a tabs picker, from: inside, expect: manual }
@@ -104,6 +104,10 @@ component:
       element: FlatList
       props: [horizontal, pagingEnabled, snapToInterval, decelerationRate=fast, accessibilityRole=adjustable, accessibilityActions]
       notes: 'A horizontal FlatList with pagingEnabled (perView 1) or snapToInterval (more) and onViewableItemsChanged for the index. The region View has accessibilityRole="adjustable" with increment/decrement accessibility actions mapped to next/previous (VoiceOver swipe up/down), so the swipe gesture has an alternative. Slides not visible have accessibilityElementsHidden. Autoplay uses setInterval cleared on any touch and never started under reduced motion. Announcements via AccessibilityInfo.announceForAccessibility when the change came from the user.'
+    swiftui:
+      element: ScrollView
+      props: [ScrollView, LazyHStack, .scrollTargetBehavior=paging, .scrollTargetLayout, .scrollPosition, .accessibilityElement=contain, .accessibilityAdjustableAction, Button, TimelineView, .accessibilityAddTraits=updatesFrequently]
+      notes: 'A horizontal `ScrollView` with `LazyHStack` and `.scrollTargetBehavior(.paging)` (`.viewAligned` when `perView` > 1) and `.scrollPosition` bound to the active index; slides are `.accessibilityElement(children: .contain)` labelled `copy.slideLabel` + heading, off-screen slides `.accessibilityHidden`. The region is one element with `.accessibilityAdjustableAction` mapped to next/previous (VoiceOver swipe up/down), which is the swipe alternative, plus the visible prev/next `Button`s and the picker (dots or tabs) as documented. Autoplay is a `TimelineView` timer stopped on any touch, VoiceOver focus or the pause `Button`, never started under reduced motion; user-initiated changes are announced.'
 ---
 
 A carousel shows several things in the space of one and lets the user page through them. It earns its place only when every slide is worth seeing and the controls make it obvious there is more; an auto-rotating banner that nobody clicks is the failure mode this component is designed to avoid.

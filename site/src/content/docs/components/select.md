@@ -82,10 +82,10 @@ component:
   events:
     onChange:
       description: Fired when the value changes (array with `multiple`).
-      platforms: { web: onChange, lit: change, rn: onChange }
+      platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
     onOpenChange:
       description: Fired when the popup opens or closes.
-      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange }
+      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
   keyboard:
     - { keys: [Enter, ' ', ArrowDown, ArrowUp], action: Opens the popup with the selected (or first) option active., when: focus on trigger, from: trigger, expect: manual }
     - { keys: [Escape], action: Closes the popup without changing the value and returns focus to the trigger., when: popup open, from: inside, expect: closes }
@@ -153,6 +153,10 @@ component:
       element: Pressable
       props: [accessibilityRole=combobox, accessibilityLabel, accessibilityHint, accessibilityState, accessibilityValue]
       notes: '`native: auto` opens a BottomSheet containing the Listbox on phones (the system''s own picker, not the OS wheel — consistent theming, multi-select and descriptions work, and the sheet is the platform idiom); tablets and react-native-web use the popup. accessibilityValue.text is the selected label(s). No hidden input; Form registration as Input.'
+    swiftui:
+      element: Button
+      props: [Button, .popover, .sheet, Listbox, .accessibilityValue, .accessibilityAddTraits=isButton, .presentationCompactAdaptation, FocusScope]
+      notes: 'A trigger `Button` (label above, `hideLabel` per Input) showing the value text and the `chevron-down` Icon, with `.accessibilityValue(selected labels or copy.placeholder)`; the popup is `Listbox embedded` in a `.popover` on regular width and a `.sheet` with `.presentationDetents([.medium, .large])` on phones — the doc''s `native: always` maps to the sheet on every width. Selection closes the popup for single, stays open for `multiple`; the trigger keeps focus and the new value is announced. Registers with the Form environment; `size: sm` per the Sm bindings.'
 ---
 
 A select is the field for "one of these" (or "any of these") when the list is longer than a RadioGroup should show and typing is not the natural way in. It looks like an Input, opens a Listbox, and returns to being a field. On phones it becomes a sheet, because that is what a thumb expects.

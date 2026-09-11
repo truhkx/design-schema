@@ -54,6 +54,10 @@ component:
       element: View
       props: [accessibilityElementsHidden, importantForAccessibility, accessibilityRole]
       notes: 'A View with height (or width) = border.width.thin and backgroundColor color.border. Decorative: accessibilityElementsHidden + importantForAccessibility="no". Semantic: there is no separator role on native; render the label (if any) as Text so it is read, otherwise the divider stays hidden — announcing "separator" has no native idiom.'
+    swiftui:
+      element: Rectangle
+      props: [Rectangle, .frame=height-1, .accessibilityHidden, .accessibilityElement, .accessibilityLabel]
+      notes: 'A `Rectangle` of the color token, `border.width.thin` thick along the cross axis (`.frame(height:)` horizontal, `.frame(width:)` vertical), `.accessibilityHidden(true)` when decorative. With `label` the divider is an `HStack` of line–`Text`–line and is an accessibility element with that label (VoiceOver reads it as a section break); the label Text takes `fontSize` through `overrides`. Not SwiftUI''s `Divider` (fixed color).'
 ---
 
 A divider is a line, and the question it always raises is whether the line means something. Between two rows of a list it is furniture: it helps the eye and says nothing. Between "Today" and "Earlier" it is structure a screen-reader user should hear. Divider makes that choice explicit instead of leaving it to whether someone remembered `aria-hidden`.

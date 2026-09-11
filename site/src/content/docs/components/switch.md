@@ -39,7 +39,7 @@ component:
   events:
     onChange:
       description: Fired when the state changes, with the new boolean. The change is already in effect; there is nothing to submit.
-      platforms: { web: onChange, lit: change, rn: onValueChange }
+      platforms: { web: onChange, lit: change, rn: onValueChange, swiftui: onChange }
   styles:
     trackOff: { token: color.control.trackOff }
     trackOn: { token: color.control.selectedBackground }
@@ -86,6 +86,10 @@ component:
       element: Switch
       props: [accessibilityRole=switch, accessibilityLabel, accessibilityHint, accessibilityState, trackColor, thumbColor, ios_backgroundColor]
       notes: 'Uses the native Switch for platform-native feel; trackOn/trackOff map to trackColor {true, false} and thumb to thumbColor; ios_backgroundColor = trackOff. Platform limits: track and thumb sizes, radius, thumb travel and the focus ring are the OS values (trackWidth, trackHeight, thumbSize, thumbInset, radius, focusRing*, transition are not applied); a disabled native Switch is not focusable. The label row is a Pressable wrapping the Switch so the whole row toggles. The native Switch draws its own track and thumb, so trackWidth/trackHeight/thumbSize/thumbInset/radius are not overridable on native; the gap and text bindings are.'
+    swiftui:
+      element: Toggle
+      props: [Toggle, .toggleStyle=custom, .accessibilityValue, .labelsHidden, Animation]
+      notes: 'A `Toggle` with a package `ToggleStyle`: the track and thumb are drawn from the tokens (`trackOn`/`trackOff`/`thumb`) — not the system switch, which cannot take the theme — with the thumb travel animated over the `transition` binding unless reduced motion. VoiceOver reads it as a switch with on/off (`.accessibilityValue`), the label from the label view; `hideLabel` uses `.labelsHidden()`. `checkedLabel`/`uncheckedLabel` copy becomes the value text.'
   behavior:
     # Authored scenarios; the parser adds renders/enum/accessible-name/focusable ones from the schema.
     - name: click-on-track-toggles-on

@@ -51,11 +51,11 @@ component:
   events:
     onClose:
       description: 'Requested close with reason: `escape`, `close-button`, `scrim`, `drag`, or `action`.'
-      platforms: { web: onClose, lit: close, rn: onClose }
+      platforms: { web: onClose, lit: close, rn: onClose, swiftui: onClose }
     onDragDismiss:
       description: The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag; provided so analytics can distinguish gestures.
       gesture: true
-      platforms: { web: onDragDismiss, lit: drag-dismiss, rn: onDragDismiss }
+      platforms: { web: onDragDismiss, lit: drag-dismiss, rn: onDragDismiss, swiftui: onDragDismiss }
   keyboard:
     - { keys: [Escape], action: Requests close with reason escape., from: inside, expect: closes }
     - { keys: [Tab], action: From the last element wraps to the first; the handle is never a stop., from: last, expect: focus-wraps-to-first }
@@ -99,6 +99,10 @@ component:
       element: Modal
       props: [visible, transparent, onRequestClose, statusBarTranslucent, accessibilityViewIsModal]
       notes: 'Native Modal with an Animated.View surface translated from the bottom; PanResponder (or the platform gesture handler if the app already has it — not a new dependency) on the header for drag; onRequestClose → escape. Safe area via SafeAreaView / the bottom inset. On tablets above the maxWidth token, present as Dialog. This is the mobile-first overlay: on phones prefer it to Dialog for anything the thumb should reach.'
+    swiftui:
+      element: sheet
+      props: [.sheet, .presentationDetents, .presentationDragIndicator, .presentationBackgroundInteraction, .interactiveDismissDisabled, .presentationBackground, FocusScope, Button]
+      notes: 'The native sheet: `.sheet` with `.presentationDetents` from `height` (`content` → `.height(measured)`, `half` → `.medium`, `full` → `.large`) and `snapPoints` → `.fraction`, `.presentationDragIndicator(.visible)` as the drag handle, `.presentationBackground(color.overlay.surface)`, `.presentationCornerRadius` from the radius token. Drag-to-dismiss is the system''s and fires `onDragDismiss`; the close `Button` is always rendered (gesture-alternative). `dismissOnScrim: false` → `.interactiveDismissDisabled()`. Heading names the sheet.'
 ---
 
 A bottom sheet is the phone's dialog. It rises from the edge the thumb can reach, keeps the page visible behind a scrim so the user knows where they are, and goes away with a swipe, a tap outside, or a close button. On a wide screen the same content is a Dialog; the component decides which, so screens are written once.

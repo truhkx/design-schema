@@ -1,0 +1,8 @@
+Create the SwiftUI package skeleton per site/src/content/docs/process/ios-platform.md ("Package layout").
+
+1. packages/swiftui/Package.swift (swift-tools-version latest stable; platforms `.iOS(.v26)` — read the deployment-target rule in the plan and pick current major − 1), products `DesignSchemaTokens` and `DesignSchema`, test targets `DesignSchemaTests` (Swift Testing) and `DesignSchemaUITests`.
+2. Sources/DesignSchemaTokens: `Theme.swift` (struct Theme with a `subscript(TokenRef) -> TokenValue` where `enum TokenValue { case color(Color), dimension(CGFloat), duration(TimeInterval), animation(Animation), fontWeight(Font.Weight), number(Double), shadow(ShadowToken) }`, `EnvironmentValues.dsTheme`, `.dsTheme(_:)`, resolution by `colorScheme`), a placeholder `TokenRef.swift` and `CalmPrecise.swift` that job 410 will overwrite.
+3. Sources/DesignSchema/Support: `FocusScope.swift` (trap + return focus with @AccessibilityFocusState / @FocusState), `Portal.swift` (top-level overlay host for Toast at layer.toast), `Announce.swift`, `ReducedMotion.swift`, `Gallery.swift` (registry of `GalleryEntry { name, view }`).
+4. apps/ios-gallery: a SwiftUI app target (Xcode project generated with `xcodegen` or a Package-based executable — choose what builds in CI without a Mac at authoring time) listing `Gallery.entries` with a theme/mode switcher.
+5. `.github/workflows/swiftui-gates.yml` stub that runs `swift build` on `macos-26` for pushes touching packages/swiftui/**.
+Gate: the workflow is green on the skeleton. You cannot compile SwiftUI on this Windows machine: write the code, push a branch, and read the workflow log with `gh run watch`. Do not modify packages/*/src (JS packages) or generated/.

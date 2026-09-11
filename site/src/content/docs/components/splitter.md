@@ -69,13 +69,13 @@ component:
   events:
     onSizeChange:
       description: Fired continuously while dragging and on each key press, with the primary size in percent.
-      platforms: { web: onSizeChange, lit: size-change, rn: onSizeChange }
+      platforms: { web: onSizeChange, lit: size-change, rn: onSizeChange, swiftui: onSizeChange }
     onSizeChangeEnd:
       description: 'Fired with the final size once when a drag ends and after each key press (a key press is a complete interaction), so a caller can persist on it.'
-      platforms: { web: onSizeChangeEnd, lit: size-change-end, rn: onSizeChangeEnd }
+      platforms: { web: onSizeChangeEnd, lit: size-change-end, rn: onSizeChangeEnd, swiftui: onSizeChangeEnd }
     onCollapseChange:
       description: Fired when the primary pane collapses or restores.
-      platforms: { web: onCollapseChange, lit: collapse-change, rn: onCollapseChange }
+      platforms: { web: onCollapseChange, lit: collapse-change, rn: onCollapseChange, swiftui: onCollapseChange }
   keyboard:
     - { keys: [Tab], action: 'The separator is a tab stop between the two panes'' content.', from: any, expect: manual }
     - { keys: [ArrowRight, ArrowDown], action: 'Grows the primary pane by `step` (ArrowDown when vertical; ArrowRight when horizontal).', from: first, expect: manual }
@@ -121,6 +121,10 @@ component:
       element: View
       props: [accessibilityRole=adjustable, accessibilityLabel, accessibilityValue, accessibilityActions]
       notes: 'Tablets and react-native-web only; below the stackBelow width the panes always stack and the separator is not rendered. The separator is a plain View with a PanResponder (as Slider''s thumb — panHandlers on a Pressable fight its own responder), so it cannot show a keyboard focus ring itself (a known platform limit; the composed collapse Button has full focus treatment). accessibilityRole="adjustable", accessibilityValue={{ min, max, now, text }}, accessibilityActions increment/decrement (step), setMinimum/setMaximum (Home/End) and activate (Enter: collapse/restore) — the gesture alternative. F6 has no native equivalent. persistKey is a module-level memory map.'
+    swiftui:
+      element: HStack
+      props: [HStack, VStack, GeometryReader, DragGesture, .accessibilityAdjustableAction, .accessibilityValue, .accessibilityAction, .focusable, .onMoveCommand, .onKeyPress, ViewThatFits, Button, UserDefaults]
+      notes: 'Regular width and Catalyst; below `stackBelow` (the splitter''s own width via `GeometryReader`) a horizontal splitter stacks its panes and renders no separator. The separator is a `Rectangle` with the wider grab area (`.contentShape`, `max(handleSize, minTarget)`), a `DragGesture` mapping to percent, and is one accessibility element (`.accessibilityLabel(label)`, `.accessibilityValue(copy.sizeText)`, `.accessibilityAdjustableAction` by `step`, custom actions `setMinimum`/`setMaximum`/`collapse`/`expand`); on iPad it is `.focusable()` with arrows/Home/End/Enter per the table (F6 has no equivalent). `persistKey` uses `UserDefaults.standard` (the platform''s own store; no dependency). The collapse `Button` sits on the separator per `collapseButtonOffset`.'
 ---
 
 A splitter gives the user control of a layout decision the designer could not make for everyone: how wide the sidebar is, how tall the preview is. It is a separator the keyboard can move, a pane that can collapse, and a memory of where it was left.

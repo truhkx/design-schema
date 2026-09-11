@@ -40,10 +40,10 @@ component:
   events:
     onAction:
       description: The action button was activated. The toast dismisses.
-      platforms: { web: onAction, lit: action, rn: onAction }
+      platforms: { web: onAction, lit: action, rn: onAction, swiftui: onAction }
     onDismiss:
       description: 'The toast left the screen: reason `timeout`, `dismiss-button`, `escape`, `action`, or `replaced` (a replaced or evicted toast leaves immediately, without its exit transition).'
-      platforms: { web: onDismiss, lit: dismiss, rn: onDismiss }
+      platforms: { web: onDismiss, lit: dismiss, rn: onDismiss, swiftui: onDismiss }
   keyboard:
     - { keys: [F6], action: 'Moves focus into the toast region (the first toast''s action or dismiss button) from anywhere; F6 again returns to where focus was.', when: a toast is visible, from: any, expect: focus-first }
     - { keys: [Escape], action: Dismisses the focused toast and returns focus., when: focus inside a toast, from: first, expect: closes }
@@ -94,6 +94,10 @@ component:
       element: View
       props: [accessibilityLiveRegion, accessibilityRole]
       notes: 'A ToastProvider mounted once at the app root renders the region as an absolutely positioned View (layer.toast zIndex, above the bottom safe-area inset, centered). Android: accessibilityLiveRegion="polite" (danger: "assertive"); iOS: AccessibilityInfo.announceForAccessibility on show. Timers pause while a toast is being touched. No F6; toasts are reached by swiping through the accessibility order. Android''s native ToastAndroid is not used, so actions and theming work. React Native has no `status` role: danger toasts use accessibilityRole="alert", others no role, with accessibilityLiveRegion (assertive/polite) and a one-time AccessibilityInfo announcement. Timers pause while a toast is touched; F6 and Escape have no native equivalent.'
+    swiftui:
+      element: VStack
+      props: [Portal, .zIndex, AccessibilityNotification, Button, withAnimation, .accessibilityElement=combine]
+      notes: 'Rendered through `Support/Portal` into the app''s top-level `ZStack` at `layer.toast` (the app installs `.dsPortalHost()` once at its root). Each toast is one combined element labelled by its text with the tone word; `role: status` posts a polite `Announcement`, `alert` an announcement with `.assertive` priority. Auto-dismiss pauses while VoiceOver focus is on the toast; the action `Button` and dismiss `Button` are inside the element as custom actions (`.accessibilityAction(named:)`) as well as visible controls. Enter/exit use the motion tokens; none under reduced motion.'
 ---
 
 A toast says "done" and gets out of the way. It confirms an action just taken, offers one chance to undo it, and leaves without being asked. It is the reason most confirmations do not need an AlertDialog: if the action is reversible, do it and toast an Undo.

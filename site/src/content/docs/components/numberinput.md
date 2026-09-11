@@ -94,7 +94,7 @@ component:
   events:
     onChange:
       description: Fired when the numeric value changes (on each valid keystroke, step, and on blur after clamping/rounding), with the number or undefined.
-      platforms: { web: onChange, lit: change, rn: onChangeText }
+      platforms: { web: onChange, lit: change, rn: onChangeText, swiftui: onChange }
   keyboard:
     - { keys: [ArrowUp], action: Increases by `step` (clamped to max)., from: first, expect: manual }
     - { keys: [ArrowDown], action: Decreases by `step` (clamped to min)., from: first, expect: manual }
@@ -159,6 +159,10 @@ component:
       element: TextInput
       props: [keyboardType=decimal-pad, accessibilityRole=adjustable, accessibilityLabel, accessibilityValue, accessibilityActions]
       notes: 'TextInput with keyboardType="decimal-pad" (numbers-and-punctuation on iOS for negatives), accessibilityRole="adjustable" with increment/decrement accessibility actions so VoiceOver/TalkBack can step without the buttons, accessibilityValue text from the formatted value. Formatting uses Intl.NumberFormat (Hermes supports it). Steppers are system Buttons beside the input, accessibilityElementsHidden since the adjustable actions cover them.'
+    swiftui:
+      element: TextField
+      props: [TextField, .keyboardType=decimalPad, Button, .accessibilityAdjustableAction, .accessibilityValue, .onKeyPress, NumberFormatter, Locale]
+      notes: 'Input''s wrapper with a `TextField` (`.keyboardType(.decimalPad)` or `.numberPad` when `precision` is 0 and `min` ≥ 0) between the decrement/increment `Button`s (`minus`/`plus` Icons, hidden with `hideSteppers`); the field is one element with `.accessibilityValue(formatted)` and `.accessibilityAdjustableAction` stepping by `step` (VoiceOver swipe up/down), which is the spinbutton equivalent. Formatting through `NumberFormatter`/`Locale.current` for `format: decimal|currency|unit`, parsing leniently as the doc describes; ArrowUp/Down/PageUp/PageDown/Home/End on iPad via `.onKeyPress`. Registers with the Form environment as a `Double`. `size: sm` per the Sm bindings.'
 ---
 
 A number input is for numbers people type exactly — a quantity, a price, a weight — with step buttons and arrow keys for the small adjustments, and locale formatting so 1,234.5 reads the way the user expects. It is Input with a spinbutton's semantics and a parser that understands what people actually type.

@@ -1,0 +1,4 @@
+Make the generator templates and conventions state current versions and idioms as facts (Workstream C, last bullet).
+
+Update prompts/templates/{web,lit,rn}.md and prompts/conventions/{web,lit,rn}.md so every version mention is current: React 19 (`ref` prop, no forwardRef), Storybook 10 CSF3, Vite 8 / Vitest 5, TypeScript 7 with isolatedDeclarations (every exported symbol has an explicit type annotation; no inferred export types), Lit 3.3 standard decorators (`accessor`), React Native 0.87 strict TS API. Add a one-line "Versions" section at the top of each conventions file listing them with the date, so a future job can grep it.
+Gate: `pnpm parse` regenerates prompts without error. Do not modify packages/*/src or generated/ (a template change intentionally invalidates nothing — the lock hashes prompts, and prompts embed the template, so the next `-NoPause` pass regenerates everything; note that in the job log).

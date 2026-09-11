@@ -39,7 +39,7 @@ component:
   events:
     onStepSelect:
       description: Fired when a navigable step is chosen, with its id. The container changes `current`; the stepper never changes it itself.
-      platforms: { web: onStepSelect, lit: step-select, rn: onStepSelect }
+      platforms: { web: onStepSelect, lit: step-select, rn: onStepSelect, swiftui: onStepSelect }
   keyboard:
     - { keys: [Tab], action: 'Moves between navigable steps in order; non-navigable steps are not focusable.', from: first, expect: focus-next }
     - { keys: [Enter, ' '], action: Selects the focused step., from: first, expect: manual }
@@ -107,6 +107,10 @@ component:
       element: View
       props: [accessibilityRole=list, accessibilityLabel]
       notes: 'A View with accessibilityRole="list"; each step a Pressable (navigable) or View with accessibilityState={{ selected: current }} and an accessibilityLabel built from copy.stepLabel plus the status word. Horizontal steppers use `compact` on phones; vertical is preferred for long flows.'
+    swiftui:
+      element: VStack
+      props: [.accessibilityElement=contain, .accessibilityLabel, Button, .accessibilityAddTraits=isSelected, .accessibilityValue, Icon, ViewThatFits]
+      notes: 'A `.contain` element labelled `copy.navLabel` holding the ordered steps (`HStack`/`VStack` by `orientation`): navigable steps are `Button`s whose accessibility label is `copy.stepLabel` plus the status word, the current step carries `.isSelected` and `.accessibilityValue(copy.current)`; non-navigable steps are plain elements with the same label. Indicators draw the number or the `check`/`danger` Icon; `compact` switches through `ViewThatFits` below the prose width. Not SwiftUI''s `Stepper` (a numeric control).'
 ---
 
 A stepper is a map of a journey with a "you are here". It sets expectations (five steps, not fifteen), shows progress without a bar, and gives people a way back to a step they finished. It is navigation, not a form control; the number-stepping field is NumberInput.

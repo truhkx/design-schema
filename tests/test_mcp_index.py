@@ -89,6 +89,19 @@ class TestSchemaSummary:
         component["props"]["variant"]["platforms"] = ["web", "lit"]
         assert "(platforms: web, lit)" in ix.schema_summary(component)
 
+    def test_a_summary_over_the_budget_is_split_into_continuation_chunks(self):
+        header = "Widget (action) — anatomy: container, label."
+        lines = [f"  - prop{i}: string. " + "x" * 200 for i in range(60)]
+        summary = "\n".join([header] + lines)
+        assert len(summary) > ix.MAX_CHARS
+        out = ix.schema_chunks("Widget", summary, {"kind": "schema"})
+        assert [c["id"] for c in out][:2] == ["schema:Widget", "schema:Widget#2"]
+        assert all(len(c["text"]) <= ix.MAX_CHARS for c in out)
+        assert all(c["text"].startswith(header) for c in out)
+        rejoined = [l for c in out for l in c["text"].split("\n")[1:]]
+        assert rejoined == lines
+        assert ix.schema_chunks("Widget", header, {"kind": "schema"}) == [{"id": "schema:Widget", "text": header, "meta": {"kind": "schema"}}]
+
     def test_prop_a11y_notes_are_surfaced(self, component):
         component["props"]["label"]["a11y"] = "Becomes the accessible name."
         assert "Accessibility: Becomes the accessible name." in ix.schema_summary(component)

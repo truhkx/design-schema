@@ -60,6 +60,10 @@ component:
       element: View
       props: [style]
       notes: Flexbox with `gap` (RN ≥ 0.71). Children are not wrapped. `element` is not applicable; use `accessibilityRole` on the content instead.
+    swiftui:
+      element: VStack
+      props: [HStack, spacing, alignment, .frame, ViewThatFits, .accessibilityElement=contain]
+      notes: '`VStack`/`HStack` with `spacing` from the gap token and `alignment` from `align`; `wrap` uses a `Layout`-conforming `FlowLayout` in `Support/` (SwiftUI has no flex-wrap). `direction: responsive` (row above a width, column below) is `ViewThatFits(in: .horizontal)` with the HStack first. Dividers between items (`divider: true`) are the system `Divider` inserted by `ForEach` over the subviews via `Group` + `_VariadicView`-free approach: children are passed as an array of views through the package''s `Stack { … }` result builder, so Stack can interleave.'
 ---
 
 Stack is how things get spaced. Instead of margins on individual components, a Stack owns the gap between its children, using one of the theme's rhythm presets (`layout.gap.*`) rather than a raw number, so a theme with `layout.rhythm: loose` opens up every screen at once. Almost every screen is stacks inside stacks.

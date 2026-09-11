@@ -43,10 +43,10 @@ component:
   events:
     onChange:
       description: Fired when the set of open sections changes, with the open ids.
-      platforms: { web: onChange, lit: change, rn: onChange }
+      platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
     onOpenChange:
       description: 'Fired per section as it opens or closes, with `{ id, open, reason }` (`reason`: `trigger`, `keyboard`, `exclusive` when another section closed it, `controlled`). The per-item trigger for analytics, lazy loading of a panel''s content, or scrolling the opened section into view; `onChange` remains the set-level event for state.'
-      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange }
+      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
   keyboard:
     - { keys: [Enter, ' '], action: Toggles the focused section., from: first, expect: toggles }
     - { keys: [ArrowDown], action: Moves focus to the next trigger; wraps., from: first, expect: focus-next }
@@ -84,6 +84,10 @@ component:
       element: View
       props: []
       notes: 'A View of Disclosures with dividers; exclusive logic and headingLevel passed through. Arrow keys apply only with a hardware keyboard on react-native-web.'
+    swiftui:
+      element: VStack
+      props: [Disclosure, Heading, Button, .accessibilityValue=expanded, .focusSection, .onMoveCommand, '@FocusState']
+      notes: 'A `VStack` of items, each a `Heading` at `headingLevel` wrapping the package trigger `Button` (`.accessibilityValue` expanded/collapsed) and its panel; `multiple`/`collapsible` per the doc; ArrowUp/Down/Home/End move between triggers on iPad via `@FocusState`. Panels animate with `transition` unless reduced motion. Composes Disclosure''s engine, not `DisclosureGroup`.'
 ---
 
 An accordion is a list of Disclosures that know about each other: consistent headings, arrow keys to move between them, and optionally the rule that opening one closes the rest. It is the right shape for FAQs, settings groups and long forms broken into sections.

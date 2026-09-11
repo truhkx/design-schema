@@ -1,0 +1,5 @@
+Port tools/generate.py to TypeScript as tools/generate.ts (Workstream A of process/typescript-and-currency.md, step 6). Run with `node tools/<name>.ts` (Node 22.18+/24 type stripping; add `tsx` as a devDependency fallback for older Node and use it in package.json scripts as `node --import tsx`), no build step.
+
+Rules: same CLI flags, same exit codes, same stdout wording, same files written. Prove it: run the Python and the TypeScript versions over the current docs and diff `generated/` (and stdout) — the job fails on any difference. Port the tool's tests to Vitest under tools/__tests__/. Only after the diff is empty delete the Python file and update package.json scripts to call the TypeScript one.
+The PowerShell scripts (generate.ps1, tier2.ps1, regen.ps1, run-jobs.ps1) must keep working with only the `py -3 tools/generate.py` → `node tools/generate.ts` substitution; update them. Keep the lock format, gap files, preflight, allowedTools, resilience (job 190) and the fake runner tests.
+Do not modify packages/*/src or generated/ except by running the tools.

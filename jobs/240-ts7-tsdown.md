@@ -1,0 +1,8 @@
+TypeScript 7 for typechecking, tsdown for builds, tsconfig cleanup, Lit standard decorators (Workstream B step 5).
+
+1. `typescript` ^7 at the root and in every package. Tools that still need the compiler API (storybook docgen, typescript-eslint if present) get `@typescript/typescript6` in their own dev tree — do not downgrade the main `typescript`.
+2. Replace tsup with tsdown in packages/react, lit, rn: `tsdown.config.ts` with `entry: ['src/index.ts']`, `format: ['esm']`, `dts: { isolatedDeclarations: true }`, `sourcemap: true`, `clean: true`, `platform: 'neutral'`, externals as before, CSS bundled to `dist/index.css` for react. Remove `tsup` from the root.
+3. tsconfig per package: remove `experimentalDecorators`, `useDefineForClassFields`, `baseUrl`; add `isolatedDeclarations: true`, `verbatimModuleSyntax: true`, `exactOptionalPropertyTypes: true`, `noUncheckedIndexedAccess: true`, explicit `types` (TS 7 no longer auto-discovers), `rootDir`. Fix the errors this surfaces by adding explicit export types — do this through a codemod-style script you write in tools/, not by hand-editing each generated file, and delete the script afterwards if it is one-shot.
+4. Lit: convert `@property()` fields to standard decorators with `accessor` (`@property() accessor label = ''`); `@customElement` unchanged.
+5. `release:check` adds `pnpm -r exec publint` and `pnpm -r exec attw --pack`; `exports` maps gain a `"default"` condition.
+Gate: `pnpm typecheck`, `pnpm build:packages`, `pnpm release:check`, all tests. Edits under packages/*/src are limited to the mechanical changes in 3 and 4; do not modify generated/.

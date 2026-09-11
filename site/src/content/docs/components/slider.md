@@ -83,10 +83,10 @@ component:
   events:
     onChange:
       description: Fired on every value change while dragging or with keys (number or pair).
-      platforms: { web: onChange, lit: change, rn: onValueChange }
+      platforms: { web: onChange, lit: change, rn: onValueChange, swiftui: onChange }
     onChangeEnd:
       description: Fired once when the interaction ends (pointer up, key released). Use for expensive effects.
-      platforms: { web: onChangeEnd, lit: change-end, rn: onSlidingComplete }
+      platforms: { web: onChangeEnd, lit: change-end, rn: onSlidingComplete, swiftui: onChangeEnd }
   keyboard:
     - { keys: [ArrowRight, ArrowUp], action: Increases by `step`., from: first, expect: manual }
     - { keys: [ArrowLeft, ArrowDown], action: Decreases by `step`., from: first, expect: manual }
@@ -154,6 +154,10 @@ component:
       element: View
       props: [accessibilityRole=adjustable, accessibilityLabel, accessibilityValue, accessibilityActions, onAccessibilityAction]
       notes: 'Drawn with Views and a PanResponder per thumb (no new dependency; the community Slider has no range support and would not take tokens). accessibilityRole="adjustable" with accessibilityActions increment/decrement handled in onAccessibilityAction (VoiceOver swipe up/down, TalkBack volume keys), accessibilityValue={{ min, max, now, text }}. A range renders two adjustable elements. The drag gesture is additive: the adjustable actions are the non-gesture path.'
+    swiftui:
+      element: ZStack
+      props: [GeometryReader, DragGesture, .accessibilityAdjustableAction, .accessibilityValue, .accessibilityElement, .focusable, .onMoveCommand, .onKeyPress, '@FocusState', Capsule]
+      notes: 'Drawn from the tokens (track `Capsule`, fill, thumb `Circle`s) with a `DragGesture` per thumb in a `GeometryReader` — not SwiftUI''s `Slider` (single value, untinted thumb). Each thumb is an accessibility element (`.accessibilityLabel(thumbLabel)`, `.accessibilityValue(formatValue)`, `.accessibilityAdjustableAction` stepping by `step`, Shift-step = `largeStep` via the increment/decrement with `.accessibilityAdjustableAction`''s direction only — the large step is a separate custom action); on iPad each thumb is `.focusable()` and arrows/PageUp/PageDown/Home/End follow the keyboard table. Range mode keeps thumbs ordered and swaps focus at the crossover. Marks and the value bubble per the doc; ticks from the tokens.'
 ---
 
 A slider is for values you feel rather than type: volume, brightness, a price range, a zoom level. Its thumb sits on the value, the fill shows how much, and arrow keys move it by exact steps so keyboard and screen-reader users get the same precision the pointer gets by drag.

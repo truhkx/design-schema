@@ -88,13 +88,13 @@ component:
   events:
     onChange:
       description: Fired when the selected value(s) change (array with `multiple`; custom entries included when `allowCustom`).
-      platforms: { web: onChange, lit: change, rn: onChange }
+      platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
     onInputChange:
       description: Fired on every keystroke with the input text. The hook for `async` filtering.
-      platforms: { web: onInputChange, lit: input-change, rn: onInputChange }
+      platforms: { web: onInputChange, lit: input-change, rn: onInputChange, swiftui: onInputChange }
     onOpenChange:
       description: Fired when the list opens or closes.
-      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange }
+      platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
   keyboard:
     - { keys: [ArrowDown], action: Opens the list (if closed) and moves the active option down; focus stays in the input., from: first, expect: manual }
     - { keys: [ArrowUp], action: Opens the list and moves the active option up., from: first, expect: manual }
@@ -176,6 +176,10 @@ component:
       element: TextInput
       props: [accessibilityRole=combobox, accessibilityLabel, accessibilityHint, accessibilityState, accessibilityValue]
       notes: 'On phones the popup is a BottomSheet with the TextInput at its top (keyboard-avoiding) and the Listbox below — typing on a phone with a floating list under the keyboard is unusable. Tablets and react-native-web use the anchored popup. Chips render before the input inside the field; each chip has a remove Button. Result counts are announced with announceForAccessibility. Form registration as Input.'
+    swiftui:
+      element: TextField
+      props: [TextField, Listbox, .popover, .accessibilityValue, .onKeyPress, .onMoveCommand, '@FocusState', .autocorrectionDisabled, AccessibilityNotification]
+      notes: 'An Input-shaped `TextField` (`.autocorrectionDisabled`, `.textInputAutocapitalization(.never)`) with the `Listbox embedded` rendered inline below the field on phones (the keyboard is up; a popover would fight it) and as a `.popover` on regular width. The active option is tracked by index (not focus — focus stays in the field) and announced through `AccessibilityNotification.Announcement` with `copy.activeOption`; the count is announced when the list opens. Arrows/Home/End/Enter/Escape per the keyboard table via `.onKeyPress` on the field. `allowCustom`, `multiple` (chips as `Button`s with `close` Icons) as documented.'
 ---
 
 A combobox is an input that helps you finish. You type, it narrows the list, you pick — or, when the thing you want does not exist yet, you keep what you typed. It is the right field whenever a Select's list would be too long to scan, and it is the multi-select of choice when picks should be visible as chips.

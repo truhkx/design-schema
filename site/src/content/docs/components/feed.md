@@ -47,13 +47,13 @@ component:
   events:
     onLoadMore:
       description: 'Fired when the last rendered article is within one screen of view (or on End / Ctrl+End with `hasMore`).'
-      platforms: { web: onLoadMore, lit: load-more, rn: onEndReached }
+      platforms: { web: onLoadMore, lit: load-more, rn: onEndReached, swiftui: onLoadMore }
     onShowNew:
       description: Fired when the new-items button is pressed; the caller prepends the items and clears `newItemsCount`.
-      platforms: { web: onShowNew, lit: show-new, rn: onShowNew }
+      platforms: { web: onShowNew, lit: show-new, rn: onShowNew, swiftui: onShowNew }
     onItemVisible:
       description: 'Fired with an item id when it has been substantially visible for a moment (mark as read).'
-      platforms: { web: onItemVisible, lit: item-visible, rn: onViewableItemsChanged }
+      platforms: { web: onItemVisible, lit: item-visible, rn: onViewableItemsChanged, swiftui: onItemVisible }
   keyboard:
     - { keys: [Tab], action: 'Moves through interactive content inside the current article and on to the next article''s content in reading order; articles themselves are focusable so the feed commands below work.', from: any, expect: focus-next }
     - { keys: [PageDown], action: 'Moves focus to the next article (the APG feed command).', from: inside, expect: manual }
@@ -106,6 +106,10 @@ component:
       element: FlatList
       props: [accessibilityRole=list, accessibilityLabel, onEndReached, onEndReachedThreshold, onViewableItemsChanged, ListFooterComponent, maintainVisibleContentPosition]
       notes: 'A FlatList newest-first with onEndReached (threshold 1 screen) for onLoadMore, ListFooterComponent for the loading indicator / end message, maintainVisibleContentPosition so prepending via onShowNew does not jump, and the new-items Button rendered above the list. Articles are Cards left un-collapsed (no `accessible` on the Card: collapsing would hide the action Buttons and Links from focus), with visually-hidden Text runs for copy.unread and, when the total is known, copy.position after the heading. There is no hardware-keyboard feed model on native (no Page or Ctrl keys); screen readers use their own browse gestures. The absolute time is not exposed on native. onViewableItemsChanged with 50% for one second drives onItemVisible.'
+    swiftui:
+      element: ScrollView
+      props: [ScrollView, LazyVStack, Card, .accessibilityElement=contain, .accessibilityLabel, .accessibilityAddTraits=updatesFrequently, .onScrollTargetVisibilityChange, ProgressBar, Button, AccessibilityNotification, ScrollViewReader]
+      notes: 'A `ScrollView` + `LazyVStack` of `Card focusable` articles inside a `.contain` element labelled by `label` with `.updatesFrequently`; each Card gets `.accessibilityValue(copy.position)` when the total is known and the hidden `unread` word. Load-more fires from `.onScrollTargetVisibilityChange` on the last article (threshold one screen) and once on appear when empty with `hasMore`; visibility for `onItemVisible` from the same observer with a one-second timer. New items are never inserted automatically: the sticky new-items `Button` prepends and `ScrollViewReader` scrolls to the first new article, which receives VoiceOver focus. PageUp/PageDown/Ctrl+Home/End on iPad move `@AccessibilityFocusState`/`@FocusState` between articles; VoiceOver users get the rotor. Relative time from the copy strings; the absolute date is the article''s `accessibilityHint`.'
 ---
 
 A feed is a list that never quite ends: it grows as you reach the bottom, and newer things arrive at the top. The APG feed pattern exists because this breaks the assumptions of screen readers (content appears while you are reading) and keyboards (Tab through a hundred cards is not navigation), so the feed gives them article-level movement and control over when new items appear.

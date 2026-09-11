@@ -67,13 +67,13 @@ component:
   events:
     onChange:
       description: Fired on every value change with the new string value.
-      platforms: { web: onChange, lit: change, rn: onChangeText }
+      platforms: { web: onChange, lit: change, rn: onChangeText, swiftui: onChange }
     onFocus:
       description: Fired when the field receives focus.
-      platforms: { web: onFocus, lit: 'focus (native, retargeted — no CustomEvent)', rn: onFocus }
+      platforms: { web: onFocus, lit: 'focus (native, retargeted — no CustomEvent)', rn: onFocus, swiftui: onFocus }
     onBlur:
       description: Fired when the field loses focus. The usual moment to validate.
-      platforms: { web: onBlur, lit: 'blur (native, retargeted — no CustomEvent)', rn: onBlur }
+      platforms: { web: onBlur, lit: 'blur (native, retargeted — no CustomEvent)', rn: onBlur, swiftui: onBlur }
   styles:
     background: { token: color.background }
     foreground: { token: color.foreground }
@@ -124,6 +124,10 @@ component:
       element: TextInput
       props: [accessibilityLabel, accessibilityHint, accessibilityState, keyboardType, textContentType, secureTextEntry]
       notes: 'No label element — the label is rendered as Text and also passed as accessibilityLabel; description as accessibilityHint. `type` maps to keyboardType and textContentType. Errors use accessibilityLiveRegion (Android) / AccessibilityInfo.announceForAccessibility (iOS). Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur` and `onLongPress` to the native element, so Tooltip can attach to it.'
+    swiftui:
+      element: TextField
+      props: [TextField, SecureField, .textFieldStyle=plain, .keyboardType, .textContentType, .textInputAutocapitalization, .autocorrectionDisabled, .focused, .submitLabel, .accessibilityLabel, .accessibilityHint, .accessibilityValue]
+      notes: 'Label `Text` above (visually hidden with `hideLabel` — still the `.accessibilityLabel`), description `Text`, the field (`TextField` or `SecureField` for `type: password`) inside a bordered `RoundedRectangle` drawn from the tokens (`.textFieldStyle(.plain)`; the border is the focus ring when focused), and the error `Text` announced through `AccessibilityNotification.Announcement` when it appears. `type` maps to `.keyboardType` (`.emailAddress`, `.numberPad`, `.phonePad`, `.URL`) and `autocomplete` to `.textContentType`. `description` and `error` are joined into `.accessibilityHint`; `invalid` adds copy.invalid to the value; `required` appends the indicator to the visible label. Registers with the Form environment. `size: sm` swaps the Sm bindings.'
 ---
 
 Input collects a single line of text. It bundles the label, helper text, field, and error message so that the association between them is always correct — the most common accessibility failure in forms is a field whose label or error is only visually nearby.

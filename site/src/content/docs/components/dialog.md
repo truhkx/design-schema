@@ -57,10 +57,10 @@ component:
   events:
     onClose:
       description: 'Fired when the user requests to close, with a reason: `escape`, `close-button`, `scrim`, or `action`. The consumer sets `open` to false (or not).'
-      platforms: { web: onClose, lit: close, rn: onClose }
+      platforms: { web: onClose, lit: close, rn: onClose, swiftui: onClose }
     onOpened:
       description: Fired after the open transition ends and focus has moved in. Use to start work that needs the dialog visible.
-      platforms: { web: onOpened, lit: opened, rn: onOpened }
+      platforms: { web: onOpened, lit: opened, rn: onOpened, swiftui: onOpened }
   keyboard:
     - { keys: [Escape], action: Requests close with reason escape (even when not dismissible)., from: inside, expect: closes }
     - { keys: [Tab], action: Moves to the next focusable element inside the dialog., from: first, expect: focus-next }
@@ -107,6 +107,10 @@ component:
       element: Modal
       props: [visible, transparent, animationType=none, onRequestClose, statusBarTranslucent, accessibilityViewIsModal]
       notes: 'Native Modal with transparent background; the scrim is a full-screen Pressable (accessible={false}) in color.overlay.scrim; the surface is a View with accessibilityViewIsModal so VoiceOver/TalkBack ignore the page behind. onRequestClose (Android back) → onClose reason escape. Focus: AccessibilityInfo.setAccessibilityFocus on the title or first control after the enter animation. Keyboard avoidance with KeyboardAvoidingView so a Form in the body stays visible. Enter/exit animated with Animated (opacity + translateY), skipped under reduce motion. Size maps to maxWidth from the same tokens; on phones the surface is full-width with the gutter as margin. The surface carries the RN >= 0.74 `role="dialog"` prop (as Landmark and Fieldset use `role`), alongside accessibilityViewIsModal; the legacy accessibilityRole union has no dialog value. Scroll lock has no native meaning and is not implemented.'
+    swiftui:
+      element: sheet
+      props: [.sheet, .fullScreenCover, .popover, .interactiveDismissDisabled, .presentationBackground, .accessibilityAddTraits=isModal, FocusScope, .onExitCommand]
+      notes: 'Presented with `.sheet` on compact width and `.popover` (regular width, iPad) when `size` is not `full`; `size: full` is `.fullScreenCover`. The dialog surface, heading (`Heading`, the `.accessibilityLabel` of the container), body and actions are the package''s own views inside the presentation with `.presentationBackground(color.overlay.surface)` and `.presentationDragIndicator(.hidden)`. `dismissOnScrim: false` → `.interactiveDismissDisabled()`. FocusScope handles initial and return focus; Escape via `.onExitCommand`; VoiceOver''s two-finger scrub triggers the same close through `.accessibilityAction(.escape)`. `onOpened` fires from `.onAppear` of the content.'
 ---
 
 A dialog interrupts. It takes the whole screen's attention for one task and gives it back when the task is done or abandoned. Everything about it — the scrim, the trapped focus, the inert page behind, Escape, focus returning to where it was — exists to make that interruption safe and reversible. Anything that does not need the interruption should not be a dialog.

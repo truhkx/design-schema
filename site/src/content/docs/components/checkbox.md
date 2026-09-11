@@ -60,7 +60,7 @@ component:
   events:
     onChange:
       description: Fired when the checked state changes, with the new boolean.
-      platforms: { web: onChange, lit: change, rn: onChange }
+      platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
   styles:
     controlBackground: { token: color.control.background }
     controlBorder: { token: color.control.border }
@@ -114,6 +114,10 @@ component:
       element: Pressable
       props: [accessibilityRole=checkbox, accessibilityLabel, accessibilityHint, accessibilityState]
       notes: 'No native checkbox in core RN. Render Pressable containing a drawn control and Text label; accessibilityState={{ checked: indeterminate ? "mixed" : checked, disabled }}. Errors use accessibilityLiveRegion (Android) / AccessibilityInfo.announceForAccessibility (iOS), as in Input.'
+    swiftui:
+      element: Toggle
+      props: [Toggle, .toggleStyle=custom, .accessibilityValue, .accessibilityAddTraits, .frame=minHeight, .contentShape, Icon]
+      notes: 'A `Toggle` with a package `ToggleStyle` that draws the box from tokens and a `check`/`dash` Icon — SwiftUI exposes a Toggle to VoiceOver as a switch with on/off; the style adds `.accessibilityValue(copy.checked / copy.unchecked / copy.mixed)` so the state is spoken as a checkbox state, and `indeterminate` sets the mixed value and the dash glyph. The label is the Toggle''s label view (`hideLabel` → `.labelsHidden()` with `.accessibilityLabel`). Description and error as Input. Registers with the Form environment; `disabled` per the conventions.'
   behavior:
     # Authored scenarios; the parser adds renders/accessible-name/focusable/error-identified ones from the schema.
     - name: click-on-control-toggles-on

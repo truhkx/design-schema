@@ -51,6 +51,10 @@ component:
       element: Text
       props: [accessibilityRole=header]
       notes: iOS and Android have no heading levels. `level` maps only to typography; the header trait is set regardless of level. Document the outline in the screen's design instead.
+    swiftui:
+      element: Text
+      props: [.accessibilityAddTraits=isHeader, .accessibilityHeading, .font, .fontWeight]
+      notes: 'A `Text` with `.accessibilityAddTraits(.isHeader)` and `.accessibilityHeading(.h1…h6)` from `level` — VoiceOver''s rotor lists headings by level, so the outline is real on iOS. Size from the `size` binding through `@ScaledMetric`; `level` never changes the look. `element` is ignored.'
 ---
 
 Headings label sections of content. Their most important job is invisible: they build the outline that screen-reader users jump through to understand and navigate a page.

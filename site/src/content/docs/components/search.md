@@ -64,13 +64,13 @@ component:
   events:
     onChange:
       description: Fired on every keystroke with the query; the caller fetches suggestions here.
-      platforms: { web: onChange, lit: change, rn: onChangeText }
+      platforms: { web: onChange, lit: change, rn: onChangeText, swiftui: onChange }
     onSubmit:
       description: Fired on Enter, the submit button, or choosing a suggestion, with the query.
-      platforms: { web: onSubmit, lit: submit, rn: onSubmitEditing }
+      platforms: { web: onSubmit, lit: submit, rn: onSubmitEditing, swiftui: onSubmit }
     onClear:
       description: Fired when the clear button empties the field.
-      platforms: { web: onClear, lit: clear, rn: onClear }
+      platforms: { web: onClear, lit: clear, rn: onClear, swiftui: onClear }
   keyboard:
     - { keys: [Enter], action: 'Submits the query (or the highlighted suggestion).', from: first, expect: manual }
     - { keys: [Escape], action: 'Closes suggestions if open; otherwise clears the field.', from: first, expect: manual }
@@ -128,6 +128,10 @@ component:
       element: TextInput
       props: [returnKeyType=search, clearButtonMode=never, accessibilityRole=search, accessibilityLabel]
       notes: 'TextInput with returnKeyType="search" and onSubmitEditing; the system clear Button rather than clearButtonMode so it matches across platforms; a search glyph Icon before the input. Suggestions render as a Listbox below the field in a View (no overlay: on a phone the list takes the space under the field). The container View has accessibilityRole="search".'
+    swiftui:
+      element: TextField
+      props: [TextField, .submitLabel=search, .keyboardType, .autocorrectionDisabled, Button, Listbox, .accessibilityElement=contain, .accessibilityAddTraits=isSearchField, AccessibilityNotification]
+      notes: 'Not `.searchable` (navigation-bar bound). A `.contain` element labelled by `label` holding the `search` Icon, a `TextField` with `.isSearchField`, `.submitLabel(.search)`, `.autocorrectionDisabled`, the clear `Button` when there is text, and the submit `Button`; `onSubmit` from `.onSubmit`. Suggestions: `Listbox embedded` inline below the field (the keyboard is up), active index tracked and announced as Combobox; the count announced on open. `landmark` registers a ''Search'' rotor entry through Landmark. `action` has no meaning on iOS (no form navigation) and is ignored with a debug note.'
 ---
 
 Search is the field people look for first. It is an Input shaped so nobody has to read a label — a magnifier glyph, a pill, a clear button — and it submits on Enter like every search field they have used.

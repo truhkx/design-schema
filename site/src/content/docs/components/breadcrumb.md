@@ -25,7 +25,7 @@ component:
   events:
     onNavigate:
       description: 'Fired when a non-current item is activated, as `(item, index, event)`. On web the link still navigates unless the consumer calls `event.preventDefault()`; on native there is no event, the handler is the navigation, and without one the Link falls back to Linking.openURL.'
-      platforms: { web: onNavigate, lit: navigate, rn: onNavigate }
+      platforms: { web: onNavigate, lit: navigate, rn: onNavigate, swiftui: onNavigate }
   styles:
     currentColor: { token: color.foreground, description: 'The current page, rendered as text with aria-current, in the regular weight.' }
     itemColor: { token: color.foreground.muted, description: 'An ancestor item without `href`, rendered as plain text (a level that has no page of its own).' }
@@ -58,6 +58,10 @@ component:
       element: View
       props: [role=navigation, accessibilityLabel]
       notes: 'A horizontal, wrapping View with role="navigation" (semantic on react-native-web; no accessibilityRole value exists for it) labelled with `label`; ancestors are ds Links (Text with role link) whose onPress fires onNavigate, the current page is Text with accessibilityState={{ selected: true }}. Separators are Text with importantForAccessibility="no" / accessibilityElementsHidden. Breadcrumbs are rare on native — most screens rely on the navigation stack — and are provided mainly for tablet and react-native-web layouts.'
+    swiftui:
+      element: HStack
+      props: [.accessibilityElement=contain, .accessibilityLabel, Link, Icon, .accessibilityAddTraits=isSelected, ViewThatFits]
+      notes: 'An `HStack` (wrapping `FlowLayout` when items overflow) inside `.accessibilityElement(children: .contain)` labelled `copy.navLabel`; items are `Link`s with the `chevron-right` Icon (hidden) between; the current item is a `Text` with `.isSelected` plus `copy.current` in its label. `collapse` folds the middle items behind an ellipsis Button that expands them in place.'
 ---
 
 A breadcrumb answers "where am I?" and "how do I go up a level?" in one line. It is a secondary navigation: it never replaces the primary nav or the back button, and it shows the site's hierarchy, not the user's history.

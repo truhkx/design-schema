@@ -38,7 +38,7 @@ component:
   events:
     onToggle:
       description: 'Fired after the state changes, with the new boolean `open` and a reason: `pointer`, `keyboard`, or `controlled` (Accordion relies on it).'
-      platforms: { web: onToggle, lit: toggle, rn: onToggle }
+      platforms: { web: onToggle, lit: toggle, rn: onToggle, swiftui: onToggle }
   styles:
     triggerColor: { token: color.foreground }
     triggerBackgroundHover: { token: color.background.subtle, description: Pointer hover and pressed state of the trigger. }
@@ -78,6 +78,10 @@ component:
       element: Pressable
       props: [accessibilityRole=button, accessibilityLabel, accessibilityState, accessibilityHint]
       notes: 'Pressable trigger with accessibilityState={{ expanded: open, disabled }} and the panel conditionally rendered below. Screen readers read "expanded/collapsed" from the state; there is no aria-controls equivalent. `headingLevel` sets accessibilityRole="header" on the trigger text instead of a level.'
+    swiftui:
+      element: VStack
+      props: [Button, .accessibilityValue=expanded, Icon, withAnimation, .accessibilityAction]
+      notes: 'A `Button` trigger (the package Button, `ghost`, chevron Icon rotated when open) with `.accessibilityValue(copy.expanded / copy.collapsed)` — SwiftUI has no expanded trait, the value carries it — above the content, which is inserted/removed with the `transition` animation (none under reduced motion). Not `DisclosureGroup` (its chevron and spacing are uncontrollable). `defaultOpen`/`open` per the controlled rule.'
 ---
 
 A disclosure is a button that reveals content beneath it. It is deliberately plain: no border, no card, no animation of the panel. The pattern's job is to keep long pages scannable by hiding detail until it is wanted — FAQ answers, advanced options, "show more".

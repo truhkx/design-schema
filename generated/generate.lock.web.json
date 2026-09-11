@@ -717,6 +717,28 @@
       "modules": true
     }
   },
+  "Pattern.SettingsPage.web": {
+    "hash": "316a0649244a2fc9",
+    "lastAttemptHash": "316a0649244a2fc9",
+    "generatedAt": "2026-09-11T00:26:01+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.2291,
+    "files": [
+      "packages/react/demo/SettingsPage.stories.tsx",
+      "packages/react/demo/SettingsPage.tsx"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Popover.web": {
     "hash": "152c2e281a9168a6",
     "lastAttemptHash": "152c2e281a9168a6",

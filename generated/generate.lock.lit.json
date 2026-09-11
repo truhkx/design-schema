@@ -688,6 +688,28 @@
       "modules": true
     }
   },
+  "Pattern.SettingsPage.lit": {
+    "hash": "024bf7a4378f95e3",
+    "lastAttemptHash": "024bf7a4378f95e3",
+    "generatedAt": "2026-09-11T00:31:59+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.4437,
+    "files": [
+      "packages/lit/demo/SettingsPage.stories.ts",
+      "packages/lit/demo/SettingsPage.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Popover.lit": {
     "hash": "24243f9dcd4b7410",
     "lastAttemptHash": "24243f9dcd4b7410",

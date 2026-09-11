@@ -686,6 +686,28 @@
       "modules": true
     }
   },
+  "Pattern.SettingsPage.rn": {
+    "hash": "389059d249368ce4",
+    "lastAttemptHash": "389059d249368ce4",
+    "generatedAt": "2026-09-11T00:35:50+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.2235,
+    "files": [
+      "packages/rn/demo/SettingsPage.stories.tsx",
+      "packages/rn/demo/SettingsPage.tsx"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true
+    }
+  },
   "Popover.rn": {
     "hash": "e126314959858d8d",
     "lastAttemptHash": "e126314959858d8d",

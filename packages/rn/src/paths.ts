@@ -81,11 +81,7 @@ export const paths: Record<IconName, IconGlyph> = {
   search: { d: 'M7 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9zM10.3 10.3L14 14' },
   'arrow-right': { d: 'M3 8h10M9 4l4 4-4 4' },
   'arrow-left': { d: 'M13 8H3M7 4L3 8l4 4' },
-  /* No web/Lit reference existed for this glyph at generation time; see the gap note in Icon.tsx. */
-  calendar: {
-    d: 'M2 6h12M5 1.5v3M11 1.5v3M3 3h10a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z',
-  },
-  /* No web/Lit reference existed for this glyph at generation time either; see the gap note in Icon.tsx. */
+  calendar: { d: 'M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3' },
   menu: { d: 'M2 4h12M2 8h12M2 12h12' },
   /* Dots drawn as zero-length, round-capped strokes so they render on the same stroke-only path as the lines. */
   list: { d: 'M5 4h9M5 8h9M5 12h9M2 4h.01M2 8h.01M2 12h.01' },

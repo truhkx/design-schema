@@ -70,20 +70,20 @@
     }
   },
   "AlertDialog.web": {
-    "hash": "b9635f57873b1a59",
-    "lastAttemptHash": "b9635f57873b1a59",
-    "generatedAt": "2026-09-10T22:14:29+00:00",
+    "hash": "8b150e04846ba0da",
+    "lastAttemptHash": "8b150e04846ba0da",
+    "generatedAt": "2026-09-10T23:57:39+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.4089,
+    "costUsd": 0.2551,
     "files": [
       "packages/react/src/AlertDialog.css",
       "packages/react/src/AlertDialog.stories.tsx",
-      "packages/react/src/AlertDialog.test.tsx",
-      "packages/react/src/AlertDialog.tsx"
+      "packages/react/src/AlertDialog.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 3,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -167,12 +167,13 @@
   "Button.web": {
     "hash": "442dc19d7fa73dfa",
     "lastAttemptHash": "442dc19d7fa73dfa",
-    "generatedAt": "2026-09-10T21:21:53+00:00",
+    "generatedAt": "2026-09-10T23:45:55+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6,
+    "costUsd": 0.422,
     "files": [
+      "packages/react/src/Button.css",
       "packages/react/src/Button.tsx"
     ],
     "gaps": 3,
@@ -348,19 +349,18 @@
   "Dialog.web": {
     "hash": "4b3a45f6b5005b2a",
     "lastAttemptHash": "4b3a45f6b5005b2a",
-    "generatedAt": "2026-09-10T22:09:23+00:00",
+    "generatedAt": "2026-09-10T23:56:06+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.2453,
+    "rounds": 1,
+    "costUsd": 0.5907,
     "files": [
-      "packages/react/src/BottomSheet.tsx",
       "packages/react/src/Dialog.css",
       "packages/react/src/Dialog.stories.tsx",
-      "packages/react/src/Dialog.test.tsx",
-      "packages/react/src/Dialog.tsx"
+      "packages/react/src/Dialog.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -533,17 +533,18 @@
   "Icon.web": {
     "hash": "472ebff36ada6dd0",
     "lastAttemptHash": "472ebff36ada6dd0",
-    "generatedAt": "2026-09-10T21:12:56+00:00",
+    "generatedAt": "2026-09-10T23:48:41+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6299,
+    "costUsd": 0.2991,
     "files": [
       "packages/react/src/Icon.css",
       "packages/react/src/Icon.stories.tsx",
-      "packages/react/src/Icon.tsx"
+      "packages/react/src/Icon.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -556,18 +557,16 @@
   "Input.web": {
     "hash": "32fe26c4d611b67b",
     "lastAttemptHash": "32fe26c4d611b67b",
-    "generatedAt": "2026-09-10T21:27:15+00:00",
+    "generatedAt": "2026-09-10T23:52:47+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8932,
+    "costUsd": 0.8786,
     "files": [
       "packages/react/src/Input.css",
-      "packages/react/src/Input.stories.tsx",
-      "packages/react/src/Input.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Input.tsx"
     ],
-    "gaps": 5,
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -647,19 +646,20 @@
     }
   },
   "Menu.web": {
-    "hash": "a6c67145c0e3d54c",
-    "lastAttemptHash": "a6c67145c0e3d54c",
-    "generatedAt": "2026-09-10T06:45:21+00:00",
+    "hash": "b20351fe2a1b6b80",
+    "lastAttemptHash": "b20351fe2a1b6b80",
+    "generatedAt": "2026-09-11T00:00:52+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3044,
+    "costUsd": 0.5409,
     "files": [
       "packages/react/src/Menu.css",
       "packages/react/src/Menu.stories.tsx",
-      "packages/react/src/Menu.tsx"
+      "packages/react/src/Menu.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 3,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -138,6 +138,11 @@ function flattenActionItems(items: MenuItem[]): MenuActionItem[] {
  * `action` event with the item's `id`; `open-change` fires on every open and
  * close.
  *
+ * Setting `anchor` to an element positions the popup relative to it instead
+ * of a trigger, omitting the trigger part entirely; `open` must then be
+ * controlled by the consumer, since there is no trigger to toggle it. Used by
+ * ActionSheet above its breakpoint and by context menus.
+ *
  * ## When to use
  *
  * Use a Menu for secondary actions on an item or a view that do not deserve
@@ -350,6 +355,14 @@ export class DsMenu extends LitElement {
   /** Controlled open state. Omit for an uncontrolled menu. */
   @property({ type: Boolean, reflect: true }) open?: boolean;
 
+  /**
+   * Position the popup relative to this element instead of rendering a
+   * trigger; the trigger part is omitted and `open` must be controlled. Used
+   * by ActionSheet above its breakpoint and by context menus. Lit has no ref
+   * concept, so this takes the element directly rather than a `RefObject`.
+   */
+  @property({ attribute: false }) anchor?: HTMLElement | null;
+
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
   @property({ attribute: false }) overrides?: Partial<Record<MenuOverridableBinding, TokenRef>>;
 
@@ -359,7 +372,7 @@ export class DsMenu extends LitElement {
   /** The item currently carrying the roving tabindex and real focus. */
   @state() private activeId: string | null = null;
 
-  @query('#trigger') private readonly triggerButtonEl!: HTMLElement;
+  @query('#trigger') private readonly triggerButtonEl?: HTMLElement;
   @query('.popup') private readonly popupEl!: HTMLElement;
 
   private readonly popoverSupported = POPOVER_SUPPORTED;
@@ -426,23 +439,27 @@ export class DsMenu extends LitElement {
     const triggerIconName: IconName = this.triggerIcon === 'ellipsis' ? 'ellipsis' : 'chevron-down';
 
     return html`
-      <ds-button
-        id="trigger"
-        class="trigger"
-        part="trigger"
-        variant=${this.triggerVariant}
-        label=${this.label}
-        ?icon-only=${this.iconOnly}
-        aria-haspopup="menu"
-        aria-expanded=${isOpen ? 'true' : 'false'}
-        aria-controls="list"
-        @press=${this.handleTriggerPress}
-        @keydown=${this.handleTriggerKeydown}
-      >
-        ${this.triggerIcon === 'none'
-          ? nothing
-          : html`<ds-icon slot="trailing-icon" name=${triggerIconName}></ds-icon>`}
-      </ds-button>
+      ${this.anchor
+        ? nothing
+        : html`
+            <ds-button
+              id="trigger"
+              class="trigger"
+              part="trigger"
+              variant=${this.triggerVariant}
+              label=${this.label}
+              ?icon-only=${this.iconOnly}
+              aria-haspopup="menu"
+              aria-expanded=${isOpen ? 'true' : 'false'}
+              aria-controls="list"
+              @press=${this.handleTriggerPress}
+              @keydown=${this.handleTriggerKeydown}
+            >
+              ${this.triggerIcon === 'none'
+                ? nothing
+                : html`<ds-icon slot="trailing-icon" name=${triggerIconName}></ds-icon>`}
+            </ds-button>
+          `}
       <div
         class="popup"
         part="popup"
@@ -454,7 +471,8 @@ export class DsMenu extends LitElement {
           class="list"
           part="list"
           role="menu"
-          aria-labelledby="trigger"
+          aria-label=${this.anchor ? this.label : nothing}
+          aria-labelledby=${this.anchor ? nothing : 'trigger'}
           tabindex="-1"
           @keydown=${this.handleListKeydown}
         >
@@ -578,7 +596,7 @@ export class DsMenu extends LitElement {
     }
     this.setOpen(false);
     if (restoreFocus) {
-      this.triggerButtonEl.focus();
+      (this.anchor ?? this.triggerButtonEl)?.focus();
     }
   }
 
@@ -692,7 +710,7 @@ export class DsMenu extends LitElement {
   }
 
   private updatePosition(): void {
-    const trigger = this.triggerButtonEl;
+    const trigger = this.anchor ?? this.triggerButtonEl;
     const popup = this.popupEl;
     if (!trigger || !popup) {
       return;
@@ -756,6 +774,9 @@ export class DsMenu extends LitElement {
     }
     if (!this.items || this.items.length === 0) {
       console.warn('<ds-menu> requires at least one item in `items`.', this);
+    }
+    if (this.anchor && this.open === undefined) {
+      console.warn('<ds-menu> with `anchor` set omits the trigger, so `open` must be controlled by the consumer.', this);
     }
   }
 }

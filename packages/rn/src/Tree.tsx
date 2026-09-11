@@ -4,7 +4,6 @@ import type { AccessibilityActionEvent, ListRenderItemInfo, ViewStyle } from 're
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
-import { Checkbox } from './Checkbox';
 import { Heading } from './Heading';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
@@ -12,6 +11,9 @@ import { Text } from './Text';
 import { toEasing, useReducedMotion, useTheme } from './theme';
 
 export type TreeSelectable = 'none' | 'single' | 'multiple';
+
+/** Heading level for the visible `label`. The schema declares the values as strings; numbers are accepted for ergonomics. Its size is `headingSize` regardless of level. */
+export type TreeHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
 
 /** A hierarchy entry. `href` makes the node a link (navigation trees); `badge` is a short trailing count or status; `children: "lazy"` loads on first expand through `onExpand`. */
 export interface TreeNode {
@@ -34,11 +36,15 @@ export type TreeOverridableBinding =
   | 'rowHover'
   | 'rowSelectedBorderWidth'
   | 'labelSelectedWeight'
+  | 'headingSize'
   | 'badgeSize'
   | 'expandButtonSize'
   | 'guideLine'
   | 'guideLineWidth'
   | 'checkboxGap'
+  | 'checkboxSize'
+  | 'checkboxBackground'
+  | 'checkboxRadius'
   | 'fontFamily'
   | 'fontSize'
   | 'lineHeight'
@@ -50,6 +56,8 @@ export interface TreeProps {
   label: string;
   /** Show `label` as a heading above the tree. */
   showLabel?: boolean;
+  /** Heading level of the visible label in the page outline; its size is `headingSize` regardless. */
+  headingLevel?: TreeHeadingLevel;
   /** The hierarchy. */
   nodes: TreeNode[];
   /** Controlled expanded ids. */
@@ -214,23 +222,27 @@ function TreeExpandButton({ expanded, label, transitionDuration, color, onPress 
  * child in `copy.loading` (and fires `onExpand`) until the caller replaces its
  * children.
  *
- * In `none`/`single` mode the row is a `Pressable` with `accessibilityRole`
- * `"link"` (nodes with `href`, opened through `Linking`) or `"button"`
- * (everything else, calling `onActivate`); `single` also selects the node on
- * activation, and — with `selectOnFocus` — as soon as focus reaches it, since
- * native has no separate "move" and "activate" keys. In `multiple` mode the row
- * has no outer `Pressable`: the `Checkbox` component's own control and label
- * *are* the row's hit target and its visible/accessible name, cascading to
- * loaded descendants and showing indeterminate when `selectChildren` is set.
- * There are no hardware arrow keys, so the chevron `Button` is a real,
- * always-visible touch target, and each row also exposes `expand`/`collapse`
- * `accessibilityActions` for assistive technology. Selection changes in
- * `multiple` mode announce `copy.selectedCount` (`AccessibilityInfo` on iOS, a
- * hidden polite live region on Android).
+ * Every row is a `Pressable` with `accessibilityRole` `"link"` (nodes with
+ * `href`, opened through `Linking`) or `"button"` (everything else, calling
+ * `onActivate`) — never the `Checkbox` component, so the row stays one hit
+ * target. In `none`/`single` mode a tap activates (and, in `single`, selects);
+ * `single` also selects as soon as focus reaches the row when `selectOnFocus`
+ * is set, since native has no separate "move" and "activate" keys. In
+ * `multiple` mode a tap instead toggles selection and a long press activates,
+ * so `href` and `onActivate` remain reachable; the row draws its own checkbox
+ * glyph (the `checkbox*` bindings, a `check`/`dash` `Icon`) beside the label
+ * and reflects `accessibilityState.checked` (`'mixed'` when only some loaded
+ * descendants are selected under `selectChildren`). There are no hardware
+ * arrow keys, so the chevron `Button` is a real, always-visible touch target,
+ * and each row also exposes `expand`/`collapse` `accessibilityActions` for
+ * assistive technology. Selection changes in `multiple` mode announce
+ * `copy.selectedCount` (`AccessibilityInfo` on iOS, a hidden polite live
+ * region on Android).
  */
 export function Tree({
   label,
   showLabel = false,
+  headingLevel = '2',
   nodes,
   expanded,
   defaultExpanded,
@@ -259,10 +271,14 @@ export function Tree({
   const rowSelectedBorderWidthValue = overrides?.rowSelectedBorderWidth ? (resolveToken(t, overrides.rowSelectedBorderWidth) as number) : t.borderWidthFocus;
   const badgeSizeRef: TokenRef = overrides?.badgeSize ?? ('font.size.xs' as TokenRef);
   const labelSelectedWeightRef: TokenRef = overrides?.labelSelectedWeight ?? ('font.weight.medium' as TokenRef);
+  const headingSizeRef: TokenRef = overrides?.headingSize ?? ('font.size.md' as TokenRef);
   const expandButtonSizeValue = overrides?.expandButtonSize ? (resolveToken(t, overrides.expandButtonSize) as number) : t.sizeTargetMin;
   const guideLineColor = overrides?.guideLine ? (resolveToken(t, overrides.guideLine) as string) : t.colorBorder;
   const guideLineWidthValue = overrides?.guideLineWidth ? (resolveToken(t, overrides.guideLineWidth) as number) : t.borderWidthThin;
-  const checkboxGapRef: TokenRef = overrides?.checkboxGap ?? ('layout.gap.tight' as TokenRef);
+  const checkboxGapValue = overrides?.checkboxGap ? (resolveToken(t, overrides.checkboxGap) as number) : t.layoutGapTight;
+  const checkboxSizeValue = overrides?.checkboxSize ? (resolveToken(t, overrides.checkboxSize) as number) : t.space4;
+  const checkboxBackgroundColor = overrides?.checkboxBackground ? (resolveToken(t, overrides.checkboxBackground) as string) : t.colorControlBackground;
+  const checkboxRadiusValue = overrides?.checkboxRadius ? (resolveToken(t, overrides.checkboxRadius) as number) : t.radiusSm;
   const disabledOpacityValue = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
   const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
   const typographyOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
@@ -388,6 +404,23 @@ export function Tree({
     handleActivate(node);
   };
 
+  // In `multiple` mode the row's tap toggles selection instead of activating, since
+  // the checkbox glyph is drawn inside the same Pressable rather than composing the
+  // Checkbox component; a long press is the only way left to reach `onActivate`/`href`.
+  const handleMultiplePress = (node: TreeNode): void => {
+    if (node.disabled) {
+      return;
+    }
+    toggleMultiple(node);
+  };
+
+  const handleMultipleLongPress = (node: TreeNode): void => {
+    if (node.disabled) {
+      return;
+    }
+    handleActivate(node);
+  };
+
   const handleRowFocus = (node: TreeNode): void => {
     setFocusedId(node.id);
     if (selectOnFocus && selectable === 'single' && !node.disabled) {
@@ -406,7 +439,7 @@ export function Tree({
     const guideOffsets = showGuides ? Array.from({ length: level - 1 }, (_, i) => indentValue * i + expandButtonSizeValue / 2) : [];
     const indentContainerWidth = indentValue * (level - 1) + expandButtonSizeValue;
     return (
-      <View style={{ width: indentContainerWidth, height: effectiveRowHeight }} testID="Tree.indent">
+      <View style={{ width: indentContainerWidth, height: effectiveRowHeight, marginRight: rowGapValue }} testID="Tree.indent">
         {guideOffsets.map((offset) => (
           <View
             key={offset}
@@ -430,14 +463,38 @@ export function Tree({
 
   const renderIcon = (node: TreeNode): React.JSX.Element | null =>
     node.icon ? (
-      <View testID="Tree.icon">
+      <View style={{ marginRight: rowGapValue }} testID="Tree.icon">
         <Icon name={node.icon} inline color={t.colorForegroundMuted} />
       </View>
     ) : null;
 
+  /** The drawn checkbox glyph for `multiple` mode — not the `Checkbox` component, so the row stays one hit target (a tap toggles, a long press activates). */
+  const renderCheckboxGlyph = (checked: boolean, indeterminate: boolean): React.JSX.Element => {
+    const filled = checked || indeterminate;
+    return (
+      <View
+        style={{
+          width: checkboxSizeValue,
+          height: checkboxSizeValue,
+          borderRadius: checkboxRadiusValue,
+          borderWidth: t.borderWidthThin,
+          borderColor: t.colorControlBorder,
+          backgroundColor: filled ? t.colorControlSelectedBackground : checkboxBackgroundColor,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+        testID="Tree.checkbox"
+      >
+        {filled ? <Icon name={indeterminate ? 'dash' : 'check'} size="xs" color={t.colorControlSelectedForeground} /> : null}
+      </View>
+    );
+  };
+
   const renderBadge = (node: TreeNode): React.JSX.Element | null =>
     node.badge !== undefined ? (
-      <View testID="Tree.badge">
+      <View style={{ marginLeft: rowGapValue }} testID="Tree.badge">
         <Text size="xs" tone="muted" overrides={badgeOverrides}>
           {node.badge}
         </Text>
@@ -484,47 +541,28 @@ export function Tree({
       backgroundColor: isSelected ? t.colorBackgroundStrong : 'transparent',
     };
 
-    if (selectable === 'multiple') {
-      return (
-        <View style={contentStyle} testID="Tree.node">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: rowGapValue }} testID="Tree.nodeRow">
-            {renderIndent(item)}
-            {renderIcon(node)}
-            <View style={{ flex: 1 }} testID="Tree.label">
-              <Checkbox
-                label={node.label}
-                name={`tree-${node.id}`}
-                checked={nodeCheckState?.checked ?? false}
-                indeterminate={nodeCheckState?.indeterminate ?? false}
-                disabled={node.disabled}
-                overrides={{ gap: checkboxGapRef }}
-                onChange={() => toggleMultiple(node)}
-              />
-            </View>
-            {renderBadge(node)}
-          </View>
-        </View>
-      );
-    }
+    const isMultiple = selectable === 'multiple';
 
     return (
       <View style={contentStyle} testID="Tree.node">
         <Pressable
-          onPress={() => handleRowPress(node)}
+          onPress={() => (isMultiple ? handleMultiplePress(node) : handleRowPress(node))}
+          onLongPress={isMultiple ? () => handleMultipleLongPress(node) : undefined}
           onFocus={() => handleRowFocus(node)}
           onBlur={() => handleRowBlur(node.id)}
           accessibilityRole={node.href !== undefined ? 'link' : 'button'}
           accessibilityLabel={accessibleLabel}
           accessibilityState={{
             disabled: node.disabled,
-            selected: selectable !== 'none' ? isSelected : undefined,
+            selected: selectable === 'single' ? isSelected : undefined,
+            checked: isMultiple ? (nodeCheckState?.indeterminate ? 'mixed' : (nodeCheckState?.checked ?? false)) : undefined,
             expanded: hasChildren ? isExpanded : undefined,
           }}
           accessibilityActions={hasChildren ? [{ name: 'expand', label: COPY.expand(node.label) }, { name: 'collapse', label: COPY.collapse(node.label) }] : undefined}
           onAccessibilityAction={hasChildren ? nodeAccessibilityAction(node, isExpanded) : undefined}
           hitSlop={rowHitSlop}
           style={({ pressed }) => [
-            { flexDirection: 'row', alignItems: 'center', gap: rowGapValue },
+            { flexDirection: 'row', alignItems: 'center' },
             pressed && !node.disabled ? { backgroundColor: rowHoverColor } : null,
             isFocused ? { borderWidth: t.borderWidthFocus, borderColor: t.colorBorderFocus, borderRadius: rowRadiusValue } : null,
           ]}
@@ -532,6 +570,11 @@ export function Tree({
         >
           {renderIndent(item)}
           {renderIcon(node)}
+          {isMultiple ? (
+            <View style={{ marginRight: checkboxGapValue }} testID="Tree.checkboxSlot">
+              {renderCheckboxGlyph(nodeCheckState?.checked ?? false, nodeCheckState?.indeterminate ?? false)}
+            </View>
+          ) : null}
           <View style={{ flex: 1 }} testID="Tree.label">
             <Text size="sm" truncate weight={isSelected ? 'medium' : 'regular'} overrides={isSelected ? { ...typographyOverrides, fontWeight: labelSelectedWeightRef } : typographyOverrides}>
               {node.label}
@@ -551,7 +594,11 @@ export function Tree({
 
   return (
     <View testID="Tree">
-      {showLabel ? <Heading level="2">{label}</Heading> : null}
+      {showLabel ? (
+        <Heading level={headingLevel} overrides={{ fontSize: headingSizeRef }}>
+          {label}
+        </Heading>
+      ) : null}
       <FlatList
         data={visibleNodes}
         keyExtractor={(item) => item.key}

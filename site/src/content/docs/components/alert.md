@@ -56,7 +56,7 @@ component:
     dismissLabel: Dismiss
   a11y:
     role: status
-    requires: [live-region, contrast-aa, accessible-name, focus-visible, keyboard-operable, target-24px]
+    requires: [live-region, contrast-aa, focus-visible, keyboard-operable, target-24px]
     contrast:
       - { foreground: 'color.status.{tone}.foreground', background: 'color.status.{tone}.background', level: AA }
       - { foreground: color.foreground, background: 'color.status.{tone}.background', level: AA }
@@ -98,7 +98,7 @@ The heading says what happened in a few words ("Changes saved", "Payment failed"
 
 ## Accessibility
 
-The message is announced when it appears, politely for `status` and immediately for `alert` (WCAG 4.1.3 Status Messages), and it is never used to move focus (3.2.1). Tone is conveyed by the icon shape and the heading, not only by color (1.4.1). Heading, body, links, the dismiss button and icon meet contrast on the tinted background in both modes — 4.5:1 for text and 3:1 for the icon (1.4.3, 1.4.11); the build checks every tone. The dismiss button has an accessible name from `copy.dismissLabel`, visible focus, and a 24px target (2.4.7, 2.5.8). Only `danger` and blocking `warning` alerts use `live: alert`; interrupting for good news is a real cost to screen-reader users.
+The message is announced when it appears, politely for `status` and immediately for `alert` (WCAG 4.1.3 Status Messages), and it is never used to move focus (3.2.1). Tone is conveyed by the icon shape and the heading, not only by color (1.4.1). Heading, body, links, the dismiss button and icon meet contrast on the tinted background in both modes — 4.5:1 for text and 3:1 for the icon (1.4.3, 1.4.11); the build checks every tone. The region itself has no separate accessible name — a status or alert region is announced by its content, and naming it would be read twice. The dismiss button has an accessible name from `copy.dismissLabel`, visible focus, and a 24px target (2.4.7, 2.5.8). Only `danger` and blocking `warning` alerts use `live: alert`; interrupting for good news is a real cost to screen-reader users.
 
 ## Platform notes
 

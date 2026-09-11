@@ -1,14 +1,16 @@
 /* Input — styled only through Design Schema token custom properties. */
 
 .ds-input {
+  /* helperSize is forwarded entirely into the composed description/error Text elements' own
+     overrides instead (they render the helper text); fontFamily/lineHeight are forwarded to
+     those Text elements *and* kept here, for the label and the raw `<input>`, neither of which
+     is a Text. */
   --ds-input-background: var(--color-background);
   --ds-input-foreground: var(--color-foreground);
   --ds-input-placeholder: var(--color-foreground-muted);
   --ds-input-border: var(--color-border-strong);
   --ds-input-border-focus: var(--color-border-focus);
   --ds-input-border-invalid: var(--color-border-danger);
-  --ds-input-error-text: var(--color-foreground-danger);
-  --ds-input-description-text: var(--color-foreground-muted);
   --ds-input-border-width: var(--border-width-thin);
   --ds-input-radius: var(--radius-md);
   --ds-input-padding-inline: var(--space-md);
@@ -19,7 +21,6 @@
   --ds-input-font-family: var(--font-family-body);
   --ds-input-font-size: var(--font-size-md);
   --ds-input-label-weight: var(--font-weight-medium);
-  --ds-input-helper-size: var(--font-size-sm);
   --ds-input-line-height: var(--font-line-height-normal);
   --ds-input-min-target: var(--size-target-comfortable);
   --ds-input-min-target-sm: var(--size-target-min);
@@ -110,16 +111,10 @@
 
 .ds-input__description {
   margin: 0;
-  font-size: var(--ds-input-helper-size);
-  line-height: var(--ds-input-line-height);
-  color: var(--ds-input-description-text);
 }
 
 .ds-input__error {
   margin: 0;
-  font-size: var(--ds-input-helper-size);
-  line-height: var(--ds-input-line-height);
-  color: var(--ds-input-error-text);
 }
 
 @media (prefers-reduced-motion: no-preference) {

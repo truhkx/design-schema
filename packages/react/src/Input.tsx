@@ -10,6 +10,7 @@ import {
   type FocusEvent,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
+import { Text, type TextOverridableBinding } from './Text';
 import { useFormContext } from './FormContext';
 import './Input.css';
 
@@ -42,7 +43,11 @@ export type InputOverridableBinding =
   | 'minTargetSm'
   | 'disabledOpacity';
 
-const OVERRIDE_HOOK: Record<InputOverridableBinding, string> = {
+/** Bindings owned by the root; `helperSize` is forwarded entirely into the composed description/
+ * error Text elements' own `overrides` instead (they render the helper text, not the root), and
+ * `fontFamily`/`lineHeight` are forwarded to those Text elements *and* kept on the root for the
+ * label and the raw `<input>`, neither of which is a Text. */
+const ROOT_OVERRIDE_HOOK: Partial<Record<InputOverridableBinding, string>> = {
   borderFocus: '--ds-input-border-focus',
   borderInvalid: '--ds-input-border-invalid',
   borderWidth: '--ds-input-border-width',
@@ -55,19 +60,46 @@ const OVERRIDE_HOOK: Record<InputOverridableBinding, string> = {
   fontFamily: '--ds-input-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-input-font-size',
   labelWeight: '--ds-input-label-weight',
-  helperSize: '--ds-input-helper-size',
   lineHeight: '--ds-input-line-height',
   minTargetSm: '--ds-input-min-target-sm',
   disabledOpacity: '--ds-input-disabled-opacity',
 };
 
-function overridesToStyle(overrides: Partial<Record<InputOverridableBinding, TokenRef>>): CSSProperties {
-  const style: Record<string, string> = {};
+function resolveOverrides(overrides: Partial<Record<InputOverridableBinding, TokenRef>>): {
+  rootStyle: CSSProperties;
+  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+  errorOverrides: Partial<Record<TextOverridableBinding, TokenRef>>;
+} {
+  const rootStyle: Record<string, string> = {};
+  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+  const errorOverrides: Partial<Record<TextOverridableBinding, TokenRef>> = {};
+
   for (const binding of Object.keys(overrides) as InputOverridableBinding[]) {
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    if (!ref) continue;
+    switch (binding) {
+      case 'helperSize':
+        descriptionOverrides.fontSize = ref;
+        errorOverrides.fontSize = ref;
+        break;
+      case 'fontFamily':
+        rootStyle['--ds-input-font-family'] = cssVar(ref); // literal-ok: CSS custom-property hook name, not a font stack
+        descriptionOverrides.fontFamily = ref;
+        errorOverrides.fontFamily = ref;
+        break;
+      case 'lineHeight':
+        rootStyle['--ds-input-line-height'] = cssVar(ref);
+        descriptionOverrides.lineHeight = ref;
+        errorOverrides.lineHeight = ref;
+        break;
+      default: {
+        const hook = ROOT_OVERRIDE_HOOK[binding];
+        if (hook) rootStyle[hook] = cssVar(ref);
+      }
+    }
   }
-  return style as CSSProperties;
+
+  return { rootStyle: rootStyle as CSSProperties, descriptionOverrides, errorOverrides };
 }
 
 export interface InputProps
@@ -237,8 +269,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     .join(' ');
   const labelClasses = ['ds-input__label', hideLabel ? 'ds-input__visually-hidden' : null].filter(Boolean).join(' ');
 
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+  const { rootStyle, descriptionOverrides, errorOverrides } = overrides
+    ? resolveOverrides(overrides)
+    : { rootStyle: undefined, descriptionOverrides: undefined, errorOverrides: undefined };
+  const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
 
   return (
     <div className={classes} data-ds="Input" data-ds-field style={mergedStyle}>
@@ -247,9 +281,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {required ? <span className="ds-input__required">{COPY.requiredIndicator}</span> : null}
       </label>
       {description ? (
-        <p id={descriptionId} data-part="description" className="ds-input__description">
+        <Text
+          element="p"
+          id={descriptionId}
+          data-part="description"
+          size="sm"
+          tone="muted"
+          className="ds-input__description"
+          overrides={descriptionOverrides}
+        >
           {description}
-        </p>
+        </Text>
       ) : null}
       <input
         {...rest}
@@ -272,9 +314,18 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         onBlur={handleBlur}
       />
       {resolvedError ? (
-        <p id={errorId} role="alert" data-part="errorMessage" className="ds-input__error">
+        <Text
+          element="p"
+          id={errorId}
+          role="alert"
+          data-part="errorMessage"
+          size="sm"
+          tone="danger"
+          className="ds-input__error"
+          overrides={errorOverrides}
+        >
           {resolvedError}
-        </p>
+        </Text>
       ) : null}
     </div>
   );

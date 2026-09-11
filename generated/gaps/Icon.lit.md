@@ -24,3 +24,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-10 17:12 — round 1
 
 - Icon: 'list' item dots and 'grid' squares/'pause' bars aren't explicitly marked line vs. filled in the content guidelines — rendered the dots and pause bars as filled (class="filled") since a stroked 1px-radius circle/thin rect would be nearly invisible at xs, and grid squares as unfilled outlines (consistent with 'outlined squares' wording) but this choice wasn't stated for list/pause explicitly, only inferred from 'filled' precedent (ellipsis dots, status shapes).
+
+## 2026-09-10 19:50 — round 1
+
+- Icon: color binding's doc default is `color.foreground`, but the component behavior described in guidance is `currentColor` inheritance with `color.foreground` only as what inheritance resolves to at the root — implemented the hook with no default set (falls back to `inherit`) rather than defaulting the hook to `var(--color-foreground)`, since a hard default would break free color inheritance from Button/Link/Alert.
+- Icon: calendar glyph's hanger-tick geometry uses y=2 to y=5 (to align with the rounded-rect header at y=6.5) instead of the guidance's literal y=1 to y=4, since the literal coordinates would float above the rounded rectangle's top edge.

@@ -31,6 +31,7 @@ export type AlertDialogOverridableBinding =
   | 'textGap'
   | 'iconGap'
   | 'footerGap'
+  | 'iconSize'
   | 'width'
   | 'layer'
   | 'enter'
@@ -47,6 +48,7 @@ const HOOKS: Record<AlertDialogOverridableBinding, string> = {
   textGap: '--ds-alert-dialog-text-gap',
   iconGap: '--ds-alert-dialog-icon-gap',
   footerGap: '--ds-alert-dialog-footer-gap',
+  iconSize: '--ds-alert-dialog-icon-size',
   width: '--ds-alert-dialog-width',
   layer: '--ds-alert-dialog-layer',
   enter: '--ds-alert-dialog-enter',
@@ -140,6 +142,7 @@ export class DsAlertDialog extends LitElement {
       --ds-alert-dialog-text-gap: var(--layout-gap-tight);
       --ds-alert-dialog-icon-gap: var(--layout-gap-normal);
       --ds-alert-dialog-footer-gap: var(--layout-gap-tight);
+      --ds-alert-dialog-icon-size: var(--font-size-lg);
       --ds-alert-dialog-width: var(--layout-max-width-prose);
       --ds-alert-dialog-layer: var(--layer-dialog);
       --ds-alert-dialog-enter: var(--motion-duration-base);
@@ -224,6 +227,8 @@ export class DsAlertDialog extends LitElement {
 
     .icon {
       flex: none;
+      /* iconSize: font.size.lg, forwarded to the child Icon's own --ds-icon-size hook */
+      --ds-icon-size: var(--ds-alert-dialog-icon-size);
       /* icon: color.status.{tone}.icon, locked — no override hook */
     }
     :host([tone='danger']) .icon {
@@ -329,7 +334,7 @@ export class DsAlertDialog extends LitElement {
             style="display: flex; flex-direction: column; gap: var(--ds-alert-dialog-part-gap)"
           >
             <div class="content">
-              <ds-icon class="icon" part="icon" name=${this.tone} size="lg"></ds-icon>
+              <ds-icon class="icon" part="icon" name=${this.tone}></ds-icon>
               <div class="text">
                 <ds-heading id="heading" part="title" level="2" size="lg" tabindex="-1">${this.heading}</ds-heading>
                 <ds-text id="description" part="description" size="sm" tone="muted">${this.description}</ds-text>

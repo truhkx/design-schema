@@ -43,6 +43,7 @@ const meta: Meta<typeof Tree> = {
   args: {
     label: 'Folders',
     showLabel: false,
+    headingLevel: '2',
     nodes,
     defaultExpanded: ['documents'],
     selectable: 'single',
@@ -62,6 +63,11 @@ export const Default: Story = {};
 export const SelectableNone: Story = { args: { selectable: 'none' } };
 export const SelectableSingle: Story = { args: { selectable: 'single' } };
 export const SelectableMultiple: Story = { args: { selectable: 'multiple' } };
+
+// headingLevel
+export const HeadingLevel2: Story = { args: { showLabel: true, headingLevel: '2' } };
+export const HeadingLevel3: Story = { args: { showLabel: true, headingLevel: '3' } };
+export const HeadingLevel4: Story = { args: { showLabel: true, headingLevel: '4' } };
 
 // notable states
 export const ShowLabel: Story = { args: { showLabel: true } };

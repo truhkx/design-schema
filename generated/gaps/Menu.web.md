@@ -17,3 +17,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: `open` is documented as "controlled open state" with no explicit uncontrolled-close mechanism when using it purely as a boolean toggle from outside (no onOpenChange-driven two-way binding helper) — implemented as fully controlled-if-present (parent must flip `open` itself on onOpenChange), matching Dialog/AlertDialog convention in this package.
 - Menu: minWidth token math ("space.20 × 2.5, i.e. 200px") is described in prose, not as a generator-computed literal — implemented as calc(var(--ds-menu-min-width) * 2.5) in CSS to avoid a hard-coded px value, since the doc explicitly says 'no new token'.
 - Menu: spec's keyboard table marks ArrowDown-from-trigger and ArrowUp-from-trigger as `expect: manual` — verified via the Keyboard story (open:true) rather than an automated scenario, per the doc's own scenario list which only covers `renders-*` and `has-accessible-name`.
+
+## 2026-09-10 20:00 — round 1
+
+- Menu: `anchor` is typed `RefObject<HTMLElement | View>` in the schema shape (cross-platform), but web has no `View`; narrowed to `RefObject<HTMLElement>` for this platform.
+- Menu: schema gives no explicit rule for whether disabled items are still rendered with `aria-disabled` vs. removed from the roving tabindex sequence — chose to keep them in the DOM, skip them in arrow/typeahead/Home/End traversal, and mark `aria-disabled="true"`, consistent with the 'visible, announced disabled, skipped' behavior description.
+- Menu: `minWidth` token doc says 'space.20 × 2.5 ... the generator multiplies; no new token' — implemented as a CSS `calc(var(--ds-menu-min-width) * 2.5)` at render time rather than a build-time multiplied constant, since overrides must still be able to swap the base token.
+- Menu: the `controlled` onOpenChange reason is documented but has no trigger in the schema's own event flow (parent-driven); the component never emits it itself, only documents it for forwarding — flagged in case the intent was for the component to emit it when `open` changes while controlled.

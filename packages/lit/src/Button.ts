@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
+import { LitElement, css, html, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
@@ -238,17 +238,18 @@ export class DsButton extends LitElement {
       display: none;
     }
 
-    /* loading: keep the footprint, hide the content, show progress */
+    /* loading: spinner takes the leading-icon spot, trailing icon hides, label stays visible */
     :host([loading]) button {
       cursor: progress;
     }
-    :host([loading]) .content {
-      visibility: hidden;
+    :host([loading]) slot[name='leading-icon'] {
+      display: none;
+    }
+    :host([loading]) slot[name='trailing-icon'] {
+      display: none;
     }
     .spinner {
-      position: absolute;
-      inset: 0;
-      margin: auto;
+      display: none;
       box-sizing: border-box;
       inline-size: 1em;
       block-size: 1em;
@@ -256,6 +257,9 @@ export class DsButton extends LitElement {
       border-inline-end-color: transparent;
       border-radius: var(--radius-full);
       animation: ds-button-spin var(--ds-button-loading-spin) linear infinite;
+    }
+    :host([loading]) .spinner {
+      display: inline-block;
     }
     @keyframes ds-button-spin {
       to {
@@ -341,11 +345,11 @@ export class DsButton extends LitElement {
         @click=${this.handleClick}
       >
         <span class="content">
+          <span class="spinner" part="leading-icon" aria-hidden="true"></span>
           <slot name="leading-icon" part="leading-icon"></slot>
           <span class="label" part="label">${this.label}</span>
           <slot name="trailing-icon" part="trailing-icon"></slot>
         </span>
-        ${this.loading ? html`<span class="spinner" aria-hidden="true"></span>` : nothing}
       </button>
     `;
   }

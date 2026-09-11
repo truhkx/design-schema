@@ -33,3 +33,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-10 18:09 — round 2
 
 - Dialog.test.tsx used the pre-rename `title` prop (extra unused field plus a `screen.getByRole` name lookup); it's part of the typecheck gate even though it wasn't listed as generator output, so updated both spots to `heading` to match DialogProps.
+
+## 2026-09-10 19:56 — round 1
+
+- Dialog: schema gives no CSS width for size 'md'/'lg' beyond "derived from layout.maxWidth.content" — implementation uses `calc(layout.maxWidth.content * 0.75)` for md and `layout.maxWidth.content` for lg verbatim, matching the doc's parenthetical exactly, so treated as settled rather than a gap.
+- Dialog: initialFocus 'title' and 'close' aren't expressible via FocusScope's own `autoFocus` enum ('first'|'last'|'container'|'none'), so Dialog sets `autoFocus="none"` on FocusScope and moves focus itself in a layout effect; FocusScope still owns opener-capture/restore. Verified empirically (temporary test, since removed) that this two-effect split still restores focus to the true opener despite the layout-effect/passive-effect ordering looking risky on paper.

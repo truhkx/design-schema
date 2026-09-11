@@ -21,3 +21,7 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - AlertDialog: platform note says the shadow <dialog> should be named with aria-label/aria-description since 'ids do not cross the shadow boundary', but heading/description live inside the same shadow root as the dialog, so aria-labelledby="heading"/aria-describedby="description" (matching Dialog's own pattern) works and was kept instead of duplicating the strings into aria-label/aria-description.
 - AlertDialog: confirmDisabled maps to ds-button's `disabled` (matching the RN note's 'stays focusable' contract is not fully achievable on web since a disabled button is unfocusable); used plain `disabled` rather than `aria-disabled` since Button's own contract wasn't overridden here — flagged as a gap since the RN notes imply focusable-but-inert.
+
+## 2026-09-10 19:59 — round 1
+
+- AlertDialog (lit): the pre-existing implementation hardcoded the tone icon's size as size="lg" instead of wiring it through the iconSize override binding (font.size.lg, forwarded to the icon's own --ds-icon-size hook per the styles.iconSize spec). Fixed by adding the iconSize hook to AlertDialogOverridableBinding/HOOKS/:host default and setting `.icon { --ds-icon-size: var(--ds-alert-dialog-icon-size) }` instead of a static size attribute.

@@ -171,9 +171,9 @@ export interface IconProps
    */
   inline?: boolean;
   /**
-   * Accessible name. When set, the icon is meaningful and exposed as an image with this name;
-   * when omitted, it is decorative and hidden from assistive technology. Most icons sit next to
-   * text and should have no label.
+   * Accessible name. When set (non-empty), the icon is meaningful and exposed as an image with
+   * this name; when omitted or empty, it is decorative and hidden from assistive technology. Most
+   * icons sit next to text and should have no label.
    */
   label?: string;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */

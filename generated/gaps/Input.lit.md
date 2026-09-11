@@ -13,3 +13,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Input: platforms.lit.reflect lists only [type, required, disabled, invalid], omitting `size` — but the `size` prop drives interpolated bindings (fontSize: font.size.{size}) and swaps paddingBlock/paddingInline/minTarget for their Sm variants, which the doc's own convention expresses as `:host([attr=...])` CSS selectors. Reflected `size` anyway (as Search.ts already does for its own `size` prop) so the sm/md variants are actually stylable; flagging the missing reflect-list entry as a doc gap.
 - Input: `hideLabel` has no doc default of `true`, so it does not fall under the 'booleans that default to true → negated attribute' rule; implemented as a normal boolean property/attribute `hide-label` (visually-hidden clip pattern on the `<label>`, label stays in the DOM as the accessible name via `for`).
+
+## 2026-09-10 19:53 — round 1
+
+- Input: `size` is not listed under `platforms.lit.reflect` (only type, required, disabled, invalid are), but the size variants are expressed as CSS attribute selectors elsewhere in the package (e.g. Search), so it is reflected anyway — flagging the reflect list as incomplete rather than deviating from established Lit convention.
+- Input: schema gives no explicit rule for how a disabled field should behave in ElementInternals form submission; chose to omit disabled fields from setFormValue/validity (matching native <input disabled> semantics) while keeping the field focusable/readonly per the doc's explicit 'never the native disabled attribute' instruction.
+- Input: no `keyboard` block and no overlay/composition behavior in this schema, so no Keyboard story was required — noting only because the generator's general instructions mention it for components that have one.

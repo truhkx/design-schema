@@ -15,6 +15,7 @@ component:
       type: string
       required: true
       description: 'The trigger''s label and the menu''s accessible name ("More actions", "Sort by").'
+      a11y: 'aria-label of the menu and the accessible name of its trigger.'
     items:
       type: array
       required: true

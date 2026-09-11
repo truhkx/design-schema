@@ -27,7 +27,7 @@ component:
     error:
       type: string
       description: A group-level error (cross-field validation such as "End date must be after start date"). Field-level errors stay on the fields.
-      a11y: Rendered once under the group with role=alert and linked with aria-describedby.
+      a11y: Rendered once under the group with role=alert and linked with aria-describedby; while set, the group carries aria-invalid="true" (accessibilityState invalid is not available on native, so the error text alone identifies it there).
     disabled:
       type: boolean
       default: false
@@ -93,7 +93,7 @@ Legends are short noun phrases in sentence case ("Shipping address") or, for a s
 
 ## Accessibility
 
-A native group with a name means the relationship between fields is programmatically determinable (WCAG 1.3.1) and each field's accessible context includes the group (3.3.2). Description and error are linked from the group with `aria-describedby`, and the error announces when it appears (3.3.1). No color-only signals; text meets AA in both modes.
+A native group with a name means the relationship between fields is programmatically determinable (WCAG 1.3.1) and each field's accessible context includes the group (3.3.2). Description and error are linked from the group with `aria-describedby`, the group carries `aria-invalid` while an error is set, and the error announces when it appears (3.3.1). No color-only signals; text meets AA in both modes.
 
 ## Platform notes
 

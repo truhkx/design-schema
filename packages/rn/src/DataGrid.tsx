@@ -206,6 +206,7 @@ const COPY = {
   editing: (column: string): string => `Editing ${column}. Enter to save, Escape to cancel.`,
   invalid: (message: string): string => message,
   rowCount: (count: number): string => `${count} rows`,
+  position: (row: number, column: string): string => `Row ${row}, ${column}`,
   resize: (column: string): string => `Resize ${column}`,
   loading: 'Loading',
   empty: 'Nothing to show.',
@@ -863,6 +864,10 @@ export function DataGrid({
     statusText = COPY.editing(columnByKey.get(editingCell.column)?.header ?? editingCell.column);
   } else if (effectiveSelectable === 'row' && selectedRowIds.length > 0) {
     statusText = COPY.selectedRows(selectedRowIds.length, sortedData.length);
+  } else if (effectiveSelectable === 'cell' && activeCell !== null) {
+    const activeRowIndex = sortedData.findIndex((row) => row.id === activeCell.rowId);
+    const activeColumn = columnByKey.get(activeCell.column);
+    statusText = COPY.position(activeRowIndex + 1, activeColumn?.header ?? activeCell.column);
   } else {
     statusText = COPY.rowCount(rowCount ?? sortedData.length);
   }

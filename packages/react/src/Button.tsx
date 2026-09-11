@@ -26,7 +26,8 @@ export type ButtonOverridableBinding =
   | 'fontSize'
   | 'disabledOpacity'
   | 'transition'
-  | 'loadingSpin';
+  | 'loadingSpin'
+  | 'spinnerStroke';
 
 const OVERRIDE_HOOK: Record<ButtonOverridableBinding, string> = {
   backgroundHover: '--ds-button-background-hover',
@@ -40,6 +41,7 @@ const OVERRIDE_HOOK: Record<ButtonOverridableBinding, string> = {
   disabledOpacity: '--ds-button-disabled-opacity',
   transition: '--ds-button-transition',
   loadingSpin: '--ds-button-loading-spin',
+  spinnerStroke: '--ds-button-spinner-stroke',
 };
 
 function overridesToStyle(overrides: Partial<Record<ButtonOverridableBinding, TokenRef>>): CSSProperties {

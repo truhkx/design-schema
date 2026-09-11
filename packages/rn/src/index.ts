@@ -247,7 +247,7 @@ export type {
 } from './TreeGrid';
 
 export { Tree } from './Tree';
-export type { TreeNode, TreeOverridableBinding, TreeProps, TreeSelectable } from './Tree';
+export type { TreeHeadingLevel, TreeNode, TreeOverridableBinding, TreeProps, TreeSelectable } from './Tree';
 
 export { Splitter } from './Splitter';
 export type { SplitterOrientation, SplitterOverridableBinding, SplitterProps, SplitterStackBelow } from './Splitter';

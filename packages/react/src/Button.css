@@ -19,6 +19,7 @@
   --ds-button-disabled-opacity: var(--opacity-disabled);
   --ds-button-transition: var(--motion-duration-fast);
   --ds-button-loading-spin: var(--motion-duration-loop);
+  --ds-button-spinner-stroke: var(--border-width-focus);
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -79,7 +80,7 @@
 }
 .ds-button--inverse.ds-button--ghost {
   --ds-button-foreground: var(--ds-button-inverse-foreground);
-  --ds-button-background-hover: color-mix(in srgb, var(--color-inverse-foreground) 16%, transparent);
+  --ds-button-background-hover: color-mix(in srgb, var(--color-inverse-foreground) 12%, var(--color-inverse-surface));
 }
 
 /* backgroundHover: pointer hover and pressed state, only while activatable. */
@@ -123,7 +124,7 @@
   block-size: 1em;
   flex: 0 0 auto;
   border-radius: var(--radius-full);
-  border: var(--border-width-focus) solid currentColor;
+  border: var(--ds-button-spinner-stroke) solid currentColor;
   border-inline-end-color: transparent;
 }
 

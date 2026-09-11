@@ -1,39 +1,43 @@
 import * as React from 'react';
-import { AccessibilityInfo, Animated, FlatList, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
-import type {
-  AccessibilityActionEvent,
-  ListRenderItemInfo,
-  NativeSyntheticEvent,
-  TextInputKeyPressEventData,
-  TextStyle,
-  ViewStyle,
-} from 'react-native';
+import { Animated, FlatList, PanResponder, Pressable, ScrollView, TextInput, View } from 'react-native';
+import type { AccessibilityActionEvent, ListRenderItemInfo, NativeSyntheticEvent, TextInputKeyPressEventData, TextStyle, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { BottomSheet } from './BottomSheet';
 import { Button } from './Button';
 import { Checkbox } from './Checkbox';
+import type { DataGridColumn, DataGridColumnResize } from './DataGrid';
 import { Heading } from './Heading';
 import { Icon } from './Icon';
 import { Listbox } from './Listbox';
 import { Text } from './Text';
-import type { DataGridCellSelection, DataGridColumn, DataGridSort, DataGridSortDirection } from './DataGrid';
 import { toEasing, toLineHeight, useReducedMotion, useTheme } from './theme';
 
+export type TreeGridSortDirection = 'ascending' | 'descending';
 export type TreeGridSelectable = 'none' | 'row' | 'cell';
 export type TreeGridDensity = 'compact' | 'comfortable';
 export type TreeGridHeight = 'content' | 'viewport' | 'fixed';
-export type TreeGridSortDirection = DataGridSortDirection;
-export type TreeGridSort = DataGridSort;
-export type TreeGridCellSelection = DataGridCellSelection;
-export type TreeGridSelection = string[] | TreeGridCellSelection;
 
-/** A nested record. `children: "lazy"` marks a row whose children load on first expand, through `onExpand`. */
+/** A nested record. `id` must be stable. `children: "lazy"` marks a subtree not yet loaded. */
 export interface TreeGridRow {
   id: string;
   children?: TreeGridRow[] | 'lazy';
   [key: string]: unknown;
 }
+
+/** Controlled sort state; sorts siblings within each level and keeps the hierarchy. */
+export interface TreeGridSort {
+  column: string;
+  direction: TreeGridSortDirection;
+}
+
+/** A single selected cell, in `selectable="cell"` mode. */
+export interface TreeGridCellSelection {
+  rowId: string;
+  column: string;
+}
+
+export type TreeGridSelection = string[] | TreeGridCellSelection;
 
 /** Payload of a committed edit. */
 export interface TreeGridCellChange {
@@ -51,50 +55,58 @@ export interface TreeGridProps {
   caption: string;
   /** Visually hide the caption; it remains the accessible name. */
   hideCaption?: boolean;
-  /** Column definitions. Exactly one column may be `isRowHeader`; it carries the indent and the expand button. */
+  /** DataGrid's column model. The `isRowHeader` column is required and carries the indent and expand button; it must come first after the selection column. */
   columns: DataGridColumn[];
-  /** Nested rows. */
+  /** Nested rows. `children: "lazy"` marks a row whose children load on first expand through `onExpand`. */
   data: TreeGridRow[];
   /** Controlled ids of expanded rows. */
   expanded?: string[];
-  /** Initially expanded ids. `["*"]` expands every loaded row. */
+  /** Initially expanded ids. `["*"]` expands every loaded (non-lazy) row with children. */
   defaultExpanded?: string[];
-  /** Sort applies within each level; siblings are ordered, hierarchy is kept. Fully caller-controlled — the caller re-sorts `data`. */
+  /** Controlled sort state; the caller sorts `data`. Applies within each level. */
   sort?: TreeGridSort;
+  /** Initial sort; the grid sorts `data` itself. */
+  defaultSort?: TreeGridSort;
   /** `row` adds a checkbox column and toggles rows; `cell` selects one cell. */
   selectable?: TreeGridSelectable;
-  /** Selecting a parent row selects its (loaded) descendants; the parent shows indeterminate when only some are selected. */
+  /** Controlled selected row ids (row mode). */
+  selected?: string[];
+  /** Initially selected row ids. */
+  defaultSelected?: string[];
+  /** Toggling a parent sets or clears its own id and every loaded descendant; a parent's shown state derives from its loaded descendants. */
   selectChildren?: boolean;
   /** Master switch: cells whose column is `editable` can be edited by tapping them. */
   editable?: boolean;
   /** Row height: compact suits the grid's purpose; comfortable for touch. */
   density?: TreeGridDensity;
+  /** The header stays visible while the body scrolls. Always true unless `height="content"`. */
+  stickyHeader?: boolean;
   /** `viewport` fills the height available under the header; `content` grows with rows; `fixed` uses a fixed height. */
   height?: TreeGridHeight;
   /** Data is being fetched: existing rows stay, `copy.loading` shows in the status bar. */
   loading?: boolean;
+  /** Shown when `data` is empty. Defaults to `copy.empty`. */
+  emptyMessage?: string;
   /** A footer line with row count, selection count and, while editing, the validation message. */
   showStatusBar?: boolean;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<TreeGridOverridableBinding, TokenRef>>;
   /** Fired with the new array of expanded ids. */
   onExpandChange?: (expanded: string[]) => void;
-  /** Fired when a `children: "lazy"` row is expanded for the first time, with its id; the caller loads and replaces `children`. */
-  onExpand?: (rowId: string) => void;
+  /** Fired with its id each time a row whose `children` is still `"lazy"` is expanded, so a failed load can retry. */
+  onExpand?: (id: string) => void;
   /** Fired when a sortable header is activated, with the new sort state. */
   onSortChange?: (sort: TreeGridSort) => void;
-  /** Fired with the new selection: row ids, or one cell. */
+  /** Fired with the new selection: row ids or one cell. */
   onSelectionChange?: (selection: TreeGridSelection) => void;
   /** Fired when an edit commits, with the new and previous value. The caller updates `data`. */
   onCellChange?: (change: TreeGridCellChange) => void;
+  /** Fired when an editor is about to open; return `false` to refuse editing that cell. */
+  onEditStart?: (target: TreeGridCellSelection) => boolean | void;
+  /** Fired with the column and its new width when a resizable column finishes being dragged. */
+  onColumnResize?: (resize: DataGridColumnResize) => void;
 }
 
-/**
- * `copy.*` from the component schema, used verbatim. The `select*` and status-bar
- * strings below them are not part of the schema (TreeGrid, unlike DataGrid, defines
- * no copy for selection or status text) and were authored to match DataGrid's own
- * phrasing; see the generation gap notes.
- */
 const COPY = {
   expand: (rowName: string): string => `Expand ${rowName}`,
   collapse: (rowName: string): string => `Collapse ${rowName}`,
@@ -103,17 +115,31 @@ const COPY = {
   loading: 'Loading',
   expandAll: 'Expand all',
   collapseAll: 'Collapse all',
+  sortAscending: (column: string): string => `Sort by ${column}, ascending`,
+  sortDescending: (column: string): string => `Sort by ${column}, descending`,
+  sortedAnnouncement: (column: string, direction: TreeGridSortDirection): string => `Sorted by ${column}, ${direction}`,
   selectAll: 'Select all rows',
   selectRow: (rowName: string): string => `Select ${rowName}`,
   selectedRows: (count: number, total: number): string => `${count} of ${total} rows selected`,
   editing: (column: string): string => `Editing ${column}. Enter to save, Escape to cancel.`,
+  invalid: (message: string): string => message,
   rowCount: (count: number): string => `${count} rows`,
+  position: (row: number, column: string): string => `Row ${row}, ${column}`,
+  resize: (column: string): string => `Resize ${column}`,
   empty: 'Nothing to show.',
   scrollHint: 'Scroll sideways to see more columns',
 } as const;
 
-/** Visually clips content to 1x1 while keeping it in the accessibility tree, for live-region announcements. */
 const HIDDEN_STYLE: ViewStyle = { position: 'absolute', width: 1, height: 1, overflow: 'hidden' };
+
+/** One row in the flattened, virtualizable visible-row list; collapsed subtrees never appear here. */
+interface FlatRow {
+  key: string;
+  level: number;
+  hasChildren: boolean;
+  loading?: boolean;
+  row?: TreeGridRow;
+}
 
 function cellValue(row: TreeGridRow, key: string): string {
   const raw = row[key];
@@ -135,28 +161,57 @@ function compareRows(a: TreeGridRow, b: TreeGridRow, column: string, direction: 
   return (an - bn) * factor;
 }
 
-/** Sorts siblings within each level, recursively, keeping the hierarchy intact. */
-function sortTree(rows: TreeGridRow[], sort: TreeGridSort | undefined): TreeGridRow[] {
-  if (sort === undefined) {
-    return rows;
-  }
+function sortTree(rows: TreeGridRow[], sort: TreeGridSort): TreeGridRow[] {
   const sorted = [...rows].sort((a, b) => compareRows(a, b, sort.column, sort.direction));
-  return sorted.map((row) => (row.children !== undefined && row.children !== 'lazy' ? { ...row, children: sortTree(row.children, sort) } : row));
+  return sorted.map((row) => (Array.isArray(row.children) ? { ...row, children: sortTree(row.children, sort) } : row));
 }
 
-function collectAllIds(rows: TreeGridRow[]): string[] {
+function rowHasChildren(row: TreeGridRow): boolean {
+  return row.children === 'lazy' || (Array.isArray(row.children) && row.children.length > 0);
+}
+
+function flattenTree(rows: TreeGridRow[], expandedSet: Set<string>, level: number): FlatRow[] {
+  const out: FlatRow[] = [];
+  for (const row of rows) {
+    const hasChildren = rowHasChildren(row);
+    out.push({ key: row.id, level, hasChildren, row });
+    if (hasChildren && expandedSet.has(row.id)) {
+      if (row.children === 'lazy') {
+        out.push({ key: `${row.id}::loading`, level: level + 1, hasChildren: false, loading: true });
+      } else if (Array.isArray(row.children)) {
+        out.push(...flattenTree(row.children, expandedSet, level + 1));
+      }
+    }
+  }
+  return out;
+}
+
+/** Every row that has loaded (array) children, at any depth — used for `["*"]` and expand-all. */
+function collectExpandableIds(rows: TreeGridRow[]): string[] {
+  const ids: string[] = [];
+  for (const row of rows) {
+    if (Array.isArray(row.children) && row.children.length > 0) {
+      ids.push(row.id);
+      ids.push(...collectExpandableIds(row.children));
+    }
+  }
+  return ids;
+}
+
+/** Every loaded row id at any depth — used by select-all. */
+function collectAllLoadedIds(rows: TreeGridRow[]): string[] {
   const ids: string[] = [];
   for (const row of rows) {
     ids.push(row.id);
-    if (row.children !== undefined && row.children !== 'lazy') {
-      ids.push(...collectAllIds(row.children));
+    if (Array.isArray(row.children)) {
+      ids.push(...collectAllLoadedIds(row.children));
     }
   }
   return ids;
 }
 
 function collectLoadedDescendantIds(row: TreeGridRow): string[] {
-  if (row.children === undefined || row.children === 'lazy') {
+  if (!Array.isArray(row.children)) {
     return [];
   }
   const ids: string[] = [];
@@ -167,116 +222,138 @@ function collectLoadedDescendantIds(row: TreeGridRow): string[] {
   return ids;
 }
 
-interface TreeGridVisibleRow {
-  key: string;
-  row: TreeGridRow;
-  level: number;
-  hasChildren: boolean;
-  isExpanded: boolean;
-  placeholder: boolean;
-}
+type CheckState = 'checked' | 'unchecked' | 'indeterminate';
 
-/** Flattens the tree into the visible-row list: what gets rendered, virtualized and counted. Collapsed descendants are not rendered at all. */
-function flattenTree(rows: TreeGridRow[], expandedSet: Set<string>, level: number): TreeGridVisibleRow[] {
-  const result: TreeGridVisibleRow[] = [];
-  for (const row of rows) {
-    const hasChildren = row.children !== undefined && (row.children === 'lazy' || row.children.length > 0);
-    const isExpanded = hasChildren && expandedSet.has(row.id);
-    result.push({ key: row.id, row, level, hasChildren, isExpanded, placeholder: false });
-    if (isExpanded) {
-      if (row.children === 'lazy') {
-        result.push({ key: `${row.id}::loading`, row: { id: `${row.id}::loading` }, level: level + 1, hasChildren: false, isExpanded: false, placeholder: true });
-      } else if (row.children !== undefined) {
-        result.push(...flattenTree(row.children, expandedSet, level + 1));
-      }
-    }
+function computeRowCheckState(row: TreeGridRow, selectedSet: Set<string>): CheckState {
+  const descendantIds = collectLoadedDescendantIds(row);
+  if (descendantIds.length === 0) {
+    return selectedSet.has(row.id) ? 'checked' : 'unchecked';
   }
-  return result;
+  if (descendantIds.every((id) => selectedSet.has(id))) {
+    return 'checked';
+  }
+  if (descendantIds.every((id) => !selectedSet.has(id))) {
+    return selectedSet.has(row.id) ? 'checked' : 'unchecked';
+  }
+  return 'indeterminate';
 }
 
-interface TreeGridExpandButtonProps {
+interface TreeGridChevronProps {
   expanded: boolean;
-  label: string;
-  transitionDuration: number;
   color: string;
-  onPress: () => void;
+  duration: number;
+  easing: readonly number[];
 }
 
-/** The expand/collapse control for a row header. Its own component so the chevron rotation can hold an `Animated.Value` per row. */
-function TreeGridExpandButton({ expanded, label, transitionDuration, color, onPress }: TreeGridExpandButtonProps): React.JSX.Element {
-  const { tokens: t } = useTheme();
+/** The row header's expand control, rotating a chevron over `transition`, skipped under reduced motion. */
+function TreeGridChevron({ expanded, color, duration, easing }: TreeGridChevronProps): React.JSX.Element {
   const reducedMotion = useReducedMotion();
-  const rotation = React.useRef(new Animated.Value(expanded ? 1 : 0)).current;
+  const rotate = React.useRef(new Animated.Value(expanded ? 1 : 0)).current;
 
   React.useEffect(() => {
     const toValue = expanded ? 1 : 0;
     if (reducedMotion) {
-      rotation.setValue(toValue);
+      rotate.setValue(toValue);
       return;
     }
-    Animated.timing(rotation, {
-      toValue,
-      duration: transitionDuration,
-      easing: toEasing(t.motionEasingStandard),
-      useNativeDriver: false,
-    }).start();
-  }, [expanded, reducedMotion, rotation, transitionDuration, t.motionEasingStandard]);
+    Animated.timing(rotate, { toValue, duration, easing: toEasing(easing), useNativeDriver: false }).start();
+  }, [expanded, reducedMotion, rotate, duration, easing]);
 
-  const rotate = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '90deg'] });
+  const style: Animated.WithAnimatedObject<ViewStyle> = {
+    transform: [{ rotate: rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '90deg'] }) }],
+  };
 
   return (
-    <Button
-      label={label}
-      variant="ghost"
-      size="sm"
-      iconOnly
-      leadingIcon={
-        <Animated.View style={{ transform: [{ rotate }] }}>
-          <Icon name="chevron-right" inline color={color} />
-        </Animated.View>
-      }
-      onPress={onPress}
+    <Animated.View style={style}>
+      <Icon name="chevron-right" size="sm" color={color} />
+    </Animated.View>
+  );
+}
+
+interface TreeGridResizeHandleProps {
+  width: number;
+  minWidth: number;
+  color: string;
+  handleWidth: number;
+  label: string;
+  onResize: (width: number) => void;
+  onResizeEnd: (width: number) => void;
+}
+
+/** The draggable edge of a resizable column header, built on core `PanResponder` (the package permits no gesture-handler dependency). */
+function TreeGridResizeHandle({ width, minWidth, color, handleWidth, label, onResize, onResizeEnd }: TreeGridResizeHandleProps): React.JSX.Element {
+  const widthRef = React.useRef(width);
+  widthRef.current = width;
+  const startWidthRef = React.useRef(width);
+
+  const responder = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        startWidthRef.current = widthRef.current;
+      },
+      onPanResponderMove: (_event, gesture) => {
+        onResize(Math.max(minWidth, startWidthRef.current + gesture.dx));
+      },
+      onPanResponderRelease: () => onResizeEnd(widthRef.current),
+      onPanResponderTerminate: () => onResizeEnd(widthRef.current),
+    }),
+  ).current;
+
+  return (
+    <View
+      {...responder.panHandlers}
+      role="separator"
+      accessibilityRole="adjustable"
+      accessibilityLabel={label}
+      style={{ width: handleWidth, alignSelf: 'stretch', backgroundColor: color }}
+      testID="TreeGrid.resizeHandle"
     />
   );
 }
 
 /**
- * TreeGrid — a DataGrid whose rows nest. The hierarchy lives in the row-header
- * column (indent, a chevron, a level announced to assistive technology); every
- * other concern — columns, cell navigation, editors, selection, virtualization —
- * matches DataGrid. Collapsing a parent removes its descendants from the visible
- * list, which is also the virtualized `FlatList` list, so deep or wide trees stay
- * cheap until opened.
+ * TreeGrid — a DataGrid whose rows nest, the hierarchy carried entirely in the row
+ * header column (indent, an expand control, an announced level) while every other
+ * column, cell and interaction behaves as DataGrid.
  *
- * When to use: records that nest and carry several comparable fields per record —
- * a chart of accounts, folders and files, a bill of materials. Use `children:
- * "lazy"` on a row to defer loading its children until first expand. Use
- * `selectChildren` when selecting a row means "this and everything in it".
+ * When to use: Use a TreeGrid when records nest and each has several comparable
+ * fields — a chart of accounts with balances, a bill of materials with quantities.
+ * Use `children: "lazy"` for deep or large trees so the first paint is fast, and
+ * `selectChildren` when selecting a row means "this and everything in it." Do not
+ * use it for a hierarchy with one field per node (Tree) or flat data (DataGrid).
  *
- * There is no `treegrid` element on native. Renders a caption (`Heading`, or
- * hidden when `hideCaption` — the horizontal `ScrollView` region keeps
- * `accessibilityLabel={caption}` regardless, so the accessible name survives),
- * then that `ScrollView` around a `FlatList` (`role="grid"`) over the
- * flattened visible rows, with a fixed `getItemLayout` from `density`'s row-height
- * token. Each row header `Pressable` carries `accessibilityState={{ expanded }}`
- * when it has children, an `accessibilityLabel` combining `copy.level` and
- * `copy.childCount`, and its own `expand`/`collapse` `accessibilityActions` —
- * the visible expand `Button` (chevron rotated over `transition`, skipped under
- * reduced motion) is a real touch target since there are no hardware arrow keys.
- * Indent is padding reserved per level; a vertical guide line is drawn for every
- * open ancestor, aligned with that ancestor's expand button, so deep trees stay
- * legible. A `"lazy"` row shows one placeholder child row in `copy.loading` (and
- * fires `onExpand`) until the caller replaces its `children`.
+ * There is no grid element on native, so this follows DataGrid's own approximation:
+ * a caption (`Heading`, or hidden when `hideCaption`, though the caption always
+ * remains the accessible name via `accessibilityLabel`), a horizontal `ScrollView`
+ * (`role="grid"`) containing a `FlatList` over the rows visible after collapsing —
+ * collapsed subtrees are simply absent from that list, which is also what gets
+ * virtualized, so a large collapsed tree costs nothing. The root view exposes
+ * `expandAll`/`collapseAll` accessibility actions named from `copy` (there being no
+ * hardware `*` key on a touchscreen); each row header cell carries
+ * `accessibilityState.expanded` when it has children, an accessibilityLabel of
+ * "{name}, {copy.level}, {copy.childCount}" (the only place those two copy strings
+ * are used, since the web platform relies on `aria-level`/`aria-setsize` instead),
+ * and its own `expand`/`collapse` accessibility actions; a real, minimum-target
+ * `Button` (rotating chevron) sits alongside it as a pointer/touch control, since
+ * there are no arrow keys to fall back on. Indent is `space.5` per level as leading
+ * padding; one full-height guide line per ancestor level is drawn beside it. A
+ * `"lazy"` row fires `onExpand` on every expand while still lazy (so a failed load
+ * can retry) and shows one placeholder child row reading `copy.loading` until the
+ * caller replaces `children`.
  *
- * Sorting (`sort`) is fully caller-controlled — there is no uncontrolled default —
- * and is applied recursively within each level so the hierarchy survives.
- * `selectable="row"` adds a `Checkbox` select column; with `selectChildren` it
- * cascades to loaded descendants and shows indeterminate on a partly-selected
- * parent. `"cell"` tracks one active cell. Editing (`text`/`number`/`date` via an
- * inline `TextInput`, `checkbox` live, `select` through a `BottomSheet` +
- * `Listbox`) matches DataGrid. The status bar doubles as the polite live region
- * for loading, editing and selection state; sort changes get their own hidden
- * live region.
+ * Sorting orders siblings within each level and keeps the hierarchy; a controlled
+ * `sort` leaves ordering to the caller, otherwise the grid sorts `data` itself from
+ * `defaultSort`. `selectable="row"` adds a `Checkbox` column; with `selectChildren`,
+ * toggling a parent sets or clears itself and every loaded descendant, and a
+ * parent's shown state (checked/indeterminate) is derived live from its loaded
+ * descendants each render rather than only from its own stored id. `selectable="cell"`
+ * tracks one active cell. `editable` columns open the same editors as DataGrid:
+ * `checkbox` commits immediately, `select` opens a `BottomSheet` `Listbox`, `text`/
+ * `number`/`date` open an inline `TextInput` committing on blur or hardware Enter
+ * and cancelling on hardware Escape. The status bar doubles as the polite live
+ * region for loading, editing and selection state; sort changes get their own
+ * hidden live region.
  */
 export function TreeGrid({
   caption,
@@ -286,12 +363,17 @@ export function TreeGrid({
   expanded,
   defaultExpanded,
   sort,
+  defaultSort,
   selectable = 'none',
+  selected,
+  defaultSelected,
   selectChildren = false,
   editable = false,
   density = 'compact',
+  stickyHeader = true,
   height = 'viewport',
   loading = false,
+  emptyMessage,
   showStatusBar = true,
   overrides,
   onExpandChange,
@@ -299,26 +381,57 @@ export function TreeGrid({
   onSortChange,
   onSelectionChange,
   onCellChange,
+  onEditStart,
+  onColumnResize,
 }: TreeGridProps): React.JSX.Element {
   const { tokens: t } = useTheme();
 
-  // ---- tokens ----
+  // ---- sort ----
 
-  const indentValue = overrides?.indent ? (resolveToken(t, overrides.indent) as number) : t.space5;
-  const expandButtonSizeValue = overrides?.expandButtonSize ? (resolveToken(t, overrides.expandButtonSize) as number) : t.sizeTargetMin;
-  const expandGapValue = overrides?.expandGap ? (resolveToken(t, overrides.expandGap) as number) : t.layoutGapTight;
-  const guideLineColor = overrides?.guideLine ? (resolveToken(t, overrides.guideLine) as string) : t.colorBorder;
-  const guideLineWidthValue = overrides?.guideLineWidth ? (resolveToken(t, overrides.guideLineWidth) as number) : t.borderWidthThin;
-  const parentWeightRef: TokenRef = overrides?.parentWeight ?? ('font.weight.medium' as TokenRef);
-  const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
+  const [internalSort, setInternalSort] = React.useState<TreeGridSort | undefined>(defaultSort);
+  const activeSort = sort ?? internalSort;
 
-  const activeRowHeight = density === 'compact' ? t.sizeTargetMin : t.sizeTargetComfortable;
-  const fixedHeightValue = t.space20;
+  const sortedData = React.useMemo(() => {
+    if (sort !== undefined || internalSort === undefined) {
+      return data;
+    }
+    return sortTree(data, internalSort);
+  }, [data, sort, internalSort]);
+
+  const commitSort = (next: TreeGridSort): void => {
+    if (sort === undefined) {
+      setInternalSort(next);
+    }
+    onSortChange?.(next);
+  };
+
+  const handleSort = (columnKey: string): void => {
+    const next: TreeGridSort =
+      activeSort?.column === columnKey
+        ? { column: columnKey, direction: activeSort.direction === 'ascending' ? 'descending' : 'ascending' }
+        : { column: columnKey, direction: 'ascending' };
+    commitSort(next);
+  };
+
+  const [sortAnnouncement, setSortAnnouncement] = React.useState('');
+  const columnByKey = React.useMemo(() => new Map(columns.map((c) => [c.key, c] as const)), [columns]);
+  const isFirstSort = React.useRef(true);
+  React.useEffect(() => {
+    if (isFirstSort.current) {
+      isFirstSort.current = false;
+      return;
+    }
+    if (activeSort === undefined) {
+      return;
+    }
+    setSortAnnouncement(COPY.sortedAnnouncement(columnByKey.get(activeSort.column)?.header ?? activeSort.column, activeSort.direction));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSort?.column, activeSort?.direction]);
 
   // ---- expansion ----
 
   const [internalExpanded, setInternalExpanded] = React.useState<string[]>(() =>
-    defaultExpanded?.includes('*') ? collectAllIds(data) : (defaultExpanded ?? []),
+    defaultExpanded?.includes('*') ? collectExpandableIds(data) : (defaultExpanded ?? []),
   );
   const expandedIds = expanded ?? internalExpanded;
   const expandedSet = React.useMemo(() => new Set(expandedIds), [expandedIds]);
@@ -331,121 +444,52 @@ export function TreeGrid({
   };
 
   const toggleExpand = (row: TreeGridRow): void => {
-    const isExpandedNow = expandedSet.has(row.id);
-    const next = isExpandedNow ? expandedIds.filter((id) => id !== row.id) : [...expandedIds, row.id];
-    commitExpanded(next);
-    if (!isExpandedNow && row.children === 'lazy') {
+    const isExpanded = expandedSet.has(row.id);
+    if (!isExpanded && row.children === 'lazy') {
       onExpand?.(row.id);
     }
+    commitExpanded(isExpanded ? expandedIds.filter((id) => id !== row.id) : [...expandedIds, row.id]);
   };
-
-  const allRowIds = React.useMemo(() => collectAllIds(data), [data]);
-  const expandAll = (): void => commitExpanded(allRowIds);
-  const collapseAll = (): void => commitExpanded([]);
-
-  const handleRootAccessibilityAction = (event: AccessibilityActionEvent): void => {
-    if (event.nativeEvent.actionName === 'expandAll') {
-      expandAll();
-    } else if (event.nativeEvent.actionName === 'collapseAll') {
-      collapseAll();
-    }
-  };
-
-  // ---- sort ----
-
-  React.useEffect(() => {
-    if (__DEV__ && columns.some((c) => c.resizable === true)) {
-      // eslint-disable-next-line no-console
-      console.warn('TreeGrid: `column.resizable` has no drag-resize implementation on React Native — the schema defines no `onColumnResize` event for this component — so columns render at a fixed width.');
-    }
-  }, [columns]);
-
-  const [sortAnnouncement, setSortAnnouncement] = React.useState('');
-  const isFirstSort = React.useRef(true);
-  React.useEffect(() => {
-    if (isFirstSort.current) {
-      isFirstSort.current = false;
-      return;
-    }
-    if (sort === undefined) {
-      return;
-    }
-    const column = columns.find((c) => c.key === sort.column);
-    const message = `Sorted by ${column?.header ?? sort.column}, ${sort.direction}`;
-    setSortAnnouncement(message);
-    if (Platform.OS === 'ios') {
-      AccessibilityInfo.announceForAccessibility(message);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sort?.column, sort?.direction]);
-
-  const handleSort = (columnKey: string): void => {
-    const next: TreeGridSort =
-      sort?.column === columnKey ? { column: columnKey, direction: sort.direction === 'ascending' ? 'descending' : 'ascending' } : { column: columnKey, direction: 'ascending' };
-    onSortChange?.(next);
-  };
-
-  const sortedData = React.useMemo(() => sortTree(data, sort), [data, sort]);
-  const visibleRows = React.useMemo(() => flattenTree(sortedData, expandedSet, 1), [sortedData, expandedSet]);
-  const rowById = React.useMemo(() => new Map(visibleRows.filter((v) => !v.placeholder).map((v) => [v.row.id, v.row] as const)), [visibleRows]);
-
-  // ---- columns ----
-
-  const rowHeaderColumn = columns.find((c) => c.isRowHeader === true) ?? null;
-  const orderedColumns = React.useMemo(() => {
-    const pinnedStart = columns.filter((c) => c.pinned === 'start');
-    const pinnedEnd = columns.filter((c) => c.pinned === 'end');
-    const middle = columns.filter((c) => c.pinned !== 'start' && c.pinned !== 'end');
-    return [...pinnedStart, ...middle, ...pinnedEnd];
-  }, [columns]);
-
-  const widthFor = (column: DataGridColumn): number => column.width ?? column.minWidth ?? t.space20;
-  const rowName = (row: TreeGridRow): string => (rowHeaderColumn ? cellValue(row, rowHeaderColumn.key) || row.id : row.id);
 
   // ---- selection ----
 
   const effectiveSelectable = selectable;
-  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
-  const selectedSet = React.useMemo(() => new Set(selectedIds), [selectedIds]);
-  const [activeCell, setActiveCell] = React.useState<TreeGridCellSelection | null>(null);
+  const [internalSelectedRows, setInternalSelectedRows] = React.useState<string[]>(defaultSelected ?? []);
+  const selectedRowIds = selected ?? internalSelectedRows;
+  const selectedSet = React.useMemo(() => new Set(selectedRowIds), [selectedRowIds]);
 
-  const commitSelection = (next: string[]): void => {
-    setSelectedIds(next);
+  const [activeCell, setActiveCell] = React.useState<TreeGridCellSelection | null>(null);
+  const [focusedCellKey, setFocusedCellKey] = React.useState<string | null>(null);
+
+  const commitRowSelection = (next: string[]): void => {
+    if (selected === undefined) {
+      setInternalSelectedRows(next);
+    }
     onSelectionChange?.(next);
   };
 
-  const toggleRowSelection = (row: TreeGridRow): void => {
+  const toggleRow = (row: TreeGridRow): void => {
+    if (selectChildren) {
+      const ids = [row.id, ...collectLoadedDescendantIds(row)];
+      const checked = computeRowCheckState(row, selectedSet) === 'checked';
+      const next = new Set(selectedSet);
+      ids.forEach((id) => (checked ? next.delete(id) : next.add(id)));
+      commitRowSelection(Array.from(next));
+      return;
+    }
     const next = new Set(selectedSet);
-    const ids = selectChildren ? [row.id, ...collectLoadedDescendantIds(row)] : [row.id];
-    const willSelect = !next.has(row.id);
-    ids.forEach((id) => {
-      if (willSelect) {
-        next.add(id);
-      } else {
-        next.delete(id);
-      }
-    });
-    commitSelection(Array.from(next));
+    if (next.has(row.id)) {
+      next.delete(row.id);
+    } else {
+      next.add(row.id);
+    }
+    commitRowSelection(Array.from(next));
   };
 
-  const rowCheckState = (row: TreeGridRow, hasChildren: boolean): { checked: boolean; indeterminate: boolean } => {
-    const isSelected = selectedSet.has(row.id);
-    if (!selectChildren || !hasChildren) {
-      return { checked: isSelected, indeterminate: false };
-    }
-    const descendantIds = collectLoadedDescendantIds(row);
-    if (descendantIds.length === 0) {
-      return { checked: isSelected, indeterminate: false };
-    }
-    const selectedDescendants = descendantIds.filter((id) => selectedSet.has(id)).length;
-    const allSelected = isSelected && selectedDescendants === descendantIds.length;
-    const someSelected = isSelected || selectedDescendants > 0;
-    return { checked: allSelected, indeterminate: !allSelected && someSelected };
-  };
-
-  const allSelected = allRowIds.length > 0 && allRowIds.every((id) => selectedSet.has(id));
-  const someRowsSelected = !allSelected && allRowIds.some((id) => selectedSet.has(id));
-  const toggleAll = (): void => commitSelection(allSelected ? [] : allRowIds);
+  const allLoadedIds = React.useMemo(() => collectAllLoadedIds(sortedData), [sortedData]);
+  const allSelected = allLoadedIds.length > 0 && allLoadedIds.every((id) => selectedSet.has(id));
+  const someSelected = !allSelected && allLoadedIds.some((id) => selectedSet.has(id));
+  const toggleAll = (): void => commitRowSelection(allSelected ? [] : allLoadedIds);
 
   const selectCellTarget = (rowId: string, column: string): void => {
     const next: TreeGridCellSelection = { rowId, column };
@@ -453,16 +497,22 @@ export function TreeGrid({
     onSelectionChange?.(next);
   };
 
+  const rowHeaderColumn = columns.find((c) => c.isRowHeader === true) ?? null;
+  const rowName = (row: TreeGridRow): string => (rowHeaderColumn ? cellValue(row, rowHeaderColumn.key) || row.id : row.id);
+
   // ---- editing ----
 
   const [editingCell, setEditingCell] = React.useState<TreeGridCellSelection | null>(null);
   const [editingValue, setEditingValue] = React.useState('');
   const [editingError, setEditingError] = React.useState<string | undefined>(undefined);
   const [selectEditorTarget, setSelectEditorTarget] = React.useState<TreeGridCellSelection | null>(null);
-  const [focusedCellKey, setFocusedCellKey] = React.useState<string | null>(null);
 
   const startEdit = (row: TreeGridRow, column: DataGridColumn): void => {
     if (!editable || column.editable !== true) {
+      return;
+    }
+    const allowed = onEditStart?.({ rowId: row.id, column: column.key });
+    if (allowed === false) {
       return;
     }
     if (column.editor === 'checkbox') {
@@ -482,9 +532,6 @@ export function TreeGrid({
     const validationError = column.validate?.(value, row);
     if (validationError !== undefined) {
       setEditingError(validationError);
-      if (Platform.OS === 'ios') {
-        AccessibilityInfo.announceForAccessibility(validationError);
-      }
       return;
     }
     const previous = row[column.key];
@@ -499,14 +546,134 @@ export function TreeGrid({
     setEditingError(undefined);
   };
 
+  // ---- tokens ----
+
+  const gridLineColor = t.colorBorder;
+  const gridLineWidth = t.borderWidthThin;
+  const headerBorderColor = t.colorBorderStrong;
+  const headerBorderWidth = t.borderWidthThin;
+  const cellPaddingInline = t.space2;
+  const cellFocusRingWidth = t.borderWidthFocus;
+  const rowHeightValue = t.sizeTargetMin;
+  const rowHeightComfortableValue = t.sizeTargetComfortable;
+  const activeRowHeight = density === 'compact' ? rowHeightValue : rowHeightComfortableValue;
+  const fixedHeightValue = t.space20;
+
+  const indentSize = overrides?.indent ? (resolveToken(t, overrides.indent) as number) : t.space5;
+  const expandButtonSize = overrides?.expandButtonSize ? (resolveToken(t, overrides.expandButtonSize) as number) : t.sizeTargetMin;
+  const expandGap = overrides?.expandGap ? (resolveToken(t, overrides.expandGap) as number) : t.layoutGapTight;
+  const guideLineColor = overrides?.guideLine ? (resolveToken(t, overrides.guideLine) as string) : t.colorBorder;
+  const guideLineWidth = overrides?.guideLineWidth ? (resolveToken(t, overrides.guideLineWidth) as number) : t.borderWidthThin;
+  const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
+  const parentWeightRef = overrides?.parentWeight ?? ('font.weight.medium' as TokenRef);
+
+  const widthFor = (column: DataGridColumn): number => columnWidths[column.key] ?? column.width ?? column.minWidth ?? t.space20;
+  const minWidthFor = (column: DataGridColumn): number => column.minWidth ?? t.sizeTargetMin;
+
+  const [columnWidths, setColumnWidths] = React.useState<Record<string, number>>({});
+
+  const orderedColumns = React.useMemo(() => {
+    const pinnedStart = columns.filter((c) => c.pinned === 'start');
+    const pinnedEnd = columns.filter((c) => c.pinned === 'end');
+    const middle = columns.filter((c) => c.pinned !== 'start' && c.pinned !== 'end');
+    return [...pinnedStart, ...middle, ...pinnedEnd];
+  }, [columns]);
+
+  const flatRows = React.useMemo(() => flattenTree(sortedData, expandedSet, 1), [sortedData, expandedSet]);
+  const visibleRowCount = flatRows.filter((r) => !r.loading).length;
+
+  const selectCellStyle: ViewStyle = { width: t.sizeTargetComfortable, alignItems: 'center', justifyContent: 'center' };
+
+  const showEmpty = flatRows.length === 0;
+  const emptyText = loading && showEmpty ? COPY.loading : (emptyMessage ?? COPY.empty);
+
+  // ---- header ----
+
+  const stickyHeaderEffective = height === 'content' ? stickyHeader : true;
+
+  const renderColumnHeader = (column: DataGridColumn): React.JSX.Element => {
+    const width = widthFor(column);
+    const isSorted = activeSort?.column === column.key;
+    const headerCellStyle: ViewStyle = {
+      width,
+      paddingHorizontal: cellPaddingInline,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderRightWidth: gridLineWidth,
+      borderRightColor: gridLineColor,
+      backgroundColor: t.colorBackgroundSubtle,
+    };
+
+    return (
+      <View key={column.key} style={headerCellStyle} role="columnheader" accessibilityRole="header" testID="TreeGrid.columnHeader">
+        {column.sortable ? (
+          <View style={{ flex: 1 }} testID="TreeGrid.sortButton">
+            <Button
+              label={column.abbr ?? column.header}
+              variant="ghost"
+              size="sm"
+              trailingIcon={
+                isSorted ? <Icon name={activeSort.direction === 'ascending' ? 'chevron-up' : 'chevron-down'} inline color={t.colorForeground} /> : undefined
+              }
+              onPress={() => handleSort(column.key)}
+            />
+            {isSorted ? (
+              <View style={HIDDEN_STYLE}>
+                <Text>{activeSort.direction === 'ascending' ? COPY.sortAscending(column.header) : COPY.sortDescending(column.header)}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <Text size="sm" weight="semibold" truncate>
+            {column.header}
+          </Text>
+        )}
+        {column.resizable ? (
+          <TreeGridResizeHandle
+            width={width}
+            minWidth={minWidthFor(column)}
+            color={t.colorBorderStrong}
+            handleWidth={t.space1}
+            label={COPY.resize(column.header)}
+            onResize={(next) => setColumnWidths((prev) => ({ ...prev, [column.key]: next }))}
+            onResizeEnd={(next) => onColumnResize?.({ column: column.key, width: next })}
+          />
+        ) : null}
+      </View>
+    );
+  };
+
+  const headerRowStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    backgroundColor: t.colorBackgroundSubtle,
+    borderBottomWidth: headerBorderWidth,
+    borderBottomColor: headerBorderColor,
+  };
+
+  const renderHeader = (): React.JSX.Element => (
+    <View role="rowgroup" testID="TreeGrid.header">
+      <View style={headerRowStyle} role="row" testID="TreeGrid.headerRow">
+        {effectiveSelectable === 'row' ? (
+          <View style={selectCellStyle} testID="TreeGrid.selectAllCell">
+            <Checkbox label={COPY.selectAll} name="tree-grid-select-all" checked={allSelected} indeterminate={someSelected} onChange={toggleAll} />
+          </View>
+        ) : null}
+        {orderedColumns.map((column) => renderColumnHeader(column))}
+      </View>
+    </View>
+  );
+
+  // ---- body ----
+
   const renderEditor = (row: TreeGridRow, column: DataGridColumn): React.JSX.Element => {
-    const editorFontSize = t.fontSizeSm;
     const editorStyle: TextStyle = {
       minHeight: t.sizeTargetMin,
       color: t.colorForeground,
       fontFamily: column.editor === 'number' ? t.fontFamilyMono : t.fontFamilyBody,
-      fontSize: editorFontSize,
-      lineHeight: toLineHeight(editorFontSize, t.fontLineHeightTight),
+      fontSize: t.fontSizeSm,
+      lineHeight: toLineHeight(t.fontSizeSm, t.fontLineHeightTight),
       paddingVertical: t.space1,
     };
 
@@ -534,14 +701,9 @@ export function TreeGrid({
     );
   };
 
-  // ---- cells ----
-
-  const selectCellStyle: ViewStyle = { width: t.sizeTargetComfortable, alignItems: 'center', justifyContent: 'center' };
-
-  const renderCell = (visible: TreeGridVisibleRow, column: DataGridColumn): React.JSX.Element => {
-    const { row, level, hasChildren, isExpanded } = visible;
+  const renderDataCell = (flatRow: FlatRow, column: DataGridColumn): React.JSX.Element => {
+    const row = flatRow.row as TreeGridRow;
     const width = widthFor(column);
-    const isRowHeaderCol = column.isRowHeader === true;
     const isEditingThis = editingCell !== null && editingCell.rowId === row.id && editingCell.column === column.key;
     const cellKey = `${row.id}:${column.key}`;
     const isFocused = focusedCellKey === cellKey;
@@ -549,21 +711,19 @@ export function TreeGrid({
     const hasError = isEditingThis && editingError !== undefined;
     const canEdit = editable && column.editable === true;
     const isCheckboxEditor = canEdit && column.editor === 'checkbox';
-    const name = rowName(row);
 
     const cellOuterStyle: ViewStyle = {
       width,
-      paddingHorizontal: t.space2,
+      paddingHorizontal: cellPaddingInline,
       justifyContent: 'center',
-      borderRightWidth: t.borderWidthThin,
-      borderRightColor: t.colorBorder,
+      borderRightWidth: gridLineWidth,
+      borderRightColor: gridLineColor,
       backgroundColor: hasError ? t.colorStatusDangerBackground : isEditingThis ? t.colorControlBackground : isCellSelected ? t.colorBackgroundSubtle : 'transparent',
-      borderWidth: isFocused ? t.borderWidthFocus : hasError ? t.borderWidthThin : 0,
+      borderWidth: isFocused ? cellFocusRingWidth : hasError ? gridLineWidth : 0,
       borderColor: isFocused ? t.colorBorderFocus : hasError ? t.colorBorderDanger : 'transparent',
     };
 
     let content: React.ReactNode;
-
     if (isEditingThis) {
       content = renderEditor(row, column);
     } else if (isCheckboxEditor) {
@@ -575,37 +735,6 @@ export function TreeGrid({
           onChange={(next) => commitEdit(row, column, next)}
         />
       );
-    } else if (isRowHeaderCol) {
-      const guideOffsets = Array.from({ length: level - 1 }, (_, i) => indentValue * i + expandButtonSizeValue / 2);
-      const indentContainerWidth = indentValue * (level - 1) + expandButtonSizeValue;
-      content = (
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ width: indentContainerWidth, height: activeRowHeight }}>
-            {guideOffsets.map((offset) => (
-              <View
-                key={offset}
-                style={{ position: 'absolute', left: offset, top: 0, bottom: 0, width: guideLineWidthValue, backgroundColor: guideLineColor }}
-                testID="TreeGrid.indent"
-              />
-            ))}
-            {hasChildren ? (
-              <View style={{ position: 'absolute', left: indentValue * (level - 1), top: 0, bottom: 0, justifyContent: 'center' }}>
-                <TreeGridExpandButton
-                  expanded={isExpanded}
-                  label={isExpanded ? COPY.collapse(name) : COPY.expand(name)}
-                  transitionDuration={transitionDuration}
-                  color={t.colorForeground}
-                  onPress={() => toggleExpand(row)}
-                />
-              </View>
-            ) : null}
-          </View>
-          <View style={{ width: expandGapValue }} />
-          <Text size="sm" truncate overrides={hasChildren ? { fontWeight: parentWeightRef } : undefined}>
-            {name}
-          </Text>
-        </View>
-      );
     } else if (column.render) {
       content = column.render(row);
     } else {
@@ -616,24 +745,13 @@ export function TreeGrid({
       );
     }
 
-    const testId = isRowHeaderCol ? 'TreeGrid.rowHeader' : 'TreeGrid.cell';
-    const role = isRowHeaderCol ? 'rowheader' : 'cell';
-
     if (isEditingThis || isCheckboxEditor) {
       return (
-        <View key={column.key} style={cellOuterStyle} role={role} testID={testId}>
+        <View key={column.key} style={cellOuterStyle} role="cell" testID="TreeGrid.cell">
           {content}
         </View>
       );
     }
-
-    const handleAccessibilityAction = (event: AccessibilityActionEvent): void => {
-      if (event.nativeEvent.actionName === 'expand' && !isExpanded) {
-        toggleExpand(row);
-      } else if (event.nativeEvent.actionName === 'collapse' && isExpanded) {
-        toggleExpand(row);
-      }
-    };
 
     return (
       <Pressable
@@ -648,50 +766,135 @@ export function TreeGrid({
         }}
         onFocus={() => setFocusedCellKey(cellKey)}
         onBlur={() => setFocusedCellKey((prev) => (prev === cellKey ? null : prev))}
-        accessibilityLabel={
-          isRowHeaderCol
-            ? hasChildren
-              ? `${name}, ${COPY.level(level)}, ${COPY.childCount(collectLoadedDescendantIds(row).length)}`
-              : `${name}, ${COPY.level(level)}`
-            : `${column.header}: ${cellValue(row, column.key)}`
-        }
+        accessibilityLabel={`${column.header}: ${cellValue(row, column.key)}`}
         accessibilityHint={canEdit ? 'double tap to edit' : undefined}
-        accessibilityState={isRowHeaderCol ? (hasChildren ? { expanded: isExpanded } : undefined) : isCellSelected ? { selected: true } : undefined}
-        accessibilityActions={isRowHeaderCol && hasChildren ? [{ name: 'expand', label: COPY.expand(name) }, { name: 'collapse', label: COPY.collapse(name) }] : undefined}
-        onAccessibilityAction={isRowHeaderCol && hasChildren ? handleAccessibilityAction : undefined}
-        role={role}
-        testID={testId}
+        accessibilityState={isCellSelected ? { selected: true } : undefined}
+        role="cell"
+        testID="TreeGrid.cell"
       >
         {content}
       </Pressable>
     );
   };
 
-  const renderRow = ({ item: visible }: ListRenderItemInfo<TreeGridVisibleRow>): React.JSX.Element => {
-    if (visible.placeholder) {
-      const placeholderIndent = indentValue * (visible.level - 1) + expandButtonSizeValue + expandGapValue;
-      return (
-        <View
-          style={{ flexDirection: 'row', alignItems: 'center', minHeight: activeRowHeight, paddingLeft: placeholderIndent, borderBottomWidth: t.borderWidthThin, borderBottomColor: t.colorBorder }}
-          role="row"
-          accessibilityState={{ busy: true }}
-          testID="TreeGrid.row"
-        >
-          <Text size="sm" tone="muted">
-            {COPY.loading}
-          </Text>
-        </View>
-      );
-    }
+  const renderGuideLines = (level: number): React.JSX.Element[] =>
+    Array.from({ length: level - 1 }, (_, index) => (
+      <View key={index} style={{ width: indentSize, alignSelf: 'stretch', alignItems: 'center' }} testID="TreeGrid.indent">
+        <View style={{ width: guideLineWidth, flex: 1, backgroundColor: guideLineColor }} />
+      </View>
+    ));
 
-    const { row, hasChildren } = visible;
-    const isRowSelected = effectiveSelectable === 'row' && rowCheckState(row, hasChildren).checked;
+  const renderRowHeaderCell = (flatRow: FlatRow, column: DataGridColumn): React.JSX.Element => {
+    const row = flatRow.row as TreeGridRow;
+    const width = widthFor(column);
+    const isExpanded = expandedSet.has(row.id);
+    const isEditingThis = editingCell !== null && editingCell.rowId === row.id && editingCell.column === column.key;
+    const canEdit = editable && column.editable === true;
+    const name = rowName(row);
+    const childCount = Array.isArray(row.children) ? row.children.length : undefined;
+    const label = flatRow.hasChildren
+      ? `${name}, ${COPY.level(flatRow.level)}${childCount !== undefined ? `, ${COPY.childCount(childCount)}` : ''}`
+      : `${name}, ${COPY.level(flatRow.level)}`;
+
+    const handleAction = (event: AccessibilityActionEvent): void => {
+      if (event.nativeEvent.actionName === 'expand' && !isExpanded) {
+        toggleExpand(row);
+      } else if (event.nativeEvent.actionName === 'collapse' && isExpanded) {
+        toggleExpand(row);
+      }
+    };
+
+    const cellOuterStyle: ViewStyle = {
+      width,
+      paddingHorizontal: cellPaddingInline,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRightWidth: gridLineWidth,
+      borderRightColor: gridLineColor,
+    };
+
+    return (
+      <View
+        key={column.key}
+        style={cellOuterStyle}
+        role="rowheader"
+        accessible
+        accessibilityLabel={label}
+        accessibilityState={flatRow.hasChildren ? { expanded: isExpanded } : undefined}
+        accessibilityActions={flatRow.hasChildren ? [{ name: 'expand', label: COPY.expand(name) }, { name: 'collapse', label: COPY.collapse(name) }] : undefined}
+        onAccessibilityAction={flatRow.hasChildren ? handleAction : undefined}
+        testID="TreeGrid.rowHeader"
+      >
+        {renderGuideLines(flatRow.level)}
+        <View style={{ width: expandButtonSize, alignItems: 'center', justifyContent: 'center' }} testID="TreeGrid.expandButton">
+          {flatRow.hasChildren ? (
+            <Button
+              label={isExpanded ? COPY.collapse(name) : COPY.expand(name)}
+              variant="ghost"
+              size="sm"
+              iconOnly
+              expanded={isExpanded}
+              leadingIcon={<TreeGridChevron expanded={isExpanded} color={t.colorForeground} duration={transitionDuration} easing={t.motionEasingStandard} />}
+              onPress={() => toggleExpand(row)}
+            />
+          ) : null}
+        </View>
+        <View style={{ width: expandGap }} />
+        <View style={{ flex: 1 }} testID="TreeGrid.cellContent">
+          {isEditingThis ? (
+            renderEditor(row, column)
+          ) : canEdit ? (
+            <Pressable onPress={() => startEdit(row, column)} accessibilityHint="double tap to edit">
+              <Text size="sm" truncate overrides={flatRow.hasChildren ? { fontWeight: parentWeightRef } : undefined}>
+                {name}
+              </Text>
+            </Pressable>
+          ) : (
+            <Text size="sm" truncate overrides={flatRow.hasChildren ? { fontWeight: parentWeightRef } : undefined}>
+              {name}
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  const renderLoadingRow = (flatRow: FlatRow): React.JSX.Element => {
+    const rowStyle: ViewStyle = {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: activeRowHeight,
+      borderBottomWidth: gridLineWidth,
+      borderBottomColor: gridLineColor,
+      backgroundColor: t.colorBackground,
+      paddingHorizontal: cellPaddingInline,
+    };
+    return (
+      <View style={rowStyle} role="row" accessibilityState={{ busy: true }} testID="TreeGrid.row">
+        {effectiveSelectable === 'row' ? <View style={selectCellStyle} /> : null}
+        {renderGuideLines(flatRow.level)}
+        <View style={{ width: expandButtonSize }} />
+        <View style={{ width: expandGap }} />
+        <Text size="sm" tone="muted">
+          {COPY.loading}
+        </Text>
+      </View>
+    );
+  };
+
+  const renderRow = ({ item: flatRow }: ListRenderItemInfo<FlatRow>): React.JSX.Element => {
+    if (flatRow.loading) {
+      return renderLoadingRow(flatRow);
+    }
+    const row = flatRow.row as TreeGridRow;
+    const checkState: CheckState = selectChildren ? computeRowCheckState(row, selectedSet) : selectedSet.has(row.id) ? 'checked' : 'unchecked';
+    const isRowSelected = effectiveSelectable === 'row' && checkState === 'checked';
     const rowStyle: ViewStyle = {
       flexDirection: 'row',
       alignItems: 'stretch',
       minHeight: activeRowHeight,
-      borderBottomWidth: t.borderWidthThin,
-      borderBottomColor: t.colorBorder,
+      borderBottomWidth: gridLineWidth,
+      borderBottomColor: gridLineColor,
       backgroundColor: isRowSelected ? t.colorBackgroundSubtle : t.colorBackground,
     };
 
@@ -702,103 +905,41 @@ export function TreeGrid({
             <Checkbox
               label={COPY.selectRow(rowName(row))}
               name={`tree-grid-row-${row.id}`}
-              checked={rowCheckState(row, hasChildren).checked}
-              indeterminate={rowCheckState(row, hasChildren).indeterminate}
-              onChange={() => toggleRowSelection(row)}
+              checked={checkState === 'checked'}
+              indeterminate={checkState === 'indeterminate'}
+              onChange={() => toggleRow(row)}
             />
           </View>
         ) : null}
-        {orderedColumns.map((column) => renderCell(visible, column))}
+        {orderedColumns.map((column) => (column.isRowHeader ? renderRowHeaderCell(flatRow, column) : renderDataCell(flatRow, column)))}
       </View>
     );
   };
 
-  const getItemLayout = (_listData: ArrayLike<TreeGridVisibleRow> | null | undefined, index: number): { length: number; offset: number; index: number } => ({
+  const getItemLayout = (_listData: ArrayLike<FlatRow> | null | undefined, index: number): { length: number; offset: number; index: number } => ({
     length: activeRowHeight,
     offset: activeRowHeight * index,
     index,
   });
 
-  // ---- header ----
-
-  const renderColumnHeader = (column: DataGridColumn): React.JSX.Element => {
-    const width = widthFor(column);
-    const isSorted = sort?.column === column.key;
-    const headerCellStyle: ViewStyle = {
-      width,
-      paddingHorizontal: t.space2,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderRightWidth: t.borderWidthThin,
-      borderRightColor: t.colorBorder,
-      backgroundColor: t.colorBackgroundSubtle,
-    };
-
-    return (
-      <View key={column.key} style={headerCellStyle} role="columnheader" accessibilityRole="header" testID="TreeGrid.columnHeader">
-        {column.sortable ? (
-          <View style={{ flex: 1 }} testID="TreeGrid.sortButton">
-            <Button
-              label={column.abbr ?? column.header}
-              variant="ghost"
-              size="sm"
-              trailingIcon={isSorted ? <Icon name={sort.direction === 'ascending' ? 'chevron-up' : 'chevron-down'} inline color={t.colorForeground} /> : undefined}
-              onPress={() => handleSort(column.key)}
-            />
-          </View>
-        ) : (
-          <Text size="sm" weight="semibold" truncate>
-            {column.header}
-          </Text>
-        )}
-      </View>
-    );
-  };
-
-  const headerRowStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    backgroundColor: t.colorBackgroundSubtle,
-    borderBottomWidth: t.borderWidthThin,
-    borderBottomColor: t.colorBorderStrong,
-  };
-
-  const renderHeader = (): React.JSX.Element => (
-    <View role="rowgroup" testID="TreeGrid.header">
-      <View style={headerRowStyle} role="row" testID="TreeGrid.headerRow">
-        {effectiveSelectable === 'row' ? (
-          <View style={selectCellStyle} testID="TreeGrid.selectAllCell">
-            <Checkbox label={COPY.selectAll} name="tree-grid-select-all" checked={allSelected} indeterminate={someRowsSelected} onChange={toggleAll} />
-          </View>
-        ) : null}
-        {orderedColumns.map((column) => renderColumnHeader(column))}
-      </View>
-    </View>
-  );
-
-  // ---- layout ----
-
-  const showEmpty = visibleRows.length === 0;
   const containerHeightStyle: ViewStyle = height === 'fixed' ? { height: fixedHeightValue } : height === 'viewport' ? { flex: 1 } : {};
   const totalContentWidth = orderedColumns.reduce((sum, column) => sum + widthFor(column), 0) + (effectiveSelectable === 'row' ? t.sizeTargetComfortable : 0);
 
   const grid = (
     <FlatList
-      data={visibleRows}
+      data={flatRows}
       keyExtractor={(item) => item.key}
       renderItem={renderRow}
+      extraData={[expandedIds, selectedRowIds, activeCell, editingCell, editingError, columnWidths, focusedCellKey, activeSort]}
       ListHeaderComponent={renderHeader}
-      stickyHeaderIndices={height !== 'content' ? [0] : undefined}
+      stickyHeaderIndices={stickyHeaderEffective ? [0] : undefined}
       getItemLayout={getItemLayout}
       scrollEnabled={height !== 'content'}
       style={height === 'content' ? undefined : { flex: 1 }}
-      role="grid"
-      accessibilityLabel={caption}
       accessibilityState={{ busy: loading }}
       ListEmptyComponent={
-        <View style={{ padding: t.space2 }} accessible accessibilityLabel={loading ? COPY.loading : COPY.empty} testID="TreeGrid.emptyState">
-          <Text tone="muted">{loading ? COPY.loading : COPY.empty}</Text>
+        <View style={{ padding: cellPaddingInline }} accessible accessibilityLabel={emptyText} testID="TreeGrid.emptyState">
+          <Text tone="muted">{emptyText}</Text>
         </View>
       }
       testID="TreeGrid.grid"
@@ -812,7 +953,8 @@ export function TreeGrid({
       contentContainerStyle={{ minWidth: totalContentWidth, flexGrow: 1 }}
       accessibilityLabel={caption}
       accessibilityHint={COPY.scrollHint}
-      role="treegrid"
+      accessibilityState={{ busy: loading }}
+      role="grid"
       testID="TreeGrid.scrollRegion"
     >
       <View style={[{ flex: 1 }, containerHeightStyle]}>{grid}</View>
@@ -825,20 +967,46 @@ export function TreeGrid({
   if (loading) {
     statusText = COPY.loading;
   } else if (editingError !== undefined) {
-    statusText = editingError;
+    statusText = COPY.invalid(editingError);
   } else if (editingCell !== null) {
-    const column = columns.find((c) => c.key === editingCell.column);
-    statusText = COPY.editing(column?.header ?? editingCell.column);
-  } else if (effectiveSelectable === 'row' && selectedIds.length > 0) {
-    statusText = COPY.selectedRows(selectedIds.length, allRowIds.length);
+    statusText = COPY.editing(columnByKey.get(editingCell.column)?.header ?? editingCell.column);
+  } else if (effectiveSelectable === 'row' && selectedRowIds.length > 0) {
+    statusText = COPY.selectedRows(selectedRowIds.length, visibleRowCount);
+  } else if (effectiveSelectable === 'cell' && activeCell !== null) {
+    const activeRowIndex = flatRows.findIndex((fr) => !fr.loading && fr.row?.id === activeCell.rowId);
+    const activeColumn = columnByKey.get(activeCell.column);
+    statusText = COPY.position(activeRowIndex + 1, activeColumn?.header ?? activeCell.column);
   } else {
-    statusText = COPY.rowCount(showEmpty ? 0 : visibleRows.length);
+    statusText = COPY.rowCount(visibleRowCount);
   }
 
   // ---- select editor (BottomSheet) ----
 
-  const selectEditorRow = selectEditorTarget ? (rowById.get(selectEditorTarget.rowId) ?? null) : null;
-  const selectEditorColumn = selectEditorTarget ? (columns.find((c) => c.key === selectEditorTarget.column) ?? null) : null;
+  const findRow = (rows: TreeGridRow[], id: string): TreeGridRow | null => {
+    for (const row of rows) {
+      if (row.id === id) {
+        return row;
+      }
+      if (Array.isArray(row.children)) {
+        const found = findRow(row.children, id);
+        if (found !== null) {
+          return found;
+        }
+      }
+    }
+    return null;
+  };
+
+  const selectEditorRow = selectEditorTarget ? findRow(sortedData, selectEditorTarget.rowId) : null;
+  const selectEditorColumn = selectEditorTarget ? (columnByKey.get(selectEditorTarget.column) ?? null) : null;
+
+  const handleRootAction = (event: AccessibilityActionEvent): void => {
+    if (event.nativeEvent.actionName === 'expandAll') {
+      commitExpanded(collectExpandableIds(sortedData));
+    } else if (event.nativeEvent.actionName === 'collapseAll') {
+      commitExpanded([]);
+    }
+  };
 
   return (
     <View
@@ -847,7 +1015,7 @@ export function TreeGrid({
         { name: 'expandAll', label: COPY.expandAll },
         { name: 'collapseAll', label: COPY.collapseAll },
       ]}
-      onAccessibilityAction={handleRootAccessibilityAction}
+      onAccessibilityAction={handleRootAction}
     >
       {!hideCaption ? (
         <View testID="TreeGrid.caption">

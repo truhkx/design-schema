@@ -22,6 +22,7 @@ component:
       type: string
       required: true
       description: 'The question or statement, as a level-2 Heading and the accessible name ("Delete 3 files?").'
+      a11y: 'aria-labelledby the heading; native accessibilityLabel on the modal content.'
     description:
       type: string
       required: true

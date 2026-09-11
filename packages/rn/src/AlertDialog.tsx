@@ -90,7 +90,9 @@ const TONE = {
  * a reflexive Enter cancels rather than confirms. The icon, its color and the
  * confirm button's variant come from the `tone` lookup table. Buttons are the
  * system `Button` (`secondary` for Cancel; `danger` or `primary` for Confirm by
- * tone) — never restyled.
+ * tone) — never restyled. The surface also carries the RN >= 0.74
+ * `role="alertdialog"` prop alongside `accessibilityViewIsModal`, matching Dialog's
+ * `role="dialog"`.
  */
 export function AlertDialog({
   open,
@@ -261,6 +263,7 @@ export function AlertDialog({
           <FocusScope trapped active={mounted} autoFocus="none" restoreFocus>
             <Animated.View
               style={outerSurfaceStyle}
+              role="alertdialog"
               accessibilityViewIsModal
               accessibilityLabel={heading}
               accessibilityHint={description}

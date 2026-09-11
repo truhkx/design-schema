@@ -26,3 +26,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - AlertDialog: the existing implementation used a prop named `title` instead of the schema's `heading`; renamed the prop (and stories/test args) to `heading` to match the schema and the sibling components' convention (Dialog, Alert) of avoiding `title` since it collides with a native HTML/RN attribute name.
 - AlertDialog: `iconSize` is listed as overridable in the schema but was missing from `AlertDialogOverridableBinding` and never forwarded to the tone Icon; added it and wired it through `Icon`'s `overrides.size`, following the exact pattern Alert.tsx uses for its own `iconSize` binding.
 - AlertDialog: `footerGap` was declared in the overridable-binding type but a comment claimed Stack had 'no override hook' and the override was silently dropped; Stack does accept `overrides.gap` (used by Dialog.tsx for the same seam), so wired `overrides?.footerGap` through to the footer Stack's `overrides` prop and removed the inaccurate comment.
+
+## 2026-09-10 20:20 — round 1
+
+- AlertDialog (rn): platform notes require the surface to carry RN's role="alertdialog" prop (paralleling Dialog's role="dialog"), but the existing implementation only had accessibilityViewIsModal/accessibilityLabel/accessibilityHint. Added role="alertdialog" to the surface and to the doc comment.
+- AlertDialog (rn): scroll-lock from a11y.requires has no native equivalent (no page scroll for a modal to suppress), same acknowledged limit as Dialog — not implemented.
+- AlertDialog (rn): heading-hierarchy is satisfied only by Heading's own accessibilityRole="header"; RN has no heading levels so level=2 only sets the visual size, per the schema's own note.

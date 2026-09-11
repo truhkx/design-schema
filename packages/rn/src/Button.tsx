@@ -24,7 +24,8 @@ export type ButtonOverridableBinding =
   | 'fontSize'
   | 'disabledOpacity'
   | 'transition'
-  | 'loadingSpin';
+  | 'loadingSpin'
+  | 'spinnerStroke';
 
 /** The pair sent to `onTrack` after a tracked press. */
 export interface ButtonTrackEvent {
@@ -211,6 +212,9 @@ export function Button({
   const loadingSpinDuration = overrides?.loadingSpin
     ? (resolveToken(t, overrides.loadingSpin) as number)
     : t.motionDurationLoop;
+  const spinnerStroke = overrides?.spinnerStroke
+    ? (resolveToken(t, overrides.spinnerStroke) as number)
+    : t.borderWidthFocus;
 
   // Background transitions between rest and pressed since there is no hover on touch.
   const highlight = React.useRef(new Animated.Value(0)).current;
@@ -327,7 +331,7 @@ export function Button({
     width: fontSize,
     height: fontSize,
     borderRadius: fontSize / 2, // literal-ok: halves a token-derived size into a radius
-    borderWidth: t.borderWidthFocus,
+    borderWidth: spinnerStroke,
     borderColor: foreground,
     borderTopColor: 'transparent',
     transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }],

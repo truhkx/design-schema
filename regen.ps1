@@ -50,7 +50,9 @@ $phases = @(
   @{ name = "Numeric";    components = "Slider,NumberInput,ProgressBar,Stepper,Search,DatePicker" },
   @{ name = "Rows";       components = "Toolbar,Carousel,Table" },
   @{ name = "Grids";      components = "DataGrid,TreeGrid,Tree" },
-  @{ name = "Streams";    components = "Splitter,Feed" }
+  @{ name = "Streams";    components = "Splitter,Feed" },
+  # Pattern pages (site/src/content/docs/patterns) come last: they compose everything above.
+  @{ name = "Patterns";   pattern = "SettingsPage" }
 )
 
 $plan = @()
@@ -67,7 +69,7 @@ if ($Phase -ne "") {
 }
 
 Log "Plan: $(($plan | ForEach-Object { $_.name }) -join ' -> ')  platforms=$Platform force=$($Force.IsPresent) gates=$($Gates.IsPresent) pause=$(-not $NoPause.IsPresent)"
-if ($DryRun) { $plan | ForEach-Object { Log "  $($_.name): $($_.components)" }; exit 0 }
+if ($DryRun) { $plan | ForEach-Object { Log "  $($_.name): $(if ($_.pattern) { 'pattern ' + $_.pattern } else { $_.components })" }; exit 0 }
 
 # Preparation: tokens, prompts, and a parse that must be clean before any model call.
 Log "== pnpm themes =="
@@ -120,9 +122,10 @@ $i = 0
 foreach ($p in $plan) {
   $i++
   Log ""
-  Log "==== Phase $($p.name) ($i of $($plan.Count)): $($p.components) ===="
+  $what = if ($p.pattern) { "pattern " + $p.pattern } else { $p.components }
+  Log "==== Phase $($p.name) ($i of $($plan.Count)): $what ===="
   $args = @("tools/generate.py", "--platform", $Platform)
-  $args += @("--component", $p.components)
+  if ($p.pattern) { $args += @("--pattern", $p.pattern) } else { $args += @("--component", $p.components) }
   if ($Force) { $args += "--force" }
   if ($Gates) { $args += @("--with", "keyboard", "--with", "axe") }
   node tools/py.mjs @args 2>&1 | ForEach-Object { Log "$_" }

@@ -30,3 +30,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-10 18:13 — round 2
 
 - BottomSheet.tsx (rn): its wide-viewport path composes Dialog and previously forwarded title={title}; updated to heading={title} to match Dialog's schema-mandated prop rename. BottomSheet's own `hideTitle` is still not forwarded to Dialog's `hideHeading` — the existing docstring says 'hideTitle has no Dialog equivalent, so the title always renders in that presentation,' which is no longer strictly true now that Dialog has hideHeading; deciding whether BottomSheet should forward it is a BottomSheet-schema question, out of scope for this Dialog-only fix.
+
+## 2026-09-10 20:18 — round 1
+
+- Dialog: onClose reason 'action' is documented as existing for a consumer whose footer action wants to reuse the same callback, but the spec never says Dialog itself emits it — implementation never calls onClose('action') internally, leaving it entirely to the consumer's footer buttons.
+- Dialog: size sm/md/lg widths — only widthSm has a named token (layout.maxWidth.prose); md/lg are described as '3/4 of' and 'equal to' layout.maxWidth.content but no distinct tokens exist for them, so md is computed as layoutMaxWidthContent * 0.75 (a literal-ok multiplier) rather than a token lookup.
+- Dialog: anatomy lists scrim/surface/focusScope/header/heading/description/body/footer/closeButton as parts, but only scrim/header/body/footer plus the root got testIDs (matching AlertDialog's precedent) — heading, description, closeButton and focusScope have no individual testID.

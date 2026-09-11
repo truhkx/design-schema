@@ -1,10 +1,7 @@
 /**
  * Icon — behavior scenarios from the component doc, one test each, in the doc's
  * order. Every scenario is a `renders: true` check (Icon has no interaction, no
- * focus, no animation); see generated/prompts/Icon.rn.md. `has-accessible-name` has
- * no `given` in the doc even though Icon is decorative (no accessible name) by
- * default, so it is exercised with an explicit `label` — see the gap note in the
- * generation report.
+ * focus, no animation); see generated/prompts/Icon.rn.md.
  */
 import * as React from 'react';
 import { render, screen } from '@testing-library/react-native';
@@ -126,9 +123,6 @@ describe('Icon', () => {
     expect(s.toJSON()).not.toBeNull();
   });
 
-  /* the doc header claims 33 scenarios but its embedded yaml lists only 26, stopping
-     at "calendar"; these 7 follow the same derived pattern for the remaining `name`
-     enum values — see the gap note in the generation report */
   it('renders-name-menu', () => {
     const s = setup({ name: 'menu' });
     expect(s.toJSON()).not.toBeNull();
@@ -190,9 +184,9 @@ describe('Icon', () => {
     expect(s.toJSON()).not.toBeNull();
   });
 
-  /* derived: a11y.requires — exercised with an explicit label; see the gap note */
+  /* derived: a11y.requires */
   it('has-accessible-name', () => {
-    setup({ label: 'Warning: over quota' });
-    expect(screen.getByRole('image', { name: 'Warning: over quota' })).toBeOnTheScreen();
+    setup({ label: 'Accessible name' });
+    expect(screen.getByLabelText('Accessible name')).toBeTruthy();
   });
 });

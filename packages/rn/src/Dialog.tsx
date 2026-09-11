@@ -98,7 +98,9 @@ const COPY = {
  * because a keyboard/switch-access user must always have a reported way out. The
  * accessible name comes from `accessibilityLabel={heading}` on the modal surface
  * regardless of `hideHeading`, so hiding the heading only removes its visible
- * `Heading`, never the announced name. The `size` widths and `enter`/`exit`
+ * `Heading`, never the announced name. The surface also carries the RN >= 0.74
+ * `role="dialog"` prop alongside `accessibilityViewIsModal`, as Landmark and
+ * Fieldset use `role` for their own semantics. The `size` widths and `enter`/`exit`
  * durations are the same tokens as web; `widthSm` is the only overridable width, per
  * the schema. Scroll-lock has no native equivalent — there is no page scroll for a
  * modal window to suppress — so it is not implemented; the acknowledged limit is
@@ -312,6 +314,7 @@ export function Dialog({
           <FocusScope trapped active={mounted} autoFocus="none" restoreFocus>
             <Animated.View
               style={outerSurfaceStyle}
+              role="dialog"
               accessibilityViewIsModal
               accessibilityLabel={heading}
               accessibilityHint={description}

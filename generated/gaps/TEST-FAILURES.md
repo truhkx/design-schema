@@ -1,4 +1,4 @@
-# Test failures after the harness fixes (2026-09-10T20:05)
+# Test failures after the harness fixes (2026-09-10T20:22)
 
 Written by the job 170 pass from logs/test-{react,lit,rn}.json. Every row is a doc-versus-code mismatch or an open question, not a harness fault: fix the doc, or regenerate the target. Generated code under packages/*/src is the generator's; nothing here was patched by hand.
 
@@ -31,9 +31,7 @@ Written by the job 170 pass from logs/test-{react,lit,rn}.json. Every row is a d
 | control-is-focusable | `packages/lit/src/AlertDialog.test.ts` | AssertionError: expected <dialog role="alertdialog" …(4)>…(1)</dialog> to be <ds-button …(7)></ds-button> // Object.is equality | Verified with the deep active element (job 180): initial focus lands on the <dialog role=alertdialog> surface itself, not the cancel Button the doc names. Component: regenerate AlertDialog.lit or fix its initial-focus logic in the doc. |
 | control-is-focusable | `packages/lit/src/Dialog.test.ts` | AssertionError: expected <dialog aria-modal="true" …(3)>…(1)</dialog> to be <ds-input …(3)></ds-input> // Object.is equality | Verified with the deep active element (job 180): initial focus lands on the <dialog> surface, not the first field the doc names for initialFocus=first. Component: regenerate Dialog.lit. |
 
-## React Native — 1 failing, 196 passing, 0 skipped
+## React Native — 0 failing, 213 passing, 0 skipped
 
-| Scenario | File | Error | Diagnosis |
-| --- | --- | --- | --- |
-| has-accessible-name | `packages/rn/src/Icon.test.tsx` | Error: Unable to find an element with role: image, name: Warning: over quota | Doc says a labelled Icon exposes accessibilityRole image + accessibilityLabel; the regenerated RN Icon renders the SVG without them. Regenerate Icon.rn or fix the doc's RN platform note. |
+- none
 

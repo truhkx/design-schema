@@ -30,3 +30,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: the phone/tablet breakpoint isn't named by any of Menu's own style bindings, so the generator reused `layout.maxWidth.prose` — the same token/threshold `Select` and `Combobox` already use for their own phone-vs-tablet split — rather than inventing a new one.
 - Menu: `maxHeight`'s schema description says the popup is also capped by 'the viewport minus the gutter', but no gutter token is named; implemented as `windowHeight - popupOffset * 2`, reusing `popupOffset` for lack of a dedicated gutter binding.
 - Menu: the previously generated file's doc comments claimed two limits that no longer hold now that ActionSheet and Button's `expanded` prop exist in the package — both are fixed in this pass (composing ActionSheet on phones; passing `expanded` to the trigger Button).
+
+## 2026-09-10 20:21 — round 1
+
+- Menu: ArrowUp-on-trigger opening with the last item focused (keyboard rule) can't be distinguished from Enter/Space on the native Button, so opening always focuses the first enabled item — documented as an acknowledged native limit rather than implemented.
+- Menu: arrow-key movement, Home/End, and typeahead are a web keyboard model with no RN equivalent (no generic key-event API on Pressable); each item is instead its own Tab stop when a hardware keyboard/tab order is present, matching RadioGroup's convention. typeaheadReset has no effect on native since there is no typeahead to reset.
+- Menu: on phones the ActionSheet composition has no slot for a group label row or a separator, so `group` labels and `separator` entries are dropped (flattened) in the phone presentation — items still render, but the grouping/dividers are lost below the tablet breakpoint.
+- Menu: the schema's minWidth token (space.20 x 2.5) is not a real token multiple, so the generator computes it inline as `t.space20 * 2.5` with a literal-ok comment rather than adding a new token.

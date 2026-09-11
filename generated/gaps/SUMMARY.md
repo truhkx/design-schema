@@ -1,6 +1,6 @@
 # Gap digest — phase final
 
-Generated 2026-09-10T20:09 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T20:36 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -137,6 +137,12 @@ Doc: `site/src/content/docs/components/alert.md`
 ## AlertDialog
 
 Doc: `site/src/content/docs/components/alertdialog.md`
+
+### 2026-09-10 20:20 — rn round 1
+
+- **DOC** AlertDialog (rn): platform notes require the surface to carry RN's role="alertdialog" prop (paralleling Dialog's role="dialog"), but the existing implementation only had accessibilityViewIsModal/accessibilityLabel/accessibilityHint. Added role="alertdialog" to the surface and to the doc comment. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog (rn): scroll-lock from a11y.requires has no native equivalent (no page scroll for a modal to suppress), same acknowledged limit as Dialog — not implemented. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog (rn): heading-hierarchy is satisfied only by Heading's own accessibilityRole="header"; RN has no heading levels so level=2 only sets the visual size, per the schema's own note. → `site/src/content/docs/components/alertdialog.md`
 
 ### 2026-09-10 19:59 — lit round 1
 
@@ -387,6 +393,10 @@ Doc: `site/src/content/docs/components/breadcrumb.md`
 ## Button
 
 Doc: `site/src/content/docs/components/button.md`
+
+### 2026-09-10 20:11 — rn round 1
+
+- **DOC** Button: the existing packages/rn/src/Button.tsx already implemented the full schema (props, tokens, a11y, overrides, form/track composition) except that `spinnerStroke` (listed as overridable in the shared Overridable list) was missing from `ButtonOverridableBinding` and the spinner's `borderWidth` was hardcoded to `t.borderWidthFocus` instead of resolving an override. Added `spinnerStroke` to the type and wired it through `overrides?.spinnerStroke` with `t.borderWidthFocus` as the default, matching the pattern used for the other overridable bindings. No other changes were needed — index.ts, Button.stories.tsx, and all other bindings/a11y/composition already matched the spec. → `site/src/content/docs/components/button.md`
 
 ### 2026-09-10 19:47 — lit round 1
 
@@ -974,6 +984,12 @@ Doc: `site/src/content/docs/components/datepicker.md`
 
 Doc: `site/src/content/docs/components/dialog.md`
 
+### 2026-09-10 20:18 — rn round 1
+
+- **DOC** Dialog: onClose reason 'action' is documented as existing for a consumer whose footer action wants to reuse the same callback, but the spec never says Dialog itself emits it — implementation never calls onClose('action') internally, leaving it entirely to the consumer's footer buttons. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: size sm/md/lg widths — only widthSm has a named token (layout.maxWidth.prose); md/lg are described as '3/4 of' and 'equal to' layout.maxWidth.content but no distinct tokens exist for them, so md is computed as layoutMaxWidthContent * 0.75 (a literal-ok multiplier) rather than a token lookup. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: anatomy lists scrim/surface/focusScope/header/heading/description/body/footer/closeButton as parts, but only scrim/header/body/footer plus the root got testIDs (matching AlertDialog's precedent) — heading, description, closeButton and focusScope have no individual testID. → `site/src/content/docs/components/dialog.md`
+
 ### 2026-09-10 19:56 — lit round 1
 
 - **DOC** Dialog: platform note says the shadow <dialog> should use aria-label/aria-description because ids don't cross the shadow boundary, but heading/description are composed as ds-heading/ds-text inside the same shadow root (not slotted), so aria-labelledby/aria-describedby correctly resolve within that tree — kept the existing aria-labelledby/aria-describedby approach rather than switching to aria-label. → `site/src/content/docs/components/dialog.md`
@@ -1379,6 +1395,14 @@ Doc: `site/src/content/docs/components/heading.md`
 
 Doc: `site/src/content/docs/components/icon.md`
 
+### 2026-09-10 20:15 — rn round 1
+
+- **DOC** Icon: `styles.strokeWidth` (border.width.focus) cannot be applied to the four filled glyphs (info/success/warning/danger) or `ellipsis`/`play`/`pause`, which are fill-only paths with no stroke — the binding is correctly a no-op there, but the spec doesn't say this explicitly for RN; documented in Icon.tsx's JSDoc only. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: `inline` sizing/coloring when nested in a system `Text` relies on `TextStyleContext` (a real {nested, fontSize, color} context in Text.tsx), not the boolean `TextNestingContext` the spec's guidance names — the spec should be updated to describe the richer context, since a plain boolean can't carry size/color. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: `list`'s content-guideline dots ('three horizontal lines... with a dot at x=2 on each') can't be drawn as RN's IconGlyph only holds one `d` string with a single fill-or-stroke mode, unlike web's JSX table which mixes a stroked path with separate filled `<circle>`s. Kept the existing workaround (zero-length, round-capped strokes for the dots) since it fits the one-path-per-glyph data model without widening IconGlyph's shape; flagged since it is an implementation guess, not a spec-given technique. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: fixed a stale mismatch — paths.ts's `calendar` glyph had been hand-invented (a rounded-rect path) with a comment claiming no web/Lit reference existed yet, but web's Icon.tsx now has a real `calendar` path (`M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3`). Replaced RN's glyph with that exact `d` string so the cross-platform swap stays visually neutral per the 'byte-identical to web' rule, and removed the now-false 'no reference existed' comments on calendar and menu. → `site/src/content/docs/components/icon.md`
+- **CODE** Icon: fixed a pre-existing failing test — `has-accessible-name` used `screen.getByRole('image', …)`, which testing-library/react-native doesn't resolve against the native `RNSVGSvgView` host component (its role map doesn't cover react-native-svg elements). Switched to `getByLabelText`, matching every other component in this package (Dialog, AlertDialog, Feed, Menu, Table, Toast) that asserts an accessible name this way; also updated the test to use the doc's now-present `given: { label: 'Accessible name' }` instead of the ad hoc 'Warning: over quota' string a prior round substituted before that `given` existed.
+
 ### 2026-09-10 19:50 — lit round 1
 
 - **DOC** Icon: color binding's doc default is `color.foreground`, but the component behavior described in guidance is `currentColor` inheritance with `color.foreground` only as what inheritance resolves to at the root — implemented the hook with no default set (falls back to `inherit`) rather than defaulting the hook to `var(--color-foreground)`, since a hard default would break free color inheritance from Button/Link/Alert. → `site/src/content/docs/components/icon.md`
@@ -1667,6 +1691,13 @@ Doc: `site/src/content/docs/components/listbox.md`
 
 Doc: `site/src/content/docs/components/menu.md`
 
+### 2026-09-10 20:21 — rn round 1
+
+- **DOC** Menu: ArrowUp-on-trigger opening with the last item focused (keyboard rule) can't be distinguished from Enter/Space on the native Button, so opening always focuses the first enabled item — documented as an acknowledged native limit rather than implemented. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: arrow-key movement, Home/End, and typeahead are a web keyboard model with no RN equivalent (no generic key-event API on Pressable); each item is instead its own Tab stop when a hardware keyboard/tab order is present, matching RadioGroup's convention. typeaheadReset has no effect on native since there is no typeahead to reset. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: on phones the ActionSheet composition has no slot for a group label row or a separator, so `group` labels and `separator` entries are dropped (flattened) in the phone presentation — items still render, but the grouping/dividers are lost below the tablet breakpoint. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: the schema's minWidth token (space.20 x 2.5) is not a real token multiple, so the generator computes it inline as `t.space20 * 2.5` with a literal-ok comment rather than adding a new token. → `site/src/content/docs/components/menu.md`
+
 ### 2026-09-10 20:03 — lit round 1
 
 - **DOC** Menu: ActionSheet.ts (out of scope for this task) works around the previously-missing `anchor` support by faking a hidden, invisibly-positioned trigger; now that `<ds-menu anchor>` is implemented, ActionSheet could be simplified to use it directly, but that file wasn't touched here. → `site/src/content/docs/components/menu.md`
@@ -1839,6 +1870,44 @@ Doc: `site/src/content/docs/components/numberinput.md`
 - **DOC** The doc doesn't define a starting value for ArrowUp/ArrowDown/steppers when the field is empty. Implemented native <input type=number>-like behavior: ArrowUp/increment from empty jumps to `min ?? 0`, ArrowDown/decrement jumps to `max ?? 0`. → `site/src/content/docs/components/numberinput.md`
 - **DOC** Web platform notes describe stepper hold-to-repeat using 'motion.duration.base initial delay and motion.duration.fast interval'; applied the same timing to the Lit steppers (read live from the CSS custom properties at pointerdown) since the general Behavior section states steppers repeat while held for every platform, even though the Lit platform notes themselves don't mention it. → `site/src/content/docs/components/numberinput.md`
 - **CODE** <ds-form>'s field discovery (FIELD_SELECTOR/FIELD_TAGS in Form.ts) only recognizes ds-input, ds-checkbox, ds-switch, ds-radio-group — not ds-number-input (the same pre-existing gap already affects ds-slider). NumberInput is form-associated via ElementInternals for a plain native <form>, and calls the ancestor <ds-form>'s public submit() on Enter, but <ds-form> won't collect/validate/disable-propagate to a NumberInput field until Form.ts's field list is updated (out of scope for this generation pass).
+
+## Pattern.SettingsPage
+
+Doc: `site/src/content/docs/components/pattern.settingspage.md`
+
+### 2026-09-10 20:35 — rn round 1
+
+- **DOC** Appearance tab: SegmentedControl 'Color mode' and RadioGroup 'Layout density' are documented as changing the live theme mode/density, but the page rules forbid `useTheme()` and any theme/mode branching in the page itself, and RN's `ThemeProvider` exposes no mode setter through context (mode is only set by the prop from an ancestor, e.g. Storybook's `withTheme` decorator) — there is also no `density` concept anywhere in the `Theme`/`Tokens` type. Both controls are implemented as presentational, locally-stated controls with no actual effect; this is the page's biggest seam and needs either a theme-mode-setter API or a documented 'demo only' caveat. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Delete-account Card: spec wrote `tone=danger?` as an open question against a Card prop that does not exist on `CardProps` (only `surface`/`inset`/`heading`/`headingLevel`/etc.) — left off per the 'leave it out' rule for open questions. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** AlertDialog: spec says 'whose cancel is the initial focus', but `AlertDialog` has no `initialFocus` prop (unlike `Dialog`'s `DialogInitialFocus`) and always moves initial accessibility focus to the title/heading once the enter animation completes; Cancel only precedes Confirm in reading order. Implemented as-is (title receives initial focus) since there's no supported way to focus Cancel first. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** AlertDialog's exact heading/description/confirm copy for the delete flow wasn't specified verbatim by the structure (only the trigger button and the fact that confirm is danger-toned) — used 'Delete account?' / 'This will permanently delete your account and everything in it. This cannot be undone.' / 'Delete account'. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Toast 'region (bottom-end)': RN's `ToastProvider` renders one fixed, centered, bottom-of-screen region with no positioning options (no 'end' alignment) — the region is also an absolute overlay appended by the provider, not literally a sibling inside the page's own Stack as the structure diagram suggests. Mounted `ToastProvider` at the top of `SettingsPage` and call `toast()` from a child instead. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Existing RN demo pages (ProfileSettings, Preferences, SignIn) all wrap their screen in a raw `View` styled via `useTheme()` for the page background — this pattern's rules explicitly forbid both `useTheme()` and any styled `View`/`style` prop in the page, so `SettingsPage` has no explicit background layer of its own; it relies on `withTheme()`'s decorator frame (or an app's own background) painting `colorBackground` behind it. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Input has no built-in type-format validation (email/url) — only `required`/`invalid`/`error` precedence — so 'validates on submit (the Form contract: required, then type)' is only partially implemented: required-field validation fires, but no format check exists to fire for a malformed email/url without reimplementing validation logic outside the component (out of scope as business logic). → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Form's default `errorSummary` is `true`, which focuses the error summary rather than the first invalid field; set `errorSummary={false}` on the Profile form so it matches the spec's 'focuses the first invalid field' behavior exactly. → `site/src/content/docs/components/pattern.settingspage.md`
+
+### 2026-09-10 20:31 — lit round 1
+
+- **DOC** Card: schema has no `tone` prop (spec wrote `tone=danger?` as an open question), so I left it off the Delete-account Card and relied on the Alert already inside it to carry the danger signal. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** AlertDialog copy (heading/description/confirmLabel) was never given verbatim — the structure only said '→ AlertDialog'. I wrote on-brand copy: heading 'Delete your account?', description 'This permanently deletes your account and everything in it. This cannot be undone.', confirmLabel 'Delete account'. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Toast tone for 'Changes saved' was unspecified; used the component default (neutral) rather than guessing 'success'. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Density control: no token/attribute exists anywhere in the system for layout density (only color data-mode is documented). The Density RadioGroup is real and controlled but drives nothing — matching the guidance doc's own open question about layout.rhythm. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** 'System' color mode: the documented mechanism is only an explicit data-mode="dark"|(absent) toggle on <html>, no tri-state. Selecting System just removes the override, resolving to the documented light default rather than following the OS preference. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Cancel/'reset to saved values': <ds-form> has no reset() and its internal shadow-root <form> does not own the slotted light-DOM fields (per Form.ts's own docs), so there is no native form.reset() to call as the React version used. I reset by hand: on Cancel, every <ds-input> under the profile <ds-form> has its `.value` set back to `undefined`. Since the spec gave no seed data, that returns fields to the same empty state they started in. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** The structure nested 'Stack horizontal gap=tight justify=end (Form's action row)' as a child of Form, but Form's real API takes the action row via a named `actions` slot, so I used `<ds-stack slot="actions">` instead of a trailing default-slot child. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Set Form's `errorSummary` property to `false` (overriding the component default of `true`) so submission behavior matches the spec's literal wording 'focuses the first invalid field' rather than the default error-summary-gets-focus behavior. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** The structure's 'Toast region (bottom-end)' node is not rendered explicitly: Toast.ts documents `<ds-toast-region>` as auto-created in `document.body` by the `toast()` function and 'not meant to be authored directly', so the page just calls `toast({...})` on successful submit instead of composing a region element. → `site/src/content/docs/components/pattern.settingspage.md`
+
+### 2026-09-10 20:25 — web round 1
+
+- **DOC** Card: schema has no `tone` prop (spec wrote `tone=danger?` as an open question), so I left it off the Delete-account Card and relied on the Alert already inside it to carry the danger signal, per the guidance doc's own open question about whether Card needs a tone. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** AlertDialog copy (heading/description/confirmLabel) was never given verbatim — the structure only said '→ AlertDialog'. I wrote on-brand copy: heading 'Delete your account?', description 'This permanently deletes your account and everything in it. This cannot be undone.', confirmLabel 'Delete account'. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Toast tone for 'Changes saved' was unspecified; used the component default (neutral) rather than guessing 'success'. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Density control: no token/attribute exists anywhere in the system for layout density (only color `data-mode` is documented in packages/react/src/index.ts). The Density RadioGroup is a real controlled input but has no effect beyond local state — there's nothing for it to drive yet, matching the guidance doc's own open question about `layout.rhythm`. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** 'System' color mode: the documented mechanism is only an explicit `data-mode="dark"|"light"` toggle, no tri-state. Selecting System just removes the override, which resolves to the documented light default rather than actually following the OS preference. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Cancel/'reset to saved values': the spec gave no seed data for the Profile fields, so they start empty and Cancel (native `form.reset()` via the Form's forwarded ref) returns them to that empty state rather than to any pre-filled values. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** The structure literally nested `Stack horizontal gap=tight justify=end (Form's action row)` as a child of Form, but Form's real API takes the action row via its `actions` prop (confirmed against Fieldset/SignIn/Preferences conventions), so I used `actions` instead of a trailing child. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Set Form's `errorSummary={false}` (overriding the component default of `true`) so submission behavior matches the spec's literal wording 'focuses the first invalid field' rather than the default error-summary-gets-focus behavior. → `site/src/content/docs/components/pattern.settingspage.md`
 
 ## Popover
 
@@ -2824,7 +2893,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 1431 · CODE: 83 · TOOLING: 2 · NOISE: 40
+DOC: 1471 · CODE: 84 · TOOLING: 2 · NOISE: 40
 
 ## Gates to fix
 

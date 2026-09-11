@@ -46,17 +46,18 @@
     }
   },
   "Alert.rn": {
-    "hash": "ef5ecb5064cae7d2",
-    "lastAttemptHash": "ef5ecb5064cae7d2",
-    "generatedAt": "2026-09-10T21:54:06+00:00",
+    "hash": "0a74c42ab9a3992b",
+    "lastAttemptHash": "0a74c42ab9a3992b",
+    "generatedAt": "2026-09-11T00:45:15+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5186,
+    "costUsd": 0.4893,
     "files": [
+      "packages/rn/src/Alert.test.tsx",
       "packages/rn/src/Alert.tsx"
     ],
-    "gaps": 1,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -419,13 +420,13 @@
     }
   },
   "Fieldset.rn": {
-    "hash": "4a98923230e87387",
-    "lastAttemptHash": "4a98923230e87387",
-    "generatedAt": "2026-09-10T22:01:18+00:00",
+    "hash": "a33369956ef19729",
+    "lastAttemptHash": "a33369956ef19729",
+    "generatedAt": "2026-09-11T01:00:08+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.454,
+    "costUsd": 0.3253,
     "files": [
       "packages/rn/src/Fieldset.tsx"
     ],

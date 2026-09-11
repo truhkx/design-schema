@@ -2,7 +2,6 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Fieldset.js';
-import './Stack.js';
 import './Input.js';
 import type { FieldsetGap } from './Fieldset.js';
 
@@ -39,11 +38,9 @@ const meta: Meta<FieldsetArgs> = {
       gap=${args.gap}
       ?disabled=${args.disabled}
     >
-      <ds-stack gap=${args.gap}>
-        <ds-input name="street" label="Street" ?required=${args.required}></ds-input>
-        <ds-input name="city" label="City" ?required=${args.required}></ds-input>
-        <ds-input name="postal-code" label="Postal code" ?required=${args.required}></ds-input>
-      </ds-stack>
+      <ds-input name="street" label="Street" ?required=${args.required}></ds-input>
+      <ds-input name="city" label="City" ?required=${args.required}></ds-input>
+      <ds-input name="postal-code" label="Postal code" ?required=${args.required}></ds-input>
     </ds-fieldset>
   `,
 };

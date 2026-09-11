@@ -27,7 +27,7 @@ function ActionSheetDemo(props: Partial<ComponentProps<typeof ActionSheet>>) {
       <Button label="More actions" iconOnly leadingIcon={<Icon name="ellipsis" inline />} onClick={() => setOpen(true)} />
       <ActionSheet
         open={open}
-        title="Photo.jpg"
+        heading="Photo.jpg"
         actions={PHOTO_ACTIONS}
         onAction={() => setOpen(false)}
         onClose={() => setOpen(false)}
@@ -41,8 +41,12 @@ export const Default: Story = {
   render: () => <ActionSheetDemo />,
 };
 
-export const WithoutTitle: Story = {
-  render: () => <ActionSheetDemo title={undefined} />,
+export const WithoutHeading: Story = {
+  render: () => <ActionSheetDemo heading={undefined} />,
+};
+
+export const NotDismissible: Story = {
+  render: () => <ActionSheetDemo dismissible={false} />,
 };
 
 export const DisabledAction: Story = {
@@ -62,7 +66,7 @@ export const Keyboard: Story = {
   render: () => (
     <ActionSheet
       open
-      title="Photo.jpg"
+      heading="Photo.jpg"
       actions={PHOTO_ACTIONS}
       onAction={() => {}}
       onClose={() => {}}

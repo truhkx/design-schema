@@ -38,6 +38,9 @@ export type PopoverPlacement =
 
 export type PopoverOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'close-button' | 'tab-out';
 
+/** Heading level of the panel heading. Accepts the schema's string values and their numeric equivalents. */
+export type PopoverHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
+
 type PopoverSide = 'top' | 'bottom' | 'start' | 'end';
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
@@ -184,6 +187,8 @@ export interface PopoverProps {
   children: ReactNode;
   /** Optional heading at the top of the panel, also the accessible name. Without it, the panel is named by the trigger. */
   heading?: string;
+  /** Heading level of the panel heading, so it fits the page outline (a popover usually sits under a level-2 section). */
+  headingLevel?: PopoverHeadingLevel;
   /** Controlled open state. Omit for uncontrolled (the trigger toggles it). */
   open?: boolean;
   /** Preferred side and alignment; flips and shifts to stay in the viewport. */
@@ -223,6 +228,7 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
     trigger,
     children,
     heading,
+    headingLevel = '3',
     open: openProp,
     placement = 'bottom',
     modal = false,
@@ -457,7 +463,7 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
           {heading || dismissible ? (
             <div className="ds-popover__header">
               {heading ? (
-                <Heading level={2} id={headingId} ref={headingRef} tabIndex={-1} data-part="heading" className="ds-popover__heading">
+                <Heading level={headingLevel} id={headingId} ref={headingRef} tabIndex={-1} data-part="heading" className="ds-popover__heading">
                   {heading}
                 </Heading>
               ) : null}

@@ -317,8 +317,8 @@ def accessible_name_prop(component: dict) -> str | None:
     props = component.get("props") or {}
     for name, prop in props.items():
         note = str(prop.get("a11y") or "").lower()
-        if any(h in note for h in ACCESSIBLE_NAME_HINTS):
-            return name
+        if prop.get("type") in ("string", "content", "enum") and any(h in note for h in ACCESSIBLE_NAME_HINTS):
+            return name  # a boolean like BottomSheet's hideTitle can mention the name without supplying it
     for name in ACCESSIBLE_NAME_PROPS:
         if name in props and props[name].get("required"):
             return name

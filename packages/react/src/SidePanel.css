@@ -105,13 +105,13 @@
   touch-action: none;
 }
 
-.ds-side-panel__title {
+.ds-side-panel__heading {
   min-inline-size: 0;
 }
 
-/* hideTitle: the title stays in the DOM for the accessible name but is visually hidden — the
+/* hideHeading: the heading stays in the DOM for the accessible name but is visually hidden — the
    standard clip pattern, the one sanctioned pixel literal. */
-.ds-side-panel__title--hidden {
+.ds-side-panel__heading--hidden {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;

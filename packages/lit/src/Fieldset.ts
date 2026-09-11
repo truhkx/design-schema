@@ -2,6 +2,8 @@ import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
+import './Stack.js';
+import type { StackOverridableBinding } from './Stack.js';
 
 export type FieldsetGap = 'tight' | 'normal' | 'loose';
 
@@ -21,12 +23,12 @@ export type FieldsetOverridableBinding =
   | 'fontFamily'
   | 'lineHeight';
 
-const HOOKS: Record<FieldsetOverridableBinding, string> = {
+/** CSS hooks on the host. `fieldsGap` is forwarded to the composed `<ds-stack>`'s own `overrides.gap` instead — see `stackOverrides`. */
+const HOOKS: Record<Exclude<FieldsetOverridableBinding, 'fieldsGap'>, string> = {
   legendSize: '--ds-fieldset-legend-size',
   legendWeight: '--ds-fieldset-legend-weight',
   helperSize: '--ds-fieldset-helper-size',
   partGap: '--ds-fieldset-part-gap',
-  fieldsGap: '--ds-fieldset-fields-gap',
   fontFamily: '--ds-fieldset-font-family', // literal-ok: CSS custom-property name, not a font stack
   lineHeight: '--ds-fieldset-line-height',
 };
@@ -34,10 +36,11 @@ const HOOKS: Record<FieldsetOverridableBinding, string> = {
 /**
  * `<ds-fieldset>` — Fieldset (category: input).
  *
- * `<ds-fieldset legend="Shipping address" gap="normal"><ds-stack>…</ds-stack></ds-fieldset>`.
- * A shadow `<fieldset><legend>` wraps a default `<slot>` for the fields, which
- * stay in the light DOM (usually a `ds-stack` of `ds-input`/`ds-checkbox`/etc.)
- * so `<ds-form>` still collects them by traversing past this element. The
+ * `<ds-fieldset legend="Shipping address" gap="normal"><ds-input …></ds-input>…</ds-fieldset>`.
+ * A shadow `<fieldset><legend>` wraps a `<ds-stack>` composed around a default
+ * `<slot>` for the fields, which stay in the light DOM as raw fields (Fieldset
+ * renders the Stack itself, so consumers should not wrap their own) so
+ * `<ds-form>` still collects them by traversing past this element. The
  * group's `description` and `error` render in the shadow root, linked from the
  * fieldset with `aria-describedby`; `error` gets `role="alert"`. `disabled`
  * propagates to every slotted `ds-input`, `ds-checkbox`, `ds-switch` and
@@ -55,11 +58,11 @@ const HOOKS: Record<FieldsetOverridableBinding, string> = {
  * when the group needs a rule, and put cross-field errors on the group rather
  * than on one field.
  *
- * @slot - The fields, usually a Stack of Inputs, Checkboxes or Switches.
+ * @slot - The raw fields (Inputs, Checkboxes, Switches); Fieldset lays them out in its own composed Stack.
  * @csspart group - The `<fieldset>` (anatomy: group).
  * @csspart legend - The `<legend>`.
  * @csspart description - The group helper text.
- * @csspart fields - The wrapper around the default slot (anatomy: fields).
+ * @csspart fields - The composed `<ds-stack>` wrapping the default slot (anatomy: fields).
  * @csspart errorMessage - The `role="alert"` group error region.
  */
 @customElement('ds-fieldset')
@@ -72,24 +75,12 @@ export class DsFieldset extends LitElement {
       --ds-fieldset-legend-weight: var(--font-weight-medium);
       --ds-fieldset-helper-size: var(--font-size-sm);
       --ds-fieldset-part-gap: var(--layout-gap-tight);
-      --ds-fieldset-fields-gap: var(--layout-gap-normal);
       --ds-fieldset-font-family: var(--font-family-body);
       --ds-fieldset-line-height: var(--font-line-height-normal);
     }
 
     :host([hidden]) {
       display: none;
-    }
-
-    /* fieldsGap: layout.gap.{gap} */
-    :host([gap='tight']) {
-      --ds-fieldset-fields-gap: var(--layout-gap-tight);
-    }
-    :host([gap='normal']) {
-      --ds-fieldset-fields-gap: var(--layout-gap-normal);
-    }
-    :host([gap='loose']) {
-      --ds-fieldset-fields-gap: var(--layout-gap-loose);
     }
 
     /* No border and no padding: the group is structure, not a surface. */
@@ -127,13 +118,6 @@ export class DsFieldset extends LitElement {
       color: var(--color-foreground-muted);
     }
 
-    .fields {
-      display: flex;
-      flex-direction: column;
-      gap: var(--ds-fieldset-fields-gap);
-      min-inline-size: 0;
-    }
-
     /* errorText: color.foreground.danger, locked */
     .error {
       font-size: var(--ds-fieldset-helper-size);
@@ -157,7 +141,7 @@ export class DsFieldset extends LitElement {
   /** Disables every field inside. Fields keep their own `disabled` for finer control. */
   @property({ type: Boolean, reflect: true }) disabled = false;
 
-  /** Gap between the fields, from the layout rhythm. */
+  /** Gap between the fields, from the layout rhythm. Fieldset renders the Stack itself; children are the raw fields. */
   @property({ reflect: true }) gap: FieldsetGap = 'normal';
 
   /** Per-instance style overrides: `{ fieldsGap: 'layout.gap.loose' }`. Locked bindings are ignored. */
@@ -204,12 +188,18 @@ export class DsFieldset extends LitElement {
         ${this.description
           ? html`<p id="description" class="description" part="description">${this.description}</p>`
           : nothing}
-        <div class="fields" part="fields">
+        <ds-stack part="fields" gap=${this.gap} .overrides=${this.stackOverrides}>
           <slot @slotchange=${this.handleSlotChange}></slot>
-        </div>
+        </ds-stack>
         <div id="error" class="error" part="errorMessage" role="alert">${this.error ?? ''}</div>
       </fieldset>
     `;
+  }
+
+  /** `overrides.fieldsGap` forwarded to the composed `<ds-stack>`'s own `overrides.gap`; Fieldset never styles the Stack directly. */
+  private get stackOverrides(): Partial<Record<StackOverridableBinding, TokenRef>> | undefined {
+    const ref = this.overrides?.fieldsGap;
+    return ref === undefined ? undefined : { gap: ref };
   }
 
   /** True once at least one field is found and every one of them is `required`. */
@@ -244,7 +234,7 @@ export class DsFieldset extends LitElement {
   }
 
   private applyOverrides(): void {
-    for (const binding of Object.keys(HOOKS) as FieldsetOverridableBinding[]) {
+    for (const binding of Object.keys(HOOKS) as Exclude<FieldsetOverridableBinding, 'fieldsGap'>[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
       if (ref === undefined) {

@@ -96,13 +96,20 @@
   min-inline-size: 0;
 }
 
-.ds-bottom-sheet__title {
+.ds-bottom-sheet__heading {
   min-inline-size: 0;
 }
 
-/* hideTitle: the title stays in the DOM for the accessible name but is visually hidden — the
+/* focus-visible: the heading is only focused programmatically (as the last initial-focus
+   fallback), never removed. */
+.ds-bottom-sheet__heading:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
+}
+
+/* hideHeading: the heading stays in the DOM for the accessible name but is visually hidden — the
    standard clip pattern, the one sanctioned pixel literal. */
-.ds-bottom-sheet__title--hidden {
+.ds-bottom-sheet__visually-hidden {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -115,8 +122,11 @@
   border: 0;
 }
 
+/* target-44px: touch targets in the sheet are comfortable-sized because sheets are used one-handed. */
 .ds-bottom-sheet__close {
   flex: 0 0 auto;
+  min-inline-size: var(--size-target-comfortable);
+  min-block-size: var(--size-target-comfortable);
 }
 
 /* body → the Box's own inset (default layout.inset.lg); this is the part that scrolls when content

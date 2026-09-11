@@ -24,12 +24,14 @@ import { Button } from './Button';
 import { FocusScope } from './FocusScope';
 import { Heading } from './Heading';
 import { Icon } from './Icon';
+import { Landmark } from './Landmark';
 import { Stack } from './Stack';
 import './SidePanel.css';
 
 export type SidePanelSide = 'start' | 'end';
 export type SidePanelWidth = 'narrow' | 'default' | 'wide';
 export type SidePanelPersistent = 'never' | 'content' | 'page';
+export type SidePanelRole = 'complementary' | 'navigation';
 export type SidePanelOpenChangeReason =
   | 'trigger'
   | 'escape'
@@ -39,8 +41,12 @@ export type SidePanelOpenChangeReason =
   | 'action'
   | 'navigation';
 
-/** Reasons that request close but are not blocked by `dismissible: false` — only the trigger, footer actions, and following a link still work. */
-const ALWAYS_ALLOWED_REASONS: ReadonlySet<SidePanelOpenChangeReason> = new Set(['trigger', 'action', 'navigation']);
+/**
+ * Reasons that request close even when `dismissible` is false: the trigger toggle, a footer
+ * action, and following a Link are the consumer's own deliberate UI, not an incidental dismiss
+ * affordance; Escape still reports through `onOpenChange` so the consumer can decide, as in Dialog.
+ */
+const ALWAYS_ALLOWED_REASONS: ReadonlySet<SidePanelOpenChangeReason> = new Set(['trigger', 'escape', 'action', 'navigation']);
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type SidePanelOverridableBinding =
@@ -99,6 +105,21 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+/**
+ * Moves focus to the next document-order tabbable element relative to `anchor`, ignoring anything
+ * inside `exclude` (the portaled panel) — used so Tab out of the last panel element continues into
+ * the page rather than the portal's own position in the DOM.
+ */
+function focusAdjacent(anchor: HTMLElement | null, exclude: HTMLElement | null) {
+  if (!anchor) return;
+  const all = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) => !exclude || !exclude.contains(element),
+  );
+  const index = all.indexOf(anchor);
+  if (index === -1) return;
+  (all[index + 1] ?? anchor).focus();
+}
+
 /* Only declared when the bundler defines it; never assumed. */
 declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
@@ -144,10 +165,10 @@ export interface SidePanelProps {
   trigger?: ReactElement;
   /** Controlled visibility. Omit for uncontrolled (the trigger toggles it). */
   open?: boolean;
-  /** The panel's title and accessible name ("Menu", "Filters", "Your cart"). May be visually hidden with `hideTitle`. */
-  title: string;
-  /** Keep the title for assistive technology but do not render it. The accessible name is required regardless. */
-  hideTitle?: boolean;
+  /** The panel's title and accessible name ("Menu", "Filters", "Your cart"). May be visually hidden with `hideHeading`. */
+  heading: string;
+  /** Keep the title for assistive technology but do not render it (a navigation panel whose List is self-explanatory). The accessible name is required regardless. */
+  hideHeading?: boolean;
   /** The body: a List or Tree of Links for navigation, a Form of filters, a Stack of Cards. Scrolls inside the panel when taller than the viewport. */
   children: ReactNode;
   /** Pinned to the bottom of the panel above the safe area. */
@@ -163,6 +184,13 @@ export interface SidePanelProps {
    */
   persistent?: SidePanelPersistent;
   /**
+   * The landmark the panel exposes (in persistent mode, and as the region's role while open in
+   * non-modal mode): `navigation` for a menu of Links, `complementary` for filters, a cart, a
+   * detail. On web this selects the Landmark component's element (`nav` or `aside`). Not used when
+   * `modal` — a modal panel is a dialog, not a landmark.
+   */
+  role?: SidePanelRole;
+  /**
    * False (the default, the disclosure pattern): no scrim by default, the page stays live and in
    * the tab order, focus stays on the trigger when it opens, and Escape or an outside click closes
    * it. True: the panel is a modal Dialog at the edge — scrim, focus trapped, page inert.
@@ -172,7 +200,8 @@ export interface SidePanelProps {
   scrim?: boolean;
   /**
    * Escape, the close button, a scrim tap / outside click, and the swipe gesture all request
-   * close. When false, only the trigger and footer actions close it.
+   * close. When false, the close button is not rendered and taps outside do nothing; Escape still
+   * reports through `onOpenChange` with reason `escape` (the consumer decides), as in Dialog.
    */
   dismissible?: boolean;
   /** On touch, a swipe toward the edge dismisses. Purely additive: the trigger and close button always exist. */
@@ -202,13 +231,14 @@ export const SidePanel = forwardRef<HTMLDivElement, SidePanelProps>(function Sid
   {
     trigger,
     open: openProp,
-    title,
-    hideTitle = false,
+    heading,
+    hideHeading = false,
     children,
     footer,
     side = 'start',
     width = 'default',
     persistent = 'never',
+    role = 'complementary',
     modal = false,
     scrim = true,
     dismissible = true,
@@ -226,7 +256,7 @@ export const SidePanel = forwardRef<HTMLDivElement, SidePanelProps>(function Sid
   const generatedId = useId();
   const triggerId = `ds-side-panel${generatedId}-trigger`;
   const panelId = `ds-side-panel${generatedId}-panel`;
-  const titleId = `ds-side-panel${generatedId}-title`;
+  const headingId = `ds-side-panel${generatedId}-heading`;
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => wrapperRef.current as HTMLDivElement, []);
@@ -249,8 +279,8 @@ export const SidePanel = forwardRef<HTMLDivElement, SidePanelProps>(function Sid
 
   const closingRef = useRef(false);
 
-  if (isDev && !title) {
-    console.warn('SidePanel: `title` is required and becomes the accessible name; it must not be empty.');
+  if (isDev && !heading) {
+    console.warn('SidePanel: `heading` is required and becomes the accessible name; it must not be empty.');
   }
 
   const changeOpen = (value: boolean, reason: SidePanelOpenChangeReason) => {
@@ -365,11 +395,32 @@ export const SidePanel = forwardRef<HTMLDivElement, SidePanelProps>(function Sid
     requestClose('scrim');
   };
 
+  // Non-modal only (the modal dialog traps Tab through FocusScope): Shift+Tab from the first
+  // element returns to the trigger with the panel still open; Tab from the last element continues
+  // into the page at the trigger's own document position, since the portaled panel sits elsewhere
+  // in the DOM and cannot rely on natural tab order to leave it.
   const handlePanelKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
-    if (event.key !== 'Escape') return;
-    event.preventDefault();
-    requestClose('escape');
-    triggerRef.current?.focus();
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      requestClose('escape');
+      triggerRef.current?.focus();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const focusables = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const activeElement = document.activeElement;
+    if (!event.shiftKey && activeElement === last) {
+      event.preventDefault();
+      focusAdjacent(triggerRef.current, panel);
+    } else if (event.shiftKey && activeElement === first) {
+      event.preventDefault();
+      triggerRef.current?.focus();
+    }
   };
 
   const handleCloseButtonClick = () => requestClose('close-button');
@@ -449,7 +500,9 @@ export const SidePanel = forwardRef<HTMLDivElement, SidePanelProps>(function Sid
   const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
   const bodyOverrides = overrides?.inset ? { paddingBlock: overrides.inset, paddingInline: overrides.inset } : undefined;
 
-  const titleClasses = ['ds-side-panel__title', hideTitle ? 'ds-side-panel__title--hidden' : null].filter(Boolean).join(' ');
+  const headingClasses = ['ds-side-panel__heading', hideHeading ? 'ds-side-panel__heading--hidden' : null]
+    .filter(Boolean)
+    .join(' ');
 
   const header = (
     <div
@@ -460,10 +513,10 @@ export const SidePanel = forwardRef<HTMLDivElement, SidePanelProps>(function Sid
       onPointerUp={finishHeaderDrag}
       onPointerCancel={finishHeaderDrag}
     >
-      <Heading level={2} id={titleId} data-part="title" className={titleClasses}>
-        {title}
+      <Heading level={2} id={headingId} data-part="heading" className={headingClasses}>
+        {heading}
       </Heading>
-      {!isPersistentActive ? (
+      {!isPersistentActive && dismissible ? (
         <Button
           ref={closeButtonRef}
           variant="ghost"
@@ -513,13 +566,13 @@ export const SidePanel = forwardRef<HTMLDivElement, SidePanelProps>(function Sid
     return (
       <div ref={wrapperRef} data-ds="SidePanel" className="ds-side-panel">
         {clonedTrigger}
-        <aside id={panelId} aria-labelledby={titleId} role="complementary" className={persistentClasses} style={overrideStyle}>
+        <Landmark role={role} id={panelId} aria-labelledby={headingId} className={persistentClasses} style={overrideStyle}>
           <div className="ds-side-panel__surface" data-part="surface">
             {header}
             {body}
             {footerNode}
           </div>
-        </aside>
+        </Landmark>
       </div>
     );
   }
@@ -566,24 +619,24 @@ export const SidePanel = forwardRef<HTMLDivElement, SidePanelProps>(function Sid
           style={overrideStyle}
           role="dialog"
           aria-modal="true"
-          aria-labelledby={titleId}
+          aria-labelledby={headingId}
           onCancel={handleDialogCancel}
           onClick={handleDialogClick}
         >
           {panelBody}
         </dialog>
       ) : (
-        <aside
+        <Landmark
           ref={panelRef as Ref<HTMLElement>}
+          role={role}
           id={panelId}
           className={panelClasses}
           style={overrideStyle}
-          role="complementary"
-          aria-labelledby={titleId}
+          aria-labelledby={headingId}
           onKeyDown={handlePanelKeyDown}
         >
           {panelBody}
-        </aside>
+        </Landmark>
       )}
     </>
   );

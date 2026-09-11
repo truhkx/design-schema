@@ -23,20 +23,19 @@
     }
   },
   "ActionSheet.web": {
-    "hash": "299e943664f0ef49",
-    "lastAttemptHash": "299e943664f0ef49",
-    "generatedAt": "2026-09-10T07:16:07+00:00",
+    "hash": "f32f51969774e10c",
+    "lastAttemptHash": "f32f51969774e10c",
+    "generatedAt": "2026-09-11T00:41:42+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.6345,
+    "costUsd": 1.2107,
     "files": [
       "packages/react/src/ActionSheet.css",
       "packages/react/src/ActionSheet.stories.tsx",
-      "packages/react/src/ActionSheet.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/ActionSheet.tsx"
     ],
-    "gaps": 7,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -47,19 +46,20 @@
     }
   },
   "Alert.web": {
-    "hash": "33847c4f8a4382bb",
-    "lastAttemptHash": "33847c4f8a4382bb",
-    "generatedAt": "2026-09-10T21:47:31+00:00",
+    "hash": "f623b840dd630d33",
+    "lastAttemptHash": "f623b840dd630d33",
+    "generatedAt": "2026-09-11T00:46:09+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5856,
+    "costUsd": 0.3123,
     "files": [
       "packages/react/src/Alert.css",
+      "packages/react/src/Alert.stories.tsx",
       "packages/react/src/Alert.test.tsx",
       "packages/react/src/Alert.tsx"
     ],
-    "gaps": 5,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -94,20 +94,19 @@
     }
   },
   "BottomSheet.web": {
-    "hash": "5f96d7a73b638ea9",
-    "lastAttemptHash": "5f96d7a73b638ea9",
-    "generatedAt": "2026-09-10T07:06:34+00:00",
+    "hash": "7d2858f6504e94ef",
+    "lastAttemptHash": "7d2858f6504e94ef",
+    "generatedAt": "2026-09-11T00:50:45+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8422,
+    "costUsd": 1.0841,
     "files": [
       "packages/react/src/BottomSheet.css",
       "packages/react/src/BottomSheet.stories.tsx",
-      "packages/react/src/BottomSheet.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/BottomSheet.tsx"
     ],
-    "gaps": 7,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -441,19 +440,20 @@
     }
   },
   "Fieldset.web": {
-    "hash": "7dd365e58ee8744d",
-    "lastAttemptHash": "7dd365e58ee8744d",
-    "generatedAt": "2026-09-10T21:54:47+00:00",
+    "hash": "c74b5c1ad7cb4ccf",
+    "lastAttemptHash": "c74b5c1ad7cb4ccf",
+    "generatedAt": "2026-09-11T01:01:14+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5576,
+    "costUsd": 0.3209,
     "files": [
       "packages/react/src/Fieldset.css",
-      "packages/react/src/Fieldset.test.tsx",
-      "packages/react/src/Fieldset.tsx"
+      "packages/react/src/Fieldset.stories.tsx",
+      "packages/react/src/Fieldset.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 3,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -740,20 +740,19 @@
     }
   },
   "Popover.web": {
-    "hash": "152c2e281a9168a6",
-    "lastAttemptHash": "152c2e281a9168a6",
-    "generatedAt": "2026-09-10T06:57:19+00:00",
+    "hash": "25e813bea9e1e616",
+    "lastAttemptHash": "25e813bea9e1e616",
+    "generatedAt": "2026-09-11T01:02:49+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.9587,
+    "costUsd": 0.3888,
     "files": [
-      "packages/react/src/Popover.css",
       "packages/react/src/Popover.stories.tsx",
       "packages/react/src/Popover.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -882,20 +881,20 @@
     }
   },
   "SidePanel.web": {
-    "hash": "ede8cadd07ff4c1e",
-    "lastAttemptHash": "ede8cadd07ff4c1e",
-    "generatedAt": "2026-09-10T07:25:26+00:00",
+    "hash": "dded8fb4bed452a3",
+    "lastAttemptHash": "dded8fb4bed452a3",
+    "generatedAt": "2026-09-11T01:09:53+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.6019,
+    "costUsd": 1.8075,
     "files": [
       "packages/react/src/SidePanel.css",
       "packages/react/src/SidePanel.stories.tsx",
       "packages/react/src/SidePanel.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

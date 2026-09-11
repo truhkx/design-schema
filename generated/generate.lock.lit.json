@@ -45,17 +45,17 @@
     }
   },
   "Alert.lit": {
-    "hash": "1ce60c2bcae6f667",
-    "lastAttemptHash": "1ce60c2bcae6f667",
-    "generatedAt": "2026-09-10T21:42:01+00:00",
+    "hash": "3f8347c185cdfabd",
+    "lastAttemptHash": "3f8347c185cdfabd",
+    "generatedAt": "2026-09-11T00:43:32+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.9799,
+    "costUsd": 0.4909,
     "files": [
       "packages/lit/src/Alert.ts"
     ],
-    "gaps": 3,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -426,15 +426,15 @@
     }
   },
   "Fieldset.lit": {
-    "hash": "1790f9455f302430",
-    "lastAttemptHash": "1790f9455f302430",
-    "generatedAt": "2026-09-10T21:48:57+00:00",
+    "hash": "a3cb70bd418462c9",
+    "lastAttemptHash": "a3cb70bd418462c9",
+    "generatedAt": "2026-09-11T00:58:30+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3771,
+    "costUsd": 1.6162,
     "files": [
-      "packages/lit/src/Fieldset.test.ts",
+      "packages/lit/src/Fieldset.stories.ts",
       "packages/lit/src/Fieldset.ts"
     ],
     "gaps": 2,

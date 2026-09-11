@@ -14,7 +14,7 @@ function BottomSheetHarness({ children, footer, onClose, ...rest }: Partial<Bott
     <>
       <Button label="Filters" onClick={() => setOpen(true)} />
       <BottomSheet
-        title="Filters"
+        heading="Filters"
         {...rest}
         open={open}
         onClose={(reason) => {
@@ -50,12 +50,12 @@ const meta = {
   component: BottomSheet,
   args: {
     open: false,
-    title: 'Filters',
-    hideTitle: false,
+    heading: 'Filters',
+    hideHeading: false,
     children: defaultBody,
     height: 'content',
     dismissible: true,
-    draggable: true,
+    dragToDismiss: true,
   },
   render: (args) => <BottomSheetHarness {...args} />,
   tags: ['autodocs'],
@@ -72,10 +72,10 @@ export const HeightHalf: Story = { args: { height: 'half' } };
 export const HeightFull: Story = { args: { height: 'full' } };
 
 /* notable states */
-export const HideTitleTrue: Story = {
+export const HideHeadingTrue: Story = {
   args: {
-    hideTitle: true,
-    title: 'Share',
+    hideHeading: true,
+    heading: 'Share',
     children: (
       <Stack direction="horizontal" gap="normal">
         <Button label="Copy link" variant="secondary" size="sm" />
@@ -90,13 +90,13 @@ export const HideTitleTrue: Story = {
 export const NotDismissible: Story = {
   args: {
     dismissible: false,
-    draggable: false,
+    dragToDismiss: false,
     children: <Text>Use the footer actions to close this sheet — the scrim, Escape reporting aside, and drag are disabled.</Text>,
   },
 };
 
-export const DraggableFalse: Story = {
-  args: { draggable: false },
+export const DragToDismissFalse: Story = {
+  args: { dragToDismiss: false },
 };
 
 export const WithoutFooter: Story = {

@@ -36,10 +36,11 @@ export type ActionSheetAction = {
 
 /**
  * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
- * this list. `titleSize`, and `fontFamily`/`lineHeight` for the title, are forwarded to the
- * composed `Text` title's own `overrides`, since Text already owns those bindings; `fontFamily` and
- * `lineHeight` are also applied to the item rows directly. Only applies to the phone presentation —
- * above the wide breakpoint the sheet renders as `Menu` and uses Menu's own overrides contract.
+ * this list. `titleSize`, and `fontFamily`/`lineHeight` for the heading, are forwarded to the
+ * composed `Text` heading's own `overrides`, since Text already owns those bindings; `fontFamily`
+ * and `lineHeight` are also applied to the item rows directly. Only applies to the phone
+ * presentation — above the wide breakpoint the sheet renders as `Menu` and uses Menu's own
+ * overrides contract.
  */
 export type ActionSheetOverridableBinding =
   | 'scrim'
@@ -48,6 +49,7 @@ export type ActionSheetOverridableBinding =
   | 'itemPaddingBlock'
   | 'itemPaddingInline'
   | 'itemGap'
+  | 'headerPaddingBlock'
   | 'titleSize'
   | 'fontFamily'
   | 'fontSize'
@@ -66,6 +68,7 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string>>
   itemPaddingBlock: '--ds-action-sheet-item-padding-block',
   itemPaddingInline: '--ds-action-sheet-item-padding-inline',
   itemGap: '--ds-action-sheet-item-gap',
+  headerPaddingBlock: '--ds-action-sheet-header-padding-block',
   fontFamily: '--ds-action-sheet-font-family',
   fontSize: '--ds-action-sheet-font-size',
   lineHeight: '--ds-action-sheet-line-height',
@@ -154,15 +157,19 @@ export interface ActionSheetProps
    * What the actions apply to ("Photo.jpg"), shown muted above the list. Also the accessible name;
    * when omitted the name is `copy.defaultLabel`.
    */
-  title?: string;
+  heading?: string;
   /** Two to about eight actions. `danger` actions are visually distinct and grouped last. */
   actions: ActionSheetAction[];
+  /** Escape, the scrim, the cancel row and the drag all request close; Escape still reports through onClose when false, as in Dialog. */
+  dismissible?: boolean;
   /** Label of the explicit cancel row on phones. Defaults to `copy.cancelLabel`. */
   cancelLabel?: string;
   /** An action was chosen; receives its `id`. The consumer performs it and closes. */
   onAction?: (id: string) => void;
   /** Dismissed without choosing: reason `escape`, `scrim`, `cancel`, or `drag`. */
   onClose?: (reason: ActionSheetCloseReason) => void;
+  /** Portal target for the sheet's DOM node. Defaults to `document.body`. */
+  container?: HTMLElement;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<ActionSheetOverridableBinding, TokenRef>>;
 }
@@ -177,7 +184,20 @@ export interface ActionSheetProps
  * actions last with `tone: danger`.
  */
 export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(function ActionSheet(
-  { open, title, actions, cancelLabel, onAction, onClose, overrides, className, style, ...rest },
+  {
+    open,
+    heading,
+    actions,
+    dismissible = true,
+    cancelLabel,
+    onAction,
+    onClose,
+    container,
+    overrides,
+    className,
+    style,
+    ...rest
+  },
   ref,
 ) {
   const isWide = useIsWideViewport();
@@ -200,7 +220,7 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
   const [visible, setVisible] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const accessibleLabel = title || COPY.defaultLabel;
+  const accessibleLabel = heading || COPY.defaultLabel;
   const { normal: normalActions, danger: dangerActions } = partitionActions(actions);
 
   useEffect(() => {
@@ -275,10 +295,13 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
     return () => document.documentElement.classList.remove('ds-action-sheet-lock-scroll');
   }, [present, isWide]);
 
-  const requestClose = (reason: ActionSheetCloseReason) => onClose?.(reason);
+  const requestClose = (reason: ActionSheetCloseReason) => {
+    if (reason !== 'escape' && !dismissible) return;
+    onClose?.(reason);
+  };
 
   const handleCancel = (event: SyntheticEvent<HTMLDialogElement>) => {
-    // The consumer owns `open`; the sheet never closes itself.
+    // The consumer owns `open`; the sheet never closes itself, even when it is not dismissible.
     event.preventDefault();
     requestClose('escape');
   };
@@ -383,12 +406,12 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
     activateAction(action);
   };
 
-  // Menu reports why it closed; an item choice (`action`) is handled by handleMenuAction instead,
-  // so every other reason (trigger, escape, outside) maps to 'escape' — the only ActionSheetCloseReason
-  // that fits this non-modal, scrim-less, cancel-row-less presentation.
+  // Menu reports why it closed; an item choice (`action`) is handled by handleMenuAction instead.
+  // `outside` (a click away from the popup) is this presentation's equivalent of the scrim tap, so
+  // it maps to 'scrim'; every other reason (trigger, controlled) falls back to 'escape'.
   const handleMenuOpenChange = ({ open: isOpen, reason }: { open: boolean; reason: MenuOpenChangeReason }) => {
     if (isOpen || reason === 'action') return;
-    requestClose('escape');
+    requestClose(reason === 'outside' ? 'scrim' : 'escape');
   };
 
   const handleMenuAction = (id: string) => {
@@ -444,6 +467,7 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
         anchor={menuAnchorRef}
         onAction={handleMenuAction}
         onOpenChange={handleMenuOpenChange}
+        container={container}
       />
     );
   }
@@ -477,18 +501,20 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
           onPointerUp={finishDrag}
           onPointerCancel={finishDrag}
         >
-          <span className="ds-action-sheet__handle" aria-hidden="true" />
-          {title ? (
-            <Text
-              size="sm"
-              tone="muted"
-              data-part="title"
-              className="ds-action-sheet__title"
-              overrides={Object.keys(textOverrides).length ? textOverrides : undefined}
-            >
-              {title}
-            </Text>
-          ) : null}
+          <div className="ds-action-sheet__header" data-part="header">
+            <span className="ds-action-sheet__handle" data-part="handle" aria-hidden="true" />
+            {heading ? (
+              <Text
+                size="sm"
+                tone="muted"
+                data-part="heading"
+                className="ds-action-sheet__heading"
+                overrides={Object.keys(textOverrides).length ? textOverrides : undefined}
+              >
+                {heading}
+              </Text>
+            ) : null}
+          </div>
           <div
             role="menu"
             id={listId}
@@ -504,17 +530,19 @@ export const ActionSheet = forwardRef<HTMLDialogElement, ActionSheetProps>(funct
             {dangerActions.map(renderItem)}
           </div>
           <div role="separator" className="ds-action-sheet__divider" aria-hidden="true" />
-          <Button
-            variant="secondary"
-            label={cancelLabel || COPY.cancelLabel}
-            data-part="cancelButton"
-            className="ds-action-sheet__cancel"
-            onClick={handleCancelButtonClick}
-          />
+          <div className="ds-action-sheet__cancel-row">
+            <Button
+              variant="secondary"
+              label={cancelLabel || COPY.cancelLabel}
+              data-part="cancelButton"
+              className="ds-action-sheet__cancel"
+              onClick={handleCancelButtonClick}
+            />
+          </div>
         </div>
       </FocusScope>
     </dialog>
   );
 
-  return createPortal(node, document.body);
+  return createPortal(node, container ?? document.body);
 });

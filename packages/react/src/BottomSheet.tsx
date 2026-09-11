@@ -114,10 +114,10 @@ export interface BottomSheetProps
   extends Omit<ComponentPropsWithoutRef<'dialog'>, 'children' | 'title' | 'onCancel' | 'onClose' | 'open'> {
   /** Controlled visibility, as in Dialog. */
   open: boolean;
-  /** The sheet's title and accessible name. May be visually hidden with `hideTitle` when the content is self-explanatory (a share sheet). */
-  title: string;
-  /** Keep the title for assistive technology but do not render it. The accessible name is required regardless; visually hidden is fine, absent is not. */
-  hideTitle?: boolean;
+  /** The sheet's title and accessible name. May be visually hidden with `hideHeading` when the content is self-explanatory (a share sheet). */
+  heading: string;
+  /** Keep the heading for assistive technology but do not render it (forwarded to Dialog above the breakpoint). The accessible name is required regardless; visually hidden is fine, absent is not. */
+  hideHeading?: boolean;
   /** The body. Scrolls inside the sheet when taller than the sheet's height. */
   children: ReactNode;
   /** Action row, pinned to the bottom of the sheet above the safe area. */
@@ -126,8 +126,12 @@ export interface BottomSheetProps
   height?: BottomSheetHeight;
   /** Escape, the close button, a scrim tap and the drag gesture all request close. When false, only the footer actions close it; Escape still reports. */
   dismissible?: boolean;
-  /** Drag the handle (or the sheet) downward to dismiss, with a velocity threshold. Purely additive: the close button and Escape always exist. */
-  draggable?: boolean;
+  /**
+   * Drag the handle (or the header) downward to dismiss: release past 25% of the sheet height, or
+   * faster than 1.5 px/ms, dismisses; otherwise the sheet springs back. Purely additive: the close
+   * button and Escape always exist.
+   */
+  dragToDismiss?: boolean;
   /** Requested close with reason: `escape`, `close-button`, `scrim`, `drag`, or `action`. */
   onClose?: (reason: BottomSheetCloseReason) => void;
   /** The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag; provided so analytics can distinguish gestures. */
@@ -151,13 +155,13 @@ export interface BottomSheetProps
 export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(function BottomSheet(
   {
     open,
-    title,
-    hideTitle = false,
+    heading,
+    hideHeading = false,
     children,
     footer,
     height = 'content',
     dismissible = true,
-    draggable = true,
+    dragToDismiss = true,
     onClose,
     onDragDismiss,
     container,
@@ -171,13 +175,14 @@ export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(funct
   const isWide = useIsWideViewport();
 
   const generatedId = useId();
-  const titleId = `ds-bottom-sheet${generatedId}-title`;
+  const headingId = `ds-bottom-sheet${generatedId}-heading`;
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   useImperativeHandle(ref, () => dialogRef.current as HTMLDialogElement, []);
 
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const dragRef = useRef<{ startY: number; startTime: number } | null>(null);
 
@@ -186,8 +191,8 @@ export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(funct
   // Drives the entered/exited CSS state; toggled a frame after mount so the enter transition runs.
   const [visible, setVisible] = useState(false);
 
-  if (isDev && !title) {
-    console.warn('BottomSheet: `title` is required and becomes the accessible name; it must not be empty.');
+  if (isDev && !heading) {
+    console.warn('BottomSheet: `heading` is required and becomes the accessible name; it must not be empty.');
   }
 
   useEffect(() => {
@@ -207,7 +212,7 @@ export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(funct
     }
 
     const first = bodyRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-    (first ?? closeButtonRef.current ?? dialog).focus();
+    (first ?? closeButtonRef.current ?? headingRef.current ?? dialog).focus();
 
     if (prefersReducedMotion()) {
       setVisible(true);
@@ -270,7 +275,7 @@ export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(funct
   // distance only. Released past 25% of the sheet's height or a fast flick dismisses; otherwise the
   // sheet springs back on the same transition the open/close states use.
   const handleHeaderPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!draggable) return;
+    if (!dragToDismiss) return;
     if ((event.target as HTMLElement).closest('button')) return;
     const surface = surfaceRef.current;
     if (!surface) return;
@@ -297,7 +302,7 @@ export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(funct
     const elapsed = Math.max(1, event.timeStamp - drag.startTime);
     const velocity = deltaY / elapsed;
     const sheetHeight = surface.getBoundingClientRect().height || 1;
-    const pastThreshold = deltaY / sheetHeight > 0.25 || velocity > 0.5;
+    const pastThreshold = deltaY / sheetHeight > 0.25 || velocity > 1.5;
 
     surface.style.transition = prefersReducedMotion() ? 'none' : '';
     surface.style.transform = '';
@@ -317,8 +322,8 @@ export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(funct
         {...rest}
         ref={ref}
         open={open}
-        heading={title}
-        hideHeading={hideTitle}
+        heading={heading}
+        hideHeading={hideHeading}
         footer={footer}
         size="md"
         dismissible={dismissible}
@@ -345,7 +350,7 @@ export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(funct
 
   const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
 
-  const titleClasses = ['ds-bottom-sheet__title', hideTitle ? 'ds-bottom-sheet__title--hidden' : null]
+  const headingClasses = ['ds-bottom-sheet__heading', hideHeading ? 'ds-bottom-sheet__visually-hidden' : null]
     .filter(Boolean)
     .join(' ');
 
@@ -357,11 +362,11 @@ export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(funct
       className={classes}
       style={mergedStyle}
       aria-modal="true"
-      aria-labelledby={titleId}
+      aria-labelledby={headingId}
       onCancel={handleCancel}
       onClick={handleScrimClick}
     >
-      <FocusScope trapped autoFocus="none" restoreFocus>
+      <FocusScope trapped autoFocus="none" restoreFocus data-part="focusScope">
         <div className="ds-bottom-sheet__surface" ref={surfaceRef} data-part="surface">
           <div
             className="ds-bottom-sheet__header"
@@ -373,8 +378,8 @@ export const BottomSheet = forwardRef<HTMLDialogElement, BottomSheetProps>(funct
           >
             <span className="ds-bottom-sheet__handle" data-part="handle" aria-hidden="true" />
             <div className="ds-bottom-sheet__heading-row">
-              <Heading level={2} id={titleId} data-part="title" className={titleClasses}>
-                {title}
+              <Heading level={2} id={headingId} ref={headingRef} tabIndex={-1} data-part="heading" className={headingClasses}>
+                {heading}
               </Heading>
               <Button
                 ref={closeButtonRef}

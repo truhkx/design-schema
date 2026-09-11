@@ -18,12 +18,13 @@ const meta = {
   component: SidePanel,
   args: {
     trigger: <Button label="Open menu" variant="secondary" />,
-    title: 'Menu',
-    hideTitle: false,
+    heading: 'Menu',
+    hideHeading: false,
     children: defaultBody,
     side: 'start',
     width: 'default',
     persistent: 'never',
+    role: 'complementary',
     modal: false,
     scrim: true,
     dismissible: true,
@@ -39,7 +40,7 @@ export const Default: Story = {};
 
 /* side */
 export const SideStart: Story = { args: { side: 'start' } };
-export const SideEnd: Story = { args: { side: 'end', trigger: <Button label="Open cart" variant="secondary" />, title: 'Your cart' } };
+export const SideEnd: Story = { args: { side: 'end', trigger: <Button label="Open cart" variant="secondary" />, heading: 'Your cart' } };
 
 /* width */
 export const WidthNarrow: Story = { args: { width: 'narrow' } };
@@ -47,7 +48,7 @@ export const WidthDefault: Story = { args: { width: 'default' } };
 export const WidthWide: Story = {
   args: {
     width: 'wide',
-    title: 'Filters',
+    heading: 'Filters',
     trigger: <Button label="Filters" variant="secondary" />,
     children: (
       <Stack gap="normal">
@@ -72,12 +73,16 @@ export const PersistentNever: Story = { args: { persistent: 'never' } };
 export const PersistentContent: Story = { args: { persistent: 'content' } };
 export const PersistentPage: Story = { args: { persistent: 'page' } };
 
+/* role */
+export const RoleComplementary: Story = { args: { role: 'complementary' } };
+export const RoleNavigation: Story = { args: { role: 'navigation' } };
+
 /* notable states */
 export const ModalTrue: Story = {
   args: {
     modal: true,
     side: 'end',
-    title: 'Checkout',
+    heading: 'Checkout',
     trigger: <Button label="Checkout" variant="primary" />,
     children: <Text>Review your order before continuing.</Text>,
     footer: <Button label="Continue" variant="primary" size="sm" />,
@@ -90,15 +95,20 @@ export const DismissibleFalse: Story = {
   args: {
     dismissible: false,
     swipeable: false,
-    children: <Text>Use the trigger or a footer action to close this panel — Escape, the close button, and the scrim are disabled.</Text>,
+    children: (
+      <Text>
+        The close button is not rendered and the scrim does nothing — use the trigger or a footer action to close this panel. Escape
+        still reports through onOpenChange for the consumer to decide.
+      </Text>
+    ),
     footer: <Button label="Done" variant="primary" size="sm" />,
   },
 };
 
 export const SwipeableFalse: Story = { args: { swipeable: false } };
 
-export const HideTitleTrue: Story = {
-  args: { hideTitle: true, title: 'Navigation' },
+export const HideHeadingTrue: Story = {
+  args: { hideHeading: true, heading: 'Navigation' },
 };
 
 export const WithoutFooter: Story = { args: { footer: undefined } };

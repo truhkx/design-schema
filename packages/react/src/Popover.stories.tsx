@@ -37,6 +37,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+/* headingLevel */
+export const HeadingLevel2: Story = { args: { heading: 'Filters', headingLevel: '2' } };
+export const HeadingLevel3: Story = { args: { heading: 'Filters', headingLevel: '3' } };
+export const HeadingLevel4: Story = { args: { heading: 'Filters', headingLevel: '4' } };
+
 /* placement */
 export const PlacementBottomStart: Story = { args: { placement: 'bottom-start' } };
 export const PlacementBottom: Story = { args: { placement: 'bottom' } };

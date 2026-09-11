@@ -24,6 +24,7 @@ export type AlertOverridableBinding =
   | 'gap'
   | 'partGap'
   | 'iconSize'
+  | 'headingSize'
   | 'headingWeight'
   | 'fontFamily'
   | 'fontSize'
@@ -38,6 +39,7 @@ const HOOKS: Record<AlertOverridableBinding, string> = {
   gap: '--ds-alert-gap',
   partGap: '--ds-alert-part-gap',
   iconSize: '--ds-alert-icon-size',
+  headingSize: '--ds-alert-heading-size',
   headingWeight: '--ds-alert-heading-weight',
   fontFamily: `--ds-alert-font-family`,
   fontSize: '--ds-alert-font-size',
@@ -80,7 +82,7 @@ const FOCUSABLE =
  * @csspart icon - The tone icon (anatomy: icon).
  * @csspart heading - The heading paragraph (anatomy: heading).
  * @csspart body - The body wrapper (anatomy: body).
- * @csspart dismiss - The dismiss `<ds-button>` (anatomy: dismissButton).
+ * @csspart dismiss-button - The dismiss `<ds-button>` (anatomy: dismissButton).
  */
 @customElement('ds-alert')
 export class DsAlert extends LitElement {
@@ -93,6 +95,7 @@ export class DsAlert extends LitElement {
       --ds-alert-gap: var(--space-3);
       --ds-alert-part-gap: var(--space-1);
       --ds-alert-icon-size: var(--font-size-lg);
+      --ds-alert-heading-size: var(--font-size-md);
       --ds-alert-heading-weight: var(--font-weight-semibold);
       --ds-alert-font-family: var(--font-family-body);
       --ds-alert-font-size: var(--font-size-md);
@@ -180,6 +183,7 @@ export class DsAlert extends LitElement {
 
     .heading {
       margin: 0;
+      font-size: var(--ds-alert-heading-size);
       font-weight: var(--ds-alert-heading-weight);
     }
     /* foreground: color.status.{tone}.foreground, locked */
@@ -268,7 +272,7 @@ export class DsAlert extends LitElement {
           ? html`
               <ds-button
                 class="dismiss"
-                part="dismiss"
+                part="dismiss-button"
                 variant="ghost"
                 size="sm"
                 icon-only

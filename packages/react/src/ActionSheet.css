@@ -7,6 +7,7 @@
   --ds-action-sheet-item-padding-block: var(--space-sm);
   --ds-action-sheet-item-padding-inline: var(--layout-inset-md);
   --ds-action-sheet-item-gap: var(--layout-gap-normal);
+  --ds-action-sheet-header-padding-block: var(--space-sm);
   --ds-action-sheet-font-family: var(--font-family-body);
   --ds-action-sheet-font-size: var(--font-size-md);
   --ds-action-sheet-line-height: var(--font-line-height-normal);
@@ -66,21 +67,30 @@
   }
 }
 
-/* handle: a 4×36 decorative pill centered above the title, aria-hidden and not focusable — supports
-   the drag gesture, which is additive to Cancel and Escape. */
+/* header: the handle plus the heading. headerPaddingBlock is also reused by the cancel row below,
+   so both sit at the same vertical rhythm as the header. */
+.ds-action-sheet__header {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding-block: var(--ds-action-sheet-header-padding-block);
+  flex: 0 0 auto;
+}
+
+/* handle: a 4×36 decorative pill centered above the heading, aria-hidden and not focusable —
+   supports the drag gesture, which is additive to Cancel and Escape. */
 .ds-action-sheet__handle {
   align-self: center;
   inline-size: var(--space-10);
   block-size: var(--space-1);
-  margin-block-start: var(--layout-gap-tight);
   border-radius: var(--radius-full);
   background-color: var(--color-foreground-muted);
   flex: 0 0 auto;
 }
 
-.ds-action-sheet__title {
+.ds-action-sheet__heading {
   padding-inline: var(--ds-action-sheet-item-padding-inline);
-  padding-block: var(--layout-gap-tight);
+  margin-block-start: var(--layout-gap-tight);
   flex: 0 0 auto;
 }
 
@@ -156,10 +166,15 @@
   background-color: var(--ds-action-sheet-divider);
 }
 
-.ds-action-sheet__cancel {
+.ds-action-sheet__cancel-row {
+  box-sizing: border-box;
+  padding-block: var(--ds-action-sheet-header-padding-block);
+  padding-inline: var(--ds-action-sheet-item-padding-inline);
   flex: 0 0 auto;
-  align-self: stretch;
-  margin: var(--ds-action-sheet-item-padding-inline);
+}
+
+.ds-action-sheet__cancel {
+  inline-size: 100%;
 }
 
 /* Body scroll lock while any ActionSheet is present in its bottom-edge presentation; toggled on

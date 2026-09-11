@@ -149,6 +149,7 @@ export { Popover } from './Popover';
 export type {
   PopoverProps,
   PopoverPlacement,
+  PopoverHeadingLevel,
   PopoverOpenChangeReason,
   PopoverOverridableBinding,
 } from './Popover';
@@ -176,6 +177,7 @@ export type {
   SidePanelSide,
   SidePanelWidth,
   SidePanelPersistent,
+  SidePanelRole,
   SidePanelOpenChangeReason,
   SidePanelOverridableBinding,
 } from './SidePanel';

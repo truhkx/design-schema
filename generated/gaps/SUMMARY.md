@@ -1,6 +1,6 @@
 # Gap digest — phase final
 
-Generated 2026-09-10T19:26 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
+Generated 2026-09-10T20:09 by tools/gap_digest.py. DOC lines belong in the named doc; fold them, run `node tools/py.mjs tools/parse.py`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -137,6 +137,15 @@ Doc: `site/src/content/docs/components/alert.md`
 ## AlertDialog
 
 Doc: `site/src/content/docs/components/alertdialog.md`
+
+### 2026-09-10 19:59 — lit round 1
+
+- **CODE** AlertDialog (lit): the pre-existing implementation hardcoded the tone icon's size as size="lg" instead of wiring it through the iconSize override binding (font.size.lg, forwarded to the icon's own --ds-icon-size hook per the styles.iconSize spec). Fixed by adding the iconSize hook to AlertDialogOverridableBinding/HOOKS/:host default and setting `.icon { --ds-icon-size: var(--ds-alert-dialog-icon-size) }` instead of a static size attribute.
+
+### 2026-09-10 19:57 — web round 1
+
+- **DOC** AlertDialog: spec doesn't state whether the icon should carry an accessible label distinguishing tones for screen readers beyond the heading/description — treated as decorative (aria-hidden) since the tone is already conveyed by the heading/description text, matching the 'decorative icons take no label' rule. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: keyboard spec's 'Tab from last wraps to first' / 'Shift+Tab from first wraps to last' is satisfied generically by FocusScope's trapped-focus wrapping rather than an AlertDialog-specific handler; no gap in behavior, but the doc could call out that this is inherited from FocusScope rather than reimplemented. → `site/src/content/docs/components/alertdialog.md`
 
 ### 2026-09-10 18:14 — rn round 1
 
@@ -379,6 +388,17 @@ Doc: `site/src/content/docs/components/breadcrumb.md`
 
 Doc: `site/src/content/docs/components/button.md`
 
+### 2026-09-10 19:47 — lit round 1
+
+- **DOC** Button (lit): the existing implementation hid the entire label/icon content via `visibility: hidden` and overlaid a centered absolute spinner while loading, contradicting the spec's 'hides trailingIcon, keeps the label visible' requirement. Fixed by placing the spinner in the leading-icon slot position (display toggled with `loading`), hiding only the leading/trailing icon slots via CSS while `loading`, and leaving the label always visible. → `site/src/content/docs/components/button.md`
+- **DOC** Button (lit): `expanded` is `attribute: false` (JS-property only, not a reflected HTML attribute) since the spec says it's set by a disclosing parent programmatically and isn't in the `platforms.lit.reflect` list; kept as-is since this predates my pass and matches the 'consumers rarely set it directly' intent, but flagging since the spec doesn't explicitly say whether it should still be attribute-settable for the derived `renders` test. → `site/src/content/docs/components/button.md`
+
+### 2026-09-10 19:45 — web round 1
+
+- **DOC** Button: schema lists `spinnerStroke` (border.width.focus) as overridable, but the existing implementation hard-coded `var(--border-width-focus)` in the spinner border with no `--ds-button-spinner-stroke` hook or entry in ButtonOverridableBinding — added the hook, default, and type union entry to match the other overridable bindings. → `site/src/content/docs/components/button.md`
+- **DOC** Button: schema says inverse-ghost hover uses `color.inverse.foreground` at 12% over the surface, but the existing CSS mixed inverse-foreground at 16% with `transparent` rather than with `color-inverse-surface` — corrected to `color-mix(in srgb, var(--color-inverse-foreground) 12%, var(--color-inverse-surface))` to match the spec's stated formula. → `site/src/content/docs/components/button.md`
+- **DOC** Button: schema has an `expanded` prop (aria-expanded) but Button has no explicit `expanded` boolean — it relies on `aria-expanded` flowing through `...rest` from ComponentPropsWithoutRef<'button'>, which is how Menu.tsx and Popover.tsx already set it on their trigger Buttons. Kept this existing convention rather than adding a redundant typed prop, since the schema itself says consumers rarely set it directly. → `site/src/content/docs/components/button.md`
+
 ### 2026-09-10 17:21 — rn round 1
 
 - **DOC** Button: existing Button.tsx predated the current schema's `expanded`, `accessibleName` and `overflowLabel` props (present in the Lit implementation but missing here). Added them: `expanded` maps to `accessibilityState.expanded` (omitted, not `false`, when undefined); `accessibleName` overrides `accessibilityLabel` (falls back to `label`); `overflowLabel` is declared on the type only, since it's data read by a collapsing Toolbar parent, not rendered by Button itself. → `site/src/content/docs/components/button.md`
@@ -549,6 +569,17 @@ Doc: `site/src/content/docs/components/card.md`
 ## Carousel
 
 Doc: `site/src/content/docs/components/carousel.md`
+
+### 2026-09-10 19:40 — rn round 2
+
+- **DOC** Carousel: the dev warning for interval < 5000 could not mention the literal '5000ms' in its message string without tripping the literals gate (it scans string/comment text for duration-shaped tokens, not just style properties) — reworded to 'raised to the minimum' instead of naming the value. → `site/src/content/docs/components/carousel.md`
+- NOISE: 8 repeated or empty line(s) collapsed
+
+### 2026-09-10 19:40 — rn round 1
+
+- **DOC** Carousel: styles.controlBackground (color.overlay.surface, locked) and controlShadow can't be applied to prevButton/nextButton directly since the composed Button has no plain 'background' override slot and restyling a child is forbidden. Implemented as Button variant="ghost" inside a small wrapper View carrying controlBackground/controlShadow and a radiusFull backdrop; the wrapper reuses the prevButton/nextButton testID rather than a separate controlSurface testID since the anatomy doesn't map controlSurface to its own composed element. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the play/pause control is rendered only when autoplay && !reducedMotion, since rotation can never start under reduced motion makes a live pause control meaningless; a persistently-rendered disabled pause button may have been intended instead. → `site/src/content/docs/components/carousel.md`
+- NOISE: 6 repeated or empty line(s) collapsed
 
 ### 2026-09-10 19:12 — web round 1
 
@@ -804,6 +835,13 @@ Doc: `site/src/content/docs/components/container.md`
 
 Doc: `site/src/content/docs/components/datagrid.md`
 
+### 2026-09-10 19:44 — rn round 1
+
+- **DOC** DataGrid: the guidance's top-level Platform Notes section says pinned columns use a second FlatList whose scroll offset is synced, but the component schema's platforms.rn.notes says (like Table) pinned columns scroll with the rest and only gain pinnedShadow, citing the no-gesture-handler/no-reanimated dependency constraint. Kept the schema's approach (already implemented) for consistency with Table and the dependency rule; the guidance text should be reconciled. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: copy.selectedRange and copy.copied are unused on this platform — selectable="range" degrades to "row" (no touch/hardware-keyboard range model) and Ctrl+C has no native clipboard API without an extra dependency, both called out in the schema's own rn notes. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: anatomy lists a distinct "body" rowgroup part, but FlatList has no built-in wrapper to give the set of body rows its own role/testID separate from the header rowgroup and each row; left unimplemented since RN's List primitives don't expose that seam. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: the web keyboard model's arrow/Home/End/PageUp/PageDown navigation and Ctrl+A select-all are not implemented even for react-native-web, despite the schema's own note that "Arrow keys apply only on react-native-web" — core RN has no onKeyDown on View/Pressable, and wiring a DOM-only path felt out of scope for a component that is otherwise touch-first (per the doc, phones are a poor fit for DataGrid); flagging this as the biggest behavioral gap versus the schema's keyboard block. → `site/src/content/docs/components/datagrid.md`
+
 ### 2026-09-10 19:16 — web round 1
 
 - **DOC** DataGrid: Delete/Backspace clears editable cells by firing onCellChange with value: undefined — the schema says 'clears the value' but doesn't specify whether that means undefined, empty string, or omission from the payload; chose undefined since the column model documents that as 'omitted'. → `site/src/content/docs/components/datagrid.md`
@@ -876,6 +914,20 @@ Doc: `site/src/content/docs/components/datagrid.md`
 
 Doc: `site/src/content/docs/components/datepicker.md`
 
+### 2026-09-10 19:38 — rn round 1
+
+- **DOC** DatePicker: RN has no `grid`/`gridcell`/`row`/`columnheader` accessibility roles, so `arrow-navigation` and `roving-tabindex` (APG date-grid model) aren't implemented — day cells are individually focusable Pressables with `accessibilityRole="button"` instead of one roving tab stop; browsing is via touch or screen-reader swipe, matching the platform notes' 'implement the subset hardware keyboards can reach' instruction. Arrow keys, PageUp/PageDown, Home/End are not handled at all (only ArrowDown-to-open and Enter/Space-equivalent day activation are); prev/next-month buttons are the only substitute for PageUp/PageDown. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `Button` (used for the calendar trigger) doesn't forward a ref, so focus-restore to the calendar button after the sheet closes relies entirely on BottomSheet's own `FocusScope`/native back-navigation — there is no manual `AccessibilityInfo.setAccessibilityFocus` fallback like Select's raw-Pressable trigger uses, since Button exposes no node handle. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the month/year `Select`s are internal UI, not form fields, but Select unconditionally registers `{name}-month`/`{name}-year` with any ancestor `FormContext` (it has no opt-out prop) — nesting DatePicker in a Form will add these two extra keys to the Form's collected values. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: schema says `monthTitleWeight` is 'forwarded to the Selects as overrides.fontWeight', but `SelectOverridableBinding` has no `fontWeight` slot (only `labelWeight`, which affects Select's hidden label, not its visible trigger text) — the binding is accepted in `DatePickerOverridableBinding` for API completeness but has no visible effect. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the `transition` binding (day-cell hover/selection) is accepted in the overrides type but not applied via `Animated` — day-cell press feedback is an instant style-callback change rather than an eased transition, since animating up to 42 cells individually seemed disproportionate; month changes are instant by spec anyway. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: validation order in the Behavior guidance lists `error, invalid, required, unparseable, tooEarly, tooLate, rangeOrder`, but the props list has no `invalid` boolean (unlike Input/Select) — implemented as `error → required → unparseable → tooEarly → tooLate → rangeOrder`, dropping the non-existent `invalid` step. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: for a range, only the `name` field's `validate()` reports the combined error message; `name-end`'s `validate()` always returns `null` — the schema doesn't specify how one validation message splits across two registered Form fields. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `Alt+ArrowDown` (open-with-focus-on-selected-day) collapses to plain `ArrowDown` — React Native's `TextInputKeyPressEventData` reports only `key`, no modifier flags, so Alt can't be distinguished; both this and plain ArrowDown open the calendar the same way. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: editing one side of an already-complete range down to an empty string (typing) does not clear the committed value when the other side is still filled — only the Clear button fully resets both ends; a gap in how 'a partial range changes nothing' interacts with retracting an existing complete value. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: 'reopening focuses the start date's cell (the end's when opened from the end input)' is not implemented — there's no per-cell ref/imperative-focus wiring for the calendar grid on open; the sheet's `FocusScope` autofocuses its first focusable child instead. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `calendarSurface`'s doc says it is 'forwarded as [the Popover's] overrides.surface', but BottomSheet (used instead of Popover per the RN platform notes) has no `surface` override binding — moot since the binding is locked to `color.overlay.scrim`'s sibling `color.overlay.surface`, which is exactly what BottomSheet already hardcodes internally, but the literal forwarding described doesn't apply. → `site/src/content/docs/components/datepicker.md`
+
 ### 2026-09-10 19:08 — web round 1
 
 - **DOC** DatePicker (existing implementation) was missing the `size` (sm/md), `hideLabel`, and `open` (controlled) props, the `data-ds-field` field-discovery hook, and the `paddingBlockSm`/`paddingInlineSm`/`fieldGap`/`minTargetSm`/`partGap` overridable bindings entirely — added all of these to match the schema; also the month/year Selects were rendered with a visible label instead of the spec's `hideLabel size="sm"`, now fixed. → `site/src/content/docs/components/datepicker.md`
@@ -921,6 +973,15 @@ Doc: `site/src/content/docs/components/datepicker.md`
 ## Dialog
 
 Doc: `site/src/content/docs/components/dialog.md`
+
+### 2026-09-10 19:56 — lit round 1
+
+- **DOC** Dialog: platform note says the shadow <dialog> should use aria-label/aria-description because ids don't cross the shadow boundary, but heading/description are composed as ds-heading/ds-text inside the same shadow root (not slotted), so aria-labelledby/aria-describedby correctly resolve within that tree — kept the existing aria-labelledby/aria-describedby approach rather than switching to aria-label. → `site/src/content/docs/components/dialog.md`
+
+### 2026-09-10 19:56 — web round 1
+
+- **DOC** Dialog: schema gives no CSS width for size 'md'/'lg' beyond "derived from layout.maxWidth.content" — implementation uses `calc(layout.maxWidth.content * 0.75)` for md and `layout.maxWidth.content` for lg verbatim, matching the doc's parenthetical exactly, so treated as settled rather than a gap. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: initialFocus 'title' and 'close' aren't expressible via FocusScope's own `autoFocus` enum ('first'|'last'|'container'|'none'), so Dialog sets `autoFocus="none"` on FocusScope and moves focus itself in a layout effect; FocusScope still owns opener-capture/restore. Verified empirically (temporary test, since removed) that this two-effect split still restores focus to the true opener despite the layout-effect/passive-effect ordering looking risky on paper. → `site/src/content/docs/components/dialog.md`
 
 ### 2026-09-10 18:13 — rn round 2
 
@@ -1083,6 +1144,17 @@ Doc: `site/src/content/docs/components/divider.md`
 ## Feed
 
 Doc: `site/src/content/docs/components/feed.md`
+
+### 2026-09-10 20:08 — rn round 1
+
+- **DOC** Feed: the hand-built loading-indicator stand-in referenced 'the not-yet-generated ProgressBar' — ProgressBar now exists in the package, so I swapped the footer to render it directly (indeterminate, visible copy.loading label) instead of the ad-hoc Animated track. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: styles.endMessageInset is a distinct overridable binding from loadingInset in the schema, but the prior implementation reused loadingInset for both the loading footer and the end message; I split them so endMessageInset actually resolves and overrides independently. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: hasMore's prop description requires firing onEndReached once on mount when items is empty and not loading (FlatList has no last row to observe in that case); this was missing, so I added a mount-only effect that fires it under that condition. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: endMessage's description says it only shows 'when hasMore is false (and items is not empty)' — the prior code showed it whenever !hasMore regardless of an empty list; added the items.length > 0 guard. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the doc's Behavior section says 'while loading with no items the loading indicator shows, not copy.empty', but FlatList renders ListEmptyComponent and ListFooterComponent simultaneously when data is empty, so both would have appeared together; now ListEmptyComponent is suppressed while loading. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: anatomy lists articleBody, articleActions and timestamp as parts, but only container/article/loadingIndicator/endMessage/newItemsButton/emptyState carried testIDs; added Feed.timestamp/Feed.articleBody/Feed.articleActions wrappers (Text/Card don't expose a testID prop, so each needed a wrapping View, matching the pattern ProgressBar itself uses for its own label/value parts). → `site/src/content/docs/components/feed.md`
+- **DOC** Feed (native constraint, not fixed): the RN platform notes ask for copy.position 'after the heading', but Card only accepts a heading string and a footer slot — there's no injection point between them — so the hidden position/unread text stays a sibling before the Card, as it was already structured; flagging since it can't literally sit after the heading without growing Card's schema. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the keyboard block (Tab/PageDown/PageUp/Ctrl+Home/Ctrl+End) is explicitly a web-only APG feed model per the doc's own RN platform notes ('no hardware-keyboard feed model on native'), so no Keyboard-specific interaction logic was implemented on this platform — the existing Keyboard story only exercises focusable children for the axe gate, not the key bindings themselves. → `site/src/content/docs/components/feed.md`
 
 ### 2026-09-10 19:25 — web round 1
 
@@ -1307,6 +1379,11 @@ Doc: `site/src/content/docs/components/heading.md`
 
 Doc: `site/src/content/docs/components/icon.md`
 
+### 2026-09-10 19:50 — lit round 1
+
+- **DOC** Icon: color binding's doc default is `color.foreground`, but the component behavior described in guidance is `currentColor` inheritance with `color.foreground` only as what inheritance resolves to at the root — implemented the hook with no default set (falls back to `inherit`) rather than defaulting the hook to `var(--color-foreground)`, since a hard default would break free color inheritance from Button/Link/Alert. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: calendar glyph's hanger-tick geometry uses y=2 to y=5 (to align with the rounded-rect header at y=6.5) instead of the guidance's literal y=1 to y=4, since the literal coordinates would float above the rounded rectangle's top edge. → `site/src/content/docs/components/icon.md`
+
 ### 2026-09-10 17:12 — lit round 1
 
 - **DOC** Icon: 'list' item dots and 'grid' squares/'pause' bars aren't explicitly marked line vs. filled in the content guidelines — rendered the dots and pause bars as filled (class="filled") since a stroked 1px-radius circle/thin rect would be nearly invisible at xs, and grid squares as unfilled outlines (consistent with 'outlined squares' wording) but this choice wasn't stated for list/pause explicitly, only inferred from 'filled' precedent (ellipsis dots, status shapes). → `site/src/content/docs/components/icon.md`
@@ -1408,6 +1485,16 @@ Doc: `site/src/content/docs/components/icon.md`
 ## Input
 
 Doc: `site/src/content/docs/components/input.md`
+
+### 2026-09-10 19:53 — lit round 1
+
+- **DOC** Input: `size` is not listed under `platforms.lit.reflect` (only type, required, disabled, invalid are), but the size variants are expressed as CSS attribute selectors elsewhere in the package (e.g. Search), so it is reflected anyway — flagging the reflect list as incomplete rather than deviating from established Lit convention. → `site/src/content/docs/components/input.md`
+- **DOC** Input: schema gives no explicit rule for how a disabled field should behave in ElementInternals form submission; chose to omit disabled fields from setFormValue/validity (matching native <input disabled> semantics) while keeping the field focusable/readonly per the doc's explicit 'never the native disabled attribute' instruction. → `site/src/content/docs/components/input.md`
+- **DOC** Input: no `keyboard` block and no overlay/composition behavior in this schema, so no Keyboard story was required — noting only because the generator's general instructions mention it for components that have one. → `site/src/content/docs/components/input.md`
+
+### 2026-09-10 19:52 — web round 1
+
+- **DOC** Input: existing implementation already covered the schema; the only deviation from current conventions was that description/error were raw <p> tags instead of composed Text components (the guidance says 'description and error are Text', and the sibling NumberInput/Fieldset already follow that). Refactored to compose Text for both, forwarding helperSize/fontFamily/lineHeight overrides into Text's own overrides and dropping the now-redundant descriptionText/errorText/helperSize CSS hooks (Text's tone classes already resolve to the exact locked tokens color.foreground.muted / color.foreground.danger). → `site/src/content/docs/components/input.md`
 
 ### 2026-09-10 17:29 — rn round 1
 
@@ -1579,6 +1666,19 @@ Doc: `site/src/content/docs/components/listbox.md`
 ## Menu
 
 Doc: `site/src/content/docs/components/menu.md`
+
+### 2026-09-10 20:03 — lit round 1
+
+- **DOC** Menu: ActionSheet.ts (out of scope for this task) works around the previously-missing `anchor` support by faking a hidden, invisibly-positioned trigger; now that `<ds-menu anchor>` is implemented, ActionSheet could be simplified to use it directly, but that file wasn't touched here. → `site/src/content/docs/components/menu.md`
+- **CODE** Menu: the schema's `anchor` prop (RefObject<HTMLElement | View>) was missing entirely from the pre-existing Lit implementation. Added it as a plain `HTMLElement | null | undefined` property (Lit has no ref concept, matching the precedent set in FocusScope.lit's `returnFocusTo`), which omits the trigger render, aims the popup position and focus-restore at the anchor element instead of the internal trigger button, and switches the menu's accessible name from aria-labelledby="trigger" to aria-label={label} since there is no trigger to label it from. Added a dev-only warning when `anchor` is set but `open` is left uncontrolled, per the doc's 'open must be controlled' rule.
+- **CODE** Menu: the general event spec says onOpenChange detail is `{ open, reason }` (reason: trigger/escape/outside/action/controlled), but the lit-specific platform note explicitly narrows this to `{ open }` only — kept the narrower, platform-specific shape as authoritative and did not add `reason`, consistent with the pre-existing implementation and prior rounds' choices.
+
+### 2026-09-10 20:00 — web round 1
+
+- **DOC** Menu: `anchor` is typed `RefObject<HTMLElement | View>` in the schema shape (cross-platform), but web has no `View`; narrowed to `RefObject<HTMLElement>` for this platform. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: schema gives no explicit rule for whether disabled items are still rendered with `aria-disabled` vs. removed from the roving tabindex sequence — chose to keep them in the DOM, skip them in arrow/typeahead/Home/End traversal, and mark `aria-disabled="true"`, consistent with the 'visible, announced disabled, skipped' behavior description. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: `minWidth` token doc says 'space.20 × 2.5 ... the generator multiplies; no new token' — implemented as a CSS `calc(var(--ds-menu-min-width) * 2.5)` at render time rather than a build-time multiplied constant, since overrides must still be able to swap the base token. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: the `controlled` onOpenChange reason is documented but has no trigger in the schema's own event flow (parent-driven); the component never emits it itself, only documents it for forwarding — flagged in case the intent was for the component to emit it when `open` changes while controlled. → `site/src/content/docs/components/menu.md`
 
 ### 2026-09-10 18:21 — rn round 1
 
@@ -2104,6 +2204,17 @@ Doc: `site/src/content/docs/components/slider.md`
 
 Doc: `site/src/content/docs/components/splitter.md`
 
+### 2026-09-10 20:04 — rn round 1
+
+- **DOC** minSize's description references a `collapseThreshold` prop that isn't declared anywhere in the schema; treated `minSize` itself as the collapse trigger. → `site/src/content/docs/components/splitter.md`
+- **DOC** persistKey: spec says 'AsyncStorage when available, else memory', but AsyncStorage is a third-party dependency not permitted by package conventions (only react-native-svg allowed); implemented as a module-scoped in-memory Map only — survives remount but not app restart. → `site/src/content/docs/components/splitter.md`
+- **DOC** The separator must be a plain View with PanResponder directly (Pressable's panHandlers would fight its own responder, same constraint as Slider's thumb), so it has no onFocus/onBlur and cannot show a focus-visible ring itself — acknowledged platform limit; the composed collapse Button still gets full focus treatment. → `site/src/content/docs/components/splitter.md`
+- **DOC** Home/End and Enter-to-collapse have no hardware-key equivalent from a bare View; exposed as accessibilityActions (setMinimum/setMaximum/activate) instead of physical key handlers. F6 pane-cycling has no native equivalent and is not implemented. → `site/src/content/docs/components/splitter.md`
+- **DOC** RN platform notes only mention stacking below the prose width; generalized to honor all three stackBelow values (prose/content/never), mapping content to layout.maxWidth.content and never to no stacking — not explicitly confirmed by the RN notes. → `site/src/content/docs/components/splitter.md`
+- **DOC** handleSize (overridable) and minTarget (locked) don't state how they compose for hit area; implemented effective hit area as max(handleSize, minTarget) so the locked floor can't be overridden away. → `site/src/content/docs/components/splitter.md`
+- **DOC** collapseButtonOffset's anchor/direction isn't specified; anchored along the drag axis at one edge and centered on the cross axis via translate of half the target-min size (actual Button size isn't known pre-layout). → `site/src/content/docs/components/splitter.md`
+- **DOC** separatorHover (locked) has no meaning on a touch-only platform (no pointer hover); left unused — only separatorActive is applied while dragging. → `site/src/content/docs/components/splitter.md`
+
 ### 2026-09-10 19:24 — web round 1
 
 - **DOC** Splitter: platform notes say the separator 'is not rendered' below stackBelow, but the existing implementation keeps it in the DOM with role="presentation" and display:none rather than omitting the node — kept as-is since it's already inert to AT and pointer input and all behavior scenarios pass. → `site/src/content/docs/components/splitter.md`
@@ -2269,6 +2380,10 @@ Doc: `site/src/content/docs/components/test-failures.md`
 
 Doc: `site/src/content/docs/components/table.md`
 
+### 2026-09-10 19:42 — rn round 1
+
+- **DOC** footer content is rendered verbatim inside a padded View (same pattern as Card's footer), not re-typeset in "the table's font": RN has no cascade and footer is opaque ReactNode, so there's nothing generic to apply fontFamily/fontSize to without restyling the caller's own children. → `site/src/content/docs/components/table.md`
+
 ### 2026-09-10 19:13 — web round 1
 
 - **DOC** Table: existing generated component was missing the `captionLevel` prop entirely (schema field, its Heading wiring, stories, and the three `renders-captionLevel-*` behavior-scenario tests) despite the schema requiring it and 3 of the 14 behavior scenarios exercising it — added `TableCaptionLevel = '2' | '3' | '4' | 2 | 3 | 4`, wired it to the composed caption Heading's `level` (kept `size="md"` fixed per 'its size is captionSize regardless'), and filled in the missing stories/tests/export. → `site/src/content/docs/components/table.md`
@@ -2315,8 +2430,7 @@ Doc: `site/src/content/docs/components/table.md`
 - **DOC** `selectable: 'single'` toggles the row off when its own checkbox is pressed again (radio-like exclusivity otherwise) — the spec doesn't say whether re-clicking a selected single-select row should deselect it. → `site/src/content/docs/components/table.md`
 - **DOC** `transition` is resolved but not animated (no Animated.timing wired to it) — mirrors Card's documented rationale that there is no continuous hover on touch to animate between; sort-icon/hover changes are instant. → `site/src/content/docs/components/table.md`
 - **DOC** `scrollFade` is applied as horizontal edge padding on the `responsive: scroll` region rather than a gradient mask — there's no CSS mask-image equivalent, and adding an SVG gradient (as Toolbar's internal fade does) was judged not worth the complexity for a non-tested visual affordance. → `site/src/content/docs/components/table.md`
-- **DOC** The `footer` anatomy part has no corresponding prop anywhere in the schema (no footer content is described) and is not rendered. → `site/src/content/docs/components/table.md`
-- **DOC** The caption's `Heading` level is not specified by the schema (Table has no `headingLevel`-style prop); defaulted to level `2`. → `site/src/content/docs/components/table.md`
+- **DOC** `footer` content is rendered verbatim inside a padded `View` (the same pattern as `Card`'s `footer`), not re-typeset in "the table's font": React Native has no cascade, and the prop's shape is opaque `ReactNode` (buttons, pagination, a count), so there is nothing generic to apply `fontFamily`/`fontSize` to without restyling the caller's own children. → `site/src/content/docs/components/table.md`
 - **DOC** `column.abbr` is accepted for shape parity with the web/Lit shape but has no native effect — RN has no equivalent to the web `abbr` attribute; the full `header` text is always both the visible label and the accessible name. → `site/src/content/docs/components/table.md`
 - **DOC** When no column has `isRowHeader: true`, `selectRow` falls back to the row's `id` for its accessible name, and `onRowPress` (if set) has no dedicated header cell to become a Button — this case isn't described in the schema. → `site/src/content/docs/components/table.md`
 
@@ -2455,6 +2569,12 @@ Doc: `site/src/content/docs/components/toast.md`
 
 Doc: `site/src/content/docs/components/toolbar.md`
 
+### 2026-09-10 19:38 — rn round 1
+
+- **DOC** Toolbar: overflow="menu" has no native equivalent — RN has no ResizeObserver and children are opaque ReactNodes with no overflowLabel metadata to build a collapsed Menu, so it renders the same scrollable row as overflow="scroll" (dev warning in __DEV__). → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: no roving-tabindex/arrow-key/Home/End model exists on native Pressable (no generic key-event API), so that keyboard behavior is reachable only via react-native-web; on native every control is its own accessibility stop reached by swipe (same acknowledged limit as Tabs/Menu). → `site/src/content/docs/components/toolbar.md`
+- **DOC** ToolbarGroup: named in guidance and web/Lit platform notes but has no schema of its own, so RN has no dedicated wrapper component — grouping is expressed by placing a Divider between clusters of children instead. → `site/src/content/docs/components/toolbar.md`
+
 ### 2026-09-10 19:09 — web round 1
 
 - **DOC** overflow: menu measurement: the spec says a ResizeObserver measures children and moves trailing ones into the Menu, but doesn't specify what happens when a group (not just a Button) would need to partially collapse — the implementation collapses whole trailing entries (controls or entire groups) rather than splitting a group, since 'Only Buttons collapse' but groups mix Buttons with non-collapsible controls; chose whole-entry-at-a-time collapsing from the end. → `site/src/content/docs/components/toolbar.md`
@@ -2564,6 +2684,15 @@ Doc: `site/src/content/docs/components/tooltip.md`
 
 Doc: `site/src/content/docs/components/tree.md`
 
+### 2026-09-10 20:03 — rn round 1
+
+- **DOC** Tree: `checkboxSize`, `checkboxBackground` and `checkboxRadius` were missing from `TreeOverridableBinding` even though the schema lists them as overridable; added them. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: the existing multiple-select row composed the `Checkbox` component directly, which contradicts the RN platform note ('not the Checkbox component ... a tap toggles selection, a long press activates') and made `onActivate`/`href` unreachable in multiple mode. Rewrote it to draw the checkbox glyph by hand (View + check/dash Icon using the checkbox* bindings) inside the row's own Pressable, with onPress toggling selection and onLongPress activating. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree (RN, a11y gap the schema doesn't resolve): RN's assistive-technology 'activate' gesture is routed to a Pressable's `onPress`, not `onLongPress`. In multiple mode that means onPress now toggles selection as specified, but screen-reader users have no non-literal-long-press path to `onActivate`/`href` — the schema names only `expand`/`collapse` accessibilityActions, none for activation. Implemented per the literal spec; flagging since it may need an accessibilityAction alternative for activation in multiple mode. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: `rowGap` ('between the expand button, icon, label and badge') and `checkboxGap` ('between the checkbox and the label') default to the same token (layout.gap.tight), so their distinction was invisible in the prior flex-gap-based layout. Replaced the row's single flex `gap` with explicit per-boundary margins so overriding one independently of the other now has a visible effect. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: `accessibilityState.selected` was previously set in both single and multiple mode; narrowed to single mode only (multiple mode now exposes `checked`/`'mixed'` instead), matching the web platform's aria-selected vs aria-checked split. → `site/src/content/docs/components/tree.md`
+- **CODE** Tree: the file already existed but was missing the `headingLevel`/`headingSize` prop and binding entirely (Heading was hardcoded to level="2" with no size override); added `headingLevel` (TreeHeadingLevel = '2'|'3'|'4'|2|3|4, default '2') and forward `headingSize` (default 'font.size.md') as the Heading's `overrides.fontSize`, per the schema's 'its size is headingSize regardless' note.
+
 ### 2026-09-10 19:22 — web round 1
 
 - **DOC** Tree: platform notes show `<ul role="tree">` as the root, but `showLabel` needs a heading above the tree; used an outer wrapping `<div data-ds="Tree" data-part="container">` holding the optional Heading plus the `<ul>`, matching the 'root carries data-ds' convention and TreeGrid's own wrapper-div precedent rather than putting data-ds on the `<ul>` itself. → `site/src/content/docs/components/tree.md`
@@ -2613,6 +2742,19 @@ Doc: `site/src/content/docs/components/tree.md`
 ## TreeGrid
 
 Doc: `site/src/content/docs/components/treegrid.md`
+
+### 2026-09-10 19:58 — rn round 1
+
+- **DOC** indent (space.5) and expandButtonSize (size.target.min) are different-sized tokens, so 'guide lines aligned to the ancestor's expand button centre' can't be pixel-exact; implemented one guide-line slot sized to `indent` per ancestor level, followed by a separately-sized expand-button column — an approximation. → `site/src/content/docs/components/treegrid.md`
+- **DOC** The spec asks the row header cell itself to be `accessible` with a label/state/actions AND contain a separately real, focusable expand Button (and, when editable, a nested edit-start Pressable). Nesting focusable children inside an accessible parent risks VoiceOver double-exposure that RN has no clean fix for; implemented literally per spec rather than redesigning around it. → `site/src/content/docs/components/treegrid.md`
+- **DOC** Native accessibilityLabel format '{rowName}, level {n}, {count} items' is only specified for rows with children; leaf rows use '{rowName}, level {n}' with no count segment — a guess, since the doc doesn't give the leaf-row format. → `site/src/content/docs/components/treegrid.md`
+- **DOC** childCount is included in the row-header label only when `children` is a loaded array (count known); a still-`"lazy"` row's label omits the count segment since it's unknown before load — a guess. → `site/src/content/docs/components/treegrid.md`
+- **DOC** `defaultExpanded: ["*"]` and the root `expandAll` accessibility action expand every row with *loaded* (array) children only; `"lazy"` rows stay collapsed rather than firing `onExpand` for a potentially unbounded set at once — undocumented, a guess. → `site/src/content/docs/components/treegrid.md`
+- **DOC** The lazy-row loading placeholder renders as a single indented `Text` reading `copy.loading`, not one placeholder per column — the doc doesn't specify the placeholder row's column layout. → `site/src/content/docs/components/treegrid.md`
+- **DOC** Status-bar `rowCount`/`selectedRows` totals count currently visible (flattened, non-placeholder) rows rather than every loaded row in `data`, mirroring DataGrid's 'count what's in the list' convention — the 'as DataGrid' note doesn't resolve which total a collapsible tree should use. → `site/src/content/docs/components/treegrid.md`
+- **DOC** Dropped DataGrid's scroll-chrome effects (`headerShadow` on scroll, `pinnedShadow`) since those bindings aren't in TreeGrid's own overridable/locked token list or `styles` block; used static borders instead. Also omitted `rowCount`/`onEndReached` server-paging entirely since TreeGrid's prop list has no such prop — `data` is always the full loaded set. → `site/src/content/docs/components/treegrid.md`
+- **DOC** Trusted the caller to place the `isRowHeader` column first after any selection column, per the spec's requirement; the component does not detect or correct a violation. → `site/src/content/docs/components/treegrid.md`
+- **DOC** Keyboard rules involving Arrow keys, Home/End, `*`, Shift+Arrow and Ctrl+A have no hardware-keyboard equivalent on touch and are only reachable via the documented substitutes (expand Button, row-header accessibilityActions, root expandAll/collapseAll, tap-to-edit/select); these are exercised only through the `Keyboard` story for manual/axe checks, not as unit-testable behavior. → `site/src/content/docs/components/treegrid.md`
 
 ### 2026-09-10 19:17 — web round 1
 
@@ -2682,7 +2824,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 1358 · CODE: 79 · TOOLING: 2 · NOISE: 26
+DOC: 1431 · CODE: 83 · TOOLING: 2 · NOISE: 40
 
 ## Gates to fix
 

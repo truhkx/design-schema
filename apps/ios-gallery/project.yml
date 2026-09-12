@@ -1,0 +1,99 @@
+# XcodeGen spec for the gallery app and the UI-test bundle that drives it.
+#
+# Why this exists (job 440; the trade-off is written up in README.md). `swift build` compiles every gallery
+# screen, which is the typecheck half of the gate, but it produces a Mach-O executable and not an .app —
+# and XCUITest needs an app bundle to launch and attach to. An .xcodeproj is the only thing that produces
+# one, and an .xcodeproj cannot be authored or checked on the Windows machine this repository is written
+# on. So the project is not checked in: the macOS runner generates it from this file, which *can* be read
+# and reviewed anywhere, and throws it away with the workspace.
+#
+#     brew install xcodegen && xcodegen generate --spec apps/ios-gallery/project.yml
+#
+# The app target's sources are `Sources/IOSGallery` — the same files `swift build` compiles — and the
+# package comes in as a local Swift package, so there is exactly one copy of every component.
+
+name: DesignSchemaGallery
+
+options:
+  bundleIdPrefix: dev.designschema
+  createIntermediateGroups: true
+  # Matches packages/swiftui/Package.swift: the current iOS major minus one, reviewed each September
+  # (process/ios-platform.md). The two must agree or the app and the package it links disagree about
+  # which APIs exist.
+  deploymentTarget:
+    iOS: "26.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    # Simulator only: nothing here is ever installed on a device, and a signing identity on a CI runner is
+    # a secret this gate has no reason to want.
+    CODE_SIGN_IDENTITY: ""
+    CODE_SIGNING_REQUIRED: "NO"
+    CODE_SIGNING_ALLOWED: "NO"
+
+packages:
+  DesignSchema:
+    path: ../../packages/swiftui
+
+targets:
+  DesignSchemaGallery:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources/IOSGallery
+    dependencies:
+      - package: DesignSchema
+        product: DesignSchema
+      - package: DesignSchema
+        product: DesignSchemaTokens
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.designschema.gallery
+        # iPhone and iPad: the keyboard rules are iPad's (hardware keyboard), the rest is both.
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: "NO"
+    info:
+      path: Generated/Info.plist
+      properties:
+        CFBundleDisplayName: DesignSchema
+        # Without a launch screen an app runs letterboxed in iPad compatibility mode, where the component
+        # under audit is scaled and the hit-region check would be measuring the scaler.
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+
+  DesignSchemaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    # The tests live with the package (packages/swiftui/Tests/DesignSchemaUITests) so that
+    # `swift build --build-tests` typechecks them on every build, even where they cannot run. This target
+    # compiles those same files into a UI-test bundle.
+    sources:
+      - path: ../../packages/swiftui/Tests/DesignSchemaUITests
+    dependencies:
+      - target: DesignSchemaGallery
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.designschema.gallery.uitests
+        TEST_TARGET_NAME: DesignSchemaGallery
+
+schemes:
+  DesignSchemaGallery:
+    build:
+      targets:
+        DesignSchemaGallery: all
+        DesignSchemaUITests: [test]
+    test:
+      targets:
+        - DesignSchemaUITests
+    run:
+      config: Debug

@@ -1,6 +1,6 @@
 /** tools/behavior_tests.ts — tests derived from a component's `behavior` scenarios
  *  (port of tests/test_behavior_tests.py). */
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
@@ -272,7 +272,7 @@ describe('surfaces', () => {
 
 describe('name and renders', () => {
   test('renders never queries by role', () => {
-    for (const platform of bt.PLATFORMS) {
+    for (const platform of bt.JS_PLATFORMS) {
       expect(bt.thenRendersLines(WIDGET, platform).some((ln) => ln.includes('ByRole'))).toBe(false);
     }
   });
@@ -321,6 +321,303 @@ describe('lit focus', () => {
     const content = bt.litFile(WIDGET, [{ name: 'f', then: [{ focusable: true }] }]);
     expect(content).toContain('function activeChain()');
     expect(content).toContain('expect(activeChain()).toContain(s.el);');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// swiftui
+// ---------------------------------------------------------------------------
+
+/** WIDGET as a component the iOS package also ships: a swiftui platform block, a swiftui event name, and
+ *  the prop shapes the Swift initializer has to be handed (required string, enum, controlled/uncontrolled
+ *  pair, a prop the doc narrows away from this platform). */
+const SWIDGET: Dict = {
+  ...WIDGET,
+  anatomy: ['control', 'label'],
+  props: {
+    label: { type: 'string', required: true, description: 'Visible text.' },
+    variant: { type: 'enum', values: ['primary', 'icon-only'], default: 'primary', description: 'Emphasis.' },
+    size: { type: 'enum', values: ['sm', '2xl'], default: 'sm', description: 'Scale.' },
+    open: { type: 'boolean', description: 'Controlled.' },
+    defaultOpen: { type: 'boolean', description: 'Uncontrolled.' },
+    loading: { type: 'boolean', description: 'Web only.', platforms: ['web'] },
+    default: { type: 'boolean', description: 'A Swift keyword as a prop name.' },
+  },
+  events: {
+    onPress: { description: 'Activated.', platforms: { web: 'onPress', lit: 'press', rn: 'onPress', swiftui: 'action' } },
+  },
+  platforms: {
+    web: { element: 'button' },
+    lit: { tag: 'ds-widget' },
+    rn: { element: 'Pressable' },
+    swiftui: { element: 'Button' },
+  },
+};
+
+function swiftTitles(content: string): string[] {
+  return [...content.matchAll(/^ {4}@Test\("(.*?)"\)$/gm)].map((m) => m[1] as string);
+}
+
+function swiftSkips(content: string): string[] {
+  return [...content.matchAll(/^ {4}@Test\("(.*?)", \.disabled\("(.*?)"\)\)$/gm)].map((m) => `${m[1] as string} — ${m[2] as string}`);
+}
+
+describe('swift names and literals', () => {
+  test('a doc enum value becomes the nested case', () => {
+    expect(bt.swiftCase('primary')).toBe('.primary');
+    expect(bt.swiftCase('icon-only')).toBe('.iconOnly');
+  });
+
+  test('quoted digits stay an Int, because the initializer takes one', () => {
+    expect(bt.swiftCase('1')).toBe('1');
+    expect(bt.swiftCase(3)).toBe('3');
+  });
+
+  test('a value that starts with digits moves them to the end — nothing else is a Swift identifier', () => {
+    expect(bt.swiftCase('2xl')).toBe('.xl2');
+    expect(bt.swiftCase('4xl')).toBe('.xl4');
+  });
+
+  test('an argument label that is a Swift keyword is back-ticked', () => {
+    expect(bt.swiftLabel('label')).toBe('label');
+    expect(bt.swiftLabel('default')).toBe('`default`');
+  });
+
+  test('string literals escape what would end them', () => {
+    expect(bt.swiftString('say "hi"\\now')).toBe('"say \\"hi\\"\\\\now"');
+  });
+
+  test('scenario names become unique camelCase functions', () => {
+    const used = new Set<string>();
+    expect(bt.swiftFunctionName('renders-variant-primary', used)).toBe('rendersVariantPrimary');
+    expect(bt.swiftFunctionName('renders variant primary', used)).toBe('rendersVariantPrimary2');
+  });
+});
+
+describe('swiftInitArgs', () => {
+  test('required props are filled in, optional ones are left to the initializer default', () => {
+    expect(bt.swiftInitArgs(SWIDGET, {})).toEqual(['label: "Label"', 'action: events.spy("onPress")']);
+  });
+
+  test('a given value is rendered by the prop type', () => {
+    expect(bt.swiftInitArgs(SWIDGET, { label: 'Go', variant: 'icon-only', size: '2xl' })).toEqual([
+      'label: "Go"',
+      'variant: .iconOnly',
+      'size: .xl2',
+      'action: events.spy("onPress")',
+    ]);
+  });
+
+  test('a controlled prop with a default sibling is passed as the uncontrolled one', () => {
+    // `open` is a Binding<Bool>? in SwiftUI; a literal only typechecks against `defaultOpen`.
+    expect(bt.swiftInitArgs(SWIDGET, { open: true })).toContain('defaultOpen: true');
+    expect(bt.swiftInitArgs(SWIDGET, { open: true })).not.toContain('open: true');
+    // unless the scenario already said what the uncontrolled value is
+    expect(bt.swiftInitArgs(SWIDGET, { open: true, defaultOpen: false })).toContain('defaultOpen: false');
+  });
+
+  test('a keyword prop name is back-ticked in the call', () => {
+    expect(bt.swiftInitArgs(SWIDGET, { default: true })).toContain('`default`: true');
+  });
+
+  test('a prop the doc narrows away from swiftui is not a parameter', () => {
+    expect(bt.swiftInitArgs(SWIDGET, {}).join(' ')).not.toContain('loading');
+    expect(() => bt.swiftInitArgs(SWIDGET, { loading: true })).toThrow(/does not declare this prop for swiftui/);
+  });
+
+  test('a given prop the doc never declared is unmappable', () => {
+    expect(() => bt.swiftInitArgs(SWIDGET, { nope: 1 })).toThrow(/declares no such prop/);
+  });
+
+  test('a required array prop has no literal to synthesize', () => {
+    const grid: Dict = { ...SWIDGET, props: { rows: { type: 'array', required: true, description: 'x' } } };
+    expect(() => bt.swiftInitArgs(grid, {})).toThrow(/no literal this generator can synthesize/);
+  });
+
+  test('a content prop becomes a view builder, given or not', () => {
+    const card: Dict = { ...SWIDGET, props: { children: { type: 'content', required: true, description: 'x' } } };
+    expect(bt.swiftInitArgs(card, {})).toContain('children: { SwiftUI.Text("Children") }');
+    // parse.ts fills the derived accessible-name scenario in with a string even for a content prop
+    expect(bt.swiftInitArgs(card, { children: 'Accessible name' })).toContain('children: { SwiftUI.Text("Accessible name") }');
+  });
+});
+
+describe('swift when', () => {
+  test('a click is the part\'s activate action, with the root as the fallback identifier', () => {
+    expect(bt.swiftWhenLines(SWIDGET, { name: 'x', when: { click: 'control' }, then: [] })).toEqual([
+      'try host.activate("Widget.control", or: "Widget")',
+    ]);
+  });
+
+  test('a key goes through the relay', () => {
+    expect(bt.swiftWhenLines(SWIDGET, { name: 'x', when: { key: 'Enter' }, then: [] })).toEqual(['try host.send(key: "Enter")']);
+  });
+
+  test.each(['focus', 'blur'])('%s is unmappable: a hosted view cannot move focus', (kind) => {
+    expect(() => bt.swiftWhenLines(SWIDGET, { name: 'x', when: { [kind]: 'control' }, then: [] })).toThrow(/keyboard gate/);
+  });
+
+  test('typing needs a simulator', () => {
+    expect(() => bt.swiftWhenLines(SWIDGET, { name: 'x', when: { type: 'abc' }, then: [] })).toThrow(/needs a UI test on a simulator/);
+  });
+});
+
+describe('swift then', () => {
+  const then = (item: Dict, given: Dict = {}): string[] => bt.swiftThenItemLines(SWIDGET, item, given);
+
+  test('renders checks the root identifier is in the tree, never a role', () => {
+    expect(then({ renders: true })).toEqual(['#expect(host.exists("Widget"), "\\(host.dump())")']);
+  });
+
+  test('name compares the root label with the value the scenario passed', () => {
+    expect(then({ name: true }, {})).toEqual(['#expect(try host.require("Widget").label == "Label", "\\(host.dump())")']);
+    expect(then({ name: true }, { label: 'Go' })[0]).toContain('== "Go"');
+  });
+
+  test('a name this generator cannot predict is only asserted to be non-empty', () => {
+    const heading: Dict = { ...SWIDGET, props: { children: { type: 'content', required: true, description: 'x' } } };
+    expect(bt.swiftThenItemLines(heading, { name: true }, {})).toEqual([
+      '#expect(try host.require("Widget").label.isEmpty == false, "\\(host.dump())")',
+    ]);
+  });
+
+  test('text and copy look through everything the tree says out loud', () => {
+    expect(then({ text: 'Saved.' })).toEqual(['#expect(host.containsText("Saved."), "\\(host.dump())")']);
+    // WIDGET's copy.required is '{label} is required.' — the label the scenario passes is substituted
+    expect(then({ copy: 'required' }, { label: 'Go' })[0]).toContain('"Go is required."');
+    expect(() => then({ copy: 'nope' })).toThrow(/unknown copy key/);
+  });
+
+  test('the states the conventions give an accessibility spelling', () => {
+    expect(then({ state: 'expanded', is: true })[0]).toContain('.value == "expanded"');
+    expect(then({ state: 'open', is: false })[0]).toContain('.value == "collapsed"');
+    expect(then({ state: 'selected', is: true })[0]).toContain('.traits.contains(.selected) == true');
+    expect(then({ state: 'disabled', is: true })[0]).toContain('.isEnabled == false');
+    // every state assertion targets the primary part and falls back to the root
+    expect(then({ state: 'selected', is: true })[0]).toContain('"Widget.control", or: "Widget"');
+  });
+
+  test('a state with no SwiftUI spelling is unmappable rather than a guess', () => {
+    expect(() => then({ state: 'checked', is: true })).toThrow(/names no accessibility spelling/);
+  });
+
+  test('roles map to traits, and the ones with no trait say so', () => {
+    expect(then({ role: 'button' })).toEqual(['#expect(host.containsTrait(.button), "\\(host.dump())")']);
+    expect(() => then({ role: 'heading' })).toThrow(/carries no trait for it/);
+  });
+
+  test('focus is the standing gap and names the gate that covers it', () => {
+    for (const item of [{ focusable: true }, { focused: 'control' }, { focus: 'none' }]) {
+      expect(() => then(item)).toThrow(/iPad keyboard gate/);
+    }
+  });
+
+  test('events are checked against the recorded payload', () => {
+    expect(then({ event: 'onPress' })[0]).toContain('#expect(events.fired("onPress"), "\\(events.describe("onPress"))")');
+    expect(then({ event: 'onPress', fired: false })[0]).toContain('events.count("onPress") == 0');
+    // Swift's Bool describes itself as `true`, not Python's `True`
+    expect(then({ event: 'onPress', with: true })[0]).toContain('events.fired("onPress", with: "true")');
+    expect(then({ event: 'onPress', with: 2 })[0]).toContain('events.fired("onPress", with: "2")');
+    expect(then({ event: 'onPress', with: { name: 'signup', all: false } })[0])
+      .toContain('events.fired("onPress", with: ["name": "signup", "all": "false"])');
+    expect(() => then({ event: 'onPress', with: [1, 2] })).toThrow(/no Swift comparison/);
+  });
+
+  test('an event with no swiftui name is unmappable', () => {
+    const c: Dict = { ...SWIDGET, events: { onPress: { description: 'x', platforms: { web: 'onPress' } } } };
+    expect(() => bt.swiftThenItemLines(c, { event: 'onPress' }, {})).toThrow(/names no swiftui closure/);
+  });
+
+  test('an arbitrary attribute has no meaning in an accessibility tree', () => {
+    expect(() => then({ attribute: 'data-x', is: 'y' })).toThrow(/attribute/);
+  });
+});
+
+describe('swiftFile', () => {
+  const CLICK_SWIFT: Dict = { name: 'click-fires', when: { click: 'control' }, then: [{ event: 'onPress' }] };
+
+  test('one @Test per scenario, and the unmappable one carries its reason', () => {
+    const content = bt.swiftFile(SWIDGET, [CLICK_SWIFT, BAD]);
+    expect(swiftTitles(content)).toEqual(['click-fires']);
+    expect(swiftSkips(content)).toHaveLength(1);
+    expect(swiftSkips(content)[0]).toContain('has-weird-attr');
+  });
+
+  test('the suite is main-actor and the component is module-qualified', () => {
+    const content = bt.swiftFile(SWIDGET, [CLICK_SWIFT]);
+    expect(content).toContain('@testable import DesignSchema');
+    expect(content).toContain('@MainActor\n@Suite("Widget behavior")\nstruct WidgetBehaviorTests {');
+    // SwiftUI has a Button too: an unqualified name would be ambiguous in a file that imports both
+    expect(content).toContain('DesignSchema.Widget(');
+  });
+
+  test('a scenario that never names the host still uses the binding', () => {
+    // Swift warns about an unused binding, and a warning in the log is a line in the gate report.
+    const content = bt.swiftFile(SWIDGET, [{ name: 'nothing-fires', then: [{ event: 'onPress', fired: false }] }]);
+    expect(content).toContain('        _ = host');
+  });
+
+  test('a component with no events declares no log', () => {
+    const c: Dict = { ...SWIDGET, events: {} };
+    expect(bt.swiftFile(c, [{ name: 'renders', then: [{ renders: true }] }])).not.toContain('DSEventLog()');
+  });
+});
+
+describe('main — swiftui', () => {
+  let generated = '';
+  let swiftOut = '';
+
+  beforeEach(() => {
+    generated = join(tmp(), 'generated');
+    swiftOut = join(tmp(), 'packages', 'swiftui', 'Tests', 'DesignSchemaTests', 'Generated');
+    mkdirSync(generated, { recursive: true });
+    Object.assign(bt.paths, { ROOT: tmp(), GENERATED: generated, OUT: join(generated, 'behavior') });
+    for (const platform of bt.PLATFORMS) {
+      write(join(tmp(), (bt.SOURCE_FILE[platform] as string).replace('{name}', 'Widget')), 'export {};');
+    }
+    write(join(generated, 'components.json'), JSON.stringify([{ component: { ...SWIDGET, behavior: [{ name: 'renders', then: [{ renders: true }] }] } }]));
+  });
+
+  function swiftFiles(): string[] {
+    return readdirSync(swiftOut).filter((n) => n.endsWith('.swift')).sort();
+  }
+
+  test('the Swift cases go where SwiftPM looks for them, not into generated/', () => {
+    expect(bt.main()).toBe(0);
+    expect(bt.swiftOutDir()).toBe(swiftOut);
+    expect(swiftFiles()).toEqual(['WidgetBehaviorTests.swift']);
+    expect(readFileSync(join(swiftOut, 'WidgetBehaviorTests.swift'), 'utf8')).toContain('@Suite("Widget behavior")');
+  });
+
+  test('a component not generated for swiftui yet gets no Swift file', () => {
+    rmSync(join(tmp(), (bt.SOURCE_FILE.swiftui as string).replace('{name}', 'Widget')));
+    bt.main();
+    expect(swiftFiles()).toEqual([]);
+  });
+
+  test('a file no longer derived is removed on the next run', () => {
+    mkdirSync(swiftOut, { recursive: true });
+    writeFileSync(join(swiftOut, 'GoneBehaviorTests.swift'), '// old', 'utf8');
+    bt.main();
+    expect(swiftFiles()).toEqual(['WidgetBehaviorTests.swift']);
+  });
+
+  test('--check passes on what main just wrote and fails once it drifts', () => {
+    bt.main();
+    expect(bt.main(['--check'])).toBe(0);
+    expect(std.out()).toContain('1 committed file(s) are current');
+
+    writeFileSync(join(swiftOut, 'WidgetBehaviorTests.swift'), '// hand-edited', 'utf8');
+    expect(bt.main(['--check'])).toBe(1);
+    expect(std.err()).toContain('out of date');
+  });
+
+  test('--check reports a file the docs no longer derive, and never writes', () => {
+    bt.main();
+    writeFileSync(join(swiftOut, 'GoneBehaviorTests.swift'), '// old', 'utf8');
+    expect(bt.main(['--check'])).toBe(1);
+    expect(std.err()).toContain('no longer derived');
+    expect(swiftFiles()).toContain('GoneBehaviorTests.swift'); // --check is read-only
   });
 });
 

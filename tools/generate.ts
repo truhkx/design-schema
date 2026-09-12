@@ -5,6 +5,7 @@
  *
  *     node tools/generate.ts --platform web --component Icon              # one component, one platform
  *     node tools/generate.ts --platform web,lit,rn --component Icon       # three platforms, sequentially
+ *     node tools/generate.ts --platform swiftui --component Button,Icon   # one branch each, one CI round trip
  *     node tools/generate.ts --stale                                      # everything whose prompt changed
  *     node tools/generate.ts --check                                      # list stale entries, generate nothing
  *     node tools/generate.ts ... --runner api                             # Messages API instead of Claude Code
@@ -20,6 +21,9 @@
  *      expects files back in a fenced format, which this script writes.
  *   3. Gates (tools/checks.ts): parse, contrast, literals, typecheck. Failures are handed back to
  *      the model verbatim as a fix round, up to --max-rounds. The model never sees the gate code.
+ *      `swiftui` compiles only on macOS, so its build/test/audit gates run in GitHub Actions
+ *      (tools/swiftui_gate.ts): the file goes on a `gen/swiftui/<Name>` branch, the workflow answers with
+ *      the same GateResult shape, and a phase is generated as one batch so it waits on CI once.
  *   4. Gaps the model reported land in generated/gaps/<Name>.<platform>.md for the doc pass.
  *      The lockfile records hash, files, rounds, gate results and cost.
  *
@@ -58,6 +62,7 @@ import {
   writeTextAtomic,
 } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
+import * as swiftui from './swiftui_gate.ts';
 
 export type Dict = Record<string, unknown>;
 export type Lock = Record<string, Dict>;
@@ -76,8 +81,16 @@ export const paths = {
   CONVENTIONS: join(REPO_ROOT, 'prompts', 'conventions'), // one-page digest per platform, inlined into the task prompt
 };
 
-export const PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn' };
-export const PLATFORM_LABEL: Record<string, string> = { web: 'React (web)', lit: 'Lit web components', rn: 'React Native' };
+export const PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn', swiftui: 'swiftui' };
+export const PLATFORM_LABEL: Record<string, string> = {
+  web: 'React (web)', lit: 'Lit web components', rn: 'React Native', swiftui: 'SwiftUI (iOS)',
+};
+
+/** Platforms whose build gates cannot run on this machine. SwiftUI compiles only on macOS
+ *  (process/ios-platform.md, "Gates, and the Mac problem"), so the file is pushed on a `gen/<platform>/<Name>`
+ *  branch and a workflow answers with the same gate results a local typecheck would have produced —
+ *  minutes rather than seconds per round, which is why these platforms generate a phase as one batch. */
+export const REMOTE_GATE: ReadonlySet<string> = new Set(['swiftui']);
 // a precise spec + hard gates is where a cheaper model is enough; --model fable for the hard ones
 export const DEFAULT_MODEL: string = process.env['DS_MODEL'] ?? 'sonnet';
 
@@ -93,7 +106,23 @@ export const CONVENTION_FILES: Record<string, string[]> = {
   rn: ['packages/rn/src/index.ts', 'packages/rn/src/Button.tsx', 'packages/rn/src/Button.stories.tsx',
        'packages/rn/src/Input.tsx', 'packages/rn/src/FormContext.ts', 'packages/rn/src/theme.tsx',
        'packages/rn/src/decorators.tsx', 'packages/tokens/dist/calm-precise/rn/tokens.light.d.ts'],
+  // Swift has no index file: what a new component registers itself with is a gallery screen, so
+  // Gallery.swift takes index.ts's place as the first file (the one the task prompt says to open).
+  swiftui: ['packages/swiftui/Sources/DesignSchema/Support/Gallery.swift',
+            'packages/swiftui/Sources/DesignSchema/Button.swift',
+            'packages/swiftui/Sources/DesignSchema/Support/SVGPath.swift',
+            'packages/swiftui/Sources/DesignSchema/Support/FocusScope.swift',
+            'packages/swiftui/Sources/DesignSchemaTokens/Theme.swift',
+            'packages/swiftui/Package.swift'],
 };
+
+/** Where a platform's generated component files live: `packages/react/src/`, and for the Swift package
+ *  `packages/swiftui/Sources/DesignSchema/` (SwiftPM's layout, not `src/`). */
+export function srcDir(platform: string): string {
+  return platform === 'swiftui'
+    ? join(paths.ROOT, 'packages', 'swiftui', 'Sources', 'DesignSchema')
+    : join(paths.ROOT, 'packages', PKG[platform] as string, 'src');
+}
 
 export const REPORT_INSTRUCTIONS = `
 ## Reporting (mandatory)
@@ -320,15 +349,26 @@ export function taskPrompt(name: string, platform: string): string {
       `Then generate the pattern page **${short}** from the specification below into \`packages/${PKG[platform] as string}/demo/\` ` +
       `(the page and its \`Patterns/${short}\` story). Do not touch \`src/index.ts\`; compose only the package's existing ` +
       `components and never re-implement or restyle them.`;
+  } else if (platform === 'swiftui') {
+    // No index.ts: a Swift package exports every `public` symbol, and what makes a component appear in
+    // the gallery app is its own screen file. `Gallery+Generated.swift` is the generator's to rewrite.
+    task =
+      `Then generate **${name}** from the specification below, and beside it ` +
+      `\`packages/swiftui/Sources/DesignSchema/Gallery+${name}.swift\` — \`public extension Gallery { static var ` +
+      `${galleryEntryName(name)}: GalleryEntry { GalleryEntry("${name}") { … } } }\`, one screen showing the component in its ` +
+      `states, in the style of the existing \`Gallery+*.swift\` files. Never edit \`Support/Gallery+Generated.swift\`: the ` +
+      `generator rewrites it from the screen files. If the spec's Related section names components that exist in the ` +
+      `package, compose them; never re-implement or restyle them.`;
   } else {
     task =
       `Then generate **${name}** from the specification below. Also add the export(s) to the package's \`index.ts\` in its ` +
       `existing style. If the spec's Related section names components that exist in the package, compose them; never ` +
       `re-implement or restyle them.`;
   }
+  const open = platform === 'swiftui' ? 'for the gallery screen type' : 'to add the export';
   return `You are the ${PLATFORM_LABEL[platform] as string} generator for the Design Schema repository (cwd is the repo root).
 
-The package conventions are summarised below; follow them exactly. Do not read the whole package — open \`${files[0] as string}\` to add the export, and at most one existing component (\`${exemplar}\` or the one closest to what you are writing) if the digest leaves a detail out.
+The package conventions are summarised below; follow them exactly. Do not read the whole package — open \`${files[0] as string}\` ${open}, and at most one existing component (\`${exemplar}\` or the one closest to what you are writing) if the digest leaves a detail out.
 
 ${digest}
 
@@ -642,6 +682,52 @@ export function restoreCustom(platform: string, snapshot: Record<string, Buffer>
   return changed;
 }
 
+// ---------------------------------------------------------------- the swiftui gallery registry
+
+/** `Button` → `buttonScreen`: the symbol a component's `Gallery+<Name>.swift` declares. */
+export function galleryEntryName(name: string): string {
+  const stem = name.startsWith('Pattern.') ? name.slice(name.indexOf('.') + 1) : name;
+  return (stem.charAt(0).toLowerCase() + stem.slice(1)) + 'Screen';
+}
+
+export const GALLERY_REGISTRY = join('Support', 'Gallery+Generated.swift');
+
+/**
+ * Rewrite `Support/Gallery+Generated.swift` from the `Gallery+<Name>.swift` files on disk. The gallery app
+ * renders `Gallery.entries` and never names a component, so this one generated list is what makes a new
+ * component appear in it — and it has to be written before the gate runs, or the branch compiles code the
+ * runner cannot see the point of.
+ */
+export function writeGalleryRegistry(platform: string = 'swiftui'): string | null {
+  const dir = srcDir(platform);
+  if (!existsSync(dir)) return null;
+  const names = sortedNames(
+    readdirSync(dir)
+      .filter((n) => n.startsWith('Gallery+') && n.endsWith('.swift') && n !== 'Gallery+Generated.swift')
+      .map((n) => n.slice('Gallery+'.length, -'.swift'.length)),
+  );
+  const body = names.length === 0 ? '[]' : `[\n${names.map((n) => `            Self.${galleryEntryName(n)},`).join('\n')}\n        ]`;
+  const text = `//  Gallery+Generated.swift
+//
+//  Generated by tools/generate.ts after every swiftui generation round: one entry per
+//  Sources/DesignSchema/Gallery+<Name>.swift. Do not edit by hand — the next generation overwrites it.
+
+import SwiftUI
+
+public extension Gallery {
+    /// The generated component screens; \`Gallery.entries\` sorts them by name.
+    static var generated: [GalleryEntry] {
+        ${body}
+    }
+}
+`;
+  const file = join(dir, GALLERY_REGISTRY);
+  if (existsSync(file) && readText(file) === text) return null;
+  mkdirSync(dirname(file), { recursive: true });
+  writeText(file, text);
+  return relative(paths.ROOT, file).replaceAll('\\', '/');
+}
+
 /** `datetime.now().strftime("%Y-%m-%d %H:%M")`, local time. */
 function stamp(now: Date): string {
   const pad = (n: number): string => String(n).padStart(2, '0');
@@ -669,39 +755,135 @@ export function recordGaps(name: string, platform: string, gaps: string[], round
 
 // ---------------------------------------------------------------- main loop
 
-export async function generateOne(name: string, platform: string, args: Args, lock: Lock): Promise<boolean> {
+/** What the preamble decided about a target: generate it (with its prompt hash), or not, and why. */
+export type Ready = { go: boolean; hash: string; ok: boolean };
+
+/** The prompt has to exist, the hash has to be stale (unless --force), and --dry-run stops here. Shared by
+ *  the local driver and the batch one, so a swiftui target is skipped, printed and dry-run identically. */
+function ready(name: string, platform: string, args: Args, lock: Lock): Ready {
   const key = `${name}.${platform}`;
   const pp = promptPath(name, platform);
   if (!existsSync(pp)) {
     print(`✖ ${key}: no prompt at ${relative(paths.ROOT, pp)} (run tools/parse.ts)`);
-    return false;
+    return { go: false, hash: '', ok: false };
   }
   const h = sha(readText(pp));
   if (!args.force && (lock[key] ?? {})['hash'] === h) {
     print(`= ${key}: up to date (${h})`);
-    return true;
+    return { go: false, hash: h, ok: true };
   }
   print(`\n== ${key}  prompt ${h}  model ${args.model}  runner ${args.runner}`);
   if (args.dryRun) {
     print([...hooks.taskPrompt(name, platform)].slice(0, 1500).join('') + '\n…');
-    return true;
+    return { go: false, hash: h, ok: true };
   }
+  return { go: true, hash: h, ok: true };
+}
 
-  const skip = new Set(args.skip);
-  // Preflight: gates that do not depend on the generated code must already pass, or every fix round
-  // would be spent on something the model cannot change (a doc elsewhere failing to parse, a contrast
-  // pair in another component). Costs nothing; saves the whole run when the docs are the problem.
+/**
+ * Preflight: gates that do not depend on the generated code must already pass, or every fix round
+ * would be spent on something the model cannot change (a doc elsewhere failing to parse, a contrast
+ * pair in another component). Costs nothing; saves the whole run when the docs are the problem.
+ */
+function preflight(platform: string, skip: Set<string>, what: string): boolean {
   const preSkip = new Set([...skip, 'typecheck', 'literals', 'keyboard', 'keyboard-run', 'axe']);
   const pre = hooks.runGates(platform, preSkip, false).filter((r) => !r.ok);
-  if (pre.length > 0) {
-    print(`  ✖ ${key}: preflight failed before any model call — fix the docs and re-run tools/parse.ts:`);
-    for (const r of pre) print('    ' + pySplitlines(pyStrip(r.output)).slice(-6).join('\n    '));
-    return false;
+  if (pre.length === 0) return true;
+  print(`  ✖ ${what}: preflight failed before any model call — fix the docs and re-run tools/parse.ts:`);
+  for (const r of pre) print('    ' + pySplitlines(pyStrip(r.output)).slice(-6).join('\n    '));
+  return false;
+}
+
+/** Session and cost carried across a target's rounds; `modelRound` updates it in place so a call that
+ *  throws halfway (the report nudge, say) still leaves what was already spent in the lock. */
+type CallState = { session: string | null; cost: number };
+
+/** One model call for one target: the retries, the missing-report nudge and the custom/ guard. */
+async function modelRound(
+  state: CallState, runner: Runner, prompt: string, platform: string, key: string, roundNo: number, args: Args,
+): Promise<{ report: Report; customChanged: string[]; roundCost: number }> {
+  const customBefore = hooks.customSnapshot(platform);
+  try {
+    const [text, s, roundCost] = await runWithRetry(runner, prompt, args.runner === 'cli' ? state.session : null, key, roundNo);
+    state.session = s;
+    const customChanged = hooks.restoreCustom(platform, customBefore);
+    state.cost += roundCost;
+    let rep = parseReport(text);
+    if (rep.files.length === 0 && rep.gaps.includes(NO_REPORT) && args.runner === 'cli' && state.session) {
+      // The model finished without the trailing report (Text.lit did). One cheap resumed turn asks for it, so
+      // the files it touched reach the lock; the original gap line stays if the second reply has none either.
+      print(`  round ${roundNo}: no JSON report — asking once more for it`);
+      const [text2, s2, c2] = await runWithRetry(runner, REPORT_NUDGE, state.session, key, roundNo);
+      state.session = s2;
+      state.cost += c2;
+      const rep2 = parseReport(text2);
+      if (rep2.files.length > 0 || !rep2.gaps.includes(NO_REPORT)) {
+        rep = { files: rep2.files, gaps: [...rep2.gaps, '(report recovered after a second request)'] };
+      }
+    }
+    return { report: rep, customChanged, roundCost };
+  } catch (e) {
+    hooks.restoreCustom(platform, customBefore);
+    throw e;
   }
+}
+
+/** The gate that says the model wrote where it may not: custom/ is hand-written and was put back. */
+function customGate(platform: string, customChanged: string[]): GateResult {
+  print('  ✖ custom     restored ' + customChanged.join(', '));
+  return {
+    name: 'custom',
+    ok: false,
+    output:
+      'packages/' + (PKG[platform] as string) + "/src/custom/ is hand-written and never the generator's to change; these files were " +
+      'restored: ' + customChanged.join(', ') + '. Import the modules the Extensions section names and call them where ' +
+      '`wire` says; do not create, edit or copy anything under custom/.',
+  };
+}
+
+/** The runner, not the spec, gave up: no hash (stays stale for the next pass), the message in the lock,
+ *  and on to the next target — one dead API call must not abort the phase. */
+function recordRunnerError(
+  key: string, platform: string, h: string, message: string, state: CallState, files: string[], gaps: number, roundNo: number, args: Args, lock: Lock,
+): void {
+  lock[key] = {
+    hash: null, lastAttemptHash: h, error: message,
+    generatedAt: utcNow(),
+    model: args.model, runner: args.runner, rounds: roundNo, costUsd: pyRoundTo(state.cost, 4),
+    files, gaps, gates: {},
+  };
+  saveLock(lock, platform);
+  print(`  ? ${key}: runner error, will retry on the next pass\n    ${message}`);
+}
+
+function recordResult(
+  key: string, platform: string, h: string, results: GateResult[], state: CallState, files: string[], gaps: number, roundNo: number, args: Args, lock: Lock,
+): boolean {
+  const ok = results.every((r) => r.ok);
+  lock[key] = {
+    hash: ok ? h : ((lock[key] ?? {})['hash'] ?? null), // a failed run does not claim the hash → stays stale
+    lastAttemptHash: h,
+    generatedAt: utcNow(),
+    model: args.model, runner: args.runner, rounds: roundNo, costUsd: pyRoundTo(state.cost, 4),
+    files, gaps,
+    gates: Object.fromEntries(results.map((r) => [r.name, r.ok])),
+  };
+  saveLock(lock, platform);
+  print(`  ${ok ? '✔' : '✖'} ${key}: ${files.length} file(s), ${gaps} gap(s), ${roundNo} round(s), $${pyFixed(state.cost, 3)}`);
+  return ok;
+}
+
+export async function generateOne(name: string, platform: string, args: Args, lock: Lock): Promise<boolean> {
+  const key = `${name}.${platform}`;
+  const start = ready(name, platform, args, lock);
+  if (!start.go) return start.ok;
+  const h = start.hash;
+
+  const skip = new Set(args.skip);
+  if (!preflight(platform, skip, key)) return false;
 
   const runner: Runner = args.runner === 'cli' ? hooks.CliRunner(args.model, args.maxTurns) : hooks.ApiRunner(args.model, platform);
-  let session: string | null = null;
-  let cost = 0;
+  const state: CallState = { session: null, cost: 0 };
   let files: string[] = [];
   const allGaps: string[] = [];
   let results: GateResult[] = [];
@@ -709,61 +891,21 @@ export async function generateOne(name: string, platform: string, args: Args, lo
   let roundNo = 1;
   for (; roundNo <= args.maxRounds; roundNo++) {
     print(`  round ${roundNo}: model …`);
-    const customBefore = hooks.customSnapshot(platform);
-    let customChanged: string[] = [];
-    let rep: Report;
-    let c: number;
+    let round: { report: Report; customChanged: string[]; roundCost: number };
     try {
-      const [text, s, roundCost] = await runWithRetry(runner, prompt, args.runner === 'cli' ? session : null, key, roundNo);
-      session = s;
-      c = roundCost;
-      customChanged = hooks.restoreCustom(platform, customBefore);
-      cost += c;
-      rep = parseReport(text);
-      if (rep.files.length === 0 && rep.gaps.includes(NO_REPORT) && args.runner === 'cli' && session) {
-        // The model finished without the trailing report (Text.lit did). One cheap resumed turn asks for it, so
-        // the files it touched reach the lock; the original gap line stays if the second reply has none either.
-        print(`  round ${roundNo}: no JSON report — asking once more for it`);
-        const [text2, s2, c2] = await runWithRetry(runner, REPORT_NUDGE, session, key, roundNo);
-        session = s2;
-        cost += c2;
-        const rep2 = parseReport(text2);
-        if (rep2.files.length > 0 || !rep2.gaps.includes(NO_REPORT)) {
-          rep = { files: rep2.files, gaps: [...rep2.gaps, '(report recovered after a second request)'] };
-        }
-      }
+      round = await modelRound(state, runner, prompt, platform, key, roundNo, args);
     } catch (e) {
       if (e instanceof ExitError) throw e;
-      // The runner, not the spec, gave up: no hash (stays stale for the next pass), the message in the lock,
-      // and on to the next target — one dead API call must not abort the phase.
-      hooks.restoreCustom(platform, customBefore);
-      const message = errorLine(e);
-      lock[key] = {
-        hash: null, lastAttemptHash: h, error: message,
-        generatedAt: utcNow(),
-        model: args.model, runner: args.runner, rounds: roundNo, costUsd: pyRoundTo(cost, 4),
-        files, gaps: allGaps.length, gates: {},
-      };
-      saveLock(lock, platform);
-      print(`  ? ${key}: runner error, will retry on the next pass\n    ${message}`);
+      recordRunnerError(key, platform, h, errorLine(e), state, files, allGaps.length, roundNo, args, lock);
       return false;
     }
+    const rep = round.report;
     files = pySorted([...new Set([...files, ...rep.files])]); // union across rounds: fix rounds often touch other files
     allGaps.push(...rep.gaps);
     recordGaps(name, platform, rep.gaps, roundNo);
-    print(`  round ${roundNo}: ${rep.files.length} file(s), ${rep.gaps.length} gap(s), $${pyFixed(c, 3)}`);
+    print(`  round ${roundNo}: ${rep.files.length} file(s), ${rep.gaps.length} gap(s), $${pyFixed(round.roundCost, 3)}`);
     results = hooks.runGates(platform, skip, true, new Set(args.extra));
-    if (customChanged.length > 0) {
-      results.push({
-        name: 'custom',
-        ok: false,
-        output:
-          'packages/' + (PKG[platform] as string) + "/src/custom/ is hand-written and never the generator's to change; these files were " +
-          'restored: ' + customChanged.join(', ') + '. Import the modules the Extensions section names and call them where ' +
-          '`wire` says; do not create, edit or copy anything under custom/.',
-      });
-      print('  ✖ custom     restored ' + customChanged.join(', '));
-    }
+    if (round.customChanged.length > 0) results.push(customGate(platform, round.customChanged));
     const bad = results.filter((r) => !r.ok);
     if (bad.length === 0) break;
     if (roundNo === args.maxRounds) {
@@ -773,18 +915,167 @@ export async function generateOne(name: string, platform: string, args: Args, lo
     prompt = hooks.fixPrompt(name, platform, hooks.failuresAsPrompt(results), roundNo + 1);
   }
 
-  const ok = results.every((r) => r.ok);
-  lock[key] = {
-    hash: ok ? h : ((lock[key] ?? {})['hash'] ?? null), // a failed run does not claim the hash → stays stale
-    lastAttemptHash: h,
-    generatedAt: utcNow(),
-    model: args.model, runner: args.runner, rounds: roundNo, costUsd: pyRoundTo(cost, 4),
-    files, gaps: allGaps.length,
-    gates: Object.fromEntries(results.map((r) => [r.name, r.ok])),
-  };
-  saveLock(lock, platform);
-  print(`  ${ok ? '✔' : '✖'} ${key}: ${files.length} file(s), ${allGaps.length} gap(s), ${roundNo} round(s), $${pyFixed(cost, 3)}`);
+  return recordResult(key, platform, h, results, state, files, allGaps.length, roundNo, args, lock);
+}
+
+// ---------------------------------------------------------------- the batch loop (remote gates)
+
+/** One target inside a batch: everything generateOne keeps in locals, for several targets at once. */
+type Job = {
+  name: string;
+  key: string;
+  hash: string;
+  runner: Runner;
+  state: CallState;
+  prompt: string;
+  files: string[];
+  gaps: string[];
+  results: GateResult[];
+  rounds: number;
+  live: boolean; // still being worked on: not passed, not failed, not abandoned
+  recorded: boolean; // its lock entry is already written (a runner or gate error wrote it)
+};
+
+/** The files of a target the remote gate carries and folds back: what the model reported, kept to the
+ *  Swift package, plus the registry the generator rewrote. */
+function gateFiles(job: Job, platform: string): string[] {
+  const pkg = `packages/${PKG[platform] as string}/`;
+  const reported = job.files.map((f) => f.replaceAll('\\', '/')).filter((f) => f.startsWith(pkg));
+  const registry = relative(paths.ROOT, join(srcDir(platform), GALLERY_REGISTRY)).replaceAll('\\', '/');
+  return pySorted([...new Set([...reported, registry])]);
+}
+
+/**
+ * A whole phase against a remote gate, one CI round trip per round: every target's model call happens
+ * locally and in order (one Claude Code at a time), then all of the branches are pushed and dispatched,
+ * then all of the runs are waited on together. Ten components cost one wait, not ten.
+ *
+ * Otherwise this is generateOne's loop: the same preflight, the same lock entries, the same fix prompt
+ * built from the failing gates — a `swift build` error reaches the model exactly as a `tsc` one does.
+ */
+export async function generateBatch(names: string[], platform: string, args: Args, lock: Lock): Promise<boolean> {
+  let ok = true;
+  const jobs: Job[] = [];
+  for (const name of names) {
+    const start = ready(name, platform, args, lock);
+    if (!start.go) {
+      ok = ok && start.ok;
+      continue;
+    }
+    jobs.push({
+      name, key: `${name}.${platform}`, hash: start.hash,
+      runner: args.runner === 'cli' ? hooks.CliRunner(args.model, args.maxTurns) : hooks.ApiRunner(args.model, platform),
+      state: { session: null, cost: 0 }, prompt: hooks.taskPrompt(name, platform),
+      files: [], gaps: [], results: [], rounds: 0, live: true, recorded: false,
+    });
+  }
+  if (jobs.length === 0) return ok;
+
+  const skip = new Set(args.skip);
+  if (!preflight(platform, skip, jobs.map((j) => j.key).join(', '))) return false;
+  const gate = hooks.remoteGate(platform);
+  try {
+    gate.preflight();
+  } catch (e) {
+    print(`  ✖ ${platform}: the remote gate cannot run — ${errorLine(e)}`);
+    return false;
+  }
+
+  for (let roundNo = 1; roundNo <= args.maxRounds; roundNo++) {
+    const live = jobs.filter((j) => j.live);
+    if (live.length === 0) break;
+    for (const job of live) {
+      job.rounds = roundNo;
+      print(`  round ${roundNo}: ${job.name} model …`);
+      let round: { report: Report; customChanged: string[]; roundCost: number };
+      try {
+        round = await modelRound(job.state, job.runner, job.prompt, platform, job.key, roundNo, args);
+      } catch (e) {
+        if (e instanceof ExitError) throw e;
+        recordRunnerError(job.key, platform, job.hash, errorLine(e), job.state, job.files, job.gaps.length, roundNo, args, lock);
+        job.live = false;
+        job.recorded = true;
+        ok = false;
+        continue;
+      }
+      const rep = round.report;
+      job.files = pySorted([...new Set([...job.files, ...rep.files])]);
+      job.gaps.push(...rep.gaps);
+      recordGaps(job.name, platform, rep.gaps, roundNo);
+      print(`  round ${roundNo}: ${job.name}: ${rep.files.length} file(s), ${rep.gaps.length} gap(s), $${pyFixed(round.roundCost, 3)}`);
+      job.results = round.customChanged.length > 0 ? [customGate(platform, round.customChanged)] : [];
+    }
+
+    const staged = jobs.filter((j) => j.live);
+    if (staged.length === 0) break;
+    // The registry lists every gallery screen on disk, so it is written once, after the round's model
+    // calls and before anything is pushed.
+    const registry = writeGalleryRegistry(platform);
+    if (registry) print(`  ↻ ${registry}`);
+    // The local gates are doc-level and repo-wide: one run answers for the whole batch.
+    const local = hooks.runGates(platform, skip, true, new Set(args.extra));
+    let batches: GateBatch[];
+    try {
+      batches = await gate.runBatch(staged.map((j) => ({ name: j.name, files: gateFiles(j, platform) })));
+    } catch (e) {
+      if (e instanceof ExitError) throw e;
+      // The gate never answered (no `gh`, a dead network, a cancelled run): that is not the spec's
+      // fault, so every target of this round is recorded the way a dead model call is.
+      const message = errorLine(e);
+      for (const job of staged) {
+        recordRunnerError(job.key, platform, job.hash, message, job.state, job.files, job.gaps.length, roundNo, args, lock);
+        job.live = false;
+        job.recorded = true;
+      }
+      return false;
+    }
+
+    for (const batch of batches) {
+      const job = staged.find((j) => j.name === batch.run.name) as Job;
+      job.results = [...job.results, ...local, ...batch.results];
+      const bad = job.results.filter((r) => !r.ok);
+      if (bad.length === 0) {
+        const folded = gate.fold(batch.run);
+        if (folded.length > 0) print(`  ⇣ ${job.name}: ${folded.join(', ')}`);
+        job.live = false;
+        continue;
+      }
+      gate.discard(batch.run);
+      if (roundNo === args.maxRounds) {
+        print(`  ✖ ${job.name}: gates still failing after ${roundNo} round(s): ${bad.map((r) => r.name).join(', ')}`);
+        job.live = false;
+        continue;
+      }
+      job.prompt = hooks.fixPrompt(job.name, platform, hooks.failuresAsPrompt(job.results), roundNo + 1);
+    }
+  }
+
+  for (const job of jobs) {
+    if (job.recorded) {
+      ok = false; // its lock entry says why; recording it twice would claim the hash it never earned
+      continue;
+    }
+    const passed = recordResult(job.key, platform, job.hash, job.results, job.state, job.files, job.gaps.length, job.rounds, args, lock);
+    ok = ok && passed;
+  }
   return ok;
+}
+
+/** One component's branch, its workflow run and what the run said about it. */
+export type GateBatch = swiftui.Batch;
+
+/** The gate that lives somewhere else: tools/swiftui_gate.ts, behind the seam the tests replace so no
+ *  suite ever pushes a branch. `runBatch` is one CI round trip for as many components as are handed to it. */
+export type RemoteGate = {
+  preflight(): void;
+  runBatch(targets: { name: string; files: string[] }[]): Promise<GateBatch[]>;
+  fold(run: swiftui.RemoteRun): string[];
+  discard(run: swiftui.RemoteRun): void;
+};
+
+export function remoteGate(platform: string): RemoteGate {
+  if (platform === 'swiftui') return swiftui;
+  throw new ExitError(`no remote gate for platform ${platform}`);
 }
 
 /** The seams the tests replace, the way the Python tests monkeypatched the module globals. */
@@ -796,6 +1087,7 @@ export const hooks = {
   failuresAsPrompt,
   customSnapshot,
   restoreCustom,
+  remoteGate,
   CliRunner: (model: string, maxTurns: number): Runner => new CliRunner(model, maxTurns),
   ApiRunner: (model: string, platform: string): Runner => new ApiRunner(model, platform),
 };
@@ -833,6 +1125,7 @@ deterministic gates everywhere else.
 
     node tools/generate.ts --platform web --component Icon              # one component, one platform
     node tools/generate.ts --platform web,lit,rn --component Icon       # three platforms, sequentially
+    node tools/generate.ts --platform swiftui --component Button,Icon   # one branch each, one CI round trip
     node tools/generate.ts --stale                                      # everything whose prompt changed
     node tools/generate.ts --check                                      # list stale entries, generate nothing
     node tools/generate.ts ... --runner api                             # Messages API instead of Claude Code
@@ -848,6 +1141,8 @@ How it works
      expects files back in a fenced format, which this script writes.
   3. Gates (tools/checks.ts): parse, contrast, literals, typecheck. Failures are handed back to
      the model verbatim as a fix round, up to --max-rounds. The model never sees the gate code.
+     \`swiftui\` compiles only on macOS, so its build/test/audit gates run in GitHub Actions
+     (tools/swiftui_gate.ts) and a phase is generated as one batch: one CI round trip per round.
   4. Gaps the model reported land in generated/gaps/<Name>.<platform>.md for the doc pass.
      The lockfile records hash, files, rounds, gate results and cost.
 
@@ -856,7 +1151,7 @@ build never calls a model; it runs the same gates on committed code.
 
 options:
   -h, --help            show this help message and exit
-  --platform PLATFORM   comma-separated: web,lit,rn
+  --platform PLATFORM   comma-separated: web,lit,rn,swiftui
   --component COMPONENT
                         comma-separated component names (as in the doc
                         frontmatter)
@@ -986,7 +1281,7 @@ async function run(argv: string[]): Promise<number> {
     let nAdopted = 0;
     for (const [n, p] of allTargets()) {
       const pattern = n.startsWith('Pattern.');
-      const folder = join(paths.ROOT, 'packages', PKG[p] as string, pattern ? 'demo' : 'src');
+      const folder = pattern ? join(paths.ROOT, 'packages', PKG[p] as string, 'demo') : srcDir(p);
       const stem = pattern ? n.slice(n.indexOf('.') + 1) : n;
       if (!anyFileNamed(folder, stem)) continue;
       const h = sha(readText(promptPath(n, p)));
@@ -1028,8 +1323,21 @@ async function run(argv: string[]): Promise<number> {
   }
   print(`targets: ${targets.map(([n, p]) => `${n}.${p}`).join(', ')}`);
   let ok = true;
+  // Platforms whose gates are local run target by target, as they always have. A remote-gate platform's
+  // targets are collected and generated as one batch at the end, so the phase waits on CI once.
+  const batched = new Map<string, string[]>();
   for (const [n, p] of targets) {
+    if (REMOTE_GATE.has(p)) {
+      const names = batched.get(p) ?? [];
+      names.push(n);
+      batched.set(p, names);
+      continue;
+    }
     const passed = await generateOne(n, p, args, lock);
+    ok = ok && passed;
+  }
+  for (const [p, names] of batched) {
+    const passed = await generateBatch(names, p, args, lock);
     ok = ok && passed;
   }
   return ok ? 0 : 1;

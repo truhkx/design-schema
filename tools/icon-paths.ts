@@ -1,0 +1,184 @@
+#!/usr/bin/env node
+/**
+ * Emit the SwiftUI glyph table from the shared one.
+ *
+ * tools/icon-paths.json is the single source for Icon's glyphs (one SVG path `d` per name on the
+ * 16×16 grid, plus `filled`). This script:
+ *
+ *   1. checks the table's names against the Icon doc's `name` enum — same names, same order;
+ *   2. checks every `d` uses only the commands Support/SVGPath.swift parses (M L H V C Q A Z, either case);
+ *   3. writes packages/swiftui/Sources/DesignSchema/Icon+Paths.swift.
+ *
+ * The JS packages still hold their own copies of the table (packages/react/src/Icon.tsx,
+ * packages/lit/src/Icon.ts, packages/rn/src/paths.ts); they are told to read this JSON in their next
+ * regeneration by the per-platform digests in prompts/conventions. Nothing here writes into a JS package.
+ *
+ * Usage:  node --import tsx tools/icon-paths.ts            # write the Swift file
+ *         node --import tsx tools/icon-paths.ts --check     # exit 1 if it is out of date
+ *
+ * Runs under Node's type stripping (22.18+ / 24): annotations only.
+ */
+import { existsSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { readText, writeTextAtomic } from './lib/py.ts';
+import { REPO_ROOT } from './lib/root.ts';
+
+/** Every path the tool reads or writes. The tests point these at a sandbox. */
+export const paths = {
+  ROOT: REPO_ROOT,
+  TABLE: join(REPO_ROOT, 'tools', 'icon-paths.json'),
+  DOC: join(REPO_ROOT, 'site', 'src', 'content', 'docs', 'components', 'icon.md'),
+  SWIFT: join(REPO_ROOT, 'packages', 'swiftui', 'Sources', 'DesignSchema', 'Icon+Paths.swift'),
+};
+
+/** One glyph: the path data, and whether it fills (even-odd) instead of stroking. */
+export type Glyph = { d: string; filled: boolean; note?: string | undefined };
+
+export type Table = { grid: number; strokeWidth: number; strokeWidthToken: string; glyphs: Record<string, Glyph> };
+
+/** The commands Support/SVGPath.swift understands. Anything else must not reach the Swift. */
+const SUPPORTED = new Set('MLHVCQAZmlhvcqaz'.split(''));
+
+export function readTable(): Table {
+  const raw = JSON.parse(readFileSync(paths.TABLE, 'utf8')) as {
+    grid: number;
+    strokeWidth: number;
+    strokeWidthToken: string;
+    glyphs: Record<string, { d: string; filled?: boolean; note?: string }>;
+  };
+  const glyphs: Record<string, Glyph> = {};
+  for (const [name, g] of Object.entries(raw.glyphs)) {
+    glyphs[name] = { d: g.d, filled: g.filled === true, note: g.note };
+  }
+  return { grid: raw.grid, strokeWidth: raw.strokeWidth, strokeWidthToken: raw.strokeWidthToken, glyphs };
+}
+
+/** The `name` enum from the Icon doc's frontmatter, in document order. Read with a regexp rather than the
+ *  YAML loader so this tool stays independent of `pnpm parse` having run. */
+export function docNames(): string[] {
+  const text = readFileSync(paths.DOC, 'utf8');
+  const match = /^\s*values:\s*\[([^\]]*)\]/m.exec(text);
+  if (!match) throw new Error(`${paths.DOC}: could not find the name enum's \`values:\` list`);
+  return (match[1] as string).split(',').map((v) => v.trim()).filter(Boolean);
+}
+
+/** Fails loudly rather than emitting Swift that draws the wrong thing. */
+export function validate(table: Table, names: string[]): void {
+  const own = Object.keys(table.glyphs);
+  if (own.join(',') !== names.join(',')) {
+    const missing = names.filter((n) => !own.includes(n));
+    const extra = own.filter((n) => !names.includes(n));
+    const detail = missing.length || extra.length
+      ? `${missing.length ? `missing ${missing.join(', ')}; ` : ''}${extra.length ? `unknown ${extra.join(', ')}` : ''}`
+      : 'same names, different order';
+    throw new Error(`tools/icon-paths.json does not match the Icon doc's name enum: ${detail}`);
+  }
+  for (const [name, glyph] of Object.entries(table.glyphs)) {
+    if (!glyph.d.trim()) throw new Error(`${name}: empty path data`);
+    for (const c of glyph.d) {
+      if (/[A-Za-z]/.test(c) && !SUPPORTED.has(c) && c !== 'e' && c !== 'E') {
+        throw new Error(`${name}: command "${c}" is not one of M L H V C Q A Z (Support/SVGPath.swift parses no more)`);
+      }
+    }
+  }
+}
+
+/** `chevron-right` → `chevronRight`, for the Swift doc comment's ordering only. */
+export function camel(name: string): string {
+  return name.replace(/-([a-z])/g, (_m, c: string) => (c as string).toUpperCase());
+}
+
+export function swift(table: Table, names: string[]): string {
+  const width = Math.max(...names.map((n) => n.length)) + 2; // `"name":` padded so the tuples line up
+  const rows = names.map((name) => {
+    const glyph = table.glyphs[name] as Glyph;
+    const key = `"${name}":`.padEnd(width + 2);
+    const note = glyph.note ? ` // ${glyph.note}` : '';
+    return `        ${key} (path: "${glyph.d}", filled: ${glyph.filled}),${note}`;
+  });
+  const filled = names.filter((n) => (table.glyphs[n] as Glyph).filled);
+  return `//  Icon+Paths.swift
+//
+//  GENERATED by \`node --import tsx tools/icon-paths.ts\` from tools/icon-paths.json — do not edit.
+//  \`pnpm icons:check\` fails when this file and that table disagree.
+//
+//  The glyph table Icon draws from: one SVG path \`d\` per glyph name on a ${table.grid}×${table.grid} grid, the same data the
+//  web SVG uses, so a glyph beside a label looks the same on every platform. Support/SVGPath.swift turns a \`d\`
+//  into a \`Path\`; \`IconPaths.shape(_:)\` is that \`Path\` as a \`Shape\` scaled to whatever square it is given.
+//
+//  Line glyphs stroke in the text color at \`border.width.${table.strokeWidthToken.split('.').pop() ?? 'focus'}\` (${table.strokeWidth} pt on the ${table.grid}-grid) with round caps and
+//  joins. The \`filled\` glyphs (${filled.join(', ')}) fill with fill-rule
+//  even-odd and draw no stroke: each status shape's inner mark (i, check, !, x) is a hole, so it reads on any
+//  surface without a second color.
+//
+//  Keyed by the doc's \`name\` value (\`"chevron-right"\`), not a Swift identifier, so the generated
+//  \`Icon.Name\` enum can look its own \`rawValue\` up here and this file never has to know that type exists.
+
+import SwiftUI
+
+public enum IconPaths {
+    /// The grid every \`path\` is drawn on. \`shape(_:)\` scales it to the square it is asked for.
+    public static let grid: CGFloat = ${table.grid}
+
+    /// Stroke width for line glyphs, in points on the ${table.grid}-grid (the \`${table.strokeWidthToken}\` token). Kept at this
+    /// thickness at every rendered size, so glyphs stay legible at \`xs\`.
+    public static let strokeWidth: CGFloat = ${table.strokeWidth}
+
+    /// Glyph name → path data on the ${table.grid}-grid, and whether it fills (even-odd) rather than strokes.
+    public static let table: [String: (path: String, filled: Bool)] = [
+${rows.join('\n')}
+    ]
+
+    /// Every glyph name, in the order the Icon doc's \`name\` enum lists them.
+    public static let names: [String] = [
+${names.map((n) => `        "${n}",`).join('\n')}
+    ]
+
+    /// The glyph for \`name\`, or nil when there is none — the caller decides whether that is a bug.
+    public static func glyph(_ name: String) -> (path: String, filled: Bool)? {
+        table[name]
+    }
+
+    /// The glyph as a \`Shape\`: the ${table.grid}-grid path scaled to fit whatever rect it is laid out in, and centered
+    /// there. Stroke it (line glyphs) or fill it with \`FillStyle(eoFill: true)\` (\`filled\` glyphs).
+    public static func shape(_ name: String) -> SVGPathShape? {
+        guard let glyph = table[name] else { return nil }
+        return SVGPathShape(glyph.path, viewBox: CGSize(width: grid, height: grid))
+    }
+}
+`;
+}
+
+export function main(argv: string[]): number {
+  const check = argv.includes('--check');
+  const table = readTable();
+  const names = docNames();
+  validate(table, names);
+  const text = swift(table, names);
+  const current = existsSync(paths.SWIFT) ? readText(paths.SWIFT) : null;
+  if (current === text) {
+    process.stdout.write(`icon paths: Icon+Paths.swift up to date (${names.length} glyphs)\n`);
+    return 0;
+  }
+  if (check) {
+    process.stderr.write(
+      `icon paths: Icon+Paths.swift is out of date — run \`pnpm icons\`\n${current === null ? '  (the file does not exist)\n' : ''}`,
+    );
+    return 1;
+  }
+  writeTextAtomic(paths.SWIFT, text);
+  process.stdout.write(`icon paths: wrote Icon+Paths.swift (${names.length} glyphs)\n`);
+  return 0;
+}
+
+const invokedDirectly = process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (invokedDirectly) {
+  try {
+    process.exitCode = main(process.argv.slice(2));
+  } catch (error) {
+    process.stderr.write(`icon paths: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exitCode = 1;
+  }
+}

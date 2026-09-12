@@ -215,7 +215,7 @@ describe('generatorRunning', () => {
 
 describe('targets', () => {
   beforeEach(() => {
-    for (const name of ['Button.web.md', 'Pattern.SettingsPage.rn.md', 'theme.calm-precise.md', 'Ignored.swiftui.md', 'notes.txt']) {
+    for (const name of ['Button.web.md', 'Pattern.SettingsPage.rn.md', 'theme.calm-precise.md', 'Ignored.compose.md', 'notes.txt']) {
       write(join(g.paths.PROMPTS, name), `spec for ${name}\n`);
     }
   });
@@ -750,8 +750,9 @@ describe('the command line', () => {
   });
 
   test('an unknown platform exits 1 with the message on stderr', async () => {
-    expect(await g.main(['--platform', 'swiftui', '--component', 'Icon'])).toBe(1);
-    expect(std.err()).toBe('unknown platform swiftui\n');
+    // `compose` is the other platform id the schema reserves; nothing generates it yet.
+    expect(await g.main(['--platform', 'compose', '--component', 'Icon'])).toBe(1);
+    expect(std.err()).toBe('unknown platform compose\n');
   });
 
   test('--help prints the description and the options, and exits 0', async () => {
@@ -786,6 +787,193 @@ describe('the command line', () => {
     g.hooks.taskPrompt = () => 'task';
     expect(await g.main(['--platform', 'lit', '--stale', '--dry-run'])).toBe(0);
     expect(std.out()).toContain('targets: Text.lit\n');
+  });
+});
+
+describe('the swiftui platform', () => {
+  const SWIFT_REPORT = '```json\n{"files": ["packages/swiftui/Sources/DesignSchema/Button.swift",' +
+    ' "packages/swiftui/Sources/DesignSchema/Gallery+Button.swift"], "gaps": []}\n```';
+
+  /** A remote gate that answers from a list of results per round and records what it was asked. */
+  function fakeGate(rounds: GateResult[][] = []): { batches: string[][]; folded: string[]; discarded: string[]; preflights: number } {
+    const seen = { batches: [] as string[][], folded: [] as string[], discarded: [] as string[], preflights: 0 };
+    const queue = [...rounds];
+    g.hooks.remoteGate = () => ({
+      preflight: () => {
+        seen.preflights += 1;
+      },
+      runBatch: async (targets) => {
+        seen.batches.push(targets.map((t) => t.name));
+        const results = queue.length > 0 ? (queue.shift() as GateResult[]) : [gate('swift-build', true)];
+        return targets.map((t) => ({
+          run: { name: t.name, branch: `gen/swiftui/${t.name}`, worktree: 'w', sha: 's', id: '1', files: t.files },
+          results,
+        }));
+      },
+      fold: (run) => {
+        seen.folded.push(run.name);
+        return run.files;
+      },
+      discard: (run) => {
+        seen.discarded.push(run.name);
+      },
+    });
+    return seen;
+  }
+
+  /** Prompts for two swiftui targets, a fake model and the gates stubbed to green. */
+  function swiftLoop(replies: unknown[]): FakeRunner {
+    write(join(g.paths.PROMPTS, 'Button.swiftui.md'), 'button spec');
+    write(join(g.paths.PROMPTS, 'Icon.swiftui.md'), 'icon spec');
+    const runner = new FakeRunner(replies);
+    g.hooks.taskPrompt = () => 'task';
+    g.hooks.fixPrompt = (_n, _p, failures) => `fix: ${failures}`;
+    g.hooks.failuresAsPrompt = (results) => results.filter((r) => !r.ok).map((r) => `${r.name}: ${r.output}`).join('\n');
+    g.hooks.CliRunner = () => runner;
+    g.hooks.sleep = async () => {};
+    g.hooks.runGates = () => [];
+    return runner;
+  }
+
+  test('the platform is known, labelled, and points at the Swift package', () => {
+    expect(g.PKG['swiftui']).toBe('swiftui');
+    expect(g.PLATFORM_LABEL['swiftui']).toBe('SwiftUI (iOS)');
+    expect(g.REMOTE_GATE.has('swiftui')).toBe(true);
+    expect(g.CONVENTION_FILES['swiftui']?.[0]).toBe('packages/swiftui/Sources/DesignSchema/Support/Gallery.swift');
+    expect(g.CONVENTION_FILES['swiftui']?.[1]).toBe('packages/swiftui/Sources/DesignSchema/Button.swift');
+    expect(g.srcDir('swiftui').replaceAll('\\', '/')).toMatch(/packages\/swiftui\/Sources\/DesignSchema$/);
+    expect(g.srcDir('web').replaceAll('\\', '/')).toMatch(/packages\/react\/src$/);
+  });
+
+  test('the task prompt asks for the file, the gallery screen, and nothing under Gallery+Generated', () => {
+    write(join(g.paths.PROMPTS, 'Button.swiftui.md'), '# spec');
+    const prompt = g.taskPrompt('Button', 'swiftui');
+    expect(prompt).toContain('You are the SwiftUI (iOS) generator');
+    expect(prompt).toContain('packages/swiftui/Sources/DesignSchema/Gallery+Button.swift');
+    expect(prompt).toContain('static var buttonScreen: GalleryEntry');
+    expect(prompt).toContain('Never edit `Support/Gallery+Generated.swift`');
+    expect(prompt, 'a Swift package has no index to export from').not.toContain('index.ts');
+  });
+
+  test('the gallery registry is written from the screen files on disk', () => {
+    const dir = g.srcDir('swiftui');
+    mkdirSync(dir, { recursive: true });
+    expect(g.writeGalleryRegistry()).toContain('Gallery+Generated.swift');
+    expect(readText(join(dir, g.GALLERY_REGISTRY))).toContain('static var generated: [GalleryEntry] {\n        []\n    }');
+    write(join(dir, 'Gallery+Icon.swift'), 'screen');
+    write(join(dir, 'Gallery+Button.swift'), 'screen');
+    write(join(dir, 'Button.swift'), 'component'); // not a screen
+    g.writeGalleryRegistry();
+    const text = readText(join(dir, g.GALLERY_REGISTRY));
+    expect(text).toContain('            Self.buttonScreen,\n            Self.iconScreen,'); // sorted, not generation order
+    expect(text).not.toContain('Self.buttonSwiftScreen');
+    expect(g.writeGalleryRegistry(), 'unchanged: nothing is rewritten').toBeNull();
+  });
+
+  test('a batch is one CI round trip: both branches, one runBatch, then the fold', async () => {
+    const runner = swiftLoop([SWIFT_REPORT, SWIFT_REPORT]);
+    const seen = fakeGate();
+    const lock: g.Lock = {};
+    expect(await g.generateBatch(['Button', 'Icon'], 'swiftui', args({ platform: 'swiftui' }), lock)).toBe(true);
+    expect(runner.calls).toHaveLength(2); // both models ran before anything was pushed
+    expect(seen.preflights).toBe(1);
+    expect(seen.batches).toEqual([['Button', 'Icon']]);
+    expect(seen.folded).toEqual(['Button', 'Icon']);
+    expect(seen.discarded).toEqual([]);
+    expect(lock['Button.swiftui']).toMatchObject({ hash: g.sha('button spec'), gates: { 'swift-build': true } });
+    expect(lock['Icon.swiftui']).toMatchObject({ hash: g.sha('icon spec') });
+    expect(readLock('swiftui')['Button.swiftui']).toBeDefined();
+  });
+
+  test('the registry is rewritten before the branch is pushed', async () => {
+    swiftLoop([SWIFT_REPORT]);
+    mkdirSync(g.srcDir('swiftui'), { recursive: true });
+    write(join(g.srcDir('swiftui'), 'Gallery+Button.swift'), 'screen');
+    fakeGate();
+    await g.generateBatch(['Button'], 'swiftui', args({ platform: 'swiftui' }), {});
+    expect(readText(join(g.srcDir('swiftui'), g.GALLERY_REGISTRY))).toContain('Self.buttonScreen');
+  });
+
+  test('a swift build error is round 2, exactly as a typecheck failure is', async () => {
+    const runner = swiftLoop([SWIFT_REPORT, SWIFT_REPORT]);
+    const failure = gate('swift-build', false, 'Button.swift:31:9: error: cannot find `theme` in scope');
+    const seen = fakeGate([[failure], [gate('swift-build', true)]]);
+    const lock: g.Lock = {};
+    expect(await g.generateBatch(['Button'], 'swiftui', args({ platform: 'swiftui', maxRounds: 2 }), lock)).toBe(true);
+    expect(runner.calls).toHaveLength(2);
+    expect(runner.calls[1]?.[0]).toBe('fix: swift-build: Button.swift:31:9: error: cannot find `theme` in scope');
+    expect(seen.batches).toEqual([['Button'], ['Button']]); // a second round trip, for the one that failed
+    expect(seen.discarded, 'the failing round keeps its branch').toEqual(['Button']);
+    expect(seen.folded).toEqual(['Button']);
+    expect(lock['Button.swiftui']).toMatchObject({ rounds: 2 });
+  });
+
+  test('a target still failing at the last round stays stale and keeps its branch', async () => {
+    swiftLoop([SWIFT_REPORT]);
+    const seen = fakeGate([[gate('swift-test', false, 'IconSnapshotTests: 4% of pixels differ')]]);
+    const lock: g.Lock = {};
+    expect(await g.generateBatch(['Button'], 'swiftui', args({ platform: 'swiftui' }), lock)).toBe(false);
+    expect(seen.folded).toEqual([]);
+    expect(seen.discarded).toEqual(['Button']);
+    expect(lock['Button.swiftui']).toMatchObject({ hash: null, gates: { 'swift-test': false } });
+    expect(std.out()).toContain('✖ Button: gates still failing after 1 round(s): swift-test');
+  });
+
+  test('a gate that never answers is recorded like a dead model call, not as a pass', async () => {
+    swiftLoop([SWIFT_REPORT]);
+    fakeGate();
+    g.hooks.remoteGate = () => ({
+      preflight: () => {},
+      runBatch: () => Promise.reject(new Error('no gates/Button.swiftui.json from run 12')),
+      fold: () => [],
+      discard: () => {},
+    });
+    const lock: g.Lock = {};
+    expect(await g.generateBatch(['Button'], 'swiftui', args({ platform: 'swiftui' }), lock)).toBe(false);
+    const e = lock['Button.swiftui'] as g.Dict;
+    expect(e['hash']).toBeNull();
+    expect(e['error']).toBe('no gates/Button.swiftui.json from run 12');
+    expect(e['gates']).toEqual({});
+  });
+
+  test('a gate that cannot run at all stops before the first model call', async () => {
+    const runner = swiftLoop([SWIFT_REPORT]);
+    g.hooks.remoteGate = () => ({
+      preflight: () => {
+        throw new Error('`gh` is not on PATH');
+      },
+      runBatch: () => Promise.reject(new Error('never reached')),
+      fold: () => [],
+      discard: () => {},
+    });
+    expect(await g.generateBatch(['Button'], 'swiftui', args({ platform: 'swiftui' }), {})).toBe(false);
+    expect(runner.calls).toHaveLength(0);
+    expect(std.out()).toContain('✖ swiftui: the remote gate cannot run — `gh` is not on PATH');
+  });
+
+  test('--platform swiftui routes the whole component list into one batch', async () => {
+    swiftLoop([SWIFT_REPORT, SWIFT_REPORT]);
+    const seen = fakeGate();
+    expect(await g.main(['--platform', 'swiftui', '--component', 'Button,Icon'])).toBe(0);
+    expect(seen.batches).toEqual([['Button', 'Icon']]);
+  });
+
+  test('an up-to-date target is skipped and never reaches the gate', async () => {
+    swiftLoop([SWIFT_REPORT]);
+    const seen = fakeGate();
+    const lock: g.Lock = { 'Button.swiftui': entry(g.sha('button spec')) };
+    expect(await g.generateBatch(['Button'], 'swiftui', args({ platform: 'swiftui' }), lock)).toBe(true);
+    expect(seen.batches).toEqual([]);
+    expect(std.out()).toContain('= Button.swiftui: up to date');
+  });
+
+  test('--dry-run prints the prompt and pushes nothing', async () => {
+    swiftLoop([]);
+    const seen = fakeGate();
+    expect(await g.main(['--platform', 'swiftui', '--component', 'Button', '--dry-run'])).toBe(0);
+    expect(seen.batches).toEqual([]);
+    expect(seen.preflights).toBe(0);
+    expect(std.out()).toContain('task');
   });
 });
 

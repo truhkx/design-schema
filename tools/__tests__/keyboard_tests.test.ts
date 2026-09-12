@@ -1,6 +1,6 @@
 /** tools/keyboard_tests.ts — Playwright specs derived from a component's `keyboard` block
  *  (port of tests/test_keyboard_tests.py). */
-import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
@@ -174,6 +174,34 @@ describe('specFor', () => {
   });
 });
 
+describe('specData', () => {
+  test('the block as data, with the defaults the Swift side should not have to know', () => {
+    const c = dialog();
+    c.keyboard = [{ keys: ['Home'], action: 'Moves to the first item.' }];
+    expect(kt.specData(c)).toEqual({
+      name: 'Dialog',
+      role: 'dialog',
+      identifier: 'Dialog',
+      rules: [{ keys: ['Home'], action: 'Moves to the first item.', from: 'inside', expect: 'manual' }],
+    });
+  });
+
+  test('`when` is carried through, and absent when the doc omits it', () => {
+    const rules = kt.specData(DIALOG).rules;
+    expect(rules.map((r) => r.expect)).toEqual(['closes', 'focus-next', 'focus-wraps-to-last', 'manual']);
+    expect(rules.every((r) => !('when' in r))).toBe(true);
+    const c = dialog();
+    c.keyboard = [{ keys: ['ArrowDown'], action: 'Opens.', when: 'focus on trigger', from: 'trigger', expect: 'opens' }];
+    expect(kt.specData(c).rules[0]?.when).toBe('focus on trigger');
+  });
+
+  test('the identifier is the component root`s testability hook, not its role', () => {
+    const c = { ...DIALOG, name: 'Stack', a11y: { role: 'none', requires: [] } };
+    expect(kt.specData(c).identifier).toBe('Stack');
+    expect(kt.specData(c).role).toBe('none');
+  });
+});
+
 describe('main', () => {
   let generated = '';
   let out = '';
@@ -223,8 +251,29 @@ describe('main', () => {
   test('stale specs are removed on every run', () => {
     mkdirSync(out, { recursive: true });
     writeFileSync(join(out, 'Gone.web.spec.ts'), '// old', 'utf8');
+    writeFileSync(join(out, 'Gone.json'), '{}', 'utf8');
     writeComponents([DIALOG]);
     kt.main();
-    expect(specs()).not.toContain('Gone.web.spec.ts');
+    expect(readdirSync(out)).not.toContain('Gone.web.spec.ts');
+    expect(readdirSync(out)).not.toContain('Gone.json');
+  });
+
+  // The swiftui gate's XCUITest cannot read a Markdown doc on a macOS runner, and that job never runs
+  // `pnpm install` — the rules reach it as this file (tools/swiftui_gate.ts ships it with the branch).
+  test('the rules are written out as data beside the specs', () => {
+    writeComponents([DIALOG]);
+    kt.main();
+    expect(readdirSync(out).filter((n) => n.endsWith('.json'))).toEqual(['Dialog.json']);
+    expect(JSON.parse(readFileSync(join(out, 'Dialog.json'), 'utf8'))).toEqual(kt.specData(DIALOG));
+    expect(std.out()).toContain('1 rule set(s) for the swiftui gate');
+  });
+
+  test('the data is written even where no browser platform wants a spec', () => {
+    const c = dialog();
+    c.platforms = { rn: { element: 'Modal' }, swiftui: {} };
+    writeComponents([c]);
+    kt.main();
+    expect(specs()).toEqual([]);
+    expect(readdirSync(out)).toEqual(['Dialog.json']);
   });
 });

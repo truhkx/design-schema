@@ -27,6 +27,12 @@ describe('the gate table', () => {
     }
   });
 
+  test('swiftui runs the doc gates only — its build half is the macOS workflow', () => {
+    expect(names('swiftui')).toEqual(['parse', 'contrast']);
+    // No pnpm gate may be pointed at a Swift package: there is no @design-schema/swiftui to filter.
+    expect(checks.gatesFor('swiftui', new Set(), new Set(['keyboard', 'axe', 'behavior']))).toEqual(checks.gatesFor('swiftui'));
+  });
+
   test('--skip removes a gate by name', () => {
     expect(names('web', ['typecheck', 'deps'])).toEqual(['parse', 'contrast', 'literals', 'modules']);
   });
@@ -119,7 +125,7 @@ describe('the command line', () => {
     expect(checks.main([])).toBe(2);
     expect(std.err()).toContain('the following arguments are required: --platform');
     expect(checks.main(['--platform', 'nope'])).toBe(2);
-    expect(std.err()).toContain("invalid choice: 'nope' (choose from web, lit, rn)");
+    expect(std.err()).toContain("invalid choice: 'nope' (choose from web, lit, rn, swiftui)");
   });
 
   test('--skip and --with are repeatable', () => {
@@ -130,7 +136,7 @@ describe('the command line', () => {
   test('--json is accepted and stays out of the usage line', () => {
     expect(checks.parseArgs(['--platform', 'lit', '--json']).json).toBe(true);
     expect(checks.main(['--bogus'])).toBe(2);
-    expect(std.err()).toContain('usage: checks.ts [-h] --platform {web,lit,rn} [--skip SKIP] [--with EXTRA]\n');
+    expect(std.err()).toContain('usage: checks.ts [-h] --platform {web,lit,rn,swiftui} [--skip SKIP] [--with EXTRA]\n');
     expect(std.err()).not.toContain('[--json]');
   });
 
@@ -141,6 +147,6 @@ describe('the command line', () => {
 
   test('--help exits 0 with the usage line', () => {
     expect(checks.main(['--help'])).toBe(0);
-    expect(std.out()).toBe('usage: checks.ts [-h] --platform {web,lit,rn} [--skip SKIP] [--with EXTRA]\n');
+    expect(std.out()).toBe('usage: checks.ts [-h] --platform {web,lit,rn,swiftui} [--skip SKIP] [--with EXTRA]\n');
   });
 });

@@ -28,6 +28,12 @@ jobs:
       - run: pnpm typecheck:tools
       - run: pnpm test:tools
       - run: pnpm typecheck
+      # Icon+Paths.swift is generated from tools/icon-paths.json; the SwiftUI gate compares pixels against
+      # that table, so a hand-edit here would make the Mac gate fail for a reason it cannot explain.
+      - run: pnpm icons:check
+      # The SwiftUI behavior cases are the one derived artifact that is committed — the macOS gate runner
+      # never runs `pnpm install`, so it cannot derive them — and this is what stops them going stale.
+      - run: pnpm gates:behavior:check
       # Generated code must be current with its docs (prompt hash); a stale target fails the build.
       - run: pnpm generate:check
 
@@ -44,6 +50,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm gates:browser
+      # The Icon reference PNGs the SwiftUI snapshot gate compares against are rendered by this same
+      # Chromium, so they are re-rendered here and must still match what is checked in.
+      - run: pnpm icons:snapshots:check
 
   # Every dependency tracks its latest stable release (process/typescript-and-currency.md, Workstream C).
   # tools/currency.ts reads `pnpm outdated --recursive --format json` and fails when anything is more

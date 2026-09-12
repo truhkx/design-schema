@@ -4,6 +4,8 @@
 #   powershell -ExecutionPolicy Bypass -File .\tier2.ps1 -From Dialog    # resume from a batch
 #   powershell -ExecutionPolicy Bypass -File .\tier2.ps1 -Gates          # also run the keyboard + axe gates per batch (needs Playwright)
 #   powershell -ExecutionPolicy Bypass -File .\tier2.ps1 -DryRun         # print the plan only
+#   powershell -ExecutionPolicy Bypass -File .\tier2.ps1 -Platform swiftui  # iOS: each batch is one GitHub Actions
+#     round trip, because SwiftUI compiles only on macOS (needs `gh` on PATH and an origin to push to).
 # Log: logs\tier2.log (UTF-8). Each batch also appends to logs\generate.log via generate.ps1.
 param(
   [string]$From = "",
@@ -15,7 +17,21 @@ Set-Location $PSScriptRoot
 New-Item -ItemType Directory -Force -Path logs | Out-Null
 $log = "logs\tier2.log"
 function Log($line) { Write-Host $line; Add-Content -Path $log -Value $line -Encoding utf8 }
-Set-Content -Path $log -Value "== tier2 $(Get-Date -Format s) ==" -Encoding utf8
+Set-Content -Path $log -Value "== tier2 $(Get-Date -Format s) platforms=$Platform ==" -Encoding utf8
+
+$known = @("web", "lit", "rn", "swiftui")
+$requested = @($Platform.Split(",") | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" })
+$unknown = @($requested | Where-Object { $known -notcontains $_ })
+if ($requested.Count -eq 0 -or $unknown.Count -gt 0) {
+  Log "Unknown platform '$($unknown -join ', ')'. Known: $($known -join ', ')"
+  exit 1
+}
+# swiftui's build gates run on macOS in GitHub Actions (process/ios-platform.md, "Gates, and the Mac problem").
+if ($requested -contains "swiftui" -and -not (Get-Command gh -ErrorAction SilentlyContinue)) {
+  Log "swiftui needs the GitHub CLI on PATH (gh auth login): its gates run on macOS in GitHub Actions."
+  exit 1
+}
+$browserPlatforms = @($requested | Where-Object { $_ -ne "swiftui" })
 
 # Batches: each composes only components from earlier batches (or Tier 0/1).
 $batches = @(
@@ -50,7 +66,7 @@ $batches = @(
 )
 
 $extra = ""
-if ($Gates) { $extra = "--with keyboard --with axe" }
+if ($Gates -and $browserPlatforms.Count -gt 0) { $extra = "--with keyboard --with axe" }
 
 $started = ($From -eq "")
 $plan = @()
@@ -67,7 +83,7 @@ if ($DryRun) { $plan | ForEach-Object { Log "  $($_.name): $($_.components)" }; 
 Log "== pnpm themes =="
 pnpm themes 2>&1 | ForEach-Object { Log "$_" }
 if ($LASTEXITCODE -ne 0) { Log "themes failed"; exit 1 }
-if ($Gates) {
+if ($Gates -and $browserPlatforms.Count -gt 0) {
   Log "== playwright install chromium (one-time) =="
   pnpm exec playwright install chromium 2>&1 | ForEach-Object { Log "$_" }
 }

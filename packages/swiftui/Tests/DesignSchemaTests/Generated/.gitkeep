@@ -1,0 +1,7 @@
+# tools/behavior_tests.ts writes <Name>BehaviorTests.swift here, one per component whose
+# packages/swiftui/Sources/DesignSchema/<Name>.swift exists. Those files are committed — the macOS runner
+# that runs `swift test` never runs `pnpm install`, so it cannot derive them — and
+# `node tools/behavior_tests.ts --check` fails when they have fallen behind the docs.
+#
+# This file keeps the folder in git while no component has been generated yet. A dotfile, so SwiftPM ignores
+# it rather than reporting an unhandled resource.

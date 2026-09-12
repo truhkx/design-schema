@@ -5,6 +5,7 @@
  *
  *     node tools/checks.ts --platform web            # all gates for one platform
  *     node tools/checks.ts --platform rn --skip typecheck
+ *     node tools/checks.ts --platform swiftui        # the doc gates only — the Swift build is a macOS workflow
  *
  * Each gate is a (name, argv, cwd) triple. A gate passes when its process exits 0. The
  * model never sees the gate definitions, only their output — the docs are the spec, these
@@ -20,6 +21,10 @@
  *   behavior   tools/behavior_tests.ts + pnpm test    every `behavior` scenario, against the real component module        (--with behavior)
  *   contrast   tools/check_contrast.ts           every declared pair, every theme × mode (doc-level, cheap, run anyway)
  *   parse      tools/parse.ts                    the docs still validate (a generator may not edit docs, but be sure)
+ *
+ * The `swiftui` platform's build half is not here: `swift build`, the Swift Testing suite and the XCUITest
+ * accessibility audit run on the macOS workflow and come back as swift-build / swift-test / swift-audit
+ * results from tools/swiftui_gate.ts, in this same GateResult shape.
  *
  * Planned (see process/generation-pipeline.md): axe over Storybook stories; Playwright keyboard tests
  * derived from a11y.requires; a "no new dependencies" diff on package.json.
@@ -39,7 +44,15 @@ import { ljust, pySplitlines, pyStrip } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
 
 export const ROOT: string = REPO_ROOT;
-export const PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn' };
+export const PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn', swiftui: 'swiftui' };
+
+/** Platforms whose package is TypeScript, and so whose typecheck, dependency and module gates are a
+ *  `pnpm --filter` away. `swiftui` is a Swift package: `swift build`, the Swift Testing suite and the
+ *  XCUITest audit run on the macOS workflow (tools/swiftui_gate.ts), because SwiftUI compiles nowhere
+ *  else — process/ios-platform.md, "Gates, and the Mac problem". What is left here are the doc-level
+ *  gates, which read the docs and so run anywhere. (The literals gate joins them when job 450 teaches
+ *  tools/lint_literals.ts to read Swift.) */
+export const TS_PACKAGE: ReadonlySet<string> = new Set(['web', 'lit', 'rn']);
 
 export type Gate = { name: string; argv: string[]; cwd: string };
 export type GateResult = { name: string; ok: boolean; output: string };
@@ -63,19 +76,24 @@ export function gatesFor(platform: string, skip: Set<string> = new Set(), extra:
     // stripping needs 22.18+).
     gate('parse', tool('parse.ts')),
     gate('contrast', tool('check_contrast.ts')),
-    gate('literals', tool('lint_literals.ts', '--platform', platform)),
-    gate('typecheck', [pnpm(), '--filter', `@design-schema/${pkg}`, 'typecheck']),
-    gate('deps', tool('check_deps.ts', '--platform', platform)),
-    gate('modules', tool('check_modules.ts', '--platform', platform)),
   ];
+  if (TS_PACKAGE.has(platform)) {
+    allGates.push(
+      gate('literals', tool('lint_literals.ts', '--platform', platform)),
+      gate('typecheck', [pnpm(), '--filter', `@design-schema/${pkg}`, 'typecheck']),
+      gate('deps', tool('check_deps.ts', '--platform', platform)),
+      gate('modules', tool('check_modules.ts', '--platform', platform)),
+    );
+  }
   if (extra.has('keyboard') && (platform === 'web' || platform === 'lit')) {
     allGates.push(gate('keyboard', tool('keyboard_tests.ts')));
     allGates.push(gate('keyboard-run', [pnpm(), 'exec', 'playwright', 'test', `--project=keyboard-${platform}`]));
   }
-  if (extra.has('axe')) {
+  if (extra.has('axe') && TS_PACKAGE.has(platform)) {
     allGates.push(gate('axe', [pnpm(), 'exec', 'playwright', 'test', `--project=axe-${platform}`]));
   }
-  if (extra.has('behavior')) {
+  // The Swift behavior suite is Swift Testing on the macOS runner (job 460), not Vitest here.
+  if (extra.has('behavior') && TS_PACKAGE.has(platform)) {
     allGates.push(gate('behavior', tool('behavior_tests.ts')));
     // `pnpm --filter <pkg> test -- <pattern>` forwards a literal "--" into vitest/jest on this
     // pnpm (10.17), which then ignores the pattern and runs every test file; `run test <pattern>`
@@ -132,11 +150,11 @@ export function failuresAsPrompt(results: GateResult[], limit: number = 6000): s
 export type Args = { platform: string; skip: string[]; extra: string[]; json: boolean };
 
 /**
- * argparse's `--platform {web,lit,rn}` (required), `--skip` and `--with` (both repeatable), plus `--json`,
+ * argparse's `--platform {web,lit,rn,swiftui}` (required), `--skip` and `--with` (both repeatable), plus `--json`,
  * which stays out of the usage line the way an `argparse.SUPPRESS` help does.
  */
 export function parseArgs(argv: string[], prog: string = 'checks.ts'): Args {
-  const usage = `usage: ${prog} [-h] --platform {web,lit,rn} [--skip SKIP] [--with EXTRA]`;
+  const usage = `usage: ${prog} [-h] --platform {web,lit,rn,swiftui} [--skip SKIP] [--with EXTRA]`;
   const die: (message: string) => never = (message) => {
     process.stderr.write(`${usage}\n${prog}: error: ${message}\n`);
     throw Object.assign(new Error(message), { exitCode: 2 });

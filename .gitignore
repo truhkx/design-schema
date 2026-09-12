@@ -16,6 +16,15 @@ generated/behavior/
 generated/keyboard/
 # Kept on purpose: generated/generate.lock.json (the hash CI checks) and generated/gaps/ (what the docs left ambiguous).
 
+# SwiftPM / Xcode build state (packages/swiftui, apps/ios-gallery)
+.build/
+.swiftpm/
+*.xcodeproj/xcuserdata/
+DerivedData/
+# XcodeGen writes the gallery's project from apps/ios-gallery/project.yml on the macOS runner; the .yml is
+# the reviewable source, the .xcodeproj is build state (apps/ios-gallery/project.yml explains why).
+apps/ios-gallery/*.xcodeproj/
+
 # Local state, logs, caches
 logs/
 mcp/.chroma/

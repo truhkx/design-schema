@@ -31,6 +31,16 @@ function kinds(findings: Finding[]): string[] {
   return findings.map(([, name]) => name);
 }
 
+/** A SwiftUI source, scanned through `scanFile` so the `.swift` dispatch is covered too. */
+function swift(text: string, name = 'Widget.swift'): Finding[] {
+  return ll.scanFile(write(join(tmp(), 'packages/swiftui/Sources/DesignSchema', name), text));
+}
+
+/** The body of a `var body: some View` line, indented as a generated component writes it. */
+function view(...modifiers: string[]): string {
+  return ['Text(label)', ...modifiers.map((m) => `    ${m}`)].join('\n');
+}
+
 describe('hex color', () => {
   test('six-digit hex is a finding', () => {
     expect(scan('.ds-widget { color: #3B5BDB; }')).toEqual([[1, 'hex color', '#3B5BDB']]);
@@ -146,6 +156,91 @@ describe('React Native size numbers', () => {
   });
 });
 
+describe('SwiftUI literals', () => {
+  test('the gate: a bare padding is a finding, the token is not', () => {
+    expect(swift(view('.padding(12)'))).toEqual([[2, 'SwiftUI literal in .padding(', '12']]);
+    expect(swift(view('.padding(theme.spaceMd)'))).toEqual([]);
+  });
+
+  test.each(ll.SWIFT_CALLS)('every policed call reports the number it wraps: %s', (call) => {
+    const findings = swift(view(`${call}44)`));
+    expect(findings).toEqual([[2, `SwiftUI literal in ${call}`, '44']]);
+  });
+
+  test.each([
+    '.frame(width: theme.sizeTargetMin, height: theme.sizeTargetMin)',
+    '.cornerRadius(theme.radiusMd)',
+    '.font(.system(size: theme.fontSizeMd, weight: .semibold))',
+    '.foregroundStyle(theme.colorActionPrimaryForeground)',
+    '.animation(theme.animation(.motionEasingStandard), value: isOn)',
+    '.zIndex(theme.number(item.layer))',
+    '.padding(.horizontal, theme.space2)',
+  ])('a token read through any of them is clean: %s', (modifier) => {
+    expect(swift(view(modifier))).toEqual([]);
+  });
+
+  test.each(['0', '1', '-1', '2', '-2', '0.5', '0.25', '-0.75'])('0, 1, 2 and fractions are allowed: %s', (n) => {
+    expect(swift(view(`.padding(${n})`))).toEqual([]);
+  });
+
+  test.each(['12', '1.5', '44.0', '1_000', '0xFF3B30'])('anything else is a finding: %s', (n) => {
+    expect(kinds(swift(view(`.padding(${n})`)))).toEqual(['SwiftUI literal in .padding(']);
+  });
+
+  test('a number outside the policed calls is not this rule\'s business', () => {
+    // Indices, counts and loop bounds are not design values.
+    expect(swift('let columns = 3\nfor i in 0..<12 { rows.append(i) }')).toEqual([]);
+  });
+
+  test('a call spanning several lines is still covered, and closes again', () => {
+    const src = ['Text(label)', '    .frame(', '        width: 44,', '        height: theme.sizeTargetMin', '    )', '    .tag(7)'].join('\n');
+    expect(swift(src)).toEqual([[3, 'SwiftUI literal in .frame(', '44']]);
+  });
+
+  test('the innermost call owns the number', () => {
+    expect(swift(view('.frame(width: box(Color(white: 0.9, opacity: 12), 44))'))).toEqual([
+      [2, 'SwiftUI literal in Color(', '12'],
+      [2, 'SwiftUI literal in .frame(', '44'],
+    ]);
+  });
+
+  test('`.font(` alone carries a token, only `.system(size:` carries a size', () => {
+    expect(swift(view('.font(theme.fontBody)'))).toEqual([]);
+    expect(kinds(swift(view('.font(.system(size: 14))')))).toEqual(['SwiftUI literal in .font(.system(size:']);
+  });
+
+  test('a longer identifier ending in Color is not `Color(`', () => {
+    expect(swift('let c = BrandColor(17)')).toEqual([]);
+    expect(kinds(swift('let c = Color(17)'))).toEqual(['SwiftUI literal in Color(']);
+  });
+
+  test('a token name that ends in a digit is not a number', () => {
+    expect(swift(view('.padding(theme.space2)', '.zIndex(theme.layer1)'))).toEqual([]);
+  });
+
+  test('the literal-ok mark exempts its own line, not the whole call', () => {
+    expect(swift(view('.padding(12) // literal-ok: the sheet grabber is a fixed 12pt handle'))).toEqual([]);
+    const src = ['Text(label)', '    .frame(', '        width: 44, // literal-ok: the macOS toolbar item is fixed', '        height: 44', '    )'].join('\n');
+    expect(swift(src)).toEqual([[4, 'SwiftUI literal in .frame(', '44']]);
+  });
+
+  test('comments and strings are not scanned, and leave the parens balanced', () => {
+    expect(swift(view('// .padding(12) before tokens', '.padding(theme.spaceMd)'))).toEqual([]);
+    expect(swift(view('/* .padding(12 */ .padding(theme.spaceMd)'))).toEqual([]);
+    expect(swift('/* a note about\n   .padding(12)\n*/\nText(label).padding(theme.spaceMd)')).toEqual([]);
+    expect(swift(view('.accessibilityLabel("12 of 30 (in stock)")', '.padding(theme.spaceMd)'))).toEqual([]);
+  });
+
+  test('the CSS rules do not run on Swift: `Color(red:green:blue:)` is argument labels', () => {
+    expect(swift('let c = Color(red: theme.r, green: theme.g, blue: theme.b)')).toEqual([]);
+  });
+
+  test('Swift is only linted under packages/swiftui, but the rule is the file type', () => {
+    // The walk decides which files are handed over; `scanFile` keys off `.swift` alone.
+    expect(kinds(ll.scanFile(write(join(tmp(), 'Loose.swift'), 'Text(l).padding(12)')))).toEqual(['SwiftUI literal in .padding(']);
+  });
+});
+
 describe('the visually-hidden exemption', () => {
   const CLIP = `.ds-widget__visually-hidden {
   position: absolute;
@@ -248,6 +343,17 @@ describe('main', () => {
     expect(std.out()).toContain('1 finding(s) in 1 file(s)');
   });
 
+  test('swiftui is walked at Sources/DesignSchema, subdirectories included', () => {
+    // SwiftPM's layout, and the support types live one level down.
+    Object.assign(ll.paths, { ROOT: tmp() });
+    write(join(tmp(), 'packages/swiftui/Sources/DesignSchema/Widget.swift'), 'Text(l).padding(theme.spaceMd)');
+    write(join(tmp(), 'packages/swiftui/Sources/DesignSchema/Support/Panel.swift'), 'Text(l).cornerRadius(12)');
+    write(join(tmp(), 'packages/swiftui/Sources/DesignSchemaTokens/Theme.swift'), 'let spaceMd: CGFloat = 12');
+    expect(ll.main(['--platform', 'swiftui'])).toBe(1);
+    expect(std.out()).toContain(join('Support', 'Panel.swift') + ':1: SwiftUI literal in .cornerRadius( `12`');
+    expect(std.out()).toContain('1 finding(s) in 2 file(s)'); // the token package is not a component
+  });
+
   test('a finding inside the repository is reported relative to it', () => {
     Object.assign(ll.paths, { ROOT: tmp() });
     write(join(tmp(), 'packages/react/src/A.css'), 'a { color: #123456; }');
@@ -257,7 +363,7 @@ describe('main', () => {
 
   test('argparse exit codes: an unknown flag and a bad --platform choice both exit 2', () => {
     expect(ll.main(['--nope'])).toBe(2);
-    expect(ll.main(['--platform', 'swift'])).toBe(2);
-    expect(std.err()).toContain("invalid choice: 'swift' (choose from web, lit, rn)");
+    expect(ll.main(['--platform', 'swift'])).toBe(2); // the platform is `swiftui`
+    expect(std.err()).toContain("invalid choice: 'swift' (choose from web, lit, rn, swiftui)");
   });
 });

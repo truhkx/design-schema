@@ -17,7 +17,14 @@
  * Rules whose `expect` is `manual` are listed in the spec as `test.skip` so the report shows
  * coverage, not silence.
  *
- * Usage:  node tools/keyboard_tests.ts          # writes generated/keyboard/*.spec.ts
+ * The same block is also written out as data — `generated/keyboard/<Name>.json` — because the fourth
+ * platform's keyboard gate is not Playwright: it is an XCUITest driving an iPad simulator with a hardware
+ * keyboard (.github/workflows/swiftui-gates.yml, job 440). Swift cannot read a Markdown doc on the runner
+ * and the macOS job never runs `pnpm install`, so the rules travel to it as JSON, derived here where the
+ * `keyboard` block is already parsed. One derivation, two consumers: a rule that changes in the doc changes
+ * both gates.
+ *
+ * Usage:  node tools/keyboard_tests.ts          # writes generated/keyboard/*.spec.ts and *.json
  *         pnpm gates:keyboard                    # runs them (Playwright starts the Storybooks)
  *
  * Port of tools/keyboard_tests.py: same specs byte for byte, same line on stdout, same exit code.
@@ -201,12 +208,39 @@ export function specFor(c: Dict, platform: string): string {
   return lines.join('\n') + '\n';
 }
 
+/** One rule as the XCUITest reads it: the doc's own fields, with the defaults already applied so the
+ *  Swift side never has to know what `from` means when it is absent. */
+export type KeyboardRule = { keys: string[]; action: string; from: string; expect: string; when?: string };
+export type KeyboardSpec = { name: string; role: string; identifier: string; rules: KeyboardRule[] };
+
+/**
+ * The `keyboard` block as data, for a consumer that is not Playwright.
+ *
+ * `identifier` is the component root's `.accessibilityIdentifier` (process/ios-platform.md, "Testability
+ * hook": the root carries `<Name>`), which is how XCUITest finds what the web spec finds by role.
+ */
+export function specData(c: Dict): KeyboardSpec {
+  const rules: KeyboardRule[] = [];
+  for (const rule of (truthy(c.keyboard) ? (c.keyboard as Dict[]) : [])) {
+    const when = pyGet(rule, 'when', null);
+    rules.push({
+      keys: [...(rule.keys as string[])],
+      action: rule.action as string,
+      from: pyGet(rule, 'from', 'inside') as string,
+      expect: pyGet(rule, 'expect', 'manual') as string,
+      ...(truthy(when) ? { when: when as string } : {}),
+    });
+  }
+  return { name: c.name as string, role: c.a11y.role as string, identifier: c.name as string, rules };
+}
+
 export function main(): number {
   const comps = readComponents(join(paths.GENERATED, 'components.json'));
-  freshOutDir(paths.OUT, (n) => n.endsWith('.spec.ts'));
+  freshOutDir(paths.OUT, (n) => n.endsWith('.spec.ts') || n.endsWith('.json'));
   let nSpecs = 0;
   let nTests = 0;
   let nManual = 0;
+  let nData = 0;
   for (const entry of comps) {
     const c = entry.component as Dict;
     if (!truthy(pyGet(c, 'keyboard', null))) continue;
@@ -216,6 +250,10 @@ export function main(): number {
       writeText(join(paths.OUT, `${c.name as string}.${platform}.spec.ts`), specFor(c, platform));
       nSpecs += 1;
     }
+    // Platform-neutral: the block is the doc's, not a platform's, and the swiftui gate reads it for any
+    // component whose screen the gallery can open.
+    writeText(join(paths.OUT, `${c.name as string}.json`), JSON.stringify(specData(c), null, 2) + '\n');
+    nData += 1;
     for (const r of c.keyboard as Dict[]) {
       for (const _key of r.keys as string[]) {
         void _key;
@@ -225,7 +263,10 @@ export function main(): number {
     }
   }
   const out = relative(paths.ROOT, paths.OUT);
-  process.stdout.write(`✔ keyboard gate: ${nSpecs} spec(s), ${nTests} auto-tested rule(s) per platform, ${nManual} manual → ${out}/\n`);
+  process.stdout.write(
+    `✔ keyboard gate: ${nSpecs} spec(s), ${nTests} auto-tested rule(s) per platform, ${nManual} manual, ` +
+      `${nData} rule set(s) for the swiftui gate → ${out}/\n`,
+  );
   return 0;
 }
 

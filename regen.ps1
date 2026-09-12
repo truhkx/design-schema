@@ -3,6 +3,10 @@
 #
 #   powershell -ExecutionPolicy Bypass -File .\regen.ps1                      # all phases, all platforms, sequential
 #   powershell -ExecutionPolicy Bypass -File .\regen.ps1 -Platform web        # one platform (run three windows for parallel; needs job 100)
+#   powershell -ExecutionPolicy Bypass -File .\regen.ps1 -Platform swiftui    # iOS: each phase is one batch and one CI round trip
+#     swiftui builds nowhere but macOS, so its gates run in GitHub Actions: the generator pushes a
+#     gen/swiftui/<Name> branch per component of the phase, dispatches .github/workflows/swiftui-gates.yml
+#     and waits on all of the runs together. Needs `gh` on PATH, `gh auth login`, and an origin to push to.
 #   powershell -ExecutionPolicy Bypass -File .\regen.ps1 -From Overlays       # resume from a phase
 #   powershell -ExecutionPolicy Bypass -File .\regen.ps1 -Phase Overlays      # exactly one phase
 #   powershell -ExecutionPolicy Bypass -File .\regen.ps1 -NoPause             # do not stop between phases for gap folding
@@ -38,6 +42,23 @@ $log = "logs\regen$suffix.log"
 function Log($line) { Write-Host $line; Add-Content -Path $log -Value $line -Encoding utf8 }
 Set-Content -Path $log -Value "== regen $(Get-Date -Format s) platforms=$Platform ==" -Encoding utf8
 if ($Model -ne "") { $env:DS_MODEL = $Model }
+
+# Platforms, checked here rather than after `pnpm parse`: a typo should cost a second, not a minute.
+$known = @("web", "lit", "rn", "swiftui")
+$requested = @($Platform.Split(",") | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" })
+$unknown = @($requested | Where-Object { $known -notcontains $_ })
+if ($requested.Count -eq 0 -or $unknown.Count -gt 0) {
+  Log "Unknown platform '$($unknown -join ', ')'. Known: $($known -join ', ')"
+  exit 1
+}
+# swiftui's build gates are a GitHub Actions workflow on macOS (process/ios-platform.md, "Gates, and the
+# Mac problem"): without gh there is nothing to ask, and the generator would stop after the first phase.
+if ($requested -contains "swiftui" -and -not (Get-Command gh -ErrorAction SilentlyContinue)) {
+  Log "swiftui needs the GitHub CLI on PATH (gh auth login): its gates run on macOS in GitHub Actions."
+  exit 1
+}
+# The browser gates are a Playwright project per TypeScript platform; there is none for swiftui.
+$browserPlatforms = @($requested | Where-Object { $_ -ne "swiftui" })
 
 # Phases in composition order. A component is generated only after everything it composes.
 $phases = @(
@@ -78,7 +99,7 @@ if ($LASTEXITCODE -ne 0) { Log "themes failed"; exit 1 }
 Log "== parse =="
 pnpm parse 2>&1 | ForEach-Object { Log "$_" }
 if ($LASTEXITCODE -ne 0) { Log "parse failed: fix the docs above before regenerating"; exit 1 }
-if ($Gates) { pnpm exec playwright install chromium 2>&1 | ForEach-Object { Log "$_" } }
+if ($Gates -and $browserPlatforms.Count -gt 0) { pnpm exec playwright install chromium 2>&1 | ForEach-Object { Log "$_" } }
 
 function Snapshot($message) {
   if (Test-Path .\commit.ps1) { & powershell -ExecutionPolicy Bypass -File .\commit.ps1 -m $message 2>&1 | ForEach-Object { Log "$_" } }
@@ -127,7 +148,7 @@ foreach ($p in $plan) {
   $args = @("tools/generate.ts", "--platform", $Platform)
   if ($p.pattern) { $args += @("--pattern", $p.pattern) } else { $args += @("--component", $p.components) }
   if ($Force) { $args += "--force" }
-  if ($Gates) { $args += @("--with", "keyboard", "--with", "axe") }
+  if ($Gates -and $browserPlatforms.Count -gt 0) { $args += @("--with", "keyboard", "--with", "axe") }
   node @args 2>&1 | ForEach-Object { Log "$_" }
   $code = $LASTEXITCODE
   Snapshot "regen: phase $($p.name) ($Platform) exit $code"

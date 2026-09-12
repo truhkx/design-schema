@@ -1,11 +1,11 @@
 # Runs the prompts in jobs\*.md through Claude Code headlessly, in order, stopping at the first failure.
 #   powershell -ExecutionPolicy Bypass -File .\run-jobs.ps1
 #   powershell -ExecutionPolicy Bypass -File .\run-jobs.ps1 -After tier2     # wait for tier2.ps1 to finish first
-#   powershell -ExecutionPolicy Bypass -File .\run-jobs.ps1 -Model opus -MaxTurns 120
+#   powershell -ExecutionPolicy Bypass -File .\run-jobs.ps1 -Model opus -MaxTurns 250
 param(
   [string]$After = "",
   [string]$Model = "sonnet",
-  [int]$MaxTurns = 100
+  [int]$MaxTurns = 250
 )
 Set-Location $PSScriptRoot
 New-Item -ItemType Directory -Force -Path logs\jobs, jobs\done, jobs\failed | Out-Null

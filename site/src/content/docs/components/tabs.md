@@ -103,7 +103,7 @@ component:
     lit:
       tag: ds-tabs
       reflect: [value, orientation, activation, fit]
-      notes: '`tabs` is a property. Panels are slotted <ds-tab-panel id> light-DOM elements; ds-tabs sets hidden/aria-labelledby on them from slotchange and renders the tab list in its shadow root. `change` is a composed CustomEvent with detail { value }. Roving tabindex over shadow tabs.'
+      notes: '`tabs` is a property. Panels are slotted <ds-tab-panel id> light-DOM elements; ds-tabs sets hidden/aria-labelledby on them from slotchange and renders the tab list in its shadow root. Panels are never moved, detached or re-appended: `keepMounted: false` is expressed only by toggling the `hidden` attribute on the slotted panel, so there is no detached-panel map. A slotchange handler must never call appendChild, insertBefore or remove on its own slotted children - re-inserting a node that is already a child re-fires slotchange and spins the renderer until the tab is killed. `change` is a composed CustomEvent with detail { value }. Roving tabindex over shadow tabs.'
     rn:
       element: View
       props: [accessibilityRole=tablist, accessibilityRole=tab, accessibilityState]

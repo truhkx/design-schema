@@ -1,4 +1,4 @@
-// The tests gate (tools/checks.py) runs `pnpm test -- src/<Name>.test.tsx` per component.
+// The tests gate (tools/checks.ts) runs `pnpm test -- src/<Name>.test.tsx` per component.
 // React Native's own Jest preset (test renderer + native mocks; a separate package since 0.87) with
 // the workspace packages added to the transform allowlist; pnpm nests real paths under
 // node_modules/.pnpm, hence the lookahead that skips that segment.

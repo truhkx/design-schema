@@ -90,8 +90,8 @@ foreach ($b in $plan) {
 
 Log ""
 Log "== all batches passed: re-indexing the MCP =="
-node tools/py.mjs mcp/index.py 2>&1 | ForEach-Object { Log "$_" }
+node --disable-warning=ExperimentalWarning --import tsx mcp/index.ts 2>&1 | ForEach-Object { Log "$_" }
 Log "== generate:check =="
-node tools/py.mjs tools/generate.py --check 2>&1 | ForEach-Object { Log "$_" }
+node tools/generate.ts --check 2>&1 | ForEach-Object { Log "$_" }
 Log "== done =="
 exit 0

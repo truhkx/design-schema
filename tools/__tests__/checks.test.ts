@@ -54,10 +54,13 @@ describe('the gate table', () => {
     expect(typecheck.argv.slice(1)).toEqual(['--filter', '@design-schema/rn', 'typecheck']);
   });
 
-  test('the two remaining Python gates run on a resolved interpreter', () => {
-    const deps = checks.gatesFor('lit').find((g) => g.name === 'deps') as Gate;
-    expect(deps.argv.slice(0, checks.python().length)).toEqual(checks.python());
-    expect(deps.argv[checks.python().length]?.replaceAll('\\', '/')).toMatch(/tools\/check_deps\.py$/);
+  test('the deps and modules gates are TypeScript too — no interpreter but Node', () => {
+    for (const [name, file] of [['deps', 'check_deps.ts'], ['modules', 'check_modules.ts']] as const) {
+      const g = checks.gatesFor('lit').find((x) => x.name === name) as Gate;
+      expect(g.argv.slice(0, 3)).toEqual([checks.node(), '--import', 'tsx']);
+      expect(g.argv[3]?.replaceAll('\\', '/')).toMatch(new RegExp(`tools/${file.replace('.', '\\.')}$`));
+      expect(g.argv.slice(-2)).toEqual(['--platform', 'lit']);
+    }
   });
 });
 

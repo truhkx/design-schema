@@ -15,7 +15,7 @@
 import { pyRepr, pySorted } from './py.ts';
 
 export type SchemaError = { path: (string | number)[]; message: string; validator: string };
-type Schema = Record<string, any>;
+export type Schema = Record<string, any>;
 /** A subschema may be the boolean `true`/`false` forms as well as an object. */
 type SubSchema = Schema | boolean;
 

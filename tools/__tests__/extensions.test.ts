@@ -1,5 +1,5 @@
 /** Extensions: tools/parse.ts merges site/src/content/docs/extensions/*.md into components and writes module stubs
- *  (port of the parser half of tests/test_extensions.py; tools/check_modules.py keeps its pytest suite). */
+ *  The gate half — every declared module exists, exports its name and matches its stub — is check_modules.test.ts. */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, test } from 'vitest';

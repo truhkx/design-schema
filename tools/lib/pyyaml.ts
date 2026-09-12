@@ -235,13 +235,15 @@ class Emitter {
   private openEnded = false;
   private emitted = new Set<CollectionNode>();
   private readonly bestIndent = 2;
-  private readonly bestWidth = 80;
+  private readonly bestWidth: number;
   private readonly bestLineBreak = '\n';
 
   private readonly allowUnicode: boolean;
 
-  constructor(allowUnicode: boolean) {
+  constructor(allowUnicode: boolean, width: number) {
     this.allowUnicode = allowUnicode;
+    // `Emitter.__init__`: a width at or below twice the indent is ignored.
+    this.bestWidth = width > this.bestIndent * 2 ? width : 80;
   }
 
   emitDocument(root: Node): string {
@@ -679,9 +681,9 @@ function analyzeScalar(text: string, allowUnicode: boolean): Analysis {
   return { scalar: text, empty: false, multiline: lineBreaks, allowFlowPlain, allowBlockPlain, allowSingleQuoted, allowDoubleQuoted, allowBlock };
 }
 
-/** `yaml.safe_dump(data, sort_keys=False, allow_unicode=allowUnicode)`. Block style, width 80, indent 2. */
-export function dump(data: unknown, allowUnicode = false): string {
+/** `yaml.safe_dump(data, sort_keys=False, allow_unicode=allowUnicode, width=width)`. Block style, indent 2. */
+export function dump(data: unknown, allowUnicode = false, width = 80): string {
   const root = new Representer().represent(data);
   anchorNodes(root);
-  return new Emitter(allowUnicode).emitDocument(root);
+  return new Emitter(allowUnicode, width).emitDocument(root);
 }

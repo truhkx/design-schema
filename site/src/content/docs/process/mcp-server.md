@@ -5,11 +5,11 @@ sidebar:
   order: 4
 ---
 
-The MCP server is the design system's API for AI clients (Claude, Cursor, Copilot, anything that speaks the Model Context Protocol). It is built with FastMCP and serves nothing it computes on the fly: every answer comes from the same build outputs the site renders — `generated/components.json`, `generated/themes.json`, `generated/prompts/`, the token files, and the generated packages. If the docs change, `pnpm check` regenerates those outputs, `pnpm mcp:index` re-embeds them, and the server is current.
+The MCP server is the design system's API for AI clients (Claude, Cursor, Copilot, anything that speaks the Model Context Protocol). It is built on the official MCP TypeScript SDK and serves nothing it computes on the fly: every answer comes from the same build outputs the site renders — `generated/components.json`, `generated/themes.json`, `generated/prompts/`, the token files, and the generated packages. If the docs change, `pnpm check` regenerates those outputs, `pnpm mcp:index` re-embeds them, and the server is current.
 
 ## The index
 
-Guidance is embedded into a local vector database (ChromaDB, file-based, no API keys; the embedding model runs on your machine). Each chunk is a build output tagged with metadata:
+Guidance is embedded into a local vector database (`mcp/.chroma`, file-based, no API keys; the all-MiniLM-L6-v2 embedding model runs on your machine). The file is the sqlite database ChromaDB wrote when the tools were Python — same schema (`mcp/chroma-schema.sql` is its own DDL), same `FLOAT32` vector blobs — with one thing left out: the hnswlib segment beside it, an *approximate* nearest-neighbour index that only Python can read. At 1,600 chunks the server scans the vectors exactly instead, which is faster than building the graph and strictly more accurate than querying it. Each chunk is a build output tagged with metadata:
 
 | Field | Values | What it does |
 | --- | --- | --- |
@@ -35,24 +35,24 @@ Resources: `design-schema://components`, `design-schema://components/{name}`, `d
 ## Running it
 
 ```sh
-pip install -r tools/requirements.txt   # fastmcp, chromadb (plus pyyaml, jsonschema)
-pnpm mcp:index                          # build mcp/.chroma from the generated outputs
-pnpm mcp:smoke                          # run a few searches and lookups from the terminal
-pnpm mcp                                # start the server over stdio
+pnpm install       # @modelcontextprotocol/sdk and onnxruntime-node come with the repo's dev dependencies
+pnpm mcp:index     # build mcp/.chroma from the generated outputs (downloads the embedding model once)
+pnpm mcp:smoke     # run a few searches and lookups from the terminal
+pnpm mcp           # start the server over stdio
 ```
 
-Register it with a client (paths are absolute; on Windows use `py` instead of `python3`):
+Register it with a client (paths are absolute):
 
 ```sh
 # Claude Code
-claude mcp add design-schema -- python3 /path/to/design-schema/mcp/server.py
+claude mcp add design-schema -- node --import tsx /path/to/design-schema/mcp/server.ts
 ```
 
 ```json
 // Claude Desktop (claude_desktop_config.json) or Cursor (.cursor/mcp.json)
 {
   "mcpServers": {
-    "design-schema": { "command": "python3", "args": ["/path/to/design-schema/mcp/server.py"] }
+    "design-schema": { "command": "node", "args": ["--import", "tsx", "/path/to/design-schema/mcp/server.ts"] }
   }
 }
 ```

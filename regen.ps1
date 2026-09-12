@@ -15,7 +15,7 @@
 #                                                                             #   parse must pass, then the next phase starts without a pause.
 #   Windows running in parallel take turns folding through generated\fold.lock; each folds only gap files newer than folded.json.
 #
-# Between phases (unless -NoPause) the script writes generated\gaps\SUMMARY.md (via tools/gap_digest.py when present,
+# Between phases (unless -NoPause) the script writes generated\gaps\SUMMARY.md (via tools/gap_digest.ts when present,
 # else a concatenation), commits, and exits with code 3. Fold the gaps into the docs, run `pnpm parse`,
 # then resume with -From <next phase>. Targets whose docs changed become stale automatically (prompt hash), so the
 # next phase regenerates only what the folded gaps touched plus its own components.
@@ -85,8 +85,8 @@ function Snapshot($message) {
 }
 
 function Write-GapSummary($phaseName) {
-  if (Test-Path tools\gap_digest.py) {
-    node tools/py.mjs tools/gap_digest.py --phase $phaseName 2>&1 | ForEach-Object { Log "$_" }
+  if (Test-Path tools\gap_digest.ts) {
+    node --import tsx tools/gap_digest.ts --phase $phaseName 2>&1 | ForEach-Object { Log "$_" }
   } else {
     $out = "generated\gaps\SUMMARY.md"
     Set-Content -Path $out -Value "# Gaps after phase $phaseName ($(Get-Date -Format s))" -Encoding utf8
@@ -108,7 +108,7 @@ function AutoFold($phaseName) {
   try {
     Log "== auto-fold ($FoldModel) after $phaseName =="
     $prompt = Get-Content prompts\fold-gaps.md -Raw -Encoding utf8
-    $prompt | claude -p --model $FoldModel --permission-mode acceptEdits --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(node tools/*),Bash(py *),Bash(python *),Bash(powershell *),Bash(git *)" 2>&1 | ForEach-Object { Log "$_" }
+    $prompt | claude -p --model $FoldModel --permission-mode acceptEdits --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(node tools/*),Bash(pnpm *),Bash(powershell *),Bash(git *)" 2>&1 | ForEach-Object { Log "$_" }
     pnpm parse 2>&1 | ForEach-Object { Log "$_" }
     if ($LASTEXITCODE -ne 0) {
       Log "auto-fold left the docs unparseable: stopping so a human can look (git diff site/src/content/docs)."
@@ -124,11 +124,11 @@ foreach ($p in $plan) {
   Log ""
   $what = if ($p.pattern) { "pattern " + $p.pattern } else { $p.components }
   Log "==== Phase $($p.name) ($i of $($plan.Count)): $what ===="
-  $args = @("tools/generate.py", "--platform", $Platform)
+  $args = @("tools/generate.ts", "--platform", $Platform)
   if ($p.pattern) { $args += @("--pattern", $p.pattern) } else { $args += @("--component", $p.components) }
   if ($Force) { $args += "--force" }
   if ($Gates) { $args += @("--with", "keyboard", "--with", "axe") }
-  node tools/py.mjs @args 2>&1 | ForEach-Object { Log "$_" }
+  node @args 2>&1 | ForEach-Object { Log "$_" }
   $code = $LASTEXITCODE
   Snapshot "regen: phase $($p.name) ($Platform) exit $code"
   if ($code -ne 0) {
@@ -154,8 +154,8 @@ foreach ($p in $plan) {
 
 Log ""
 Log "== all phases done: re-index MCP, check =="
-node tools/py.mjs mcp/index.py 2>&1 | ForEach-Object { Log "$_" }
-node tools/py.mjs tools/generate.py --check 2>&1 | ForEach-Object { Log "$_" }
+node --disable-warning=ExperimentalWarning --import tsx mcp/index.ts 2>&1 | ForEach-Object { Log "$_" }
+node tools/generate.ts --check 2>&1 | ForEach-Object { Log "$_" }
 Write-GapSummary "final"
 Snapshot "regen: complete ($Platform)"
 Log "== done =="

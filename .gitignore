@@ -19,8 +19,6 @@ generated/keyboard/
 # Local state, logs, caches
 logs/
 mcp/.chroma/
-__pycache__/
-.pytest_cache/
 test-results/
 playwright-report/
 *.log

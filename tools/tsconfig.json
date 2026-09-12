@@ -14,5 +14,5 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["**/*.ts", "../schema/component.ts", "../schema/extension.ts", "../vitest.config.ts"]
+  "include": ["**/*.ts", "../mcp/**/*.ts", "../schema/component.ts", "../schema/extension.ts", "../vitest.config.ts"]
 }

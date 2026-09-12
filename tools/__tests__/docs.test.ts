@@ -6,9 +6,13 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
+import { expand } from '../check_contrast.ts';
+import { iterErrors } from '../lib/jsonschema.ts';
+import type { Schema } from '../lib/jsonschema.ts';
 import { readText, sortedNames } from '../lib/py.ts';
 import { REPO_ROOT } from '../lib/root.ts';
 import * as parse from '../parse.ts';
+import { loadTheme, modes, publicName, themes } from '../lib/tokens.ts';
 
 const md = (dir: string): string[] => sortedNames(readdirSync(dir).filter((n) => n.endsWith('.md'))).map((n) => join(dir, n));
 const COMPONENT_DOCS = md(parse.paths.DOCS);
@@ -109,5 +113,44 @@ describe.skipIf(!generatedExists)('generated is in sync', () => {
       const found = readFileSync(join(GENERATED, 'prompts', name), 'utf8').match(placeholder) ?? [];
       expect(found, `${name} still has ${found.join(', ')}`).toEqual([]);
     }
+  });
+});
+
+/**
+ * The token half of tests/test_docs.py, which read the shipped docs through tools/tokens.py until step 6
+ * of process/typescript-and-currency.md ported mcp/server.py — its last importer — and deleted it.
+ */
+describe('the shipped docs against the token resolver', () => {
+  const themeSchema = (): Schema => JSON.parse(readFileSync(join(REPO_ROOT, 'schema', 'theme.schema.json'), 'utf8')) as Schema;
+
+  test.each(COMPONENT_DOCS.map((f) => [basename(f), f]))('%s: every style token exists in every theme', (_name, path) => {
+    // A style binding must resolve once its {slot}s are filled in.
+    const [fm] = parse.splitFrontmatter(readText(path as string), path as string);
+    const c = fm.component as parse.Dict;
+    for (const theme of themes()) {
+      for (const mode of modes(theme)) {
+        const names = new Set(Object.keys(loadTheme(theme, mode)).map(publicName));
+        for (const [prop, binding] of Object.entries((c.styles ?? {}) as parse.Dict)) {
+          for (const ref of expand((binding as parse.Dict).token as string, c.props as parse.Dict)) {
+            // Tokens are addressed by their public name, so a slot that expands to `...default` resolves to
+            // the group itself. A slot that expands to `none`/`full` renders nothing rather than a token
+            // (NO_TOKEN_VALUES in tools/parse.ts), so it needs none.
+            if (ref.split('.').some((part) => part === 'none' || part === 'full')) continue;
+            expect(names, `${c.name as string}.${prop} → ${ref} missing in ${theme}/${mode}`).toContain(publicName(ref));
+          }
+        }
+      }
+    }
+  });
+
+  test.each(THEME_DOCS.map((f) => [basename(f), f]))('%s: the frontmatter validates against the theme schema', (_name, path) => {
+    const [fm] = parse.splitFrontmatter(readText(path as string), path as string);
+    expect(fm).toHaveProperty('theme');
+    expect(iterErrors(themeSchema(), fm).map((e) => e.message)).toEqual([]);
+  });
+
+  test.each(THEME_DOCS.map((f) => [basename(f), f]))('%s: its tokens were derived', (_name, path) => {
+    const [fm] = parse.splitFrontmatter(readText(path as string), path as string);
+    expect(themes(), 'run tools/theme.ts').toContain((fm.theme as parse.Dict).id);
   });
 });

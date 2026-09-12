@@ -1,7 +1,7 @@
 /**
- * DTCG token resolver (theme × mode) for the TypeScript tools: theme ids, the resolved light/dark tree of a
- * theme, public and CSS token names. The port of tools/tokens.py, which now survives only as the reader
- * mcp/server.py imports until step 6 of process/typescript-and-currency.md ports that too.
+ * DTCG token resolver (theme × mode) for the tools: theme ids, the resolved light/dark tree of a theme,
+ * and the public, CSS and camelCase names of a token path. The port of tools/tokens.py, which step 6 of
+ * process/typescript-and-currency.md deleted with mcp/server.py, its last reader.
  *
  * Runs under Node's type stripping: annotations only.
  */
@@ -17,9 +17,10 @@ const REF = /^\{([a-zA-Z0-9.\-]+)\}$/;
 const RESERVED = new Set(['$type', '$description', '$value', '$extensions', '$deprecated']);
 
 export type TokenEntry = { $value: unknown; $type: string | null; raw?: unknown };
-type Tree = Record<string, unknown>;
+export type Tree = Record<string, unknown>;
 
-function deepMerge(a: Tree, b: Tree): Tree {
+/** `tokens._deep_merge`: `b` over `a` in place, recursing into branches both sides hold as trees. */
+export function deepMerge(a: Tree, b: Tree): Tree {
   for (const [k, v] of Object.entries(b)) {
     const existing = a[k];
     if (isTree(v) && isTree(existing)) deepMerge(existing, v);
@@ -102,4 +103,10 @@ export function shadowCss(v: Record<string, unknown>): string {
 export function cssName(path: string): string {
   const kebab = publicName(path).replace(/\./g, '-').replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
   return `--${kebab}`;
+}
+
+/** color.action.primary.background → colorActionPrimaryBackground (the name React Native uses). */
+export function camelName(path: string): string {
+  const [first, ...rest] = publicName(path).replace(/-/g, '.').split('.') as [string, ...string[]];
+  return first + rest.map((s) => s.slice(0, 1).toUpperCase() + s.slice(1)).join('');
 }

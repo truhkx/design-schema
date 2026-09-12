@@ -645,7 +645,7 @@ function pathKey(p: string): string {
 }
 
 /** generated/modules/<platform>/<path>.d.ts per declared module, from its signature. The `modules` gate
- *  (tools/check_modules.py) typechecks the real file against it. Stale stubs are removed.
+ *  (tools/check_modules.ts) typechecks the real file against it. Stale stubs are removed.
  *  (The header line named tools/parse.py until the Python tool was retired; that is the one deliberate
  *  difference from its output.) */
 export function writeModuleStubs(components: Dict[]): number {

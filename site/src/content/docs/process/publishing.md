@@ -14,7 +14,7 @@ Four packages ship from this repository under the `@design-schema` npm organizat
 | `@design-schema/lit` | The generated custom elements. Importing the package registers them, so it is marked as having side effects. | `lit` (peer), tokens |
 | `@design-schema/rn` | The generated React Native components. | `react`, `react-native`, `react-native-svg` (peers), tokens |
 
-The allowed runtime dependencies are fixed in `tools/check_deps.py`, and the `deps` gate fails a generation that adds one. Everything a component needs is a token or a platform primitive; that is what makes the packages cheap to adopt.
+The allowed runtime dependencies are fixed in `tools/check_deps.ts`, and the `deps` gate fails a generation that adds one. Everything a component needs is a token or a platform primitive; that is what makes the packages cheap to adopt.
 
 ## Build
 

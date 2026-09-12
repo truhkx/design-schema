@@ -5,7 +5,7 @@
  *
  * Runs under Node's type stripping: annotations only.
  */
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { pyFloatRepr } from './pyyaml.ts';
@@ -20,6 +20,11 @@ export function readText(file: string): string {
 /** `Path.write_text(text, encoding="utf-8")`: `\n` becomes the platform line separator (`\r\n` on Windows). */
 export function writeText(file: string, text: string): void {
   writeFileSync(file, LINESEP === '\n' ? text : text.replace(/\n/g, LINESEP), 'utf8');
+}
+
+/** `open(file, "a", encoding="utf-8").write(text)`: the same line-separator translation, appended. */
+export function appendText(file: string, text: string): void {
+  appendFileSync(file, LINESEP === '\n' ? text : text.replace(/\n/g, LINESEP), 'utf8');
 }
 
 /** Write via `<file>.tmp` + rename (`os.replace`), creating parent folders. */

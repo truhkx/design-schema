@@ -17,23 +17,28 @@ tools/theme.ts                         theme doc → OKLCH ramps, scales, contra
 tools/lib/tokens.ts                    DTCG token resolver (theme × mode) the tools read through
 tools/parse.ts                         validates docs → generated/{components,themes}.json + generated/prompts/*.md (TypeScript; `node --import tsx`)
 tools/check_contrast.ts + oklch.ts     WCAG contrast for every declared pair × theme × mode × variant (TypeScript; `node --import tsx`)
-tools/generate.py + generate.ps1       doc → platform code + tests via Claude Code headless, gated by tools/checks.ts; lockfile in generated/
+tools/generate.ts + generate.ps1       doc → platform code + tests via Claude Code headless, gated by tools/checks.ts; lockfile in generated/
 tools/checks.ts                        the gates: parse, contrast, literals, typecheck, tests (Vitest / Vitest browser / Jest per platform)
 tools/spec_sheet.ts                    every token value and style binding of a theme → the spec-sheet page (TypeScript; `node --import tsx`)
 tools/lint_literals.ts                 build gate: no hex/px/ms/font literals in generated packages (TypeScript; `node --import tsx`)
 tools/keyboard_tests.ts                `keyboard` block → generated/keyboard/*.spec.ts (Playwright; TypeScript)
 tools/behavior_tests.ts                `behavior` scenarios → generated/behavior/*.test.ts(x) (TypeScript)
 prompts/conventions/                   one-page package digests the generator reads instead of the whole package
-mcp/                                   FastMCP server + the ChromaDB index it searches
-tests/                                 pytest suite for the Python tools, the MCP server, and the docs
+tools/check_deps.ts + check_modules.ts build gates: no new runtime dependency; every declared extension module matches its stub
+tools/gap_digest.ts                    generated/gaps/*.md → SUMMARY.md between regen phases (DOC gaps first)
+mcp/                                   MCP server (@modelcontextprotocol/sdk) + the local vector index it searches
+tools/__tests__ + mcp/__tests__        the Vitest suite for everything above (`pnpm test:tools`)
+tests/gates/                           the Playwright axe gate, run over every story in light and dark
 ```
+
+Node is the whole toolchain: every tool is TypeScript run by `node --import tsx`, with no build step and no Python.
 
 ## Setup
 
 Windows (one shot, writes logs to `logs\`):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\setup.ps1      # pnpm via npm, pnpm install + rebuild, python deps, typecheck
+powershell -ExecutionPolicy Bypass -File .\setup.ps1      # pnpm via npm, pnpm install + rebuild natives, typecheck
 powershell -ExecutionPolicy Bypass -File .\storybook.ps1  # all four Storybooks; open http://localhost:6006
 ```
 
@@ -41,8 +46,9 @@ Anywhere else:
 
 ```sh
 npm install -g pnpm@10 && pnpm install         # native build scripts are pre-approved in package.json
-pip install -r tools/requirements.txt          # pyyaml, jsonschema (Python 3.10+)
 ```
+
+That is the whole install: Node 22+ (`.nvmrc`) and pnpm. The tools run straight from source — Node 22.18+/24 strips the types natively, and `tsx` is the devDependency fallback for older 22.x.
 
 Verified 2026-09-09 on Windows: all three packages type-check clean and the sign-in demo renders on React, Lit, and React Native (react-native-web) in the composed Storybook.
 
@@ -56,8 +62,8 @@ pnpm docs         # run the docs site locally (http://localhost:4321)
 pnpm storybook    # React (6007) + Lit (6008) + React Native via react-native-web (6009), composed at http://localhost:6006
 pnpm storybook:device # the same React Native stories on a phone (Expo Go) for VoiceOver / TalkBack; see below
 pnpm typecheck    # tsc --noEmit in every package
-pytest            # color math, token resolver, theme derivation, contrast, MCP tools (the Python tools)
-pnpm test:tools   # Vitest: the doc parser, behavior scenarios, extensions, patterns, the derived JSON schema (tools/*.ts)
+pnpm test:tools   # Vitest: color math, the token resolver, theme derivation, contrast, the doc parser, behavior
+                  #   scenarios, extensions, patterns, the derived JSON schema, the gates and the MCP tools
 pnpm test:packages # the generated components' behavior tests on all three platforms (Lit needs `npx playwright install chromium` once)
 pnpm gates        # every code gate on committed code, no model
 pnpm build        # tokens + parse + static site build
@@ -99,5 +105,5 @@ If the phone cannot reach the machine, start with `pnpm --filter rn-storybook st
 - [x] Type-check and run the generated packages against real dependencies (typecheck + tests gates)
 - [ ] Behavior scenarios and generated tests for every component (Switch and Checkbox author them; run `generate.ps1 -Stale -Extra "--tests-only"` for the rest)
 - [x] Generate `component.schema.json` from `component.ts` (single source; `pnpm schema`)
-- [ ] FastMCP server (`mcp/`) exposing components, sections, tokens, contrast check, and `generate(component, platform)`
+- [ ] MCP server (`mcp/`) exposing components, sections, tokens, contrast check, and `generate(component, platform)`
 - [ ] SwiftUI and Compose templates

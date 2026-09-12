@@ -1,6 +1,6 @@
 # Commit with the session attribution. ASCII only.
 #   powershell -ExecutionPolicy Bypass -File .\commit.ps1 -m "regen: phase Core"                      # stage everything
-#   powershell -ExecutionPolicy Bypass -File .\commit.ps1 -m "job: 80-rn-svg.md" -Paths tools/x.py,tests/test_x.py   # only these paths
+#   powershell -ExecutionPolicy Bypass -File .\commit.ps1 -m "job: 80-rn-svg.md" -Paths tools/x.ts,tools/__tests__/x.test.ts   # only these paths
 # regen.ps1 calls the first form to snapshot generated code; the job queue uses -Paths so a job commit never
 # sweeps in the generator's in-progress files (its lockfile, gap reports and package sources).
 param(

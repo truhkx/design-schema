@@ -29,7 +29,7 @@ $jobs = Get-ChildItem jobs\*.md | Where-Object { $_.Name -ne "README.md" } | Sor
 if ($jobs.Count -eq 0) { Log "No jobs queued."; exit 0 }
 Log "Queue: $(($jobs | ForEach-Object { $_.BaseName }) -join ', ')"
 
-$allowed = "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(pnpm *),Bash(node *),Bash(py *),Bash(python *),Bash(pytest *),Bash(git status*),Bash(git diff*)"
+$allowed = "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(pnpm *),Bash(node *),Bash(git status*),Bash(git diff*)"
 foreach ($job in $jobs) {
   $name = $job.BaseName
   $jobLog = "logs\jobs\$name.log"

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The deterministic gates a generated component must pass. Used by tools/generate.py after
+ * The deterministic gates a generated component must pass. Used by tools/generate.ts after
  * every model round, and runnable on its own as a build step:
  *
  *     node tools/checks.ts --platform web            # all gates for one platform
@@ -13,8 +13,8 @@
  * Gates today:
  *   literals   tools/lint_literals.ts            no hex/px/ms/font literals in the package
  *   typecheck  pnpm --filter <pkg> typecheck     the real TypeScript typings (needs node_modules)
- *   deps       tools/check_deps.py                the package gained no runtime dependency outside the allowed set
- *   modules    tools/check_modules.py             every module an extension declares exists, exports its name and matches its signature stub
+ *   deps       tools/check_deps.ts               the package gained no runtime dependency outside the allowed set
+ *   modules    tools/check_modules.ts            every module an extension declares exists, exports its name and matches its signature stub
  *   keyboard   tools/keyboard_tests.ts + Playwright   every `keyboard` rule with an `expect`, against the Keyboard story  (--with keyboard)
  *   axe        tests/gates/axe.spec.ts + Playwright   axe over every story, light and dark                                (--with axe)
  *   behavior   tools/behavior_tests.ts + pnpm test    every `behavior` scenario, against the real component module        (--with behavior)
@@ -25,15 +25,16 @@
  * derived from a11y.requires; a "no new dependencies" diff on package.json.
  *
  * Port of tools/checks.py: same flags, same gates, same lines on stdout, same exit codes. `--json`
- * is the one addition — the machine-readable results tools/generate.py reads until step 5 of
- * process/typescript-and-currency.md ports the generator itself. Runs under Node's type stripping:
- * annotations only.
+ * is the one addition — the machine-readable results the Python generator read across the language
+ * boundary; tools/generate.ts calls `runAll` in process, and `--json` stays for other callers.
+ * Every gate is Node now (job 320): nothing here launches a Python interpreter.
+ * Runs under Node's type stripping: annotations only.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, statSync } from 'node:fs';
-import { delimiter, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { which, winQuote } from './lib/proc.ts';
 import { ljust, pySplitlines, pyStrip } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
 
@@ -43,46 +44,12 @@ export const PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn' 
 export type Gate = { name: string; argv: string[]; cwd: string };
 export type GateResult = { name: string; ok: boolean; output: string };
 
-/** `shutil.which(cmd)`: the first PATH entry that exists, trying every PATHEXT suffix on Windows. */
-function which(cmd: string): string | null {
-  const exts = process.platform === 'win32' ? (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';') : [''];
-  const dirs = (process.env.PATH ?? '').split(delimiter);
-  if (process.platform === 'win32') dirs.unshift(process.cwd());
-  for (const dir of dirs) {
-    if (!dir) continue;
-    for (const ext of exts) {
-      const candidate = join(dir, cmd + (cmd.toLowerCase().endsWith(ext.toLowerCase()) ? '' : ext));
-      try {
-        if (existsSync(candidate) && statSync(candidate).isFile()) return candidate;
-      } catch {
-        // an unreadable PATH entry is not a match
-      }
-    }
-  }
-  return null;
-}
-
 export function pnpm(): string {
   return which('pnpm') ?? which('pnpm.cmd') ?? 'pnpm';
 }
 
 export function node(): string {
   return which('node') ?? 'node';
-}
-
-let pythonCache: string[] | null = null;
-
-/** `sys.executable` in the Python original: the interpreter tools/py.mjs would have launched. */
-export function python(): string[] {
-  if (pythonCache) return pythonCache;
-  const candidates = process.platform === 'win32' ? [['py', '-3'], ['python'], ['python3']] : [['python3'], ['python'], ['py', '-3']];
-  for (const candidate of candidates) {
-    const found = which(candidate[0] as string);
-    if (!found) continue;
-    const probe = spawnSync(found, [...candidate.slice(1), '--version'], { encoding: 'utf8' });
-    if (!probe.error && probe.status === 0) return (pythonCache = [found, ...candidate.slice(1)]);
-  }
-  return (pythonCache = [process.platform === 'win32' ? 'py' : 'python3', ...(process.platform === 'win32' ? ['-3'] : [])]);
 }
 
 export const BROWSER_GATES: ReadonlySet<string> = new Set(['keyboard', 'axe']); // need Playwright + browsers; opt in with --with
@@ -92,14 +59,14 @@ export function gatesFor(platform: string, skip: Set<string> = new Set(), extra:
   const gate = (name: string, argv: string[]): Gate => ({ name, argv, cwd: ROOT });
   const tool = (file: string, ...args: string[]): string[] => [node(), '--import', 'tsx', join(ROOT, 'tools', file), ...args];
   const allGates: Gate[] = [
-    // The parser, the contrast gate and the literals gate are TypeScript: `--import tsx` runs the
-    // .ts file on any Node ≥ 22 (native type stripping needs 22.18+).
+    // Every tool gate is TypeScript: `--import tsx` runs the .ts file on any Node ≥ 22 (native type
+    // stripping needs 22.18+).
     gate('parse', tool('parse.ts')),
     gate('contrast', tool('check_contrast.ts')),
     gate('literals', tool('lint_literals.ts', '--platform', platform)),
     gate('typecheck', [pnpm(), '--filter', `@design-schema/${pkg}`, 'typecheck']),
-    gate('deps', [...python(), join(ROOT, 'tools', 'check_deps.py'), '--platform', platform]),
-    gate('modules', [...python(), join(ROOT, 'tools', 'check_modules.py'), '--platform', platform]),
+    gate('deps', tool('check_deps.ts', '--platform', platform)),
+    gate('modules', tool('check_modules.ts', '--platform', platform)),
   ];
   if (extra.has('keyboard') && (platform === 'web' || platform === 'lit')) {
     allGates.push(gate('keyboard', tool('keyboard_tests.ts')));
@@ -118,14 +85,8 @@ export function gatesFor(platform: string, skip: Set<string> = new Set(), extra:
   return allGates.filter((g) => !skip.has(g.name));
 }
 
-/** cmd.exe needs the quoting `subprocess` does for us on POSIX; the repo path has a space in it. */
-function winQuote(arg: string): string {
-  if (arg === '') return '""'; // an unquoted empty argument would vanish on the command line
-  return /[\s"^&|<>()]/.test(arg) ? `"${arg.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, '$1$1')}"` : arg;
-}
-
 export function runGate(g: Gate): GateResult {
-  const env = { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1', FORCE_COLOR: '0' };
+  const env = { ...process.env, FORCE_COLOR: '0' };
   const options = { cwd: g.cwd, env, encoding: 'buffer' as const, timeout: 900_000, maxBuffer: 64 * 1024 * 1024 };
   // Windows: `pnpm` is a `.cmd`, which Node will not spawn without a shell — so the command goes
   // through cmd.exe pre-quoted. POSIX spawns the argv directly, as subprocess.run(list) does.

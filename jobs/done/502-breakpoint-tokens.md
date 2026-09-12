@@ -1,0 +1,6 @@
+Add a viewport breakpoint token group per website-plan.md ("Foundations gap: a breakpoint token").
+
+1. `foundations/layout.md`: document `layout.breakpoint.{sm,md,lg}` = 640/768/1024px, with the explicit note that this is the one token group meant for page-level chrome (headers, docs layout) rather than for use inside `packages/*/src` components, which stay container-query-driven.
+2. `tools/theme.py` (and whichever of `tools/theme.ts`/`tools/tokens.ts` exists at the time this job runs — check Workstream A's progress first): emit `layout.breakpoint.*` as plain pixel values, not derived from `density` or `rhythm` (breakpoints don't scale with either).
+3. Style Dictionary output: confirm `packages/tokens/dist/*/css/tokens.css` gets `--ds-layout-breakpoint-sm` etc., and that a JS/TS consumer can read the same values (`packages/tokens/dist/names.*`) for use in a media-query-in-JS spot if one ends up needed (e.g. an `onResize` fallback) — most usage should be plain CSS `@media`.
+Gate: `pnpm themes && pnpm tokens` regenerates without error; the contrast and lint-literals gates are unaffected (breakpoints carry no color and are not "bare numbers" inside a matched call, since they don't appear in component source). Do not modify `packages/*/src` — no component consumes this token; only the website app (job 503, 505) does.

@@ -186,6 +186,11 @@ export function deriveBase(t: Dict): Dict {
       none: T('{space.0}'), sm: T('{space.sm}'), md: T('{space.md}'), lg: T('{space.lg}'), xl: T('{space.8}') },
     maxWidth: { $description: 'Column widths. prose is a 65-character measure at the body size (px, so React Native can use it).',
       prose: px(basePx * 0.55 * 65), content: px(contentW), page: px((contentW * 4) / 3) },
+    // Viewport breakpoints for page-level chrome only (foundations/layout.md, "Breakpoints are for page
+    // chrome"). Plain pixel values, deliberately untouched by density and rhythm: those scale how much room
+    // the content takes, while a breakpoint asks how much room the *device* has, which no theme decides.
+    breakpoint: { $description: 'Viewport breakpoints for page chrome (header, docs layout) — not for components, which stay container-query-driven. Fixed px; density and rhythm do not scale them.',
+      sm: T('640px'), md: T('768px'), lg: T('1024px') },
   };
   const [rSm, rMd, rLg, rFull] = RADIUS[t.radius as string] as [number, number, number, number];
   const motion = MOTION[pyGet(t, 'motion', 'subtle') as string] as { fast: string; base: string };

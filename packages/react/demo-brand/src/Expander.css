@@ -1,0 +1,117 @@
+/* Expander — styled only through Design Schema token custom properties. */
+
+.demo-expander {
+  --demo-disclosure-trigger-color: var(--color-foreground);
+  --demo-disclosure-trigger-background-hover: var(--color-background-subtle);
+  --demo-disclosure-trigger-padding-block: var(--space-sm);
+  --demo-disclosure-trigger-padding-inline: var(--space-sm);
+  --demo-disclosure-trigger-gap: var(--space-2);
+  --demo-disclosure-trigger-font-family: var(--font-family-body);
+  --demo-disclosure-trigger-font-size: var(--font-size-md);
+  --demo-disclosure-trigger-font-weight: var(--font-weight-medium);
+  --demo-disclosure-trigger-radius: var(--radius-md);
+  --demo-disclosure-icon: var(--color-foreground-muted);
+  --demo-disclosure-panel-padding-block: var(--space-sm);
+  --demo-disclosure-panel-padding-inline: var(--space-sm);
+  --demo-disclosure-panel-color: var(--color-foreground);
+  --demo-disclosure-focus-ring: var(--color-border-focus);
+  --demo-disclosure-focus-ring-width: var(--border-width-focus);
+  --demo-disclosure-min-target: var(--size-target-min);
+  --demo-disclosure-disabled-opacity: var(--opacity-disabled);
+  --demo-disclosure-transition: var(--motion-duration-base);
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+/* headingLevel: the heading has no styling of its own; the button carries it. */
+.demo-expander__heading {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+}
+
+/* trigger: a real button, plain by design — no border, no card. */
+.demo-expander__trigger {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--demo-disclosure-trigger-gap);
+  min-inline-size: var(--demo-disclosure-min-target);
+  min-block-size: var(--demo-disclosure-min-target);
+  margin: 0;
+  padding-block: var(--demo-disclosure-trigger-padding-block);
+  padding-inline: var(--demo-disclosure-trigger-padding-inline);
+  border: 0;
+  border-radius: var(--demo-disclosure-trigger-radius);
+  background-color: transparent;
+  color: var(--demo-disclosure-trigger-color);
+  font-family: var(--demo-disclosure-trigger-font-family);
+  font-size: var(--demo-disclosure-trigger-font-size);
+  font-weight: var(--demo-disclosure-trigger-font-weight);
+  line-height: var(--font-line-height-normal);
+  text-align: start;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* triggerBackgroundHover: pointer hover and pressed state, only while activatable. */
+.demo-expander__trigger:not([aria-disabled='true']):hover,
+.demo-expander__trigger:not([aria-disabled='true']):active {
+  background-color: var(--demo-disclosure-trigger-background-hover);
+}
+
+/* focus-visible: never removed, only replaced by the token ring. */
+.demo-expander__trigger:focus-visible {
+  outline: var(--demo-disclosure-focus-ring-width) solid var(--demo-disclosure-focus-ring);
+  outline-offset: var(--demo-disclosure-focus-ring-width);
+}
+
+/* disabled: stays focusable and announced; visually dimmed. */
+.demo-expander__trigger[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: var(--demo-disclosure-disabled-opacity);
+}
+
+/* icon: a chevron, 1em, pointing right when closed and down when open. */
+.demo-expander__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  inline-size: 1em;
+  block-size: 1em;
+  color: var(--demo-disclosure-icon);
+  line-height: 0;
+}
+
+.demo-expander__icon svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+[dir='rtl'] .demo-expander__icon {
+  transform: scaleX(-1);
+}
+
+.demo-expander__trigger[aria-expanded='true'] .demo-expander__icon {
+  transform: rotate(90deg);
+}
+
+/* transition: chevron rotation only; the panel does not animate. Instant under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .demo-expander__icon {
+    transition: transform var(--demo-disclosure-transition) var(--motion-easing-standard);
+  }
+}
+
+/* panel: follows the trigger in reading order; rendered only while open. */
+.demo-expander__panel {
+  padding-block: var(--demo-disclosure-panel-padding-block);
+  padding-inline: var(--demo-disclosure-panel-padding-inline);
+  color: var(--demo-disclosure-panel-color);
+}
+
+/* keepMounted: a closed panel is hidden, not unmounted; `hidden` must win over the panel display. */
+.demo-expander__panel[hidden] {
+  display: none;
+}

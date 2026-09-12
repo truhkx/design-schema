@@ -1,0 +1,190 @@
+---
+/**
+ * A component's docs page — one route per component, the destination every sidebar link and every
+ * mobile `Select` option points at (website-plan.md, "Component page template").
+ *
+ * The same layout for all 51 regardless of generation status: header block, the examples, the props
+ * tables, the accessibility contract. Everything on it is read from `generated/components.json`,
+ * `generated/keyboard/<Name>.json` and `generated/examples/<Name>.json` — the page authors no
+ * content of its own, so a schema change reaches the site with `pnpm parse` and nothing else, and a
+ * new Storybook story reaches it with `pnpm docs:examples`.
+ *
+ * The accessibility accordion and the examples are islands. The props tables, the breadcrumb and the
+ * header block are static `@design-schema/react` output, so the whole contract is in view-source.
+ */
+import { getCollection, type CollectionEntry } from 'astro:content';
+// The one non-generated UI on the site, and only here and inside the examples — see ../../../highlight.ts.
+import { Code } from 'astro:components';
+import { Alert, Breadcrumb, Card, Heading, Stack, Text } from '@design-schema/react';
+// The membership test below, not a component: "does the package export this component" is the same
+// question as "could the site render a live example of it".
+import * as reactPackage from '@design-schema/react';
+
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import { AccessibilityContract, type KeyboardLine } from '../../../components/AccessibilityContract';
+import { Examples } from '../../../components/Examples';
+import { Mono } from '../../../components/Mono';
+import { PropsTables } from '../../../components/PropsTables';
+import { examplesFor, reactStorybookUrl } from '../../../examples';
+import { renderableExamples } from '../../../example-probe';
+import { CODE_THEME, highlightSource } from '../../../highlight';
+import '../../../components/code.css';
+import {
+  basicUsage,
+  consumerChoices,
+  contrastRows,
+  eventRows,
+  propRows,
+  reducedMotionNote,
+  requirementLines,
+  roleSentence,
+} from '../../../component-page';
+import { actionLabel, keyLabel, keyboardSpec } from '../../../keyboard';
+
+/** User-facing strings, in one place, the way the generated components keep theirs. */
+const COPY = {
+  docs: 'Docs',
+  components: 'Components',
+  notGeneratedHeading: 'Not yet generated',
+  // website-plan.md's wording, with its one code span rendered as one rather than left as backticks.
+  notGeneratedBefore: 'Not yet generated — schema and accessibility contract below are final; a live example ships once ',
+  notGeneratedPackage: 'packages/react',
+  // No leading space: the newline between it and the code span in the template already is one.
+  notGeneratedAfter: 'regenerates this component.',
+  basicUsageHeading: 'Basic usage',
+  install: 'Install the package:',
+  importIt: 'Import the stylesheet once for the app, then the component:',
+};
+
+export async function getStaticPaths() {
+  // `generated/components.json`, through the schema loader — the same 51 entries the sidebar's
+  // `generated/nav.json` is itself derived from, so every link the navigation renders is built here.
+  const components = await getCollection('components');
+  return components.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+interface Props {
+  entry: CollectionEntry<'components'>;
+}
+
+const { entry } = Astro.props;
+const definition = entry.data.component;
+const name = definition.name;
+
+/**
+ * Whether this component can show a live example yet.
+ *
+ * Read off the package's own exports rather than by listing `packages/react/src`: a page can only
+ * render what `@design-schema/react` actually ships, and a source file the package does not export
+ * is not something job 507's islands could mount. The two lists agree today, and the gate in
+ * tests/website/component-page.spec.ts recomputes the directory listing and says so if they stop.
+ */
+const generated = Object.hasOwn(reactPackage, name);
+
+/** Storybook's own stories for this component, via `generated/examples/<Name>.json`. */
+const examples = examplesFor(name);
+/** Absent until job 510 publishes a Storybook, which is when the deep links start being rendered. */
+const storybookUrl = reactStorybookUrl();
+/** The install command and the import lines, both derived from `packages/react/package.json`. */
+const usage = basicUsage(name);
+/** Each story's source, highlighted here so the island ships no highlighter — see ../../../highlight.ts. */
+const exampleCode = await Promise.all(examples.map((example) => highlightSource(example.sourceText)));
+/** Which of them render from args alone, established by rendering them — see ../../../example-probe.ts. */
+const renderable = renderableExamples(name, examples);
+
+const spec = keyboardSpec(name);
+const keyboard: KeyboardLine[] | undefined = spec?.rules.map((rule) => ({
+  key: keyLabel(rule),
+  action: actionLabel(rule),
+}));
+---
+
+<DocsLayout title={`${name} — Design Schema`} description={entry.data.description}>
+  <Stack direction="vertical" gap="section">
+    <Stack direction="vertical" gap="normal">
+      {/* The middle crumb has no `href`: there is no components index route yet, and Breadcrumb's
+          own schema renders an ancestor without one as plain text rather than a dead link. */}
+      <Breadcrumb
+        items={[{ label: COPY.docs, href: '/docs' }, { label: COPY.components }, { label: name }]}
+      />
+      <Heading level={1}>{name}</Heading>
+      <Text tone="muted">{entry.data.description}</Text>
+    </Stack>
+
+    {
+      generated ? null : (
+        /* `tone="neutral"` is what website-plan.md asks for here; Alert's schema has no neutral
+           tone (info | success | warning | danger), so this is `info` and the gap is logged in
+           generated/gaps/Alert.web.md rather than worked around with a custom style. */
+        <Alert tone="info" live="off" heading={COPY.notGeneratedHeading}>
+          <Text>
+            {COPY.notGeneratedBefore}
+            <Mono>{COPY.notGeneratedPackage}</Mono>
+            {COPY.notGeneratedAfter}
+          </Text>
+        </Alert>
+      )
+    }
+
+    {
+      /* Basic Usage (website-plan.md, step 2). Job 507 moved this section's live render into the
+         examples `Tabs` below — the default story is that section's first tab — which leaves the
+         install/import snippet as what the section still owes a reader, and a snippet is job 508's
+         work. Only rendered when the package exports the component: there is nothing to import
+         otherwise, and the notice above already says so.
+
+         Both blocks are literal `<Code>`: this is static Astro markup, so the component Astro ships
+         is usable directly here. The examples' snippets cannot be, and ../../../highlight.ts says
+         why. Both go through the same Shiki and the same token-bound theme. */
+      !generated ? null : (
+        <Stack direction="vertical" gap="normal">
+          <Heading level={2}>{COPY.basicUsageHeading}</Heading>
+          {/* `surface="subtle"` so the blocks — which take the page background, for the contrast
+              reason code.css gives — read as insets rather than as the card's own edge. */}
+          <Card surface="subtle" inset="lg">
+            <Stack direction="vertical" gap="normal">
+              <Text size="sm" tone="muted">
+                {COPY.install}
+              </Text>
+              <div class="ds-code">
+                <Code code={usage.install} lang="sh" theme={CODE_THEME} />
+              </div>
+              <Text size="sm" tone="muted">
+                {COPY.importIt}
+              </Text>
+              <div class="ds-code">
+                <Code code={usage.imports} lang="tsx" theme={CODE_THEME} />
+              </div>
+            </Stack>
+          </Card>
+        </Stack>
+      )
+    }
+
+    {/* The examples, between the header block and the props table (website-plan.md, step 4). The
+        source snippets are highlighted here rather than inside the island: it is a build-time
+        transform of a string the JSON already carries, so the island ships no highlighter. */}
+    <Examples
+      client:visible
+      name={name}
+      examples={examples}
+      renderable={renderable}
+      storybookUrl={storybookUrl}
+      code={exampleCode}
+    />
+
+    <PropsTables name={name} props={propRows(definition)} events={eventRows(definition)} />
+
+    <AccessibilityContract
+      client:visible
+      name={name}
+      role={roleSentence(definition)}
+      anatomy={definition.anatomy}
+      requirements={requirementLines(definition)}
+      choices={consumerChoices(definition)}
+      keyboard={keyboard}
+      contrast={contrastRows(definition)}
+      reducedMotion={reducedMotionNote(definition)}
+    />
+  </Stack>
+</DocsLayout>

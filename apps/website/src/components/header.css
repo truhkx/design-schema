@@ -1,0 +1,40 @@
+/*
+ * The header's own chrome: the rule at the top of the page, and the one viewport decision the site
+ * makes — a nav row above layout.breakpoint.md, a hamburger below it.
+ *
+ * The breakpoint's value is written out because a custom property cannot appear in a media
+ * condition; foundations/layout.md ("Reading a breakpoint") says to do exactly this, comment and
+ * all. Header.astro asserts the number against the token at build time so it cannot drift.
+ */
+
+.ds-site-header {
+  border-block-end: var(--border-width-thin) solid var(--color-border);
+  padding-block: var(--space-sm);
+}
+
+/*
+ * The mark in the header lockup, at the size of the wordmark's own line. Tokens carry no logo size,
+ * so this follows Icon's precedent and takes one from the type scale rather than inventing a number.
+ */
+.ds-site-header__mark {
+  inline-size: var(--font-size-2xl);
+  block-size: var(--font-size-2xl);
+}
+
+.ds-site-header__wide {
+  display: none;
+}
+
+.ds-site-header__narrow {
+  display: block;
+}
+
+@media (min-width: 768px) { /* layout.breakpoint.md */
+  .ds-site-header__wide {
+    display: block;
+  }
+
+  .ds-site-header__narrow {
+    display: none;
+  }
+}

@@ -72,6 +72,8 @@ A custom component that is not in the system — a `PriceTag`, a `StoreLocatorMa
 
 ## Upgrading upstream
 
+[Updating your fork](/guides/updating-your-fork/) is the companion to this page: how to vendor the canonical docs so the pull itself stays clean, and when to bother pulling at all. The schema-level half is here.
+
 When a new version of the system's docs arrives, the merge is: upstream docs replace upstream docs; your extensions and custom modules stay; parse. Collisions show up as parser errors (upstream added a prop your extension also added) and are resolved by renaming or deleting your side. Then regenerate; only the components whose merged schema changed are stale. This is the whole reason extensions are docs and not patches: a patch against generated code would break on every upstream change, while an extension merges at the schema level, where the contract lives.
 
 ## Planned

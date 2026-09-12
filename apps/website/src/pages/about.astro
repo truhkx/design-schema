@@ -1,0 +1,135 @@
+---
+/**
+ * The About page (site/src/content/docs/process/website-plan.md, "About and GitHub").
+ *
+ * "A plain content page — `Container(width="prose")` → `Stack` of `Heading`/`Text` … no new
+ * component needs", and that is exactly what it is: nothing here carries a `client:*` directive, so
+ * the whole page is HTML by the time it is served.
+ *
+ * On the source. The plan names two: `vision-and-decisions.md`'s "Who it is for" (Adopter / Owner)
+ * and `guides/two-ways-in.md`. Only the second is a file in this repository — the first is
+ * referenced across the process docs but has never been checked in (the same thing job 504 found
+ * when it went looking for the Vision paragraph, and it is why step 5 of this job could not edit it;
+ * see process/publishing.md, "The Pages site"). `two-ways-in.md` is the in-repo home of that same
+ * "who it is for" split, heading for heading, so it is what this page is adapted from: the adopter
+ * who wants a finished system, the owner who wants to change the rules, and what the two share.
+ *
+ * Adapted, not copied. `two-ways-in.md` is written for a contributor reading the reference site and
+ * links to its routes (`/process/from-vision-to-system/`, `/process/mcp-server/`), none of which
+ * exist here; the pitch about what each path costs is the part an adopter is reading this page for.
+ * The only links on the page are ones this site can honour: its own `/docs`, and the repository.
+ */
+import { Box, Container, Heading, Link, Stack, Text } from '@design-schema/react';
+
+import Layout from '../layouts/Layout.astro';
+import { siteNav } from '../nav';
+
+/** The page's words, in one place, the way the generated components keep theirs. */
+const COPY = {
+  title: 'About',
+  description:
+    'Who Design Schema is for — an adopter who wants a finished, accessible system without ' +
+    'generating a component, and an owner who wants to change the rules and regenerate.',
+  intro:
+    'Design Schema is open source and built for two people who are often the same small business, ' +
+    'a few months apart. One of them wants a complete, accessible design system that feels like ' +
+    'theirs; the other wants to change what the system is. Both are first-class, and the difference ' +
+    'between them is one document.',
+};
+
+/**
+ * The two audiences and what they share, in `two-ways-in.md`'s own order.
+ *
+ * Each entry is one `Heading(level=2)` and its paragraphs, so the outline runs h1 → h2 with nothing
+ * skipped — `heading-order` is one of the axe rules the site's gates hold to zero.
+ */
+const SECTIONS = [
+  {
+    heading: 'The adopter: “I have an idea of what I want my site to feel like”',
+    body: [
+      'A business owner, and the engineer helping them — increasingly an AI engineer working in a ' +
+        'coding agent — should be able to go from a description of the feel they want to a complete, ' +
+        'accessible, working design system without generating a single component.',
+      'That works because of how the pieces divide. The components are generated once, here, for ' +
+        'React, web components and React Native, and shipped as packages. They contain no colors, ' +
+        'sizes or fonts of their own — every visual value is a token reference, and a build gate ' +
+        'makes sure of it. The theme is a short Markdown doc: a seed color, a typeface, and a few ' +
+        'decisions (tone words and the one word it must never be, radius, density, motion). The ' +
+        'whole token set is derived from that doc deterministically, with contrast checked for ' +
+        'every component in light and dark.',
+      'So an adopter’s entire customisation is one document, it costs nothing to build, and every ' +
+        'component picks it up. What they get by default: the full component set on three ' +
+        'platforms, tokens in CSS, JavaScript and React Native forms, light and dark, WCAG 2.2 AA ' +
+        'verified per theme, a Storybook per platform, and a docs site that describes their own ' +
+        'system rather than this one.',
+    ],
+  },
+  {
+    heading: 'The owner: “I want to change the rules and own it”',
+    body: [
+      'A team with the means to go further does not customise the components; it customises the ' +
+        'schema — the docs the components are generated from — and regenerates. That is the second ' +
+        'path, and it is what this repository itself is.',
+      'Owning it means writing or editing a component’s Markdown doc, adding requirements to the ' +
+        'accessibility vocabulary, changing the copy templates, adding a platform target, or ' +
+        'replacing a generation template with one that matches the team’s own conventions. The ' +
+        'generator then regenerates exactly the targets whose docs changed, runs the gates, and ' +
+        'records the result in a lockfile that CI checks.',
+      'This path is the only place in the system that calls a model, and a lockfile means nobody ' +
+        'pays twice for a component whose doc has not changed. Everything after the model — type ' +
+        'checking, the no-literals gate, contrast, and the keyboard and behavior tests derived from ' +
+        'the spec — is deterministic and free. What the owner gets is the same output as the ' +
+        'adopter, plus the ability to add a component that does not exist yet, change what ' +
+        '“accessible” means for their organisation, and hand the result to their own adopters as a ' +
+        'finished system.',
+    ],
+  },
+  {
+    heading: 'What both paths share',
+    body: [
+      'The docs are the product. An adopter reads them on a site like this one; an AI engineer ' +
+        'reads them through the MCP server; the generator reads them as prompts; the build reads ' +
+        'them as constraints. When a decision changes, it changes in one file, and every projection ' +
+        'follows. That is the property that keeps the system cheap to run and possible to own: ' +
+        'there is no second place where the truth lives.',
+    ],
+  },
+];
+
+// The repository link is the generated nav's GitHub entry, not a second copy of the URL — the same
+// rule the home page's hero follows, so no page on the site can disagree about where the repo is.
+const github = siteNav().top.find((item) => item.external && item.href.includes('github.com'));
+if (!github) {
+  throw new Error('generated/nav.json has no external GitHub link for the About page to point at. Re-run `pnpm nav`.');
+}
+---
+
+<Layout title={`${COPY.title} — Design Schema`} description={COPY.description}>
+  {/* `layout.inset.xl` is the same 32px the docs shell pads its column with, so a content page and
+      a docs page sit the same distance below the header. The Box is padding only — no surface, no
+      border — because the page is text on the page background. */}
+  <Box inset="none" insetBlock="xl">
+    <Container width="prose">
+      <Stack direction="vertical" gap="section">
+        <Stack direction="vertical" gap="loose">
+          <Heading level={1}>{COPY.title}</Heading>
+          <Text size="lg" tone="muted">{COPY.intro}</Text>
+        </Stack>
+
+        {
+          SECTIONS.map((section) => (
+            <Stack element="section" direction="vertical" gap="normal">
+              <Heading level={2}>{section.heading}</Heading>
+              {section.body.map((paragraph) => <Text>{paragraph}</Text>)}
+            </Stack>
+          ))
+        }
+
+        <Stack direction="vertical" gap="tight" align="start">
+          <Link href="/docs" label="Read the docs" />
+          <Link href={github.href} label="View the source on GitHub" external />
+        </Stack>
+      </Stack>
+    </Container>
+  </Box>
+</Layout>

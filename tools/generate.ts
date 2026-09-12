@@ -26,6 +26,12 @@
  *      the same GateResult shape, and a phase is generated as one batch so it waits on CI once.
  *   4. Gaps the model reported land in generated/gaps/<Name>.<platform>.md for the doc pass.
  *      The lockfile records hash, files, rounds, gate results and cost.
+ *   5. `--naming <brand>` (or DS_NAMING) resolves themes/<brand>/naming.md once and renames the written
+ *      output: the file name, the exported identifier, the prop names, the CSS / type prefix
+ *      (tools/naming.ts). The model still reads the canonical prompt and writes canonical code, and
+ *      every gate still runs on canonical code — so the package tree is normalized back to canonical
+ *      names before the round loop and left in the brand's names after it. Without the flag there is no
+ *      naming step at all, and the output is byte-identical to a run of this tool before it existed.
  *
  * Generation is a code-mod, not a compile step: run it, review the diff, commit. The deploy
  * build never calls a model; it runs the same gates on committed code.
@@ -46,6 +52,7 @@ import { fileURLToPath } from 'node:url';
 import { failuresAsPrompt, runAll } from './checks.ts';
 import type { GateResult } from './checks.ts';
 import { which, winQuote } from './lib/proc.ts';
+import * as naming from './naming.ts';
 import {
   appendText,
   pyFixed,
@@ -93,6 +100,8 @@ export const PLATFORM_LABEL: Record<string, string> = {
 export const REMOTE_GATE: ReadonlySet<string> = new Set(['swiftui']);
 // a precise spec + hard gates is where a cheaper model is enough; --model fable for the hard ones
 export const DEFAULT_MODEL: string = process.env['DS_MODEL'] ?? 'sonnet';
+// the brand whose naming.md renames the output, for a fork that would rather not pass --naming every run
+export const DEFAULT_NAMING: string | null = process.env['DS_NAMING'] ?? null;
 
 // Files the model MAY open if the digest leaves a detail out. Reading all of these every run was ~40% of
 // the tokens of a generation, so the digest replaces them and these are the fallback for the api runner.
@@ -122,6 +131,64 @@ export function srcDir(platform: string): string {
   return platform === 'swiftui'
     ? join(paths.ROOT, 'packages', 'swiftui', 'Sources', 'DesignSchema')
     : join(paths.ROOT, 'packages', PKG[platform] as string, 'src');
+}
+
+// ---------------------------------------------------------------- naming (tools/naming.ts)
+
+/** Every folder of a platform this tool writes generated code into: the package source, and the demo
+ *  pages a `--pattern` target lands in. What a rename covers, therefore, is exactly what this writes. */
+export function generatedDirs(platform: string): string[] {
+  const dirs = [srcDir(platform)];
+  if (platform !== 'swiftui') dirs.push(join(paths.ROOT, 'packages', PKG[platform] as string, 'demo'));
+  return dirs.filter((d) => existsSync(d));
+}
+
+/** The run's naming doc, resolved once (the flag is fixed for a run, so the memo is the "once"). The
+ *  collisions a brand's own prop names cause are printed here, where they are printed exactly once. */
+let resolved: { ref: string | null; res: naming.Resolution } | null = null;
+
+export function namingFor(args: Args): naming.Resolution {
+  const ref = args.naming ?? null;
+  if (resolved !== null && resolved.ref === ref) return resolved.res;
+  const res = naming.resolve(ref);
+  resolved = { ref, res };
+  if (!naming.isNoop(res)) {
+    print(`naming ${relative(paths.ROOT, res.source as string).replaceAll('\\', '/')}: ` +
+      `${Object.keys(res.components).length} component(s), ${Object.keys(res.props).length} prop(s), --${res.cssPrefix}- prefix`);
+    for (const platform of Object.keys(PKG)) {
+      for (const warning of naming.collisions(res, platform)) print(`  ! naming ${platform}: ${warning}`);
+    }
+  }
+  return res;
+}
+
+/** Forget the memo, for a test (and for a second `main()` in the same process). */
+export function resetNaming(): void {
+  resolved = null;
+}
+
+/**
+ * Rename a platform's generated folders, in either direction. `canonical` runs before the model and the
+ * gates — they only ever see Design Schema's own names — and `brand` runs after the last gate, as the
+ * final write of the target. Both are no-ops when no naming doc is active.
+ */
+export function renameTree(platform: string, res: naming.Resolution, direction: naming.Direction): naming.Applied {
+  const all: naming.Applied = { edited: [], renames: [] };
+  if (naming.isNoop(res)) return all;
+  for (const dir of generatedDirs(platform)) {
+    const applied = naming.rename(dir, res, direction, platform);
+    all.edited.push(...applied.edited);
+    all.renames.push(...applied.renames);
+  }
+  return all;
+}
+
+/** What the rename did, as one line — or nothing at all when it found nothing to do. */
+function printRename(key: string, applied: naming.Applied, direction: naming.Direction): void {
+  if (applied.edited.length === 0 && applied.renames.length === 0) return;
+  const arrow = direction === 'brand' ? '↻' : '↺';
+  const what = direction === 'brand' ? 'brand names applied to' : 'canonical names restored in';
+  print(`  ${arrow} ${key}: naming — ${what} ${applied.edited.length} file(s), ${applied.renames.length} renamed`);
 }
 
 export const REPORT_INSTRUCTIONS = `
@@ -499,7 +566,7 @@ export class CliRunner implements Runner {
       '--allowedTools', ALLOWED_TOOLS];
     if (resume) argv.push('--resume', resume);
     const env = { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1' };
-    const options = { cwd: paths.ROOT, env, input: prompt, encoding: 'buffer' as const, timeout: 3_600_000, maxBuffer: 64 * 1024 * 1024 };
+    const options = { cwd: paths.ROOT, env, input: Buffer.from(prompt, 'utf8'), encoding: 'buffer' as const, timeout: 3_600_000, maxBuffer: 64 * 1024 * 1024 };
     // Windows: `claude` is a `.cmd`, which Node will not spawn without a shell — so the command goes
     // through cmd.exe pre-quoted. POSIX spawns the argv directly, as subprocess.run(list) does.
     const p =
@@ -858,6 +925,7 @@ function recordRunnerError(
 
 function recordResult(
   key: string, platform: string, h: string, results: GateResult[], state: CallState, files: string[], gaps: number, roundNo: number, args: Args, lock: Lock,
+  extra: Dict = {},
 ): boolean {
   const ok = results.every((r) => r.ok);
   lock[key] = {
@@ -867,20 +935,28 @@ function recordResult(
     model: args.model, runner: args.runner, rounds: roundNo, costUsd: pyRoundTo(state.cost, 4),
     files, gaps,
     gates: Object.fromEntries(results.map((r) => [r.name, r.ok])),
+    ...extra,
   };
   saveLock(lock, platform);
   print(`  ${ok ? '✔' : '✖'} ${key}: ${files.length} file(s), ${gaps} gap(s), ${roundNo} round(s), $${pyFixed(state.cost, 3)}`);
   return ok;
 }
 
-export async function generateOne(name: string, platform: string, args: Args, lock: Lock): Promise<boolean> {
+export async function generateOne(
+  name: string, platform: string, args: Args, lock: Lock, names: naming.Resolution = hooks.namingFor(args),
+): Promise<boolean> {
   const key = `${name}.${platform}`;
   const start = ready(name, platform, args, lock);
   if (!start.go) return start.ok;
   const h = start.hash;
 
+  // A fork's tree is committed in its brand's names; the model and every gate work in canonical ones.
+  printRename(key, hooks.renameTree(platform, names, 'canonical'), 'canonical');
   const skip = new Set(args.skip);
-  if (!preflight(platform, skip, key)) return false;
+  if (!preflight(platform, skip, key)) {
+    printRename(key, hooks.renameTree(platform, names, 'brand'), 'brand');
+    return false;
+  }
 
   const runner: Runner = args.runner === 'cli' ? hooks.CliRunner(args.model, args.maxTurns) : hooks.ApiRunner(args.model, platform);
   const state: CallState = { session: null, cost: 0 };
@@ -896,7 +972,8 @@ export async function generateOne(name: string, platform: string, args: Args, lo
       round = await modelRound(state, runner, prompt, platform, key, roundNo, args);
     } catch (e) {
       if (e instanceof ExitError) throw e;
-      recordRunnerError(key, platform, h, errorLine(e), state, files, allGaps.length, roundNo, args, lock);
+      recordRunnerError(key, platform, h, errorLine(e), state, namedFiles(files, names, platform), allGaps.length, roundNo, args, lock);
+      printRename(key, hooks.renameTree(platform, names, 'brand'), 'brand');
       return false;
     }
     const rep = round.report;
@@ -915,7 +992,19 @@ export async function generateOne(name: string, platform: string, args: Args, lo
     prompt = hooks.fixPrompt(name, platform, hooks.failuresAsPrompt(results), roundNo + 1);
   }
 
-  return recordResult(key, platform, h, results, state, files, allGaps.length, roundNo, args, lock);
+  // The last write of the target: the gates have had their canonical tree, the brand gets its names.
+  printRename(key, hooks.renameTree(platform, names, 'brand'), 'brand');
+  return recordResult(key, platform, h, results, state, namedFiles(files, names, platform), allGaps.length, roundNo, args, lock, namingEntry(names));
+}
+
+/** The model reports canonical paths; the lock records what is actually on disk afterwards. */
+function namedFiles(files: string[], names: naming.Resolution, platform: string): string[] {
+  return naming.isNoop(names) ? files : files.map((f) => naming.renamePath(f, names, platform));
+}
+
+/** The brand a lock entry's code was written under, so a `git log` of the lockfile says which. */
+function namingEntry(names: naming.Resolution): Dict {
+  return naming.isNoop(names) ? {} : { naming: relative(paths.ROOT, names.source as string).replaceAll('\\', '/') };
 }
 
 // ---------------------------------------------------------------- the batch loop (remote gates)
@@ -953,7 +1042,9 @@ function gateFiles(job: Job, platform: string): string[] {
  * Otherwise this is generateOne's loop: the same preflight, the same lock entries, the same fix prompt
  * built from the failing gates — a `swift build` error reaches the model exactly as a `tsc` one does.
  */
-export async function generateBatch(names: string[], platform: string, args: Args, lock: Lock): Promise<boolean> {
+export async function generateBatch(
+  names: string[], platform: string, args: Args, lock: Lock, brand: naming.Resolution = hooks.namingFor(args),
+): Promise<boolean> {
   let ok = true;
   const jobs: Job[] = [];
   for (const name of names) {
@@ -971,13 +1062,21 @@ export async function generateBatch(names: string[], platform: string, args: Arg
   }
   if (jobs.length === 0) return ok;
 
+  const batchKey = jobs.map((j) => j.key).join(', ');
+  // As in generateOne: canonical names for the model and the gates, brand names as the last write.
+  printRename(batchKey, hooks.renameTree(platform, brand, 'canonical'), 'canonical');
+  const finish = (): void => printRename(batchKey, hooks.renameTree(platform, brand, 'brand'), 'brand');
   const skip = new Set(args.skip);
-  if (!preflight(platform, skip, jobs.map((j) => j.key).join(', '))) return false;
+  if (!preflight(platform, skip, batchKey)) {
+    finish();
+    return false;
+  }
   const gate = hooks.remoteGate(platform);
   try {
     gate.preflight();
   } catch (e) {
     print(`  ✖ ${platform}: the remote gate cannot run — ${errorLine(e)}`);
+    finish();
     return false;
   }
 
@@ -1023,10 +1122,11 @@ export async function generateBatch(names: string[], platform: string, args: Arg
       // fault, so every target of this round is recorded the way a dead model call is.
       const message = errorLine(e);
       for (const job of staged) {
-        recordRunnerError(job.key, platform, job.hash, message, job.state, job.files, job.gaps.length, roundNo, args, lock);
+        recordRunnerError(job.key, platform, job.hash, message, job.state, namedFiles(job.files, brand, platform), job.gaps.length, roundNo, args, lock);
         job.live = false;
         job.recorded = true;
       }
+      finish();
       return false;
     }
 
@@ -1050,12 +1150,15 @@ export async function generateBatch(names: string[], platform: string, args: Arg
     }
   }
 
+  finish();
   for (const job of jobs) {
     if (job.recorded) {
       ok = false; // its lock entry says why; recording it twice would claim the hash it never earned
       continue;
     }
-    const passed = recordResult(job.key, platform, job.hash, job.results, job.state, job.files, job.gaps.length, job.rounds, args, lock);
+    const passed = recordResult(
+      job.key, platform, job.hash, job.results, job.state, namedFiles(job.files, brand, platform), job.gaps.length, job.rounds, args, lock, namingEntry(brand),
+    );
     ok = ok && passed;
   }
   return ok;
@@ -1088,6 +1191,8 @@ export const hooks = {
   customSnapshot,
   restoreCustom,
   remoteGate,
+  namingFor,
+  renameTree,
   CliRunner: (model: string, maxTurns: number): Runner => new CliRunner(model, maxTurns),
   ApiRunner: (model: string, platform: string): Runner => new ApiRunner(model, platform),
 };
@@ -1109,11 +1214,13 @@ export type Args = {
   skip: string[];
   extra: string[];
   dryRun: boolean;
+  /** A brand under themes/, or a path to a naming doc; null is Design Schema's own vocabulary. */
+  naming: string | null;
 };
 
 const USAGE = `usage: generate.ts [-h] [--platform PLATFORM] [--component COMPONENT]
                    [--pattern PATTERN] [--stale] [--check] [--adopt] [--force]
-                   [--runner {cli,api}] [--model MODEL]
+                   [--naming NAMING] [--runner {cli,api}] [--model MODEL]
                    [--max-rounds MAX_ROUNDS] [--max-turns MAX_TURNS]
                    [--skip SKIP] [--with EXTRA] [--dry-run]`;
 
@@ -1164,6 +1271,8 @@ options:
                         already exists (hand-written or generated elsewhere),
                         without calling a model
   --force               regenerate even when the hash matches
+  --naming NAMING       brand under themes/ (or a path to a naming doc) whose
+                        naming.md renames the written output; env DS_NAMING
   --runner {cli,api}
   --model MODEL         alias (fable, opus, sonnet) or full model id; env
                         DS_MODEL
@@ -1196,6 +1305,7 @@ export function parseArgs(argv: string[], prog: string = 'generate.ts'): Args {
   const args: Args = {
     platform: 'web,lit,rn', component: null, pattern: null, stale: false, check: false, adopt: false, force: false,
     runner: 'cli', model: DEFAULT_MODEL, maxRounds: 3, maxTurns: 80, skip: [], extra: [], dryRun: false,
+    naming: DEFAULT_NAMING,
   };
   const i = { n: 0 };
   const unrecognized: string[] = [];
@@ -1233,6 +1343,8 @@ export function parseArgs(argv: string[], prog: string = 'generate.ts'): Args {
       const v = value(arg, '--runner');
       if (v !== 'cli' && v !== 'api') argError(`argument --runner: invalid choice: '${v}' (choose from cli, api)`, prog);
       args.runner = v;
+    } else if (matches(arg, '--naming')) {
+      args.naming = value(arg, '--naming');
     } else if (matches(arg, '--model')) {
       args.model = value(arg, '--model');
     } else if (matches(arg, '--max-rounds')) {
@@ -1279,10 +1391,13 @@ async function run(argv: string[]): Promise<number> {
 
   if (args.adopt) {
     let nAdopted = 0;
+    const brand = hooks.namingFor(args);
     for (const [n, p] of allTargets()) {
       const pattern = n.startsWith('Pattern.');
       const folder = pattern ? join(paths.ROOT, 'packages', PKG[p] as string, 'demo') : srcDir(p);
-      const stem = pattern ? n.slice(n.indexOf('.') + 1) : n;
+      const canonical = pattern ? n.slice(n.indexOf('.') + 1) : n;
+      // a fork's file is on disk under its brand name, which is what `--adopt` has to find
+      const stem = naming.isNoop(brand) ? canonical : naming.renameFileName(canonical, naming.vocab(brand, p, 'brand'));
       if (!anyFileNamed(folder, stem)) continue;
       const h = sha(readText(promptPath(n, p)));
       const entry = (lock[`${n}.${p}`] ??= {});
@@ -1322,6 +1437,7 @@ async function run(argv: string[]): Promise<number> {
     return 0;
   }
   print(`targets: ${targets.map(([n, p]) => `${n}.${p}`).join(', ')}`);
+  const brand = hooks.namingFor(args); // resolved once for the whole run, before any target starts
   let ok = true;
   // Platforms whose gates are local run target by target, as they always have. A remote-gate platform's
   // targets are collected and generated as one batch at the end, so the phase waits on CI once.
@@ -1333,11 +1449,11 @@ async function run(argv: string[]): Promise<number> {
       batched.set(p, names);
       continue;
     }
-    const passed = await generateOne(n, p, args, lock);
+    const passed = await generateOne(n, p, args, lock, brand);
     ok = ok && passed;
   }
   for (const [p, names] of batched) {
-    const passed = await generateBatch(names, p, args, lock);
+    const passed = await generateBatch(names, p, args, lock, brand);
     ok = ok && passed;
   }
   return ok ? 0 : 1;

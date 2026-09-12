@@ -1,0 +1,39 @@
+---
+/**
+ * The docs landing page — the destination of the header's "Docs" link and the hero's call to action.
+ *
+ * Deliberately thin: this job (505) builds the docs section's *navigation*, and the pages it points
+ * at are jobs 506 (the component page template) and later. What this page owns is the entry point —
+ * without it the site's most-followed link is a 404 — so it says where the section's three kinds of
+ * page are and lets the sidebar do the navigating.
+ */
+import { Heading, Link, Stack, Text } from '@design-schema/react';
+
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { DOCS_SECTIONS, siteNav } from '../../nav';
+
+const COPY = {
+  title: 'Docs',
+  intro:
+    'Every component in Design Schema is specified in one Markdown doc, and these pages render that ' +
+    'schema: what a component is for, the props it takes, and the accessibility contract it is ' +
+    'generated against. Use the navigation to reach a component; the two sections below cover the ' +
+    'tokens and the patterns the components are built from.',
+};
+
+const { docs } = siteNav();
+const componentCount = docs.reduce((total, group) => total + group.components.length, 0);
+---
+
+<DocsLayout title={`${COPY.title} — Design Schema`} description={COPY.intro}>
+  <Stack direction="vertical" gap="loose">
+    <Heading level={1}>{COPY.title}</Heading>
+    <Text>{COPY.intro}</Text>
+    <Stack direction="vertical" gap="tight" align="start">
+      {DOCS_SECTIONS.map((section) => <Link href={section.href} label={section.label} />)}
+    </Stack>
+    <Text tone="muted">
+      {`${componentCount} components in ${docs.length} phases, grouped in the order the generator composes them.`}
+    </Text>
+  </Stack>
+</DocsLayout>

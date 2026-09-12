@@ -1,0 +1,44 @@
+---
+/**
+ * The docs section's navigation (site/src/content/docs/process/website-plan.md, "Docs section").
+ *
+ * Both renderings — the desktop sidebar and the mobile `Select` — come from the same generated data
+ * and live in ./DocsNav.tsx, which is the island that makes them work; this component is the
+ * composition around it: read `generated/nav.json`, mark the page being rendered, and bring in the
+ * one media query that decides which of the two a viewport sees (./docs-sidebar.css).
+ *
+ * Nothing here is hand-maintained: the phase groups and their order are the order regen.ps1 composes
+ * components in, so a component added to the schema appears in the sidebar and in the mobile Select
+ * on the next `pnpm nav`, in the right group, without this file changing.
+ */
+import { layoutBreakpointMd } from '@design-schema/tokens/calm-precise/light';
+
+import DocsNav from './DocsNav';
+import { DOCS_SECTIONS, siteNav } from '../nav';
+import './docs-sidebar.css';
+
+const { docs } = siteNav();
+if (docs.length === 0) {
+  throw new Error('generated/nav.json has no docs phase groups for the sidebar. Re-run `pnpm nav` at the repo root.');
+}
+
+// The route this page is at, so the sidebar can mark it `aria-current="page"` and the mobile Select
+// can show it as the chosen option instead of its placeholder. Trailing slash removed because Astro
+// serves `/docs/components/button/` for a route written `/docs/components/button`.
+const current = Astro.url.pathname.replace(/\/+$/, '') || '/';
+
+/**
+ * docs-sidebar.css writes `layout.breakpoint.md`'s value out, because a custom property cannot
+ * appear in a media condition (foundations/layout.md, "Reading a breakpoint"). Nothing in CSS can
+ * check that against the token, so the build does — the same guard Header.astro carries.
+ */
+const BREAKPOINT_MD_IN_CSS = '768px';
+if (layoutBreakpointMd !== BREAKPOINT_MD_IN_CSS) {
+  throw new Error(
+    `layout.breakpoint.md is now ${layoutBreakpointMd}; update the @media condition in ` +
+      `apps/website/src/components/docs-sidebar.css (and BREAKPOINT_MD_IN_CSS here) to match.`,
+  );
+}
+---
+
+<DocsNav client:load sections={[...DOCS_SECTIONS]} groups={docs} current={current} />

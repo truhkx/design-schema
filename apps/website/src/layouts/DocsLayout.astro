@@ -1,0 +1,38 @@
+---
+/**
+ * The shell every page in the docs section sits in (website-plan.md, "Docs section").
+ *
+ * `Layout.astro` still owns the document, the theme sheets, the header and the one `main` landmark;
+ * this adds the docs navigation beside the content. Above `layout.breakpoint.md` the nav is the
+ * persistent left column, below it the nav is a single `Select` stacked above the content — one grid
+ * whose first cell is whichever of the two the media query leaves displayed (./docs-layout.css).
+ *
+ * The swap is CSS, never a check in script or a guess at the user agent: Astro's output here is
+ * static, both markups are in it, and the browser picks before a line of JavaScript runs.
+ */
+import { Container } from '@design-schema/react';
+
+import Layout from './Layout.astro';
+import DocsSidebar from '../components/DocsSidebar.astro';
+import './docs-layout.css';
+
+interface Props {
+  /** The document title, passed through to Layout. */
+  title: string;
+  /** Optional meta description, passed through to Layout. */
+  description?: string | undefined;
+}
+
+const { title, description } = Astro.props;
+---
+
+<Layout title={title} description={description}>
+  <Container width="page">
+    <div class="ds-docs-shell">
+      <DocsSidebar />
+      <div class="ds-docs-shell__content">
+        <slot />
+      </div>
+    </div>
+  </Container>
+</Layout>

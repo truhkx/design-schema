@@ -1,0 +1,71 @@
+/*
+ * The home page's own chrome (site/src/content/docs/process/website-plan.md, "Home page").
+ *
+ * Everything visible on the page is a generated component; these rules only do the two things no
+ * component in the 51 can do for itself — put the decorative backdrop behind the hero's Container,
+ * and give a wrapped Stack's items a column width. No appearance is set here: no color, no border,
+ * no type. Values are tokens, the same rule the components follow.
+ */
+
+/* ---- hero ------------------------------------------------------------------------------------ */
+
+/*
+ * The positioning context for the backdrop. `overflow: hidden` keeps the art from adding a
+ * horizontal scrollbar when it is sliced wider than the viewport.
+ */
+.ds-home-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+/*
+ * Page art, not a UI glyph, so it is inline SVG rather than an Icon: it is `aria-hidden` and has no
+ * meaning to convey. `color` is what themes it — everything inside the SVG strokes and fills in
+ * `currentColor`, so the motif follows the theme's border color into dark mode and into
+ * warm-friendly without a second asset.
+ */
+.ds-home-hero__backdrop {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  color: var(--color-border);
+  pointer-events: none;
+}
+
+/* The hero's content sits above the art; the backdrop is the only other child. */
+.ds-home-hero__content {
+  position: relative;
+}
+
+.ds-home-hero__logo {
+  /* The mark at hero size. Tokens carry no dedicated logo size, so this is the spacing scale's 64,
+     the same step layout.section.lg is built from. */
+  inline-size: var(--space-16);
+  block-size: var(--space-16);
+}
+
+/* ---- feature cards --------------------------------------------------------------------------- */
+
+.ds-home-pillars > * {
+  /*
+   * A wrapped Stack is a flex row, and a flex row has no notion of a column: its items are sized by
+   * their content, so four cards of body copy shrink toward their longest word long before the row
+   * ever wraps. website-plan.md ("Home page") called the wrapped Stack the interim answer and asked
+   * for the gap to be flagged once the section was built — it is, in generated/gaps/Stack.web.md.
+   *
+   * What that gap costs is exactly this rule: a preferred column width, so the row breaks into
+   * four, two, or one column as the page narrows. It is flex sizing, which a grid primitive would
+   * own; it sets nothing about how a Card looks.
+   */
+  flex: 1 1 calc(var(--layout-max-width-prose) / 2); /* literal-ok: a ratio, not a dimension */
+  min-inline-size: 0;
+  /*
+   * A flex wrap leaves a ragged last row, and a lone card would otherwise grow to the full page
+   * width. The measure a card of prose should not exceed is already a token, so it is also the cap:
+   * the odd card out ends up a card, not a banner. (A grid primitive would not need this — its
+   * columns are the same width whether or not the last row is full, which is the other half of the
+   * argument in generated/gaps/Stack.web.md.)
+   */
+  max-inline-size: var(--layout-max-width-prose);
+}

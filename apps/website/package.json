@@ -1,0 +1,28 @@
+{
+  "name": "website",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "description": "The adopter-facing Design Schema website: home page, docs, and per-component pages, built entirely out of @design-schema/react components. No Starlight — see site/src/content/docs/process/website-plan.md.",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/react": "^4.4.0",
+    "@design-schema/react": "workspace:^",
+    "@design-schema/tokens": "workspace:^",
+    "astro": "^5.12.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "shiki": "^3.21.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}

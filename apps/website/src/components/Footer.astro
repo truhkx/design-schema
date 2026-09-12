@@ -1,0 +1,90 @@
+---
+/**
+ * The site footer (site/src/content/docs/process/website-plan.md, "Global chrome"):
+ * "`Landmark(role="contentinfo")`, a `Divider`, then a `Stack` of `Link`s (GitHub, npm, License)
+ * and a `Text(tone="muted")` copyright line."
+ *
+ * Entirely static — no `client:*` directive, so the footer ships no JavaScript and is in
+ * view-source on every page. `Layout.astro` renders it below the `main` landmark, as a sibling of
+ * it and of the header, so `contentinfo` is a top-level landmark rather than one nested in `main`
+ * (where it would not be a landmark at all).
+ *
+ * Every destination here is derived rather than typed a second time: the repository comes from
+ * `generated/nav.json`, the npm organisation from the published package's own scope, and the
+ * copyright line from the repository's LICENSE. Three facts that already live somewhere, and three
+ * things that cannot go stale in this file alone.
+ */
+import { Box, Container, Divider, Landmark, Link, Stack, Text } from '@design-schema/react';
+
+// `?raw` rather than node:fs, for the reason ../nav.ts spells out: this module is bundled into
+// dist/ before it runs, so a path resolved at runtime would be resolved from the wrong place. Vite
+// reads the file at build time and inlines it.
+import licenseText from '../../../../LICENSE?raw';
+// The published React package, for its scope. ../component-page.ts reads the same manifest for the
+// install snippet, so the site names the package exactly once per fact about it.
+import reactManifest from '../../../../packages/react/package.json';
+
+import { siteNav } from '../nav';
+
+const COPY = {
+  github: 'GitHub',
+  npm: 'npm',
+  license: 'License',
+};
+
+/** The repository, from the generated nav — the same entry the header and the hero link to. */
+const repo = siteNav().top.find((item) => item.external && item.href.includes('github.com'));
+if (!repo) {
+  throw new Error('generated/nav.json has no external GitHub link for the footer to point at. Re-run `pnpm nav`.');
+}
+
+/**
+ * The npm organisation, from the package scope rather than a URL written here: `@design-schema/react`
+ * is published from this repo, so its scope *is* the org whose packages a visitor is being sent to.
+ * Renaming the scope (process/customization-and-naming.md is about exactly that) moves this link
+ * with it instead of leaving it pointing at an org that no longer exists.
+ */
+const scope = /^@([^/]+)\//.exec(reactManifest.name)?.[1];
+if (!scope) {
+  throw new Error(`packages/react/package.json's name (${reactManifest.name}) is unscoped; the footer's npm link has no organisation to point at.`);
+}
+const npmUrl = `https://www.npmjs.com/org/${scope}`;
+
+/**
+ * The licence file on the default branch, and the copyright line read out of it.
+ *
+ * A footer that claims a licence the repository does not carry is worse than no footer link, so the
+ * year and the holder are the LICENSE's own words — the build fails here if that file ever stops
+ * carrying a copyright line, rather than the page shipping a silently wrong one.
+ */
+const licenseUrl = `${repo.href}/blob/main/LICENSE`;
+const copyrightLine = /^Copyright \(c\) (.+)$/m.exec(licenseText)?.[1]?.trim();
+if (!copyrightLine) {
+  throw new Error('LICENSE has no `Copyright (c) …` line for the footer to render.');
+}
+
+const links = [
+  { label: COPY.github, href: repo.href },
+  { label: COPY.npm, href: npmUrl },
+  { label: COPY.license, href: licenseUrl },
+];
+---
+
+<Landmark role="contentinfo" className="ds-site-footer">
+  {/*
+    Decorative, not `semantic`: the `footer` element is already the boundary between the page and
+    the site chrome, and a separator announced on top of it says the same thing twice.
+  */}
+  <Divider />
+  <Container width="page">
+    <Box inset="none" insetBlock="lg">
+      <Stack direction="vertical" gap="normal">
+        {/* Wrapped, so three links become a column on a phone rather than three crushed columns. */}
+        <Stack direction="horizontal" gap="normal" align="center" wrap>
+          {links.map((link) => <Link href={link.href} label={link.label} external />)}
+        </Stack>
+        <Text tone="muted" size="sm">{`© ${copyrightLine}`}</Text>
+      </Stack>
+    </Box>
+  </Container>
+</Landmark>

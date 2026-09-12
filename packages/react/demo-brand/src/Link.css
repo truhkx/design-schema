@@ -1,0 +1,76 @@
+/* Link — styled only through Design Schema token custom properties. */
+
+.demo-link {
+  --demo-link-underline-thickness: var(--border-width-thin);
+  --demo-link-underline-offset: var(--space-1);
+  --demo-link-external-icon-gap: var(--space-1);
+  --demo-link-focus-ring: var(--color-border-focus);
+  --demo-link-focus-ring-width: var(--border-width-focus);
+  --demo-link-focus-ring-radius: var(--radius-sm);
+  --demo-link-transition: var(--motion-duration-fast);
+
+  display: inline;
+  color: var(--demo-link-color);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: var(--demo-link-underline-thickness);
+  text-underline-offset: var(--demo-link-underline-offset);
+  border-radius: var(--demo-link-focus-ring-radius);
+  cursor: pointer;
+}
+
+/* tone → default uses the link colors; inherit takes the surrounding text color. */
+.demo-link--tone-default {
+  --demo-link-color: var(--color-link);
+  --demo-link-color-hover: var(--color-link-hover);
+  --demo-link-color-visited: var(--color-link-visited);
+}
+.demo-link--tone-inherit {
+  --demo-link-color: currentColor;
+  --demo-link-color-hover: currentColor;
+  --demo-link-color-visited: currentColor;
+}
+
+/* colorVisited (web only) */
+.demo-link:visited {
+  color: var(--demo-link-color-visited);
+}
+
+/* colorHover: pointer hover and active state. */
+.demo-link:hover,
+.demo-link:active {
+  color: var(--demo-link-color-hover);
+}
+
+/* focus-visible (locked): the ring follows the text box, not the line box. Never removed. */
+.demo-link:focus-visible {
+  outline: var(--demo-link-focus-ring-width) solid var(--demo-link-focus-ring);
+  outline-offset: var(--demo-link-focus-ring-width);
+}
+
+/* transition: color on hover, with motion.easing.standard; removed under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .demo-link {
+    transition: color var(--demo-link-transition) var(--motion-easing-standard);
+  }
+}
+
+/* externalIconGap: gap before the icon, which is 1em of the surrounding font size (no size token by design). */
+.demo-link__external-icon {
+  display: inline;
+  margin-inline-start: var(--demo-link-external-icon-gap);
+}
+
+/* copy.externalSuffix: in the accessible name, not on screen. The standard clip pattern; 1px is sanctioned here. */
+.demo-link__external-suffix {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

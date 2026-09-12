@@ -1,0 +1,93 @@
+name: deploy-pages
+
+# The public site (site/src/content/docs/process/website-plan.md, "Where this lands relative to the
+# existing Pages plan"). This artifact is `apps/website` and nothing else.
+#
+# What changed from the original plan (vision-and-decisions.md #3, "landing page at `/`, docs at
+# `/docs` (Astro build), Storybooks at `/storybook/{react,lit,rn}`"):
+#
+#   * "docs at /docs" is `apps/website`'s own docs section, not a Starlight build. `site/` is a
+#     repo-local contributor reference and is not deployed at all.
+#   * The three Storybooks are not in this artifact. They publish independently to Chromatic
+#     (job 510, .github/workflows/chromatic.yml). That workflow and this one share no job, no
+#     artifact and no `needs:` edge, so a Chromatic publish that fails — for any of the three
+#     packages — cannot fail or block this deploy. That is the single point of failure the combined
+#     build had: one Storybook failing to build used to take the working docs site down with it.
+#
+# One residual dependency, stated rather than hidden: `tools/docs_examples.ts` reads the story ids
+# from `packages/react/storybook-static/index.json`, so the *react* Storybook is still built here —
+# for its manifest, not to publish. Deriving Storybook's id algorithm by hand instead would trade a
+# loud failure for a deep link that breaks quietly, which is the trade job 507 already refused. lit
+# and rn are not built at all.
+
+on:
+  push:
+    branches: [main]
+  # So a Pages deploy can be re-run without a commit (a failed upload, a Pages settings change).
+  workflow_dispatch:
+
+# The minimum GitHub Pages needs: read the code, mint the OIDC token `deploy-pages` exchanges, and
+# write the Pages deployment. No `contents: write` — nothing here commits.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and never cancel one in flight: a half-finished Pages deployment is a
+# half-broken site, unlike a cancelled build.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: actions/configure-pages@v5
+      - run: pnpm install --frozen-lockfile
+
+      # The app's inputs, in the order apps/website/README.md's "Prerequisites" names them. All of
+      # them are gitignored build output, so a deploy derives them rather than trusting the tree.
+      #
+      # Only the React package is built. lit and rn are not imported by the website, and building
+      # them here would put them back on the docs site's critical path — the same mistake as
+      # bundling their Storybooks. (`packages/tokens` has no build script: `pnpm themes` is what
+      # writes its dist, which is why that step comes first.)
+      - name: Build the tokens
+        run: pnpm themes
+      - name: Build @design-schema/react
+        run: pnpm --filter @design-schema/react build
+      - name: Build the React Storybook (for its story-id manifest only — not published)
+        run: pnpm --filter @design-schema/react build-storybook
+      - name: Parse the schema, extract the examples, generate the nav
+        run: pnpm check
+
+      - name: Build the site
+        run: pnpm --filter website build
+
+      # The gate this job is held to: `/`, `/about` and one page per component must exist in the
+      # artifact. A silently empty route is the failure mode a static deploy otherwise ships happily
+      # — `astro build` exits 0 either way. tools/site_routes.ts reads the route list from
+      # generated/nav.json, so the component count is never written down a second time.
+      - name: Check the routes the site promises
+        run: pnpm site:routes
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/website/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

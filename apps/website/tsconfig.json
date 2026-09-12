@@ -1,0 +1,13 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    // The chrome and the example islands are React components, so JSX in this app compiles to
+    // React's automatic runtime rather than Astro's.
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
+  },
+  // ../../schema is the component frontmatter schema (Zod), reused by the schema loader so the
+  // website validates against the same definition tools/parse.ts does.
+  "include": [".astro/types.d.ts", "**/*", "../../schema/**/*"],
+  "exclude": ["dist"]
+}

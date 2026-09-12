@@ -45,6 +45,63 @@ pnpm -r publish --access public    # publishes each non-private package; pnpm re
 - Versions move together. Until the packages have independent release cadences, bump all four with `pnpm -r exec npm version <x>` and tag the commit.
 - The root package stays `private`; `pnpm -r publish` skips it, along with the docs site and the Storybook root.
 
+## The Pages site
+
+Updated 2026-09-12 (job 509). `vision-and-decisions.md` §3 said the GitHub Pages deploy was "landing
+page at `/`, docs at `/docs` (Astro build), Storybooks at `/storybook/{react,lit,rn}`". Two parts of
+that no longer hold, and job 509's step 5 was to correct that section — except that
+`vision-and-decisions.md` has never been a file in this repository. It is referenced from
+`website-plan.md`, `customization-and-naming.md` and `tools/site_nav.ts`, and job 504 already found
+the same thing when it went looking for the Vision paragraph. So the correction lives here, in the
+doc about what this repository publishes, and `vision-and-decisions.md` should be read as superseded
+on this point wherever it is kept:
+
+- **"docs at `/docs`" is `apps/website`'s docs section**, not a Starlight build.
+  [The public website](/process/website-plan/) explains why that app exists; the consequence for
+  publishing is that **`site/` is not deployed at all**. It stays the contributor and spec reference
+  — schema decisions, process pages, the MCP server doc — read locally with `pnpm docs` and by
+  Claude Code sessions working in the repository. The Pages artifact is `apps/website/dist` and
+  nothing else.
+- **The Storybooks are not in the artifact.** Each of `packages/{react,lit,rn}` publishes its own
+  Storybook to [Chromatic](https://www.chromatic.com/) on its own schedule, with a permanent
+  versioned URL per package (job 510, `generated/chromatic.json`). `/storybook/{react,lit,rn}` is
+  not a path on the site.
+
+That second change is the one worth keeping the reason for. Folding three Storybook builds into the
+Pages job made them a single point of failure for the docs site: one package failing to build its
+Storybook failed the whole artifact, and the working docs site went down with it. Separate workflows
+share no job, no artifact and no `needs:` edge, so a broken Chromatic publish cannot fail the deploy.
+The docs site does not depend on a Storybook being *reachable* either — every example on a component
+page renders from its story's args, in the page (`website-plan.md`, "Linking to Storybook") — so a
+Chromatic outage costs one "Open in Storybook ↗" link per example and nothing else.
+
+The deploy workflow is `.github/workflows/deploy-pages.yml`. It builds the packages, builds the React
+Storybook for its story-id manifest only (`tools/docs_examples.ts` reads
+`packages/react/storybook-static/index.json`; nothing is published from it, and lit and rn are not
+built), runs `pnpm check` for the site's generated inputs, builds the app, and checks the routes with
+`pnpm site:routes` before uploading — a static build exits 0 with a route silently absent, and that
+check is what makes the missing page a failed deploy instead of a 404 nobody notices.
+
+## The Storybooks
+
+Added 2026-09-12 (job 510). `.github/workflows/chromatic.yml` publishes one Storybook per package to
+its own Chromatic project, on every push to `main` and on every PR — a PR gets its own preview URL,
+which is how a generated component's Storybook is reviewed before the component is merged. A small
+first job works out which of `packages/{react,lit,rn}` the commit touched (GitHub's `paths:` filter is
+workflow-level, and this needs to be per package), and the three publishes are otherwise unrelated to
+each other and to the deploy above.
+
+The three permanent URLs live in `generated/chromatic.json` — the one file under `generated/` that is
+typed in by hand, because a Chromatic project URL only exists once somebody has created the project.
+`pnpm chromatic:check` validates its shape and `pnpm chromatic:check:fetch` requires every URL to
+answer 200; an empty string is the deliberate "no project yet" value, and while it is there the
+website simply omits that package's "Open in Storybook ↗" links.
+
+Creating the projects and storing their tokens as repository secrets
+(`CHROMATIC_PROJECT_TOKEN_{REACT,LIT,RN}`) needs a human with a GitHub and Chromatic account; the
+procedure is in `jobs/510-chromatic-storybooks.md`, "Log". Until that is done the workflow is staged
+in `.github/workflows-pending/`, not installed.
+
 ## Consuming
 
 ```ts

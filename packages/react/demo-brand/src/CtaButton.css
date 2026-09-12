@@ -1,0 +1,146 @@
+/* CtaButton — styled only through Design Schema token custom properties. */
+
+.demo-cta-button {
+  --demo-button-icon-gap: var(--space-2);
+  --demo-button-padding-inline: var(--space-md);
+  --demo-button-padding-block: var(--space-sm);
+  --demo-button-radius: var(--radius-md);
+  --demo-button-font-family: var(--font-family-body);
+  --demo-button-font-weight: var(--font-weight-medium);
+  --demo-button-font-size: var(--font-size-md);
+  --demo-button-background: var(--color-action-primary-background);
+  --demo-button-background-hover: var(--color-action-primary-background-hover);
+  --demo-button-foreground: var(--color-action-primary-foreground);
+  --demo-button-focus-ring: var(--color-border-focus);
+  --demo-button-focus-ring-width: var(--border-width-focus);
+  --demo-button-inverse-foreground: var(--color-inverse-link);
+  --demo-button-inverse-focus-ring: var(--color-inverse-focus);
+  --demo-button-min-target: var(--size-target-min);
+  --demo-button-disabled-opacity: var(--opacity-disabled);
+  --demo-button-transition: var(--motion-duration-fast);
+  --demo-button-loading-spin: var(--motion-duration-loop);
+  --demo-button-spinner-stroke: var(--border-width-focus);
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--demo-button-icon-gap);
+  min-inline-size: var(--demo-button-min-target);
+  min-block-size: var(--demo-button-min-target);
+  padding-inline: var(--demo-button-padding-inline);
+  padding-block: var(--demo-button-padding-block);
+  margin: 0;
+  border: 0;
+  border-radius: var(--demo-button-radius);
+  font-family: var(--demo-button-font-family);
+  font-weight: var(--demo-button-font-weight);
+  font-size: var(--demo-button-font-size);
+  background-color: var(--demo-button-background);
+  color: var(--demo-button-foreground);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* variant → color.action.{variant}.* (background/foreground locked; backgroundHover overridable) */
+.demo-cta-button--primary {
+  --demo-button-background: var(--color-action-primary-background);
+  --demo-button-background-hover: var(--color-action-primary-background-hover);
+  --demo-button-foreground: var(--color-action-primary-foreground);
+}
+.demo-cta-button--secondary {
+  --demo-button-background: var(--color-action-secondary-background);
+  --demo-button-background-hover: var(--color-action-secondary-background-hover);
+  --demo-button-foreground: var(--color-action-secondary-foreground);
+}
+.demo-cta-button--ghost {
+  --demo-button-background: var(--color-action-ghost-background);
+  --demo-button-background-hover: var(--color-action-ghost-background-hover);
+  --demo-button-foreground: var(--color-action-ghost-foreground);
+}
+.demo-cta-button--danger {
+  --demo-button-background: var(--color-action-danger-background);
+  --demo-button-background-hover: var(--color-action-danger-background-hover);
+  --demo-button-foreground: var(--color-action-danger-foreground);
+}
+
+/* size → paddingInline: space.{size}, fontSize: font.size.{size} */
+.demo-cta-button--sm { --demo-button-padding-inline: var(--space-sm); --demo-button-font-size: var(--font-size-sm); }
+.demo-cta-button--md { --demo-button-padding-inline: var(--space-md); --demo-button-font-size: var(--font-size-md); }
+.demo-cta-button--lg { --demo-button-padding-inline: var(--space-lg); --demo-button-font-size: var(--font-size-lg); }
+
+/* iconOnly: equal padding on every side, regardless of size. */
+.demo-cta-button--icon-only { --demo-button-padding-inline: var(--space-sm); }
+
+/* inverse: focus ring always swaps; only ghost's fill is meaningful on an inverse surface. */
+.demo-cta-button--inverse {
+  --demo-button-focus-ring: var(--demo-button-inverse-focus-ring);
+}
+.demo-cta-button--inverse.demo-cta-button--ghost {
+  --demo-button-foreground: var(--demo-button-inverse-foreground);
+  --demo-button-background-hover: color-mix(in srgb, var(--color-inverse-foreground) 12%, var(--color-inverse-surface));
+}
+
+/* backgroundHover: pointer hover and pressed state, only while activatable. */
+.demo-cta-button:not([aria-disabled='true']):not([aria-busy='true']):hover,
+.demo-cta-button:not([aria-disabled='true']):not([aria-busy='true']):active {
+  background-color: var(--demo-button-background-hover);
+}
+
+/* focus-visible: never removed, only replaced by the token ring. */
+.demo-cta-button:focus-visible {
+  outline: var(--demo-button-focus-ring-width) solid var(--demo-button-focus-ring);
+  outline-offset: var(--demo-button-focus-ring-width);
+}
+
+/* disabled: stays focusable and announced; visually dimmed. */
+.demo-cta-button[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: var(--demo-button-disabled-opacity);
+}
+
+/* loading: announces busy, ignores activation, keeps its size. */
+.demo-cta-button[aria-busy='true'] {
+  cursor: progress;
+}
+
+.demo-cta-button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.demo-cta-button__label {
+  display: inline-block;
+}
+
+/* loadingSpin: one rotation of the ring spinner; disabled under prefers-reduced-motion. */
+.demo-cta-button__spinner {
+  display: inline-block;
+  inline-size: 1em;
+  block-size: 1em;
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  border: var(--demo-button-spinner-stroke) solid currentColor;
+  border-inline-end-color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .demo-cta-button__spinner {
+    animation: demo-cta-button-spin var(--demo-button-loading-spin) linear infinite;
+  }
+
+  /* transition: background/foreground on hover and press, with motion.easing.standard. */
+  .demo-cta-button {
+    transition:
+      background-color var(--demo-button-transition) var(--motion-easing-standard),
+      color var(--demo-button-transition) var(--motion-easing-standard);
+  }
+}
+
+@keyframes demo-cta-button-spin {
+  to { transform: rotate(360deg); }
+}

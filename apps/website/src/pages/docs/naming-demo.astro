@@ -1,0 +1,133 @@
+---
+/**
+ * The naming demo (job 523): the proof of concept proving the proof of concept.
+ *
+ * `site/src/content/docs/process/customization-and-naming.md` argues that a brand can rename the
+ * generated system's identifiers — components, props, the CSS and package vocabulary — without
+ * forking the schema, and that the rename moves names and nothing else. This page is where that
+ * stops being an argument: three components rendered twice from the same props, one pair per
+ * section, the left column generated with Design Schema's vocabulary and the right column the same
+ * generation with `themes/demo-brand/naming.md` applied as its last step.
+ *
+ * Nothing here is a second hand-maintained copy of anything. The components in the right-hand column
+ * are imported from `packages/react/demo-brand/src` — generator output — and the rename tables come
+ * from `renames.json` beside them, which `pnpm demo:naming` writes from the diff it actually
+ * computed, so a table on this page cannot claim a rename the tree does not have.
+ *
+ * `tests/website/naming-demo.spec.ts` is the gate: it diffs the two renders' markup and their
+ * accessibility trees in a real browser, and drives both halves of every interaction.
+ */
+import { Alert, Box, Heading, Link, Stack, Text } from '@design-schema/react';
+
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { NamingDemo } from '../../components/NamingDemo';
+import { NamingIdentifiersTable, NamingMapTable } from '../../components/NamingTables';
+import renames from '../../../../../packages/react/demo-brand/renames.json';
+import '../../styles/naming-demo.css';
+
+/** The page's words, in one place, the way the generated components keep theirs. */
+const COPY = {
+  title: 'Naming: a worked example',
+  description:
+    'Three components rendered twice — with Design Schema’s vocabulary and with a fictional ' +
+    'brand’s — to show that a naming doc moves identifiers and nothing else.',
+  intro:
+    'An adopter can rename what the generator emits: the components, a prop here and there, the CSS ' +
+    'custom-property prefix, the package scope. They do it in one file that sits beside their theme ' +
+    'doc and never touches the canonical schema — which is also why an upstream pull comes through ' +
+    'without a conflict. This page is that mechanism, run for real.',
+  how:
+    'Everything in the right-hand column below was generated from the same component docs as the ' +
+    'left-hand column, by the same generator, and then renamed as the last step before the files ' +
+    'were written. The two columns are given the same props — under whatever name each build calls ' +
+    'them — and nothing else about them differs.',
+  liveHeading: 'The same components, twice',
+  sameHeading: 'What is the same',
+  same: [
+    'The markup. The two renders produce the same elements, nested the same way, with the same ' +
+      'attributes. The gate for this page diffs them in the browser and fails on any difference that ' +
+      'is not an identifier.',
+    'The accessibility tree. Same roles, same accessible names, same states — a screen reader cannot ' +
+      'tell the two columns apart.',
+    'The test hooks. The renamed button still says data-ds="Button", because that is how the derived ' +
+      'behavior and keyboard gates find a component, and a gate that had to know what a brand calls ' +
+      'its button would not be brand-agnostic.',
+    'The tokens. A component’s own hooks take the brand prefix, but what they resolve to does not: ' +
+      'both columns read var(--color-action-primary-background), because a token path is canonical ' +
+      'schema rather than brand vocabulary.',
+  ],
+  mapHeading: 'The naming doc',
+  mapIntro:
+    'This is the whole of it — three components, one prop and the namespace. Every key is the ' +
+    'canonical name, which is what lets the resolver check the doc against the schema and fail ' +
+    'loudly if an upstream rename ever leaves a key pointing at nothing.',
+  identifiersHeading: 'Every identifier that moved',
+  identifiersIntro:
+    'Counted by diffing each renamed file against the canonical file it was generated from. The ' +
+    'comparison is structural: the two files have to produce the same names in the same positions, ' +
+    'separated by byte-identical text, and every name that differs has to be one the doc above ' +
+    'accounts for. Nothing else in the tree is allowed to move.',
+  caveat: 'One thing on this page is not what a real fork would have',
+  caveatBody:
+    'Demo Brand’s components import @demo/tokens, because renaming the package scope is what its ' +
+    'naming doc asks for. A real fork publishes a package by that name; this repository has one ' +
+    'token package, so the demo tree aliases the specifier back to it in its tsconfig, its Vitest ' +
+    'config and this site’s Astro config. The generator writes component files, never manifests — ' +
+    'package names are the fork’s own edit, and that is the same in every adoption.',
+  back: 'Back to the docs',
+};
+
+const fileCount = renames.files.length;
+const renamedFiles = renames.files.filter((file) => file.brand !== file.canonical).length;
+const differences = renames.files.reduce((total, file) => total + file.differ, 0);
+const summary =
+  `${fileCount} generated files, ${renamedFiles} of them renamed, ${differences} names different ` +
+  'from the canonical build — and every one of them an identifier.';
+---
+
+<DocsLayout title={`${COPY.title} — Design Schema`} description={COPY.description}>
+  <Stack direction="vertical" gap="section">
+    <Stack direction="vertical" gap="loose">
+      <Heading level={1}>{COPY.title}</Heading>
+      <Text size="lg" tone="muted">{COPY.intro}</Text>
+      <Text>{COPY.how}</Text>
+      <Text tone="muted">{summary}</Text>
+    </Stack>
+
+    <Stack element="section" direction="vertical" gap="loose">
+      <Heading level={2}>{COPY.liveHeading}</Heading>
+      {/* `client:load` rather than `client:visible`: every pair on this page is interactive, and
+          half of what the page claims is that both halves of each pair behave the same way. */}
+      <NamingDemo client:load />
+    </Stack>
+
+    <Stack element="section" direction="vertical" gap="loose">
+      <Heading level={2}>{COPY.sameHeading}</Heading>
+      {COPY.same.map((line) => <Text>{line}</Text>)}
+    </Stack>
+
+    <Stack element="section" direction="vertical" gap="loose">
+      <Heading level={2}>{COPY.mapHeading}</Heading>
+      <Text>{COPY.mapIntro}</Text>
+      <NamingMapTable />
+    </Stack>
+
+    <Stack element="section" direction="vertical" gap="loose">
+      <Heading level={2}>{COPY.identifiersHeading}</Heading>
+      <Text>{COPY.identifiersIntro}</Text>
+      <NamingIdentifiersTable />
+    </Stack>
+
+    {/* `tone="info"`: a statement of fact rather than urgency — the same gap the component pages'
+        "not yet generated" notice has (generated/gaps/Alert.web.md). */}
+    <Alert tone="info" live="off" heading={COPY.caveat}>
+      <Text>{COPY.caveatBody}</Text>
+    </Alert>
+
+    <Box inset="none" insetBlock="md">
+      <Stack direction="vertical" gap="tight" align="start">
+        <Link href="/docs" label={COPY.back} />
+      </Stack>
+    </Box>
+  </Stack>
+</DocsLayout>

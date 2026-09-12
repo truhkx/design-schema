@@ -1,0 +1,99 @@
+/* Callout — styled only through Design Schema token custom properties. */
+
+.demo-callout {
+  --demo-alert-background: var(--color-status-info-background);
+  --demo-alert-foreground: var(--color-status-info-foreground);
+  --demo-alert-body-color: var(--color-foreground);
+  --demo-alert-border: var(--color-status-info-border);
+  --demo-alert-border-width: var(--border-width-thin);
+  --demo-alert-radius: var(--radius-md);
+  --demo-alert-padding: var(--space-md);
+  --demo-alert-gap: var(--space-3);
+  --demo-alert-part-gap: var(--space-1);
+  --demo-alert-icon-size: var(--font-size-lg);
+  --demo-alert-heading-size: var(--font-size-md);
+  --demo-alert-heading-weight: var(--font-weight-semibold);
+  --demo-alert-font-family: var(--font-family-body);
+  --demo-alert-font-size: var(--font-size-md);
+  --demo-alert-line-height: var(--font-line-height-normal);
+  --demo-alert-dismiss-margin: var(--space-1);
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--demo-alert-gap);
+  padding: var(--demo-alert-padding);
+  border: var(--demo-alert-border-width) solid var(--demo-alert-border);
+  border-radius: var(--demo-alert-radius);
+  background-color: var(--demo-alert-background);
+  color: var(--demo-alert-body-color);
+  font-family: var(--demo-alert-font-family);
+  font-size: var(--demo-alert-font-size);
+  line-height: var(--demo-alert-line-height);
+}
+
+/* tone → color.status.{tone}.* (background/foreground/icon locked; border overridable) */
+.demo-callout--info {
+  --demo-alert-background: var(--color-status-info-background);
+  --demo-alert-foreground: var(--color-status-info-foreground);
+  --demo-alert-border: var(--color-status-info-border);
+}
+.demo-callout--success {
+  --demo-alert-background: var(--color-status-success-background);
+  --demo-alert-foreground: var(--color-status-success-foreground);
+  --demo-alert-border: var(--color-status-success-border);
+}
+.demo-callout--warning {
+  --demo-alert-background: var(--color-status-warning-background);
+  --demo-alert-foreground: var(--color-status-warning-foreground);
+  --demo-alert-border: var(--color-status-warning-border);
+}
+.demo-callout--danger {
+  --demo-alert-background: var(--color-status-danger-background);
+  --demo-alert-foreground: var(--color-status-danger-foreground);
+  --demo-alert-border: var(--color-status-danger-border);
+}
+
+/* icon: decorative, iconSize, aligned to the first line of text. The Icon itself carries color.status.{tone}.icon via its own `overrides`. */
+.demo-callout__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-block-start: calc((var(--demo-alert-font-size) * var(--demo-alert-line-height) - var(--demo-alert-icon-size)) / 2);
+  line-height: 0;
+}
+
+.demo-callout__content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--demo-alert-part-gap);
+  min-inline-size: 0;
+}
+
+/* heading: a paragraph in headingWeight, not a heading element, so it does not disturb the outline. */
+.demo-callout__heading {
+  margin: 0;
+  color: var(--demo-alert-foreground);
+  font-size: var(--demo-alert-heading-size);
+  font-weight: var(--demo-alert-heading-weight);
+}
+
+/* bodyColor: the page foreground, so long messages read as text. */
+.demo-callout__body {
+  color: var(--demo-alert-body-color);
+}
+
+.demo-callout__body > :first-child {
+  margin-block-start: 0;
+}
+
+.demo-callout__body > :last-child {
+  margin-block-end: 0;
+}
+
+/* dismissButton: the system CtaButton, unchanged; dismissMargin pulls it into the corner. */
+.demo-callout__dismiss {
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-block: calc(-1 * var(--demo-alert-dismiss-margin));
+  margin-inline-end: calc(-1 * var(--demo-alert-dismiss-margin));
+}

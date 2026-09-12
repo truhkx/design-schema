@@ -181,6 +181,9 @@ public enum TokenRef: String, CaseIterable, Sendable {
     case layoutMaxWidthProse = "layout.maxWidth.prose"
     case layoutMaxWidthContent = "layout.maxWidth.content"
     case layoutMaxWidthPage = "layout.maxWidth.page"
+    case layoutBreakpointSm = "layout.breakpoint.sm"
+    case layoutBreakpointMd = "layout.breakpoint.md"
+    case layoutBreakpointLg = "layout.breakpoint.lg"
     case sizeTargetMin = "size.target.min"
     case sizeTargetComfortable = "size.target.comfortable"
     case radiusNone = "radius.none"
@@ -383,6 +386,9 @@ public extension Theme {
     var layoutMaxWidthProse: CGFloat { dimension(.layoutMaxWidthProse) }
     var layoutMaxWidthContent: CGFloat { dimension(.layoutMaxWidthContent) }
     var layoutMaxWidthPage: CGFloat { dimension(.layoutMaxWidthPage) }
+    var layoutBreakpointSm: CGFloat { dimension(.layoutBreakpointSm) }
+    var layoutBreakpointMd: CGFloat { dimension(.layoutBreakpointMd) }
+    var layoutBreakpointLg: CGFloat { dimension(.layoutBreakpointLg) }
     var sizeTargetMin: CGFloat { dimension(.sizeTargetMin) }
     var sizeTargetComfortable: CGFloat { dimension(.sizeTargetComfortable) }
     var radiusNone: CGFloat { dimension(.radiusNone) }

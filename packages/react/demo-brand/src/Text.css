@@ -1,0 +1,45 @@
+/* Text — styled only through Design Schema token custom properties. */
+
+.demo-text {
+  margin: 0;
+  padding: 0;
+  --demo-text-font-family: var(--font-family-body);
+  --demo-text-line-height: var(--font-line-height-normal);
+  font-family: var(--demo-text-font-family);
+  font-size: var(--demo-text-font-size);
+  font-weight: var(--demo-text-font-weight);
+  line-height: var(--demo-text-line-height);
+  color: var(--demo-text-color);
+}
+
+/* size → font.size.{size} */
+.demo-text--size-xs { --demo-text-font-size: var(--font-size-xs); }
+.demo-text--size-sm { --demo-text-font-size: var(--font-size-sm); }
+.demo-text--size-md { --demo-text-font-size: var(--font-size-md); }
+.demo-text--size-lg { --demo-text-font-size: var(--font-size-lg); }
+.demo-text--size-xl { --demo-text-font-size: var(--font-size-xl); }
+
+/* weight → font.weight.{weight} */
+.demo-text--weight-regular { --demo-text-font-weight: var(--font-weight-regular); }
+.demo-text--weight-medium { --demo-text-font-weight: var(--font-weight-medium); }
+.demo-text--weight-semibold { --demo-text-font-weight: var(--font-weight-semibold); }
+.demo-text--weight-bold { --demo-text-font-weight: var(--font-weight-bold); }
+
+/* tone → color.foreground.{tone} */
+.demo-text--tone-default { --demo-text-color: var(--color-foreground); }
+.demo-text--tone-strong { --demo-text-color: var(--color-foreground-strong); }
+.demo-text--tone-muted { --demo-text-color: var(--color-foreground-muted); }
+.demo-text--tone-danger { --demo-text-color: var(--color-foreground-danger); }
+.demo-text--tone-on-action { --demo-text-color: var(--color-foreground-on-action); }
+
+.demo-text--align-start { text-align: start; }
+.demo-text--align-center { text-align: center; }
+.demo-text--align-end { text-align: end; }
+
+/* truncate: one line with an ellipsis; the full text is exposed via `title`. */
+.demo-text--truncate {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

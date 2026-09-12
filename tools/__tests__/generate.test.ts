@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { GateResult } from '../checks.ts';
 import * as g from '../generate.ts';
 import { readText } from '../lib/py.ts';
+import * as nm from '../naming.ts';
 import { useStd, useTmp, write } from './fixtures.ts';
 
 // `claude` is not on PATH in CI, and no test may spawn it anyway: both seams are replaced here.
@@ -33,6 +34,7 @@ const std = useStd();
 
 const savedPaths = { ...g.paths };
 const savedHooks = { ...g.hooks };
+const savedNamingPaths = { ...nm.paths };
 
 let dir = '';
 
@@ -55,6 +57,8 @@ beforeEach(() => {
 afterEach(() => {
   Object.assign(g.paths, savedPaths);
   Object.assign(g.hooks, savedHooks);
+  Object.assign(nm.paths, savedNamingPaths);
+  g.resetNaming(); // the run's naming doc is resolved once and memoized
   mocked.spawn = null;
 });
 
@@ -64,7 +68,7 @@ const gate = (name: string, ok: boolean, output: string = ''): GateResult => ({ 
 
 const args = (over: Partial<g.Args> = {}): g.Args => ({
   platform: 'lit', component: null, pattern: null, stale: false, check: false, adopt: false, force: false,
-  runner: 'cli', model: 'sonnet', maxRounds: 1, maxTurns: 1, skip: [], extra: [], dryRun: false, ...over,
+  runner: 'cli', model: 'sonnet', maxRounds: 1, maxTurns: 1, skip: [], extra: [], dryRun: false, naming: null, ...over,
 });
 
 const REPORT = '```json\n{"files": ["packages/lit/src/Text.ts"], "gaps": ["Text: guessed the default size"]}\n```';
@@ -616,6 +620,122 @@ describe('the round loop', () => {
   });
 });
 
+describe('--naming', () => {
+  /** The naming doc the sandbox resolves, and the folder the runner writes into. */
+  function brand(frontmatter: string = '  namespace:\n    cssPrefix: acme\n  components:\n    Text: Body\n'): string {
+    Object.assign(nm.paths, { ROOT: dir, THEMES: join(dir, 'themes'), COMPONENTS: join(dir, 'components.json') });
+    write(join(dir, 'themes', 'acme', 'naming.md'), `---\ntitle: acme\nnaming:\n${frontmatter}---\n\nProse.\n`);
+    return g.srcDir('lit');
+  }
+
+  /** A runner that writes what the model would write: canonical names, every round. */
+  function writes(text: string): string[] {
+    const seen: string[] = [];
+    g.hooks.CliRunner = () => ({
+      run: async (): Promise<g.RunResult> => {
+        write(join(g.srcDir('lit'), 'Text.ts'), text);
+        return [REPORT, 'session-1', 0.01];
+      },
+    });
+    g.hooks.runGates = (_platform, _skip, verbose = true) => {
+      // what the gates see on disk, which must always be the canonical tree
+      if (verbose) seen.push(readdirSync(g.srcDir('lit')).join(','));
+      return [];
+    };
+    return seen;
+  }
+
+  test('the written output takes the brand names; the gates never see them', async () => {
+    loop(['unused']);
+    const src = brand();
+    const seen = writes("export const Text = 'ds-text';\n");
+    const lock: g.Lock = {};
+    expect(await g.generateOne('Text', 'lit', args({ naming: 'acme' }), lock)).toBe(true);
+    expect(seen, 'the gates ran on the canonical file').toEqual(['Text.ts']);
+    expect(readdirSync(src)).toEqual(['Body.ts']);
+    expect(readText(join(src, 'Body.ts'))).toBe("export const Body = 'acme-body';\n");
+    expect(lock['Text.lit']).toMatchObject({
+      files: ['packages/lit/src/Body.ts'],
+      naming: 'themes/acme/naming.md',
+    });
+    expect(std.out()).toContain('naming themes/acme/naming.md: 1 component(s), 0 prop(s), --acme- prefix');
+    expect(std.out()).toContain('↻ Text.lit: naming — brand names applied to 1 file(s), 1 renamed');
+  });
+
+  test('without the flag there is no naming step at all', async () => {
+    loop(['unused']);
+    const src = brand();
+    writes("export const Text = 'ds-text';\n");
+    const lock: g.Lock = {};
+    expect(await g.generateOne('Text', 'lit', args(), lock)).toBe(true);
+    expect(readdirSync(src)).toEqual(['Text.ts']);
+    expect(readText(join(src, 'Text.ts')), 'byte for byte what the model wrote').toBe("export const Text = 'ds-text';\n");
+    expect(lock['Text.lit']).toMatchObject({ files: ['packages/lit/src/Text.ts'] });
+    expect(lock['Text.lit']).not.toHaveProperty('naming');
+    expect(std.out()).not.toContain('naming');
+  });
+
+  test("a fork's renamed tree is normalized before the round and renamed after it", async () => {
+    loop(['unused']);
+    const src = brand();
+    // what a fork has committed: the brand's names, and a composite that renders the renamed component
+    write(join(src, 'Body.ts'), "export const Body = 'acme-body';\n");
+    write(join(src, 'Card.ts'), "import './Body.js';\nconst x: BodyProps = {};\n");
+    const seen = writes("export const Text = 'ds-text';\n");
+    expect(await g.generateOne('Text', 'lit', args({ naming: 'acme' }), {})).toBe(true);
+    expect(seen[0], 'the model and the gates worked on canonical names').toBe('Card.ts,Text.ts');
+    expect(readdirSync(src).sort()).toEqual(['Body.ts', 'Card.ts']);
+    expect(readText(join(src, 'Card.ts')), 'the composite still points at the brand name').toBe(
+      "import './Body.js';\nconst x: BodyProps = {};\n",
+    );
+    expect(std.out()).toContain('↺ Text.lit: naming — canonical names restored in 2 file(s), 1 renamed');
+  });
+
+  test('a run that fails still leaves the tree in the brand names', async () => {
+    loop(['unused']);
+    const src = brand();
+    write(join(src, 'Body.ts'), "export const Body = 'acme-body';\n");
+    g.hooks.runGates = (_platform, _skip, verbose = true) => (verbose ? [] : [gate('parse', false, 'doc error')]);
+    expect(await g.generateOne('Text', 'lit', args({ naming: 'acme' }), {})).toBe(false);
+    expect(std.out()).toContain('preflight failed before any model call');
+    expect(readdirSync(src), 'not left half-renamed').toEqual(['Body.ts']);
+  });
+
+  test('a naming doc that renames nothing is the same as none', async () => {
+    loop(['unused']);
+    const src = brand('  components:\n    Text: Text\n');
+    writes("export const Text = 'ds-text';\n");
+    expect(await g.generateOne('Text', 'lit', args({ naming: 'acme' }), {})).toBe(true);
+    expect(readdirSync(src)).toEqual(['Text.ts']);
+    expect(std.out()).not.toContain('naming themes/acme');
+  });
+
+  test('a collision between a brand prop name and a platform one is warned about', async () => {
+    loop(['unused']);
+    brand('  props:\n    variant: style\n');
+    writes("export const Text = 'ds-text';\n");
+    await g.generateOne('Text', 'lit', args({ naming: 'acme' }), {});
+    expect(std.out()).toContain('! naming web: variant → style collides with web\'s own `style` prop');
+  });
+
+  test('a ref that names no doc stops the run before any model call', async () => {
+    loop(['unused']);
+    brand();
+    const seen = writes("export const Text = 'ds-text';\n");
+    await expect(g.generateOne('Text', 'lit', args({ naming: 'nope' }), {})).rejects.toThrow(/no naming doc for 'nope'/);
+    expect(seen).toEqual([]);
+  });
+
+  test('--adopt finds the file under its brand name', async () => {
+    brand();
+    write(join(g.paths.PROMPTS, 'Text.lit.md'), 'spec');
+    write(join(g.srcDir('lit'), 'Body.ts'), 'export const Body = null;\n');
+    expect(await g.main(['--platform', 'lit', '--adopt', '--naming', 'acme'])).toBe(0);
+    expect(Object.keys(readLock('lit'))).toEqual(['Text.lit']);
+    expect(readLock('lit')['Text.lit']).toMatchObject({ hash: g.sha('spec'), runner: 'adopted' });
+  });
+});
+
 describe('the cli runner', () => {
   const reply = (data: unknown, over: Record<string, unknown> = {}): Record<string, unknown> => ({
     status: 0, stdout: Buffer.from(typeof data === 'string' ? data : JSON.stringify(data), 'utf8'), stderr: Buffer.alloc(0), ...over,
@@ -718,17 +838,18 @@ describe('the command line', () => {
     expect(a).toEqual({
       platform: 'web,lit,rn', component: null, pattern: null, stale: false, check: false, adopt: false, force: false,
       runner: 'cli', model: g.DEFAULT_MODEL, maxRounds: 3, maxTurns: 80, skip: [], extra: [], dryRun: false,
+      naming: g.DEFAULT_NAMING,
     });
   });
 
   test('every flag, in both the space and the equals form', () => {
     const a = g.parseArgs(['--platform=web,rn', '--component', 'Icon,Text', '--pattern=SettingsPage', '--stale', '--check',
       '--adopt', '--force', '--runner', 'api', '--model=opus', '--max-rounds', '5', '--max-turns=120',
-      '--skip', 'typecheck', '--skip=deps', '--with', 'keyboard', '--with=axe', '--dry-run']);
+      '--skip', 'typecheck', '--skip=deps', '--with', 'keyboard', '--with=axe', '--dry-run', '--naming=nimbus']);
     expect(a).toEqual({
       platform: 'web,rn', component: 'Icon,Text', pattern: 'SettingsPage', stale: true, check: true, adopt: true,
       force: true, runner: 'api', model: 'opus', maxRounds: 5, maxTurns: 120, skip: ['typecheck', 'deps'],
-      extra: ['keyboard', 'axe'], dryRun: true,
+      extra: ['keyboard', 'axe'], dryRun: true, naming: 'nimbus',
     });
   });
 

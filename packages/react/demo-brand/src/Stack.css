@@ -1,0 +1,44 @@
+/* Stack — styled only through Design Schema token custom properties. */
+
+.demo-stack {
+  --demo-stack-gap: var(--layout-gap-normal);
+  display: flex;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+  /* literal here, not var(--demo-stack-gap): the hook is only read by the value classes below,
+     so overrides.gap is a no-op while gap: none, per the presence rule. */
+  gap: 0;
+}
+
+.demo-stack--vertical { flex-direction: column; }
+.demo-stack--horizontal { flex-direction: row; }
+
+/* gap → layout.gap.{gap}; `none` renders no gap and makes overrides.gap a no-op. */
+.demo-stack--gap-none { gap: 0; }
+.demo-stack--gap-tight { --demo-stack-gap: var(--layout-gap-tight); gap: var(--demo-stack-gap); }
+.demo-stack--gap-normal { --demo-stack-gap: var(--layout-gap-normal); gap: var(--demo-stack-gap); }
+.demo-stack--gap-loose { --demo-stack-gap: var(--layout-gap-loose); gap: var(--demo-stack-gap); }
+.demo-stack--gap-section { --demo-stack-gap: var(--layout-gap-section); gap: var(--demo-stack-gap); }
+
+.demo-stack--align-start { align-items: flex-start; }
+.demo-stack--align-center { align-items: center; }
+.demo-stack--align-end { align-items: flex-end; }
+.demo-stack--align-stretch { align-items: stretch; }
+
+.demo-stack--justify-start { justify-content: flex-start; }
+.demo-stack--justify-center { justify-content: center; }
+.demo-stack--justify-end { justify-content: flex-end; }
+.demo-stack--justify-between { justify-content: space-between; }
+
+.demo-stack--wrap { flex-wrap: wrap; }
+
+/* ul / ol: keep list semantics (role="list"), drop the default list styling. */
+.demo-stack--list {
+  list-style: none;
+}
+
+.demo-stack__item {
+  display: block;
+  min-inline-size: 0;
+}

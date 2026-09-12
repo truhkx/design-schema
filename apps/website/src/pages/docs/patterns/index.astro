@@ -1,0 +1,27 @@
+---
+/**
+ * The Patterns section's landing page.
+ *
+ * The same placeholder-with-a-real-route as ./foundations/index.astro: the sidebar links here, so
+ * the route exists. The content is `site/src/content/docs/patterns/*.md` — the compositions that
+ * span components (forms, empty states, page layouts) — rendered here by a later job.
+ */
+import { Heading, Stack, Text } from '@design-schema/react';
+
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+
+const COPY = {
+  title: 'Patterns',
+  body:
+    'How the components compose: the arrangements that span more than one of them, and the rules ' +
+    'that keep those arrangements accessible. These pages render site/src/content/docs/patterns; ' +
+    'until they do, that folder is the reference.',
+};
+---
+
+<DocsLayout title={`${COPY.title} — Design Schema`} description={COPY.body}>
+  <Stack direction="vertical" gap="loose">
+    <Heading level={1}>{COPY.title}</Heading>
+    <Text>{COPY.body}</Text>
+  </Stack>
+</DocsLayout>

@@ -98,10 +98,12 @@ export class DsTabPanel extends LitElement {
  * `<ds-tabs label="Project sections" .tabs=${tabs}>` renders a `role="tablist"`
  * of native `<button role="tab">` in its shadow root, one per entry of `tabs`.
  * Panels are light-DOM `<ds-tab-panel id>` children, slotted after the list;
- * `<ds-tabs>` toggles their `hidden` attribute (and, unless `keepMounted`,
- * detaches unselected ones from the DOM entirely so their state does not
- * survive a switch) and stamps `role`, `tabindex` and `aria-label` onto them.
- * The list is one roving-tabindex stop: arrow keys along `orientation` move
+ * `<ds-tabs>` stamps `role`, `tabindex` and `aria-label` onto them and toggles
+ * `hidden` for the unselected ones. Panels are never moved, detached or
+ * re-appended — re-inserting a node that is already a child would re-fire
+ * `slotchange` and spin the renderer — so on Lit a panel's state always
+ * survives switching and `keepMounted` has no further effect. The list is
+ * one roving-tabindex stop: arrow keys along `orientation` move
  * real focus between enabled tabs and wrap, `automatic` activation selects as
  * focus moves, `manual` activation only selects on Enter/Space (the browser
  * already fires `click` for a focused `<button>` on either key, so no extra
@@ -127,6 +129,7 @@ export class DsTabPanel extends LitElement {
  * @csspart tab - Each `role="tab"` button (anatomy: tab).
  * @csspart tab-label - A tab's visible label (anatomy: tabLabel).
  * @csspart tab-icon - A tab's leading `<ds-icon>` (anatomy: tabIcon).
+ * @csspart tab-badge - A tab's trailing badge (anatomy: tabBadge).
  * @csspart indicator - The bar tracking the selected tab (anatomy: indicator).
  */
 @customElement('ds-tabs')
@@ -316,7 +319,11 @@ export class DsTabs extends LitElement {
   /** `fill` stretches tabs across the width; `start` packs them at the start. */
   @property({ reflect: true }) accessor fit: TabsFit = 'start';
 
-  /** Keep unselected panels in the light DOM (hidden) so their state survives switching. */
+  /**
+   * Kept for API parity with other platforms. On Lit, panels are light-DOM
+   * elements the host never detaches, so an unselected panel's state already
+   * survives switching regardless of this flag; it has no further effect here.
+   */
   @property({ type: Boolean, reflect: true, attribute: 'keep-mounted' }) accessor keepMounted = false;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
@@ -331,8 +338,6 @@ export class DsTabs extends LitElement {
   @query('.tablist') private accessor tablistEl!: HTMLElement | null;
   @query('.indicator') private accessor indicatorEl!: HTMLElement | null;
 
-  /** Panels detached from the light DOM while unselected (default, non-`keepMounted` behaviour). */
-  private readonly detachedPanels = new Map<string, HTMLElement>();
   private resizeObserver?: ResizeObserver | undefined;
   private lastScrolledId: string | null = null;
 
@@ -412,7 +417,7 @@ export class DsTabs extends LitElement {
       >
         ${tab.icon ? html`<ds-icon class="tab-icon" part="tab-icon" name=${tab.icon}></ds-icon>` : nothing}
         <span class="tab-label" part="tab-label">${tab.label}</span>
-        ${tab.badge !== undefined ? html`<span class="badge">${tab.badge}</span>` : nothing}
+        ${tab.badge !== undefined ? html`<span class="badge" part="tab-badge">${tab.badge}</span>` : nothing}
       </button>
     `;
   }
@@ -501,32 +506,20 @@ export class DsTabs extends LitElement {
     );
   }
 
-  /** Attaches/detaches and re-labels each `<ds-tab-panel>`, keeping their DOM order in sync with `tabs`. */
+  /** Re-labels each slotted `<ds-tab-panel>` and toggles `hidden` for the unselected ones. Never moves, detaches or re-appends a panel. */
   private syncPanels(): void {
     const selected = this.currentValue;
-    for (const tab of this.tabs) {
-      const shouldAttach = this.keepMounted || tab.id === selected;
-      let panel = this.querySelector<HTMLElement>(`:scope > ds-tab-panel[id="${CSS.escape(tab.id)}"]`);
-      if (!panel) {
-        if (!shouldAttach) {
-          continue;
-        }
-        panel = this.detachedPanels.get(tab.id) ?? null;
-        if (!panel) {
-          continue;
-        }
-        this.detachedPanels.delete(tab.id);
+    for (const panel of this.querySelectorAll<HTMLElement>(':scope > ds-tab-panel')) {
+      const tab = this.tabs.find((candidate) => candidate.id === panel.id);
+      if (!tab) {
+        // A panel without a matching tab is not rendered; see warnInDev.
+        panel.setAttribute('hidden', '');
+        continue;
       }
-      if (shouldAttach) {
-        this.appendChild(panel);
-        panel.setAttribute('role', 'tabpanel');
-        panel.setAttribute('tabindex', '0');
-        panel.setAttribute('aria-label', tab.label);
-        panel.toggleAttribute('hidden', tab.id !== selected);
-      } else {
-        this.detachedPanels.set(tab.id, panel);
-        panel.remove();
-      }
+      panel.setAttribute('role', 'tabpanel');
+      panel.setAttribute('tabindex', '0');
+      panel.setAttribute('aria-label', tab.label);
+      panel.toggleAttribute('hidden', tab.id !== selected);
     }
   }
 
@@ -588,6 +581,19 @@ export class DsTabs extends LitElement {
     }
     if (!this.tabs || this.tabs.length === 0) {
       console.warn('<ds-tabs> requires at least one entry in `tabs`.', this);
+    }
+    const panels = Array.from(this.querySelectorAll<HTMLElement>(':scope > ds-tab-panel'));
+    const panelIds = new Set(panels.map((panel) => panel.id));
+    for (const tab of this.tabs) {
+      if (!panelIds.has(tab.id)) {
+        console.warn(`<ds-tabs> tab "${tab.id}" has no matching <ds-tab-panel id="${tab.id}">.`, this);
+      }
+    }
+    const tabIds = new Set(this.tabs.map((tab) => tab.id));
+    for (const panel of panels) {
+      if (!tabIds.has(panel.id)) {
+        console.warn(`<ds-tabs> has a <ds-tab-panel id="${panel.id}"> with no matching entry in \`tabs\`.`, panel);
+      }
     }
   }
 }

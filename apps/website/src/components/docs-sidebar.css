@@ -1,0 +1,43 @@
+/*
+ * The docs navigation's own chrome: the one viewport decision the docs section makes — a persistent
+ * sidebar above layout.breakpoint.md, a single Select below it.
+ *
+ * The breakpoint's value is written out because a custom property cannot appear in a media
+ * condition; foundations/layout.md ("Reading a breakpoint") says to do exactly this, comment and
+ * all. DocsSidebar.astro asserts the number against the token at build time so it cannot drift.
+ *
+ * `display: none` rather than `hidden` or a client-side check, because it is what the gate asks for:
+ * below the breakpoint the sidebar's navigation landmark must be out of the accessibility tree
+ * entirely, not merely off-screen, so a screen reader on a phone finds one docs nav and not two.
+ */
+
+.ds-docs-nav__wide {
+  display: none;
+}
+
+.ds-docs-nav__narrow {
+  display: block;
+}
+
+/*
+ * The sidebar is taller than a phone and often taller than a desktop viewport, so it scrolls with
+ * the page until it reaches the top and then stays put — the header's own height is what it sits
+ * below. Everything here is position and spacing; nothing sets how a Disclosure or a Link looks.
+ */
+.ds-docs-nav__sidebar {
+  position: sticky;
+  inset-block-start: var(--layout-gutter);
+  max-block-size: calc(100vh - var(--layout-section-md));
+  overflow-y: auto;
+  padding-inline-end: var(--layout-gutter-narrow);
+}
+
+@media (min-width: 768px) { /* layout.breakpoint.md */
+  .ds-docs-nav__wide {
+    display: block;
+  }
+
+  .ds-docs-nav__narrow {
+    display: none;
+  }
+}

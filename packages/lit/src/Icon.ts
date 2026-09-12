@@ -43,75 +43,61 @@ const HOOKS: Record<IconOverridableBinding, string> = {
 };
 
 /**
- * The glyph table (anatomy: glyph), drawn on a 16×16 grid. Module-private on
- * purpose: other elements compose `<ds-icon name>` and never import the paths.
+ * The glyph table (anatomy: glyph), one `<path d>` per glyph on a 16×16 grid,
+ * with `d` strings copied verbatim from `tools/icon-paths.json` — the table
+ * every platform draws from. Module-private on purpose: other elements
+ * compose `<ds-icon name>` and never import the paths. To add or redraw a
+ * glyph, change the JSON, not this file.
  *
  * Line glyphs are stroked in `currentColor` at `border.width.focus` (set in
- * CSS on the `<svg>`); filled glyphs (the four status shapes and the ellipsis)
- * carry `class="filled"` and have no stroke. The status shapes are four
- * different silhouettes (circle-i, circle-check, triangle-!, octagon-x) so
- * tone is never carried by color alone.
+ * CSS on the `<svg>`); filled glyphs (the four status shapes and the
+ * ellipsis) carry `class="filled"` and have no stroke — each is one
+ * `fill-rule: evenodd` path whose inner mark is a hole. The status shapes are
+ * four different silhouettes (circle-i, circle-check, triangle-!, octagon-x)
+ * so tone is never carried by color alone.
  */
 const GLYPHS: Record<IconName, TemplateResult> = {
-  check: html`<path d="m3 8.5 3 3 7-7" />`,
+  check: html`<path d="M3 8.5l3.5 3.5L13 5" />`,
   dash: html`<path d="M4 8h8" />`,
-  'chevron-right': html`<path d="m6 3 5 5-5 5" />`,
-  'chevron-down': html`<path d="m3 6 5 5 5-5" />`,
-  'chevron-up': html`<path d="m3 10 5-5 5 5" />`,
-  'chevron-left': html`<path d="M10 3 5 8l5 5" />`,
-  close: html`<path d="m4 4 8 8M12 4l-8 8" />`,
+  'chevron-right': html`<path d="M6 3l5 5-5 5" />`,
+  'chevron-down': html`<path d="M3 6l5 5 5-5" />`,
+  'chevron-up': html`<path d="M3 10l5-5 5 5" />`,
+  'chevron-left': html`<path d="M10 3L5 8l5 5" />`,
+  close: html`<path d="M3 3l10 10M13 3L3 13" />`,
   plus: html`<path d="M8 3v10M3 8h10" />`,
   minus: html`<path d="M3 8h10" />`,
   info: html`<path
     class="filled"
-    d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1Zm0 1.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM8.75 7v4.5h-1.5V7h1.5ZM8 4.25a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Z"
+    d="M8 1a7 7 0 1 0 0 14A7 7 0 1 0 8 1zm0 3a1 1 0 1 0 0 2 1 1 0 1 0 0-2zM7 7h2v4.5H7z"
   />`,
   success: html`<path
     class="filled"
-    d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1Zm0 1.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Zm2.72 3.22 1.06 1.06L7 11.56 4.22 8.78l1.06-1.06L7 9.44l3.72-3.72Z"
+    d="M8 1a7 7 0 1 0 0 14A7 7 0 1 0 8 1zM3.9 8.6 7 11.7l5.1-5.1-1.2-1.2L7 9.3 5.1 7.4z"
   />`,
   warning: html`<path
     class="filled"
-    d="M8 1.5 15.25 14H.75L8 1.5Zm0 3L3.35 12.5h9.3L8 4.5Zm.75 2.5v3.5h-1.5V7h1.5ZM8 11.05a.85.85 0 1 1 0 1.7.85.85 0 0 1 0-1.7Z"
+    d="M8 1.5 15 14H1zM7 5.5h2V10H7zm1 5.5a1 1 0 1 0 0 2 1 1 0 1 0 0-2z"
   />`,
   danger: html`<path
     class="filled"
-    d="M5.05 1h5.9L15 5.05v5.9L10.95 15h-5.9L1 10.95v-5.9L5.05 1Zm.62 1.5L2.5 5.67v4.66l3.17 3.17h4.66l3.17-3.17V5.67L10.33 2.5H5.67Zm-.17 3.14L8 6.94l2.3-2.3 1.06 1.06L9.06 8l2.3 2.3-1.06 1.06L8 9.06l-2.3 2.3-1.06-1.06L6.94 8l-2.3-2.3 1.06-1.06Z"
+    d="M5 1h6l4 4v6l-4 4H5l-4-4V5zm-.6 4.6 1.2-1.2L8 6.8l2.4-2.4 1.2 1.2L9.2 8l2.4 2.4-1.2 1.2L8 9.2l-2.4 2.4-1.2-1.2L6.8 8z"
   />`,
-  external: html`<path d="M7 3H3v10h10V9M9 3h4v4M13 3 7 9" />`,
+  external: html`<path d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" />`,
   ellipsis: html`<path
     class="filled"
-    d="M3 6.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"
+    d="M1.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0M6.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0M11.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0"
   />`,
-  search: html`<circle cx="7" cy="7" r="4.5" /><path d="m10.5 10.5 3.5 3.5" />`,
+  search: html`<path d="M7 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9zM10.3 10.3L14 14" />`,
   'arrow-right': html`<path d="M3 8h10M9 4l4 4-4 4" />`,
-  'arrow-left': html`<path d="M13 8H3M7 4 3 8l4 4" />`,
-  calendar: html`<path
-    d="M3 3.5h10a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1ZM2 6.5h12M5 2v3M11 2v3"
-  />`,
+  'arrow-left': html`<path d="M13 8H3M7 4L3 8l4 4" />`,
+  calendar: html`<path d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3" />`,
   menu: html`<path d="M2 4h12M2 8h12M2 12h12" />`,
-  list: html`<path d="M5 4h9M5 8h9M5 12h9" /><circle class="filled" cx="2" cy="4" r="1" /><circle
-      class="filled"
-      cx="2"
-      cy="8"
-      r="1"
-    /><circle class="filled" cx="2" cy="12" r="1" />`,
-  grid: html`<rect x="2" y="2" width="5" height="5" /><rect x="9" y="2" width="5" height="5" /><rect
-      x="2"
-      y="9"
-      width="5"
-      height="5"
-    /><rect x="9" y="9" width="5" height="5" />`,
-  play: html`<path class="filled" d="M4 2 14 8 4 14Z" />`,
-  pause: html`<rect class="filled" x="3" y="2" width="3" height="12" /><rect
-      class="filled"
-      x="10"
-      y="2"
-      width="3"
-      height="12"
-    />`,
-  folder: html`<path d="M2 2h5v2h7v9h-12v-11Z" />`,
-  file: html`<path d="M4 2h5l3 3v9h-8Z" /><path d="M9 2v3h3" />`,
+  list: html`<path d="M5 4h9M5 8h9M5 12h9M2 4h.01M2 8h.01M2 12h.01" />`,
+  grid: html`<path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" />`,
+  play: html`<path class="filled" d="M4 2l10 6-10 6z" />`,
+  pause: html`<path class="filled" d="M3 2h3v12H3zM10 2h3v12H10z" />`,
+  folder: html`<path d="M2 13V2h5v2h7v9z" />`,
+  file: html`<path d="M4 2h5l3 3v9H4zM9 2v3h3" />`,
 };
 
 /**
@@ -201,10 +187,11 @@ export class DsIcon extends LitElement {
       vector-effect: non-scaling-stroke;
     }
 
-    /* filled glyphs (status shapes, ellipsis) have no stroke */
+    /* filled glyphs (status shapes, ellipsis) have no stroke; each is one evenodd path whose inner mark is a hole */
     .filled {
       fill: currentColor;
       stroke: none;
+      fill-rule: evenodd;
     }
   `;
 

@@ -13,3 +13,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-10 18:21 — round 1
 
 - Tabs: aria-controls on the shadow-root <button role="tab"> points at the light-DOM <ds-tab-panel> id, but IDREFs don't cross the shadow boundary (the same limitation the doc calls out for the panel's aria-labelledby, which is why panels use aria-label instead). The doc doesn't offer a workaround for this direction; kept aria-controls as specified since it's the literal attribute the platform notes require, but it will not resolve for assistive tech across the boundary.
+
+## 2026-09-12 05:07 — round 1
+
+- Tabs: the existing Tabs.ts implemented `keepMounted: false` by removing/re-appending unselected light-DOM `<ds-tab-panel>` children via a detached-panel map — exactly the anti-pattern the package conventions and platform notes forbid (re-inserting an already-slotted child re-fires slotchange and can spin the renderer). Rewrote syncPanels() to never move/detach/append a panel, only toggling `hidden`; as a direct consequence `keepMounted` has no observable effect on Lit (panels are consumer-owned light DOM and are never unmounted either way), unlike on platforms that actually remove unselected panels from the tree. Documented this on the property and in the class doc rather than inventing new behavior not in the schema.
+- Tabs: schema's a11y/behavior text says 'a tab without a matching panel, or a panel without a tab, is a development warning and is not rendered' — since Lit can't refuse to render a consumer's slotted light-DOM child, implemented 'not rendered' as forcing `hidden` on an orphan panel, plus added the two missing dev warnings (tab→panel and panel→tab) that the prior implementation never emitted.
+- Tabs: anatomy part `tabBadge` had no `part` attribute on the badge span in the prior implementation; added `part="tab-badge"` for consistency with the other anatomy parts (tab-label, tab-icon) and the @csspart doc block.

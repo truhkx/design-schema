@@ -1,0 +1,9 @@
+Write the fork/update workflow guide per claude/customization-and-naming.md ("Our job vs. theirs").
+
+`guides/updating-your-fork.md`, a companion to the existing `guides/extending-components.md` (which covers schema-level extension — props/events/modules that survive regeneration). This new guide covers the update path specifically:
+
+1. The vendoring model: how an adopter should bring the canonical schema docs into their own repo (a plain clone they periodically re-pull from, versus `git subtree`, with a recommendation and why) so pulling updates stays a clean, low-friction operation.
+2. When to pull: this project has no forced-update obligation to adopters (see `vision-and-decisions.md`'s reframing) — pulling is something they opt into, on their own schedule, when a changelog entry or a new component looks worth it.
+3. Why naming.md/theme.md survive a pull untouched (the mechanical reason: they're additive sibling files, never edits to the canonical docs — link back to `claude/customization-and-naming.md`), and the one case where a pull can still cause friction: an upstream schema change to a binding or prop the adopter renamed, and how to reconcile it (the naming map's key is the canonical name, so it doesn't silently break — the resolver in job 521 should raise a clear error if a `naming.md` key no longer matches anything in the canonical schema after a pull, rather than failing silently).
+4. Reiterate the extension mechanism as the alternative to hand-editing generated output, with a pointer to `guides/extending-components.md` for the how.
+Gate: reviewed against a real trial pull once job 523's demo fork exists — pull a later commit into that fork and confirm the guide's steps actually work as written, revising anything that didn't. Do not modify `packages/*/src` or `generated/`.

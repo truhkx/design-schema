@@ -395,6 +395,30 @@ describe('layout', () => {
       expect(mw[k].$value as string).not.toContain('{');
     }
   });
+
+  test('breakpoints are the conventional 640/768/1024', () => {
+    const bp = th.deriveBase(themeFixture()).layout.breakpoint as Dict;
+    expect([bp.sm.$value, bp.md.$value, bp.lg.$value]).toEqual(['640px', '768px', '1024px']);
+  });
+
+  test('no density, rhythm or contentWidth moves a breakpoint', () => {
+    // The one layout group that describes the device rather than the theme: a compact tool still has to
+    // decide "does a sidebar fit?" at the width a roomy one does.
+    const baseline = asJson(th.deriveBase(themeFixture()).layout.breakpoint);
+    for (const density of Object.keys(th.DENSITY)) {
+      for (const rhythm of Object.keys(th.RHYTHM)) {
+        const layout = th.deriveBase({ ...themeFixture(), density, layout: { rhythm, contentWidth: 1120 } }).layout as Dict;
+        expect(asJson(layout.breakpoint), `${density}/${rhythm}`).toEqual(baseline);
+      }
+    }
+  });
+
+  test('breakpoints are absolute pixels, not references — a media query cannot resolve one', () => {
+    const bp = th.deriveBase(themeFixture()).layout.breakpoint as Dict;
+    for (const k of ['sm', 'md', 'lg']) {
+      expect(bp[k].$value as string).toMatch(/^\d+px$/);
+    }
+  });
 });
 
 describe('inverse colors', () => {

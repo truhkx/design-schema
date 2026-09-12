@@ -1,0 +1,35 @@
+/*
+ * The docs shell: navigation beside content, or navigation above it.
+ *
+ * Two cells, and the media query in ../components/docs-sidebar.css decides which markup fills the
+ * first one — the hidden rendering is `display: none`, so it takes no cell at all. Layout only: no
+ * color, no border, no type, and every value a token, the same rule the components follow.
+ */
+
+.ds-docs-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--layout-gap-loose);
+  padding-block: var(--layout-section-sm);
+}
+
+.ds-docs-shell__content {
+  /* A grid item's default `min-width: auto` lets a wide child (a props table, a code block) push the
+     column past its track and the page into a horizontal scroll; this keeps the overflow inside the
+     child, where it can scroll on its own. */
+  min-inline-size: 0;
+}
+
+@media (min-width: 768px) { /* layout.breakpoint.md */
+  .ds-docs-shell {
+    /*
+     * A sidebar column, then everything else. No token is a sidebar width — the scale stops at the
+     * three content measures — so this takes the one that is about a navigation column wide: half
+     * the prose measure. The same move ../styles/home.css makes for the pillar cards, and for the
+     * same reason: a ratio of a token, not a number of its own.
+     */
+    grid-template-columns: calc(var(--layout-max-width-prose) / 2) minmax(0, 1fr); /* literal-ok: a ratio, not a dimension */
+    column-gap: var(--layout-gap-section);
+    align-items: start;
+  }
+}

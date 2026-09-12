@@ -1,0 +1,203 @@
+name: chromatic
+
+# Publishes each package's Storybook to its own Chromatic project
+# (site/src/content/docs/process/website-plan.md, "Linking to Storybook"; job 510).
+#
+# Three independent publishes, one per package. They share no artifact and no `needs:` edge with each
+# other, so the RN Storybook failing to build cannot stop react or lit from publishing — the whole
+# point of moving off the bundled `/storybook/{react,lit,rn}` Pages artifact, where one broken build
+# took the other two (and the docs site) down with it. `deploy-pages.yml` shares nothing with this
+# workflow either, so nothing here can fail the docs deploy.
+#
+# The one shared job is `changes`, which is not a build: it decides which of the three have anything
+# to publish. It is the gate job 510 is held to — "a PR touching only packages/react triggers only
+# the react Chromatic job" — and GitHub has no per-job `paths:` filter, only a workflow-level one.
+#
+# Secrets: CHROMATIC_PROJECT_TOKEN_{REACT,LIT,RN}, one per Chromatic project. See
+# jobs/510-chromatic-storybooks.md ("Log") for how the projects and the secrets are created — both
+# need a human with a GitHub/Chromatic account and neither can be done from a Claude Code session.
+
+on:
+  push:
+    branches: [main]
+  # Every PR: a PR build gets its own preview URL, which is how a generated component's Storybook
+  # gets reviewed before the component is merged.
+  pull_request:
+
+# Nothing here commits, and the Chromatic CLI reads the repository to find its baseline.
+permissions:
+  contents: read
+
+# One publish per package per ref. A superseded PR build is worth cancelling; a push to main is the
+# build every later baseline is compared against, so it is left alone.
+concurrency:
+  group: chromatic-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Which packages this ref touched. Hand-rolled from `git diff` rather than a third-party
+  # paths-filter action: ci.yml uses first-party actions only, and the whole filter is fifteen lines.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      react: ${{ steps.filter.outputs.react }}
+      lit: ${{ steps.filter.outputs.lit }}
+      rn: ${{ steps.filter.outputs.rn }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # `git diff BASE...HEAD` needs both sides in the history.
+      - id: filter
+        env:
+          # For a PR, the base branch's head at event time; `...` then diffs from the merge base, so a
+          # busy base branch does not make every PR look like it touched everything. For a push, the
+          # previous commit on main.
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          react=false; lit=false; rn=false
+
+          # A first push, a force-push, or a base commit that is not in this checkout: publish all
+          # three rather than silently skipping one. A wasted build is cheaper than a stale Storybook.
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "no usable base ($BASE) — publishing all three"
+            react=true; lit=true; rn=true
+          else
+            files=$(git diff --name-only "$BASE...HEAD")
+            echo "changed files:"; echo "$files" | sed 's/^/  /'
+
+            # What every Storybook is built out of besides its own package: the token pipeline (all
+            # three previews import `@design-schema/tokens/<theme>/css`), the shared mode decorator,
+            # the lockfile, and this workflow.
+            shared='^(packages/tokens/|storybook/shared/|tokens/|tools/theme\.ts$|pnpm-lock\.yaml$|package\.json$|\.github/workflows/chromatic\.yml$)'
+            if echo "$files" | grep -qE "$shared"; then
+              echo "a shared input changed — publishing all three"
+              react=true; lit=true; rn=true
+            fi
+
+            if echo "$files" | grep -qE '^packages/react/'; then react=true; fi
+            if echo "$files" | grep -qE '^packages/lit/';   then lit=true;   fi
+            if echo "$files" | grep -qE '^packages/rn/';    then rn=true;    fi
+          fi
+
+          echo "react=$react" >> "$GITHUB_OUTPUT"
+          echo "lit=$lit"     >> "$GITHUB_OUTPUT"
+          echo "rn=$rn"       >> "$GITHUB_OUTPUT"
+          echo "publishing → react=$react lit=$lit rn=$rn"
+
+  react:
+    needs: changes
+    if: needs.changes.outputs.react == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Chromatic walks the git history to find the build it should compare against; a shallow
+          # clone makes every build look like the first one on a new branch.
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Every preview imports `@design-schema/tokens/<theme>/css`, and packages/tokens/dist is build
+      # output, not checked in. `pnpm themes` is what writes it (the package has no build script).
+      - name: Build the tokens
+        run: pnpm themes
+      # Its own step, so "the Storybook does not build" and "the publish failed" are two different
+      # red steps rather than one.
+      - name: Build the Storybook
+        run: pnpm --filter @design-schema/react build-storybook
+      - name: Check the project token is set
+        env:
+          TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN_REACT }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::CHROMATIC_PROJECT_TOKEN_REACT is not set. See jobs/510-chromatic-storybooks.md, 'Log'."
+            exit 1
+          fi
+      # The CLI ships as the `chromatic` package (the repository is chromaui/chromatic-cli); `pnpm
+      # dlx` keeps it off the workspace's dependency graph, where tools/currency.ts would then have
+      # to track it.
+      #
+      # `--storybook-build-dir` rather than `--build-script-name build-storybook`: the flag job 510
+      # names makes the CLI run the build script itself, which — with the build step above, which
+      # that same sentence also asks for — builds each Storybook twice per run. Handing it the
+      # directory the step above produced also keeps the build inside pnpm's workspace resolution
+      # instead of whatever package manager the CLI infers from `packages/react`. Swap this line for
+      # `--build-script-name build-storybook` and drop the step above to go back.
+      - name: Publish to Chromatic
+        working-directory: packages/react
+        env:
+          CHROMATIC_PROJECT_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN_REACT }}
+        # Visual changes are not a failure here: this job publishes a Storybook. Turning Chromatic's
+        # visual-regression review into a merge gate is the "later option at no extra integration
+        # cost" website-plan.md mentions, and it is a separate decision.
+        run: pnpm dlx chromatic --project-token "$CHROMATIC_PROJECT_TOKEN" --storybook-build-dir storybook-static --exit-zero-on-changes
+
+  lit:
+    needs: changes
+    if: needs.changes.outputs.lit == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build the tokens
+        run: pnpm themes
+      - name: Build the Storybook
+        run: pnpm --filter @design-schema/lit build-storybook
+      - name: Check the project token is set
+        env:
+          TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN_LIT }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::CHROMATIC_PROJECT_TOKEN_LIT is not set. See jobs/510-chromatic-storybooks.md, 'Log'."
+            exit 1
+          fi
+      - name: Publish to Chromatic
+        working-directory: packages/lit
+        env:
+          CHROMATIC_PROJECT_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN_LIT }}
+        run: pnpm dlx chromatic --project-token "$CHROMATIC_PROJECT_TOKEN" --storybook-build-dir storybook-static --exit-zero-on-changes
+
+  rn:
+    needs: changes
+    if: needs.changes.outputs.rn == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build the tokens
+        run: pnpm themes
+      # The RN stories run in the browser through react-native-web (packages/rn/.storybook/main.ts),
+      # which is what makes them publishable to Chromatic at all — an on-device Storybook has no
+      # static web build to upload.
+      - name: Build the Storybook
+        run: pnpm --filter @design-schema/rn build-storybook
+      - name: Check the project token is set
+        env:
+          TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN_RN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::CHROMATIC_PROJECT_TOKEN_RN is not set. See jobs/510-chromatic-storybooks.md, 'Log'."
+            exit 1
+          fi
+      - name: Publish to Chromatic
+        working-directory: packages/rn
+        env:
+          CHROMATIC_PROJECT_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN_RN }}
+        run: pnpm dlx chromatic --project-token "$CHROMATIC_PROJECT_TOKEN" --storybook-build-dir storybook-static --exit-zero-on-changes

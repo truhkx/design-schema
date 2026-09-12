@@ -1,0 +1,58 @@
+---
+/**
+ * The site header (site/src/content/docs/process/website-plan.md, "Global chrome").
+ *
+ * `Landmark(role="banner")` → `Container(width="page")` → a `Stack` row with the logo link at the
+ * start and the nav at the end. Everything static lives here, rendered to HTML at build time; only
+ * the pieces that have state — the theme switcher and the mobile drawer — are the `HeaderNav`
+ * island, so the links are in the document whether or not its JavaScript ever arrives.
+ *
+ * The desktop/mobile swap is a media query in ./header.css rather than a `matchMedia` in the island,
+ * for the same reason: a breakpoint the browser already knows shouldn't wait on hydration to be
+ * applied.
+ */
+import { Container, Landmark, Link, Stack } from '@design-schema/react';
+import { layoutBreakpointMd } from '@design-schema/tokens/calm-precise/light';
+
+import HeaderNav from './HeaderNav';
+import Logo from '../assets/logo.svg';
+import { siteNav } from '../nav';
+import { publishedThemes } from '../themes';
+import './header.css';
+
+const { top } = siteNav();
+const themes = publishedThemes().map(({ id, title }) => ({ id, title }));
+
+/**
+ * The wordmark stays live text rather than being drawn into the logo asset: it is the accessible
+ * name of the header's home link, and it is themed by the type tokens like any other text. The mark
+ * (job 504) sits beside it as decoration, outside the anchor — `Link` renders its `label` and
+ * nothing else, and a mark inside the link would only repeat the name it already carries.
+ */
+const WORDMARK = 'Design Schema';
+
+/**
+ * header.css writes `layout.breakpoint.md`'s value out, because a custom property cannot appear in
+ * a media condition (foundations/layout.md, "Reading a breakpoint"). Nothing in CSS can check that
+ * against the token, so the build does: move the token and this fails instead of the layout.
+ */
+const BREAKPOINT_MD_IN_CSS = '768px';
+if (layoutBreakpointMd !== BREAKPOINT_MD_IN_CSS) {
+  throw new Error(
+    `layout.breakpoint.md is now ${layoutBreakpointMd}; update the @media condition in ` +
+      `apps/website/src/components/header.css (and BREAKPOINT_MD_IN_CSS here) to match.`,
+  );
+}
+---
+
+<Landmark role="banner" className="ds-site-header">
+  <Container width="page">
+    <Stack direction="horizontal" align="center" justify="between">
+      <Stack direction="horizontal" align="center" gap="tight">
+        <Logo class="ds-site-header__mark" aria-hidden="true" focusable="false" />
+        <Link href="/" label={WORDMARK} tone="inherit" />
+      </Stack>
+      <HeaderNav client:load items={top} themes={themes} />
+    </Stack>
+  </Container>
+</Landmark>

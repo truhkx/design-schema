@@ -1,0 +1,28 @@
+---
+/**
+ * The Foundations section's landing page.
+ *
+ * A placeholder with a real route, for the same reason as ./components/[slug].astro: the sidebar's
+ * top-level links (website-plan.md, "Docs section") have to go somewhere, and a nav link to a 404 is
+ * a defect the navigation job owns. The content — tokens, color, type, spacing, the layout
+ * breakpoints — is `site/src/content/docs/foundations/*.md`, rendered here by a later job.
+ */
+import { Heading, Stack, Text } from '@design-schema/react';
+
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+
+const COPY = {
+  title: 'Foundations',
+  body:
+    'The tokens every component is built from: color roles and their contrast pairs, the type scale, ' +
+    'spacing and the layout rhythm, motion, and the page-level breakpoints. These pages render ' +
+    'site/src/content/docs/foundations; until they do, that folder is the reference.',
+};
+---
+
+<DocsLayout title={`${COPY.title} — Design Schema`} description={COPY.body}>
+  <Stack direction="vertical" gap="loose">
+    <Heading level={1}>{COPY.title}</Heading>
+    <Text>{COPY.body}</Text>
+  </Stack>
+</DocsLayout>

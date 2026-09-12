@@ -1,0 +1,30 @@
+{
+  // The renamed tree's own typecheck, run by `pnpm demo:naming:gates`:
+  //   pnpm --filter @design-schema/react exec tsc -p demo-brand
+  //
+  // Inherits every compiler option the canonical package uses (strict, exactOptionalPropertyTypes,
+  // isolatedDeclarations, …) so "the renamed build typechecks" means what it means for
+  // packages/react/src, not something weaker. The canonical tsconfig includes `src` and `demo` only,
+  // so nothing here is part of that typecheck and nothing there is part of this one.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // The one thing in this worked example a real fork would not need. Demo Brand's generated code
+    // imports `@demo/tokens`, because renaming the package scope is what themes/demo-brand/naming.md
+    // asks for — and a real fork publishes a package by that name. This repository has exactly one
+    // token package, so the specifier is pointed back at it here rather than the demo pretending to
+    // a package that does not exist. See themes/demo-brand/naming.md, "What a fork still owns".
+    "paths": { "@demo/tokens": ["../../tokens/dist/names.d.ts"] }
+  },
+  // `src` is the same surface the canonical typecheck covers: components, their stylesheets' types,
+  // their stories and their hand-written tests. `behavior/` is deliberately *not* here, for the
+  // reason it is not in ../tsconfig.json either — the derived behavior tests build their props by
+  // spreading a story's `args` into the component, which is a type the generator never claims will
+  // check. Typechecking them here would hold the renamed tree to a bar the canonical tree is not
+  // held to, and then "it passes the same gates" would stop being true in the direction that matters.
+  //
+  // The two files from ../src are package-level rather than generated: `css.d.ts` is
+  // `declare module '*.css'`, and `test-setup.ts` is what brings jest-dom's matchers into the type
+  // system. A real fork's tree has its own copy of both; they are referenced instead of copied so
+  // this directory holds exactly one kind of file — renamed generator output.
+  "include": ["src", "../src/css.d.ts", "../src/test-setup.ts"]
+}

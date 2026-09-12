@@ -478,10 +478,11 @@ export function docSections(md: string): Record<string, string> {
 }
 
 export const GET_LAYOUT_RULES_DOC =
-  'The between-component spacing system: every `layout.*` token (gutter, section, gap, inset, maxWidth)\n' +
-  'resolved for a theme and mode, named for CSS and React Native, plus the rules for using them from the\n' +
-  'Layout and rhythm foundations page (siblings are spaced by their parent, choose gap by relationship,\n' +
-  'surfaces inset / layouts gap, pages have a gutter and a measure, sections not dividers).';
+  'The between-component spacing system: every `layout.*` token (gutter, section, gap, inset, maxWidth,\n' +
+  'breakpoint) resolved for a theme and mode, named for CSS and React Native, plus the rules for using them\n' +
+  'from the Layout and rhythm foundations page (siblings are spaced by their parent, choose gap by\n' +
+  'relationship, surfaces inset / layouts gap, pages have a gutter and a measure, breakpoints are for page\n' +
+  'chrome and never for a component, sections not dividers).';
 
 export const getLayoutRules = logged('get_layout_rules', ['theme', 'mode'], (args: { theme?: string | undefined; mode?: string | undefined } = {}): Dict => {
   const theme = args.theme ?? 'calm-precise';

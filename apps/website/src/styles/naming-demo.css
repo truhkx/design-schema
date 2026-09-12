@@ -1,0 +1,14 @@
+/*
+ * The naming demo's two-column comparison (site/src/content/docs/process/customization-and-naming.md,
+ * job 523).
+ *
+ * One rule, and it is the same one the home page's card row needs for the same reason: a wrapped
+ * Stack is a flex row, and a flex row sizes its items by their content — so the canonical component
+ * and the renamed one would sit in columns of two different widths, which is the one thing a
+ * side-by-side comparison must not do. No appearance is set here, and the value is a token.
+ * generated/gaps/Stack.web.md is where the missing grid primitive is logged.
+ */
+.ds-naming-demo__pair > * {
+  flex: 1 1 calc(var(--layout-max-width-prose) / 2); /* literal-ok: a ratio, not a dimension */
+  min-inline-size: 0;
+}

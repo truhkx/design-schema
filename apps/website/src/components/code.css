@@ -1,0 +1,82 @@
+/*
+ * The frame around a code block, and the binding that gives Shiki its colours.
+ *
+ * ../highlight.ts says why syntax highlighting is a deliberate, scoped exception to "only generated
+ * components" at all. This is the other half of that answer: the theme Shiki is handed emits every
+ * colour as `var(--ds-code-…)`, and the block below is where those names become the *active theme's*
+ * own colour tokens. Nothing here is a literal colour, so a code block re-themes exactly the way a
+ * Button does — calm-precise ⇄ warm-friendly by which token stylesheet is enabled, light ⇄ dark by
+ * `data-mode` — and a new theme colours the code on this site without touching this file.
+ *
+ * Everything that is not colour is a token too, the same rule the rest of the site follows.
+ */
+
+.ds-code {
+  /*
+   * Shiki's two document-level colours. It writes these onto the <pre> as an inline
+   * `style="background-color: var(--ds-code-background); color: var(--ds-code-foreground)"`, so they
+   * have to be inherited from an ancestor — this element — rather than set on the <pre> itself.
+   *
+   * `color.background` rather than `color.background-subtle` for the surface: the block already has
+   * its own border, and the subtle surface is a sand tint in warm-friendly that costs the code
+   * colours roughly half a contrast step — `color.status.success.foreground` lands at 4.47:1 on it,
+   * just under AA, and clears it at 4.71:1 here. The cheapest fix is the one that keeps the palette
+   * semantic instead of hand-picking a ramp step per mode.
+   */
+  --ds-code-background: var(--color-background);
+  --ds-code-foreground: var(--color-foreground);
+
+  /*
+   * The token colours, mapped onto the five meanings the theme's semantic scale actually has.
+   *
+   * The system's colour vocabulary is neutral / brand / success / warning / danger / info, and a
+   * code palette is a re-use of it, not a new one: keywords are the emphatic mark (danger), strings
+   * read as a completed value (success), numbers and constants as a caution-weight accent
+   * (warning), names that point somewhere as links (brand). `info` is deliberately unused — in
+   * warm-friendly its ramp is the same warm orange as `warning`, so a code block built on both
+   * would have two roles it could not tell apart.
+   *
+   * Every one of these clears WCAG AA (4.5:1) against `--ds-code-background` in both published
+   * themes and both modes; the tightest is success in warm-friendly light, at 4.71:1.
+   */
+  --ds-code-token-comment: var(--color-foreground-muted);
+  --ds-code-token-punctuation: var(--color-foreground-muted);
+  --ds-code-token-keyword: var(--color-status-danger-foreground);
+  --ds-code-token-string: var(--color-status-success-foreground);
+  --ds-code-token-string-expression: var(--color-status-success-foreground);
+  --ds-code-token-constant: var(--color-status-warning-foreground);
+  --ds-code-token-function: var(--color-link);
+  --ds-code-token-link: var(--color-link);
+  --ds-code-token-parameter: var(--color-foreground);
+
+  /* Diff marks. No snippet on the site is a diff yet; the theme can emit them, so they are bound. */
+  --ds-code-token-inserted: var(--color-status-success-foreground);
+  --ds-code-token-deleted: var(--color-status-danger-foreground);
+  --ds-code-token-changed: var(--color-status-warning-foreground);
+
+  /* The frame. `overflow: hidden` is what makes the <pre>'s own scrolling stop at the rounded corner. */
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  border: var(--border-width-thin) solid var(--color-border);
+}
+
+/*
+ * The scroller, and the tab stop — both Shiki's: it emits the <pre> with `tabindex="0"` precisely so
+ * a snippet wider than its column is reachable by keyboard (axe's `scrollable-region-focusable`).
+ * Nothing here takes it away or adds a second one. Matched on the element rather than on a class
+ * because the two spots ../highlight.ts describes come out under different class names.
+ */
+.ds-code pre {
+  margin: 0;
+  padding: var(--space-md);
+  overflow-x: auto;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  line-height: var(--font-line-height-normal);
+}
+
+/* The same ring every generated component draws, from the same two tokens. */
+.ds-code pre:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: calc(-1 * var(--border-width-focus));
+}

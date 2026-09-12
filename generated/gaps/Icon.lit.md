@@ -29,3 +29,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Icon: color binding's doc default is `color.foreground`, but the component behavior described in guidance is `currentColor` inheritance with `color.foreground` only as what inheritance resolves to at the root — implemented the hook with no default set (falls back to `inherit`) rather than defaulting the hook to `var(--color-foreground)`, since a hard default would break free color inheritance from Button/Link/Alert.
 - Icon: calendar glyph's hanger-tick geometry uses y=2 to y=5 (to align with the rounded-rect header at y=6.5) instead of the guidance's literal y=1 to y=4, since the literal coordinates would float above the rounded rectangle's top edge.
+
+## 2026-09-12 05:10 — round 1
+
+- Icon: Icon.ts, Icon.stories.ts and Icon.test.ts already existed (Icon predates tools/icon-paths.json, per the package conventions' note that Lit 'redraws several glyphs' today). Only Icon.ts's glyph table needed regenerating to match the JSON verbatim — stories and tests already matched the schema's enum/scenario list and needed no changes.
+- Icon: the schema's own 'Content guidelines' section hand-describes different geometry for play/pause/folder/file/list/grid than tools/icon-paths.json (e.g. folder/file paths differ in coordinates, list/grid differ in whether dots/squares are separate filled shapes vs. one stroked path). Per the explicit instruction that icon-paths.json is 'the one table every platform draws from,' I used the JSON's `d` strings verbatim and ignored the schema's prose geometry where they conflict.
+- Icon: the JSON's filled-glyph description ('each is one evenodd path whose inner mark is a hole') implies `fill-rule: evenodd` on `.filled`, which the previously-existing Icon.ts CSS omitted; added it since it's required for the status-shape holes (info/success ring, warning triangle, danger octagon) to render correctly with the JSON's single-path data.

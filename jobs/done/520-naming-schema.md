@@ -1,0 +1,6 @@
+Add the naming-doc schema per claude/customization-and-naming.md ("naming.md — a sibling doc, not a theme-doc section").
+
+1. `schema/naming.ts` (Zod, same pattern as `schema/component.ts`): `namespace` (package scope, CSS custom-property prefix, per-platform type-name prefix), `components` (canonical name → brand name map), `props` (canonical prop name → brand name map, keyed globally or per-component, e.g. `"Button.variant": "style"` vs `"variant": "style"` for a global rename). All three keys optional — an omitted `naming.md` (the default, unrenamed case) must be a no-op everywhere this schema is consumed.
+2. Regenerate `schema/naming.schema.json` from the Zod schema (`z.toJSONSchema`), same as `component.schema.json`, so the two can never drift.
+3. Write one example `naming.md` for a fictional brand (not a real rebrand — a throwaway fixture) exercising all three keys, to prove the schema round-trips.
+Gate: the fixture `naming.md` parses without error against `schema/naming.ts`; an empty/missing `naming.md` is valid (all fields optional) and parses to an all-defaults object. Do not modify `packages/*/src`, `generated/`, or the canonical component docs — this job only adds the schema and one fixture.

@@ -187,6 +187,9 @@ public enum CalmPrecise {
         public static let layoutMaxWidthProse: CGFloat = 572
         public static let layoutMaxWidthContent: CGFloat = 960
         public static let layoutMaxWidthPage: CGFloat = 1280
+        public static let layoutBreakpointSm: CGFloat = 640
+        public static let layoutBreakpointMd: CGFloat = 768
+        public static let layoutBreakpointLg: CGFloat = 1024
         public static let sizeTargetMin: CGFloat = 24
         public static let sizeTargetComfortable: CGFloat = 44
         public static let radiusNone: CGFloat = 0
@@ -401,6 +404,9 @@ public enum CalmPrecise {
             (.layoutMaxWidthProse, .dimension(layoutMaxWidthProse)),
             (.layoutMaxWidthContent, .dimension(layoutMaxWidthContent)),
             (.layoutMaxWidthPage, .dimension(layoutMaxWidthPage)),
+            (.layoutBreakpointSm, .dimension(layoutBreakpointSm)),
+            (.layoutBreakpointMd, .dimension(layoutBreakpointMd)),
+            (.layoutBreakpointLg, .dimension(layoutBreakpointLg)),
             (.sizeTargetMin, .dimension(sizeTargetMin)),
             (.sizeTargetComfortable, .dimension(sizeTargetComfortable)),
             (.radiusNone, .dimension(radiusNone)),
@@ -416,12 +422,12 @@ public enum CalmPrecise {
             (.layerDropdown, .number(layerDropdown)),
             (.layerSheet, .number(layerSheet)),
             (.layerDialog, .number(layerDialog)),
-            (.layerToast, .number(layerToast)),
-            (.motionDurationFast, .duration(motionDurationFast)),
-            (.motionDurationBase, .duration(motionDurationBase)),
         ]
 
         private static let entries6: [(TokenRef, TokenValue)] = [
+            (.layerToast, .number(layerToast)),
+            (.motionDurationFast, .duration(motionDurationFast)),
+            (.motionDurationBase, .duration(motionDurationBase)),
             (.motionDurationLoop, .duration(motionDurationLoop)),
             (.motionEasingStandard, .animation(motionEasingStandard)),
             (.motionEasingExit, .animation(motionEasingExit)),
@@ -607,6 +613,9 @@ public enum CalmPrecise {
         public static let layoutMaxWidthProse: CGFloat = 572
         public static let layoutMaxWidthContent: CGFloat = 960
         public static let layoutMaxWidthPage: CGFloat = 1280
+        public static let layoutBreakpointSm: CGFloat = 640
+        public static let layoutBreakpointMd: CGFloat = 768
+        public static let layoutBreakpointLg: CGFloat = 1024
         public static let sizeTargetMin: CGFloat = 24
         public static let sizeTargetComfortable: CGFloat = 44
         public static let radiusNone: CGFloat = 0
@@ -821,6 +830,9 @@ public enum CalmPrecise {
             (.layoutMaxWidthProse, .dimension(layoutMaxWidthProse)),
             (.layoutMaxWidthContent, .dimension(layoutMaxWidthContent)),
             (.layoutMaxWidthPage, .dimension(layoutMaxWidthPage)),
+            (.layoutBreakpointSm, .dimension(layoutBreakpointSm)),
+            (.layoutBreakpointMd, .dimension(layoutBreakpointMd)),
+            (.layoutBreakpointLg, .dimension(layoutBreakpointLg)),
             (.sizeTargetMin, .dimension(sizeTargetMin)),
             (.sizeTargetComfortable, .dimension(sizeTargetComfortable)),
             (.radiusNone, .dimension(radiusNone)),
@@ -836,12 +848,12 @@ public enum CalmPrecise {
             (.layerDropdown, .number(layerDropdown)),
             (.layerSheet, .number(layerSheet)),
             (.layerDialog, .number(layerDialog)),
-            (.layerToast, .number(layerToast)),
-            (.motionDurationFast, .duration(motionDurationFast)),
-            (.motionDurationBase, .duration(motionDurationBase)),
         ]
 
         private static let entries6: [(TokenRef, TokenValue)] = [
+            (.layerToast, .number(layerToast)),
+            (.motionDurationFast, .duration(motionDurationFast)),
+            (.motionDurationBase, .duration(motionDurationBase)),
             (.motionDurationLoop, .duration(motionDurationLoop)),
             (.motionEasingStandard, .animation(motionEasingStandard)),
             (.motionEasingExit, .animation(motionEasingExit)),

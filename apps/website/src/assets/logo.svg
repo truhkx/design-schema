@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The Design Schema mark: the one hand-authored visual asset on the site (website-plan.md, "Logo").
+  Notes are kept short and above the root element on purpose — Astro inlines this file into every
+  page that uses it, and probes only the first kilobyte for the <svg> tag. The reasoning lives in
+  apps/website/README.md, "The logo".
+
+  One figure: a schema on the left, fanning out to three platforms. All stroke, no fill, no color of
+  its own and no text, so `currentColor` re-themes it the way a generated component re-themes.
+  Sizing belongs to the consumer; width/height here are only for opening the file on its own.
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 32 32"
+  width="32"
+  height="32"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <!-- The schema: one document, the source of everything to its right. -->
+  <rect x="2" y="10" width="12" height="12" rx="3" />
+  <!-- Generation: right-angled runs from the schema to each platform. -->
+  <path d="M14 16h5V6h5" />
+  <path d="M14 16h10" />
+  <path d="M14 16h5v10h5" />
+  <!-- The platforms. -->
+  <rect x="24" y="3" width="6" height="6" rx="1.5" />
+  <rect x="24" y="13" width="6" height="6" rx="1.5" />
+  <rect x="24" y="23" width="6" height="6" rx="1.5" />
+</svg>

@@ -1,0 +1,95 @@
+---
+/**
+ * The page shell for every route on the website.
+ *
+ * It wires the theme (the generated token custom properties) and wraps the page in the one `main`
+ * landmark each page is allowed. The header (`banner`) and the footer (`contentinfo`) sit above and
+ * below it as siblings, not inside it — a `footer` nested in `main` is not a landmark at all.
+ *
+ * `data-mode` on <html> selects the light or dark half of the token sheet, exactly as the
+ * Storybooks do (storybook/shared/mode.ts).
+ */
+// The component styles for @design-schema/react. The package sets `sideEffects: false` and exports
+// its CSS separately, so a consumer imports it once, here, for the whole site.
+import '@design-schema/react/index.css';
+import { Landmark } from '@design-schema/react';
+
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { publishedThemes } from '../themes';
+import { THEME_LINK_ATTR, THEME_STORAGE_KEY } from '../theme-switch';
+
+interface Props {
+  /** The document title. */
+  title: string;
+  /** Optional meta description. */
+  description?: string | undefined;
+}
+
+const { title, description } = Astro.props;
+
+// One <link> per published theme instead of a single bundled import: every theme declares its
+// custom properties on `:root`, so the header's SegmentedControl switches themes by enabling one
+// sheet and disabling the others (see ../theme-switch.ts). The first theme is the default.
+const themes = publishedThemes();
+const themeIds = themes.map((theme) => theme.id);
+---
+
+<!doctype html>
+<html lang="en" data-mode="light" data-ds-theme={themeIds[0]}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    {
+      themes.map((theme, index) => (
+        <link rel="stylesheet" href={theme.href} media={index === 0 ? 'all' : 'not all'} {...{ [THEME_LINK_ATTR]: theme.id }} />
+      ))
+    }
+    {/* Before first paint, so a remembered theme never flashes the default one. This repeats
+        applyTheme() from ../theme-switch.ts because an inline script cannot import — keep them in
+        step. */}
+    <script is:inline define:vars={{ themeIds, linkAttr: THEME_LINK_ATTR, storageKey: THEME_STORAGE_KEY }}>
+      try {
+        const stored = localStorage.getItem(storageKey);
+        const id = themeIds.includes(stored) ? stored : themeIds[0];
+        for (const link of document.querySelectorAll(`link[${linkAttr}]`)) {
+          link.media = link.getAttribute(linkAttr) === id ? 'all' : 'not all';
+        }
+        document.documentElement.setAttribute(linkAttr, id);
+      } catch {
+        /* Storage denied; the default theme's sheet is already the enabled one. */
+      }
+    </script>
+  </head>
+  <body>
+    <Header />
+    <Landmark role="main">
+      <slot />
+    </Landmark>
+    <Footer />
+    <style is:global>
+      /* The page surface itself. Tokens only, no literals — the same rule the components follow. */
+      html {
+        background: var(--color-background);
+        color: var(--color-foreground);
+        font-family: var(--font-family-body);
+        font-size: var(--font-size-md);
+        line-height: var(--font-line-height-normal);
+      }
+      /* A column so the footer sits at the bottom of a short page (the two section placeholders are
+         a screenful of nothing otherwise) rather than halfway up it. Layout only, no appearance. */
+      body {
+        margin: 0;
+        min-block-size: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      body > main {
+        flex: 1 0 auto;
+      }
+    </style>
+  </body>
+</html>

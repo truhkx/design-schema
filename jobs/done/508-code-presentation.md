@@ -1,0 +1,4 @@
+Wire syntax-highlighted code presentation per website-plan.md ("Component page template" step 2, and the explicit scoped exception it calls out).
+
+Use Astro's built-in `<Code>` component (Shiki) for two spots only: the Basic Usage install/import snippet (job 506) and each example's `sourceText` (job 507). Theme Shiki's output colors from the active theme's token CSS custom properties (calm-precise / warm-friendly, light/dark) rather than a bundled Shiki theme, so code blocks re-theme the same way every generated component does. Document in a code comment at the top of the file that this is a deliberate, scoped exception to "only generated components" — syntax highlighting is not an APG interaction pattern, so there is no schema for it to live in.
+Gate: an example's source snippet renders with syntax color in both themes and both light/dark modes; a `<Code>` block is keyboard-scrollable and does not trap focus. Do not modify `packages/*/src` or `generated/`.

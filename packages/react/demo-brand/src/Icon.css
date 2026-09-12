@@ -1,0 +1,37 @@
+/* Icon — styled only through Design Schema token custom properties. */
+
+/*
+ * The <svg> is 1em square; `size` sets the em. Glyphs inherit the text color (currentColor), so
+ * `color` is only the fallback for an icon with no colored ancestor.
+ */
+.demo-icon {
+  --demo-icon-color: var(--color-foreground);
+  --demo-icon-stroke-width: var(--border-width-focus);
+  box-sizing: content-box;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+  color: var(--demo-icon-color);
+  /* strokeWidth: border.width.focus — line glyphs use the focus-ring width so they stay legible at xs. */
+  stroke-width: var(--demo-icon-stroke-width);
+  overflow: visible;
+}
+
+/* Stroke thickness stays the token width on screen at every rendered size. */
+.demo-icon path,
+.demo-icon rect {
+  vector-effect: non-scaling-stroke;
+}
+
+/* size → font.size.{size}: width and height. */
+.demo-icon--xs { --demo-icon-size: var(--font-size-xs); font-size: var(--demo-icon-size); }
+.demo-icon--sm { --demo-icon-size: var(--font-size-sm); font-size: var(--demo-icon-size); }
+.demo-icon--md { --demo-icon-size: var(--font-size-md); font-size: var(--demo-icon-size); }
+.demo-icon--lg { --demo-icon-size: var(--font-size-lg); font-size: var(--demo-icon-size); }
+.demo-icon--xl { --demo-icon-size: var(--font-size-xl); font-size: var(--demo-icon-size); }
+
+/* inline: 1em of the surrounding text, sitting on its baseline. The size override has no effect here. */
+.demo-icon--inline {
+  font-size: inherit;
+  vertical-align: -0.125em;
+}

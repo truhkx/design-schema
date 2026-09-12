@@ -9,7 +9,7 @@ Spacing inside a component is the component's business: Button binds its padding
 
 ## The tokens
 
-All of these are derived by `tools/theme.ts` from two theme decisions — `density` (which already scales the `space` grid) and `layout.rhythm` (tight / normal / loose, which scales the between-component steps a second time) — plus `layout.contentWidth`. Calm & precise, at `comfortable` density and `normal` rhythm, resolves to the values in the right column.
+All of these except `breakpoint` are derived by `tools/theme.ts` from two theme decisions — `density` (which already scales the `space` grid) and `layout.rhythm` (tight / normal / loose, which scales the between-component steps a second time) — plus `layout.contentWidth`. Calm & precise, at `comfortable` density and `normal` rhythm, resolves to the values in the right column.
 
 | Token | Use | Calm & precise |
 | --- | --- | --- |
@@ -18,6 +18,7 @@ All of these are derived by `tools/theme.ts` from two theme decisions — `densi
 | `layout.section.sm / md / lg` | Vertical space between page-level sections: between a page heading and its content, between a Landmark and the next. | 32 / 48 / 64 |
 | `layout.gutter.narrow / default / wide` | Horizontal page padding at narrow, default and wide viewports. Container applies it. | 16 / 24 / 32 |
 | `layout.maxWidth.prose / content / page` | Column widths. `prose` is a 65-character measure at the body size; `content` is the theme's `contentWidth`; `page` is four-thirds of it. | 572 / 960 / 1280 |
+| `layout.breakpoint.sm / md / lg` | Viewport widths at which **page chrome** changes shape — the header's nav-row-vs-hamburger switch, the docs sidebar-vs-`Select` swap. Fixed pixels, the same in every theme. | 640 / 768 / 1024 |
 
 The names are deliberately semantic. A component never binds `space.4` for a gap between siblings; it binds `layout.gap.loose`, so a theme that says `rhythm: loose` opens up every screen at once and a compact tool's `rhythm: tight` closes them, without either touching a component.
 
@@ -30,6 +31,8 @@ The names are deliberately semantic. A component never binds `space.4` for a gap
 **Surfaces inset, layouts gap.** Box and Card own the padding around their content with `inset`; Stack owns the gap between things. A Card that contains a Stack is the normal shape: the Card decides how far content sits from its edge, the Stack decides how far the pieces sit from each other. Neither needs to know the other's value.
 
 **Pages have a gutter and a measure.** Container applies the gutter at the viewport edge and caps width at `content` (or `page` for full-bleed layouts, `prose` for reading). Body text longer than a few lines lives inside a `prose` column; nothing else caps text width.
+
+**Breakpoints are for page chrome, not components.** `layout.breakpoint.*` is the one token group in this system that a component in `packages/*/src` must never bind. A component does not know what viewport it is in — it knows how much room its *container* gave it, so its responsiveness is container-query-driven (Splitter's collapse rule, measured by `ResizeObserver`, is the precedent) and a viewport breakpoint would make it lie whenever it is rendered in a sidebar or a split pane. Page-level chrome is the opposite case: the header choosing a nav row over a hamburger, and the docs layout choosing a sidebar over a `Select`, are decisions about the window, so they read these tokens. Consumed by the website app (`apps/website`) only.
 
 **Sections, not dividers.** Vertical rhythm between regions comes from `section` spacing, not from horizontal rules; a Divider (planned) is for lists, not for page structure.
 
@@ -50,3 +53,25 @@ theme:
 ```
 
 A dense admin tool might choose `density: compact, rhythm: tight`; a marketing site `density: roomy, rhythm: loose, contentWidth: 1120`. The components do not change; the rhythm does.
+
+`layout.breakpoint.*` is not on that list, and neither `density` nor `rhythm` moves it: 640 / 768 / 1024 describe devices, not taste, and a compact theme still has to decide "does a sidebar fit here?" at the same width a roomy one does. They are written once in `tools/theme.ts` and every theme gets the same three, so moving them is a change to the system rather than a theme decision — and `overrides` is not the way to do it: that escape hatch is keyed per mode (`overrides.light` / `overrides.dark`), and a breakpoint is one value for both.
+
+## Reading a breakpoint
+
+Almost always in CSS, where the token's value is inlined at build time:
+
+```css
+@media (min-width: 768px) { /* layout.breakpoint.md */ }
+```
+
+A custom property cannot appear in a media condition, so the number is written out. That is not a hole in the literal gate: `pnpm lint:literals` scans `packages/{react,lit,rn}/src` and `packages/swiftui/Sources/DesignSchema`, and this token belongs to `apps/website`, outside that tree. Inside it the gate still raises every media-query number — which is why Container's `@media` bounds carry an explicit `literal-ok: breakpoint from layout.maxWidth.*` — and a *viewport* breakpoint has no such excuse to offer, because no component should be switching on the window in the first place.
+
+The value is also in `packages/tokens/dist/<theme>/css/tokens.css` as `--layout-breakpoint-md` for anything that *can* take a custom property, and it is importable for the rare JS-side check — an `onResize` fallback, or a `matchMedia` string built at runtime:
+
+```js
+import { layoutBreakpointMd } from '@design-schema/tokens/calm-precise/light'; // '768px'
+
+const wide = matchMedia(`(min-width: ${layoutBreakpointMd})`);
+```
+
+`resolveToken` from `@design-schema/tokens` reaches the same value from the dotted name (`resolveToken(tokens, 'layout.breakpoint.md')` over a namespace import), which is the form to use when the ref is a variable. React Native has no viewport chrome to switch and gets the token as a plain number (`768`), should a future app shell need it.

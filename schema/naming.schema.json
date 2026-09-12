@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://design-schema.dev/schema/naming.schema.json",
+  "title": "Naming frontmatter",
+  "description": "A brand's renames of the generated identifiers. Lives under the `naming:` key of themes/<brand>/naming.md, a sibling of the theme doc. Every key is optional: no naming.md at all is the default, unrenamed case. Derived from schema/naming.ts by tools/schema.ts — do not edit by hand.",
+  "type": "object",
+  "properties": {
+    "naming": {
+      "default": {},
+      "$ref": "#/$defs/namingDef"
+    }
+  },
+  "$defs": {
+    "namingDef": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "description": "The vocabulary around the components: package scope, CSS custom-property prefix, per-platform type-name prefix.",
+          "default": {},
+          "$ref": "#/$defs/namespaceDef"
+        },
+        "components": {
+          "default": {},
+          "description": "Canonical component name → brand name (Button: CtaButton). Applies to the generated file name, the exported type, and every reference from a composite. Components left out keep their canonical name.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9]*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9]*$"
+          }
+        },
+        "props": {
+          "default": {},
+          "description": "Canonical prop or anatomy name → brand name. A bare key (variant: style) renames it on every component; a dotted key (Button.variant: style) renames it on one, and wins over the bare key for that component.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^([A-Z][A-Za-z0-9]*\\.)?[a-z][A-Za-z0-9]*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-z][A-Za-z0-9]*$"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "namespaceDef": {
+      "type": "object",
+      "properties": {
+        "package": {
+          "default": "@design-schema",
+          "description": "npm scope for the generated packages: @acme → @acme/react, @acme/lit, @acme/tokens.",
+          "type": "string",
+          "pattern": "^@[a-z0-9][a-z0-9._-]*$"
+        },
+        "cssPrefix": {
+          "default": "ds",
+          "description": "CSS custom-property prefix, written without the leading -- or trailing -: acme → --acme-button-background.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+        },
+        "typePrefix": {
+          "default": {},
+          "description": "Per-platform prefix on generated type names where one exists (SwiftUI's DesignSchemaTokens module and its TokenRef enum, React Native's theme context). A platform left out keeps the canonical name.",
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/platformId"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9]*$"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "platformId": {
+      "type": "string",
+      "enum": [
+        "web",
+        "lit",
+        "rn",
+        "swiftui",
+        "compose"
+      ]
+    }
+  }
+}

@@ -1,0 +1,173 @@
+---
+/**
+ * The home page (site/src/content/docs/process/website-plan.md, "Home page").
+ *
+ * A hero and a feature section, both composed entirely of generated components — the only two
+ * things on the page that are not are the logo mark and the hero's backdrop, which are page art, not
+ * UI. Nothing here carries a `client:*` directive, so the whole page is HTML by the time it is
+ * served: the heading and the statement are readable in view-source, with no JavaScript involved.
+ *
+ * Two deviations from the plan's prose, both deliberate and both logged in generated/gaps/:
+ *
+ * 1. The two calls to action are `Link`s, not `Button`s. The plan asks for Buttons, but the system's
+ *    own schema forbids exactly that — components/button.md: "Do not use a Button to navigate to
+ *    another page or screen; use a Link … so the destination is exposed to assistive technology and
+ *    works with open-in-new-tab" — and a `Button` has no destination to give, so it could only
+ *    navigate from script, leaving the hero's two actions dead without JavaScript. The plan's
+ *    `variant="outline"` does not exist either (primary / secondary / ghost / danger). What the
+ *    schema is missing is the "Link styled as a button" its own guidance names; that is the gap.
+ *    See generated/gaps/Button.web.md.
+ * 2. The feature cards need one flex-sizing rule (../styles/home.css) that a wrapped `Stack` cannot
+ *    express. See generated/gaps/Stack.web.md — the foundations question the plan predicted.
+ */
+import { Box, Card, Container, Heading, Link, Stack, Text } from '@design-schema/react';
+
+import Layout from '../layouts/Layout.astro';
+import Logo from '../assets/logo.svg';
+import { siteNav } from '../nav';
+import '../styles/home.css';
+
+/**
+ * The page's words, in one place, the way the generated components keep theirs.
+ *
+ * `statement` is the Vision paragraph, compressed to the two sentences a hero can hold: a
+ * documentation-first, schema-driven system that generates real components for every platform from
+ * one set of docs. website-plan.md's own summary of that paragraph is the wording followed here —
+ * `vision-and-decisions.md` is referenced across the process docs but is not a file in this repo.
+ */
+const COPY = {
+  title: 'Design Schema: An Agentic Design System',
+  statement:
+    'A documentation-first design system: every component is specified once, in plain language, ' +
+    'and that one schema generates the real thing for the web, for web components, and for native ' +
+    'platforms. The accessibility contract travels with the schema, so what ships is what was ' +
+    'specified.',
+  readDocs: 'Read the docs',
+  viewOnGitHub: 'View on GitHub',
+  pillarsHeading: 'Four pillars',
+};
+
+/** One Card each, per the plan's four pillars. */
+const PILLARS = [
+  {
+    heading: 'Schema-driven',
+    body:
+      'One Markdown doc per component holds its props, anatomy, states and accessibility contract. ' +
+      'Everything downstream — the code, these docs, the tests — is derived from that doc rather ' +
+      'than written a second time and left to drift.',
+  },
+  {
+    heading: 'Every platform',
+    body:
+      'The same schema generates React, Lit web components and React Native, and the same tokens ' +
+      'build for SwiftUI. A prop added to a doc reaches every platform in one pass, with the same ' +
+      'name and the same behavior.',
+  },
+  {
+    heading: 'Zero-token theming',
+    body:
+      'A theme is chosen in words — a tone, one word it must never be, a seed color, a ratio — and ' +
+      'the palettes, type scale and spacing are derived from it. Adopting the system does not start ' +
+      'with a spreadsheet of hex values.',
+  },
+  {
+    heading: 'Accessible by construction',
+    body:
+      'Each doc carries its APG role, its keyboard map and its contrast pairs, and the build proves ' +
+      'them: keyboard tests derived from the spec, axe over every story, and a contrast check on ' +
+      'every pair in every theme.',
+  },
+];
+
+// The repo link is the generated nav's GitHub entry, not a second copy of the URL: tools/site_nav.ts
+// owns it, so the hero and the header can never disagree about where the repo is.
+const github = siteNav().top.find((item) => item.external && item.href.includes('github.com'));
+if (!github) {
+  throw new Error('generated/nav.json has no external GitHub link for the hero to point at. Re-run `pnpm nav`.');
+}
+---
+
+<Layout title="Design Schema" description={COPY.statement}>
+  {/* `section` between the two regions; the hero and the pillars are each their own section. */}
+  <Stack direction="vertical" gap="section">
+    <Box element="section" inset="none" insetBlock="xl" className="ds-home-hero">
+      {/*
+        The hero's backdrop: the sand-and-geometric-line motif from the landing-page pattern note.
+        Inline SVG rather than an `Icon`, because this is page art and Icon is a fixed 16×16 UI-glyph
+        set; `aria-hidden` because it says nothing that the heading below does not. Every stroke and
+        fill is `currentColor`, so ../styles/home.css themes the whole motif with one `color`.
+      */}
+      <svg
+        class="ds-home-hero__backdrop"
+        aria-hidden="true"
+        focusable="false"
+        viewBox="0 0 1280 480"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <defs>
+          {/* The lattice: a schema grid, with a node at every intersection. */}
+          <pattern id="ds-home-hero-lattice" width="80" height="80" patternUnits="userSpaceOnUse">
+            <path d="M0 0H80M0 0V80" fill="none" stroke="currentColor" stroke-width="1" />
+            <circle cx="0" cy="0" r="2.5" fill="currentColor" />
+          </pattern>
+          {/*
+            Luminance mask: clear in the middle, where the heading and the statement sit, and full
+            strength out at the edges. The two stops are mask channel values, not colors — nothing
+            here is painted with them.
+          */}
+          <radialGradient id="ds-home-hero-fade" cx="50%" cy="50%" r="72%">
+            <stop offset="0.1" stop-color="#000" />
+            <stop offset="0.9" stop-color="#fff" />
+          </radialGradient>
+          <mask id="ds-home-hero-mask">
+            <rect width="1280" height="480" fill="url(#ds-home-hero-fade)" />
+          </mask>
+        </defs>
+        <g mask="url(#ds-home-hero-mask)">
+          <rect width="1280" height="480" fill="url(#ds-home-hero-lattice)" />
+          {/* A few larger figures, so the field is not only a grid. */}
+          <g fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="160" cy="120" r="96" />
+            <circle cx="160" cy="120" r="56" />
+            <rect x="1000" y="248" width="168" height="168" rx="8" transform="rotate(15 1084 332)" />
+            <path d="M968 72h128v128" />
+            <path d="M112 392h152M188 316v152" />
+          </g>
+        </g>
+      </svg>
+
+      <Container width="content" className="ds-home-hero__content">
+        <Stack direction="vertical" align="center" gap="loose">
+          {/* Decorative: the `Heading` below says the name, so the mark would only repeat it. */}
+          <Logo class="ds-home-hero__logo" aria-hidden="true" focusable="false" />
+          <Heading level={1} align="center">{COPY.title}</Heading>
+          <Text size="lg" tone="muted" align="center">{COPY.statement}</Text>
+          <Stack direction="horizontal" gap="normal" justify="center" wrap>
+            <Link href="/docs" label={COPY.readDocs} />
+            <Link href={github.href} label={COPY.viewOnGitHub} external />
+          </Stack>
+        </Stack>
+      </Container>
+    </Box>
+
+    <Container width="page" element="section">
+      <Stack direction="vertical" gap="loose">
+        <Heading level={2}>{COPY.pillarsHeading}</Heading>
+        {/*
+          The wrapped Stack the plan settled on in place of a grid primitive that does not exist yet.
+          Each Card renders its own `Heading(level=3)` from `heading`/`headingLevel`, which is also
+          what names the card's `article` — so the section's outline is h1 → h2 → h3, unbroken.
+        */}
+        <Stack direction="horizontal" gap="loose" align="stretch" wrap className="ds-home-pillars">
+          {
+            PILLARS.map((pillar) => (
+              <Card heading={pillar.heading} headingLevel={3}>
+                <Text>{pillar.body}</Text>
+              </Card>
+            ))
+          }
+        </Stack>
+      </Stack>
+    </Container>
+  </Stack>
+</Layout>

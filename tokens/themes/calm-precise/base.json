@@ -414,6 +414,18 @@
       "page": {
         "$value": "1280px"
       }
+    },
+    "breakpoint": {
+      "$description": "Viewport breakpoints for page chrome (header, docs layout) \u2014 not for components, which stay container-query-driven. Fixed px; density and rhythm do not scale them.",
+      "sm": {
+        "$value": "640px"
+      },
+      "md": {
+        "$value": "768px"
+      },
+      "lg": {
+        "$value": "1024px"
+      }
     }
   },
   "size": {

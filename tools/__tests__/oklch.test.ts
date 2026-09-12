@@ -42,7 +42,7 @@ describe('oklab', () => {
   test('linear ⇄ oklab round-trip', () => {
     for (const rgb of [[0.1, 0.5, 0.9], [1, 0, 0], [0.5, 0.5, 0.5]] as [number, number, number][]) {
       const back = oklabToLinear(...linearToOklab(...rgb));
-      for (let i = 0; i < 3; i++) expect(back[i]).toBeCloseTo(rgb[i], 6);
+      for (let i = 0; i < 3; i++) expect(back[i] as number).toBeCloseTo(rgb[i] as number, 6);
     }
   });
 

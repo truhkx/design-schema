@@ -303,6 +303,6 @@ describe('parseThemes', () => {
     Object.assign(parse.paths, { THEME_DOCS: themes, OUT: out, TEMPLATES: templates, ROOT: root });
     const [themesOut, errors] = parse.parseThemes();
     expect(themesOut).toEqual([]);
-    expect(errors.some((e) => e.includes('run tools/theme.py first'))).toBe(true);
+    expect(errors.some((e) => e.includes('run tools/theme.ts first'))).toBe(true);
   });
 });

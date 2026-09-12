@@ -41,7 +41,7 @@ The body then covers: **Feel** (surfaces, accent use, corners, type, motion, how
 
 ## Stage 2 — Foundations: derived palettes and scales
 
-`tools/theme.py` reads each theme doc and writes the raw materials as DTCG tokens to `tokens/themes/<id>/base.json`:
+`tools/theme.ts` reads each theme doc and writes the raw materials as DTCG tokens to `tokens/themes/<id>/base.json`:
 
 - A **neutral ramp** (12 steps, 0–1000) tinted toward the brand hue by `neutralTint`, so grays feel like they belong.
 - A **brand ramp** (50–900) around the seed color, generated in OKLCH so steps are evenly spaced to the eye and hue does not drift as lightness changes. Chroma peaks at the seed's lightness and tapers toward the ends, so tints and shades stay clean.
@@ -59,7 +59,7 @@ The semantic layer is what components are allowed to reference. It maps roles to
 - `color.border`, `color.border.focus`
 - `color.action.{primary,secondary,ghost,danger}.{background,foreground,backgroundHover}`
 
-Light and dark are two files with identical names and different values. Components never know which theme or mode is active. The generator chooses ramp steps for each role so that the declared contrast floors hold (for example, the primary action background is the lightest brand step that reaches 4.5:1 against white), and then `tools/check_contrast.py` proves it by resolving every pair every component declares, for every theme and mode, and failing the build if any misses its WCAG level.
+Light and dark are two files with identical names and different values. Components never know which theme or mode is active. The generator chooses ramp steps for each role so that the declared contrast floors hold (for example, the primary action background is the lightest brand step that reaches 4.5:1 against white), and then `tools/check_contrast.ts` proves it by resolving every pair every component declares, for every theme and mode, and failing the build if any misses its WCAG level.
 
 **This is where overrides finally show up** — as the answer to "I already have a brand; the derived value isn't right." A theme doc's `overrides` block sets explicit values per mode by token path. They are applied after derivation and are still contrast-checked, so an override can tune the system but cannot break it.
 

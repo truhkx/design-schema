@@ -5,7 +5,7 @@ import { litDecorators } from './decorators.plugin.mjs';
 // Lit elements are form-associated (ElementInternals), use delegatesFocus and :focus-visible —
 // none of which jsdom implements — so the tests run in a real headless Chromium via Playwright
 // (`npx playwright install chromium` once). The tests gate runs `pnpm test -- src/<Name>.test.ts`.
-// The behavior gate (tools/behavior_tests.py) writes generated/behavior/<Name>.lit.test.ts,
+// The behavior gate (tools/behavior_tests.ts) writes generated/behavior/<Name>.lit.test.ts,
 // run with `pnpm test -- generated/behavior/<Name>.lit`; it is included here too.
 export default defineConfig({
   // Standard decorators (`accessor`) are lowered by Babel; Vite 8's Oxc transformer leaves them as-is.

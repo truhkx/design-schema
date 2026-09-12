@@ -103,7 +103,7 @@ try:
         "modes": {"default": "light", "supports": ["light", "dark"]},
         "feel": "Cream surfaces and a pale-oak accent.", "whenToUse": "Consumer products."})
     print("\n=== write_theme valid answers ->", "ok" if good["ok"] else "FAILED", "| wrote:", Path(good["written"]).name,
-          "| theme.py:", (good["themeOutput"].splitlines() or ["-"])[-1][:70], "| errors:", good["errors"])
+          "| theme.ts:", (good["themeOutput"].splitlines() or ["-"])[-1][:70], "| errors:", good["errors"])
     text = (s.THEME_DOCS / "smoke-test-theme.md").read_text(encoding="utf-8")
     assert text.startswith("---\ntitle: Smoke test") and "## Not cold" in text and "### React Native" in text
     again = write_theme("smoke-test-theme", {"tone": ["a", "b"]})

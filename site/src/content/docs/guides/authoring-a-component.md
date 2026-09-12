@@ -70,7 +70,7 @@ Text before the first `##` is the overview. Then only these headings are allowed
 `pnpm check` derives and resolves the themes, then runs two scripts:
 
 - **`tools/parse.ts`** — frontmatter validates against the JSON Schema; the file name matches `component.name`; every `{slot}` in a token path names an enum prop; every event has a mapping for every supported platform; every behavior scenario names real props, parts, events, copy keys and platforms and stays within what each platform's tests can express; headings are from the allowed list; required sections are present. It then writes `generated/components.json` and one generation prompt per platform (schema, scenarios, guidance) to `generated/prompts/`.
-- **`tools/check_contrast.py`** — every `a11y.contrast` pair is resolved through the tokens for every theme and every enum value, and must meet its WCAG level.
+- **`tools/check_contrast.ts`** — every `a11y.contrast` pair is resolved through the tokens for every theme and every enum value, and must meet its WCAG level.
 
 A doc that fails either check fails the build. That is the feature.
 

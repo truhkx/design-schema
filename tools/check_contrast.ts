@@ -14,7 +14,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ljust, product, pyFixed, pyGet, truthy } from './lib/py.ts';
+import { has, ljust, product, pyFixed, pyGet, truthy } from './lib/py.ts';
 import { pyFloatRepr } from './lib/pyyaml.ts';
 import { REPO_ROOT } from './lib/root.ts';
 import { loadTheme, modes, publicName, themes } from './lib/tokens.ts';
@@ -96,14 +96,19 @@ export function main(): number {
       const combos: string[][] = fgs.length === bgs.length && fgs.length > 1 ? fgs.map((fg, i) => [fg, bgs[i] as string]) : product([fgs, bgs]);
       for (const [fgRef, bgRef] of combos as [string, string][]) {
         for (const [theme, tokens] of Object.entries(palettes)) {
-          const fg = tokens[fgRef] ?? null;
-          let bg = tokens[bgRef] ?? null;
+          const fg: unknown = tokens[fgRef] ?? null;
+          let bg: unknown = tokens[bgRef] ?? null;
           if (fg === null || bg === null) {
             print(`✖ ${c.name as string}: unknown token ${fg === null ? fgRef : bgRef}`);
             failures += 1;
             continue;
           }
-          if (bg === 'transparent') bg = tokens['color.background']; // ghost etc. — check against page background instead
+          if (bg === 'transparent') {
+            // ghost etc. — check against page background instead. Subscripting, not `.get`: a theme
+            // without the token is a KeyError, as it was in Python.
+            if (!has(tokens, 'color.background')) throw new Error("KeyError: 'color.background'");
+            bg = tokens['color.background'];
+          }
           const ratio = contrast(fg as string, bg as string);
           checked += 1;
           const ok = ratio >= need;

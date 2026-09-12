@@ -9,7 +9,7 @@ Spacing inside a component is the component's business: Button binds its padding
 
 ## The tokens
 
-All of these are derived by `tools/theme.py` from two theme decisions — `density` (which already scales the `space` grid) and `layout.rhythm` (tight / normal / loose, which scales the between-component steps a second time) — plus `layout.contentWidth`. Calm & precise, at `comfortable` density and `normal` rhythm, resolves to the values in the right column.
+All of these are derived by `tools/theme.ts` from two theme decisions — `density` (which already scales the `space` grid) and `layout.rhythm` (tight / normal / loose, which scales the between-component steps a second time) — plus `layout.contentWidth`. Calm & precise, at `comfortable` density and `normal` rhythm, resolves to the values in the right column.
 
 | Token | Use | Calm & precise |
 | --- | --- | --- |

@@ -8,7 +8,7 @@ import { themeDef } from '../../schema/theme';
 // Every doc page gets Starlight's own frontmatter (title, description, sidebar…).
 // Component docs additionally carry `component:` and theme docs carry `theme:`.
 // Both are optional here so ordinary pages validate; tools/parse.ts and
-// tools/theme.py enforce the full schema for their respective folders.
+// tools/theme.ts enforce the full schema for their respective folders.
 //
 // `componentDef` is a Zod 4 schema (schema/component.ts is the single source of truth and runs
 // under Node without a build), while Starlight's schema builder is Astro's bundled Zod 3. The

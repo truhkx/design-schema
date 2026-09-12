@@ -33,13 +33,13 @@ class TestComponentDocs:
     def test_every_style_token_exists_in_every_theme(self, path):
         """A style binding must resolve once its {slot}s are filled in."""
         c = frontmatter(path)["component"]
-        import check_contrast as cc
+        from helpers import expand  # tools/spec_sheet.ts is TypeScript now; tests/helpers.py holds the copy
 
         for theme in tk.themes():
             for mode in tk.modes(theme):
                 names = {tk.public_name(k) for k in tk.load_theme(theme, mode)}
                 for prop, binding in c.get("styles", {}).items():
-                    for ref in cc.expand(binding["token"], c["props"]):
+                    for ref in expand(binding["token"], c["props"]):
                         # Tokens are addressed by their public name, so a slot that
                         # expands to `...default` resolves to the group itself. A slot that
                         # expands to `none`/`full` renders nothing rather than a token
@@ -56,13 +56,13 @@ class TestThemeDocs:
 
     @pytest.mark.parametrize("path", THEME_DOCS, ids=lambda p: p.name)
     def test_frontmatter_validates(self, path, theme_schema):
-        import theme as th
+        from jsonschema import Draft202012Validator
 
         fm = frontmatter(path)
         assert "theme" in fm
-        errors = list(th.Validator(theme_schema).iter_errors(fm))
+        errors = list(Draft202012Validator(theme_schema).iter_errors(fm))
         assert not errors, "; ".join(e.message for e in errors)
 
     @pytest.mark.parametrize("path", THEME_DOCS, ids=lambda p: p.name)
     def test_tokens_were_derived_for_it(self, path):
-        assert frontmatter(path)["theme"]["id"] in tk.themes(), "run tools/theme.py"
+        assert frontmatter(path)["theme"]["id"] in tk.themes(), "run tools/theme.ts"

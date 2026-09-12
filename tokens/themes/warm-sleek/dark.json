@@ -1,7 +1,7 @@
 {
   "color": {
     "$type": "color",
-    "$description": "Semantic layer (dark) \u2014 derived by tools/theme.py.",
+    "$description": "Semantic layer (dark) \u2014 derived by tools/theme.ts.",
     "foreground": {
       "default": {
         "$value": "{color.palette.neutral.100}"

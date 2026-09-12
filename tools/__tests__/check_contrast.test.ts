@@ -167,6 +167,17 @@ describe('main', () => {
     expect(std.out()).toContain('1 pairs checked');
   });
 
+  test('a transparent background with no page background is a KeyError, as the Python subscript was', () => {
+    const generated = join(tmp(), 'components.json');
+    cc.paths.GENERATED = generated;
+    cc.hooks.themes = () => ['fake'];
+    cc.hooks.modes = () => ['light'];
+    cc.hooks.loadTheme = () => ({ 'color.action.ghost.foreground': { $value: '#3553d2', $type: 'color' } as TokenEntry,
+      'color.action.ghost.background': { $value: 'transparent', $type: 'color' } as TokenEntry });
+    writeFileSync(generated, JSON.stringify([{ component: component([{ foreground: 'color.action.ghost.foreground', background: 'color.action.ghost.background' }], {}) }]), 'utf8');
+    expect(() => cc.main()).toThrow("KeyError: 'color.background'");
+  });
+
   test('an unknown token is a failure, not a crash', () => {
     sandbox()(component([{ foreground: 'color.nope', background: 'color.background' }]));
     expect(cc.main()).toBe(1);

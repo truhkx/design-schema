@@ -899,7 +899,7 @@ export function parseThemes(): [Dict[], string[]] {
       try {
         light = tokens.loadTheme(t.id, 'light');
       } catch (e) {
-        if ((e as NodeJS.ErrnoException).code === 'ENOENT') throw new DocError(`${name(file)}: tokens/themes/${t.id} missing — run tools/theme.py first`);
+        if ((e as NodeJS.ErrnoException).code === 'ENOENT') throw new DocError(`${name(file)}: tokens/themes/${t.id} missing — run tools/theme.ts first`);
         throw e;
       }
       const resolved: Dict = {};

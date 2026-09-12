@@ -1,4 +1,8 @@
-"""tools/tokens.py — the DTCG resolver every other Python tool reads through."""
+"""tools/tokens.py — the DTCG resolver mcp/server.py reads through (the last Python importer of it).
+
+The dist writers this module used to hold are gone: `tokens/build.mjs` (Style Dictionary) is the only
+token build. tools/__tests__/*.test.ts covers the TypeScript port of the reader, tools/lib/tokens.ts.
+"""
 from __future__ import annotations
 
 import json
@@ -131,55 +135,6 @@ class TestNames:
             assert len(names) == len(set(names)), f"{namer.__name__} collides"
 
 
-class TestValueFormatting:
-    def test_css_cubic_bezier(self):
-        assert tk.css_value({"$value": [0.2, 0, 0, 1], "$type": "cubicBezier"}) == "cubic-bezier(0.2, 0, 0, 1)"
-
-    def test_css_font_family_quotes_only_multi_word_faces(self):
-        out = tk.css_value({"$value": ["system-ui", "Segoe UI", "sans-serif"], "$type": "fontFamily"})
-        assert out == 'system-ui, "Segoe UI", sans-serif'
-
-    def test_css_scalar_is_stringified(self):
-        assert tk.css_value({"$value": 400, "$type": "fontWeight"}) == "400"
-
-    def test_js_web_keeps_css_shapes(self):
-        assert tk.js_value({"$value": "12px", "$type": "dimension"}, rn=False) == "12px"
-        assert tk.js_value({"$value": [0.2, 0, 0, 1], "$type": "cubicBezier"}, rn=False).startswith("cubic-bezier(")
-
-    def test_js_rn_dimensions_become_numbers(self):
-        assert tk.js_value({"$value": "12px", "$type": "dimension"}, rn=True) == 12
-        assert isinstance(tk.js_value({"$value": "12px", "$type": "dimension"}, rn=True), int)
-        assert tk.js_value({"$value": "0.5px", "$type": "dimension"}, rn=True) == pytest.approx(0.5)
-
-    def test_js_rn_durations_become_numbers(self):
-        assert tk.js_value({"$value": "200ms", "$type": "duration"}, rn=True) == 200
-
-    def test_js_rn_cubic_bezier_stays_a_list(self):
-        assert tk.js_value({"$value": [0.2, 0, 0, 1], "$type": "cubicBezier"}, rn=True) == [0.2, 0, 0, 1]
-
-    def test_js_rn_font_family_maps_web_aliases_to_native_names(self):
-        assert tk.js_value({"$value": ["system-ui", "Arial"], "$type": "fontFamily"}, rn=True) == "System"
-        assert tk.js_value({"$value": ["ui-monospace", "Menlo"], "$type": "fontFamily"}, rn=True) == "monospace"
-        assert tk.js_value({"$value": ["Inter", "Arial"], "$type": "fontFamily"}, rn=True) == "Inter"
-
-    def test_rn_leaves_non_px_dimensions_alone(self):
-        assert tk.js_value({"$value": "50%", "$type": "dimension"}, rn=True) == "50%"
-
-
-class TestWriteJs:
-    def test_writes_module_and_declarations(self, tmp_path):
-        toks = {"space.sm": {"$value": "8px", "$type": "dimension"},
-                "color.foreground.default": {"$value": "#111", "$type": "color"}}
-        out = tmp_path / "tokens.light.js"
-        tk.write_js(toks, out, rn=True)
-        js = out.read_text()
-        assert "export const spaceSm = 8;" in js
-        assert "export const colorForeground = " in js
-        dts = out.with_suffix(".d.ts").read_text()
-        assert "export declare const spaceSm: number;" in dts
-        assert "export declare const colorForeground: string;" in dts
-
-
 class TestRealTheme:
     def test_themes_and_modes_are_discovered(self):
         assert "calm-precise" in tk.themes()
@@ -203,24 +158,3 @@ class TestRealTheme:
         base = tk.flatten(json.loads((tk.THEMES_DIR / "calm-precise" / "base.json").read_text()))
         assert "color.foreground.default" not in base
         assert "color.foreground.default" in tk.load_theme("calm-precise", "light")
-
-    def test_write_dist_emits_every_platform_flavour(self, tmp_path, monkeypatch):
-        # write_dist reports paths relative to ROOT, so DIST must sit under it.
-        monkeypatch.setattr(tk, "ROOT", tmp_path)
-        monkeypatch.setattr(tk, "DIST", tmp_path / "dist")
-        tk.write_dist()
-        theme = tmp_path / "dist" / "calm-precise"
-        assert (theme / "json" / "tokens.light.json").exists()
-        assert (theme / "js" / "tokens.dark.js").exists()
-        assert (theme / "rn" / "tokens.light.js").exists()
-        css = (theme / "css" / "tokens.css").read_text()
-        assert ':root, [data-mode="light"] {' in css
-        assert '[data-mode="dark"] {' in css
-        assert "--color-action-primary-background:" in css
-
-    def test_dist_json_is_keyed_by_public_name(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(tk, "ROOT", tmp_path)
-        monkeypatch.setattr(tk, "DIST", tmp_path / "dist")
-        tk.write_dist()
-        data = json.loads((tmp_path / "dist" / "calm-precise" / "json" / "tokens.light.json").read_text())
-        assert "color.foreground" in data and "color.foreground.default" not in data

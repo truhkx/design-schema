@@ -2,7 +2,7 @@
 // React Native's own Jest preset (test renderer + native mocks; a separate package since 0.87) with
 // the workspace packages added to the transform allowlist; pnpm nests real paths under
 // node_modules/.pnpm, hence the lookahead that skips that segment.
-// The behavior gate (tools/behavior_tests.py) writes generated/behavior/<Name>.rn.test.tsx, run
+// The behavior gate (tools/behavior_tests.ts) writes generated/behavior/<Name>.rn.test.tsx, run
 // with `pnpm test -- generated/behavior/<Name>.rn`; it is included here too.
 const path = require('path');
 

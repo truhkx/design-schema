@@ -5,7 +5,7 @@ description: How color, typography, spacing and size are defined once and delive
 
 Tokens are stored in the [W3C Design Tokens (DTCG) format](https://www.designtokens.org/) under `tokens/themes/<id>/` and built with Style Dictionary into CSS custom properties, JavaScript modules, React Native objects, and flat JSON under `packages/tokens/dist/<id>/`. Every value a component uses comes from a token; no component file contains a raw color, size, or font.
 
-Token files are **derived, not authored**. `tools/theme.py` generates them from the decisions in each [theme doc](/themes/calm-precise/); edit the theme, not the JSON.
+Token files are **derived, not authored**. `tools/theme.ts` generates them from the decisions in each [theme doc](/themes/calm-precise/); edit the theme, not the JSON.
 
 ## Two layers per theme
 
@@ -46,11 +46,11 @@ Semantic names describe role, not appearance: `color.foreground` not `color.gray
 
 ## Accessibility is checked at build time
 
-Component docs declare which foreground/background token pairs they render together. `tools/check_contrast.py` resolves those pairs for every enum value and every theme and fails the build below the declared WCAG level. Changing a palette value that breaks a button in dark mode is caught before it ships.
+Component docs declare which foreground/background token pairs they render together. `tools/check_contrast.ts` resolves those pairs for every enum value and every theme and fails the build below the declared WCAG level. Changing a palette value that breaks a button in dark mode is caught before it ships.
 
 ## Building
 
 ```sh
-pnpm themes        # tools/theme.py derives tokens/themes/<id>/*.json, then tools/tokens.py resolves them
-pnpm tokens        # Style Dictionary → packages/tokens/dist/<id>/{css,js,rn,json}
+pnpm themes        # tools/theme.ts derives tokens/themes/<id>/*.json, then tokens/build.mjs builds the dist
+pnpm tokens        # Style Dictionary → packages/tokens/dist/<id>/{css,js,rn,json} + names.{js,d.ts}
 ```

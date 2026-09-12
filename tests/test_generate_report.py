@@ -6,7 +6,6 @@ from types import SimpleNamespace
 
 import pytest
 
-import checks
 import generate as g
 
 REPORT = '```json\n{"files": ["packages/lit/src/Text.ts"], "gaps": ["Text: guessed the default size"]}\n```'
@@ -38,7 +37,7 @@ def sandbox(tmp_path, monkeypatch):
     monkeypatch.setattr(g, "fix_prompt", lambda *a, **k: "fix")
     monkeypatch.setattr(g, "custom_snapshot", lambda platform: {})
     monkeypatch.setattr(g, "restore_custom", lambda platform, snap: [])
-    monkeypatch.setattr(checks, "run_all", lambda *a, **k: [])
+    monkeypatch.setattr(g, "run_gates", lambda *a, **k: [])
 
     def make(replies):
         runner = FakeRunner(replies)

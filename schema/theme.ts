@@ -1,6 +1,6 @@
 /**
  * Theme frontmatter schema (Zod). Mirrors ./theme.schema.json — the decisions a
- * theme is derived from. tools/theme.py turns these into full DTCG token files.
+ * theme is derived from. tools/theme.ts turns these into full DTCG token files.
  */
 import { z } from 'astro/zod';
 

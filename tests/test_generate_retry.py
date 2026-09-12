@@ -8,7 +8,6 @@ from types import SimpleNamespace
 
 import pytest
 
-import checks
 import generate as g
 
 REPORT = '```json\n{"files": ["packages/lit/src/Text.ts"], "gaps": []}\n```'
@@ -44,7 +43,7 @@ def sandbox(tmp_path, monkeypatch):
     monkeypatch.setattr(g, "fix_prompt", lambda *a, **k: "fix")
     monkeypatch.setattr(g, "custom_snapshot", lambda platform: {})
     monkeypatch.setattr(g, "restore_custom", lambda platform, snap: [])
-    monkeypatch.setattr(checks, "run_all", lambda *a, **k: [])
+    monkeypatch.setattr(g, "run_gates", lambda *a, **k: [])
     slept: list[int] = []
     monkeypatch.setattr(g.time, "sleep", slept.append)
 
@@ -101,8 +100,8 @@ class TestRunnerErrors:
     def test_a_runner_error_in_a_fix_round_keeps_the_earlier_files(self, sandbox, monkeypatch):
         make, args, slept = sandbox
         # The preflight (verbose=False) passes; the gates after generation fail, so a fix round is requested.
-        monkeypatch.setattr(checks, "run_all", lambda *a, **k: [] if "verbose" in k else [checks.GateResult("typecheck", False, "nope")])
-        monkeypatch.setattr(checks, "failures_as_prompt", lambda results: "failures")
+        monkeypatch.setattr(g, "run_gates", lambda *a, **k: [] if "verbose" in k else [g.GateResult("typecheck", False, "nope")])
+        monkeypatch.setattr(g, "failures_as_prompt", lambda results: "failures")
         make(["Done.\n" + REPORT, RuntimeError("dead"), RuntimeError("dead")])
         lock = {}
         assert g.generate_one("Text", "lit", args, lock) is False

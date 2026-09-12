@@ -177,8 +177,8 @@ class TestWriteTheme:
 
         def fake_run(argv, **kw):
             calls.append(argv)
-            script = str(argv[1])
-            out = "✔ themes: warm-test (light, dark) → tokens/themes/" if script.endswith("theme.py") else "404 pairs checked, 0 failures"
+            script = str(argv[-1])  # both run as `node --import tsx <script>`
+            out = "✔ themes: warm-test (light, dark) → tokens/themes/" if script.endswith("theme.ts") else "404 pairs checked, 0 failures"
             return subprocess.CompletedProcess(argv, 0, stdout=out, stderr="")
 
         monkeypatch.setattr(subprocess, "run", fake_run)
@@ -194,8 +194,8 @@ class TestWriteTheme:
                         "## Platform notes", "### Web", "### Lit", "### React Native"):
             assert heading in text, heading
         assert "Cream surfaces and a pale-oak accent." in text and "Load Google Sans yourself." in text
-        assert len(calls) == 2, "theme.py, then check_contrast.py"
-        assert str(calls[0][1]).endswith("theme.py") and str(calls[1][1]).endswith("check_contrast.py")
+        assert len(calls) == 2, "theme.ts, then check_contrast.ts"
+        assert str(calls[0][-1]).endswith("theme.ts") and str(calls[1][-1]).endswith("check_contrast.ts")
         assert out["contrast"]["ok"] is True and out["contrast"]["failures"] == []
 
     def test_the_frontmatter_round_trips_through_the_theme_schema(self, sandbox, theme_schema):
@@ -204,9 +204,9 @@ class TestWriteTheme:
         docs, _ = sandbox
         write_theme("warm-test", GOOD)
         fm = yaml.safe_load((docs / "warm-test.md").read_text(encoding="utf-8").split("\n---\n")[0].lstrip("-\n"))
-        import theme as th
+        from jsonschema import Draft202012Validator
 
-        assert list(th.Validator(theme_schema).iter_errors(fm)) == []
+        assert list(Draft202012Validator(theme_schema).iter_errors(fm)) == []
         assert fm["theme"]["layout"] == {"rhythm": "normal", "contentWidth": 1040}
 
     def test_invalid_answers_write_nothing(self, sandbox):
@@ -240,7 +240,7 @@ class TestWriteTheme:
 
     def test_contrast_failures_are_reported_for_the_caller_to_decide(self, sandbox, monkeypatch):
         def run(argv, **kw):
-            if str(argv[1]).endswith("theme.py"):
+            if str(argv[-1]).endswith("theme.ts"):
                 return subprocess.CompletedProcess(argv, 0, stdout="✔ themes", stderr="")
             return subprocess.CompletedProcess(argv, 1, stdout="✖ Button warm-test/light color.a on color.b: 3.9:1 (needs 4.5 for AA)\n1 failure", stderr="")
 

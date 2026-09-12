@@ -1,5 +1,6 @@
-"""Shared fixtures. Puts tools/ and mcp/ on sys.path so the modules import the
-same way they do when run as scripts (both use sys.path.insert on themselves)."""
+"""Shared fixtures. Puts tools/, mcp/ and this folder on sys.path so the modules import the
+same way they do when run as scripts (both use sys.path.insert on themselves), and so the
+modules here can `from helpers import ...` however pytest was invoked."""
 from __future__ import annotations
 
 import copy
@@ -10,7 +11,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-for d in (ROOT / "tools", ROOT / "mcp"):
+for d in (ROOT / "tools", ROOT / "mcp", ROOT / "tests"):
     if str(d) not in sys.path:
         sys.path.insert(0, str(d))
 

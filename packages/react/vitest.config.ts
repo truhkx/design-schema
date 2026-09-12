@@ -3,9 +3,9 @@ import { defineConfig } from 'vitest/config';
 
 const require = createRequire(import.meta.url);
 
-// The tests gate (tools/checks.py) runs `pnpm test -- src/<Name>.test.tsx` per component.
+// The tests gate (tools/checks.ts) runs `pnpm test -- src/<Name>.test.tsx` per component.
 // jsdom is enough for React: the components are native elements with ARIA, not layout.
-// The behavior gate (tools/behavior_tests.py) writes generated/behavior/<Name>.web.test.tsx,
+// The behavior gate (tools/behavior_tests.ts) writes generated/behavior/<Name>.web.test.tsx,
 // run with `pnpm test -- generated/behavior/<Name>.web`; it is included here too.
 export default defineConfig({
   // generated/behavior/*.web.test.tsx sits outside src/, so the transformer's tsconfig discovery (which

@@ -509,7 +509,7 @@ def _theme_body(t: dict, a: dict) -> str:
     references = a.get("references") or "Not yet recorded."
     when = a.get("whenToUse") or f"Choose this theme when the product should feel {tone}."
     when_not = a.get("whenNotToUse") or f"Do not use it where the product needs to feel {not_word}; pick or author another theme."
-    a11y = a.get("accessibility") or ("Every supported mode is derived to meet WCAG 2.2 AA on every action variant and AAA on headings against the page background; the build proves it with tools/check_contrast.py. "
+    a11y = a.get("accessibility") or ("Every supported mode is derived to meet WCAG 2.2 AA on every action variant and AAA on headings against the page background; the build proves it with tools/check_contrast.ts. "
                                       "The focus ring is the accent at 2px, visible on every surface. The 24px minimum target is enforced in every component; the 44px comfortable target is used on touch platforms.")
     notes = a.get("platformNotes") or {}
     web = notes.get("web") or f"Apply the theme with `data-theme=\"{pid}\"` and switch modes with `data-mode=\"dark\"` on the root element."
@@ -560,7 +560,7 @@ def _theme_body(t: dict, a: dict) -> str:
 @_logged
 def write_theme(id: str, answers: dict, overwrite: bool = False) -> dict:
     """Write site/src/content/docs/themes/<id>.md from interview answers in the calm-precise shape, validate the
-    frontmatter against schema/theme.schema.json, run tools/theme.py to derive the tokens for every mode, and
+    frontmatter against schema/theme.schema.json, run tools/theme.ts to derive the tokens for every mode, and
     return what happened. `answers` carries the frontmatter decisions (tone, not, seed, neutralTint, scale,
     radius, density, motion, elevation, layout, modes, statusHues?, overrides?) plus prose (title, description,
     feel, notFeel, references, whenToUse, whenNotToUse, accessibility, platformNotes {web, lit, rn}).
@@ -592,13 +592,17 @@ def write_theme(id: str, answers: dict, overwrite: bool = False) -> dict:
     path.write_text("---\n" + front + "---\n" + _theme_body(t, {**answers, "title": title}), encoding="utf-8")
     env = {"PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
     import os
-    run = subprocess.run([sys.executable, str(ROOT / "tools" / "theme.py")], cwd=ROOT, capture_output=True, text=True,
+    import shutil
+    # The generator is TypeScript: `--import tsx` runs it on any Node ≥ 22 (native type stripping needs 22.18+).
+    node = shutil.which("node") or "node"
+    run = subprocess.run([node, "--import", "tsx", str(ROOT / "tools" / "theme.ts")], cwd=ROOT, capture_output=True, text=True,
                          encoding="utf-8", errors="replace", env={**os.environ, **env})
     errors = [ln.strip() for ln in (run.stderr or "").splitlines() if ln.strip()]
     result = {"ok": run.returncode == 0, "written": _rel(path), "themeOutput": (run.stdout or "").strip(), "errors": errors,
               "tokens": _rel(ROOT / "tokens" / "themes" / id) if (ROOT / "tokens" / "themes" / id).exists() else None}
     if run.returncode == 0:
-        check = subprocess.run([sys.executable, str(ROOT / "tools" / "check_contrast.py")], cwd=ROOT, capture_output=True, text=True,
+        # The contrast gate is TypeScript too.
+        check = subprocess.run([node, "--import", "tsx", str(ROOT / "tools" / "check_contrast.ts")], cwd=ROOT, capture_output=True, text=True,
                                encoding="utf-8", errors="replace", env={**os.environ, **env})
         failures = [ln.strip() for ln in (check.stdout or "").splitlines() if ln.strip().startswith("✖") and id in ln]
         result["contrast"] = {"ok": check.returncode == 0 and not failures, "failures": failures,

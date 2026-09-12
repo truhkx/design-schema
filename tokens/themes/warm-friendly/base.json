@@ -2,7 +2,7 @@
   "color": {
     "$type": "color",
     "palette": {
-      "$description": "Derived by tools/theme.py \u2014 edit the theme doc, not this file.",
+      "$description": "Derived by tools/theme.ts \u2014 edit the theme doc, not this file.",
       "neutral": {
         "0": {
           "$value": "#f9eace"

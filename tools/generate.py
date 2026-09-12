@@ -17,7 +17,7 @@ How it works
      conventions, write these files, report gaps as JSON). Runner `cli` drives Claude Code
      headless (`claude -p`, tools enabled, cwd = repo); runner `api` calls the Messages API and
      expects files back in a fenced format, which this script writes.
-  3. Gates (tools/checks.py): parse, contrast, literals, typecheck. Failures are handed back to
+  3. Gates (tools/checks.ts): parse, contrast, literals, typecheck. Failures are handed back to
      the model verbatim as a fix round, up to --max-rounds. The model never sees the gate code.
   4. Gaps the model reported land in generated/gaps/<Name>.<platform>.md for the doc pass.
      The lockfile records hash, files, rounds, gate results and cost.
@@ -41,10 +41,8 @@ import re
 import shutil
 import subprocess
 import time
+from dataclasses import dataclass
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import checks  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 PROMPTS = ROOT / "generated" / "prompts"
@@ -85,6 +83,52 @@ When the files are written, end your reply with exactly one fenced block:
 Do not edit anything under site/, schema/, prompts/ or generated/ — the docs are fixed from your gap list by a separate pass.
 Do not add dependencies. Do not write README files.
 """
+
+
+@dataclass
+class GateResult:
+    name: str
+    ok: bool
+    output: str
+
+
+def run_gates(platform: str, skip: set[str] | None = None, verbose: bool = True, extra: set[str] | None = None) -> list[GateResult]:
+    """The gates, run by tools/checks.ts.
+
+    The gate table lives in TypeScript now (job 303); `--json` hands back one object per gate so this
+    runner can print and hand back failures exactly as the in-process Python version did. Step 5 of
+    process/typescript-and-currency.md ports this file and the bridge goes with it.
+    """
+    node = shutil.which("node") or shutil.which("node.exe") or "node"
+    argv = [node, "--import", "tsx", str(ROOT / "tools" / "checks.ts"), "--platform", platform, "--json"]
+    for name in sorted(skip or set()):
+        argv += ["--skip", name]
+    for name in sorted(extra or set()):
+        argv += ["--with", name]
+    p = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                       env={**os.environ, "FORCE_COLOR": "0"})
+    try:
+        results = [GateResult(r["name"], r["ok"], r["output"]) for r in json.loads(p.stdout)]
+    except (json.JSONDecodeError, KeyError, TypeError):  # the gate runner itself failed: one failing gate says so
+        results = [GateResult("checks", False, ((p.stdout or "") + (p.stderr or "")).strip() or "tools/checks.ts produced no output")]
+    if verbose:
+        for r in results:
+            tail = r.output.splitlines()[-1] if r.output else ""
+            print(f"  {'✔' if r.ok else '✖'} {r.name:<10} {tail[:110]}")
+    return results
+
+
+def failures_as_prompt(results: list[GateResult], limit: int = 6000) -> str:
+    """The text handed back to the model: only failing gates, trimmed."""
+    parts = []
+    for r in results:
+        if r.ok:
+            continue
+        out = r.output
+        if len(out) > limit:
+            out = out[-limit:]
+        parts.append(f"### Gate `{r.name}` FAILED\n```\n{out}\n```")
+    return "\n\n".join(parts)
 
 
 def sha(text: str) -> str:
@@ -464,7 +508,7 @@ def generate_one(name: str, platform: str, args, lock: dict) -> bool:
     # Preflight: gates that do not depend on the generated code must already pass, or every fix round
     # would be spent on something the model cannot change (a doc elsewhere failing to parse, a contrast
     # pair in another component). Costs nothing; saves the whole run when the docs are the problem.
-    pre = [r for r in checks.run_all(platform, skip | {"typecheck", "literals", "keyboard", "keyboard-run", "axe"}, verbose=False) if not r.ok]
+    pre = [r for r in run_gates(platform, skip | {"typecheck", "literals", "keyboard", "keyboard-run", "axe"}, verbose=False) if not r.ok]
     if pre:
         print(f"  ✖ {key}: preflight failed before any model call — fix the docs and re-run tools/parse.ts:")
         for r in pre:
@@ -509,9 +553,9 @@ def generate_one(name: str, platform: str, args, lock: dict) -> bool:
         all_gaps += rep["gaps"]
         record_gaps(name, platform, rep["gaps"], round_no)
         print(f"  round {round_no}: {len(rep['files'])} file(s), {len(rep['gaps'])} gap(s), ${c:.3f}")
-        results = checks.run_all(platform, skip, extra=set(args.extra))
+        results = run_gates(platform, skip, extra=set(args.extra))
         if custom_changed:
-            results.append(checks.GateResult("custom", False,
+            results.append(GateResult("custom", False,
                 "packages/" + PKG[platform] + "/src/custom/ is hand-written and never the generator's to change; these files were "
                 "restored: " + ", ".join(custom_changed) + ". Import the modules the Extensions section names and call them where "
                 "`wire` says; do not create, edit or copy anything under custom/."))
@@ -522,7 +566,7 @@ def generate_one(name: str, platform: str, args, lock: dict) -> bool:
         if round_no == args.max_rounds:
             print(f"  ✖ gates still failing after {round_no} round(s): {', '.join(r.name for r in bad)}")
             break
-        prompt = fix_prompt(name, platform, checks.failures_as_prompt(results), round_no + 1)
+        prompt = fix_prompt(name, platform, failures_as_prompt(results), round_no + 1)
 
     ok = all(r.ok for r in results)
     lock[key] = {

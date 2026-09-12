@@ -13,13 +13,16 @@ site/src/content/docs/components/*.md  Stage 4: component docs — frontmatter =
 prompts/templates/                     theme.md (the "feel" skill) + web/lit/rn.md (per-component generators)
 packages/{tokens,react,lit,rn}/        built tokens + GENERATED components, stories and a sign-in demo per platform
 storybook/                             root Storybook composing the three platform Storybooks side by side
-tools/theme.py                         theme doc → OKLCH ramps, scales, contrast-aware semantic mapping
-tools/tokens.py                        pure-Python token resolver (theme × mode); fallback CSS for the site
+tools/theme.ts                         theme doc → OKLCH ramps, scales, contrast-aware semantic mapping (TypeScript; `node --import tsx`)
+tools/lib/tokens.ts                    DTCG token resolver (theme × mode) the tools read through
 tools/parse.ts                         validates docs → generated/{components,themes}.json + generated/prompts/*.md (TypeScript; `node --import tsx`)
-tools/check_contrast.py                WCAG contrast for every declared pair × theme × mode × variant
-tools/generate.py + generate.ps1       doc → platform code + tests via Claude Code headless, gated by tools/checks.py; lockfile in generated/
-tools/checks.py                        the gates: parse, contrast, literals, typecheck, tests (Vitest / Vitest browser / Jest per platform)
-tools/lint_literals.py                 build gate: no hex/px/ms/font literals in generated packages
+tools/check_contrast.ts + oklch.ts     WCAG contrast for every declared pair × theme × mode × variant (TypeScript; `node --import tsx`)
+tools/generate.py + generate.ps1       doc → platform code + tests via Claude Code headless, gated by tools/checks.ts; lockfile in generated/
+tools/checks.ts                        the gates: parse, contrast, literals, typecheck, tests (Vitest / Vitest browser / Jest per platform)
+tools/spec_sheet.ts                    every token value and style binding of a theme → the spec-sheet page (TypeScript; `node --import tsx`)
+tools/lint_literals.ts                 build gate: no hex/px/ms/font literals in generated packages (TypeScript; `node --import tsx`)
+tools/keyboard_tests.ts                `keyboard` block → generated/keyboard/*.spec.ts (Playwright; TypeScript)
+tools/behavior_tests.ts                `behavior` scenarios → generated/behavior/*.test.ts(x) (TypeScript)
 prompts/conventions/                   one-page package digests the generator reads instead of the whole package
 mcp/                                   FastMCP server + the ChromaDB index it searches
 tests/                                 pytest suite for the Python tools, the MCP server, and the docs

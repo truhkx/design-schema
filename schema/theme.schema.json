@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://design-schema.dev/schema/theme.schema.json",
   "title": "Theme frontmatter",
-  "description": "The decisions a theme is derived from. Lives under the `theme:` key of a theme doc's frontmatter. tools/theme.py turns this into full DTCG token files for every mode.",
+  "description": "The decisions a theme is derived from. Lives under the `theme:` key of a theme doc's frontmatter. tools/theme.ts turns this into full DTCG token files for every mode.",
   "type": "object",
   "required": [
     "theme"

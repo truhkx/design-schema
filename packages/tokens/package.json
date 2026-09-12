@@ -1,7 +1,7 @@
 {
   "name": "@design-schema/tokens",
   "version": "0.0.1",
-  "description": "Built design tokens, one entry per theme, mode and platform. Generated into dist/ by `pnpm themes` (Python fallback) or `pnpm tokens` (Style Dictionary).",
+  "description": "Built design tokens, one entry per theme, mode and platform. Generated into dist/ by `pnpm tokens` (Style Dictionary, tokens/build.mjs).",
   "license": "MIT",
   "repository": {
     "type": "git",

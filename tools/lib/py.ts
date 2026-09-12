@@ -93,6 +93,100 @@ export function pyFixed(x: number, digits: number): string {
   return (neg ? '-' : '') + kept;
 }
 
+/** Python's `round(x)`: half to even, returning an integer. */
+export function pyRound(x: number): number {
+  const f = Math.floor(x);
+  const diff = x - f;
+  if (diff > 0.5) return f + 1;
+  if (diff < 0.5) return f;
+  return f % 2 === 0 ? f : f + 1;
+}
+
+/**
+ * Python's `round(x, digits)`: the double nearest the correctly-rounded (ties to even) decimal.
+ * `pyFixed` produces that decimal exactly, so parsing it back lands on the same double CPython returns.
+ */
+export function pyRoundTo(x: number, digits: number): number {
+  if (!Number.isFinite(x)) return x;
+  return Number(pyFixed(x, digits));
+}
+
+// `re.escape()`'s table (Python 3.7+): only these are backslash-escaped, space and the ASCII
+// whitespace controls among them.
+const RE_SPECIAL = new Set([...'()[]{}?*+-|^$\\.&~# \t\n\r\v\f']);
+
+/** `re.escape(pattern)`. */
+export function pyReEscape(pattern: string): string {
+  let out = '';
+  for (const ch of pattern) out += RE_SPECIAL.has(ch) ? '\\' + ch : ch;
+  return out;
+}
+
+function jsonString(s: string): string {
+  let out = '"';
+  for (const unit of s) {
+    // `ensure_ascii=True`: everything above `~` becomes `\uXXXX`, astral planes as a surrogate pair.
+    if (unit === '"' || unit === '\\') out += '\\' + unit;
+    else if (unit === '\n') out += '\\n';
+    else if (unit === '\r') out += '\\r';
+    else if (unit === '\t') out += '\\t';
+    else if (unit === '\b') out += '\\b';
+    else if (unit === '\f') out += '\\f';
+    else {
+      const cp = unit.codePointAt(0) as number;
+      if (cp < 0x20 || cp > 0x7e) for (const code of unit.split('').map((u) => u.charCodeAt(0))) out += '\\u' + code.toString(16).padStart(4, '0');
+      else out += unit;
+    }
+  }
+  return out + '"';
+}
+
+/**
+ * `json.dumps(value, indent=indent)`: `ensure_ascii=True`, the `', '` / `': '` separators JSON.stringify
+ * omits when compact, and `,\n` / `': '` when indented (empty containers still collapse to `{}` / `[]`).
+ * A `Map` is dumped as an object, which is how the ported tools keep Python's key order for the groups
+ * whose keys are numbers — JavaScript hoists `"0"`, `"1"`, … to the front of a plain object.
+ */
+export function pyJsonDumps(value: unknown, indent?: number): string {
+  const pad = indent === undefined ? '' : ' '.repeat(indent);
+  const dump = (v: unknown, level: number): string => {
+    if (v === null || v === undefined) return 'null';
+    if (v === true) return 'true';
+    if (v === false) return 'false';
+    if (typeof v === 'number') {
+      if (Number.isNaN(v)) return 'NaN';
+      if (!Number.isFinite(v)) return v > 0 ? 'Infinity' : '-Infinity';
+      return Number.isInteger(v) ? String(v) : pyFloatRepr(v);
+    }
+    if (typeof v === 'string') return jsonString(v);
+    const items: string[] = Array.isArray(v)
+      ? v.map((x) => dump(x, level + 1))
+      : [...(v instanceof Map ? v : new Map(Object.entries(v as Record<string, unknown>)))].map(
+          ([k, x]) => `${jsonString(String(k))}: ${dump(x, level + 1)}`,
+        );
+    const [open, close] = Array.isArray(v) ? ['[', ']'] : ['{', '}'];
+    if (!items.length) return open + close;
+    if (indent === undefined) return open + items.join(', ') + close;
+    const inner = pad.repeat(level + 1);
+    return `${open}\n${inner}${items.join(`,\n${inner}`)}\n${pad.repeat(level)}${close}`;
+  };
+  return dump(value, 0);
+}
+
+/** `sorted(strings)`: Python compares strings by code point, `Array.sort` by UTF-16 code unit. */
+export function pySorted(values: string[]): string[] {
+  return [...values].sort((a, b) => {
+    const x = [...a];
+    const y = [...b];
+    for (let i = 0; i < Math.min(x.length, y.length); i++) {
+      const d = (x[i] as string).codePointAt(0) as number;
+      const e = (y[i] as string).codePointAt(0) as number;
+      if (d !== e) return d - e;
+    }
+    return x.length - y.length;
+  });
+}
+
 /** `str.ljust(width)`. */
 export function ljust(s: string, width: number): string {
   return s.length >= width ? s : s + ' '.repeat(width - s.length);

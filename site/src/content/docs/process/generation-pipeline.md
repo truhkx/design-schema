@@ -14,7 +14,7 @@ doc (site/src/content/docs/components/<name>.md)
   └─ tools/parse.ts ──► generated/prompts/<Name>.<platform>.md      (deterministic; sha256 = identity of the spec)
        └─ tools/generate.py
             round 1: model writes packages/<pkg>/src/<Name>.*  (+ index.ts export)  and reports gaps as JSON
-            gates:   tools/checks.py → parse · contrast · literals · typecheck
+            gates:   tools/checks.ts → parse · contrast · literals · typecheck
             round 2..N: only if a gate failed — the model gets the failing output verbatim, nothing else
             └─ generated/generate.lock.json   hash, files, rounds, gate results, cost
                generated/gaps/<Name>.<platform>.md   every guess the model had to make
@@ -34,10 +34,10 @@ Each gate is a process that exits 0 or does not; the model never sees the gate's
 
 **`parse`** — the docs still validate. A generator is told not to touch docs; this is how we know.
 **`contrast`** — every declared pair, every theme and mode. Doc-level, but cheap, and it catches a regenerated theme.
-**`literals`** — `tools/lint_literals.py`: no hex, rgb, px, ms or font-stack literals in `packages/*/src`, and no bare numbers on size properties in React Native styles. The visually-hidden clip pattern and `color-mix` of tokens are exempt; anything else needs a `literal-ok: <reason>` mark, which is a code-review flag by design.
+**`literals`** — `tools/lint_literals.ts`: no hex, rgb, px, ms or font-stack literals in `packages/*/src`, and no bare numbers on size properties in React Native styles. The visually-hidden clip pattern and `color-mix` of tokens are exempt; anything else needs a `literal-ok: <reason>` mark, which is a code-review flag by design.
 **`typecheck`** — the package's real TypeScript typings (`pnpm --filter <pkg> typecheck`). Skippable with `--skip typecheck` where `node_modules` is not available.
 
-**`keyboard`** (opt-in, `--with keyboard`) — `tools/keyboard_tests.py` reads every component's `keyboard` block and writes one Playwright spec per component and web platform into `generated/keyboard/`. A rule like `{ keys: [Tab], from: last, expect: focus-wraps-to-first }` becomes a test that opens the component's `Keyboard` story, puts focus where `from` says, presses the key, and asserts the `expect` — the root disappears, focus moved to the index it should, the trigger is focused, an aria state flipped. Rules marked `expect: manual` appear as skipped tests so coverage is visible. The walker crosses shadow roots, so Lit elements are tested the same way. Nobody writes a keyboard test per component; the doc is the test.
+**`keyboard`** (opt-in, `--with keyboard`) — `tools/keyboard_tests.ts` reads every component's `keyboard` block and writes one Playwright spec per component and web platform into `generated/keyboard/`. A rule like `{ keys: [Tab], from: last, expect: focus-wraps-to-first }` becomes a test that opens the component's `Keyboard` story, puts focus where `from` says, presses the key, and asserts the `expect` — the root disappears, focus moved to the index it should, the trigger is focused, an aria state flipped. Rules marked `expect: manual` appear as skipped tests so coverage is visible. The walker crosses shadow roots, so Lit elements are tested the same way. Nobody writes a keyboard test per component; the doc is the test.
 **`axe`** (opt-in, `--with axe`) — `tests/gates/axe.spec.ts` loads every story from each Storybook's `index.json` in light and dark mode and runs axe-core with the WCAG 2.2 AA tag set. A missing accessible name or a contrast failure axe can see fails here rather than in review.
 
 Both browser gates need `pnpm install` (Playwright and `@axe-core/playwright` are dev dependencies) and `pnpm exec playwright install chromium` once; Playwright starts the three Storybooks itself or reuses running ones. Run them on committed code with `pnpm gates:keyboard` / `pnpm gates:axe`, or during generation with `generate.ps1 -Component Dialog -Extra "--with keyboard --with axe"`.

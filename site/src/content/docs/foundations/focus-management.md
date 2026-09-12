@@ -33,7 +33,7 @@ The composite primitive, implemented per component rather than as a wrapper beca
 
 ## What the gates check
 
-The `keyboard` block in a component doc is this page as data: `{ keys: [Tab], from: last, expect: focus-wraps-to-first }`. `tools/keyboard_tests.py` turns every rule with an `expect` into a Playwright test against the component's `Keyboard` story, so a scope that stops wrapping, a menu whose Escape no longer restores focus, or a dialog that lets Tab escape fails the build. The axe gate catches the rest of what is checkable without interaction: names, roles, contrast.
+The `keyboard` block in a component doc is this page as data: `{ keys: [Tab], from: last, expect: focus-wraps-to-first }`. `tools/keyboard_tests.ts` turns every rule with an `expect` into a Playwright test against the component's `Keyboard` story, so a scope that stops wrapping, a menu whose Escape no longer restores focus, or a dialog that lets Tab escape fails the build. The axe gate catches the rest of what is checkable without interaction: names, roles, contrast.
 
 ## Platform notes
 

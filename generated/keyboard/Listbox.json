@@ -1,0 +1,91 @@
+{
+  "name": "Listbox",
+  "role": "listbox",
+  "identifier": "Listbox",
+  "rules": [
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "Moves to the next enabled option (and selects it when selection follows focus).",
+      "from": "first",
+      "expect": "focus-next"
+    },
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "Moves to the previous enabled option.",
+      "from": "last",
+      "expect": "focus-prev"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "First option.",
+      "from": "last",
+      "expect": "focus-first"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Last option.",
+      "from": "first",
+      "expect": "focus-last"
+    },
+    {
+      "keys": [
+        " "
+      ],
+      "action": "Selects the focused option; with `multiple`, toggles it.",
+      "from": "first",
+      "expect": "selects"
+    },
+    {
+      "keys": [
+        "Enter"
+      ],
+      "action": "Selects the focused option (single) — inside a Select or Combobox, also closes the popup.",
+      "from": "first",
+      "expect": "selects"
+    },
+    {
+      "keys": [
+        "Shift+ArrowDown",
+        "Shift+ArrowUp"
+      ],
+      "action": "Multiple: moves and adds the next/previous option to the selection.",
+      "from": "first",
+      "expect": "manual",
+      "when": "multiple"
+    },
+    {
+      "keys": [
+        "Control+a"
+      ],
+      "action": "Multiple: selects all enabled options; again clears.",
+      "from": "first",
+      "expect": "manual",
+      "when": "multiple"
+    },
+    {
+      "keys": [
+        "a-z"
+      ],
+      "action": "Typeahead to the next option whose label starts with the typed characters.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "PageDown",
+        "PageUp"
+      ],
+      "action": "Moves by the visible row count.",
+      "from": "first",
+      "expect": "manual"
+    }
+  ]
+}

@@ -11,7 +11,6 @@ theme:
     neutral: '#C9B99C'
     typeface: system
     mono: system
-  neutralTint: 0.6
   scale: { base: 16, ratio: 1.25 }
   radius: md
   density: roomy

@@ -6,7 +6,7 @@ import { describe, expect, test } from 'vitest';
 import { componentFrontmatter } from '../../schema/component.ts';
 import { extensionFrontmatter } from '../../schema/extension.ts';
 import { readText } from '../lib/py.ts';
-import { componentJsonSchema, renderSchema, SCHEMA_FILE } from '../schema.ts';
+import { componentJsonSchema, extensionJsonSchema, renderSchema, SCHEMA_FILE, targets, themeJsonSchema } from '../schema.ts';
 import { component } from './fixtures.ts';
 
 describe('derived JSON schema', () => {
@@ -15,7 +15,31 @@ describe('derived JSON schema', () => {
     expect(readText(SCHEMA_FILE), 'run node tools/schema.ts').toBe(renderSchema());
   });
 
-  test('keeps the $defs the extension schema references across files', () => {
+  test('every derived JSON schema is committed and current', () => {
+    const t = targets();
+    expect(t.map((x) => x.source)).toEqual(['schema/component.ts', 'schema/naming.ts', 'schema/theme.ts', 'schema/extension.ts']);
+    for (const { file, text } of t) expect(readText(file), `${file}: run node tools/schema.ts`).toBe(text);
+  });
+
+  test('the theme schema keeps its descriptions, defaults and strict objects', () => {
+    const schema = themeJsonSchema();
+    const def = (schema.$defs as Record<string, any>).themeDef;
+    expect(def.additionalProperties).toBe(false);
+    expect(def.properties.seed.additionalProperties).toBe(false);
+    expect(def.properties.statusHues.properties.danger.default).toBe(25);
+    expect(def.properties.statusHues.properties.info.default).toBe(null);
+    expect(def.properties.neutralTint.default).toBe(0.2);
+    expect(def.properties.tone.description).toContain('tie-breaker');
+    expect(def.required).toEqual(['id', 'tone', 'not', 'seed', 'scale', 'radius', 'density', 'modes']);
+  });
+
+  test('the extension schema is self-contained: component shapes are local $defs', () => {
+    const text = JSON.stringify(extensionJsonSchema());
+    expect(text).not.toContain('component.schema.json#');
+    expect((extensionJsonSchema().$defs as Record<string, unknown>)).toHaveProperty('propDef');
+  });
+
+  test('keeps the $defs other schemas reuse', () => {
     const schema = componentJsonSchema();
     expect(schema.$id).toBe('https://design-schema.dev/schema/component.schema.json');
     const defs = schema.$defs as Record<string, unknown>;

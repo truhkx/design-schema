@@ -20,21 +20,34 @@
 }
 
 /*
- * The sidebar is taller than a phone and often taller than a desktop viewport, so it scrolls with
- * the page until it reaches the top and then stays put — the header's own height is what it sits
- * below. Everything here is position and spacing; nothing sets how a Disclosure or a Link looks.
+ * The navigation inside the column (Tony's review, 2026-09-15). It scrolls with the page until it
+ * reaches a gutter below the top of the viewport and then stays put. It is never taller than the
+ * viewport less a gutter at each end, and never taller than the column (`100%`). So once its groups
+ * outgrow that space it scrolls on its own, and since a sticky box cannot leave its column, the
+ * footer never ends up underneath it. A plain `100vh` would do neither: it would run past the fold
+ * below the header, and past the column's end on a short page. Everything here is position and
+ * spacing; nothing sets how a Disclosure or a Link looks.
  */
 .ds-docs-nav__sidebar {
   position: sticky;
   inset-block-start: var(--layout-gutter);
-  max-block-size: calc(100vh - var(--layout-section-md));
+  max-block-size: min(100vh - 2 * var(--layout-gutter), 100%);
   overflow-y: auto;
   padding-inline-end: var(--layout-gutter-narrow);
 }
 
 @media (min-width: 768px) { /* layout.breakpoint.md */
+  /*
+   * The column itself: the grid cell, stretched to the full height of the docs shell (docs-layout.css),
+   * with a rule down its edge from the header to the footer. `contain: size` stops the navigation's
+   * own height from counting towards the row. Without it, a tall list would stretch the page to fit
+   * instead of scrolling inside the column; with it, the row is the content's height or the room
+   * between header and footer, whichever is greater.
+   */
   .ds-docs-nav__wide {
     display: block;
+    contain: size;
+    border-inline-end: var(--border-width-thin) solid var(--color-border);
   }
 
   .ds-docs-nav__narrow {

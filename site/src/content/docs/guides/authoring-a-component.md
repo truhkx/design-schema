@@ -27,7 +27,7 @@ component:
   events:                        # name → { description, platforms: { web, lit, rn, … } }
   styles:                        # cssProperty → { token, description? }   tokens may interpolate enum props: space.{size}
   a11y:                          # { role, requires: [...], contrast: [{ foreground, background, level, large? }] }
-  platforms:                     # web | lit | rn | swiftui | compose → { element|tag, attributes, props, reflect, supported, notes }
+  platforms:                     # web | lit | rn | swiftui → { element|tag, attributes, props, reflect, supported, notes }; lit needs tag unless supported: false
   behavior:                      # given/when/then scenarios that become one test each per platform (see below)
 ```
 
@@ -49,9 +49,9 @@ behavior:
     platforms: [web, lit]               # optional; default = every platform the component declares
 ```
 
-**Interactions** (`when`, exactly one): `key` (`Space`, `Enter`, `Escape`, `Tab`, `Shift+Tab`, arrows, `Home`, `End`; `on: <part>` targets a part other than the one carrying `a11y.role`), `click: <part>` (a press on native), `type: <text>`, `focus: <part>`, `set: { prop: value }` (re-render with changed props).
+**Interactions** (`when`, exactly one): `click: <part>` (a press on native), `key: <chord>` pressed on the part carrying `a11y.role` (a `KeyboardEvent.key` name — `Enter`, `' '` or its alias `Space`, `Escape`, `Tab`, arrows, `Home`, `End`, `F2`, a letter — optionally behind `Shift+`, `Control+`, `Alt+` or `Meta+`), `type: <text>`, `focus: <part>`, `blur: true`, `set: { prop: value }` (a controlled prop change, applied as a re-render), `hover: <part>`.
 
-**Expectations** (`then`, exactly one kind each): `event` (`fired: false` for "must not fire", `with` for the first argument / event detail), `state` + `is` (`checked`, `expanded`, `selected`, `pressed`, `disabled`, `invalid`, `open`, `value`, `busy`), `focus` (a part, or `none` / `moved` / `unchanged`), `text` or `copy` (+ `present: false`; `copy` names a `copy.*` template), `focusable`, `role` (+ `name`), `accessibleName`, `renders`. An expectation can carry its own `platforms` to narrow just itself.
+**Expectations** (`then`, exactly one kind each): `event` (`with` for the first argument / event detail, or `fired: false` for "must not fire" — never both), `state` + `is` (`checked`, `expanded`, `selected`, `pressed`, `disabled`, `invalid`, `open`; `is` is `true`, `false` or `mixed`), `focused` (a part, or `none` / `moved` / `unchanged`), `text`, `copy` (names a `copy.*` template), `focusable: true|false`, `renders: true|false`, `role`, `name` (`true` for the accessible name the naming prop gives, or the exact name as a string), `attribute` + `is` (the value, or `null` for absent; `on: <part>` targets a part other than the primary one). An expectation can carry its own `platforms` to narrow just itself. `whenClause` and `thenClause` in `schema/component.ts` are the definition; the parser rejects anything else.
 
 The parser checks every prop, enum value, anatomy part, event, copy key and platform a scenario names, and rejects what a platform's harness cannot express: React Native tests have no keyboard and cannot observe focus or an invalid state, so a scenario using those must be narrowed to `[web, lit]` explicitly. Where platforms genuinely differ — a Lit property is live state, so "controlled" has no meaning there — narrow the scenario and say why in its `description`.
 

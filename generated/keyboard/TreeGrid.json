@@ -1,0 +1,78 @@
+{
+  "name": "TreeGrid",
+  "role": "treegrid",
+  "identifier": "TreeGrid",
+  "rules": [
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Enters and leaves the grid — one tab stop, as DataGrid.",
+      "from": "any",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowDown",
+        "ArrowUp"
+      ],
+      "action": "Next / previous visible row, same column. Collapsed descendants are skipped because they are not rendered.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowRight"
+      ],
+      "action": "On a collapsed row header: expands. On an expanded row header: moves to the next cell. On any other cell: next cell.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowLeft"
+      ],
+      "action": "On a row header of an expanded row: collapses. On a row header of a collapsed or leaf row: moves focus to the parent row's header. On any other cell: previous cell.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Home",
+        "End"
+      ],
+      "action": "First / last cell in the row (Ctrl: first / last visible row of the grid).",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Enter"
+      ],
+      "action": "On a row header: toggles expansion (or activates a control inside it). Elsewhere as DataGrid: sort, edit, activate.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "*"
+      ],
+      "action": "Expands every row at the focused row's level under the same parent, the focused row included.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "F2",
+        "Escape",
+        " ",
+        "Control+a",
+        "Shift+ArrowLeft",
+        "Shift+ArrowRight"
+      ],
+      "action": "As DataGrid (Shift+Space extends the row selection; with selectChildren each selected parent cascades).",
+      "from": "inside",
+      "expect": "manual"
+    }
+  ]
+}

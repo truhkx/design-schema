@@ -73,7 +73,7 @@ describe('buildNav', () => {
         components: [{ name: 'Button', slug: 'button' }, { name: 'Link', slug: 'link' }, { name: 'Input', slug: 'input' }],
       },
     ]);
-    expect(built.top.map((item) => item.label)).toEqual(['Homepage', 'Docs', 'GitHub', 'About']);
+    expect(built.top.map((item) => item.label)).toEqual(['Docs', 'GitHub', 'About']);
     expect(built.top.filter((item) => item.external)).toEqual([{ label: 'GitHub', href: nav.REPO_URL, external: true }]);
   });
 
@@ -96,7 +96,7 @@ describe('main', () => {
   test('writes nav.json and is byte-identical on a re-run', () => {
     expect(nav.main([])).toBe(0);
     const first = readFileSync(nav.paths.OUT);
-    expect(std.out()).toContain('5 components in 2 phases, 4 top-level links');
+    expect(std.out()).toContain('5 components in 2 phases, 3 top-level links');
     expect(nav.main([])).toBe(0);
     expect(readFileSync(nav.paths.OUT).equals(first)).toBe(true);
     expect(nav.main(['--check'])).toBe(0);

@@ -3,14 +3,34 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
+import { behaviorScenario, componentDef } from '../../schema/component.ts';
 import { readText } from '../lib/py.ts';
 import { dump } from '../lib/pyyaml.ts';
+import { REPO_ROOT } from '../lib/root.ts';
 import * as parse from '../parse.ts';
 import { BODY, component, expectDocError, fmText, theme, usePaths, useStd, useTmp, write } from './fixtures.ts';
 
 const tmp = useTmp();
 usePaths();
 const std = useStd();
+
+describe('generated/components.json', () => {
+  /** The parser's output is schema data: stamped `source` markers and derived scenarios included. */
+  test('every component and derived scenario revalidates', () => {
+    const file = join(REPO_ROOT, 'generated', 'components.json');
+    expect(existsSync(file), 'generated/components.json is missing — run pnpm parse').toBe(true);
+    const entries = JSON.parse(readFileSync(file, 'utf8')) as parse.Dict[];
+    expect(entries.length).toBeGreaterThan(0);
+    for (const entry of entries) {
+      const c = componentDef.safeParse(entry.component);
+      expect(c.success, `${entry.id}.component: ${c.error?.message}`).toBe(true);
+      for (const sc of entry.behaviorDerived as unknown[]) {
+        const r = behaviorScenario.safeParse(sc);
+        expect(r.success, `${entry.id}.behaviorDerived: ${r.error?.message}`).toBe(true);
+      }
+    }
+  });
+});
 
 describe('splitFrontmatter', () => {
   test('splits frontmatter from body', () => {
@@ -118,6 +138,16 @@ describe('validate', () => {
 
   test('name must match the file name', () => {
     expectDocError(() => check(component(), 'gadget'), 'should match file name');
+  });
+
+  test('a doc may not author source, which only stampSources sets', () => {
+    const c = component();
+    c.props.label.source = 'extensions/Widget.x.md';
+    expectDocError(() => check(c), "props.label sets 'source'");
+    const k = component();
+    k.a11y.requires.push('keyboard-operable');
+    k.keyboard = [{ keys: ['Enter'], action: 'x', source: 'extensions/Widget.x.md' }];
+    expectDocError(() => check(k), "keyboard.0 sets 'source'");
   });
 
   test('hyphens in the file name are ignored when matching', () => {

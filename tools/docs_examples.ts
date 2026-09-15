@@ -13,9 +13,8 @@
  * 1. `packages/react/src/<Name>.stories.tsx` — parsed with the TypeScript compiler API, never
  *    imported. A story module pulls in React, the component and its CSS; importing it into a Node
  *    tool would need a bundler and a DOM, and would make a tool that reads source depend on source
- *    that runs. The parse walks the named exports that sit beside `export default meta`, merges
- *    each one's `args` over the meta's (Storybook's own precedence), and keeps the export's source
- *    slice for display.
+ *    that runs. The parse walks the named exports that sit beside `export default meta` and merges
+ *    each one's `args` over the meta's (Storybook's own precedence).
  * 2. `packages/react/storybook-static/index.json` — the manifest `storybook build` writes, which
  *    is where `storyId` comes from. Storybook's ID algorithm (title + export name, sluggified, with
  *    its own collision rules) is Storybook's to change; re-deriving it here would produce deep links
@@ -24,7 +23,31 @@
  *
  * Writes `generated/examples/<Name>.json`:
  *
- *   [{ "title": "Default", "args": {...}, "sourceText": "export const Default…", "storyId": "button-react--default" }, …]
+ *   { "layout": "scenarios",
+ *     "platforms": { "react": true, "lit": true, "rn": true, "swift": false },
+ *     "examples": [{ "title": "Default", "args": {...},
+ *                    "snippets": { "react": "import { Button } …", "lit": "<ds-button …>", "rn": "…", "swift": null },
+ *                    "stories": { "react": "Default", "lit": "Default", "rn": "Default", "swift": null },
+ *                    "storyId": "button-react--default", "sweep": null, "decorated": false, "primary": true }, …] }
+ *
+ * `snippets` is the copy/paste code for each platform, rendered by ./docs_snippets.ts from that
+ * platform's own story module (`packages/{react,rn}/src/<Name>.stories.tsx`,
+ * `packages/lit/src/<Name>.stories.ts`) and, for SwiftUI, from the `#Preview`s of
+ * `packages/swiftui/Sources/DesignSchema/<Name>.swift` once generation writes it. `stories` names the
+ * export each snippet came from. `platforms` is whether each platform has that source at all, so the
+ * page can tell "not generated for iOS yet" from "no story for this scenario".
+ *
+ * `layout`, `sweep` and `primary` are how the page presents the set, decided here from the stories
+ * and `generated/components.json` so the island renders a layout rather than re-deriving one:
+ *
+ *   - `sweep` is the one prop a story sets, when it sets exactly one enum or boolean prop (copy props
+ *     like `label` aside) and no code — `SizeXl: { args: { size: 'xl' } }` is `{ prop: 'size', value: 'xl' }`.
+ *   - `layout` is `sweep` when every story but Default is one, and the component is typography: a type
+ *     sample reads the same in a small tile as in a full panel, where a layout wrapper (Box, Container)
+ *     is shown by the room it takes and a control (Toolbar) by the width it has to overflow. The page
+ *     renders a sweep as one small-multiple grid. Everything else is `scenarios`, and renders as tabs.
+ *   - `primary` marks the tabs a `scenarios` page shows before its "More examples" disclosure. See
+ *     `MAX_TABS`.
  *
  * `args` is JSON, because the website renders it in a React island built from the JSON alone — the
  * examples must work with every Storybook instance unreachable. Story args are ordinary data most of
@@ -39,20 +62,33 @@
  * `{ "$unsupported": "<source text>" }` and dropped by the island. That is deliberate: the entry
  * stays honest about what it could not carry rather than omitting the story, the example still
  * renders (a `render` callback missing from a Table column means a plain cell, not a blank page),
- * and the source slice beside it shows the reader the real thing. `--report` lists them.
+ * and the snippet beside it shows the reader the real thing. `--report` lists them, and every
+ * scenario a Lit or RN story does not cover.
  *
  * Usage:  node tools/docs_examples.ts [--check] [--report]
  *
  * Runs under tsx.
  */
 import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
-import { join, relative, resolve, sep } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // TypeScript 7 ships no JS API, so the parse uses the 6.x compiler the site and apps/website
 // already alias for the same reason (see site/package.json).
 import ts from 'typescript6';
 
+import {
+  exampleCode,
+  litProperties,
+  parseStoryModule,
+  swiftPreviews,
+  type ExampleCode,
+  type Platform,
+  type PlatformSources,
+  type SnippetOptions,
+  type SnippetSources,
+  type Snippets,
+} from './docs_snippets.ts';
 import { readText, writeTextAtomic } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
 
@@ -60,7 +96,13 @@ import { REPO_ROOT } from './lib/root.ts';
 export const paths = {
   ROOT: REPO_ROOT,
   STORIES: join(REPO_ROOT, 'packages', 'react', 'src'),
+  /** Lit's and React Native's own story modules, for their snippets. Absent is "no stories on that platform". */
+  LIT_STORIES: join(REPO_ROOT, 'packages', 'lit', 'src'),
+  RN_STORIES: join(REPO_ROOT, 'packages', 'rn', 'src'),
+  /** Where generation writes `<Name>.swift`. Its presence, per component, is what turns the Swift tab on. */
+  SWIFT: join(REPO_ROOT, 'packages', 'swiftui', 'Sources', 'DesignSchema'),
   INDEX: join(REPO_ROOT, 'packages', 'react', 'storybook-static', 'index.json'),
+  COMPONENTS: join(REPO_ROOT, 'generated', 'components.json'),
   OUT: join(REPO_ROOT, 'generated', 'examples'),
 };
 
@@ -90,17 +132,67 @@ export function isUnsupported(value: Value): value is UnsupportedValue {
   return typeof value === 'object' && value !== null && '$unsupported' in value;
 }
 
+/** The one prop a story varies, and the value it sets it to. */
+export interface Sweep {
+  prop: string;
+  value: string | boolean;
+}
+
+/** How a component page lays its examples out: one small-multiple grid, or tabs. */
+export type Layout = 'sweep' | 'scenarios';
+
 /** One story, as the website reads it. */
 export interface Example {
   /** Storybook's own display name for the story ("Heading Level 2"), the tab's label. */
   title: string;
   /** The story's args merged over the meta's — what Storybook renders it with. */
   args: Record<string, Value>;
-  /** The export's source slice, shown beside the live example. */
-  sourceText: string;
+  /** Copy/paste code per platform, each from that platform's own stories — see ./docs_snippets.ts. */
+  snippets: Snippets;
+  /** The story export (or SwiftUI preview) each snippet was rendered from. */
+  stories: SnippetSources;
   /** The id Storybook assigned, read from its manifest. Never derived here. */
   storyId: string;
+  /** The single enum or boolean prop this story sets, or `null` when it is a scenario rather than a step. */
+  sweep: Sweep | null;
+  /**
+   * Whether the story wraps the component in `decorators` — a background, a width — that the website
+   * cannot run. A grid tile shows such a story's source instead of a render stripped of its frame
+   * (Text's `ToneOnAction` is white text, and without its action background it is white on white).
+   */
+  decorated: boolean;
+  /** Whether the tab is in the always-visible set rather than behind "More examples". */
+  primary: boolean;
 }
+
+/** One `<Name>.json`. */
+export interface ExampleSet {
+  layout: Layout;
+  /** Whether each platform has source for this component at all: a story module, or the generated Swift view. */
+  platforms: Record<Platform, boolean>;
+  examples: Example[];
+}
+
+/** A component as `generated/components.json` holds it, narrowed to what the layout and snippets read. */
+export interface ComponentInfo {
+  category: string;
+  props: Record<string, { type: string; default?: unknown }>;
+}
+
+/** Where an example's code comes from. The tests' default is React-only with no snippets. */
+export interface CodeSource {
+  platforms: Record<Platform, boolean>;
+  forStory(exportName: string, title: string): ExampleCode;
+}
+
+const NO_CODE: CodeSource = {
+  platforms: { react: true, lit: false, rn: false, swift: false },
+  forStory: () => ({
+    snippets: { react: null, lit: null, rn: null, swift: null },
+    stories: { react: null, lit: null, rn: null, swift: null },
+    problems: [],
+  }),
+};
 
 /* ------------------------------------------------------------------ the manifest */
 
@@ -405,8 +497,50 @@ export interface StoryExport {
   exportName: string;
   /** The story's own args merged over the meta's — Storybook's precedence. */
   args: Record<string, Value>;
-  /** The whole `export const … ;` statement, verbatim. */
-  sourceText: string;
+  /** The arg keys the story sets itself, before the merge — including ones it sets to `undefined`. */
+  set: string[];
+  /** Whether the story carries code this tool cannot see through: `render`, `play`, a spread. */
+  code: boolean;
+  /** Whether the story has `decorators`. */
+  decorated: boolean;
+}
+
+/** Story keys that make the story more than "the component with these args". */
+const STORY_CODE_KEYS: ReadonlySet<string> = new Set(['render', 'play', 'loaders', 'beforeEach']);
+
+/** An object literal member's key as written, or `undefined` for a spread or a computed key. */
+function keyOf(property: ts.ObjectLiteralElementLike): string | undefined {
+  if (ts.isSpreadAssignment(property)) return undefined;
+  const name = property.name;
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)) return name.text;
+  return undefined;
+}
+
+/**
+ * What a story object sets itself, before the merge. A story that is not an object literal
+ * (`Template.bind({})`) or spreads one in is `code`: there is no telling what it sets.
+ */
+function storyShape(initializer: ts.Expression | undefined): Pick<StoryExport, 'set' | 'code' | 'decorated'> {
+  const shape = { set: [] as string[], code: false, decorated: false };
+  const expression = initializer === undefined ? undefined : unwrap(initializer);
+  if (expression === undefined || !ts.isObjectLiteralExpression(expression)) return { ...shape, code: true };
+  for (const property of expression.properties) {
+    const key = keyOf(property);
+    if (key === undefined || STORY_CODE_KEYS.has(key)) shape.code = true;
+    if (key === 'decorators') shape.decorated = true;
+    if (key !== 'args') continue;
+    const args = ts.isPropertyAssignment(property) ? unwrap(property.initializer) : undefined;
+    if (args === undefined || !ts.isObjectLiteralExpression(args)) {
+      shape.code = true;
+      continue;
+    }
+    for (const arg of args.properties) {
+      const name = keyOf(arg);
+      if (name === undefined) shape.code = true;
+      else shape.set.push(name);
+    }
+  }
+  return shape;
 }
 
 /**
@@ -436,9 +570,7 @@ export function parseStories(fileName: string, text: string): StoryExport[] {
       exports.push({
         exportName: declaration.name.text,
         args: normalizeArgs({ ...metaArgs, ...argsOf(declaration.initializer, source, scope) }),
-        // The statement, not the declaration: a reader wants `export const Disabled: Story = {…};`,
-        // which is what they would find in the story module itself.
-        sourceText: statement.getText(source),
+        ...storyShape(declaration.initializer),
       });
     }
   }
@@ -463,9 +595,16 @@ export function storyModules(directory: string): string[] {
  * added since the last `storybook build`; both are the same mistake to ship (an example the docs
  * site would show that Storybook would not), so both are an error naming the rebuild.
  */
-export function examplesFor(name: string, exports: StoryExport[], stories: Map<string, ManifestStory>): Example[] {
+export function examplesFor(
+  name: string,
+  exports: StoryExport[],
+  stories: Map<string, ManifestStory>,
+  component: ComponentInfo,
+  code: CodeSource = NO_CODE,
+): ExampleSet & { problems: string[] } {
   const importPath = `./src/${name}.stories.tsx`;
   const examples: Example[] = [];
+  const problems: string[] = [];
   for (const story of exports) {
     const entry = stories.get(`${importPath}#${story.exportName}`);
     if (entry === undefined) {
@@ -473,19 +612,182 @@ export function examplesFor(name: string, exports: StoryExport[], stories: Map<s
         `${name}.stories.tsx exports \`${story.exportName}\`, which storybook-static/index.json does not list — rebuild it with \`${BUILD_COMMAND}\``,
       );
     }
-    examples.push({ title: entry.name, args: story.args, sourceText: story.sourceText, storyId: entry.id });
+    const { snippets, stories: from, problems: gaps } = code.forStory(story.exportName, entry.name);
+    problems.push(...gaps.map((gap) => `${name}/${entry.name}: ${gap}`));
+    examples.push({
+      title: entry.name,
+      args: story.args,
+      snippets,
+      stories: from,
+      storyId: entry.id,
+      sweep: sweepOf(story, component),
+      decorated: story.decorated,
+      primary: true,
+    });
   }
   if (examples.length === 0) throw new ExamplesError(`${name}.stories.tsx exports no stories — the docs page would have nothing to show`);
   // website-plan.md's floor, and the gate's: a component page always has a default example.
   if (!examples.some((example) => example.title === 'Default')) {
     throw new ExamplesError(`${name}.stories.tsx has no \`Default\` story — every component page opens on one`);
   }
-  return examples;
+  const layout = layoutOf(component, examples);
+  const primary = primaryFlags(layout, examples);
+  return {
+    layout,
+    platforms: code.platforms,
+    examples: examples.map((example, index) => ({ ...example, primary: primary[index] === true })),
+    problems,
+  };
+}
+
+/** A package's name from its manifest beside `src/`, or the workspace's own name when the sandbox has none. */
+function packageName(sourceDirectory: string, fallback: string): string {
+  const manifest = join(dirname(sourceDirectory), 'package.json');
+  if (!existsSync(manifest)) return fallback;
+  const name = (JSON.parse(readText(manifest)) as { name?: unknown }).name;
+  return typeof name === 'string' ? name : fallback;
+}
+
+/** The names a package's `src/index.ts` exports, or `undefined` when it cannot say (no index, or an `export *`). */
+function packageExports(sourceDirectory: string): ReadonlySet<string> | undefined {
+  const index = join(sourceDirectory, 'index.ts');
+  if (!existsSync(index)) return undefined;
+  const names = new Set<string>();
+  for (const statement of ts.createSourceFile(index, readText(index), ts.ScriptTarget.Latest, false).statements) {
+    if (!ts.isExportDeclaration(statement)) continue;
+    const clause = statement.exportClause;
+    if (clause === undefined || !ts.isNamedExports(clause)) return undefined;
+    for (const element of clause.elements) names.add(element.name.text);
+  }
+  return names;
+}
+
+/** The facts every component's snippets share, read once per run. */
+export function snippetOptions(): SnippetOptions {
+  const exports: SnippetOptions['exports'] = {};
+  for (const [platform, directory] of [['react', paths.STORIES], ['lit', paths.LIT_STORIES], ['rn', paths.RN_STORIES]] as const) {
+    const names = packageExports(directory);
+    if (names !== undefined) exports[platform] = names;
+  }
+  return {
+    packages: {
+      react: packageName(paths.STORIES, '@design-schema/react'),
+      lit: packageName(paths.LIT_STORIES, '@design-schema/lit'),
+      rn: packageName(paths.RN_STORIES, '@design-schema/rn'),
+    },
+    exports,
+    litProperties: litProperties(paths.LIT_STORIES),
+    copyTypes: COPY_TYPES,
+  };
+}
+
+/** One component's code sources: its React stories (already read) and whatever the other platforms have. */
+export function codeSource(name: string, reactText: string, component: ComponentInfo, options: SnippetOptions): CodeSource {
+  const read = (file: string) => (existsSync(file) ? readText(file) : undefined);
+  const litText = read(join(paths.LIT_STORIES, `${name}.stories.ts`));
+  const rnText = read(join(paths.RN_STORIES, `${name}.stories.tsx`));
+  const swiftText = read(join(paths.SWIFT, `${name}.swift`));
+  const sources: PlatformSources = {
+    react: parseStoryModule(`${name}.stories.tsx`, reactText),
+    lit: litText === undefined ? null : parseStoryModule(`${name}.stories.ts`, litText),
+    rn: rnText === undefined ? null : parseStoryModule(`${name}.stories.tsx`, rnText),
+    swift: swiftText === undefined ? null : swiftPreviews(swiftText),
+  };
+  return {
+    platforms: { react: true, lit: sources.lit !== null, rn: sources.rn !== null, swift: sources.swift !== null },
+    forStory: (exportName, title) => exampleCode(exportName, title, sources, component, options),
+  };
+}
+
+/* ------------------------------------------------------------------ the layout */
+
+/** Prop types that are copy rather than configuration: `VariantDanger` relabelling its button "Delete file" is still a variant. */
+const COPY_TYPES: ReadonlySet<string> = new Set(['string', 'content']);
+
+/**
+ * The one prop a story steps through, or `null` when the story is a scenario.
+ *
+ * Read off what the story sets itself rather than off a diff of the merged args: `Level2` sets
+ * `level: '2'`, which is also the meta's value, and is still a step in the level sweep.
+ */
+export function sweepOf(story: StoryExport, component: ComponentInfo): Sweep | null {
+  if (story.code) return null;
+  const typeOf = (prop: string): string | undefined => (Object.hasOwn(component.props, prop) ? component.props[prop]?.type : undefined);
+  const configured = story.set.filter((prop) => !COPY_TYPES.has(typeOf(prop) ?? ''));
+  if (configured.length !== 1) return null;
+  const prop = configured[0] as string;
+  const value = story.args[prop];
+  if (typeOf(prop) === 'enum' && typeof value === 'string') return { prop, value };
+  if (typeOf(prop) === 'boolean' && typeof value === 'boolean') return { prop, value };
+  return null;
+}
+
+/**
+ * Categories whose sweeps can be shown as small multiples. Typography only: a type sample reads the
+ * same in a tile as in a panel. Box and Container sweeps are all single props too, but they are shown
+ * by the space they take (and `element: main` twenty times over is twenty main landmarks), and a
+ * Toolbar's overflow sweep needs the width it overflows.
+ */
+export const SWEEP_CATEGORIES: ReadonlySet<string> = new Set(['typography']);
+
+/** `sweep` when every story but Default steps one prop and the component's category can be tiled. */
+export function layoutOf(component: ComponentInfo, examples: readonly Pick<Example, 'title' | 'sweep'>[]): Layout {
+  if (!SWEEP_CATEGORIES.has(component.category)) return 'scenarios';
+  const steps = examples.filter((example) => example.title !== 'Default');
+  return steps.length > 0 && steps.every((example) => example.sweep !== null) ? 'sweep' : 'scenarios';
+}
+
+/**
+ * The most tabs a page shows in one strip before it splits into a primary set and "More examples".
+ *
+ * Checked against the dense pages rather than picked: at desktop width the docs column holds about
+ * eight of Storybook's own titles ("Variant Secondary", "Selectable Range") in one row, and the
+ * horizontal strip scrolls with its scrollbar hidden — a tab past the edge is a tab nobody sees.
+ * Button (15), Select (15) and DataGrid (21) all overflowed it; the gate measures the split strip.
+ */
+export const MAX_TABS = 8;
+
+/** The tabs a split strip keeps in view, Default included. */
+export const PRIMARY_TABS = 6;
+
+/**
+ * Which examples stay in the tab strip.
+ *
+ * Everything, when the set fits or is a grid. Otherwise Default plus the first scenarios in story
+ * order: a story that sets a boolean (`Disabled`, `Loading`) or several props is a distinct situation
+ * a reader looks for, while a step along an enum (`Size Sm`, `Size Md`, `Size Lg`) is volume, and is
+ * what goes behind the disclosure. Nothing is dropped — the rest is one click away.
+ */
+export function primaryFlags(layout: Layout, examples: readonly Pick<Example, 'title' | 'sweep'>[]): boolean[] {
+  if (layout === 'sweep' || examples.length <= MAX_TABS) return examples.map(() => true);
+  let room = PRIMARY_TABS - 1;
+  return examples.map((example) => {
+    if (example.title === 'Default') return true;
+    const scenario = example.sweep === null || typeof example.sweep.value === 'boolean';
+    if (!scenario || room === 0) return false;
+    room -= 1;
+    return true;
+  });
+}
+
+/** `generated/components.json`, by component name, narrowed to `ComponentInfo`. */
+export function componentInfo(json: unknown): Map<string, ComponentInfo> {
+  if (!Array.isArray(json)) throw new ExamplesError('generated/components.json is not an array — re-run `pnpm parse`');
+  const components = new Map<string, ComponentInfo>();
+  for (const entry of json as { component?: { name?: unknown; category?: unknown; props?: unknown } }[]) {
+    const { name, category, props } = entry.component ?? {};
+    if (typeof name !== 'string' || typeof category !== 'string' || typeof props !== 'object' || props === null) {
+      throw new ExamplesError('generated/components.json has an entry without component.name/category/props — re-run `pnpm parse`');
+    }
+    components.set(name, { category, props: props as ComponentInfo['props'] });
+  }
+  return components;
 }
 
 /** The bytes of one `<Name>.json`: deterministic, so re-running on unchanged stories is a no-op. */
-export function render(examples: Example[]): string {
-  return JSON.stringify(examples, null, 2) + '\n';
+export function render(set: ExampleSet): string {
+  const { layout, platforms, examples } = set;
+  return JSON.stringify({ layout, platforms, examples }, null, 2) + '\n';
 }
 
 /** Every `{ $unsupported }` in a value, as `path -> source`, for `--report`. */
@@ -510,7 +812,8 @@ export function main(argv: string[] = process.argv.slice(2)): number {
       process.stdout.write(
         'usage: docs_examples.ts [--check] [--report]\n\n' +
           'Writes generated/examples/<Name>.json from packages/react/src/*.stories.tsx and\n' +
-          'packages/react/storybook-static/index.json.\n',
+          'packages/react/storybook-static/index.json, with each example\'s code read from the\n' +
+          'React, Lit and React Native stories and any generated SwiftUI view.\n',
       );
       return 0;
     } else {
@@ -521,18 +824,34 @@ export function main(argv: string[] = process.argv.slice(2)): number {
 
   const written = new Map<string, string>();
   let total = 0;
+  let grids = 0;
   const gaps: string[] = [];
+  const snippetGaps: string[] = [];
+  const counts: Record<Platform, number> = { react: 0, lit: 0, rn: 0, swift: 0 };
   try {
     if (!existsSync(paths.INDEX)) {
       throw new ExamplesError(`${relToRoot(paths.INDEX)} missing — build Storybook first: \`${BUILD_COMMAND}\``);
     }
+    if (!existsSync(paths.COMPONENTS)) {
+      throw new ExamplesError(`${relToRoot(paths.COMPONENTS)} missing — run \`pnpm parse\` first`);
+    }
     const stories = manifestStories(JSON.parse(readText(paths.INDEX)));
+    const components = componentInfo(JSON.parse(readText(paths.COMPONENTS)));
+    const options = snippetOptions();
     for (const name of storyModules(paths.STORIES)) {
       const file = join(paths.STORIES, `${name}.stories.tsx`);
-      const examples = examplesFor(name, parseStories(file, readText(file)), stories);
-      written.set(join(paths.OUT, `${name}.json`), render(examples));
-      total += examples.length;
-      for (const example of examples) {
+      const component = components.get(name);
+      if (component === undefined) {
+        throw new ExamplesError(`${name}.stories.tsx has no component in generated/components.json — there is no page to put its examples on`);
+      }
+      const text = readText(file);
+      const set = examplesFor(name, parseStories(file, text), stories, component, codeSource(name, text, component, options));
+      written.set(join(paths.OUT, `${name}.json`), render(set));
+      total += set.examples.length;
+      if (set.layout === 'sweep') grids += 1;
+      snippetGaps.push(...set.problems);
+      for (const example of set.examples) {
+        for (const platform of Object.keys(counts) as Platform[]) if (example.snippets[platform] !== null) counts[platform] += 1;
         for (const [path, text] of unsupportedIn(example.args)) {
           gaps.push(`${name}/${example.title}: ${path} = ${text.replace(/\s+/g, ' ').slice(0, 100)}`);
         }
@@ -573,8 +892,13 @@ export function main(argv: string[] = process.argv.slice(2)): number {
   }
 
   if (report && gaps.length > 0) process.stdout.write(`${gaps.map((gap) => `  · ${gap}`).join('\n')}\n`);
+  if (report && snippetGaps.length > 0) process.stdout.write(`${snippetGaps.map((gap) => `  ◦ ${gap}`).join('\n')}\n`);
   const note = gaps.length === 0 ? '' : `, ${gaps.length} arg${gaps.length === 1 ? '' : 's'} not encodable${report ? '' : ' (--report lists them)'}`;
-  process.stdout.write(`✔ examples: ${total} stories across ${written.size} components${note} → ${out}/\n`);
+  process.stdout.write(`✔ examples: ${total} stories across ${written.size} components (${grids} as a sweep grid)${note} → ${out}/\n`);
+  process.stdout.write(
+    `  snippets: react ${counts.react}, lit ${counts.lit}, rn ${counts.rn}, swift ${counts.swift} of ${total}` +
+      `${snippetGaps.length === 0 ? '' : `; ${snippetGaps.length} gap${snippetGaps.length === 1 ? '' : 's'}${report ? '' : ' (--report lists them)'}`}\n`,
+  );
   return 0;
 }
 

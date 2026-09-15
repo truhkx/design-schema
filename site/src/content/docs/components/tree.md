@@ -93,7 +93,7 @@ component:
     - { keys: [' '], action: 'Selects (single) or toggles selection (multiple) of the focused node.', when: selectable, from: inside, expect: manual }
     - { keys: ['*'], action: Opens every sibling of the focused node., from: inside, expect: manual }
     - { keys: [Shift+ArrowDown, Shift+ArrowUp], action: 'Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range).', when: multiple, from: inside, expect: manual }
-    - { keys: [Ctrl+A], action: 'Selects every visible, enabled node at the current expansion state; bound by key code KeyA.', when: multiple, from: inside, expect: manual }
+    - { keys: [Control+a], action: 'Selects every visible, enabled node at the current expansion state; bound by key code KeyA.', when: multiple, from: inside, expect: manual }
     - { keys: [a-z], action: 'Type-ahead: moves to the next visible node whose label starts with the typed characters; the buffer clears after 500 ms (literal-ok, as Listbox).', from: inside, expect: manual }
   styles:
     indent: { token: space.5, description: Per level on the node row. }

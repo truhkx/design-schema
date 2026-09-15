@@ -1,0 +1,64 @@
+{
+  "name": "Accordion",
+  "role": "none",
+  "identifier": "Accordion",
+  "rules": [
+    {
+      "keys": [
+        "Enter",
+        " "
+      ],
+      "action": "Toggles the focused section.",
+      "from": "first",
+      "expect": "toggles"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "Moves focus to the next trigger; wraps.",
+      "from": "first",
+      "expect": "focus-next"
+    },
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "Moves focus to the previous trigger; wraps.",
+      "from": "last",
+      "expect": "focus-prev"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "From the last trigger wraps to the first.",
+      "from": "last",
+      "expect": "focus-wraps-to-first"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "First trigger.",
+      "from": "last",
+      "expect": "focus-first"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Last trigger.",
+      "from": "first",
+      "expect": "focus-last"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Ordinary tab order — every trigger is a tab stop (the APG recommends this so panel content stays reachable).",
+      "from": "first",
+      "expect": "focus-next"
+    }
+  ]
+}

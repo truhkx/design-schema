@@ -8,7 +8,8 @@
  *                                 by their ### sub-headings and tagged with that platform
  *   generated/themes.json       → one chunk per (theme, section)
  *   schema (frontmatter)        → one "schema summary" chunk per component (props/events/a11y in prose)
- *   packages/<platform>/src/**  → one chunk per generated source file, tagged with platform + component
+ *   packages/<platform>/src/*   → one chunk per generated source file (and demo page), tagged with platform + component;
+ *                                 the Swift package's is Sources/DesignSchema/* (schema/platforms.ts `sourceDir`)
  *   generated/prompts/*         → one chunk per generation prompt (theme skills + per-platform)
  *
  * Every chunk carries metadata: kind, platform (all | web | lit | rn | …), component, theme, section,
@@ -27,6 +28,9 @@ import { fileURLToPath } from 'node:url';
 
 import { ljust, pySplitlines, pyStr, pyStrip, readText, sortedNames, truthy } from '../tools/lib/py.ts';
 import { REPO_ROOT } from '../tools/lib/root.ts';
+import { resolveRole } from '../schema/component.ts';
+import { demoDir, PACKAGE_DIR, PLATFORMS, sourceDir } from '../schema/platforms.ts';
+import type { PlatformId } from '../schema/platforms.ts';
 import { DB_PATH } from './lib/store.ts';
 import type { Chunk, Meta } from './lib/store.ts';
 
@@ -36,11 +40,11 @@ export const ROOT: string = REPO_ROOT;
 export const GENERATED: string = join(ROOT, 'generated');
 export const PACKAGES: string = join(ROOT, 'packages');
 
-export const PLATFORM_HEADINGS: Record<string, string> = {
-  web: 'web', react: 'web', lit: 'lit', 'react native': 'rn', rn: 'rn',
-  swiftui: 'swiftui', compose: 'compose', 'jetpack compose': 'compose',
+/** A lowercased `### ` heading under Platform notes → its platform: every id, plus the names authors write instead. */
+export const PLATFORM_HEADINGS: Record<string, PlatformId> = {
+  ...Object.fromEntries(PLATFORMS.map((p) => [p, p])),
+  react: 'web', 'react native': 'rn',
 };
-const PLATFORM_DIRS: Record<string, string> = { react: 'web', lit: 'lit', rn: 'rn' };
 export const MAX_CHARS = 6000; // keep chunks well inside the embedding model's context
 export const PARA_SPLIT = 400; // sections longer than this are also indexed paragraph by paragraph for finer retrieval
 
@@ -123,7 +127,8 @@ export function schemaSummary(c: Dict): string {
     lines.push('Style bindings (token per CSS property): ' + Object.entries(c.styles as Dict).map(([k, v]) => `${k} → ${v.token}`).join('; ') + '.');
   }
   const a = c.a11y as Dict;
-  lines.push(`Accessibility role ${a.role}; requires: ${(a.requires as string[]).join(', ') || 'none'}.`);
+  const role = truthy(a.roleFrom) ? `from the '${pyStr(a.roleFrom)}' prop` : resolveRole(c);
+  lines.push(`Accessibility role ${role}; requires: ${(a.requires as string[]).join(', ') || 'none'}.`);
   if (truthy(a.contrast)) {
     lines.push('Contrast pairs: ' + (a.contrast as Dict[]).map((p) => `${p.foreground} on ${p.background} at ${pyStr(Object.hasOwn(p, 'level') ? p.level : 'AA')}`).join('; ') + '.');
   }
@@ -225,13 +230,15 @@ function globDir(dir: string): string[] {
 
 export function codeChunks(): Chunk[] {
   const chunks: Chunk[] = [];
-  for (const [pkg, platform] of Object.entries(PLATFORM_DIRS)) {
-    const src = join(PACKAGES, pkg, 'src');
+  for (const platform of PLATFORMS) {
+    const src = sourceDir(ROOT, platform);
     if (!existsSync(src)) continue;
-    for (const f of sortedNames([...globDir(src), ...globDir(join(PACKAGES, pkg, 'demo'))])) {
-      if (!statSync(f).isFile() || !['.ts', '.tsx', '.css'].includes(extname(f))) continue;
+    const pkg = PACKAGE_DIR[platform] as string;
+    const demo = demoDir(ROOT, platform);
+    for (const f of sortedNames([...globDir(src), ...(demo === null ? [] : globDir(demo))])) {
+      if (!statSync(f).isFile() || !['.ts', '.tsx', '.css', '.swift'].includes(extname(f))) continue;
       const name = basename(f);
-      const stem = name.split('.')[0] as string;
+      const stem = name.split(/[.+]/)[0] as string; // `Icon+Paths.swift` is Icon's
       const component = /^\p{Lu}/u.test(stem) ? stem : '';
       const kind = name.includes('.stories.') ? 'story' : basename(join(f, '..')) === 'demo' ? 'demo' : 'code';
       const text = readText(f);

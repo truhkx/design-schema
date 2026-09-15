@@ -1,5 +1,5 @@
 /**
- * Extension frontmatter schema (Zod). Mirrors ./extension.schema.json.
+ * Extension frontmatter schema (Zod). `node tools/schema.ts` derives ./extension.schema.json from it.
  *
  * An extension doc (site/src/content/docs/extensions/<Component>.<name>.md) adds props, events,
  * unlocked style bindings, copy, keyboard rules, behavior scenarios and hand-written modules to a

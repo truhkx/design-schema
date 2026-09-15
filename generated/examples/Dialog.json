@@ -1,0 +1,544 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "open": false,
+        "heading": "Rename project",
+        "description": "Choose a new name. Existing links keep working.",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Project name",
+                "name": "projectName",
+                "defaultValue": "Q3 roadmap"
+              },
+              "children": []
+            }
+          ]
+        },
+        "hideHeading": false,
+        "size": "md",
+        "dismissible": true,
+        "initialFocus": "first"
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Rename project\" onClick={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Rename\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </Dialog>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" />\n  </Stack>\n);\n\n<DialogHarness\n  heading=\"Rename project\"\n  description=\"Choose a new name. Existing links keep working.\"\n>{defaultBody}</DialogHarness>",
+        "lit": "<ds-dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the project name everywhere it appears.\"\n>\n  <ds-input label=\"Project name\" name=\"projectName\" value=\"Untitled project\"></ds-input>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Rename\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Cancel\"></ds-button>\n</ds-dialog>",
+        "rn": "import { Button, Dialog, Text } from '@design-schema/rn';\n\n<Dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the name everywhere it appears.\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n>\n  <Text>The project name is visible to everyone with access.</Text>\n</Dialog>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "dialog-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Sm",
+      "args": {
+        "open": false,
+        "heading": "Rename project",
+        "description": "Choose a new name. Existing links keep working.",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Project name",
+                "name": "projectName",
+                "defaultValue": "Q3 roadmap"
+              },
+              "children": []
+            }
+          ]
+        },
+        "hideHeading": false,
+        "size": "sm",
+        "dismissible": true,
+        "initialFocus": "first"
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Rename project\" onClick={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Rename\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </Dialog>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" />\n  </Stack>\n);\n\n<DialogHarness\n  heading=\"Rename project\"\n  description=\"Choose a new name. Existing links keep working.\"\n  size=\"sm\"\n>{defaultBody}</DialogHarness>",
+        "lit": "<ds-dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the project name everywhere it appears.\"\n  size=\"sm\"\n>\n  <ds-input label=\"Project name\" name=\"projectName\" value=\"Untitled project\"></ds-input>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Rename\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Cancel\"></ds-button>\n</ds-dialog>",
+        "rn": "import { Button, Dialog, Text } from '@design-schema/rn';\n\n<Dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the name everywhere it appears.\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  size=\"sm\"\n>\n  <Text>The project name is visible to everyone with access.</Text>\n</Dialog>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeSm",
+        "lit": "SizeSm",
+        "rn": "SizeSm",
+        "swift": null
+      },
+      "storyId": "dialog-react--size-sm",
+      "sweep": {
+        "prop": "size",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Md",
+      "args": {
+        "open": false,
+        "heading": "Rename project",
+        "description": "Choose a new name. Existing links keep working.",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Project name",
+                "name": "projectName",
+                "defaultValue": "Q3 roadmap"
+              },
+              "children": []
+            }
+          ]
+        },
+        "hideHeading": false,
+        "size": "md",
+        "dismissible": true,
+        "initialFocus": "first"
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Rename project\" onClick={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Rename\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </Dialog>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" />\n  </Stack>\n);\n\n<DialogHarness\n  heading=\"Rename project\"\n  description=\"Choose a new name. Existing links keep working.\"\n  size=\"md\"\n>{defaultBody}</DialogHarness>",
+        "lit": "<ds-dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the project name everywhere it appears.\"\n  size=\"md\"\n>\n  <ds-input label=\"Project name\" name=\"projectName\" value=\"Untitled project\"></ds-input>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Rename\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Cancel\"></ds-button>\n</ds-dialog>",
+        "rn": "import { Button, Dialog, Text } from '@design-schema/rn';\n\n<Dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the name everywhere it appears.\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  size=\"md\"\n>\n  <Text>The project name is visible to everyone with access.</Text>\n</Dialog>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeMd",
+        "lit": "SizeMd",
+        "rn": "SizeMd",
+        "swift": null
+      },
+      "storyId": "dialog-react--size-md",
+      "sweep": {
+        "prop": "size",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Lg",
+      "args": {
+        "open": false,
+        "heading": "Rename project",
+        "description": "Choose a new name. Existing links keep working.",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Project name",
+                "name": "projectName",
+                "defaultValue": "Q3 roadmap"
+              },
+              "children": []
+            }
+          ]
+        },
+        "hideHeading": false,
+        "size": "lg",
+        "dismissible": true,
+        "initialFocus": "first"
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Rename project\" onClick={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Rename\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </Dialog>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" />\n  </Stack>\n);\n\n<DialogHarness\n  heading=\"Rename project\"\n  description=\"Choose a new name. Existing links keep working.\"\n  size=\"lg\"\n>{defaultBody}</DialogHarness>",
+        "lit": "<ds-dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the project name everywhere it appears.\"\n  size=\"lg\"\n>\n  <ds-input label=\"Project name\" name=\"projectName\" value=\"Untitled project\"></ds-input>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Rename\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Cancel\"></ds-button>\n</ds-dialog>",
+        "rn": "import { Button, Dialog, Text } from '@design-schema/rn';\n\n<Dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the name everywhere it appears.\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  size=\"lg\"\n>\n  <Text>The project name is visible to everyone with access.</Text>\n</Dialog>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeLg",
+        "lit": "SizeLg",
+        "rn": "SizeLg",
+        "swift": null
+      },
+      "storyId": "dialog-react--size-lg",
+      "sweep": {
+        "prop": "size",
+        "value": "lg"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Initial Focus First",
+      "args": {
+        "open": false,
+        "heading": "Rename project",
+        "description": "Choose a new name. Existing links keep working.",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Project name",
+                "name": "projectName",
+                "defaultValue": "Q3 roadmap"
+              },
+              "children": []
+            }
+          ]
+        },
+        "hideHeading": false,
+        "size": "md",
+        "dismissible": true,
+        "initialFocus": "first"
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Rename project\" onClick={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Rename\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </Dialog>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" />\n  </Stack>\n);\n\n<DialogHarness\n  heading=\"Rename project\"\n  description=\"Choose a new name. Existing links keep working.\"\n  initialFocus=\"first\"\n>{defaultBody}</DialogHarness>",
+        "lit": "<ds-dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the project name everywhere it appears.\"\n  initial-focus=\"first\"\n>\n  <ds-input label=\"Project name\" name=\"projectName\" value=\"Untitled project\"></ds-input>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Rename\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Cancel\"></ds-button>\n</ds-dialog>",
+        "rn": "import { Button, Dialog, Text } from '@design-schema/rn';\n\n<Dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the name everywhere it appears.\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  initialFocus=\"first\"\n>\n  <Text>The project name is visible to everyone with access.</Text>\n</Dialog>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InitialFocusFirst",
+        "lit": "InitialFocusFirst",
+        "rn": "InitialFocusFirst",
+        "swift": null
+      },
+      "storyId": "dialog-react--initial-focus-first",
+      "sweep": {
+        "prop": "initialFocus",
+        "value": "first"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Initial Focus Title",
+      "args": {
+        "open": false,
+        "heading": "Rename project",
+        "description": "Choose a new name. Existing links keep working.",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Project name",
+                "name": "projectName",
+                "defaultValue": "Q3 roadmap"
+              },
+              "children": []
+            }
+          ]
+        },
+        "hideHeading": false,
+        "size": "md",
+        "dismissible": true,
+        "initialFocus": "title"
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Rename project\" onClick={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Rename\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </Dialog>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" />\n  </Stack>\n);\n\n<DialogHarness\n  heading=\"Rename project\"\n  description=\"Choose a new name. Existing links keep working.\"\n  initialFocus=\"title\"\n>{defaultBody}</DialogHarness>",
+        "lit": "<ds-dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the project name everywhere it appears.\"\n  initial-focus=\"title\"\n>\n  <ds-input label=\"Project name\" name=\"projectName\" value=\"Untitled project\"></ds-input>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Rename\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Cancel\"></ds-button>\n</ds-dialog>",
+        "rn": "import { Button, Dialog, Text } from '@design-schema/rn';\n\n<Dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the name everywhere it appears.\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  initialFocus=\"title\"\n>\n  <Text>The project name is visible to everyone with access.</Text>\n</Dialog>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InitialFocusTitle",
+        "lit": "InitialFocusTitle",
+        "rn": "InitialFocusTitle",
+        "swift": null
+      },
+      "storyId": "dialog-react--initial-focus-title",
+      "sweep": {
+        "prop": "initialFocus",
+        "value": "title"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Initial Focus Close",
+      "args": {
+        "open": false,
+        "heading": "Rename project",
+        "description": "Choose a new name. Existing links keep working.",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Project name",
+                "name": "projectName",
+                "defaultValue": "Q3 roadmap"
+              },
+              "children": []
+            }
+          ]
+        },
+        "hideHeading": false,
+        "size": "md",
+        "dismissible": true,
+        "initialFocus": "close"
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Rename project\" onClick={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Rename\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </Dialog>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" />\n  </Stack>\n);\n\n<DialogHarness\n  heading=\"Rename project\"\n  description=\"Choose a new name. Existing links keep working.\"\n  initialFocus=\"close\"\n>{defaultBody}</DialogHarness>",
+        "lit": "<ds-dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the project name everywhere it appears.\"\n  initial-focus=\"close\"\n>\n  <ds-input label=\"Project name\" name=\"projectName\" value=\"Untitled project\"></ds-input>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Rename\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Cancel\"></ds-button>\n</ds-dialog>",
+        "rn": "import { Button, Dialog, Text } from '@design-schema/rn';\n\n<Dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the name everywhere it appears.\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  initialFocus=\"close\"\n>\n  <Text>The project name is visible to everyone with access.</Text>\n</Dialog>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InitialFocusClose",
+        "lit": "InitialFocusClose",
+        "rn": "InitialFocusClose",
+        "swift": null
+      },
+      "storyId": "dialog-react--initial-focus-close",
+      "sweep": {
+        "prop": "initialFocus",
+        "value": "close"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Not Dismissible",
+      "args": {
+        "open": false,
+        "heading": "Rename project",
+        "description": "This account and all of its projects will be permanently deleted.",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Project name",
+                "name": "projectName",
+                "defaultValue": "Q3 roadmap"
+              },
+              "children": []
+            }
+          ]
+        },
+        "hideHeading": false,
+        "size": "md",
+        "dismissible": false,
+        "initialFocus": "first",
+        "footer": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Delete account",
+                "variant": "danger",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Keep account",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Rename project\" onClick={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Rename\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </Dialog>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" />\n  </Stack>\n);\n\n<DialogHarness\n  heading=\"Rename project\"\n  description=\"This account and all of its projects will be permanently deleted.\"\n  dismissible={false}\n  footer={<>\n    <Button label=\"Delete account\" variant=\"danger\" size=\"sm\" />\n    <Button label=\"Keep account\" variant=\"secondary\" size=\"sm\" />\n  </>}\n>{defaultBody}</DialogHarness>",
+        "lit": "<ds-dialog\n  open\n  heading=\"Rename project\"\n  description=\"You must choose an option below to continue.\"\n  no-dismiss\n>\n  <ds-text>Your session is about to expire.</ds-text>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Stay signed in\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"secondary\" size=\"sm\" label=\"Sign out\"></ds-button>\n</ds-dialog>",
+        "rn": "import { Button, Dialog, Text } from '@design-schema/rn';\n\n<Dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the name everywhere it appears.\"\n  footer={<>\n    <Button label=\"Delete account\" variant=\"danger\" />\n    <Button label=\"Keep account\" variant=\"secondary\" />\n  </>}\n  dismissible={false}\n>\n  <Text>The project name is visible to everyone with access.</Text>\n</Dialog>",
+        "swift": null
+      },
+      "stories": {
+        "react": "NotDismissible",
+        "lit": "DismissibleFalse",
+        "rn": "NotDismissible",
+        "swift": null
+      },
+      "storyId": "dialog-react--not-dismissible",
+      "sweep": {
+        "prop": "dismissible",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Without Footer",
+      "args": {
+        "open": false,
+        "heading": "Rename project",
+        "description": "Choose a new name. Existing links keep working.",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Use the close button or Escape to dismiss this dialog."
+          ]
+        },
+        "hideHeading": false,
+        "size": "md",
+        "dismissible": true,
+        "initialFocus": "first",
+        "footer": null
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Dialog, type DialogProps, Button, Text } from '@design-schema/react';\n\nfunction DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Rename project\" onClick={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Rename\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </Dialog>\n    </>\n  );\n}\n\n<DialogHarness\n  heading=\"Rename project\"\n  description=\"Choose a new name. Existing links keep working.\"\n  footer={null}\n><Text>Use the close button or Escape to dismiss this dialog.</Text></DialogHarness>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithoutFooter",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "dialog-react--without-footer",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Hide Heading",
+      "args": {
+        "open": false,
+        "heading": "Rename project",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Project name",
+                "name": "projectName",
+                "defaultValue": "Q3 roadmap"
+              },
+              "children": []
+            }
+          ]
+        },
+        "hideHeading": true,
+        "size": "md",
+        "dismissible": true,
+        "initialFocus": "first"
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Rename project\" onClick={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Rename\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </Dialog>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" />\n  </Stack>\n);\n\n<DialogHarness heading=\"Rename project\" hideHeading>{defaultBody}</DialogHarness>",
+        "lit": "<ds-dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the project name everywhere it appears.\"\n  hide-heading\n>\n  <ds-input label=\"Project name\" name=\"projectName\" value=\"Untitled project\"></ds-input>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Rename\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Cancel\"></ds-button>\n</ds-dialog>",
+        "rn": "import { Button, Dialog, Text } from '@design-schema/rn';\n\n<Dialog\n  open\n  heading=\"Rename project\"\n  description=\"This changes the name everywhere it appears.\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  hideHeading\n>\n  <Text>The project name is visible to everyone with access.</Text>\n</Dialog>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HideHeading",
+        "lit": "HideHeadingTrue",
+        "rn": "HideHeading",
+        "swift": null
+      },
+      "storyId": "dialog-react--hide-heading",
+      "sweep": {
+        "prop": "hideHeading",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "open": true,
+        "heading": "Rename project",
+        "description": "Choose a new name. Existing links keep working.",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Project name",
+                "name": "projectName",
+                "defaultValue": "Q3 roadmap"
+              },
+              "children": []
+            }
+          ]
+        },
+        "hideHeading": false,
+        "size": "md",
+        "dismissible": true,
+        "initialFocus": "first"
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ children, footer, onClose, ...rest }: Partial<DialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Rename project\" onClick={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Rename\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </Dialog>\n    </>\n  );\n}\n\n<DialogHarness\n  open\n  heading=\"Rename project\"\n  description=\"Choose a new name. Existing links keep working.\"\n>\n  <Stack gap=\"normal\">\n    <Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" />\n    <Input label=\"Slug\" name=\"slug\" defaultValue=\"q3-roadmap\" />\n  </Stack>\n</DialogHarness>",
+        "lit": "<button type=\"button\" id=\"dialog-trigger\">Rename</button>\n<ds-dialog open heading=\"Rename project\" description=\"This changes the project name everywhere it appears.\">\n  <ds-input label=\"Project name\" name=\"projectName\" value=\"Untitled project\"></ds-input>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Rename\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Cancel\"></ds-button>\n</ds-dialog>",
+        "rn": "import * as React from 'react';\nimport { Button, Dialog, Input, Stack } from '@design-schema/rn';\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Open dialog\" onPress={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        description=\"This changes the name everywhere it appears.\"\n        open={open}\n        onClose={() => setOpen(false)}\n        footer={\n          <>\n            <Button label=\"Rename\" variant=\"primary\" />\n            <Button label=\"Cancel\" variant=\"secondary\" onPress={() => setOpen(false)} />\n          </>\n        }\n      >\n        <Stack gap=\"loose\">\n          <Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" />\n          <Input label=\"Description\" name=\"description\" />\n        </Stack>\n      </Dialog>\n    </Stack>\n  );\n}\n\n<Open />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "dialog-react--keyboard",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

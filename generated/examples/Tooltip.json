@@ -1,0 +1,309 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "content": "Bold",
+        "children": {
+          "$element": "Button",
+          "props": {
+            "label": "Bold"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Bold\"><Button label=\"Bold\" /></Tooltip>",
+        "lit": "<ds-tooltip content=\"Includes archived items\">\n  <ds-button label=\"Show all\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
+        "rn": "import { Button, Icon, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Add item\" describes={false}><Button iconOnly label=\"Add item\" leadingIcon={<Icon name=\"plus\" />} /></Tooltip>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "tooltip-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Placement Top",
+      "args": {
+        "content": "Bold",
+        "children": {
+          "$element": "Button",
+          "props": {
+            "label": "Bold"
+          },
+          "children": []
+        },
+        "placement": "top"
+      },
+      "snippets": {
+        "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Bold\" placement=\"top\"><Button label=\"Bold\" /></Tooltip>",
+        "lit": "<ds-tooltip content=\"Includes archived items\" placement=\"top\">\n  <ds-button label=\"Show all\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
+        "rn": "import { Button, Icon, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Add item\" placement=\"top\" describes={false}><Button iconOnly label=\"Add item\" leadingIcon={<Icon name=\"plus\" />} /></Tooltip>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementTop",
+        "lit": "PlacementTop",
+        "rn": "PlacementTop",
+        "swift": null
+      },
+      "storyId": "tooltip-react--placement-top",
+      "sweep": {
+        "prop": "placement",
+        "value": "top"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Bottom",
+      "args": {
+        "content": "Bold",
+        "children": {
+          "$element": "Button",
+          "props": {
+            "label": "Bold"
+          },
+          "children": []
+        },
+        "placement": "bottom"
+      },
+      "snippets": {
+        "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Bold\" placement=\"bottom\"><Button label=\"Bold\" /></Tooltip>",
+        "lit": "<ds-tooltip content=\"Includes archived items\" placement=\"bottom\">\n  <ds-button label=\"Show all\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
+        "rn": "import { Button, Icon, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Add item\" placement=\"bottom\" describes={false}><Button iconOnly label=\"Add item\" leadingIcon={<Icon name=\"plus\" />} /></Tooltip>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementBottom",
+        "lit": "PlacementBottom",
+        "rn": "PlacementBottom",
+        "swift": null
+      },
+      "storyId": "tooltip-react--placement-bottom",
+      "sweep": {
+        "prop": "placement",
+        "value": "bottom"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Start",
+      "args": {
+        "content": "Bold",
+        "children": {
+          "$element": "Button",
+          "props": {
+            "label": "Bold"
+          },
+          "children": []
+        },
+        "placement": "start"
+      },
+      "snippets": {
+        "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Bold\" placement=\"start\"><Button label=\"Bold\" /></Tooltip>",
+        "lit": "<ds-tooltip content=\"Includes archived items\" placement=\"start\">\n  <ds-button label=\"Show all\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
+        "rn": "import { Button, Icon, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Add item\" placement=\"start\" describes={false}><Button iconOnly label=\"Add item\" leadingIcon={<Icon name=\"plus\" />} /></Tooltip>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementStart",
+        "lit": "PlacementStart",
+        "rn": "PlacementStart",
+        "swift": null
+      },
+      "storyId": "tooltip-react--placement-start",
+      "sweep": {
+        "prop": "placement",
+        "value": "start"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement End",
+      "args": {
+        "content": "Bold",
+        "children": {
+          "$element": "Button",
+          "props": {
+            "label": "Bold"
+          },
+          "children": []
+        },
+        "placement": "end"
+      },
+      "snippets": {
+        "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Bold\" placement=\"end\"><Button label=\"Bold\" /></Tooltip>",
+        "lit": "<ds-tooltip content=\"Includes archived items\" placement=\"end\">\n  <ds-button label=\"Show all\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
+        "rn": "import { Button, Icon, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Add item\" placement=\"end\" describes={false}><Button iconOnly label=\"Add item\" leadingIcon={<Icon name=\"plus\" />} /></Tooltip>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementEnd",
+        "lit": "PlacementEnd",
+        "rn": "PlacementEnd",
+        "swift": null
+      },
+      "storyId": "tooltip-react--placement-end",
+      "sweep": {
+        "prop": "placement",
+        "value": "end"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Delay Default",
+      "args": {
+        "content": "Bold",
+        "children": {
+          "$element": "Button",
+          "props": {
+            "label": "Bold"
+          },
+          "children": []
+        },
+        "delay": "default"
+      },
+      "snippets": {
+        "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Bold\" delay=\"default\"><Button label=\"Bold\" /></Tooltip>",
+        "lit": "<ds-tooltip content=\"Includes archived items\" delay=\"default\">\n  <ds-button label=\"Show all\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
+        "rn": "import { Button, Icon, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Add item\" describes={false} delay=\"default\"><Button iconOnly label=\"Add item\" leadingIcon={<Icon name=\"plus\" />} /></Tooltip>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DelayDefault",
+        "lit": "DelayDefault",
+        "rn": "DelayDefault",
+        "swift": null
+      },
+      "storyId": "tooltip-react--delay-default",
+      "sweep": {
+        "prop": "delay",
+        "value": "default"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Delay None",
+      "args": {
+        "content": "Bold",
+        "children": {
+          "$element": "Button",
+          "props": {
+            "label": "Bold"
+          },
+          "children": []
+        },
+        "delay": "none"
+      },
+      "snippets": {
+        "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Bold\" delay=\"none\"><Button label=\"Bold\" /></Tooltip>",
+        "lit": "<ds-tooltip content=\"Includes archived items\" delay=\"none\">\n  <ds-button label=\"Show all\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
+        "rn": "import { Button, Icon, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Add item\" describes={false} delay=\"none\"><Button iconOnly label=\"Add item\" leadingIcon={<Icon name=\"plus\" />} /></Tooltip>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DelayNone",
+        "lit": "DelayNone",
+        "rn": "DelayNone",
+        "swift": null
+      },
+      "storyId": "tooltip-react--delay-none",
+      "sweep": {
+        "prop": "delay",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Describes False Icon Only",
+      "args": {
+        "content": "Bold",
+        "children": {
+          "$element": "Button",
+          "props": {
+            "label": "Bold",
+            "iconOnly": true,
+            "leadingIcon": {
+              "$element": "Icon",
+              "props": {
+                "name": "check",
+                "inline": true
+              },
+              "children": []
+            }
+          },
+          "children": []
+        },
+        "describes": false
+      },
+      "snippets": {
+        "react": "import { Tooltip, Button, Icon } from '@design-schema/react';\n\n<Tooltip content=\"Bold\" describes={false}><Button label=\"Bold\" iconOnly leadingIcon={<Icon name=\"check\" inline />} /></Tooltip>",
+        "lit": "<ds-tooltip content=\"Search\">\n  <ds-button icon-only label=\"Search\" variant=\"ghost\">\n    <ds-icon slot=\"leading-icon\" name=\"search\"></ds-icon>\n  </ds-button>\n</ds-tooltip>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "DescribesFalseIconOnly",
+        "lit": "DescribesFalse",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "tooltip-react--describes-false-icon-only",
+      "sweep": {
+        "prop": "describes",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "content": "Bold",
+        "children": {
+          "$element": "Button",
+          "props": {
+            "label": "Bold"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<div style={{ display: 'flex', gap: 'var(--space-2)' }}>\n  <Tooltip content=\"Bold\">\n    <Button label=\"Bold\" autoFocus />\n  </Tooltip>\n  <Tooltip content=\"Italic\">\n    <Button label=\"Italic\" />\n  </Tooltip>\n  <Tooltip content=\"Underline\">\n    <Button label=\"Underline\" />\n  </Tooltip>\n</div>",
+        "lit": "<div style=\"display: flex; gap: var(--space-md);\">\n  <button type=\"button\">Before</button>\n  <ds-tooltip content=\"Includes archived items\" open>\n    <ds-button label=\"Show all\"></ds-button>\n  </ds-tooltip>\n  <button type=\"button\">After</button>\n</div>",
+        "rn": "import { View } from 'react-native';\nimport { Button, Icon, Tooltip } from '@design-schema/rn';\n\n<View style={{ flexDirection: 'row', gap: 8 }}>\n  <Tooltip content=\"Add item\" describes={false}>\n    <Button iconOnly label=\"Add item\" leadingIcon={<Icon name=\"plus\" />} variant=\"ghost\" />\n  </Tooltip>\n  <Tooltip content=\"Remove item\" describes={false}>\n    <Button iconOnly label=\"Remove item\" leadingIcon={<Icon name=\"minus\" />} variant=\"ghost\" />\n  </Tooltip>\n  <Tooltip content=\"Search\" describes={false}>\n    <Button iconOnly label=\"Search\" leadingIcon={<Icon name=\"search\" />} variant=\"ghost\" />\n  </Tooltip>\n</View>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "tooltip-react--keyboard",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

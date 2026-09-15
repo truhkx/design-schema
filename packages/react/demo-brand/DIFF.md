@@ -56,7 +56,7 @@ hold for the mechanism to be what it claims to be:
 | src/custom/analytics.ts          | (same name)            | 65    | 0      | —                                                                                                             |
 | behavior/Alert.web.test.tsx      | Callout.web.test.tsx   | 221   | 11     | component name, file name                                                                                     |
 | behavior/Button.web.test.tsx     | CtaButton.web.test.tsx | 311   | 15     | component name, file name, prop name                                                                          |
-| behavior/Disclosure.web.test.tsx | Expander.web.test.tsx  | 231   | 11     | component name, file name                                                                                     |
+| behavior/Disclosure.web.test.tsx | Expander.web.test.tsx  | 235   | 11     | component name, file name                                                                                     |
 
 ## Every rename, spelled out
 

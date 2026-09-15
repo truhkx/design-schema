@@ -19,8 +19,9 @@ export type KeyboardRule = NonNullable<ComponentDef['keyboard']>[number];
 export interface KeyboardSpec {
   /** The component name, e.g. `Accordion` — the key this module is looked up by. */
   name: string;
-  /** The component's `a11y.role`, carried along for the gate that presses these keys. */
-  role: string;
+  /** The component's resolved role (`a11y.role`, or its `roleFrom` prop's default; null when that has none),
+   *  carried along for the gate that presses these keys. */
+  role: string | null;
   /** The identifier the keyboard gate mounts the component under. */
   identifier: string;
   rules: KeyboardRule[];

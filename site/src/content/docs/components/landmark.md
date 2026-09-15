@@ -28,7 +28,7 @@ component:
       platforms: [web]
   styles: {}
   a11y:
-    role: landmark
+    roleFrom: role
     requires: [landmark-role, accessible-name]
   platforms:
     web:

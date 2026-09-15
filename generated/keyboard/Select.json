@@ -1,0 +1,59 @@
+{
+  "name": "Select",
+  "role": "combobox",
+  "identifier": "Select",
+  "rules": [
+    {
+      "keys": [
+        "Enter",
+        " ",
+        "ArrowDown",
+        "ArrowUp"
+      ],
+      "action": "Opens the popup with the selected (or first) option active.",
+      "from": "trigger",
+      "expect": "manual",
+      "when": "focus on trigger"
+    },
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Closes the popup without changing the value and returns focus to the trigger.",
+      "from": "inside",
+      "expect": "closes",
+      "when": "popup open"
+    },
+    {
+      "keys": [
+        "Enter"
+      ],
+      "action": "Commits the active option and closes (single); with `multiple`, toggles it and stays open.",
+      "from": "first",
+      "expect": "manual",
+      "when": "popup open"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Commits the active option (single) and closes; focus moves on.",
+      "from": "inside",
+      "expect": "closes",
+      "when": "popup open"
+    },
+    {
+      "keys": [
+        "ArrowDown",
+        "ArrowUp",
+        "Home",
+        "End",
+        "a-z"
+      ],
+      "action": "As Listbox.",
+      "from": "first",
+      "expect": "manual",
+      "when": "popup open"
+    }
+  ]
+}

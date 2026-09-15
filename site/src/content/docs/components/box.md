@@ -53,7 +53,7 @@ component:
     radius: { token: 'radius.{radius}' }
   a11y:
     role: none
-    requires: []
+    requires: [contrast-aa]
     contrast:
       - { foreground: color.foreground, background: color.background.subtle, level: AA }
       - { foreground: color.foreground, background: color.background.strong, level: AA }

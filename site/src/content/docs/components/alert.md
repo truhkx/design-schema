@@ -7,6 +7,9 @@ component:
   status: review
   apg: alert
   anatomy: [container, icon, heading, body, dismissButton]
+  composition:
+    icon: Icon
+    dismissButton: Button
   props:
     tone:
       type: enum

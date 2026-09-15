@@ -1,0 +1,886 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${FRUIT_OPTIONS} name=\"fruit\"></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "listbox-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Max Visible 5",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          },
+          {
+            "value": "fig",
+            "label": "Fig"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          }
+        ],
+        "maxVisible": "5"
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox\n  label=\"Fruit\"\n  options={[...FRUITS, { value: 'fig', label: 'Fig' }, { value: 'grape', label: 'Grape' }]}\n  maxVisible=\"5\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst MANY_OPTIONS: ListboxOption[] = Array.from({ length: 20 }, (_, index) => ({\n  value: `option-${index + 1}`,\n  label: `Option ${index + 1}`,\n}));\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${MANY_OPTIONS} name=\"fruit\" max-visible=\"5\"></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  maxVisible=\"5\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "MaxVisible5",
+        "lit": "MaxVisible5",
+        "rn": "MaxVisible5",
+        "swift": null
+      },
+      "storyId": "listbox-react--max-visible-5",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Max Visible 8",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "maxVisible": "8"
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} maxVisible=\"8\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst MANY_OPTIONS: ListboxOption[] = Array.from({ length: 20 }, (_, index) => ({\n  value: `option-${index + 1}`,\n  label: `Option ${index + 1}`,\n}));\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${MANY_OPTIONS} name=\"fruit\" max-visible=\"8\"></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  maxVisible=\"8\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "MaxVisible8",
+        "lit": "MaxVisible8",
+        "rn": "MaxVisible8",
+        "swift": null
+      },
+      "storyId": "listbox-react--max-visible-8",
+      "sweep": {
+        "prop": "maxVisible",
+        "value": "8"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Max Visible 12",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "maxVisible": "12"
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} maxVisible=\"12\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst MANY_OPTIONS: ListboxOption[] = Array.from({ length: 20 }, (_, index) => ({\n  value: `option-${index + 1}`,\n  label: `Option ${index + 1}`,\n}));\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${MANY_OPTIONS} name=\"fruit\" max-visible=\"12\"></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  maxVisible=\"12\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "MaxVisible12",
+        "lit": "MaxVisible12",
+        "rn": "MaxVisible12",
+        "swift": null
+      },
+      "storyId": "listbox-react--max-visible-12",
+      "sweep": {
+        "prop": "maxVisible",
+        "value": "12"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Max Visible All",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "maxVisible": "all"
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} maxVisible=\"all\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${FRUIT_OPTIONS} name=\"fruit\" max-visible=\"all\"></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  maxVisible=\"all\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "MaxVisibleAll",
+        "lit": "MaxVisibleAll",
+        "rn": "MaxVisibleAll",
+        "swift": null
+      },
+      "storyId": "listbox-react--max-visible-all",
+      "sweep": {
+        "prop": "maxVisible",
+        "value": "all"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "With Descriptions",
+      "args": {
+        "label": "Assignee",
+        "options": [
+          {
+            "value": "ana",
+            "label": "Ana Souza",
+            "description": "Product design"
+          },
+          {
+            "value": "bo",
+            "label": "Bo Lin",
+            "description": "Engineering"
+          },
+          {
+            "value": "cara",
+            "label": "Cara Nash",
+            "description": "Engineering",
+            "icon": "success"
+          },
+          {
+            "value": "deshawn",
+            "label": "DeShawn Reid",
+            "description": "Out of office",
+            "disabled": true
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst PEOPLE: ListboxOption[] = [\n  { value: 'ana', label: 'Ana Souza', description: 'Product design' },\n  { value: 'bo', label: 'Bo Lin', description: 'Engineering' },\n  { value: 'cara', label: 'Cara Nash', description: 'Engineering', icon: 'success' },\n  { value: 'deshawn', label: 'DeShawn Reid', description: 'Out of office', disabled: true },\n];\n\n<Listbox label=\"Assignee\" options={PEOPLE} />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithDescriptions",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "listbox-react--with-descriptions",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Grouped",
+      "args": {
+        "label": "Ingredient",
+        "options": [
+          {
+            "group": "Fruit",
+            "options": [
+              {
+                "value": "apple",
+                "label": "Apple"
+              },
+              {
+                "value": "banana",
+                "label": "Banana"
+              }
+            ]
+          },
+          {
+            "group": "Vegetable",
+            "options": [
+              {
+                "value": "carrot",
+                "label": "Carrot"
+              },
+              {
+                "value": "daikon",
+                "label": "Daikon"
+              }
+            ]
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst GROUPED: ListboxOption[] = [\n  {\n    group: 'Fruit',\n    options: [\n      { value: 'apple', label: 'Apple' },\n      { value: 'banana', label: 'Banana' },\n    ],\n  },\n  {\n    group: 'Vegetable',\n    options: [\n      { value: 'carrot', label: 'Carrot' },\n      { value: 'daikon', label: 'Daikon' },\n    ],\n  },\n];\n\n<Listbox label=\"Ingredient\" options={GROUPED} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst GROUPED_OPTIONS: ListboxOption[] = [\n  {\n    group: 'Fruit',\n    options: [\n      { value: 'apple', label: 'Apple' },\n      { value: 'banana', label: 'Banana' },\n    ],\n  },\n  {\n    group: 'Vegetables',\n    options: [\n      { value: 'carrot', label: 'Carrot' },\n      { value: 'daikon', label: 'Daikon' },\n    ],\n  },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Produce\"\n    .options=${GROUPED_OPTIONS}\n    .defaultValue=${'banana'}\n    name=\"fruit\"\n  ></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { group: 'Design', options: [{ value: 'alex', label: 'Alex Kim' }] },\n    {\n      group: 'Engineering',\n      options: [\n        { value: 'sam', label: 'Sam Patel' },\n        { value: 'jo', label: 'Jo Rivera' },\n      ],\n    },\n    { group: 'Product', options: [{ value: 'lee', label: 'Lee Chen' }] },\n  ]}\n  defaultValue=\"sam\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Grouped",
+        "lit": "Grouped",
+        "rn": "Grouped",
+        "swift": null
+      },
+      "storyId": "listbox-react--grouped",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Multiple",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "multiple": true,
+        "defaultValue": [
+          "apple",
+          "cherry"
+        ]
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox\n  label=\"Fruit\"\n  options={FRUITS}\n  multiple\n  defaultValue={['apple', 'cherry']}\n/>",
+        "lit": null,
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Reviewers\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue={['sam', 'jo']}\n  multiple\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Multiple",
+        "lit": null,
+        "rn": "Multiple",
+        "swift": null
+      },
+      "storyId": "listbox-react--multiple",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Selection Follows Focus False",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "selectionFollowsFocus": false
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} selectionFollowsFocus={false} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Assignees\"\n    .options=${FRUIT_OPTIONS}\n    .defaultValue=${'apple'}\n    no-selection-follows-focus\n    name=\"fruit\"\n  ></ds-listbox>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "SelectionFollowsFocusFalse",
+        "lit": "SelectionFollowsFocusFalse",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "listbox-react--selection-follows-focus-false",
+      "sweep": {
+        "prop": "selectionFollowsFocus",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Required",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "required": true,
+        "name": "fruit"
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} required name=\"fruit\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${FRUIT_OPTIONS} required name=\"fruit\"></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  required\n  name=\"assignee\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Required",
+        "lit": "RequiredTrue",
+        "rn": "Required",
+        "swift": null
+      },
+      "storyId": "listbox-react--required",
+      "sweep": {
+        "prop": "required",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Invalid",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "invalid": true
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} invalid />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${FRUIT_OPTIONS} invalid name=\"fruit\"></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  invalid\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Invalid",
+        "lit": "InvalidTrue",
+        "rn": "Invalid",
+        "swift": null
+      },
+      "storyId": "listbox-react--invalid",
+      "sweep": {
+        "prop": "invalid",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Error Message",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "error": "Fix this before continuing."
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} error=\"Fix this before continuing.\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Assignees\"\n    .options=${FRUIT_OPTIONS}\n    .error=${'Fix this before continuing.'}\n    name=\"fruit\"\n  ></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  error=\"Choose an assignee before continuing.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ErrorMessage",
+        "lit": "ErrorMessage",
+        "rn": "ErrorMessage",
+        "swift": null
+      },
+      "storyId": "listbox-react--error-message",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Disabled",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "disabled": true,
+        "defaultValue": "banana"
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} disabled defaultValue=\"banana\" />",
+        "lit": null,
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  disabled\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Disabled",
+        "lit": null,
+        "rn": "Disabled",
+        "swift": null
+      },
+      "storyId": "listbox-react--disabled",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Embedded",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "embedded": true
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} embedded />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${FRUIT_OPTIONS} embedded name=\"fruit\"></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  embedded\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Embedded",
+        "lit": "EmbeddedTrue",
+        "rn": "Embedded",
+        "swift": null
+      },
+      "storyId": "listbox-react--embedded",
+      "sweep": {
+        "prop": "embedded",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Loading",
+      "args": {
+        "label": "Fruit",
+        "options": [],
+        "loading": true
+      },
+      "snippets": {
+        "react": "import { Listbox } from '@design-schema/react';\n\n<Listbox label=\"Fruit\" options={[]} loading />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${[]} name=\"fruit\" loading></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox label=\"Assignee\" options={[]} defaultValue=\"sam\" loading />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Loading",
+        "lit": "LoadingTrue",
+        "rn": "Loading",
+        "swift": null
+      },
+      "storyId": "listbox-react--loading",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Default Active Value",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "defaultActiveValue": "cherry"
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} defaultActiveValue=\"cherry\" />",
+        "lit": null,
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultActiveValue=\"jo\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DefaultActiveValue",
+        "lit": null,
+        "rn": "DefaultActiveValue",
+        "swift": null
+      },
+      "storyId": "listbox-react--default-active-value",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Empty",
+      "args": {
+        "label": "Fruit",
+        "options": []
+      },
+      "snippets": {
+        "react": "import { Listbox } from '@design-schema/react';\n\n<Listbox label=\"Fruit\" options={[]} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${[]} name=\"fruit\" empty-message=\"No matching people\"></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[]}\n  defaultValue=\"sam\"\n  emptyMessage=\"No matching people\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Empty",
+        "lit": "EmptyState",
+        "rn": "Empty",
+        "swift": null
+      },
+      "storyId": "listbox-react--empty",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Empty With Message",
+      "args": {
+        "label": "Fruit",
+        "options": [],
+        "emptyMessage": "No matching people"
+      },
+      "snippets": {
+        "react": "import { Listbox } from '@design-schema/react';\n\n<Listbox label=\"Fruit\" options={[]} emptyMessage=\"No matching people\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${[]} name=\"fruit\" empty-message=\"No matching people\"></ds-listbox>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "EmptyWithMessage",
+        "lit": "EmptyState",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "listbox-react--empty-with-message",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Controlled",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ],
+        "value": "cherry"
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} value=\"cherry\" />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Controlled",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "listbox-react--controlled",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "date",
+            "label": "Date"
+          },
+          {
+            "value": "elderberry",
+            "label": "Elderberry"
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${FRUIT_OPTIONS} name=\"fruit\"></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "listbox-react--keyboard",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

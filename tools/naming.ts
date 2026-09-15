@@ -79,6 +79,7 @@ import { fileURLToPath } from 'node:url';
 
 import { namingDefaults, namingFrontmatter } from '../schema/naming.ts';
 import type { NamingDef } from '../schema/naming.ts';
+import { demoDir, isPlatform, PLATFORMS, sourceDir } from '../schema/platforms.ts';
 import { pySorted, readText, sortedNames } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
 import { kebab, splitFrontmatter } from './parse.ts';
@@ -717,22 +718,16 @@ export function renamePath(relPath: string, res: Resolution, platform: string, d
 }
 
 /** Where a platform's generated code lives: the package source, and the pattern demo pages beside it. */
-export const SRC: Record<string, string> = {
-  web: join('packages', 'react', 'src'),
-  lit: join('packages', 'lit', 'src'),
-  rn: join('packages', 'rn', 'src'),
-  swiftui: join('packages', 'swiftui', 'Sources', 'DesignSchema'),
-};
-
 export function generatedDirs(platform: string, root: string = paths.ROOT): string[] {
-  const dirs = [join(root, SRC[platform] as string)];
-  if (platform !== 'swiftui') dirs.push(join(root, 'packages', platform === 'web' ? 'react' : platform, 'demo'));
+  const dirs = [sourceDir(root, platform)];
+  const demo = demoDir(root, platform);
+  if (demo !== null) dirs.push(demo);
   return dirs.filter((d) => existsSync(d));
 }
 
 // ---------------------------------------------------------------- command line
 
-const USAGE = `usage: naming.ts --naming BRAND|PATH [--platform web,lit,rn,swiftui]
+const USAGE = `usage: naming.ts --naming BRAND|PATH [--platform ${PLATFORMS.join(',')}]
                  [--check | --apply | --revert] [--dir DIR]`;
 
 const HELP = `${USAGE}
@@ -743,7 +738,7 @@ tools/generate.ts runs for you when it is given --naming.
 options:
   -h, --help         show this help message and exit
   --naming BRAND     a brand under themes/, or a path to a naming doc
-  --platform LIST    comma-separated: web,lit,rn,swiftui (default: all four)
+  --platform LIST    comma-separated: ${PLATFORMS.join(',')} (default: all of them)
   --check            print what would change, write nothing (the default)
   --apply            canonical → brand names
   --revert           brand → canonical names
@@ -752,7 +747,7 @@ options:
 
 export function main(argv: string[] = process.argv.slice(2)): number {
   let ref: string | null = null;
-  let platforms = 'web,lit,rn,swiftui';
+  let platforms = PLATFORMS.join(',');
   let mode: Direction | 'check' = 'check';
   let dir: string | null = null;
   for (let i = 0; i < argv.length; i++) {
@@ -792,7 +787,7 @@ export function main(argv: string[] = process.argv.slice(2)): number {
   const direction: Direction = mode === 'canonical' ? 'canonical' : 'brand';
   const verb = mode === 'check' ? 'would change' : direction === 'brand' ? 'renamed' : 'reverted';
   for (const platform of platforms.split(',').map((p) => p.trim()).filter((p) => p !== '')) {
-    if (!Object.hasOwn(SRC, platform)) {
+    if (!isPlatform(platform)) {
       process.stderr.write(`unknown platform ${platform}\n`);
       return 2;
     }

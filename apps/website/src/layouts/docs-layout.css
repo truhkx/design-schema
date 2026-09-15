@@ -21,7 +21,30 @@
 }
 
 @media (min-width: 768px) { /* layout.breakpoint.md */
+  /*
+   * The shell is at least as tall as the room between the header and the footer (Tony's review,
+   * 2026-09-15). Layout.astro already makes `main` the growing row of the body's column; this carries
+   * that height down through the Container to the grid, so a short page's sidebar column still ends
+   * at the footer. `inline-size` because a flex item with `margin-inline: auto` — the Container's
+   * centering — shrinks to its content instead of stretching.
+   *
+   * Only above the breakpoint: below it the shell is two stacked rows, and a stretched grid would
+   * hand the spare height to the Select's row and push the content down the page.
+   */
+  body > main:has(> .ds-docs-page) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ds-docs-page {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+  }
+
   .ds-docs-shell {
+    flex: 1 0 auto;
     /*
      * A sidebar column, then everything else. No token is a sidebar width — the scale stops at the
      * three content measures — so this takes the one that is about a navigation column wide: half
@@ -30,6 +53,7 @@
      */
     grid-template-columns: calc(var(--layout-max-width-prose) / 2) minmax(0, 1fr); /* literal-ok: a ratio, not a dimension */
     column-gap: var(--layout-gap-section);
-    align-items: start;
+    /* No `align-items: start`: both cells stretch to the row, so the sidebar column is the full height
+       of the shell and its sticky navigation has the whole column to travel in (docs-sidebar.css). */
   }
 }

@@ -12,6 +12,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
+import { sourceDir } from '../../schema/platforms.ts';
 import { REPO_ROOT } from '../lib/root.ts';
 import * as naming from '../naming.ts';
 import { useStd, useTmp, write } from './fixtures.ts';
@@ -481,10 +482,9 @@ function isDir(file: string): boolean {
 describe("the job's gate: the committed Button output, renamed", () => {
   /** The real generated files, copied into the sandbox — nothing here writes to packages/. */
   function sandbox(platform: string, files: string[]): string {
-    const pkg = { web: 'react', lit: 'lit', rn: 'rn' }[platform] as string;
     const src = join(dir, 'src');
     mkdirSync(src, { recursive: true });
-    for (const f of files) cpSync(join(REPO_ROOT, 'packages', pkg, 'src', f), join(src, f));
+    for (const f of files) cpSync(join(sourceDir(REPO_ROOT, platform), f), join(src, f));
     return src;
   }
 

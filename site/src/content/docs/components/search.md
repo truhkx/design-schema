@@ -110,7 +110,7 @@ component:
     noSuggestions: No suggestions
   a11y:
     role: searchbox
-    requires: [label-association, accessible-name, landmark-role, keyboard-operable, focus-visible, contrast-aa, target-24px, live-region, escape-dismiss]
+    requires: [label-association, accessible-name, landmark-role, keyboard-operable, arrow-navigation, focus-visible, contrast-aa, target-24px, live-region, escape-dismiss]
     contrast:
       - { foreground: color.foreground, background: color.control.background, level: AA }
       - { foreground: color.foreground.muted, background: color.control.background, level: AA }

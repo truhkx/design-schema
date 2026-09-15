@@ -1,0 +1,298 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "View range",
+        "options": [
+          {
+            "value": "day",
+            "label": "Day"
+          },
+          {
+            "value": "week",
+            "label": "Week"
+          },
+          {
+            "value": "month",
+            "label": "Month",
+            "disabled": true
+          }
+        ],
+        "iconOnly": false,
+        "size": "md",
+        "fill": false
+      },
+      "snippets": {
+        "react": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/react';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month', disabled: true },\n];\n\n<SegmentedControl label=\"View range\" options={OPTIONS} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { SegmentedControlOption } from '@design-schema/lit';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month', disabled: true },\n];\n\nhtml`\n  <ds-segmented-control label=\"Time range\" .options=${OPTIONS}></ds-segmented-control>\n`;",
+        "rn": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/rn';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'list', label: 'List', icon: 'external' },\n  { value: 'grid', label: 'Grid', icon: 'check' },\n  { value: 'map', label: 'Map', icon: 'info', disabled: true },\n];\n\n<SegmentedControl label=\"View mode\" options={OPTIONS} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "segmentedcontrol-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Sm",
+      "args": {
+        "label": "View range",
+        "options": [
+          {
+            "value": "day",
+            "label": "Day"
+          },
+          {
+            "value": "week",
+            "label": "Week"
+          },
+          {
+            "value": "month",
+            "label": "Month",
+            "disabled": true
+          }
+        ],
+        "iconOnly": false,
+        "size": "sm",
+        "fill": false
+      },
+      "snippets": {
+        "react": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/react';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month', disabled: true },\n];\n\n<SegmentedControl label=\"View range\" options={OPTIONS} size=\"sm\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { SegmentedControlOption } from '@design-schema/lit';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month', disabled: true },\n];\n\nhtml`\n  <ds-segmented-control label=\"Time range\" .options=${OPTIONS} size=\"sm\"></ds-segmented-control>\n`;",
+        "rn": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/rn';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'list', label: 'List', icon: 'external' },\n  { value: 'grid', label: 'Grid', icon: 'check' },\n  { value: 'map', label: 'Map', icon: 'info', disabled: true },\n];\n\n<SegmentedControl label=\"View mode\" options={OPTIONS} size=\"sm\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeSm",
+        "lit": "SizeSm",
+        "rn": "SizeSm",
+        "swift": null
+      },
+      "storyId": "segmentedcontrol-react--size-sm",
+      "sweep": {
+        "prop": "size",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Md",
+      "args": {
+        "label": "View range",
+        "options": [
+          {
+            "value": "day",
+            "label": "Day"
+          },
+          {
+            "value": "week",
+            "label": "Week"
+          },
+          {
+            "value": "month",
+            "label": "Month",
+            "disabled": true
+          }
+        ],
+        "iconOnly": false,
+        "size": "md",
+        "fill": false
+      },
+      "snippets": {
+        "react": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/react';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month', disabled: true },\n];\n\n<SegmentedControl label=\"View range\" options={OPTIONS} size=\"md\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { SegmentedControlOption } from '@design-schema/lit';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month', disabled: true },\n];\n\nhtml`\n  <ds-segmented-control label=\"Time range\" .options=${OPTIONS} size=\"md\"></ds-segmented-control>\n`;",
+        "rn": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/rn';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'list', label: 'List', icon: 'external' },\n  { value: 'grid', label: 'Grid', icon: 'check' },\n  { value: 'map', label: 'Map', icon: 'info', disabled: true },\n];\n\n<SegmentedControl label=\"View mode\" options={OPTIONS} size=\"md\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeMd",
+        "lit": "SizeMd",
+        "rn": "SizeMd",
+        "swift": null
+      },
+      "storyId": "segmentedcontrol-react--size-md",
+      "sweep": {
+        "prop": "size",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Fill",
+      "args": {
+        "label": "View range",
+        "options": [
+          {
+            "value": "day",
+            "label": "Day"
+          },
+          {
+            "value": "week",
+            "label": "Week"
+          },
+          {
+            "value": "month",
+            "label": "Month",
+            "disabled": true
+          }
+        ],
+        "iconOnly": false,
+        "size": "md",
+        "fill": true
+      },
+      "snippets": {
+        "react": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/react';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month', disabled: true },\n];\n\n<SegmentedControl label=\"View range\" options={OPTIONS} fill />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { SegmentedControlOption } from '@design-schema/lit';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month', disabled: true },\n];\n\nhtml`\n  <ds-segmented-control label=\"Time range\" .options=${OPTIONS} fill></ds-segmented-control>\n`;",
+        "rn": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/rn';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'list', label: 'List', icon: 'external' },\n  { value: 'grid', label: 'Grid', icon: 'check' },\n  { value: 'map', label: 'Map', icon: 'info', disabled: true },\n];\n\n<SegmentedControl label=\"View mode\" options={OPTIONS} fill />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Fill",
+        "lit": "Fill",
+        "rn": "Fill",
+        "swift": null
+      },
+      "storyId": "segmentedcontrol-react--fill",
+      "sweep": {
+        "prop": "fill",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Icon Only",
+      "args": {
+        "label": "View mode",
+        "options": [
+          {
+            "value": "list",
+            "label": "List view",
+            "icon": "dash"
+          },
+          {
+            "value": "grid",
+            "label": "Grid view",
+            "icon": "ellipsis"
+          }
+        ],
+        "iconOnly": true,
+        "size": "md",
+        "fill": false
+      },
+      "snippets": {
+        "react": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/react';\n\nconst ICON_OPTIONS: SegmentedControlOption[] = [\n  { value: 'list', label: 'List view', icon: 'dash' },\n  { value: 'grid', label: 'Grid view', icon: 'ellipsis' },\n];\n\n<SegmentedControl label=\"View mode\" options={ICON_OPTIONS} iconOnly />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { SegmentedControlOption } from '@design-schema/lit';\n\nconst ICON_OPTIONS: SegmentedControlOption[] = [\n  { value: 'previous', label: 'Previous', icon: 'chevron-left' },\n  { value: 'current', label: 'Current', icon: 'dash' },\n  { value: 'next', label: 'Next', icon: 'chevron-right' },\n];\n\nhtml`\n  <ds-segmented-control label=\"Time range\" .options=${ICON_OPTIONS} icon-only></ds-segmented-control>\n`;",
+        "rn": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/rn';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'list', label: 'List', icon: 'external' },\n  { value: 'grid', label: 'Grid', icon: 'check' },\n  { value: 'map', label: 'Map', icon: 'info', disabled: true },\n];\n\n<SegmentedControl\n  label=\"View mode\"\n  options={OPTIONS.map((option) => ({ ...option, icon: option.icon ?? 'info' }))}\n  iconOnly\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "IconOnly",
+        "lit": "IconOnly",
+        "rn": "IconOnly",
+        "swift": null
+      },
+      "storyId": "segmentedcontrol-react--icon-only",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Controlled",
+      "args": {
+        "label": "View range",
+        "options": [
+          {
+            "value": "day",
+            "label": "Day"
+          },
+          {
+            "value": "week",
+            "label": "Week"
+          },
+          {
+            "value": "month",
+            "label": "Month",
+            "disabled": true
+          }
+        ],
+        "iconOnly": false,
+        "size": "md",
+        "fill": false,
+        "value": "week"
+      },
+      "snippets": {
+        "react": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/react';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month', disabled: true },\n];\n\n<SegmentedControl label=\"View range\" options={OPTIONS} value=\"week\" />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Controlled",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "segmentedcontrol-react--controlled",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "label": "View range",
+        "options": [
+          {
+            "value": "day",
+            "label": "Day"
+          },
+          {
+            "value": "week",
+            "label": "Week"
+          },
+          {
+            "value": "month",
+            "label": "Month",
+            "disabled": true
+          }
+        ],
+        "iconOnly": false,
+        "size": "md",
+        "fill": false
+      },
+      "snippets": {
+        "react": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/react';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month', disabled: true },\n];\n\n<SegmentedControl label=\"View range\" options={OPTIONS} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { SegmentedControlOption } from '@design-schema/lit';\n\nconst KEYBOARD_OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month' },\n  { value: 'year', label: 'Year', disabled: true },\n];\n\nhtml`\n  <ds-segmented-control label=\"Time range\" .options=${KEYBOARD_OPTIONS}></ds-segmented-control>\n`;",
+        "rn": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/rn';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'list', label: 'List', icon: 'external' },\n  { value: 'grid', label: 'Grid', icon: 'check' },\n  { value: 'map', label: 'Map', icon: 'info', disabled: true },\n];\n\n<SegmentedControl label=\"View mode\" options={OPTIONS} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "segmentedcontrol-react--keyboard",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

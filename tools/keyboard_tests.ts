@@ -12,7 +12,8 @@
  *   - every component with a `keyboard` block ships a story named `Keyboard` (id `<title-id>--keyboard`)
  *     that renders the component OPEN / present with at least three focusable children, and the
  *     trigger (if any) in the same story;
- *   - the component root carries the schema's a11y.role (or `data-ds="<Name>"` when role is none).
+ *   - the component root carries the schema's resolved role (or `data-ds="<Name>"` when that role is unresolved
+ *     or one of NON_QUERYABLE_ROLES).
  *
  * Rules whose `expect` is `manual` are listed in the spec as `test.skip` so the report shows
  * coverage, not silence.
@@ -37,6 +38,7 @@ import { freshOutDir, readComponents } from './lib/components.ts';
 import type { Dict } from './lib/components.ts';
 import { pyGet, truthy, writeText } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
+import { NON_QUERYABLE_ROLES, normalizeKey, resolveRole, roleIn } from '../schema/component.ts';
 
 export type { Dict };
 
@@ -53,8 +55,16 @@ export const PLATFORMS: Record<string, { suffix: string; port: number }> = {
   lit: { suffix: 'Lit', port: 6008 },
 };
 
-const KEY_MAP: Record<string, string> = { ' ': 'Space', 'Shift+Tab': 'Shift+Tab' }; // Playwright key names; everything else passes through
+const KEY_MAP: Record<string, string> = { ' ': 'Space' }; // Playwright's name for the space key; every other KeyboardEvent.key passes through
 const LETTERS = /^[a-z]-[a-z]$/;
+
+/** A `keyChord` as `page.keyboard.press` spells it: the `Space` alias normalized, then each key through KEY_MAP. */
+export function playwrightKey(chord: string): string {
+  return normalizeKey(chord)
+    .split('+')
+    .map((k) => (Object.hasOwn(KEY_MAP, k) ? (KEY_MAP[k] as string) : k))
+    .join('+');
+}
 
 /** Storybook's id for title '<Name>/<Suffix>' and export 'Keyboard'. */
 export function storyId(name: string, suffix: string): string {
@@ -63,8 +73,8 @@ export function storyId(name: string, suffix: string): string {
 }
 
 export function rootLocator(c: Dict): string {
-  const role = c.a11y.role as string;
-  if (['none', 'landmark', 'img'].includes(role)) return `page.locator('[data-ds="${c.name as string}"]').first()`;
+  const role = resolveRole(c);
+  if (role === null || roleIn(NON_QUERYABLE_ROLES, role)) return `page.locator('[data-ds="${c.name as string}"]').first()`;
   return `page.getByRole('${role}').first()`;
 }
 
@@ -184,7 +194,7 @@ export function specFor(c: Dict, platform: string): string {
     const exp = pyGet(rule, 'expect', 'manual') as string;
     const frm = pyGet(rule, 'from', 'inside') as string;
     for (const key of rule.keys as string[]) {
-      const [keyName, label] = LETTERS.test(key) ? ['a', 'typeahead letter'] : [Object.hasOwn(KEY_MAP, key) ? (KEY_MAP[key] as string) : key, key];
+      const [keyName, label] = LETTERS.test(key) ? ['a', 'typeahead letter'] : [playwrightKey(key), key];
       const title = `${label}: ${rule.action as string}`.replaceAll("'", "\\'");
       const when = truthy(pyGet(rule, 'when', null)) ? ` (${rule.when as string})` : '';
       if (exp === 'manual') {
@@ -211,7 +221,7 @@ export function specFor(c: Dict, platform: string): string {
 /** One rule as the XCUITest reads it: the doc's own fields, with the defaults already applied so the
  *  Swift side never has to know what `from` means when it is absent. */
 export type KeyboardRule = { keys: string[]; action: string; from: string; expect: string; when?: string };
-export type KeyboardSpec = { name: string; role: string; identifier: string; rules: KeyboardRule[] };
+export type KeyboardSpec = { name: string; role: string | null; identifier: string; rules: KeyboardRule[] };
 
 /**
  * The `keyboard` block as data, for a consumer that is not Playwright.
@@ -231,7 +241,7 @@ export function specData(c: Dict): KeyboardSpec {
       ...(truthy(when) ? { when: when as string } : {}),
     });
   }
-  return { name: c.name as string, role: c.a11y.role as string, identifier: c.name as string, rules };
+  return { name: c.name as string, role: resolveRole(c), identifier: c.name as string, rules };
 }
 
 export function main(): number {

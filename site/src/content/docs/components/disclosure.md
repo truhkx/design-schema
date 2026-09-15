@@ -11,6 +11,7 @@ component:
     summary:
       type: string
       required: true
+      a11yRole: accessible-name
       description: The trigger's label. Also the trigger's accessible name. Says what will be revealed.
     children:
       type: content

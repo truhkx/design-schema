@@ -84,8 +84,7 @@
         "web",
         "lit",
         "rn",
-        "swiftui",
-        "compose"
+        "swiftui"
       ]
     }
   }

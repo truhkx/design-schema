@@ -1,0 +1,523 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "steps": [
+          {
+            "id": "shipping",
+            "label": "Shipping address"
+          },
+          {
+            "id": "payment",
+            "label": "Payment"
+          },
+          {
+            "id": "review",
+            "label": "Review order"
+          },
+          {
+            "id": "confirm",
+            "label": "Confirmation"
+          }
+        ],
+        "current": "payment",
+        "orientation": "horizontal",
+        "navigable": "completed",
+        "compact": false,
+        "label": "Progress"
+      },
+      "snippets": {
+        "react": "import { Stepper, type StepperStep } from '@design-schema/react';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address' },\n  { id: 'payment', label: 'Payment' },\n  { id: 'review', label: 'Review order' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" label=\"Progress\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { StepperStep, StepperStepSelectDetail } from '@design-schema/lit';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where the order will arrive' },\n  { id: 'payment', label: 'Payment', description: 'Card or bank details' },\n  { id: 'review', label: 'Review order', description: 'Check items and totals' },\n  { id: 'confirm', label: 'Confirmation', description: 'Takes about a minute' },\n];\n\nhtml`\n  <ds-stepper\n    .steps=${steps}\n    current=\"payment\"\n    @step-select=${(event: CustomEvent<StepperStepSelectDetail>) => console.log('step-select', event.detail)}\n  ></ds-stepper>\n`;",
+        "rn": "import { Stepper, type StepperStep } from '@design-schema/rn';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where we send your order' },\n  { id: 'payment', label: 'Payment', description: 'Takes about a minute' },\n  { id: 'review', label: 'Review order', description: 'Check everything before you confirm' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "stepper-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Orientation Horizontal",
+      "args": {
+        "steps": [
+          {
+            "id": "shipping",
+            "label": "Shipping address"
+          },
+          {
+            "id": "payment",
+            "label": "Payment"
+          },
+          {
+            "id": "review",
+            "label": "Review order"
+          },
+          {
+            "id": "confirm",
+            "label": "Confirmation"
+          }
+        ],
+        "current": "payment",
+        "orientation": "horizontal",
+        "navigable": "completed",
+        "compact": false,
+        "label": "Progress"
+      },
+      "snippets": {
+        "react": "import { Stepper, type StepperStep } from '@design-schema/react';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address' },\n  { id: 'payment', label: 'Payment' },\n  { id: 'review', label: 'Review order' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper\n  steps={steps}\n  current=\"payment\"\n  orientation=\"horizontal\"\n  label=\"Progress\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { StepperStep, StepperStepSelectDetail } from '@design-schema/lit';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where the order will arrive' },\n  { id: 'payment', label: 'Payment', description: 'Card or bank details' },\n  { id: 'review', label: 'Review order', description: 'Check items and totals' },\n  { id: 'confirm', label: 'Confirmation', description: 'Takes about a minute' },\n];\n\nhtml`\n  <ds-stepper\n    .steps=${steps}\n    current=\"payment\"\n    orientation=\"horizontal\"\n    @step-select=${(event: CustomEvent<StepperStepSelectDetail>) => console.log('step-select', event.detail)}\n  ></ds-stepper>\n`;",
+        "rn": "import { Stepper, type StepperStep } from '@design-schema/rn';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where we send your order' },\n  { id: 'payment', label: 'Payment', description: 'Takes about a minute' },\n  { id: 'review', label: 'Review order', description: 'Check everything before you confirm' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" orientation=\"horizontal\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "OrientationHorizontal",
+        "lit": "OrientationHorizontal",
+        "rn": "OrientationHorizontal",
+        "swift": null
+      },
+      "storyId": "stepper-react--orientation-horizontal",
+      "sweep": {
+        "prop": "orientation",
+        "value": "horizontal"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Orientation Vertical",
+      "args": {
+        "steps": [
+          {
+            "id": "account",
+            "label": "Create account",
+            "description": "Takes about a minute."
+          },
+          {
+            "id": "verify",
+            "label": "Verify identity",
+            "description": "Takes about 2 minutes."
+          },
+          {
+            "id": "plan",
+            "label": "Choose a plan",
+            "description": "Compare features and pricing."
+          },
+          {
+            "id": "done",
+            "label": "Done",
+            "description": "Review and confirm."
+          }
+        ],
+        "current": "verify",
+        "orientation": "vertical",
+        "navigable": "completed",
+        "compact": false,
+        "label": "Progress"
+      },
+      "snippets": {
+        "react": "import { Stepper, type StepperStep } from '@design-schema/react';\n\nconst stepsWithDescriptions: StepperStep[] = [\n  { id: 'account', label: 'Create account', description: 'Takes about a minute.' },\n  { id: 'verify', label: 'Verify identity', description: 'Takes about 2 minutes.' },\n  { id: 'plan', label: 'Choose a plan', description: 'Compare features and pricing.' },\n  { id: 'done', label: 'Done', description: 'Review and confirm.' },\n];\n\n<Stepper\n  steps={stepsWithDescriptions}\n  current=\"verify\"\n  orientation=\"vertical\"\n  label=\"Progress\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { StepperStep, StepperStepSelectDetail } from '@design-schema/lit';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where the order will arrive' },\n  { id: 'payment', label: 'Payment', description: 'Card or bank details' },\n  { id: 'review', label: 'Review order', description: 'Check items and totals' },\n  { id: 'confirm', label: 'Confirmation', description: 'Takes about a minute' },\n];\n\nhtml`\n  <ds-stepper\n    .steps=${steps}\n    current=\"payment\"\n    orientation=\"vertical\"\n    @step-select=${(event: CustomEvent<StepperStepSelectDetail>) => console.log('step-select', event.detail)}\n  ></ds-stepper>\n`;",
+        "rn": "import { Stepper, type StepperStep } from '@design-schema/rn';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where we send your order' },\n  { id: 'payment', label: 'Payment', description: 'Takes about a minute' },\n  { id: 'review', label: 'Review order', description: 'Check everything before you confirm' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" orientation=\"vertical\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "OrientationVertical",
+        "lit": "OrientationVertical",
+        "rn": "OrientationVertical",
+        "swift": null
+      },
+      "storyId": "stepper-react--orientation-vertical",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Navigable None",
+      "args": {
+        "steps": [
+          {
+            "id": "shipping",
+            "label": "Shipping address"
+          },
+          {
+            "id": "payment",
+            "label": "Payment"
+          },
+          {
+            "id": "review",
+            "label": "Review order"
+          },
+          {
+            "id": "confirm",
+            "label": "Confirmation"
+          }
+        ],
+        "current": "payment",
+        "orientation": "horizontal",
+        "navigable": "none",
+        "compact": false,
+        "label": "Progress"
+      },
+      "snippets": {
+        "react": "import { Stepper, type StepperStep } from '@design-schema/react';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address' },\n  { id: 'payment', label: 'Payment' },\n  { id: 'review', label: 'Review order' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" navigable=\"none\" label=\"Progress\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { StepperStep, StepperStepSelectDetail } from '@design-schema/lit';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where the order will arrive' },\n  { id: 'payment', label: 'Payment', description: 'Card or bank details' },\n  { id: 'review', label: 'Review order', description: 'Check items and totals' },\n  { id: 'confirm', label: 'Confirmation', description: 'Takes about a minute' },\n];\n\nhtml`\n  <ds-stepper\n    .steps=${steps}\n    current=\"payment\"\n    navigable=\"none\"\n    @step-select=${(event: CustomEvent<StepperStepSelectDetail>) => console.log('step-select', event.detail)}\n  ></ds-stepper>\n`;",
+        "rn": "import { Stepper, type StepperStep } from '@design-schema/rn';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where we send your order' },\n  { id: 'payment', label: 'Payment', description: 'Takes about a minute' },\n  { id: 'review', label: 'Review order', description: 'Check everything before you confirm' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" navigable=\"none\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NavigableNone",
+        "lit": "NavigableNone",
+        "rn": "NavigableNone",
+        "swift": null
+      },
+      "storyId": "stepper-react--navigable-none",
+      "sweep": {
+        "prop": "navigable",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Navigable Completed",
+      "args": {
+        "steps": [
+          {
+            "id": "shipping",
+            "label": "Shipping address"
+          },
+          {
+            "id": "payment",
+            "label": "Payment"
+          },
+          {
+            "id": "review",
+            "label": "Review order"
+          },
+          {
+            "id": "confirm",
+            "label": "Confirmation"
+          }
+        ],
+        "current": "payment",
+        "orientation": "horizontal",
+        "navigable": "completed",
+        "compact": false,
+        "label": "Progress"
+      },
+      "snippets": {
+        "react": "import { Stepper, type StepperStep } from '@design-schema/react';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address' },\n  { id: 'payment', label: 'Payment' },\n  { id: 'review', label: 'Review order' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper\n  steps={steps}\n  current=\"payment\"\n  navigable=\"completed\"\n  label=\"Progress\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { StepperStep, StepperStepSelectDetail } from '@design-schema/lit';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where the order will arrive' },\n  { id: 'payment', label: 'Payment', description: 'Card or bank details' },\n  { id: 'review', label: 'Review order', description: 'Check items and totals' },\n  { id: 'confirm', label: 'Confirmation', description: 'Takes about a minute' },\n];\n\nhtml`\n  <ds-stepper\n    .steps=${steps}\n    current=\"payment\"\n    navigable=\"completed\"\n    @step-select=${(event: CustomEvent<StepperStepSelectDetail>) => console.log('step-select', event.detail)}\n  ></ds-stepper>\n`;",
+        "rn": "import { Stepper, type StepperStep } from '@design-schema/rn';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where we send your order' },\n  { id: 'payment', label: 'Payment', description: 'Takes about a minute' },\n  { id: 'review', label: 'Review order', description: 'Check everything before you confirm' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" navigable=\"completed\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NavigableCompleted",
+        "lit": "NavigableCompleted",
+        "rn": "NavigableCompleted",
+        "swift": null
+      },
+      "storyId": "stepper-react--navigable-completed",
+      "sweep": {
+        "prop": "navigable",
+        "value": "completed"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Navigable All",
+      "args": {
+        "steps": [
+          {
+            "id": "shipping",
+            "label": "Shipping address"
+          },
+          {
+            "id": "payment",
+            "label": "Payment"
+          },
+          {
+            "id": "review",
+            "label": "Review order"
+          },
+          {
+            "id": "confirm",
+            "label": "Confirmation"
+          }
+        ],
+        "current": "payment",
+        "orientation": "horizontal",
+        "navigable": "all",
+        "compact": false,
+        "label": "Progress"
+      },
+      "snippets": {
+        "react": "import { Stepper, type StepperStep } from '@design-schema/react';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address' },\n  { id: 'payment', label: 'Payment' },\n  { id: 'review', label: 'Review order' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" navigable=\"all\" label=\"Progress\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { StepperStep, StepperStepSelectDetail } from '@design-schema/lit';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where the order will arrive' },\n  { id: 'payment', label: 'Payment', description: 'Card or bank details' },\n  { id: 'review', label: 'Review order', description: 'Check items and totals' },\n  { id: 'confirm', label: 'Confirmation', description: 'Takes about a minute' },\n];\n\nhtml`\n  <ds-stepper\n    .steps=${steps}\n    current=\"payment\"\n    navigable=\"all\"\n    @step-select=${(event: CustomEvent<StepperStepSelectDetail>) => console.log('step-select', event.detail)}\n  ></ds-stepper>\n`;",
+        "rn": "import { Stepper, type StepperStep } from '@design-schema/rn';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where we send your order' },\n  { id: 'payment', label: 'Payment', description: 'Takes about a minute' },\n  { id: 'review', label: 'Review order', description: 'Check everything before you confirm' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" navigable=\"all\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NavigableAll",
+        "lit": "NavigableAll",
+        "rn": "NavigableAll",
+        "swift": null
+      },
+      "storyId": "stepper-react--navigable-all",
+      "sweep": {
+        "prop": "navigable",
+        "value": "all"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Compact",
+      "args": {
+        "steps": [
+          {
+            "id": "shipping",
+            "label": "Shipping address"
+          },
+          {
+            "id": "payment",
+            "label": "Payment"
+          },
+          {
+            "id": "review",
+            "label": "Review order"
+          },
+          {
+            "id": "confirm",
+            "label": "Confirmation"
+          }
+        ],
+        "current": "payment",
+        "orientation": "horizontal",
+        "navigable": "completed",
+        "compact": true,
+        "label": "Progress"
+      },
+      "snippets": {
+        "react": "import { Stepper, type StepperStep } from '@design-schema/react';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address' },\n  { id: 'payment', label: 'Payment' },\n  { id: 'review', label: 'Review order' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" compact label=\"Progress\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { StepperStep, StepperStepSelectDetail } from '@design-schema/lit';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where the order will arrive' },\n  { id: 'payment', label: 'Payment', description: 'Card or bank details' },\n  { id: 'review', label: 'Review order', description: 'Check items and totals' },\n  { id: 'confirm', label: 'Confirmation', description: 'Takes about a minute' },\n];\n\nhtml`\n  <ds-stepper\n    .steps=${steps}\n    current=\"payment\"\n    compact\n    @step-select=${(event: CustomEvent<StepperStepSelectDetail>) => console.log('step-select', event.detail)}\n  ></ds-stepper>\n`;",
+        "rn": "import { Stepper, type StepperStep } from '@design-schema/rn';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where we send your order' },\n  { id: 'payment', label: 'Payment', description: 'Takes about a minute' },\n  { id: 'review', label: 'Review order', description: 'Check everything before you confirm' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" compact />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Compact",
+        "lit": "CompactTrue",
+        "rn": "CompactTrue",
+        "swift": null
+      },
+      "storyId": "stepper-react--compact",
+      "sweep": {
+        "prop": "compact",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "With Descriptions",
+      "args": {
+        "steps": [
+          {
+            "id": "account",
+            "label": "Create account",
+            "description": "Takes about a minute."
+          },
+          {
+            "id": "verify",
+            "label": "Verify identity",
+            "description": "Takes about 2 minutes."
+          },
+          {
+            "id": "plan",
+            "label": "Choose a plan",
+            "description": "Compare features and pricing."
+          },
+          {
+            "id": "done",
+            "label": "Done",
+            "description": "Review and confirm."
+          }
+        ],
+        "current": "verify",
+        "orientation": "vertical",
+        "navigable": "completed",
+        "compact": false,
+        "label": "Progress"
+      },
+      "snippets": {
+        "react": "import { Stepper, type StepperStep } from '@design-schema/react';\n\nconst stepsWithDescriptions: StepperStep[] = [\n  { id: 'account', label: 'Create account', description: 'Takes about a minute.' },\n  { id: 'verify', label: 'Verify identity', description: 'Takes about 2 minutes.' },\n  { id: 'plan', label: 'Choose a plan', description: 'Compare features and pricing.' },\n  { id: 'done', label: 'Done', description: 'Review and confirm.' },\n];\n\n<Stepper\n  steps={stepsWithDescriptions}\n  current=\"verify\"\n  orientation=\"vertical\"\n  label=\"Progress\"\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithDescriptions",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "stepper-react--with-descriptions",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "With Error",
+      "args": {
+        "steps": [
+          {
+            "id": "shipping",
+            "label": "Shipping address",
+            "status": "complete"
+          },
+          {
+            "id": "payment",
+            "label": "Payment",
+            "status": "error"
+          },
+          {
+            "id": "review",
+            "label": "Review order"
+          },
+          {
+            "id": "confirm",
+            "label": "Confirmation"
+          }
+        ],
+        "current": "payment",
+        "orientation": "horizontal",
+        "navigable": "completed",
+        "compact": false,
+        "label": "Progress"
+      },
+      "snippets": {
+        "react": "import { Stepper, type StepperStep } from '@design-schema/react';\n\nconst stepsWithError: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', status: 'complete' },\n  { id: 'payment', label: 'Payment', status: 'error' },\n  { id: 'review', label: 'Review order' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={stepsWithError} current=\"payment\" label=\"Progress\" />",
+        "lit": null,
+        "rn": "import { Stepper } from '@design-schema/rn';\n\n<Stepper\n  steps={[\n    { id: 'shipping', label: 'Shipping address', status: 'error' },\n    { id: 'payment', label: 'Payment' },\n    { id: 'review', label: 'Review order' },\n  ]}\n  current=\"payment\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithError",
+        "lit": null,
+        "rn": "WithError",
+        "swift": null
+      },
+      "storyId": "stepper-react--with-error",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Custom Label",
+      "args": {
+        "steps": [
+          {
+            "id": "shipping",
+            "label": "Shipping address"
+          },
+          {
+            "id": "payment",
+            "label": "Payment"
+          },
+          {
+            "id": "review",
+            "label": "Review order"
+          },
+          {
+            "id": "confirm",
+            "label": "Confirmation"
+          }
+        ],
+        "current": "payment",
+        "orientation": "horizontal",
+        "navigable": "completed",
+        "compact": false,
+        "label": "Checkout progress"
+      },
+      "snippets": {
+        "react": "import { Stepper, type StepperStep } from '@design-schema/react';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address' },\n  { id: 'payment', label: 'Payment' },\n  { id: 'review', label: 'Review order' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" label=\"Checkout progress\" />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "CustomLabel",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "stepper-react--custom-label",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "steps": [
+          {
+            "id": "shipping",
+            "label": "Shipping address"
+          },
+          {
+            "id": "payment",
+            "label": "Payment"
+          },
+          {
+            "id": "review",
+            "label": "Review order"
+          },
+          {
+            "id": "confirm",
+            "label": "Confirmation"
+          }
+        ],
+        "current": "payment",
+        "orientation": "horizontal",
+        "navigable": "all",
+        "compact": false,
+        "label": "Progress"
+      },
+      "snippets": {
+        "react": "import { Stepper, type StepperStep } from '@design-schema/react';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address' },\n  { id: 'payment', label: 'Payment' },\n  { id: 'review', label: 'Review order' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"payment\" navigable=\"all\" label=\"Progress\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { StepperStep, StepperStepSelectDetail } from '@design-schema/lit';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address', description: 'Where the order will arrive' },\n  { id: 'payment', label: 'Payment', description: 'Card or bank details' },\n  { id: 'review', label: 'Review order', description: 'Check items and totals' },\n  { id: 'confirm', label: 'Confirmation', description: 'Takes about a minute' },\n];\n\nhtml`\n  <ds-stepper\n    .steps=${steps}\n    current=\"payment\"\n    navigable=\"all\"\n    @step-select=${(event: CustomEvent<StepperStepSelectDetail>) => console.log('step-select', event.detail)}\n  ></ds-stepper>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "stepper-react--keyboard",
+      "sweep": {
+        "prop": "navigable",
+        "value": "all"
+      },
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

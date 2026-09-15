@@ -32,8 +32,8 @@
  * gap: nothing in a `swift test` process can move or observe SwiftUI focus, so those scenarios are
  * `.disabled` with that reason and the iPad keyboard gate (Tests/DesignSchemaUITests) is what checks them.
  *
- * Not every `when`/`then` shape has a test-code mapping today (see Unmappable below,
- * `then.attribute` and `then.focused: moved|unchanged` are the current gaps). Those scenarios
+ * Not every `when`/`then` shape (schema/component.ts `whenClause`/`thenClause`) has a test-code mapping on every
+ * platform (see Unmappable below; `then.focused: moved|unchanged` is the gap everywhere). Those scenarios
  * become `test.skip('<name> — <reason>', ...)` so the report shows the gap instead of a false pass.
  *
  * Anatomy parts are located, in order: the primary part (`anatomy[0]`, e.g. Checkbox's
@@ -58,6 +58,8 @@ import { freshOutDir, readComponents } from './lib/components.ts';
 import type { Dict } from './lib/components.ts';
 import { has, pyGet, pyJsonDumps, pyReEscape, pyRepr, pySorted, pySplitlines, pyStr, pyStrip, readText, truthy, writeText } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
+import { NON_QUERYABLE_ROLES, normalizeKey, resolveRole, roleIn } from '../schema/component.ts';
+import { PLATFORMS, SOURCE_EXT, sourceDir, TS_PLATFORMS } from '../schema/platforms.ts';
 import { accessibleNameProp, behaviorFor } from './parse.ts';
 
 export type { Dict };
@@ -70,20 +72,14 @@ export const paths = {
   OUT: join(REPO_ROOT, 'generated', 'behavior'),
 };
 
-export const PLATFORMS: readonly string[] = ['web', 'lit', 'rn', 'swiftui'];
-/** The three whose files are JavaScript and share `scenarioBlock`; `swiftui` has its own emitter below. */
-export const JS_PLATFORMS: readonly string[] = ['web', 'lit', 'rn'];
-// Roles a test cannot query for: `none`/`presentation` have no element, `text` is not an ARIA role, and
-// `landmark` stands for whichever landmark role the component's own prop selects.
-const NON_CONCRETE_ROLES = new Set(['none', 'presentation', 'text', 'landmark']);
-// The component's surface is not in the document until something opens it and there is no `open` prop to set.
+// The component's surface only shows while its trigger is hovered: web and Lit hover the trigger first; React
+// Native and SwiftUI have no hover to perform.
 const HOVER_ROLES = new Set(['tooltip']);
-export const SOURCE_FILE: Record<string, string> = {
-  web: 'packages/react/src/{name}.tsx',
-  lit: 'packages/lit/src/{name}.ts',
-  rn: 'packages/rn/src/{name}.tsx',
-  swiftui: 'packages/swiftui/Sources/DesignSchema/{name}.swift',
-};
+
+/** The component's own source file on a platform; while it is missing the component is not generated there yet. */
+export function sourceFile(root: string, name: string, platform: string): string {
+  return join(sourceDir(root, platform), `${name}.${SOURCE_EXT[platform] as string}`);
+}
 
 /** Where the Swift cases go. Derived from `paths.ROOT` rather than stored beside it, so a test that
  *  sandboxes the root cannot write into the real package. */
@@ -116,9 +112,11 @@ export const DEEP_QUERY_HELPER = `function deep(root: ParentNode, selector: stri
   return null;
 }
 `;
-const EXT: Record<string, string> = { web: 'tsx', lit: 'ts', rn: 'tsx' };
-const PKG_SRC: Record<string, string> = { web: 'packages/react/src', lit: 'packages/lit/src', rn: 'packages/rn/src' };
-const REL_SRC: Record<string, string> = Object.fromEntries(JS_PLATFORMS.map((p) => [p, '../../' + (PKG_SRC[p] as string)])); // from generated/behavior/
+// The three JavaScript platforms share `scenarioBlock` and import the component from its package source, relative to
+// generated/behavior/; `swiftui` has its own emitter below.
+const REL_SRC: Record<string, string> = Object.fromEntries(
+  TS_PLATFORMS.map((p) => [p, relative(join(REPO_ROOT, 'generated', 'behavior'), sourceDir(REPO_ROOT, p)).replaceAll('\\', '/')]),
+);
 
 const STATE_ARIA: Record<string, string> = {
   checked: 'aria-checked',
@@ -130,7 +128,10 @@ const STATE_ARIA: Record<string, string> = {
   open: 'aria-expanded',
 };
 const STATE_RN_MATCHER: Record<string, string> = { checked: 'toBeChecked', disabled: 'toBeDisabled', selected: 'toBeSelected', expanded: 'toBeExpanded' };
-const KEY_MAP: Record<string, Record<string, string>> = { web: { Space: '[Space]' }, lit: { Space: ' ' } };
+// React Native's accessibilityState has no `open`; an open disclosure is `expanded` there.
+const STATE_RN: Record<string, string> = { open: 'expanded' };
+/** Each platform's user-event spelling for a `KeyboardEvent.key` that is not written `{<key>}` there. */
+const KEY_MAP: Record<string, Record<string, string>> = { web: { ' ': '[Space]' }, lit: { ' ': ' ' } };
 
 /** Raised when a `when`/`then` shape has no test-code mapping for a platform. */
 export class Unmappable extends Error {
@@ -179,9 +180,11 @@ export function partLocator(_c: Dict, part: string, _platform: string): string {
   return `s.${part}()`;
 }
 
+/** The role a test can find the component by: its resolved role, or null when that is unresolved (a `roleFrom` prop
+ *  with no default) or one of NON_QUERYABLE_ROLES. */
 export function concreteRole(c: Dict): string | null {
-  const role = c.a11y.role as string;
-  return NON_CONCRETE_ROLES.has(role) ? null : role;
+  const role = resolveRole(c);
+  return role === null || roleIn(NON_QUERYABLE_ROLES, role) ? null : role;
 }
 
 /** The component's root: the `data-ds` hook first (piercing shadow roots on Lit), the rendered tree otherwise. */
@@ -197,6 +200,15 @@ export function rootLocatorBody(c: Dict, platform: string): string {
   throw new Unmappable(`unknown platform '${platform}'`);
 }
 
+/** The type a prop's literal takes: its `type`, except that a `union` whose `shape` starts with a scalar
+ *  (`string | string[]`, `number | [number, number]`) reads as that scalar, the way it was typed before
+ *  `union` existed. A given value is still rendered by its runtime type. */
+export function scalarType(prop: Dict): string {
+  if (prop.type !== 'union') return prop.type as string;
+  const first = pyStr(pyGet(prop, 'shape', '')).split('|')[0]?.trim();
+  return first === 'string' || first === 'number' || first === 'boolean' ? first : 'union';
+}
+
 /** The accessor body for `part`: how the part is actually found, one heuristic at a time. The primary part is
  *  the role element when the role can be queried, else the root (never `getByRole('text')` or `('none')`). */
 export function partLocatorBody(c: Dict, part: string, platform: string): string {
@@ -205,7 +217,7 @@ export function partLocatorBody(c: Dict, part: string, platform: string): string
   const role = concreteRole(c);
   const isPrimary = anatomy.length > 0 && part === anatomy[0];
   const prop = pyGet(props, part, undefined) as Dict | undefined;
-  const isTextProp = prop !== undefined && prop !== null && prop.type === 'string';
+  const isTextProp = prop !== undefined && prop !== null && scalarType(prop) === 'string';
 
   if (platform === 'web') {
     if (isPrimary) return role ? `(screen.queryByRole('${role}') ?? s.root()) as HTMLElement` : 's.root()';
@@ -236,11 +248,11 @@ export function usedParts(c: Dict, scenarios: Dict[]): string[] {
   if (anatomy.length) used.add(anatomy[0] as string);
   for (const sc of scenarios) {
     const when = (truthy(pyGet(sc, 'when', null)) ? sc.when : {}) as Dict;
-    for (const key of ['click', 'focus']) {
+    for (const key of ['click', 'focus', 'hover']) {
       if (has(when, key) && anatomy.includes(when[key] as string)) used.add(when[key] as string);
     }
     for (const item of sc.then as Dict[]) {
-      for (const key of ['focus', 'focused']) {
+      for (const key of ['focused', 'on']) {
         if (has(item, key) && anatomy.includes(item[key] as string)) used.add(item[key] as string);
       }
     }
@@ -251,6 +263,16 @@ export function usedParts(c: Dict, scenarios: Dict[]): string[] {
 // ---------------------------------------------------------------------------
 // `when` → (setup lines, action lines)
 // ---------------------------------------------------------------------------
+
+/** A `keyChord` in user-event's `keyboard()` syntax, which web and Lit share: modifiers held (`{Shift>}`), the
+ *  key, modifiers released. A printable key types itself; a named one is `{<name>}` unless KEY_MAP says otherwise. */
+export function keyStroke(chord: string, platform: string): string {
+  if (chord === 'a-z') throw new Unmappable("when.key: 'a-z' is a typeahead range, not one key press");
+  const modifiers = normalizeKey(chord).split('+');
+  const key = modifiers.pop() as string;
+  const stroke = pyGet((KEY_MAP[platform] ?? {}) as Dict, key, key.length === 1 ? key : `{${key}}`) as string;
+  return modifiers.map((m) => `{${m}>}`).join('') + stroke + [...modifiers].reverse().map((m) => `{/${m}}`).join('');
+}
 
 export function whenLines(c: Dict, sc: Dict, platform: string): string[] {
   const when = (pyGet(sc, 'when', null) ?? null) as Dict | null;
@@ -273,15 +295,22 @@ export function whenLines(c: Dict, sc: Dict, platform: string): string[] {
 
   if (kind === 'key') {
     const control = partLocator(c, primaryPart(c), platform);
-    if (platform === 'web') {
-      const mapped = pyGet(KEY_MAP.web as Dict, value as string, '{' + (value as string) + '}') as string;
-      return [`act(() => (${control}).focus());`, `await s.user.keyboard('${mapped}');`];
-    }
-    if (platform === 'lit') {
-      const mapped = pyGet(KEY_MAP.lit as Dict, value as string, '{' + (value as string) + '}') as string;
-      return ['s.el.focus();', `await userEvent.keyboard('${mapped}');`];
-    }
+    if (platform === 'web') return [`act(() => (${control}).focus());`, `await s.user.keyboard('${keyStroke(value as string, platform)}');`];
+    if (platform === 'lit') return ['s.el.focus();', `await userEvent.keyboard('${keyStroke(value as string, platform)}');`];
     throw new Unmappable('when.key: React Native has no keyboard');
+  }
+
+  if (kind === 'set') {
+    // A controlled prop change: the harness re-renders with the scenario's props merged with these.
+    if (platform === 'web' || platform === 'rn') return [`s.rerender(${js(value)});`];
+    if (platform === 'lit') return [`Object.assign(s.el, ${js(value)});`, 'await (s.el as unknown as { updateComplete: Promise<boolean> }).updateComplete;'];
+  }
+
+  if (kind === 'hover') {
+    const locator = partLocator(c, value as string, platform);
+    if (platform === 'web') return [`await s.user.hover(${locator});`];
+    if (platform === 'lit') return [`await userEvent.hover(${locator});`];
+    throw new Unmappable('when.hover: React Native has no pointer to hover with');
   }
 
   if (kind === 'type') {
@@ -352,17 +381,19 @@ export function thenStateLines(c: Dict, item: Dict, platform: string): string[] 
     return [`expect(${control}).toHaveAttribute('${aria}', '${val}');`];
   }
   if (platform === 'rn') {
-    const matcher = pyGet(STATE_RN_MATCHER, state, null) as string | null;
+    const rnState = pyGet(STATE_RN, state, state) as string;
+    const matcher = pyGet(STATE_RN_MATCHER, rnState, null) as string | null;
     if (matcher && typeof isValue === 'boolean') return [`expect(${control}).${isValue ? '' : 'not.'}${matcher}();`];
-    return [`expect(${control}).toHaveProp('accessibilityState', expect.objectContaining({ ${state}: ${js(isValue)} }));`];
+    return [`expect(${control}).toHaveProp('accessibilityState', expect.objectContaining({ ${rnState}: ${js(isValue)} }));`];
   }
   throw new Unmappable(`then.state: no mapping for ${platform}`);
 }
 
-export function thenFocusableLines(c: Dict, platform: string): string[] {
+export function thenFocusableLines(c: Dict, platform: string, focusable = true): string[] {
   const control = partLocator(c, primaryPart(c), platform);
-  if (platform === 'web') return [`act(() => (${control}).focus());`, `expect(${control}).toHaveFocus();`];
-  if (platform === 'lit') return ['s.el.focus();', 'expect(activeChain()).toContain(s.el);'];
+  const not = focusable ? '' : 'not.';
+  if (platform === 'web') return [`act(() => (${control}).focus());`, `expect(${control}).${not}toHaveFocus();`];
+  if (platform === 'lit') return ['s.el.focus();', `expect(activeChain()).${not}toContain(s.el);`];
   throw new Unmappable('then.focusable: React Native cannot observe focus');
 }
 
@@ -406,11 +437,15 @@ export function thenRoleLines(_c: Dict, role: string, platform: string): string[
   throw new Unmappable(`then.role: no mapping for ${platform}`);
 }
 
-export function thenNameLines(c: Dict, platform: string): string[] {
+/** `name: true` asserts the name the naming prop gives (or any non-empty one); `name: '<text>'` that exact name. */
+export function thenNameLines(c: Dict, platform: string, name: true | string = true): string[] {
   const role = concreteRole(c);
-  if (role === null) throw new Unmappable(`then.name: role '${c.a11y.role as string}' cannot be queried; name the landmark/text role in the doc`);
+  if (role === null) {
+    const shown = c.a11y.roleFrom !== undefined ? `from prop '${c.a11y.roleFrom as string}'` : `'${resolveRole(c) as string}'`;
+    throw new Unmappable(`then.name: role ${shown} cannot be queried; name the landmark/text role in the doc`);
+  }
   const nameProp = accessibleNameProp(c);
-  const expected = nameProp ? `s.props.${nameProp}` : null;
+  const expected = typeof name === 'string' ? js(name) : nameProp ? `s.props.${nameProp}` : null;
   if (platform === 'web') {
     if (expected) return [`expect(screen.getByRole('${role}', { name: ${expected} })).toBeInTheDocument();`];
     return [`expect(screen.getByRole('${role}')).toHaveAccessibleName();`];
@@ -429,29 +464,46 @@ export function thenNameLines(c: Dict, platform: string): string[] {
 
 /** Rendering is judged by the root, never by role: a decorative Icon has no role, an Input's role follows
  *  its type, and a closed overlay has no surface — none of those is a failure to render. */
-export function thenRendersLines(_c: Dict, platform: string): string[] {
-  if (platform === 'web') return ['expect(s.root()).not.toBeNull();'];
-  if (platform === 'rn') return ['expect(s.root()).toBeTruthy();'];
+export function thenRendersLines(_c: Dict, platform: string, renders = true): string[] {
+  if (platform === 'web') return [`expect(s.root()).${renders ? 'not.' : ''}toBeNull();`];
+  // The root falls back to UNSAFE_root, which always exists; nothing rendered is an empty tree.
+  if (platform === 'rn') return [renders ? 'expect(s.root()).toBeTruthy();' : 'expect(screen.toJSON()).toBeNull();'];
   if (platform === 'lit') {
     // An element that renders into its shadow root must have put something there; a light-DOM element (a
     // landmark whose role lives on the host through ElementInternals) has rendered once it is connected.
-    return ['expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);'];
+    return [`expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(${renders ? 'true' : 'false'});`];
   }
   throw new Unmappable(`then.renders: no mapping for ${platform}`);
+}
+
+/** `{ attribute, is, on? }` on the primary part or `on`: a string or boolean is the attribute's value, null its absence.
+ *  React Native has no attributes; the same name is a prop of the host element there. */
+export function thenAttributeLines(c: Dict, item: Dict, platform: string): string[] {
+  const attr = js(item.attribute as string);
+  const isValue = item.is as string | boolean | null;
+  const target = partLocator(c, has(item, 'on') ? (item.on as string) : primaryPart(c), platform);
+  if (platform === 'web' || platform === 'lit') {
+    if (isValue === null) return [`expect(${target}).not.toHaveAttribute(${attr});`];
+    return [`expect(${target}).toHaveAttribute(${attr}, ${js(String(isValue))});`];
+  }
+  if (platform === 'rn') {
+    if (isValue === null) return [`expect(${target}).not.toHaveProp(${attr});`];
+    return [`expect(${target}).toHaveProp(${attr}, ${js(isValue)});`];
+  }
+  throw new Unmappable(`then.attribute: no mapping for ${platform}`);
 }
 
 export function thenItemLines(c: Dict, item: Dict, platform: string): string[] {
   if (has(item, 'event')) return thenEventLines(c, item, platform);
   if (has(item, 'state')) return thenStateLines(c, item, platform);
-  if (has(item, 'focusable')) return thenFocusableLines(c, platform);
+  if (has(item, 'attribute')) return thenAttributeLines(c, item, platform);
+  if (has(item, 'focusable')) return thenFocusableLines(c, platform, item.focusable !== false);
   if (has(item, 'focused')) return thenFocusedLines(c, item.focused as string, platform);
-  if (has(item, 'focus')) return thenFocusedLines(c, item.focus as string, platform);
   if (has(item, 'text')) return thenTextLines(c, item.text as string, platform);
   if (has(item, 'copy')) return thenCopyLines(c, item.copy as string, platform);
   if (has(item, 'role')) return thenRoleLines(c, item.role as string, platform);
-  if (has(item, 'name')) return thenNameLines(c, platform);
-  if (has(item, 'renders')) return thenRendersLines(c, platform);
-  if (has(item, 'attribute')) throw new Unmappable('then.attribute: no test-code convention for an arbitrary attribute assertion yet');
+  if (has(item, 'name')) return thenNameLines(c, platform, item.name as true | string);
+  if (has(item, 'renders')) return thenRendersLines(c, platform, item.renders !== false);
   throw new Unmappable(`then: unrecognized assertion keys ${pyRepr(pySorted(Object.keys(item)))}`);
 }
 
@@ -462,7 +514,7 @@ export function thenItemLines(c: Dict, item: Dict, platform: string): string[] {
 /** Whether the scenario asserts on the component's surface (so a closed overlay must be opened first). */
 export function needsSurface(sc: Dict): boolean {
   if (truthy(pyGet(sc, 'when', null))) return true;
-  const keys = ['name', 'renders', 'focusable', 'focused', 'focus', 'state', 'role', 'text', 'copy'];
+  const keys = ['name', 'renders', 'focusable', 'focused', 'state', 'role', 'text', 'copy', 'attribute'];
   return (sc.then as Dict[]).some((item) => keys.some((k) => has(item, k)));
 }
 
@@ -480,10 +532,14 @@ export function scenarioBlock(c: Dict, sc: Dict, platform: string): string {
   let when: string[] = [];
   let then: string[] = [];
   try {
-    if (HOVER_ROLES.has(c.a11y.role as string) && needsSurface(sc)) {
-      throw new Unmappable(`role '${c.a11y.role as string}' needs its trigger hovered or focused; covered by the Keyboard story`);
+    const role = resolveRole(c, effectiveGiven(c, sc));
+    if (role !== null && HOVER_ROLES.has(role) && needsSurface(sc)) {
+      if (platform === 'rn') throw new Unmappable(`role '${role}' needs its trigger hovered or focused; covered by the Keyboard story`);
+      // The trigger is the first anatomy part; a scenario with its own interaction performs that instead, and one
+      // whose controlled `open` prop already shows the surface needs no hover (Lit's harness slots no trigger).
+      if (!truthy(pyGet(sc, 'when', null)) && effectiveGiven(c, sc).open !== true) when = whenLines(c, { ...sc, when: { hover: primaryPart(c) } }, platform);
     }
-    when = whenLines(c, sc, platform);
+    when = when.concat(whenLines(c, sc, platform));
     for (const item of sc.then as Dict[]) then = then.concat(thenItemLines(c, item, platform));
   } catch (e) {
     if (!(e instanceof Unmappable)) throw e;
@@ -569,7 +625,7 @@ export function swiftFunctionName(name: string, used: Set<string>): string {
  *  the prop is required and the scenario said nothing. There is no `meta.args` on this platform — a Swift
  *  initializer has the doc's defaults built in, so only the required props need filling. */
 export function swiftPropValue(propName: string, prop: Dict, value: unknown, given: boolean): string {
-  const type = prop.type as string;
+  const type = scalarType(prop);
   if (given) {
     if (type === 'enum') return swiftCase(value);
     // A `content` prop is a @ViewBuilder closure, so even a string the doc supplies (parse.ts fills the
@@ -652,7 +708,7 @@ export function swiftNameValue(c: Dict, given: Dict): string | null {
   if (propName === null) return null;
   if (has(given, propName)) return typeof given[propName] === 'string' ? (given[propName] as string) : null;
   const prop = pyGet((truthy(c.props) ? c.props : {}) as Dict, propName, {}) as Dict;
-  if (prop.type !== 'string' || !truthy(prop.required)) return null;
+  if (scalarType(prop) !== 'string' || !truthy(prop.required)) return null;
   return (propName[0]?.toUpperCase() ?? '') + propName.slice(1);
 }
 
@@ -669,6 +725,8 @@ export function swiftWhenLines(c: Dict, sc: Dict): string[] {
   if (kind === 'focus' || kind === 'blur') {
     throw new Unmappable(`when.${kind}: SwiftUI focus cannot be moved from a hosted view; the iPad keyboard gate drives it`);
   }
+  if (kind === 'set') throw new Unmappable('when.set: a hosted view is built once from literal props; a controlled change needs a Binding the test owns');
+  if (kind === 'hover') throw new Unmappable('when.hover: a hosted view has no pointer to hover with');
   throw new Unmappable(`when.${kind}: no test-code mapping for this interaction`);
 }
 
@@ -725,7 +783,7 @@ export function swiftThenItemLines(c: Dict, item: Dict, given: Dict): string[] {
     throw new Unmappable(`then.state ${state}: prompts/conventions/swiftui.md names no accessibility spelling for it`);
   }
 
-  if (has(item, 'focusable') || has(item, 'focused') || has(item, 'focus')) {
+  if (has(item, 'focusable') || has(item, 'focused')) {
     throw new Unmappable('then.focus: a hosted view cannot move or observe SwiftUI focus; the iPad keyboard gate checks it');
   }
 
@@ -756,14 +814,17 @@ export function swiftThenItemLines(c: Dict, item: Dict, given: Dict): string[] {
   }
 
   if (has(item, 'name')) {
-    const expected = swiftNameValue(c, given);
+    const expected = typeof item.name === 'string' ? item.name : swiftNameValue(c, given);
     const node = `try host.require(${swiftString(c.name as string)})`;
     if (expected === null) return [swiftExpect(`${node}.label.isEmpty == false`)];
     return [swiftExpect(`${node}.label == ${swiftString(expected)}`)];
   }
 
-  if (has(item, 'renders')) return [swiftExpect(`host.exists(${swiftString(c.name as string)})`)];
-  if (has(item, 'attribute')) throw new Unmappable('then.attribute: no test-code convention for an arbitrary attribute assertion yet');
+  if (has(item, 'renders')) {
+    const exists = `host.exists(${swiftString(c.name as string)})`;
+    return [swiftExpect(item.renders === false ? `${exists} == false` : exists)];
+  }
+  if (has(item, 'attribute')) throw new Unmappable('then.attribute: an accessibility tree has no attributes; assert the label, value or trait instead');
   throw new Unmappable(`then: unrecognized assertion keys ${pyRepr(pySorted(Object.keys(item)))}`);
 }
 
@@ -780,8 +841,9 @@ export function swiftScenarioBlock(c: Dict, sc: Dict, used: Set<string>): string
   let then: string[] = [];
   let args: string[] = [];
   try {
-    if (HOVER_ROLES.has(c.a11y.role as string) && needsSurface(sc)) {
-      throw new Unmappable(`role '${c.a11y.role as string}' needs its trigger hovered or focused; covered by the Keyboard story`);
+    const role = resolveRole(c, given);
+    if (role !== null && HOVER_ROLES.has(role) && needsSurface(sc)) {
+      throw new Unmappable(`role '${role}' needs its trigger hovered or focused; covered by the Keyboard story`);
     }
     args = swiftInitArgs(c, given);
     when = swiftWhenLines(c, sc);
@@ -1024,7 +1086,7 @@ function isSwiftUI(platform: string): boolean {
 export function outFile(name: string, platform: string): string {
   return isSwiftUI(platform)
     ? join(swiftOutDir(), `${name}BehaviorTests.swift`)
-    : join(paths.OUT, `${name}.${platform}.test.${EXT[platform] as string}`);
+    : join(paths.OUT, `${name}.${platform}.test.${SOURCE_EXT[platform] as string}`);
 }
 
 export function main(argv: readonly string[] = process.argv.slice(2)): number {
@@ -1045,7 +1107,7 @@ export function main(argv: readonly string[] = process.argv.slice(2)): number {
     if (!truthy(pyGet(c, 'behavior', null)) && !derived.length) continue;
     for (const platform of PLATFORMS) {
       if (!has(c.platforms as Dict, platform) || !truthy(pyGet(c.platforms[platform] as Dict, 'supported', true))) continue;
-      if (!existsSync(join(paths.ROOT, (SOURCE_FILE[platform] as string).replace('{name}', c.name as string)))) {
+      if (!existsSync(sourceFile(paths.ROOT, c.name as string, platform))) {
         nMissing += 1; // not generated yet: no test file, so the package suite stays green
         continue;
       }

@@ -1,0 +1,162 @@
+{
+  "name": "DataGrid",
+  "role": "grid",
+  "identifier": "DataGrid",
+  "rules": [
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Enters the grid on the last-focused cell (initially the first header cell) and, from inside, leaves it — the grid is one tab stop. Inside a cell that contains a control, Tab still leaves the grid; use Enter to interact with the control. While an editor is open, Tab commits and opens the next editable cell in the row (Shift+Tab the previous); from the last editable cell it commits and leaves the grid.",
+      "from": "any",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowRight"
+      ],
+      "action": "Next cell in the row.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowLeft"
+      ],
+      "action": "Previous cell.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "Same column, next row (into the body from the header).",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "Same column, previous row (into the header from the first body row).",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "First cell in the row (Ctrl: first cell in the grid).",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Last cell in the row (Ctrl: last cell in the grid).",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "PageDown"
+      ],
+      "action": "Down one visible page of rows, same column.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "PageUp"
+      ],
+      "action": "Up one visible page of rows.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Enter"
+      ],
+      "action": "On a header cell: sorts (if sortable). On an editable cell: opens the editor; while editing, commits and moves focus down one row. On the selection cell: toggles its checkbox. On a cell whose `render` contains a control (Link, Button, Checkbox): focuses and activates the first focusable descendant.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "F2"
+      ],
+      "action": "Opens the editor without moving; while editing, commits and returns focus to the cell without moving.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "While editing, cancels the edit and restores the value. Otherwise clears a range selection.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        " "
+      ],
+      "action": "Row mode: toggles the focused row; Shift+Space extends the row selection from the anchor (the last row toggled) through the focused row. Range mode: selects the focused row as a full-width range, Shift+Space extends that row range, Ctrl+Space selects the focused column as a range over the loaded rows.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "selectable is row or range"
+    },
+    {
+      "keys": [
+        "Shift+ArrowRight",
+        "Shift+ArrowLeft",
+        "Shift+ArrowDown",
+        "Shift+ArrowUp"
+      ],
+      "action": "Extends the range selection from the anchor; a plain arrow collapses the range to the newly focused cell and makes it the anchor.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "selectable is range and focus in the body"
+    },
+    {
+      "keys": [
+        "Shift+ArrowRight",
+        "Shift+ArrowLeft"
+      ],
+      "action": "Widens / narrows the column by resizeStep and fires onColumnResize on release of Shift.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on the header cell of a resizable column"
+    },
+    {
+      "keys": [
+        "Control+a"
+      ],
+      "action": "Selects all loaded rows or cells (bound by key code KeyA, so it works on any layout).",
+      "from": "inside",
+      "expect": "manual",
+      "when": "selectable is row or range"
+    },
+    {
+      "keys": [
+        "Control+c"
+      ],
+      "action": "Copies the selection as tab-separated text (with headers when whole columns are selected); bound by key code KeyC.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "selectable is range"
+    },
+    {
+      "keys": [
+        "Delete",
+        "Backspace"
+      ],
+      "action": "Clears the value of editable cells in the selection.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "editable and selection"
+    }
+  ]
+}

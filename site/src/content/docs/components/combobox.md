@@ -30,11 +30,11 @@ component:
       shape: 'ListboxOption[] (flat or grouped, as Listbox)'
       description: 'The full option set, or the current page of results when `filter` is `async`. Passed through to the Listbox after filtering.'
     value:
-      type: string
+      type: union
       description: Controlled selected value(s). With `multiple`, an array. With `allowCustom`, a value not in `options` is a custom entry.
       shape: 'string | string[]'
     defaultValue:
-      type: string
+      type: union
       description: Initial value(s).
       shape: 'string | string[]'
     open:

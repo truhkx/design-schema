@@ -1,0 +1,40 @@
+{
+  "name": "AlertDialog",
+  "role": "alertdialog",
+  "identifier": "AlertDialog",
+  "rules": [
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Cancels (onCancel with reason escape).",
+      "from": "inside",
+      "expect": "closes"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "From Confirm (the last button) wraps to Cancel (the first).",
+      "from": "last",
+      "expect": "focus-wraps-to-first"
+    },
+    {
+      "keys": [
+        "Shift+Tab"
+      ],
+      "action": "From Cancel wraps to Confirm.",
+      "from": "first",
+      "expect": "focus-wraps-to-last"
+    },
+    {
+      "keys": [
+        "Enter"
+      ],
+      "action": "Activates the focused button. Initial focus is on Cancel so Enter never confirms by momentum.",
+      "from": "first",
+      "expect": "closes",
+      "when": "focus on a button"
+    }
+  ]
+}

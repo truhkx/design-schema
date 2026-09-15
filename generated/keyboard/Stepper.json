@@ -1,0 +1,24 @@
+{
+  "name": "Stepper",
+  "role": "none",
+  "identifier": "Stepper",
+  "rules": [
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Moves between navigable steps in order; non-navigable steps are not focusable.",
+      "from": "first",
+      "expect": "focus-next"
+    },
+    {
+      "keys": [
+        "Enter",
+        " "
+      ],
+      "action": "Selects the focused step.",
+      "from": "first",
+      "expect": "manual"
+    }
+  ]
+}

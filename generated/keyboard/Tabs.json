@@ -1,0 +1,86 @@
+{
+  "name": "Tabs",
+  "role": "tablist",
+  "identifier": "Tabs",
+  "rules": [
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Moves focus to the selected tab, then out of the tab list into the panel (the list is one tab stop).",
+      "from": "any",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowRight"
+      ],
+      "action": "Moves to the next tab, wrapping; selects it under automatic activation.",
+      "from": "first",
+      "expect": "focus-next",
+      "when": "horizontal"
+    },
+    {
+      "keys": [
+        "ArrowLeft"
+      ],
+      "action": "Moves to the previous tab, wrapping.",
+      "from": "last",
+      "expect": "focus-prev",
+      "when": "horizontal"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "Moves to the next tab, wrapping; selects it under automatic activation.",
+      "from": "first",
+      "expect": "manual",
+      "when": "vertical"
+    },
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "Moves to the previous tab, wrapping.",
+      "from": "last",
+      "expect": "manual",
+      "when": "vertical"
+    },
+    {
+      "keys": [
+        "ArrowRight"
+      ],
+      "action": "From the last tab wraps to the first.",
+      "from": "last",
+      "expect": "focus-wraps-to-first",
+      "when": "horizontal"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "First tab.",
+      "from": "last",
+      "expect": "focus-first"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Last tab.",
+      "from": "first",
+      "expect": "focus-last"
+    },
+    {
+      "keys": [
+        "Enter",
+        " "
+      ],
+      "action": "Selects the focused tab (manual activation).",
+      "from": "first",
+      "expect": "selects",
+      "when": "manual"
+    }
+  ]
+}

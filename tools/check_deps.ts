@@ -24,13 +24,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { isTsPlatform, PACKAGE_DIR, TS_PLATFORMS } from '../schema/platforms.ts';
 import { pySorted, truthy } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
 
 /** Every path the tool reads. The tests point these at a sandbox. */
 export const paths = { PACKAGES: join(REPO_ROOT, 'packages') };
-
-export const PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn' };
 
 const TOKENS = '@design-schema/tokens';
 export const ALLOWED: Record<string, string[]> = {
@@ -76,7 +75,7 @@ export type Args = { platform: string | null };
 
 /** argparse's `--platform {web,lit,rn}` (optional). */
 export function parseArgs(argv: string[], prog: string = 'check_deps.ts'): Args {
-  const usage = `usage: ${prog} [-h] [--platform {web,lit,rn}]`;
+  const usage = `usage: ${prog} [-h] [--platform {${TS_PLATFORMS.join(',')}}]`;
   const die: (message: string) => never = (message) => {
     process.stderr.write(`${usage}\n${prog}: error: ${message}\n`);
     throw Object.assign(new Error(message), { exitCode: 2 });
@@ -90,7 +89,7 @@ export function parseArgs(argv: string[], prog: string = 'check_deps.ts'): Args 
     } else if (arg === '--platform' || arg.startsWith('--platform=')) {
       const value = arg.startsWith('--platform=') ? arg.slice('--platform='.length) : argv[++i];
       if (value === undefined) die('argument --platform: expected one argument');
-      if (!Object.hasOwn(PKG, value)) die(`argument --platform: invalid choice: '${value}' (choose from ${Object.keys(PKG).join(', ')})`);
+      if (!isTsPlatform(value)) die(`argument --platform: invalid choice: '${value}' (choose from ${TS_PLATFORMS.join(', ')})`);
       args.platform = value;
     } else {
       die(`unrecognized arguments: ${arg}`);
@@ -106,7 +105,7 @@ export function main(argv: string[] = process.argv.slice(2)): number {
   } catch (e) {
     return (e as { exitCode?: number }).exitCode ?? 2;
   }
-  const findings = checkAll(paths.PACKAGES, a.platform ? (PKG[a.platform] as string) : null);
+  const findings = checkAll(paths.PACKAGES, a.platform ? (PACKAGE_DIR[a.platform] as string) : null);
   for (const f of findings) process.stdout.write(`✖ ${f}\n`);
   process.stdout.write(`${findings.length ? '✖' : '✔'} check_deps: ${findings.length} finding(s)\n`);
   return findings.length ? 1 : 0;

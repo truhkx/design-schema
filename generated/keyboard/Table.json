@@ -1,0 +1,34 @@
+{
+  "name": "Table",
+  "role": "table",
+  "identifier": "Table",
+  "rules": [
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Moves through interactive content in reading order: select-all, then per row the checkbox, links, buttons and the actions cell. Cells themselves are not focusable — this is a table, not a grid.",
+      "from": "any",
+      "expect": "focus-next"
+    },
+    {
+      "keys": [
+        "Enter",
+        " "
+      ],
+      "action": "On a sort button, sorts; on a row checkbox, toggles; on a row header button, activates the row.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowRight",
+        "ArrowLeft"
+      ],
+      "action": "In `responsive: scroll` below the breakpoint, the scroll region is focusable and arrows scroll it horizontally.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "scroll region focused"
+    }
+  ]
+}

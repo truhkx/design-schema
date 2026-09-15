@@ -3,15 +3,17 @@
  * The site header (site/src/content/docs/process/website-plan.md, "Global chrome").
  *
  * `Landmark(role="banner")` → `Container(width="page")` → a `Stack` row with the logo link at the
- * start and the nav at the end. Everything static lives here, rendered to HTML at build time; only
- * the pieces that have state — the theme switcher and the mobile drawer — are the `HeaderNav`
+ * start and the nav filling the rest (its links centered and evenly spaced — header.css). The banner
+ * carries `data-mode="dark"`, so it is dark on a light page too.
+ *
+ * Everything static lives here, rendered to HTML at build time; only the pieces that have state — the theme switcher and the mobile drawer — are the `HeaderNav`
  * island, so the links are in the document whether or not its JavaScript ever arrives.
  *
  * The desktop/mobile swap is a media query in ./header.css rather than a `matchMedia` in the island,
  * for the same reason: a breakpoint the browser already knows shouldn't wait on hydration to be
  * applied.
  */
-import { Container, Landmark, Link, Stack } from '@design-schema/react';
+import { Container, Landmark, Stack } from '@design-schema/react';
 import { layoutBreakpointMd } from '@design-schema/tokens/calm-precise/light';
 
 import HeaderNav from './HeaderNav';
@@ -25,9 +27,12 @@ const themes = publishedThemes().map(({ id, title }) => ({ id, title }));
 
 /**
  * The wordmark stays live text rather than being drawn into the logo asset: it is the accessible
- * name of the header's home link, and it is themed by the type tokens like any other text. The mark
- * (job 504) sits beside it as decoration, outside the anchor — `Link` renders its `label` and
- * nothing else, and a mark inside the link would only repeat the name it already carries.
+ * name of the header's home link, and it is themed by the type tokens like any other text.
+ *
+ * The whole lockup is the home link (Tony's review, 2026-09-15 — there is no separate "Homepage" nav
+ * entry any more), so the mark (job 504) sits inside the anchor, `aria-hidden`: the wordmark already
+ * names the link, and the mark would only repeat it. That makes this a plain `<a>` rather than a
+ * `Link`, which renders its `label` and nothing else; header.css gives it Link's focus ring.
  */
 const WORDMARK = 'Design Schema';
 
@@ -45,13 +50,13 @@ if (layoutBreakpointMd !== BREAKPOINT_MD_IN_CSS) {
 }
 ---
 
-<Landmark role="banner" className="ds-site-header">
+<Landmark role="banner" className="ds-site-header" data-mode="dark">
   <Container width="page">
-    <Stack direction="horizontal" align="center" justify="between">
-      <Stack direction="horizontal" align="center" gap="tight">
+    <Stack direction="horizontal" align="center" gap="normal">
+      <a class="ds-site-header__home" href="/">
         <Logo class="ds-site-header__mark" aria-hidden="true" focusable="false" />
-        <Link href="/" label={WORDMARK} tone="inherit" />
-      </Stack>
+        <span>{WORDMARK}</span>
+      </a>
       <HeaderNav client:load items={top} themes={themes} />
     </Stack>
   </Container>

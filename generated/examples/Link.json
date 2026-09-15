@@ -1,0 +1,176 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "href": "/billing/history",
+        "label": "View the billing history",
+        "external": false,
+        "tone": "default",
+        "download": false
+      },
+      "snippets": {
+        "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" />",
+        "lit": "<ds-link href=\"#billing\" label=\"View the billing history\"></ds-link>",
+        "rn": "import { Link } from '@design-schema/rn';\n\n<Link href=\"https://example.com/billing\" label=\"View the billing history\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "link-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Tone Default",
+      "args": {
+        "href": "/billing/history",
+        "label": "View the billing history",
+        "external": false,
+        "tone": "default",
+        "download": false
+      },
+      "snippets": {
+        "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" tone=\"default\" />",
+        "lit": "<ds-link href=\"#billing\" label=\"View the billing history\" tone=\"default\"></ds-link>",
+        "rn": "import { Link } from '@design-schema/rn';\n\n<Link\n  href=\"https://example.com/billing\"\n  label=\"View the billing history\"\n  tone=\"default\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneDefault",
+        "lit": "ToneDefault",
+        "rn": "ToneDefault",
+        "swift": null
+      },
+      "storyId": "link-react--tone-default",
+      "sweep": {
+        "prop": "tone",
+        "value": "default"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Tone Inherit",
+      "args": {
+        "href": "/privacy",
+        "label": "privacy policy",
+        "external": false,
+        "tone": "inherit",
+        "download": false
+      },
+      "snippets": {
+        "react": "import { Link, Text } from '@design-schema/react';\n\n<Text tone=\"muted\" size=\"sm\">\n  By continuing you agree to the <Link href=\"/privacy\" label=\"privacy policy\" tone=\"inherit\" />.\n</Text>",
+        "lit": "<ds-text tone=\"muted\">Your trial ends in 3 days.\n  <ds-link href=\"#billing\" label=\"Compare plans\" tone=\"inherit\"></ds-link>.</ds-text>",
+        "rn": "import { Link, Text } from '@design-schema/rn';\n\n<Text tone=\"muted\">\n  Read the <Link href=\"https://example.com/billing\" tone=\"inherit\" label=\"terms of service\" /> before you continue.\n</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneInherit",
+        "lit": "ToneInherit",
+        "rn": "ToneInherit",
+        "swift": null
+      },
+      "storyId": "link-react--tone-inherit",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "External",
+      "args": {
+        "href": "https://example.com/docs",
+        "label": "Example documentation",
+        "external": true,
+        "tone": "default",
+        "download": false
+      },
+      "snippets": {
+        "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"https://example.com/docs\" label=\"Example documentation\" external />",
+        "lit": "<ds-link href=\"https://www.w3.org/WAI/ARIA/apg/\" label=\"ARIA Authoring Practices Guide\" external></ds-link>",
+        "rn": "import { Link } from '@design-schema/rn';\n\n<Link href=\"https://status.example.com\" label=\"Status page\" external />",
+        "swift": null
+      },
+      "stories": {
+        "react": "External",
+        "lit": "ExternalTrue",
+        "rn": "External",
+        "swift": null
+      },
+      "storyId": "link-react--external",
+      "sweep": {
+        "prop": "external",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Download",
+      "args": {
+        "href": "/invoices/2026-09.pdf",
+        "label": "Invoice for September",
+        "external": false,
+        "tone": "default",
+        "download": true
+      },
+      "snippets": {
+        "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/invoices/2026-09.pdf\" label=\"Invoice for September\" download />",
+        "lit": "<ds-link href=\"/invoice-2026-09.pdf\" label=\"Download invoice (PDF)\" download></ds-link>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Download",
+        "lit": "DownloadTrue",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "link-react--download",
+      "sweep": {
+        "prop": "download",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Inline",
+      "args": {
+        "href": "/billing/history",
+        "label": "View the billing history",
+        "external": false,
+        "tone": "default",
+        "download": false
+      },
+      "snippets": {
+        "react": "import { Link, Text } from '@design-schema/react';\n\n<Text>\n  Your plan renews on 1 October. <Link href=\"/billing/history\" label=\"View the billing history\" /> to see previous charges.\n</Text>",
+        "lit": "<ds-text>Screen-reader users navigate by pulling up a list of links, so\n  <ds-link href=\"#billing\" label=\"link text should describe the destination\"></ds-link>\n  and make sense out of context.</ds-text>",
+        "rn": "import { Link, Text } from '@design-schema/rn';\n\n<Text>\n  Your plan renews on 1 October. <Link href=\"https://example.com/billing\" label=\"Manage your subscription\" /> to change it.\n</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Inline",
+        "lit": "Inline",
+        "rn": "Inline",
+        "swift": null
+      },
+      "storyId": "link-react--inline",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

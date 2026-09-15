@@ -50,7 +50,7 @@ component:
     lineHeight: { token: font.lineHeight.normal }
     color: { token: 'color.foreground.{tone}' }
   a11y:
-    role: text
+    role: generic
     requires: [contrast-aa]
     contrast:
       - { foreground: color.foreground, background: color.background, level: AA }

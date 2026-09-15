@@ -1,0 +1,1310 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{content}</Box>",
+        "lit": "<ds-box>\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "box-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Inset None",
+      "args": {
+        "inset": "none",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"none\" surface=\"subtle\" radius=\"md\">{content}</Box>",
+        "lit": "<ds-box inset=\"none\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"none\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetNone",
+        "lit": "InsetNone",
+        "rn": "InsetNone",
+        "swift": null
+      },
+      "storyId": "box-react--inset-none",
+      "sweep": {
+        "prop": "inset",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Sm",
+      "args": {
+        "inset": "sm",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"sm\" surface=\"subtle\" radius=\"md\">{content}</Box>",
+        "lit": "<ds-box inset=\"sm\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"sm\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetSm",
+        "lit": "InsetSm",
+        "rn": "InsetSm",
+        "swift": null
+      },
+      "storyId": "box-react--inset-sm",
+      "sweep": {
+        "prop": "inset",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Md",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{content}</Box>",
+        "lit": "<ds-box inset=\"md\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetMd",
+        "lit": "InsetMd",
+        "rn": "InsetMd",
+        "swift": null
+      },
+      "storyId": "box-react--inset-md",
+      "sweep": {
+        "prop": "inset",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Lg",
+      "args": {
+        "inset": "lg",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"lg\" surface=\"subtle\" radius=\"md\">{content}</Box>",
+        "lit": "<ds-box inset=\"lg\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"lg\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetLg",
+        "lit": "InsetLg",
+        "rn": "InsetLg",
+        "swift": null
+      },
+      "storyId": "box-react--inset-lg",
+      "sweep": {
+        "prop": "inset",
+        "value": "lg"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Xl",
+      "args": {
+        "inset": "xl",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"xl\" surface=\"subtle\" radius=\"md\">{content}</Box>",
+        "lit": "<ds-box inset=\"xl\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"xl\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetXl",
+        "lit": "InsetXl",
+        "rn": "InsetXl",
+        "swift": null
+      },
+      "storyId": "box-react--inset-xl",
+      "sweep": {
+        "prop": "inset",
+        "value": "xl"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Block None",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        },
+        "insetBlock": "none"
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"none\">{content}</Box>",
+        "lit": null,
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"none\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetBlockNone",
+        "lit": null,
+        "rn": "InsetBlockNone",
+        "swift": null
+      },
+      "storyId": "box-react--inset-block-none",
+      "sweep": {
+        "prop": "insetBlock",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Block Sm",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        },
+        "insetBlock": "sm"
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"sm\">{content}</Box>",
+        "lit": "<ds-box inset=\"lg\" inset-block=\"sm\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"sm\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetBlockSm",
+        "lit": "InsetBlockSm",
+        "rn": "InsetBlockSm",
+        "swift": null
+      },
+      "storyId": "box-react--inset-block-sm",
+      "sweep": {
+        "prop": "insetBlock",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Block Md",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        },
+        "insetBlock": "md"
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"md\">{content}</Box>",
+        "lit": null,
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetBlockMd",
+        "lit": null,
+        "rn": "InsetBlockMd",
+        "swift": null
+      },
+      "storyId": "box-react--inset-block-md",
+      "sweep": {
+        "prop": "insetBlock",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Block Lg",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        },
+        "insetBlock": "lg"
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"lg\">{content}</Box>",
+        "lit": null,
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"lg\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetBlockLg",
+        "lit": null,
+        "rn": "InsetBlockLg",
+        "swift": null
+      },
+      "storyId": "box-react--inset-block-lg",
+      "sweep": {
+        "prop": "insetBlock",
+        "value": "lg"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Block Xl",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        },
+        "insetBlock": "xl"
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"xl\">{content}</Box>",
+        "lit": null,
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"xl\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetBlockXl",
+        "lit": null,
+        "rn": "InsetBlockXl",
+        "swift": null
+      },
+      "storyId": "box-react--inset-block-xl",
+      "sweep": {
+        "prop": "insetBlock",
+        "value": "xl"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Inline None",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        },
+        "insetInline": "none"
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"none\">{content}</Box>",
+        "lit": null,
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"none\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetInlineNone",
+        "lit": null,
+        "rn": "InsetInlineNone",
+        "swift": null
+      },
+      "storyId": "box-react--inset-inline-none",
+      "sweep": {
+        "prop": "insetInline",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Inline Sm",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        },
+        "insetInline": "sm"
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"sm\">{content}</Box>",
+        "lit": "<ds-box inset=\"lg\" inset-inline=\"sm\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"sm\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetInlineSm",
+        "lit": "InsetInlineSm",
+        "rn": "InsetInlineSm",
+        "swift": null
+      },
+      "storyId": "box-react--inset-inline-sm",
+      "sweep": {
+        "prop": "insetInline",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Inline Md",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        },
+        "insetInline": "md"
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"md\">{content}</Box>",
+        "lit": null,
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetInlineMd",
+        "lit": null,
+        "rn": "InsetInlineMd",
+        "swift": null
+      },
+      "storyId": "box-react--inset-inline-md",
+      "sweep": {
+        "prop": "insetInline",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Inline Lg",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        },
+        "insetInline": "lg"
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"lg\">{content}</Box>",
+        "lit": null,
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"lg\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetInlineLg",
+        "lit": null,
+        "rn": "InsetInlineLg",
+        "swift": null
+      },
+      "storyId": "box-react--inset-inline-lg",
+      "sweep": {
+        "prop": "insetInline",
+        "value": "lg"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Inline Xl",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        },
+        "insetInline": "xl"
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"xl\">{content}</Box>",
+        "lit": null,
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"xl\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetInlineXl",
+        "lit": null,
+        "rn": "InsetInlineXl",
+        "swift": null
+      },
+      "storyId": "box-react--inset-inline-xl",
+      "sweep": {
+        "prop": "insetInline",
+        "value": "xl"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Surface None",
+      "args": {
+        "inset": "md",
+        "surface": "none",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"none\" radius=\"md\">{content}</Box>",
+        "lit": "<ds-box surface=\"none\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"none\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SurfaceNone",
+        "lit": "SurfaceNone",
+        "rn": "SurfaceNone",
+        "swift": null
+      },
+      "storyId": "box-react--surface-none",
+      "sweep": {
+        "prop": "surface",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Surface Default",
+      "args": {
+        "inset": "md",
+        "surface": "default",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"default\" radius=\"md\">{content}</Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"default\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"default\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SurfaceDefault",
+        "lit": "SurfaceDefault",
+        "rn": "SurfaceDefault",
+        "swift": null
+      },
+      "storyId": "box-react--surface-default",
+      "sweep": {
+        "prop": "surface",
+        "value": "default"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Surface Subtle",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{content}</Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SurfaceSubtle",
+        "lit": "SurfaceSubtle",
+        "rn": "SurfaceSubtle",
+        "swift": null
+      },
+      "storyId": "box-react--surface-subtle",
+      "sweep": {
+        "prop": "surface",
+        "value": "subtle"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Surface Strong",
+      "args": {
+        "inset": "md",
+        "surface": "strong",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"strong\" radius=\"md\">{content}</Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"strong\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"strong\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SurfaceStrong",
+        "lit": "SurfaceStrong",
+        "rn": "SurfaceStrong",
+        "swift": null
+      },
+      "storyId": "box-react--surface-strong",
+      "sweep": {
+        "prop": "surface",
+        "value": "strong"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Border",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": true,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" border radius=\"md\">{content}</Box>",
+        "lit": null,
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" border><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Border",
+        "lit": null,
+        "rn": "Border",
+        "swift": null
+      },
+      "storyId": "box-react--border",
+      "sweep": {
+        "prop": "border",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Radius None",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "none",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"none\">{content}</Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"none\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"none\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RadiusNone",
+        "lit": "RadiusNone",
+        "rn": "RadiusNone",
+        "swift": null
+      },
+      "storyId": "box-react--radius-none",
+      "sweep": {
+        "prop": "radius",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Radius Sm",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "sm",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"sm\">{content}</Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"sm\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"sm\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RadiusSm",
+        "lit": "RadiusSm",
+        "rn": "RadiusSm",
+        "swift": null
+      },
+      "storyId": "box-react--radius-sm",
+      "sweep": {
+        "prop": "radius",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Radius Md",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{content}</Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RadiusMd",
+        "lit": "RadiusMd",
+        "rn": "RadiusMd",
+        "swift": null
+      },
+      "storyId": "box-react--radius-md",
+      "sweep": {
+        "prop": "radius",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Radius Lg",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "lg",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"lg\">{content}</Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"lg\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"lg\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RadiusLg",
+        "lit": "RadiusLg",
+        "rn": "RadiusLg",
+        "swift": null
+      },
+      "storyId": "box-react--radius-lg",
+      "sweep": {
+        "prop": "radius",
+        "value": "lg"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Radius Full",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "full",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"full\">{content}</Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"full\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"full\"><Text>Box content</Text></Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RadiusFull",
+        "lit": "RadiusFull",
+        "rn": "RadiusFull",
+        "swift": null
+      },
+      "storyId": "box-react--radius-full",
+      "sweep": {
+        "prop": "radius",
+        "value": "full"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Element Div",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"div\">{content}</Box>",
+        "lit": "<ds-box element=\"div\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementDiv",
+        "lit": "ElementDiv",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "box-react--element-div",
+      "sweep": {
+        "prop": "element",
+        "value": "div"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Element Section",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "section",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"section\">{content}</Box>",
+        "lit": "<ds-box element=\"section\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementSection",
+        "lit": "ElementSection",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "box-react--element-section",
+      "sweep": {
+        "prop": "element",
+        "value": "section"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Element Article",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "article",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"article\">{content}</Box>",
+        "lit": "<ds-box element=\"article\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementArticle",
+        "lit": "ElementArticle",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "box-react--element-article",
+      "sweep": {
+        "prop": "element",
+        "value": "article"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Element Aside",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "aside",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"aside\">{content}</Box>",
+        "lit": "<ds-box element=\"aside\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementAside",
+        "lit": "ElementAside",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "box-react--element-aside",
+      "sweep": {
+        "prop": "element",
+        "value": "aside"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Element Header",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "header",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"header\">{content}</Box>",
+        "lit": "<ds-box element=\"header\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementHeader",
+        "lit": "ElementHeader",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "box-react--element-header",
+      "sweep": {
+        "prop": "element",
+        "value": "header"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Element Footer",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "footer",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"footer\">{content}</Box>",
+        "lit": "<ds-box element=\"footer\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementFooter",
+        "lit": "ElementFooter",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "box-react--element-footer",
+      "sweep": {
+        "prop": "element",
+        "value": "footer"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Element Main",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "main",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"main\">{content}</Box>",
+        "lit": "<ds-box element=\"main\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementMain",
+        "lit": "ElementMain",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "box-react--element-main",
+      "sweep": {
+        "prop": "element",
+        "value": "main"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Element Nav",
+      "args": {
+        "inset": "md",
+        "surface": "subtle",
+        "border": false,
+        "radius": "md",
+        "element": "nav",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Box content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Box content.</Text>;\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"nav\">{content}</Box>",
+        "lit": "<ds-box element=\"nav\">\n  <ds-text>Box content</ds-text>\n</ds-box>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementNav",
+        "lit": "ElementNav",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "box-react--element-nav",
+      "sweep": {
+        "prop": "element",
+        "value": "nav"
+      },
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

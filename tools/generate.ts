@@ -49,6 +49,7 @@ import { createRequire } from 'node:module';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { demoDir, isPlatform, PACKAGE_DIR, PLATFORM_LABEL, PLATFORMS, sourceDir } from '../schema/platforms.ts';
 import { failuresAsPrompt, runAll } from './checks.ts';
 import type { GateResult } from './checks.ts';
 import { which, winQuote } from './lib/proc.ts';
@@ -86,11 +87,7 @@ export const paths = {
   LOGS: join(REPO_ROOT, 'logs'),
   GAPS: join(REPO_ROOT, 'generated', 'gaps'),
   CONVENTIONS: join(REPO_ROOT, 'prompts', 'conventions'), // one-page digest per platform, inlined into the task prompt
-};
-
-export const PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn', swiftui: 'swiftui' };
-export const PLATFORM_LABEL: Record<string, string> = {
-  web: 'React (web)', lit: 'Lit web components', rn: 'React Native', swiftui: 'SwiftUI (iOS)',
+  COMPONENTS: join(REPO_ROOT, 'generated', 'components.json'), // which (component, platform) pairs a doc marks unsupported
 };
 
 /** Platforms whose build gates cannot run on this machine. SwiftUI compiles only on macOS
@@ -128,9 +125,7 @@ export const CONVENTION_FILES: Record<string, string[]> = {
 /** Where a platform's generated component files live: `packages/react/src/`, and for the Swift package
  *  `packages/swiftui/Sources/DesignSchema/` (SwiftPM's layout, not `src/`). */
 export function srcDir(platform: string): string {
-  return platform === 'swiftui'
-    ? join(paths.ROOT, 'packages', 'swiftui', 'Sources', 'DesignSchema')
-    : join(paths.ROOT, 'packages', PKG[platform] as string, 'src');
+  return sourceDir(paths.ROOT, platform);
 }
 
 // ---------------------------------------------------------------- naming (tools/naming.ts)
@@ -139,7 +134,8 @@ export function srcDir(platform: string): string {
  *  pages a `--pattern` target lands in. What a rename covers, therefore, is exactly what this writes. */
 export function generatedDirs(platform: string): string[] {
   const dirs = [srcDir(platform)];
-  if (platform !== 'swiftui') dirs.push(join(paths.ROOT, 'packages', PKG[platform] as string, 'demo'));
+  const demo = demoDir(paths.ROOT, platform);
+  if (demo !== null) dirs.push(demo);
   return dirs.filter((d) => existsSync(d));
 }
 
@@ -155,7 +151,7 @@ export function namingFor(args: Args): naming.Resolution {
   if (!naming.isNoop(res)) {
     print(`naming ${relative(paths.ROOT, res.source as string).replaceAll('\\', '/')}: ` +
       `${Object.keys(res.components).length} component(s), ${Object.keys(res.props).length} prop(s), --${res.cssPrefix}- prefix`);
-    for (const platform of Object.keys(PKG)) {
+    for (const platform of PLATFORMS) {
       for (const warning of naming.collisions(res, platform)) print(`  ! naming ${platform}: ${warning}`);
     }
   }
@@ -300,8 +296,8 @@ function sameValue(a: unknown, b: unknown): boolean {
 // a log without its end marker that has not moved in half an hour was abandoned, not paused
 export const RUNNING_LOG_MAX_AGE_S = 30 * 60;
 
-/** True while another generator run appears to be in progress: a tier2.ps1 / regen.ps1 log without its end
- *  marker that was written to recently. A killed window leaves a log without the marker forever; its age tells. */
+/** True while another generator run appears to be in progress: a regen.ps1 log without its end marker that
+ *  was written to recently. A killed window leaves a log without the marker forever; its age tells. */
 export function generatorRunning(): boolean {
   let names: string[];
   try {
@@ -309,7 +305,7 @@ export function generatorRunning(): boolean {
   } catch {
     return false; // no logs folder: nothing is running
   }
-  const logs = [...names.filter((n) => n === 'tier2.log'), ...names.filter((n) => n.startsWith('regen') && n.endsWith('.log'))];
+  const logs = names.filter((n) => n.startsWith('regen') && n.endsWith('.log'));
   for (const name of logs) {
     const log = join(paths.LOGS, name);
     let text: string;
@@ -332,7 +328,7 @@ export function generatorRunning(): boolean {
 export function migrateLegacyLock(): void {
   if (!existsSync(paths.LEGACY_LOCK)) return;
   const legacy = readJson(paths.LEGACY_LOCK);
-  for (const platform of Object.keys(PKG)) {
+  for (const platform of PLATFORMS) {
     const current = readJson(lockPath(platform));
     const merged: Lock = {};
     for (const [k, v] of Object.entries(legacy)) if (k.endsWith(`.${platform}`)) merged[k] = v;
@@ -351,7 +347,7 @@ export function loadLock(): Lock {
   migrateLegacyLock();
   const lock: Lock = {};
   if (existsSync(paths.LEGACY_LOCK)) Object.assign(lock, readJson(paths.LEGACY_LOCK));
-  for (const platform of Object.keys(PKG)) Object.assign(lock, readJson(lockPath(platform)));
+  for (const platform of PLATFORMS) Object.assign(lock, readJson(lockPath(platform)));
   return lock;
 }
 
@@ -367,6 +363,19 @@ export function promptPath(name: string, platform: string): string {
   return join(paths.PROMPTS, `${name}.${platform}.md`);
 }
 
+/** `<Name>.<platform>` for every pair whose doc says `platforms.<platform>.supported: false`. The parser writes
+ *  no prompt for those, but a prompt from before the doc said so can still be on disk, and `--component` names
+ *  pairs directly: neither may generate code for a platform the doc rules out. */
+export function unsupportedTargets(): Set<string> {
+  const out = new Set<string>();
+  if (!existsSync(paths.COMPONENTS)) return out;
+  type Entry = { component: { name: string; platforms?: Record<string, { supported?: boolean }> } };
+  for (const { component: c } of JSON.parse(readText(paths.COMPONENTS)) as Entry[]) {
+    for (const [platform, notes] of Object.entries(c.platforms ?? {})) if (notes.supported === false) out.add(`${c.name}.${platform}`);
+  }
+  return out;
+}
+
 export function allTargets(): Target[] {
   let names: string[];
   try {
@@ -374,6 +383,7 @@ export function allTargets(): Target[] {
   } catch {
     return [];
   }
+  const unsupported = unsupportedTargets();
   const out: Target[] = [];
   for (const file of sortedNames(names.filter((n) => n.endsWith('.md')))) {
     if (file.startsWith('theme.')) continue;
@@ -381,7 +391,7 @@ export function allTargets(): Target[] {
     const cut = stem.lastIndexOf('.'); // `Pattern.<Name>.<platform>` keeps its dot in the name
     if (cut === -1) continue;
     const [name, platform] = [stem.slice(0, cut), stem.slice(cut + 1)];
-    if (Object.hasOwn(PKG, platform)) out.push([name, platform]);
+    if (isPlatform(platform) && !unsupported.has(stem)) out.push([name, platform]);
   }
   return out;
 }
@@ -413,7 +423,7 @@ export function taskPrompt(name: string, platform: string): string {
   if (name.startsWith('Pattern.')) {
     const short = name.slice(name.indexOf('.') + 1);
     task =
-      `Then generate the pattern page **${short}** from the specification below into \`packages/${PKG[platform] as string}/demo/\` ` +
+      `Then generate the pattern page **${short}** from the specification below into \`packages/${PACKAGE_DIR[platform] as string}/demo/\` ` +
       `(the page and its \`Patterns/${short}\` story). Do not touch \`src/index.ts\`; compose only the package's existing ` +
       `components and never re-implement or restyle them.`;
   } else if (platform === 'swiftui') {
@@ -710,7 +720,7 @@ export function parseReport(text: string): Report {
 }
 
 export function customDir(platform: string): string {
-  return join(paths.ROOT, 'packages', PKG[platform] as string, 'src', 'custom');
+  return join(srcDir(platform), 'custom');
 }
 
 /** Every file under packages/<pkg>/src/custom/ with its content. The folder is hand-written (extension modules);
@@ -902,7 +912,7 @@ function customGate(platform: string, customChanged: string[]): GateResult {
     name: 'custom',
     ok: false,
     output:
-      'packages/' + (PKG[platform] as string) + "/src/custom/ is hand-written and never the generator's to change; these files were " +
+      relative(paths.ROOT, customDir(platform)).replaceAll('\\', '/') + "/ is hand-written and never the generator's to change; these files were " +
       'restored: ' + customChanged.join(', ') + '. Import the modules the Extensions section names and call them where ' +
       '`wire` says; do not create, edit or copy anything under custom/.',
   };
@@ -1028,7 +1038,7 @@ type Job = {
 /** The files of a target the remote gate carries and folds back: what the model reported, kept to the
  *  Swift package, plus the registry the generator rewrote. */
 function gateFiles(job: Job, platform: string): string[] {
-  const pkg = `packages/${PKG[platform] as string}/`;
+  const pkg = `packages/${PACKAGE_DIR[platform] as string}/`;
   const reported = job.files.map((f) => f.replaceAll('\\', '/')).filter((f) => f.startsWith(pkg));
   const registry = relative(paths.ROOT, join(srcDir(platform), GALLERY_REGISTRY)).replaceAll('\\', '/');
   return pySorted([...new Set([...reported, registry])]);
@@ -1394,11 +1404,11 @@ async function run(argv: string[]): Promise<number> {
     const brand = hooks.namingFor(args);
     for (const [n, p] of allTargets()) {
       const pattern = n.startsWith('Pattern.');
-      const folder = pattern ? join(paths.ROOT, 'packages', PKG[p] as string, 'demo') : srcDir(p);
+      const folder = pattern ? demoDir(paths.ROOT, p) : srcDir(p);
       const canonical = pattern ? n.slice(n.indexOf('.') + 1) : n;
       // a fork's file is on disk under its brand name, which is what `--adopt` has to find
       const stem = naming.isNoop(brand) ? canonical : naming.renameFileName(canonical, naming.vocab(brand, p, 'brand'));
-      if (!anyFileNamed(folder, stem)) continue;
+      if (folder === null || !anyFileNamed(folder, stem)) continue;
       const h = sha(readText(promptPath(n, p)));
       const entry = (lock[`${n}.${p}`] ??= {});
       entry['hash'] = h;
@@ -1406,7 +1416,7 @@ async function run(argv: string[]): Promise<number> {
       entry['runner'] = 'adopted';
       nAdopted += 1;
     }
-    for (const platform of Object.keys(PKG)) saveLock(lock, platform);
+    for (const platform of PLATFORMS) saveLock(lock, platform);
     // `Path.relative_to` spells "the same folder" as `.`, which `path.relative` spells as the empty string.
     print(`✔ adopted ${nAdopted} target(s) → ${relative(paths.ROOT, paths.LOCK_DIR) || '.'}/generate.lock.<platform>.json`);
     return 0;
@@ -1414,16 +1424,21 @@ async function run(argv: string[]): Promise<number> {
 
   const platforms = args.platform.split(',').map(pyStrip).filter((p) => p !== '');
   for (const p of platforms) {
-    if (!Object.hasOwn(PKG, p)) throw new ExitError(`unknown platform ${p}`);
+    if (!isPlatform(p)) throw new ExitError(`unknown platform ${p}`);
   }
   let targets: Target[];
   if (args.stale) {
     targets = staleTargets(lock).filter(([, p]) => platforms.includes(p));
   } else if (truthy(args.component) || truthy(args.pattern)) {
     targets = [];
+    const unsupported = unsupportedTargets();
     for (const raw of (args.component ?? '').split(',')) {
       const n = pyStrip(raw);
-      if (n) for (const p of platforms) targets.push([n, p]);
+      if (!n) continue;
+      for (const p of platforms) {
+        if (unsupported.has(`${n}.${p}`)) print(`skip   ${n}.${p}: platforms.${p}.supported is false`);
+        else targets.push([n, p]);
+      }
     }
     for (const raw of (args.pattern ?? '').split(',')) {
       const n = pyStrip(raw);

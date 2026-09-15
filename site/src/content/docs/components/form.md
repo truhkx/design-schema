@@ -58,7 +58,7 @@ component:
     summaryHeadingOne: '1 problem with this form'
   a11y:
     role: form
-    requires: [error-identification, keyboard-operable, focus-visible]
+    requires: [focus-visible, contrast-aa]
     contrast:
       - { foreground: color.foreground.danger, background: color.background.subtle, level: AA }
   platforms:

@@ -25,11 +25,11 @@ component:
       default: false
       description: 'Opening one section closes the others. Off by default: users usually want to compare, and forced-closing is a common frustration.'
     value:
-      type: string
+      type: union
       description: 'Controlled open ids: always an array (zero or one entry when `exclusive`); `onChange` reports the same shape.'
       shape: 'string | string[]'
     defaultValue:
-      type: string
+      type: union
       description: Initially open ids.
       shape: 'string | string[]'
     divided:

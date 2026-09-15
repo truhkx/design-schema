@@ -1,0 +1,500 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "Save changes",
+        "variant": "primary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" />",
+        "lit": "<ds-button label=\"Save changes\"></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "button-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Variant Primary",
+      "args": {
+        "label": "Save changes",
+        "variant": "primary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" variant=\"primary\" />",
+        "lit": "<ds-button label=\"Save changes\" variant=\"primary\"></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" variant=\"primary\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "VariantPrimary",
+        "lit": "Primary",
+        "rn": "VariantPrimary",
+        "swift": null
+      },
+      "storyId": "button-react--variant-primary",
+      "sweep": {
+        "prop": "variant",
+        "value": "primary"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Variant Secondary",
+      "args": {
+        "label": "Cancel",
+        "variant": "secondary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Cancel\" variant=\"secondary\" />",
+        "lit": "<ds-button label=\"Save changes\" variant=\"secondary\"></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Cancel\" variant=\"secondary\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "VariantSecondary",
+        "lit": "Secondary",
+        "rn": "VariantSecondary",
+        "swift": null
+      },
+      "storyId": "button-react--variant-secondary",
+      "sweep": {
+        "prop": "variant",
+        "value": "secondary"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Variant Ghost",
+      "args": {
+        "label": "Forgot password?",
+        "variant": "ghost",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Forgot password?\" variant=\"ghost\" />",
+        "lit": "<ds-button label=\"Save changes\" variant=\"ghost\"></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Forgot password?\" variant=\"ghost\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "VariantGhost",
+        "lit": "Ghost",
+        "rn": "VariantGhost",
+        "swift": null
+      },
+      "storyId": "button-react--variant-ghost",
+      "sweep": {
+        "prop": "variant",
+        "value": "ghost"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Variant Danger",
+      "args": {
+        "label": "Delete file",
+        "variant": "danger",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Delete file\" variant=\"danger\" />",
+        "lit": "<ds-button label=\"Delete file\" variant=\"danger\"></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Delete file\" variant=\"danger\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "VariantDanger",
+        "lit": "Danger",
+        "rn": "VariantDanger",
+        "swift": null
+      },
+      "storyId": "button-react--variant-danger",
+      "sweep": {
+        "prop": "variant",
+        "value": "danger"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Sm",
+      "args": {
+        "label": "Save changes",
+        "variant": "primary",
+        "size": "sm",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" size=\"sm\" />",
+        "lit": "<ds-button label=\"Save changes\" size=\"sm\"></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" size=\"sm\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeSm",
+        "lit": "SizeSm",
+        "rn": "SizeSm",
+        "swift": null
+      },
+      "storyId": "button-react--size-sm",
+      "sweep": {
+        "prop": "size",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Md",
+      "args": {
+        "label": "Save changes",
+        "variant": "primary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" size=\"md\" />",
+        "lit": "<ds-button label=\"Save changes\" size=\"md\"></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" size=\"md\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeMd",
+        "lit": "SizeMd",
+        "rn": "SizeMd",
+        "swift": null
+      },
+      "storyId": "button-react--size-md",
+      "sweep": {
+        "prop": "size",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Lg",
+      "args": {
+        "label": "Save changes",
+        "variant": "primary",
+        "size": "lg",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" size=\"lg\" />",
+        "lit": "<ds-button label=\"Save changes\" size=\"lg\"></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" size=\"lg\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeLg",
+        "lit": "SizeLg",
+        "rn": "SizeLg",
+        "swift": null
+      },
+      "storyId": "button-react--size-lg",
+      "sweep": {
+        "prop": "size",
+        "value": "lg"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Type Button",
+      "args": {
+        "label": "Save changes",
+        "variant": "primary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" type=\"button\" />",
+        "lit": "<ds-button label=\"Save changes\" type=\"button\"></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" type=\"button\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "TypeButton",
+        "lit": "TypeButton",
+        "rn": "TypeButton",
+        "swift": null
+      },
+      "storyId": "button-react--type-button",
+      "sweep": {
+        "prop": "type",
+        "value": "button"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Type Submit",
+      "args": {
+        "label": "Sign in",
+        "variant": "primary",
+        "size": "md",
+        "type": "submit",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Sign in\" type=\"submit\" />",
+        "lit": "<ds-button label=\"Save changes\" type=\"submit\"></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Sign in\" type=\"submit\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "TypeSubmit",
+        "lit": "TypeSubmit",
+        "rn": "TypeSubmit",
+        "swift": null
+      },
+      "storyId": "button-react--type-submit",
+      "sweep": {
+        "prop": "type",
+        "value": "submit"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Disabled",
+      "args": {
+        "label": "Save changes",
+        "variant": "primary",
+        "size": "md",
+        "type": "button",
+        "disabled": true,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" disabled />",
+        "lit": "<ds-button label=\"Save changes\" disabled></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" disabled />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Disabled",
+        "lit": "Disabled",
+        "rn": "Disabled",
+        "swift": null
+      },
+      "storyId": "button-react--disabled",
+      "sweep": {
+        "prop": "disabled",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Loading",
+      "args": {
+        "label": "Saving",
+        "variant": "primary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": true,
+        "inverse": false
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Saving\" loading />",
+        "lit": "<ds-button label=\"Save changes\" loading></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" loading />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Loading",
+        "lit": "Loading",
+        "rn": "Loading",
+        "swift": null
+      },
+      "storyId": "button-react--loading",
+      "sweep": {
+        "prop": "loading",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Icon Only",
+      "args": {
+        "label": "Close",
+        "variant": "ghost",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": true,
+        "loading": false,
+        "inverse": false,
+        "leadingIcon": {
+          "$element": "svg",
+          "props": {
+            "width": "16",
+            "height": "16",
+            "viewBox": "0 0 16 16",
+            "fill": "none",
+            "stroke": "currentColor",
+            "strokeWidth": "1.5"
+          },
+          "children": [
+            {
+              "$element": "path",
+              "props": {
+                "d": "M3 3l10 10M13 3L3 13"
+              },
+              "children": []
+            }
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button\n  label=\"Close\"\n  variant=\"ghost\"\n  iconOnly\n  leadingIcon={<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" strokeWidth=\"1.5\">\n    <path d=\"M3 3l10 10M13 3L3 13\" />\n  </svg>}\n/>",
+        "lit": "<ds-button label=\"Close\" variant=\"ghost\" icon-only>\n  <ds-icon slot=\"leading-icon\" name=\"close\"></ds-icon>\n</ds-button>",
+        "rn": "import * as React from 'react';\nimport { Button, type ButtonVariant, Icon, type IconName, useTheme, type Tokens } from '@design-schema/rn';\n\nconst FOREGROUND_TOKEN: Record<ButtonVariant, keyof Tokens> = {\n  primary: 'colorActionPrimaryForeground',\n  secondary: 'colorActionSecondaryForeground',\n  ghost: 'colorActionGhostForeground',\n  danger: 'colorActionDangerForeground',\n};\n\nfunction GlyphIcon({\n  name,\n  variant = 'primary',\n  inverse = false,\n}: {\n  name: IconName;\n  variant?: ButtonVariant | undefined;\n  inverse?: boolean | undefined;\n}): React.JSX.Element {\n  const { tokens } = useTheme();\n  const color = variant === 'ghost' && inverse ? tokens.colorInverseLink : (tokens[FOREGROUND_TOKEN[variant]] as string);\n  return <Icon name={name} color={color} />;\n}\n\n<Button\n  label=\"Close\"\n  variant=\"ghost\"\n  iconOnly\n  leadingIcon={<GlyphIcon name=\"close\" variant=\"ghost\" />}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "IconOnly",
+        "lit": "IconOnly",
+        "rn": "IconOnly",
+        "swift": null
+      },
+      "storyId": "button-react--icon-only",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Inverse",
+      "args": {
+        "label": "Undo",
+        "variant": "ghost",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": true
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Undo\" variant=\"ghost\" inverse />",
+        "lit": "<div\n  style=\"background: var(--color-inverse-surface); padding: var(--space-md); border-radius: var(--radius-md);\"\n>\n  <ds-button label=\"Dismiss\" variant=\"ghost\" inverse></ds-button>\n</div>",
+        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Button, useTheme } from '@design-schema/rn';\n\nfunction InverseSurface({ children }: { children: React.ReactNode }): React.JSX.Element {\n  const { tokens } = useTheme();\n  return (\n    <View style={{ backgroundColor: tokens.colorInverseSurface, padding: tokens.spaceMd, borderRadius: tokens.radiusMd }}>\n      {children}\n    </View>\n  );\n}\n\n<InverseSurface>\n  <Button label=\"Learn more\" variant=\"ghost\" inverse />\n</InverseSurface>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Inverse",
+        "lit": "Inverse",
+        "rn": "Inverse",
+        "swift": null
+      },
+      "storyId": "button-react--inverse",
+      "sweep": null,
+      "decorated": true,
+      "primary": true
+    },
+    {
+      "title": "Tracked",
+      "args": {
+        "label": "Sign up",
+        "variant": "primary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false,
+        "track": "signup"
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Sign up\" track=\"signup\" />",
+        "lit": "<ds-button label=\"Sign up\" track=\"signup\"></ds-button>",
+        "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Sign up\" track=\"signup\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Tracked",
+        "lit": "Tracked",
+        "rn": "Tracked",
+        "swift": null
+      },
+      "storyId": "button-react--tracked",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {},
+      "snippets": {
+        "react": "import { useState, type ComponentProps } from 'react';\nimport { ActionSheet, type ActionSheetAction, Button, Icon } from '@design-schema/react';\n\nconst PHOTO_ACTIONS: ActionSheetAction[] = [\n  { id: 'share', label: 'Share', icon: 'external' },\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },\n];\n\nfunction ActionSheetDemo(props: Partial<ComponentProps<typeof ActionSheet>>) {\n  const [open, setOpen] = useState(true);\n  return (\n    <div>\n      <Button label=\"More actions\" iconOnly leadingIcon={<Icon name=\"ellipsis\" inline />} onClick={() => setOpen(true)} />\n      <ActionSheet\n        open={open}\n        heading=\"Photo.jpg\"\n        actions={PHOTO_ACTIONS}\n        onAction={() => setOpen(false)}\n        onClose={() => setOpen(false)}\n        {...props}\n      />\n    </div>\n  );\n}\n\n<ActionSheetDemo />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ActionSheetAction } from '@design-schema/lit';\n\nconst DEFAULT_ACTIONS: ActionSheetAction[] = [\n  { id: 'share', label: 'Share', icon: 'external' },\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'delete', label: 'Delete photo', tone: 'danger' },\n];\n\nhtml`\n  <ds-action-sheet open heading=\"Photo.jpg\" .actions=${DEFAULT_ACTIONS}></ds-action-sheet>\n`;",
+        "rn": "import { ActionSheet, type ActionSheetAction } from '@design-schema/rn';\n\nconst ACTIONS: ActionSheetAction[] = [\n  { id: 'share', label: 'Share', icon: 'external' },\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete photo', tone: 'danger' },\n];\n\n<ActionSheet open heading=\"Photo.jpg\" actions={ACTIONS} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "actionsheet-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Without Heading",
+      "args": {},
+      "snippets": {
+        "react": "import { useState, type ComponentProps } from 'react';\nimport { ActionSheet, type ActionSheetAction, Button, Icon } from '@design-schema/react';\n\nconst PHOTO_ACTIONS: ActionSheetAction[] = [\n  { id: 'share', label: 'Share', icon: 'external' },\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },\n];\n\nfunction ActionSheetDemo(props: Partial<ComponentProps<typeof ActionSheet>>) {\n  const [open, setOpen] = useState(true);\n  return (\n    <div>\n      <Button label=\"More actions\" iconOnly leadingIcon={<Icon name=\"ellipsis\" inline />} onClick={() => setOpen(true)} />\n      <ActionSheet\n        open={open}\n        heading=\"Photo.jpg\"\n        actions={PHOTO_ACTIONS}\n        onAction={() => setOpen(false)}\n        onClose={() => setOpen(false)}\n        {...props}\n      />\n    </div>\n  );\n}\n\n<ActionSheetDemo heading={undefined} />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithoutHeading",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "actionsheet-react--without-heading",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Not Dismissible",
+      "args": {},
+      "snippets": {
+        "react": "import { useState, type ComponentProps } from 'react';\nimport { ActionSheet, type ActionSheetAction, Button, Icon } from '@design-schema/react';\n\nconst PHOTO_ACTIONS: ActionSheetAction[] = [\n  { id: 'share', label: 'Share', icon: 'external' },\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },\n];\n\nfunction ActionSheetDemo(props: Partial<ComponentProps<typeof ActionSheet>>) {\n  const [open, setOpen] = useState(true);\n  return (\n    <div>\n      <Button label=\"More actions\" iconOnly leadingIcon={<Icon name=\"ellipsis\" inline />} onClick={() => setOpen(true)} />\n      <ActionSheet\n        open={open}\n        heading=\"Photo.jpg\"\n        actions={PHOTO_ACTIONS}\n        onAction={() => setOpen(false)}\n        onClose={() => setOpen(false)}\n        {...props}\n      />\n    </div>\n  );\n}\n\n<ActionSheetDemo dismissible={false} />",
+        "lit": null,
+        "rn": "import { ActionSheet, type ActionSheetAction } from '@design-schema/rn';\n\nconst ACTIONS: ActionSheetAction[] = [\n  { id: 'share', label: 'Share', icon: 'external' },\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete photo', tone: 'danger' },\n];\n\n<ActionSheet open heading=\"Photo.jpg\" actions={ACTIONS} dismissible={false} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NotDismissible",
+        "lit": null,
+        "rn": "NotDismissible",
+        "swift": null
+      },
+      "storyId": "actionsheet-react--not-dismissible",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Disabled Action",
+      "args": {},
+      "snippets": {
+        "react": "import { useState, type ComponentProps } from 'react';\nimport { ActionSheet, type ActionSheetAction, Button, Icon } from '@design-schema/react';\n\nconst PHOTO_ACTIONS: ActionSheetAction[] = [\n  { id: 'share', label: 'Share', icon: 'external' },\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },\n];\n\nfunction ActionSheetDemo(props: Partial<ComponentProps<typeof ActionSheet>>) {\n  const [open, setOpen] = useState(true);\n  return (\n    <div>\n      <Button label=\"More actions\" iconOnly leadingIcon={<Icon name=\"ellipsis\" inline />} onClick={() => setOpen(true)} />\n      <ActionSheet\n        open={open}\n        heading=\"Photo.jpg\"\n        actions={PHOTO_ACTIONS}\n        onAction={() => setOpen(false)}\n        onClose={() => setOpen(false)}\n        {...props}\n      />\n    </div>\n  );\n}\n\n<ActionSheetDemo\n  actions={[\n    { id: 'share', label: 'Share', icon: 'external' },\n    { id: 'rename', label: 'Rename', disabled: true },\n    { id: 'duplicate', label: 'Duplicate' },\n    { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },\n  ]}\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "DisabledAction",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "actionsheet-react--disabled-action",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Keyboard",
+      "args": {},
+      "snippets": {
+        "react": "import { ActionSheet, type ActionSheetAction } from '@design-schema/react';\n\nconst PHOTO_ACTIONS: ActionSheetAction[] = [\n  { id: 'share', label: 'Share', icon: 'external' },\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },\n];\n\n<ActionSheet\n  open\n  heading=\"Photo.jpg\"\n  actions={PHOTO_ACTIONS}\n  onAction={() => {}}\n  onClose={() => {}}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ActionSheetAction } from '@design-schema/lit';\n\nconst DEFAULT_ACTIONS: ActionSheetAction[] = [\n  { id: 'share', label: 'Share', icon: 'external' },\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'delete', label: 'Delete photo', tone: 'danger' },\n];\n\nhtml`\n  <ds-action-sheet open heading=\"Photo.jpg\" .actions=${DEFAULT_ACTIONS}></ds-action-sheet>\n`;",
+        "rn": "import * as React from 'react';\nimport { ActionSheet, type ActionSheetAction, Button, Stack } from '@design-schema/rn';\n\nconst ACTIONS: ActionSheetAction[] = [\n  { id: 'share', label: 'Share', icon: 'external' },\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete photo', tone: 'danger' },\n];\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"More actions\" onPress={() => setOpen(true)} />\n      <ActionSheet heading=\"Photo.jpg\" actions={ACTIONS} open={open} onClose={() => setOpen(false)} onAction={() => setOpen(false)} />\n    </Stack>\n  );\n}\n\n<Open />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "actionsheet-react--keyboard",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

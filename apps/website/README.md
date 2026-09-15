@@ -55,12 +55,12 @@ them by hand.
 | `src/components/PropsTables.tsx` | The props and events `Table`s. Static — no `client:*`, so they ship no JavaScript. |
 | `src/components/AccessibilityContract.tsx` | The a11y `Alert` and the three-section `Accordion`. The component page's one island. |
 | `src/components/Mono.tsx` | A prop name, a type, a token path: `Text` at `font.family.mono` rather than a bare `<code>`. |
-| `generated/examples/<Name>.json` | Not in this app: `tools/docs_examples.ts` writes it (one entry per Storybook story — title, args, source, story id) for the examples section to read. |
+| `generated/examples/<Name>.json` | Not in this app: `tools/docs_examples.ts` writes it (one entry per Storybook story — title, args, story id, and a `{ react, lit, rn, swift }` snippet map that `tools/docs_snippets.ts` renders from each platform's own stories) for the examples section to read. |
 | `src/examples.ts` | Those files, globbed at build time, plus the Chromatic project URL and the story deep link's shape. |
 | `src/example-args.ts` | Encoded story `args` → React props: JSX descriptors rebuilt, uncarryable args dropped. Shared by the page and the island. |
 | `src/example-probe.ts` | Which examples render at all, answered by rendering them at build time. Server-only — it imports `react-dom/server`. |
 | `src/highlight.ts` | The one non-generated UI surface: the Shiki theme both code spots use, and the highlighter the example source goes through. Says why that spot is not a literal `<Code>`. |
-| `src/components/Examples.tsx` | The examples `Tabs`: one tab per story, each panel a live render, its source, and the Storybook link. The component page's second island. |
+| `src/components/Examples.tsx` | The examples `Tabs`: one tab per story, each panel a live render, a React / React Native / Lit / Swift strip over that story's code, and the Storybook link. The component page's second island. |
 | `src/components/code.css` | The code block's frame, and where Shiki's colour variables are bound to the active theme's colour tokens. |
 | `src/styles/home.css` | The home page's two layout rules. Nothing in it sets appearance. |
 | `src/pages/` | Routes: `/`, `/docs`, `/docs/foundations`, `/docs/patterns`, and `/docs/components/[slug]` (one per component). |
@@ -112,8 +112,8 @@ the HTML of every page that uses it, so they are kept short and the reasoning li
 and Astro probes only the first kilobyte of the file for the `<svg>` tag, so nothing long may sit
 above it.
 
-The mark is decorative everywhere it appears (`aria-hidden`): in the header the adjacent `Link`
-already says "Design Schema", and on the home page the `h1` does. The wordmark stays live text
+The mark is decorative everywhere it appears (`aria-hidden`): in the header it sits inside the home
+link, whose wordmark already says "Design Schema", and on the home page the `h1` does. The wordmark stays live text
 rather than being drawn into the asset, so it is selectable, translatable, themed by the type
 tokens, and available as the home link's accessible name.
 
@@ -157,9 +157,13 @@ against a fresh listing of `packages/react/src` — one test per component, all 
 
 `tests/website/examples.spec.ts` is job 507's gate, and it hard-codes nothing either: the story
 modules are re-listed from `packages/react/src`, the expected ids come from Storybook's own
-`index.json`, and each page's tab count is the entry count in `generated/examples/<Name>.json`. It
-also asserts the page makes no request to a Storybook or Chromatic origin — which is what "renders
-correctly with Storybook's dev server stopped" means operationally, and this config never starts one.
+`index.json`, and each page's tabs and tiles are counted against `generated/examples/<Name>.json` —
+the primary strip, the strip behind "More examples", or the sweep grid, whichever the file's layout
+says. Every story has to be reachable one way or another. The grid's captions are compared with the
+built token JSON in each published theme, and the pages that led to the split (Button, Select,
+DataGrid) have to fit their primary strip on one row. It also asserts the page makes no request to a
+Storybook or Chromatic origin — which is what "renders correctly with Storybook's dev server
+stopped" means operationally, and this config never starts one.
 
 `tests/website/code.spec.ts` is job 508's gate, and it asserts no colour. Asserting a hex would be
 asserting the theme, which is the thing this job made re-themeable — so every check is a
@@ -218,9 +222,27 @@ is two files outside this app and four inside it:
 3. `src/example-args.ts` turns the encoded args back into props. Two shapes are not plain data: JSX
    from the story, which is rebuilt with `createElement`, and args that were genuinely code (a
    `render` callback, a `formatValue`), which the extractor marked and this drops.
-4. `src/components/Examples.tsx` renders the `Tabs`. Nothing in it fetches Storybook or Chromatic —
+4. `src/components/Examples.tsx` renders them. Nothing in it fetches Storybook or Chromatic —
    the live render is built from the JSON — so the examples work with every Storybook instance down.
    A "Storybook is down" incident costs the page one link, which is the point of doing it this way.
+
+How a set is laid out is decided by the tool, not the page, and written into the JSON:
+
+- **`layout: "sweep"`** — every story except Default sets exactly one enum or boolean prop, and the
+  component is typography (Heading, Text). The page shows one small-multiple grid, grouped by prop,
+  and each tile gets a caption with the token it reads and that token's built value
+  (`23px / 1.4375rem · font.size.xl`). `src/example-sweep.ts` works the captions out at build time.
+  The token comes from the schema's style binding, and the value from each published theme's token
+  JSON (`src/themes.ts`); inline CSS then shows the reading for whichever theme and mode is active.
+  Heading's level→size default isn't in the schema, so the caption renders the component to see
+  which size it chose. Box, Container and Toolbar have sweep-shaped stories too, but a layout
+  wrapper or an overflowing control can't be shown in a small tile, so they stay tabs.
+- **`layout: "scenarios"`** — tabs. Past `MAX_TABS` (8) stories, the hidden-scrollbar strip no
+  longer fits the docs column. Then the strip keeps the `primary` stories: Default, plus the first
+  five that aren't a step along an enum (`Disabled`, `Icon Only`, `Empty`). The rest go in a second, vertical
+  strip behind a "More examples (n)" `Disclosure`. Vertical, because the rest can be thirty stories
+  and a column hides none of them. The Disclosure mounts it on open, because Tabs measures its
+  indicator, and it would measure zero inside a hidden panel.
 
 The "Open in Storybook ↗" link appears only once `generated/chromatic.json` exists (job 510). Until
 then there is no hosted Storybook to point at, and the panel omits the link rather than linking to a
@@ -255,6 +277,50 @@ Only the Basic Usage snippets are a literal `<Code>`. The example snippets live 
 island and Astro can only pass markup into an island through a *statically named* slot, while the
 number of snippets on a page is the number of stories the component has — so those go through the
 same Shiki and the same theme from the page frontmatter, and the island is handed finished HTML.
+
+## Self-hosting
+
+The site is fully static, so hosting it is two stages in one image (`Dockerfile`, beside this file):
+a Node 24 build that derives every input from the docs, then Caddy serving `dist`. The build runs the
+same steps as `.github/workflows-pending/deploy-pages.yml`, plus the behavior and keyboard generators
+that `pnpm check` does not run, and it fails if `pnpm site:routes` finds a missing page. It installs
+only the root tools, this app and the two packages it imports; Lit, React Native and the Expo app are
+never installed.
+
+From the repository root:
+
+```
+docker build -f apps/website/Dockerfile -t design-schema-website .
+docker run --rm -p 8080:80 design-schema-website          # http://localhost:8080
+```
+
+Or with Compose, which also keeps Caddy's certificates in a volume and restarts the container:
+
+```
+docker compose -f apps/website/compose.yaml up -d --build
+```
+
+**A real domain with HTTPS.** Point the domain's DNS at the server, open ports 80 and 443, and create
+`apps/website/.env`:
+
+```
+SITE_ADDRESS=example.com
+HTTP_PORT=80
+HTTPS_PORT=443
+```
+
+With `SITE_ADDRESS` set, Caddy obtains and renews a Let's Encrypt certificate on its own and redirects
+HTTP to HTTPS (`Caddyfile`). Left unset, it serves plain HTTP on port 80, which is also the setting to
+use behind another reverse proxy.
+
+The build context is the working tree, uncommitted edits included, and the image validates every doc
+before it builds anything. So build from a tree that passes `pnpm check`: not while a job queue is
+mid-run, when a half-applied change fails the parse step. A context from a Windows checkout is fine;
+the Dockerfile normalises text files to LF before the first tool runs.
+
+**Updating** is a rebuild: `docker compose -f apps/website/compose.yaml up -d --build`. HTML is served
+with `Cache-Control: no-cache` and fingerprinted `/_astro/*` assets as immutable, so a new build is
+visible on the next page load.
 
 ## Not here yet
 

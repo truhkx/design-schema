@@ -33,7 +33,7 @@ export const VALID_COMPONENT: Dict = {
   },
   a11y: {
     role: 'button',
-    requires: ['accessible-name', 'focus-visible'],
+    requires: ['accessible-name', 'focus-visible', 'contrast-aa'],
     contrast: [{ foreground: 'color.action.{variant}.foreground', background: 'color.action.{variant}.background', level: 'AA' }],
   },
   platforms: { web: { element: 'button' }, rn: { element: 'Pressable' } },

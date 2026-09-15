@@ -1,6 +1,7 @@
 import {
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   type ComponentPropsWithoutRef,
   type KeyboardEvent,
@@ -157,7 +158,9 @@ export const FocusScope = function FocusScope({
 
   // Records the opener, focuses per `autoFocus`, and restores focus on unmount. Runs once: autoFocus
   // is "on mount" by definition, and restoreFocus is read fresh from `latest` at cleanup time.
-  useEffect(() => {
+  // A layout effect, so it reads the opener before the parent's layout effects run: every overlay
+  // composite moves focus into itself in its own useLayoutEffect, and a child's fire first.
+  useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return undefined;
 
@@ -179,6 +182,11 @@ export const FocusScope = function FocusScope({
     }
 
     return () => {
+      // Layout cleanup runs before the passive ones, so the focusin trap below is still listening
+      // and this scope is still top: leave the stack first, or the trap pulls the restored focus
+      // straight back into the container that is about to be removed.
+      const index = scopeStack.indexOf(entryRef.current);
+      if (index !== -1) scopeStack.splice(index, 1);
       const opener2 = openerRef.current;
       if (latest.current.restoreFocus) {
         const explicit = latest.current.returnFocusTo?.current;

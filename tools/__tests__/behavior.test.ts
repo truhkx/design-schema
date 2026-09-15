@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
+import { BEHAVIOR_STATES, behaviorScenario, keyChord, normalizeKey } from '../../schema/component.ts';
 import { readText } from '../lib/py.ts';
 import { dump } from '../lib/pyyaml.ts';
 import { REPO_ROOT } from '../lib/root.ts';
@@ -11,6 +12,9 @@ import * as parse from '../parse.ts';
 import { component, expectDocError } from './fixtures.ts';
 
 const PATH = 'widget.md';
+
+/** The scenario rules are componentDef's `.check` now; the parser reports them through `validate`. */
+const check = (c: parse.Dict, file: string): void => parse.validate({ component: c }, file);
 
 function withBehavior(c: parse.Dict, ...scenarios: parse.Dict[]): parse.Dict {
   const out = structuredClone(c);
@@ -24,80 +28,149 @@ const CLICK = { name: 'click-fires', when: { click: 'container' }, then: [{ even
 
 describe('validateBehavior', () => {
   test('a valid scenario passes', () => {
-    parse.validateBehavior(withBehavior(component(), CLICK), PATH);
+    check(withBehavior(component(), CLICK), PATH);
   });
 
   test('unknown prop in given', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, given: { colour: 'red' } }), PATH), "unknown prop 'colour'");
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, given: { colour: 'red' } }), PATH), "unknown prop 'colour'");
   });
 
   test('enum value must be declared', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, given: { variant: 'tertiary' } }), PATH), 'not one of');
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, given: { variant: 'tertiary' } }), PATH), 'not one of');
   });
 
   test('boolean prop needs a boolean', () => {
     const c = component();
     c.props.disabled = { type: 'boolean', description: 'x' };
-    expectDocError(() => parse.validateBehavior(withBehavior(c, { ...CLICK, given: { disabled: 'yes' } }), PATH), 'must be a boolean');
+    expectDocError(() => check(withBehavior(c, { ...CLICK, given: { disabled: 'yes' } }), PATH), 'must be a boolean');
   });
 
   test('unknown anatomy part', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, when: { click: 'thumb' } }), PATH), "unknown anatomy part 'thumb'");
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, when: { click: 'thumb' } }), PATH), "unknown anatomy part 'thumb'");
   });
 
   test('unknown event', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, then: [{ event: 'onToggle' }] }), PATH), "unknown event 'onToggle'");
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, then: [{ event: 'onToggle' }] }), PATH), "unknown event 'onToggle'");
   });
 
-  test('with on an event that must not fire', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, then: [{ event: 'onPress', fired: false, with: true }] }), PATH), '`with` on an event that must not fire');
-  });
-
-  test('focus accepts parts and the three words', () => {
+  test('focused accepts parts and the three words', () => {
     for (const target of ['container', 'none', 'moved', 'unchanged']) {
-      parse.validateBehavior(withBehavior(component(), { ...CLICK, then: [{ focus: target }], platforms: ['web', 'lit'] }), PATH);
+      check(withBehavior(component(), { ...CLICK, then: [{ focused: target }], platforms: ['web', 'lit'] }), PATH);
     }
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, then: [{ focus: 'elsewhere' }], platforms: ['web'] }), PATH), "unknown anatomy part 'elsewhere'");
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, then: [{ focused: 'elsewhere' }], platforms: ['web'] }), PATH), "then.focused: unknown anatomy part 'elsewhere'");
+  });
+
+  test('hover and attribute.on name anatomy parts', () => {
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, when: { hover: 'thumb' } }), PATH), "when.hover: unknown anatomy part 'thumb'");
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, then: [{ attribute: 'aria-busy', is: null, on: 'thumb' }] }), PATH), "then.attribute.on: unknown anatomy part 'thumb'");
+    check(withBehavior(component(), { ...CLICK, when: { hover: 'label' }, then: [{ attribute: 'aria-busy', is: null, on: 'label' }] }), PATH);
+  });
+
+  test('set names props and values like given', () => {
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, when: { set: { colour: 'red' } } }), PATH), "when.set: unknown prop 'colour'");
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, when: { set: { variant: 'tertiary' } } }), PATH), 'when.set.variant: \'tertiary\' is not one of');
+    check(withBehavior(component(), { ...CLICK, when: { set: { variant: 'danger' } } }), PATH);
   });
 
   test('unknown copy key', () => {
     const c = component();
     c.copy = { required: '{label} is required.' };
-    expectDocError(() => parse.validateBehavior(withBehavior(c, { ...CLICK, then: [{ copy: 'optional' }] }), PATH), "unknown copy key 'optional'");
+    expectDocError(() => check(withBehavior(c, { ...CLICK, then: [{ copy: 'optional' }] }), PATH), "unknown copy key 'optional'");
   });
 
   test('undeclared platform', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, platforms: ['swiftui'] }), PATH), 'does not declare');
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, platforms: ['swiftui'] }), PATH), 'does not declare');
   });
 
   test('expectation cannot widen beyond the scenario', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, platforms: ['web'], then: [{ event: 'onPress', platforms: ['rn'] }] }), PATH), "outside the scenario's platforms");
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, platforms: ['web'], then: [{ event: 'onPress', platforms: ['rn'] }] }), PATH), "outside the scenario's platforms");
   });
 
   test('duplicate names', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), CLICK, CLICK), PATH), 'duplicate behavior scenario');
+    expectDocError(() => check(withBehavior(component(), CLICK, CLICK), PATH), 'duplicate behavior scenario');
   });
 
   test('derived is reserved for the parser', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, derived: 'me' }), PATH), 'only the parser may set');
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, derived: true }), PATH), 'only the parser may set');
+  });
+});
+
+describe('clause schema', () => {
+  /** The shapes validateBehavior used to check by hand are schema/component.ts's whenClause and thenClause. */
+  const parses = (sc: parse.Dict): boolean => behaviorScenario.safeParse(sc).success;
+
+  test('a valid scenario parses', () => {
+    expect(parses(CLICK)).toBe(true);
+  });
+
+  test('an unknown when key is rejected', () => {
+    expect(parses({ ...CLICK, when: { press: 'container' } })).toBe(false);
+  });
+
+  test('two keys in one when are rejected', () => {
+    expect(parses({ ...CLICK, when: { click: 'container', key: 'Enter' } })).toBe(false);
+  });
+
+  test('with alongside fired: false is rejected', () => {
+    expect(parses({ ...CLICK, then: [{ event: 'onPress', fired: false, with: true }] })).toBe(false);
+    expect(parses({ ...CLICK, then: [{ event: 'onPress', fired: false }] })).toBe(true);
+    expect(parses({ ...CLICK, then: [{ event: 'onPress', with: { name: 'signup' } }] })).toBe(true);
+  });
+
+  test('a key outside keyChord is rejected, at when.key', () => {
+    const r = behaviorScenario.safeParse({ ...CLICK, when: { key: 'Ctrl+A' } });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0]?.path).toEqual(['when', 'key']);
+    for (const key of ['Enter', ' ', 'Space', 'Shift+Tab', 'Alt+ArrowDown', 'Control+a', 'F12', '*', ',', 'a-z']) expect(keyChord.safeParse(key).success, key).toBe(true);
+    for (const key of ['Ctrl+A', 'Spacebar', 'F13', 'A', 'Shift+']) expect(keyChord.safeParse(key).success, key).toBe(false);
+  });
+
+  test('normalizeKey turns the Space alias into the key it names', () => {
+    expect(normalizeKey('Space')).toBe(' ');
+    expect(normalizeKey('Shift+Space')).toBe('Shift+ ');
+    expect(normalizeKey('Enter')).toBe('Enter');
+  });
+
+  test('the focus alias is gone; focused is the assertion', () => {
+    expect(parses({ ...CLICK, then: [{ focus: 'none' }] })).toBe(false);
+    expect(parses({ ...CLICK, then: [{ focused: 'none' }] })).toBe(true);
+  });
+
+  test('state is one of BEHAVIOR_STATES and is is a boolean or mixed', () => {
+    for (const state of BEHAVIOR_STATES) expect(parses({ ...CLICK, then: [{ state, is: true }] })).toBe(true);
+    expect(parses({ ...CLICK, then: [{ state: 'busy', is: true }] })).toBe(false);
+    expect(parses({ ...CLICK, then: [{ state: 'checked', is: 'mixed' }] })).toBe(true);
+    expect(parses({ ...CLICK, then: [{ state: 'checked', is: 'on' }] })).toBe(false);
+  });
+
+  test('the negative and exact forms, and attribute absence, are allowed', () => {
+    for (const item of [{ focusable: false }, { renders: false }, { name: 'Save draft' }, { attribute: 'aria-busy', is: null, on: 'label' }, { attribute: 'aria-busy', is: true }]) {
+      expect(parses({ ...CLICK, then: [item] }), JSON.stringify(item)).toBe(true);
+    }
+    expect(parses({ ...CLICK, then: [{ name: false }] })).toBe(false);
+  });
+
+  test('every assertion may carry platforms', () => {
+    expect(parses({ ...CLICK, then: [{ text: 'Saved.', platforms: ['web'] }] })).toBe(true);
+    expect(parses({ ...CLICK, then: [{ text: 'Saved.', platforms: ['desktop'] }] })).toBe(false);
   });
 });
 
 describe('React Native limits', () => {
   /** What the RN harness cannot express must be narrowed away explicitly, not left to the generator. */
   test('key interaction must exclude rn', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, when: { key: 'Space' } }), PATH), 'no keyboard');
-    parse.validateBehavior(withBehavior(component(), { ...CLICK, when: { key: 'Space' }, platforms: ['web', 'lit'] }), PATH);
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, when: { key: 'Space' } }), PATH), 'no keyboard');
+    check(withBehavior(component(), { ...CLICK, when: { key: 'Space' }, platforms: ['web', 'lit'] }), PATH);
   });
 
   test('focus expectations must exclude rn', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, then: [{ focusable: true }] }), PATH), 'cannot observe focus');
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, then: [{ focusable: true }] }), PATH), 'cannot observe focus');
     // narrowing the single expectation is enough
-    parse.validateBehavior(withBehavior(component(), { ...CLICK, then: [{ focusable: true, platforms: ['web'] }] }), PATH);
+    check(withBehavior(component(), { ...CLICK, then: [{ focusable: true, platforms: ['web'] }] }), PATH);
   });
 
   test('invalid state must exclude rn', () => {
-    expectDocError(() => parse.validateBehavior(withBehavior(component(), { ...CLICK, then: [{ state: 'invalid', is: true }] }), PATH), 'no invalid accessibility state');
+    expectDocError(() => check(withBehavior(component(), { ...CLICK, then: [{ state: 'invalid', is: true }] }), PATH), 'no invalid accessibility state');
   });
 });
 
@@ -134,6 +207,22 @@ describe('deriveBehavior', () => {
     const sc = parse.deriveBehavior(c).find((s) => s.name === 'error-is-identified') as parse.Dict;
     expect(sc.given).toEqual({ error: 'Fix this before continuing.' });
     expect(sc.then[1].platforms).toEqual(['web', 'lit']);
+  });
+
+  test('enum render names are kebab-cased and pass the schema', () => {
+    const c = component();
+    c.props.headingLevel = { type: 'enum', values: ['2', 'startsWith'], description: 'x' };
+    const names = parse.deriveBehavior(c).map((sc) => sc.name);
+    expect(names).toContain('renders-heading-level-2');
+    expect(names).toContain('renders-heading-level-starts-with');
+    const sc = parse.deriveBehavior(c).find((s) => s.name === 'renders-heading-level-2') as parse.Dict;
+    expect(sc.given).toEqual({ headingLevel: '2' });
+  });
+
+  test('a derived shape the schema rejects fails loudly', () => {
+    const c = component();
+    c.props.size.values = ['md', 'x.y'];
+    expect(() => parse.deriveBehavior(c)).toThrow();
   });
 
   test('platform limited enum props limit their scenarios', () => {
@@ -233,6 +322,19 @@ describe('accessibleNameGiven', () => {
     c.props.title = { type: 'string', required: true, description: 'x' };
     c.props.name = { type: 'string', description: 'x', a11y: 'Read as the accessible name.' };
     expect(parse.accessibleNameProp(c)).toBe('name');
+  });
+
+  test('a declared a11yRole wins over the heuristic', () => {
+    const c = component();
+    c.props.name = { type: 'string', description: 'x', a11y: 'Read as the accessible name.' };
+    c.props.summary = { type: 'string', required: true, description: 'x', a11yRole: 'accessible-name' };
+    expect(parse.accessibleNameProp(c)).toBe('summary');
+  });
+
+  test('the shipped disclosure doc declares its naming prop', () => {
+    const path = join(parse.paths.DOCS, 'disclosure.md');
+    const [fm] = parse.splitFrontmatter(readText(path), path);
+    expect(parse.accessibleNameProp(fm.component)).toBe('summary');
   });
 
   test('an enum naming prop uses its first value', () => {

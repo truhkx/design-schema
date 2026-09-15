@@ -1,0 +1,514 @@
+# Generate: NumberInput for React Native
+
+You are generating a production component for the **Design Schema** design system. The component schema below is the source of truth. Do not invent props, events, or styles that are not in it, and do not omit any that are.
+
+## Output
+
+Write `packages/rn/src/NumberInput.tsx` exporting a typed React Native function component named `NumberInput`.
+
+## Rules
+
+- React Native 0.87 with its strict TypeScript API (the default): import instance types for refs (`ViewInstance`, `TextInputInstance`, `ScrollViewInstance`, `HostInstance`), whole event types (`TextInputFocusEvent`, `LayoutChangeEvent`), and treat `ViewStyle`/`TextStyle` as read-only.
+- React 19: `ref` is a prop; no forwardRef; `useId`. A component that exposes its root declares `ref?: Ref<ViewInstance> | undefined` (the root's instance type) in `NumberInputProps` and attaches it to the root; never `React.forwardRef`, `useActionState` or `useFormStatus`.
+- Render the component declared under `platforms.rn.element` with the props listed under `platforms.rn.props`. Map each event to its `platforms.rn` name.
+- Import tokens from `@design-schema/tokens/<theme-id>/rn/light` and `/dark` (flat ESM modules with `.d.ts`; the theme id is in the theme skill) and read the active mode from the package's `useTheme()` hook (`ThemeProvider` with mode light | dark | system). Dimensions and durations are numbers; `fontWeight` tokens are numbers and must be converted to RN's string union; `font.lineHeight.*` are unitless multipliers — multiply by the font size; `fontFamilyBody` is `"System"`. Never hard-code a color, size, or font. A style binding like `color.action.{variant}.background` becomes `tokens[\`colorAction${capitalize(variant)}Background\`]`.
+- Implement every item in `a11y.requires` with React Native's accessibility API:
+  - `accessible-name`: `accessibilityLabel={label}`.
+  - `keyboard-operable` / `focus-visible`: rely on the native focus system; for `Pressable`, style the focused/pressed state via the `style` callback.
+  - `target-24px` / `target-44px`: `minWidth`/`minHeight` from `tokens.sizeTargetMin` / `tokens.sizeTargetComfortable`, and `hitSlop` where the visual is smaller.
+  - `heading-hierarchy`: RN has no heading levels — set `accessibilityRole="header"` and document that the `level` prop only controls typography.
+- `disabled` sets `accessibilityState={{ disabled: true }}` in addition to `disabled`.
+- There is no CSS cascade: every style must be explicit on the element.
+- Enum props whose values are quoted digits (Heading `level`, Stack `gap`) accept both the string and the number.
+- `disabled` uses `opacity.disabled` on the whole element; never invent a disabled color.
+- Use every `copy.*` string verbatim; do not write your own user-facing text.
+- Testability hooks: the root carries `testID="<Name>"` (react-native-web renders it as data-testid); a component with a `keyboard` block ships a story exported as `Keyboard` rendering it open with its trigger and at least three focusable children, for the axe gate and manual keyboard checks on react-native-web.
+- `keyboard` rules describe the web keyboard model; on native implement the subset hardware keyboards can reach (Escape/back gesture = dismiss, Enter = activate) and expose everything else through accessibility actions and visible controls. Overlays: modal dialogs, sheets and action sheets use the native `Modal` (`accessibilityViewIsModal`, `onRequestClose` for the Android back button, `statusBarTranslucent`); the scrim is a `Pressable` with `color.overlay.scrim`; sheets animate from the bottom with `Animated` and support drag-to-dismiss ONLY as an addition to a visible close control (`gesture-alternative`); tooltips are not a native pattern — render the tooltip text as `accessibilityHint` and show it on long-press only; toasts use a portal-less `View` with `layer.toast` zIndex at the root.
+- Props of type `array`, `object`, or `function` carry a `shape` string in TypeScript notation; use it verbatim as the type. Prop type `content` is `ReactNode` / a slot / `ReactNode` by platform.
+- Interpolated style bindings (`color.status.{tone}.background`) resolve per enum value at render time; never enumerate them by hand where a lookup will do. A resolved path ending in `.default` drops that segment (`color.background.{surface}` with `default` is `color.background`, i.e. `--color-background` / `colorBackground`); an enum value of `none` for a background/border/max-width binding renders nothing rather than a token.
+- Composite components (Breadcrumb, Alert, RadioGroup) reuse the system's existing components (Link, Button, Text) from the same package rather than re-implementing them, and never restyle a child (no class overrides, no `::part`, no style props reaching into it): if a child needs a variation, the child's schema grows.
+- Transitions use the component's own `transition` binding (its token and description), with `motion.easing.standard`; `motion.duration.fast` is only the default when a component has no `transition` binding.
+- Development-only warnings the docs ask for use the platform convention: `process.env.NODE_ENV !== 'production'` (React), `import.meta.env.DEV` (Lit), `__DEV__` (React Native).
+- Stories are named after the prop and value in PascalCase (`ToneInfo`, `RoleBanner`); demo stories are titled `Demo/<Name>/<Platform>`.
+- Icons: use the system `Icon` component for every glyph the docs name (`<Icon name="external" inline />`, `<ds-icon name="close">`, `<Icon name="check" color={…} />`); never draw an inline SVG or a Unicode glyph by hand. Decorative icons take no label; a glyph that carries meaning gets one.
+- Stories: Storybook 10 CSF3 with `@storybook/react-vite`, run under react-native-web; title `'<Name>/React Native'`; one story per enum value plus Default; wrap in `ThemeProvider`.
+- TypeScript 7 with `isolatedDeclarations`: every exported symbol carries an explicit type annotation and no export type is inferred — the component returns `React.JSX.Element` (`| null` when it can render nothing), exported constants, contexts and hooks are annotated, `const meta: Meta<typeof NumberInput> = …` in stories. `exactOptionalPropertyTypes` (`name?: T | undefined`), `noUncheckedIndexedAccess` and `verbatimModuleSyntax` (`import type`) are on.
+- Tests run on Jest 30 with `@react-native/jest-preset` and `@testing-library/react-native` 13 (synchronous `render`/`fireEvent`); the behavior scenarios below become `NumberInput.test.tsx`.
+
+## Component schema
+
+```yaml
+component:
+  name: NumberInput
+  category: input
+  status: review
+  apg: spinbutton
+  anatomy:
+  - label
+  - description
+  - field
+  - input
+  - decrementButton
+  - incrementButton
+  - prefix
+  - suffix
+  - errorMessage
+  composition:
+    description: Text
+    decrementButton: Button
+    incrementButton: Button
+  props:
+    label:
+      type: string
+      required: true
+      description: Visible label.
+      a11y: label/for on the input; accessibilityLabel on native.
+    name:
+      type: string
+      required: true
+      description: Field name for the Form. The collected value is a number (or undefined
+        when empty).
+    value:
+      type: number
+      description: Controlled numeric value. `null`/undefined means empty.
+    defaultValue:
+      type: number
+      description: Initial value.
+    min:
+      type: number
+      description: Lower bound; values are clamped on blur and the decrement button
+        disables at it.
+    max:
+      type: number
+      description: Upper bound.
+    step:
+      type: number
+      default: 1
+      description: Increment for the buttons and arrow keys. Also the rounding granularity
+        when `precision` is omitted.
+    precision:
+      type: number
+      description: Decimal places to keep and display. Defaults to the decimals in
+        `step`.
+    format:
+      type: enum
+      values:
+      - decimal
+      - currency
+      - percent
+      - unit
+      default: decimal
+      description: 'Locale formatting of the displayed value via Intl.NumberFormat:
+        thousands separators, currency symbol (`currency` prop), percent, or a unit
+        (`unit` prop). The underlying value is always a plain number.'
+    currency:
+      type: string
+      description: 'ISO 4217 code for `format: currency` (e.g. USD).'
+    unit:
+      type: string
+      description: 'Intl unit identifier for `format: unit` (e.g. kilogram, hour),
+        or a literal shown as `suffix`.'
+    leadingText:
+      type: string
+      description: 'Static text before the value inside the field ("$"), when `format`
+        cannot express it. (Not `prefix`: that name is a native Element member.)'
+    trailingText:
+      type: string
+      description: Static text after the value inside the field ("kg", "%"). Also
+        the literal shown when `unit` is not a valid Intl unit.
+    hideSteppers:
+      type: boolean
+      default: false
+      description: Hide the increment/decrement buttons. Arrow keys work regardless.
+    placeholder:
+      type: string
+      description: Example value shown while empty.
+    description:
+      type: string
+      description: Helper text.
+    required:
+      type: boolean
+      default: false
+      description: Must have a value to submit.
+    hideLabel:
+      type: boolean
+      default: false
+      description: 'Visually hide the label (it remains the accessible name). Only
+        for a field whose context already names it: a DataGrid cell editor, a Search.'
+    size:
+      type: enum
+      values:
+      - sm
+      - md
+      default: md
+      description: 'sm for fields inside grid cells and toolbars: minimum target height,
+        tighter padding, small type.'
+    disabled:
+      type: boolean
+      default: false
+      description: Not editable, not submitted, still readable.
+    invalid:
+      type: boolean
+      default: false
+      description: Marks the field invalid.
+    error:
+      type: string
+      description: Error message; implies invalid.
+  events:
+    onChange:
+      description: Fired when the numeric value changes (on each valid keystroke,
+        step, and on blur after clamping/rounding), with the number or undefined.
+      platforms:
+        web: onChange
+        lit: change
+        rn: onChangeText
+        swiftui: onChange
+  keyboard:
+  - keys:
+    - ArrowUp
+    action: Increases by `step` (clamped to max).
+    from: first
+    expect: manual
+  - keys:
+    - ArrowDown
+    action: Decreases by `step` (clamped to min).
+    from: first
+    expect: manual
+  - keys:
+    - PageUp
+    - PageDown
+    action: Changes by ten steps.
+    from: first
+    expect: manual
+  - keys:
+    - Home
+    - End
+    action: Sets min / max when they are defined; otherwise the input's native caret
+      movement.
+    from: first
+    expect: manual
+  - keys:
+    - Enter
+    action: Commits (rounds and clamps) the typed value; inside a Form, submits.
+    from: first
+    expect: manual
+  styles:
+    background:
+      token: color.background
+      locked: true
+    foreground:
+      token: color.foreground
+      locked: true
+    placeholder:
+      token: color.foreground.muted
+      locked: true
+    border:
+      token: color.border.strong
+      locked: true
+    borderFocus:
+      token: color.border.focus
+      locked: true
+    borderInvalid:
+      token: color.border.danger
+      locked: false
+    borderWidth:
+      token: border.width.thin
+      locked: false
+    radius:
+      token: radius.md
+      locked: false
+    paddingInline:
+      token: space.md
+      locked: false
+    paddingBlock:
+      token: space.sm
+      locked: false
+    paddingBlockSm:
+      token: space.1
+      description: Vertical padding at size sm.
+      locked: false
+    paddingInlineSm:
+      token: space.2
+      description: Horizontal padding at size sm.
+      locked: false
+    affixColor:
+      token: color.foreground.muted
+      description: Prefix and suffix text.
+      locked: true
+    affixGap:
+      token: layout.gap.tight
+      locked: false
+    stepperGap:
+      token: layout.gap.none
+      description: The two stepper Buttons sit flush at the end of the field, separated
+        from the input by a hairline.
+      locked: false
+    stepperDivider:
+      token: color.border
+      locked: false
+    partGap:
+      token: space.1
+      locked: false
+    labelWeight:
+      token: font.weight.medium
+      locked: false
+    helperSize:
+      token: font.size.sm
+      locked: false
+    descriptionText:
+      token: color.foreground.muted
+      locked: true
+    errorText:
+      token: color.foreground.danger
+      locked: true
+    fontFamily:
+      token: font.family.body
+      locked: false
+    fontSize:
+      token: font.size.{size}
+      locked: false
+    lineHeight:
+      token: font.lineHeight.normal
+      locked: false
+    minTarget:
+      token: size.target.comfortable
+      locked: true
+    minTargetSm:
+      token: size.target.min
+      description: The field height floor at size sm; the stepper buttons become Button
+        size sm.
+      locked: true
+    focusRingWidth:
+      token: border.width.focus
+      locked: true
+    disabledOpacity:
+      token: opacity.disabled
+      locked: false
+  copy:
+    increment: Increase
+    decrement: Decrease
+    required: '{label} is required.'
+    invalid: '{label} must be a number.'
+    outOfRange: '{label} must be between {min} and {max}.'
+    currencyMissing: format "currency" needs a currency code.
+    requiredIndicator: ' (required)'
+  a11y:
+    role: spinbutton
+    requires:
+    - label-association
+    - accessible-name
+    - error-identification
+    - keyboard-operable
+    - arrow-navigation
+    - focus-visible
+    - contrast-aa
+    - target-44px
+    contrast:
+    - foreground: color.foreground
+      background: color.background
+      level: AA
+    - foreground: color.foreground.muted
+      background: color.background
+      level: AA
+    - foreground: color.foreground.danger
+      background: color.background
+      level: AA
+    - foreground: color.border.strong
+      background: color.background
+      level: AA
+      large: true
+  platforms:
+    web:
+      element: input
+      attributes:
+      - type=text
+      - inputmode=decimal
+      - role=spinbutton
+      - aria-valuenow
+      - aria-valuemin
+      - aria-valuemax
+      - aria-valuetext
+      - aria-describedby
+      - aria-invalid
+      - aria-required
+      - autocomplete=off
+      notes: 'An <input type="text" inputmode="decimal" role="spinbutton"> rather
+        than type="number": the native number input cannot format, drops leading zeros,
+        scrolls its value on wheel, and its spin buttons are unstyleable and tiny.
+        The value is parsed from the locale format on input (accepting both the locale''s
+        and "." decimal separators) and re-formatted on blur. aria-valuenow/text mirror
+        the number. Steppers are the system Button (ghost, sm, iconOnly, plus/minus
+        icons) with tabindex="-1" — the input is the single tab stop and the arrows
+        do the same job; the buttons are pointer conveniences and repeat while held.'
+    lit:
+      tag: ds-number-input
+      reflect:
+      - format
+      - required
+      - disabled
+      - invalid
+      - show-steppers
+      notes: Form-associated; setFormValue with the plain number as a string. Implements
+        DsFormField. Composed `change` with detail { value }.
+    rn:
+      element: TextInput
+      props:
+      - keyboardType=decimal-pad
+      - accessibilityRole=adjustable
+      - accessibilityLabel
+      - accessibilityValue
+      - accessibilityActions
+      notes: TextInput with keyboardType="decimal-pad" (numbers-and-punctuation on
+        iOS for negatives), accessibilityRole="adjustable" with increment/decrement
+        accessibility actions so VoiceOver/TalkBack can step without the buttons,
+        accessibilityValue text from the formatted value. Formatting uses Intl.NumberFormat
+        (Hermes supports it). Steppers are system Buttons beside the input, accessibilityElementsHidden
+        since the adjustable actions cover them.
+    swiftui:
+      element: TextField
+      props:
+      - TextField
+      - .keyboardType=decimalPad
+      - Button
+      - .accessibilityAdjustableAction
+      - .accessibilityValue
+      - .onKeyPress
+      - NumberFormatter
+      - Locale
+      notes: 'Input''s wrapper with a `TextField` (`.keyboardType(.decimalPad)` or
+        `.numberPad` when `precision` is 0 and `min` ≥ 0) between the decrement/increment
+        `Button`s (`minus`/`plus` Icons, hidden with `hideSteppers`); the field is
+        one element with `.accessibilityValue(formatted)` and `.accessibilityAdjustableAction`
+        stepping by `step` (VoiceOver swipe up/down), which is the spinbutton equivalent.
+        Formatting through `NumberFormatter`/`Locale.current` for `format: decimal|currency|unit`,
+        parsing leniently as the doc describes; ArrowUp/Down/PageUp/PageDown/Home/End
+        on iPad via `.onKeyPress`. Registers with the Form environment as a `Double`.
+        `size: sm` per the Sm bindings.'
+```
+
+## Overrides (per-instance styling contract)
+
+The component accepts `overrides?: Partial<Record<OverridableBinding, TokenRef>>` where `OverridableBinding` is the union of the overridable bindings below and `TokenRef` is the token-name union exported by `@design-schema/tokens` (dotted names, e.g. `'space.lg'`). Resolve each entry through the theme with `resolveToken(t, ref)` — both `TokenRef` and `resolveToken` are imported from `@design-schema/tokens`, not from `./theme` (dotted → camelCase key), and use the result in place of the binding's default token. This is the ONLY per-instance styling surface: there is no `style` prop, so a screen cannot drift from the system by passing pixels. Locked bindings are not in the type and are ignored if passed.
+
+Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
+
+The `platforms.rn.props` list names the native props the schema cares about; `overrides` and `testID` apply to every component regardless of whether that list mentions them.
+
+Overridable: `borderInvalid`, `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `paddingBlockSm`, `paddingInlineSm`, `affixGap`, `stepperGap`, `stepperDivider`, `partGap`, `labelWeight`, `helperSize`, `fontFamily`, `fontSize`, `lineHeight`, `disabledOpacity`
+Locked (accessibility-bearing, never overridable): `background`, `foreground`, `placeholder`, `border`, `borderFocus`, `affixColor`, `descriptionText`, `errorText`, `minTarget`, `minTargetSm`, `focusRingWidth`
+
+## Behavior scenarios (9)
+
+Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
+
+```yaml
+- name: renders
+  then:
+  - renders: true
+  derived: true
+- name: renders-format-decimal
+  given:
+    format: decimal
+  then:
+  - renders: true
+  derived: true
+- name: renders-format-currency
+  given:
+    format: currency
+  then:
+  - renders: true
+  derived: true
+- name: renders-format-percent
+  given:
+    format: percent
+  then:
+  - renders: true
+  derived: true
+- name: renders-format-unit
+  given:
+    format: unit
+  then:
+  - renders: true
+  derived: true
+- name: renders-size-sm
+  given:
+    size: sm
+  then:
+  - renders: true
+  derived: true
+- name: renders-size-md
+  given:
+    size: md
+  then:
+  - renders: true
+  derived: true
+- name: has-accessible-name
+  then:
+  - name: true
+  derived: true
+- name: error-is-identified
+  given:
+    error: Fix this before continuing.
+  then:
+  - text: Fix this before continuing.
+  derived: true
+```
+
+## Platform notes (rn)
+
+```yaml
+element: TextInput
+props:
+- keyboardType=decimal-pad
+- accessibilityRole=adjustable
+- accessibilityLabel
+- accessibilityValue
+- accessibilityActions
+notes: TextInput with keyboardType="decimal-pad" (numbers-and-punctuation on iOS for
+  negatives), accessibilityRole="adjustable" with increment/decrement accessibility
+  actions so VoiceOver/TalkBack can step without the buttons, accessibilityValue text
+  from the formatted value. Formatting uses Intl.NumberFormat (Hermes supports it).
+  Steppers are system Buttons beside the input, accessibilityElementsHidden since
+  the adjustable actions cover them.
+```
+
+## Guidance
+
+## Overview
+
+A number input is for numbers people type exactly — a quantity, a price, a weight — with step buttons and arrow keys for the small adjustments, and locale formatting so 1,234.5 reads the way the user expects. It is Input with a spinbutton's semantics and a parser that understands what people actually type.
+
+## When to use
+
+Use a NumberInput for any exact numeric value: quantities, amounts, measurements, ages, counts. Choose `format` so the field reads as the thing it holds (`currency` with a code, `percent`, a `unit`). Set `min`, `max` and `step` whenever they exist; they drive the buttons, the arrow keys and the out-of-range message. Pair with a Slider when a feel for the scale helps.
+
+## When not to use
+
+Do not use it for numbers that are really identifiers — phone numbers, postal codes, card numbers, IDs — which are strings with digits; use Input with the right `type`/`inputmode`. Do not use it for a value chosen from a few options (RadioGroup, SegmentedControl) or where approximate is fine and immediate feedback matters more than exactness (Slider).
+
+## Behavior
+
+Typing accepts digits, a leading minus, and the locale's or a period decimal separator; other characters are ignored rather than rejected loudly. `onChange` fires with the parsed number as it becomes valid. On blur or Enter the value is rounded to `precision`, clamped to `min`/`max`, and re-formatted. ArrowUp/Down step; PageUp/Down step by ten; Home/End go to the bounds when defined. The steppers repeat while held and disable at the bounds. Empty is a valid state (undefined) unless `required`. Validation precedence is Input's, plus `copy.outOfRange` for a clamped value when the field is `required` and the user typed out of range (the field clamps and reports, rather than silently changing the number). `percent` stores the number as typed (25, not 0.25) and divides by 100 only for display. `format: currency` without `currency` is a development warning and falls back to USD. From an empty field, ArrowUp/increment goes to `min ?? 0` and ArrowDown/decrement to `max ?? 0`. `copy.outOfRange` is reported whenever a blur-time clamp changed what was typed, `required` or not. Hold-to-repeat timings are read from the resolved theme at pointerdown (`motion.duration.base` delay, `motion.duration.fast` interval), never hardcoded. The label is a native `<label for>` (web/Lit) styled from this component's label bindings, not a Text. The Form value is a number.
+
+## Content guidelines
+
+Labels name the quantity with its unit when the field shows none ("Weight (kg)"), or use `unit`/`suffix` and keep the label plain. Placeholders show a realistic example ("12.5"). Use `precision` to show the decimals the domain uses (prices 2, weights 1, counts 0).
+
+## Accessibility
+
+The input is a `spinbutton` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax` and `aria-valuetext` carrying the formatted value (WCAG 4.1.2; APG spinbutton), labelled and described like Input (1.3.1, 3.3.2). Arrow keys give keyboard users the stepping the buttons give pointer users (2.1.1); the buttons are removed from the tab order so the field stays one stop. On native the `adjustable` role with increment/decrement actions covers screen-reader users. Out-of-range and invalid values produce text errors linked to the field (3.3.1, 3.3.3). Targets and contrast as Input.
+
+## Platform notes
+
+### Web
+Render Input's wrapper (label, description, field, error) with `<input type="text" inputmode="decimal" role="spinbutton" autocomplete="off" aria-valuenow aria-valuemin aria-valuemax aria-valuetext>` plus optional prefix/suffix `<span>`s and, when `showSteppers`, two system `Button`s (`ghost`, `sm`, `iconOnly`, `Icon name="minus"` / `"plus"`, labels from copy, `tabIndex={-1}`, `aria-hidden` since the arrows duplicate them) separated from the input by a hairline. Parse with a small locale-aware routine (strip group separators, normalise the decimal separator) and format with `Intl.NumberFormat`. Keydown implements the table; hold-to-repeat with `motion.duration.base` initial delay and `motion.duration.fast` interval.
+
+### Lit
+`<ds-number-input label="Quantity" name="qty" min="1" max="99">`; form-associated; `DsFormField`; composed `change`.
+
+### React Native
+`TextInput` with `keyboardType="decimal-pad"`, `accessibilityRole="adjustable"`, `accessibilityValue={{ text }}`, `accessibilityActions` increment/decrement; steppers as system `Button`s (hidden from AT). Format with `Intl.NumberFormat`; parse as on web. Form registration as Input, returning a number.
+
+## Related
+
+Input, Slider, Form, Button.

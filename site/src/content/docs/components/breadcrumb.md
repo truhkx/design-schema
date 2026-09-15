@@ -7,6 +7,8 @@ component:
   status: review
   apg: breadcrumb
   anatomy: [nav, list, item, link, separator, current]
+  composition:
+    link: Link
   props:
     items:
       type: array

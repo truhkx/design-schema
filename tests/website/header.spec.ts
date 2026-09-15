@@ -12,6 +12,8 @@ const audit = (page: Page) => new AxeBuilder({ page }).withTags(['wcag2a', 'wcag
 
 const hamburger = (page: Page) => page.getByRole('button', { name: 'Open menu' });
 const drawer = (page: Page) => page.getByRole('dialog', { name: 'Menu' });
+/** The logo lockup: the header's only link to `/`, named by its wordmark. */
+const homeLink = (page: Page) => page.getByRole('banner').getByRole('link', { name: 'Design Schema', exact: true });
 
 /**
  * The header's markup is server-rendered, so it is on screen well before its island hydrates and a
@@ -50,7 +52,8 @@ test.describe('site header — below the breakpoint', () => {
 
     // Tab from the top of the document: the logo link, then the hamburger. Nothing in between.
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('link', { name: 'Design Schema' })).toBeFocused();
+    await expect(homeLink(page)).toBeFocused();
+    await expect(homeLink(page)).toHaveAttribute('href', '/');
     await page.keyboard.press('Tab');
     await expect(hamburger(page)).toBeFocused();
     await expect(hamburger(page)).toHaveAttribute('aria-expanded', 'false');
@@ -79,9 +82,11 @@ test.describe('site header — below the breakpoint', () => {
     await openDrawer(page, 'Enter');
 
     const panel = drawer(page);
-    for (const label of ['Homepage', 'Docs', 'About']) {
+    for (const label of ['Docs', 'About']) {
       await expect(panel.getByRole('link', { name: label, exact: true })).toBeVisible();
     }
+    // The logo is the home link, so the generated list has no Homepage entry to repeat.
+    await expect(panel.getByRole('link', { name: 'Homepage' })).toHaveCount(0);
     await expect(panel.getByRole('link', { name: /GitHub/ })).toHaveAttribute('target', '_blank');
     // The theme control is repeated at the bottom of the panel.
     await expect(panel.getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
@@ -111,12 +116,61 @@ test.describe('site header — above the breakpoint', () => {
     await openHome(page);
     const nav = page.getByRole('navigation', { name: 'Main' });
     await expect(nav).toBeVisible();
-    for (const label of ['Homepage', 'Docs', 'About']) {
+    for (const label of ['Docs', 'About']) {
       await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
     }
+    await expect(page.getByRole('link', { name: 'Homepage' })).toHaveCount(0);
     await expect(nav.getByRole('link', { name: /GitHub/ })).toHaveAttribute('target', '_blank');
     await expect(page.getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
     await expect(hamburger(page)).toBeHidden();
+    await expect(homeLink(page)).toHaveAttribute('href', '/');
+  });
+
+  test('the nav spans the row and spaces its links evenly', async ({ page }) => {
+    await openHome(page);
+    const nav = page.getByRole('navigation', { name: 'Main' });
+    const navBox = await nav.boundingBox();
+    const linkBoxes = await nav.getByRole('link').evaluateAll((links) =>
+      links.map((link) => {
+        const rect = link.getBoundingClientRect();
+        return { left: rect.left, right: rect.right };
+      }),
+    );
+    expect(navBox).not.toBeNull();
+    // Wider than the links need: the nav fills the space between the lockup and the theme control.
+    const linksWidth = linkBoxes.reduce((sum, box) => sum + (box.right - box.left), 0);
+    expect(navBox!.width).toBeGreaterThan(linksWidth * 2);
+    // space-evenly: the gap before the first link, between each pair, and after the last are equal.
+    const edges = [navBox!.x, ...linkBoxes.flatMap((box) => [box.left, box.right]), navBox!.x + navBox!.width];
+    const gaps: number[] = [];
+    for (let i = 0; i < edges.length; i += 2) gaps.push(edges[i + 1]! - edges[i]!);
+    for (const gap of gaps) expect(Math.abs(gap - gaps[0]!)).toBeLessThanOrEqual(2);
+  });
+
+  test('the header is dark on a light page', async ({ page }) => {
+    await openHome(page);
+    await expect(page.locator('html')).toHaveAttribute('data-mode', 'light');
+    await expect(page.getByRole('banner')).toHaveAttribute('data-mode', 'dark');
+    const [header, body] = await Promise.all([
+      page.getByRole('banner').evaluate((el) => getComputedStyle(el).backgroundColor),
+      page.locator('html').evaluate((el) => getComputedStyle(el).backgroundColor),
+    ]);
+    expect(header).not.toEqual(body);
+  });
+
+  test('links are not underlined until hovered or focused', async ({ page }) => {
+    await openHome(page);
+    const link = page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Docs', exact: true });
+    const decoration = () => link.evaluate((el) => getComputedStyle(el).textDecorationLine);
+    expect(await decoration()).toBe('none');
+    await link.hover();
+    await expect.poll(decoration).toBe('underline');
+    await page.mouse.move(0, 700);
+    await expect.poll(decoration).toBe('none');
+    await link.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect.poll(decoration).toBe('underline');
   });
 
   test('the theme control swaps which token stylesheet is enabled', async ({ page }) => {

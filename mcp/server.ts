@@ -26,12 +26,14 @@ import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mc
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
-import { iterErrors, sortedErrors } from '../tools/lib/jsonschema.ts';
-import type { Schema } from '../tools/lib/jsonschema.ts';
 import { which } from '../tools/lib/proc.ts';
 import { appendText, has, pyGet, pyJsonDumps, pyRoundTo, pySorted, pySplitlines, pyStr, pyStrip, readText, sortedNames, truthy, writeText } from '../tools/lib/py.ts';
 import { dump as yamlDump } from '../tools/lib/pyyaml.ts';
 import { REPO_ROOT } from '../tools/lib/root.ts';
+import { resolveRole } from '../schema/component.ts';
+import { PLATFORM_LABEL, PLATFORMS, SOURCE_EXT, sourceDir } from '../schema/platforms.ts';
+import type { PlatformId } from '../schema/platforms.ts';
+import { themeFrontmatter } from '../schema/theme.ts';
 import { camelName, cssName, loadTheme, modes as themeModes, publicName, themes as themeIds } from '../tools/lib/tokens.ts';
 import { contrast as _contrast } from '../tools/oklch.ts';
 import { splitPlatformNotes } from './index.ts';
@@ -48,10 +50,8 @@ type Dict = Record<string, any>;
 export const paths = {
   ROOT: REPO_ROOT,
   GENERATED: join(REPO_ROOT, 'generated'),
-  PACKAGES: join(REPO_ROOT, 'packages'),
   CALL_LOG: join(REPO_ROOT, 'logs', 'mcp-calls.jsonl'),
   THEME_DOCS: join(REPO_ROOT, 'site', 'src', 'content', 'docs', 'themes'),
-  THEME_SCHEMA: join(REPO_ROOT, 'schema', 'theme.schema.json'),
   PROCESS_DOC: join(REPO_ROOT, 'site', 'src', 'content', 'docs', 'process', 'from-vision-to-system.md'),
   LAYOUT_DOC: join(REPO_ROOT, 'site', 'src', 'content', 'docs', 'foundations', 'layout.md'),
   COMPONENT_SCHEMA: join(REPO_ROOT, 'schema', 'component.schema.json'),
@@ -90,10 +90,7 @@ function logged<A extends Dict, R>(tool: string, params: string[], fn: (args: A)
   }) as (...rest: ToolArgs<A>) => R;
 }
 
-export const PLATFORMS = ['web', 'lit', 'rn', 'swiftui', 'compose'] as const;
-export type Platform = (typeof PLATFORMS)[number];
-const PLATFORM_PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn' };
-const PLATFORM_LABEL: Record<string, string> = { web: 'React (web)', lit: 'Lit web components', rn: 'React Native', swiftui: 'SwiftUI', compose: 'Jetpack Compose' };
+export type Platform = PlatformId;
 
 export const INSTRUCTIONS: string =
   "Design Schema is a documentation-first, cross-platform design system. Start with get_theme_skill for the " +
@@ -255,6 +252,12 @@ export const getComponent = logged('get_component', ['name', 'platform'], (args:
   return { name: c.name, title: e.title, description: e.description, status: pyGet(c, 'status', 'draft'), schema: c, behavior, guidance: sections, source: e.source };
 });
 
+/** `<Name>+*.swift` beside the type in the Swift package source, sorted. */
+function swiftExtensions(src: string, name: string): string[] {
+  if (!existsSync(src)) return [];
+  return sortedNames(readdirSync(src).filter((f) => f.startsWith(`${name}+`) && f.endsWith('.swift'))).map((f) => join(src, f));
+}
+
 export const LOOKUP_CODE_DOC =
   'Everything needed to implement or use a component on one platform: the generated reference\n' +
   'source (and its CSS on web), stories, the platform notes, the exact generation prompt, and the\n' +
@@ -272,19 +275,17 @@ export const lookupCode = logged('lookup_code', ['component', 'platform', 'inclu
     component: name, platform, platformLabel: PLATFORM_LABEL[platform],
     supported: pyGet(pyGet(c.platforms as Dict, platform, {}) as Dict, 'supported', Object.hasOwn(c.platforms as Dict, platform)),
   };
-  const pkg = PLATFORM_PKG[platform];
   const files: Record<string, string> = {};
-  if (pkg) {
-    const src = join(paths.PACKAGES, pkg, 'src');
-    const candidates: Record<string, string[]> = {
-      source: [join(src, `${name}.tsx`), join(src, `${name}.ts`)],
-      styles: [join(src, `${name}.css`)],
-      stories: [join(src, `${name}.stories.tsx`), join(src, `${name}.stories.ts`)],
-    };
-    for (const [key, list] of Object.entries(candidates)) {
-      if (!include.includes(key)) continue;
-      for (const p of list) if (existsSync(p)) files[relative(paths.ROOT, p)] = readText(p);
-    }
+  const src = sourceDir(paths.ROOT, platform);
+  const ext = SOURCE_EXT[platform] as string;
+  const candidates: Record<string, string[]> =
+    platform === 'swiftui'
+      ? // Swift keeps a type's extensions beside it as `<Name>+<Topic>.swift` (Icon+Paths.swift); there is no stylesheet or story.
+        { source: [join(src, `${name}.swift`), ...swiftExtensions(src, name)], styles: [], stories: [] }
+      : { source: [join(src, `${name}.${ext}`)], styles: [join(src, `${name}.css`)], stories: [join(src, `${name}.stories.${ext}`)] };
+  for (const [key, list] of Object.entries(candidates)) {
+    if (!include.includes(key)) continue;
+    for (const p of list) if (existsSync(p)) files[relative(paths.ROOT, p)] = readText(p);
   }
   result.files = files;
   if (include.includes('notes')) {
@@ -434,7 +435,8 @@ export const getKeyboardModel = logged('get_keyboard_model', ['component'], (arg
   const wanted = ['keyboard-operable', 'escape-dismiss', 'arrow-navigation', 'roving-tabindex', 'focus-trap', 'focus-restore'];
   const keys = (rule: Dict): number => (rule.keys as string[]).length;
   return {
-    component: c.name, apg: pyGet(c, 'apg', null), role: (c.a11y as Dict).role,
+    component: c.name, apg: pyGet(c, 'apg', null), role: resolveRole(c),
+    ...(has(c.a11y as Dict, 'roleFrom') ? { roleFrom: (c.a11y as Dict).roleFrom } : {}),
     requires: ((c.a11y as Dict).requires as string[]).filter((r) => wanted.includes(r)),
     rules,
     autoTested: rules.filter((r) => r.expect !== 'manual').reduce((n, r) => n + keys(r), 0),
@@ -553,8 +555,9 @@ const THEME_QUESTIONS: Dict[] = [
   },
 ];
 
+/** The theme schema as JSON Schema, derived from the Zod source at call time (what tools/schema.ts writes to disk). */
 function themeSchema(): Dict {
-  return JSON.parse(readText(paths.THEME_SCHEMA)) as Dict;
+  return z.toJSONSchema(themeFrontmatter, { target: 'draft-2020-12', io: 'input' }) as Dict;
 }
 
 const SPEC_KEYS = ['type', 'enum', 'minimum', 'maximum', 'default', 'pattern', 'description', 'minItems', 'maxItems'];
@@ -589,7 +592,7 @@ function fieldSpecAt(schema: Dict, node: Dict): Dict {
 export const START_THEME_DOC =
   'Begin authoring a theme: the five interview questions from the process doc (tone + excluded word,\n' +
   'seed color, typeface, scale/radius/density, motion/elevation/layout rhythm/modes), each with the\n' +
-  'frontmatter fields it fills and the allowed values from schema/theme.schema.json. Ask them one at a\n' +
+  'frontmatter fields it fills and the allowed values from the theme schema (schema/theme.ts). Ask them one at a\n' +
   'time, then call write_theme with the answers. The reference example is the calm-precise theme doc.';
 
 export const startTheme = logged('start_theme', [], (_args: Dict = {}): Dict => {
@@ -682,7 +685,7 @@ function capitalize(s: string): string {
 
 export const WRITE_THEME_DOC =
   'Write site/src/content/docs/themes/<id>.md from interview answers in the calm-precise shape, validate the\n' +
-  'frontmatter against schema/theme.schema.json, run tools/theme.ts to derive the tokens for every mode, and\n' +
+  'frontmatter against the theme schema (schema/theme.ts), run tools/theme.ts to derive the tokens for every mode, and\n' +
   'return what happened. `answers` carries the frontmatter decisions (tone, not, seed, neutralTint, scale,\n' +
   'radius, density, motion, elevation, layout, modes, statusHues?, overrides?) plus prose (title, description,\n' +
   'feel, notFeel, references, whenToUse, whenNotToUse, accessibility, platformNotes {web, lit, rn}).\n' +
@@ -694,7 +697,8 @@ export const writeTheme = logged('write_theme', ['id', 'answers', 'overwrite'], 
   if (!/^[a-z][a-z0-9-]*$/.test(id)) throw new Error('id must be kebab-case: lowercase letters, digits and hyphens, starting with a letter');
   const t: Dict = { id, status: pyGet(answers, 'status', 'draft') };
   for (const k of THEME_KEYS) if (Object.hasOwn(answers, k) && k !== 'status') t[k] = answers[k];
-  const problems = sortedErrors(iterErrors(themeSchema() as Schema, { theme: t })).map((e) => `${e.path.map((p) => String(p)).join('.') || '(root)'}: ${e.message}`);
+  const parsed = themeFrontmatter.safeParse({ theme: t });
+  const problems = parsed.success ? [] : parsed.error.issues.map((e) => `${e.path.map(String).join('.') || '(root)'}: ${e.message}`);
   if (problems.length) return { ok: false, written: null, errors: problems, hint: 'Fix the answers; nothing was written.' };
   const path = join(paths.THEME_DOCS, `${id}.md`);
   if (existsSync(path) && !args.overwrite) return { ok: false, written: null, errors: [`${rel(path)} exists; pass overwrite=true to replace it`] };

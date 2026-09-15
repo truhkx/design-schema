@@ -23,8 +23,9 @@ import { basename, extname, isAbsolute, join, relative, resolve } from 'node:pat
 import { fileURLToPath } from 'node:url';
 import type { ZodType } from 'zod';
 
-import { componentFrontmatter } from '../schema/component.ts';
+import { BEHAVIOR_FOCUS_TARGETS, BEHAVIOR_STATES, behaviorScenario, componentFrontmatter, lockRule, mustLock, resolveRole, roleIn, TARGET_REQUIRES, TARGET_TOKEN, WIDGET_ROLES } from '../schema/component.ts';
 import { extensionFrontmatter } from '../schema/extension.ts';
+import { isTsPlatform, PACKAGE_DIR, TS_PLATFORMS } from '../schema/platforms.ts';
 import { has, ljust, product, pyGet, pyRepr, pyRstrip, pySplit, pySplitlines, pyStr, pyStrip, readText, sortedNames, truthy, writeTextAtomic } from './lib/py.ts';
 import { dump as yamlDump, load as yamlLoad } from './lib/pyyaml.ts';
 import { REPO_ROOT } from './lib/root.ts';
@@ -49,8 +50,6 @@ export const paths = {
   // binding can take resolves to a real token. Read from the built JSON when it exists, else from the theme tree.
   TOKEN_DIST: join(REPO_ROOT, 'packages', 'tokens', 'dist', 'calm-precise', 'json', 'tokens.light.json'),
 };
-
-export const PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn' };
 
 // The prose body is guidance, not schema. Sections are fixed so the docs site,
 // the MCP server, and the prompt builder can address them by name.
@@ -204,23 +203,38 @@ function slots(token: string): string[] {
   return [...token.matchAll(SLOT)].map((m) => m[1] as string);
 }
 
+/** The first prop, event, style binding, keyboard rule or scenario that authors `source`, as a dotted path; null
+ *  when none does. The schema accepts the key because `stampSources` sets it; a doc may not. */
+/** The foreground and background tokens of every a11y.contrast pair, as authored (interpolation unexpanded). */
+function contrastTokens(c: Dict): string[] {
+  return ((pyGet(c.a11y, 'contrast', []) ?? []) as Dict[]).flatMap((pair) => [pair.foreground, pair.background]);
+}
+
+export function authoredSource(block: Dict): string | null {
+  for (const section of ['props', 'events', 'styles']) {
+    for (const [key, item] of Object.entries((truthy(block[section]) ? block[section] : {}) as Dict)) {
+      if (typeof item === 'object' && item !== null && has(item, 'source')) return `${section}.${key}`;
+    }
+  }
+  for (const section of ['keyboard', 'behavior']) {
+    const items = (truthy(block[section]) ? block[section] : []) as Dict[];
+    const i = items.findIndex((item) => typeof item === 'object' && item !== null && has(item, 'source'));
+    if (i >= 0) return `${section}.${i}`;
+  }
+  return null;
+}
+
 export function validate(fm: Dict, file: string): void {
   const problems = schemaErrors(componentFrontmatter, fm);
   if (problems) throw new DocError([`${name(file)}: frontmatter failed schema validation:`, ...problems].join('\n'));
   const c: Dict = fm.component;
+  const sourced = authoredSource(c);
+  if (sourced !== null) throw new DocError(`${name(file)}: ${sourced} sets 'source' — only the parser may set that key`);
   const fileStem = stem(file).replace(/-/g, '').toLowerCase();
   if (String(c.name).toLowerCase() !== fileStem) throw new DocError(`${name(file)}: component.name '${c.name}' should match file name`);
-  // Every prop referenced by a token slot must be an enum prop.
-  for (const [propName, binding] of Object.entries((pyGet(c, 'styles', {}) ?? {}) as Dict)) {
-    for (const slot of slots(binding.token)) {
-      const p = pyGet(c.props, slot, null) as Dict | null;
-      if (!truthy(p) || (p as Dict).type !== 'enum') {
-        throw new DocError(`${name(file)}: styles.${propName} interpolates '{${slot}}' but '${slot}' is not an enum prop`);
-      }
-    }
-  }
-  // …and every value the interpolation can take must resolve to a built token (after dropping a trailing
-  // `.default`), except the no-op values. Two docs shipped with a value that had no token before this check.
+  // The schema checked every token slot names an enum prop; every value the interpolation can take must also resolve
+  // to a built token (after dropping a trailing `.default`), except the no-op values. Two docs shipped with a value
+  // that had no token before this check.
   const names = hooks.tokenNames();
   if (names !== null) {
     for (const [propName, binding] of Object.entries((pyGet(c, 'styles', {}) ?? {}) as Dict)) {
@@ -237,145 +251,68 @@ export function validate(fm: Dict, file: string): void {
       }
     }
   }
-  // Overrides: a binding is locked when its token carries an accessibility guarantee — it appears in a contrast
-  // pair, or it is a focus ring / minimum target. Generators expose every other binding as a per-instance override.
-  const contrastTokens = new Set<unknown>();
-  for (const pair of (pyGet(c.a11y, 'contrast', []) ?? []) as Dict[]) for (const k of ['foreground', 'background']) contrastTokens.add(pair[k]);
+  // Overrides: a binding is locked when it carries an accessibility guarantee — schema/component.ts's `mustLock`.
+  // Generators expose every other binding as a per-instance override. An explicit `locked: false` cannot opt out.
+  const pairTokens = contrastTokens(c);
   for (const [bName, binding] of Object.entries((pyGet(c, 'styles', {}) ?? {}) as Dict)) {
-    const auto = contrastTokens.has(binding.token) || bName.startsWith('focusRing') || bName === 'minTarget' || bName === 'dismissTarget';
-    binding.locked = Boolean(truthy(pyGet(binding, 'locked', false)) || auto);
+    const rule = lockRule(bName, binding.token, pairTokens, c.props);
+    if (rule !== null && binding.locked === false) {
+      throw new DocError(`${name(file)}: styles.${bName} sets locked: false, but '${binding.token}' must be locked (${rule})`);
+    }
+    binding.locked = Boolean(truthy(pyGet(binding, 'locked', false)) || rule !== null);
   }
-  // Composition parts must be anatomy parts, and name a component that exists (or is explicitly planned).
-  for (const [part, comp] of Object.entries((truthy(c.composition) ? c.composition : {}) as Record<string, string>)) {
-    if (!(c.anatomy as unknown[]).includes(part)) throw new DocError(`${name(file)}: composition.${part} is not in anatomy ${pyRepr(c.anatomy)}`);
+  // Composition parts name a component that exists (or is explicitly planned); the schema checked they are anatomy parts.
+  const composition = (truthy(c.composition) ? c.composition : {}) as Record<string, string>;
+  for (const [part, comp] of Object.entries(composition)) {
     const compName = pyStrip(replaceAll(comp, '(planned)', ''));
     if (!existsSync(join(paths.DOCS, `${compName.toLowerCase()}.md`)) && !comp.includes('(planned)')) {
       throw new DocError(`${name(file)}: composition.${part} names '${comp}', which has no doc (mark it '(planned)')`);
     }
   }
-  // Keyboard rules imply keyboard-operable, and Escape implies escape-dismiss.
-  const kb: Dict[] = truthy(c.keyboard) ? c.keyboard : [];
-  const requires: unknown[] = c.a11y.requires;
-  if (truthy(kb) && !requires.includes('keyboard-operable')) throw new DocError(`${name(file)}: has a keyboard block but a11y.requires lacks 'keyboard-operable'`);
-  if (kb.some((r) => (r.keys as unknown[]).includes('Escape')) && !requires.includes('escape-dismiss')) {
-    throw new DocError(`${name(file)}: keyboard uses Escape but a11y.requires lacks 'escape-dismiss'`);
-  }
-  // A gesture-triggered event must have a non-gesture alternative (WCAG 2.5.1 / 2.5.7).
-  const events = (pyGet(c, 'events', {}) ?? {}) as Dict;
-  if (Object.values(events).some((ev) => truthy((ev as Dict).gesture)) && !requires.includes('gesture-alternative')) {
-    throw new DocError(`${name(file)}: declares a gesture event but a11y.requires lacks 'gesture-alternative'`);
-  }
-  // Every event must map (or be explicitly unsupported) on every platform declared for the component.
-  for (const [evName, ev] of Object.entries(events)) {
-    for (const [platform, notes] of Object.entries(c.platforms as Dict)) {
-      if (truthy(pyGet(notes, 'supported', true)) && !has(ev.platforms, platform)) {
-        throw new DocError(`${name(file)}: events.${evName} has no mapping for platform '${platform}'`);
-      }
+  // The halves of the target and keyboard-operable rules that read other docs. The schema accepted the doc because it
+  // composes something; one composed component must then declare the requirement itself.
+  const requires: string[] = c.a11y.requires;
+  const target = requires.find((r) => TARGET_REQUIRES.includes(r));
+  if (target !== undefined && !Object.values((pyGet(c, 'styles', {}) ?? {}) as Dict).some((b) => (b.token as string).startsWith(TARGET_TOKEN))) {
+    if (!composedRequires(composition).some((reqs) => reqs.some((r) => TARGET_REQUIRES.includes(r)))) {
+      throw new DocError(`${name(file)}: a11y.requires has '${target}' but no styles binding is on a ${TARGET_TOKEN}* token and no composed component declares a target requirement`);
     }
   }
-  validateBehavior(c, file);
-}
-
-export const BEHAVIOR_STATES: Set<string> = new Set(['checked', 'expanded', 'selected', 'disabled', 'invalid', 'pressed', 'open']);
-export const BEHAVIOR_FOCUS_TARGETS: Set<string> = new Set(['none', 'moved', 'unchanged']);
-
-/** Cross-reference each authored `behavior` scenario against the rest of the schema:
- *  props/anatomy/events/copy it names must exist, and anything React Native's harness
- *  cannot express (keyboard, focus observation, an `invalid` state) must narrow `platforms`
- *  to exclude 'rn' rather than leave the generator to guess. */
-export function validateBehavior(component: Dict, file: string): void {
-  const anatomy: unknown[] = truthy(component.anatomy) ? component.anatomy : [];
-  const props: Dict = truthy(component.props) ? component.props : {};
-  const events: Dict = truthy(component.events) ? component.events : {};
-  const copy: Dict = truthy(component.copy) ? component.copy : {};
-  const declaredPlatforms = new Set(Object.keys(truthy(component.platforms) ? component.platforms : {}));
-
-  const seenNames = new Set<string>();
-  for (const sc of (truthy(component.behavior) ? component.behavior : []) as Dict[]) {
-    const scName: string = sc.name;
-    if (seenNames.has(scName)) throw new DocError(`${name(file)}: duplicate behavior scenario '${scName}'`);
-    seenNames.add(scName);
-    if (has(sc, 'derived')) throw new DocError(`${name(file)}: behavior scenario '${scName}' sets 'derived' — only the parser may set that key`);
-
-    const scenarioPlatforms = (sc.platforms ?? null) as string[] | null;
-    if (scenarioPlatforms !== null) {
-      for (const plat of scenarioPlatforms) {
-        if (!declaredPlatforms.has(plat)) throw new DocError(`${name(file)}: scenario '${scName}' platforms includes '${plat}', which the component does not declare`);
-      }
+  const role = resolveRole(c);
+  if (requires.includes('keyboard-operable') && !truthy(c.keyboard) && !roleIn(WIDGET_ROLES, role)) {
+    if (!composedRequires(composition).some((reqs) => reqs.includes('keyboard-operable'))) {
+      throw new DocError(`${name(file)}: a11y.requires has 'keyboard-operable' but there is no keyboard block, a11y.role '${role}' is not a natively focusable widget role, and no composed component declares 'keyboard-operable'`);
     }
-
-    for (const [propName, value] of Object.entries((truthy(sc.given) ? sc.given : {}) as Dict)) {
-      const prop = pyGet(props, propName, null) as Dict | null;
-      if (prop === null) throw new DocError(`${name(file)}: scenario '${scName}' given: unknown prop '${propName}'`);
-      if (prop.type === 'enum' && !(prop.values as unknown[]).includes(value)) {
-        throw new DocError(`${name(file)}: scenario '${scName}' given.${propName}: '${value}' is not one of ${pyRepr(prop.values)}`);
-      }
-      if (prop.type === 'boolean' && typeof value !== 'boolean') {
-        throw new DocError(`${name(file)}: scenario '${scName}' given.${propName} must be a boolean, got ${pyRepr(value)}`);
-      }
-    }
-
-    const when: Dict = truthy(sc.when) ? sc.when : {};
-    if (has(when, 'click') && !anatomy.includes(when.click)) throw new DocError(`${name(file)}: scenario '${scName}' when.click: unknown anatomy part '${when.click}'`);
-    if (has(when, 'focus') && !anatomy.includes(when.focus)) throw new DocError(`${name(file)}: scenario '${scName}' when.focus: unknown anatomy part '${when.focus}'`);
-    if (has(when, 'key')) {
-      const effective = scenarioPlatforms !== null ? new Set(scenarioPlatforms) : declaredPlatforms;
-      if (effective.has('rn')) throw new DocError(`${name(file)}: scenario '${scName}' uses when.key but React Native has no keyboard — narrow platforms to exclude 'rn'`);
-    }
-
-    for (const item of (truthy(sc.then) ? sc.then : []) as Dict[]) {
-      if (has(item, 'event')) {
-        const ev = item.event;
-        if (!has(events, ev)) throw new DocError(`${name(file)}: scenario '${scName}' then.event: unknown event '${ev}'`);
-        if (item.fired === false && has(item, 'with')) throw new DocError(`${name(file)}: scenario '${scName}': \`with\` on an event that must not fire`);
-      }
-      for (const key of ['focus', 'focused']) {
-        if (has(item, key)) {
-          const target = item[key];
-          if (!anatomy.includes(target) && !BEHAVIOR_FOCUS_TARGETS.has(target)) {
-            throw new DocError(`${name(file)}: scenario '${scName}' then.${key}: unknown anatomy part '${target}'`);
-          }
-        }
-      }
-      if (has(item, 'copy') && !has(copy, item.copy)) throw new DocError(`${name(file)}: scenario '${scName}' then.copy: unknown copy key '${item.copy}'`);
-      if (has(item, 'state') && !BEHAVIOR_STATES.has(item.state)) {
-        throw new DocError(`${name(file)}: scenario '${scName}' then.state '${item.state}' must be one of ${pyRepr([...BEHAVIOR_STATES].sort())}`);
-      }
-
-      const itemPlatforms = (item.platforms ?? null) as string[] | null;
-      if (itemPlatforms !== null) {
-        for (const plat of itemPlatforms) {
-          if (!declaredPlatforms.has(plat)) throw new DocError(`${name(file)}: scenario '${scName}' then item platforms includes '${plat}', which the component does not declare`);
-        }
-        if (scenarioPlatforms !== null && !itemPlatforms.every((p) => scenarioPlatforms.includes(p))) {
-          throw new DocError(`${name(file)}: scenario '${scName}' then item platforms ${pyRepr(itemPlatforms)} outside the scenario's platforms ${pyRepr(scenarioPlatforms)}`);
-        }
-      }
-
-      let effective: Set<string>;
-      if (itemPlatforms !== null) effective = new Set(itemPlatforms);
-      else if (scenarioPlatforms !== null) effective = new Set(scenarioPlatforms);
-      else effective = declaredPlatforms;
-      if (effective.has('rn')) {
-        if (has(item, 'focusable')) throw new DocError(`${name(file)}: scenario '${scName}' then.focusable: React Native cannot observe focus — narrow platforms to exclude 'rn'`);
-        if (item.state === 'invalid') throw new DocError(`${name(file)}: scenario '${scName}' then.state invalid: React Native has no invalid accessibility state — narrow platforms to exclude 'rn'`);
-      }
-    }
+  }
+  for (const sc of (truthy(c.behavior) ? c.behavior : []) as Dict[]) {
+    if (has(sc, 'derived')) throw new DocError(`${name(file)}: behavior scenario '${sc.name}' sets 'derived' — only the parser may set that key`);
   }
 }
 
-// ARIA widget roles whose element itself takes focus (WAI-ARIA 1.2 widget roles minus composite containers).
-export const WIDGET_ROLES: Set<string> = new Set(['button', 'checkbox', 'switch', 'radio', 'textbox', 'searchbox', 'spinbutton', 'combobox', 'slider',
-  'link', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option', 'treeitem', 'gridcell', 'scrollbar']);
+/** `a11y.requires` of every component a composition names that has a doc (a planned one has none yet). */
+function composedRequires(composition: Record<string, string>): string[][] {
+  return Object.values(composition).flatMap((comp) => {
+    const file = join(paths.DOCS, `${pyStrip(replaceAll(comp, '(planned)', '')).toLowerCase()}.md`);
+    if (!existsSync(file)) return [];
+    const [fm] = splitFrontmatter(readText(file), file);
+    return [((fm.component as Dict | undefined)?.a11y?.requires ?? []) as string[]];
+  });
+}
+
+export { BEHAVIOR_FOCUS_TARGETS, BEHAVIOR_STATES };
 
 export const ACCESSIBLE_NAME_HINTS: readonly string[] = ['accessible name', 'aria-label', 'accessibilitylabel', 'accessibility label'];
 export const ACCESSIBLE_NAME_PROPS: readonly string[] = ['label', 'caption', 'title'];
 export const ACCESSIBLE_NAME_PLACEHOLDER = 'Accessible name';
 
-/** The prop that gives the component its accessible name: the first whose `a11y` note says so, else a
- *  required `label`/`caption`/`title`. null when the name is intrinsic (children, heading text) or absent. */
+/** The prop that gives the component its accessible name: the first that declares `a11yRole: accessible-name`;
+ *  failing that, the first whose `a11y` note says so, else a required `label`/`caption`/`title`. null when the
+ *  name is intrinsic (children, heading text) or absent. */
 export function accessibleNameProp(component: Dict): string | null {
   const props: Dict = truthy(component.props) ? component.props : {};
+  for (const [propName, prop] of Object.entries(props)) {
+    if (prop.a11yRole === 'accessible-name') return propName;
+  }
   for (const [propName, prop] of Object.entries(props)) {
     const note = pyStr(truthy(prop.a11y) ? prop.a11y : '').toLowerCase();
     if (['string', 'content', 'enum'].includes(prop.type) && ACCESSIBLE_NAME_HINTS.some((h) => note.includes(h))) {
@@ -410,44 +347,47 @@ export function deriveBehavior(component: Dict): Dict[] {
   const requires: unknown[] = truthy(a11y.requires) ? a11y.requires : [];
   const declaredPlatforms = Object.keys(truthy(component.platforms) ? component.platforms : {});
 
-  const scenarios: Dict[] = [{ name: 'renders', then: [{ renders: true }], derived: true }];
+  // Every derived scenario goes through the schema, so a shape or name it rejects fails the parse here rather
+  // than reaching generated/components.json.
+  const scenarios: Dict[] = [];
+  const derive = (sc: Dict): void => { scenarios.push(behaviorScenario.parse({ ...sc, derived: true })); };
+
+  derive({ name: 'renders', then: [{ renders: true }] });
 
   for (const [propName, prop] of Object.entries(props)) {
     if (prop.type !== 'enum') continue;
     for (const value of (truthy(prop.values) ? prop.values : []) as unknown[]) {
-      const sc: Dict = { name: `renders-${propName}-${pyStr(value)}`, given: { [propName]: value }, then: [{ renders: true }], derived: true };
-      if (has(prop, 'platforms')) sc.platforms = prop.platforms; // the same array: PyYAML anchors it when it recurs
-      scenarios.push(sc);
+      const sc: Dict = { name: `renders-${kebab(propName)}-${kebab(String(value))}`, given: { [propName]: value }, then: [{ renders: true }] };
+      if (has(prop, 'platforms')) sc.platforms = prop.platforms;
+      derive(sc);
     }
   }
 
   if (requires.includes('accessible-name')) {
-    const sc: Dict = { name: 'has-accessible-name', then: [{ name: true }], derived: true };
+    const sc: Dict = { name: 'has-accessible-name', then: [{ name: true }] };
     const given = accessibleNameGiven(component);
     if (truthy(given)) sc.given = given;
-    scenarios.push(sc);
+    derive(sc);
   }
 
-  if (requires.includes('keyboard-operable') && WIDGET_ROLES.has(a11y.role)) {
+  if (requires.includes('keyboard-operable') && roleIn(WIDGET_ROLES, resolveRole({ ...component, a11y }))) {
     // A container (form, navigation, status region) is keyboard-operable through its children; only a widget
     // role names something that itself takes focus.
-    scenarios.push({
+    derive({
       name: 'control-is-focusable',
       then: [{ focusable: true }],
       platforms: declaredPlatforms.filter((p) => p !== 'rn').sort(),
-      derived: true,
     });
   }
 
   if (requires.includes('error-identification') && has(props, 'error')) {
-    scenarios.push({
+    derive({
       name: 'error-is-identified',
       given: { error: 'Fix this before continuing.' },
       then: [
         { text: 'Fix this before continuing.' },
         { state: 'invalid', is: true, platforms: ['web', 'lit'] },
       ],
-      derived: true,
     });
   }
 
@@ -507,6 +447,8 @@ export function loadExtensions(): [Record<string, ExtensionRecord[]>, string[]] 
       const problems = schemaErrors(extensionFrontmatter, fm);
       if (problems) throw new DocError([`${rel}: frontmatter failed schema validation:`, ...problems].join('\n'));
       const x: Dict = fm.extension;
+      const sourced = authoredSource(x);
+      if (sourced !== null) throw new DocError(`${rel}: ${sourced} sets 'source' — only the parser may set that key`);
       const expected = `${x.extends}.${x.name}.md`;
       if (name(file) !== expected) throw new DocError(`${rel}: file should be named ${expected} (extends + name)`);
       (byComponent[x.extends] ??= []).push({ file: rel, name: x.name, extends: x.extends, extension: x, body: pyStrip(body), title: pyGet(fm, 'title', stem(file)) as string });
@@ -522,7 +464,8 @@ export type Added = [Dict, string];
 
 /** Merge every extension into the component in place. Add-only: a name that upstream or an earlier extension
  *  already declares is an error naming the extension file. Returns the merged dict items with the file that added
- *  them, for stamping `source` after schema validation (the item schemas forbid unknown keys). */
+ *  them, for stamping `source` after schema validation (which rejects a `source` a doc authored itself). Copy
+ *  strings are not objects and carry no marker; `extensionSummary` still lists them under `adds.copy`. */
 export function mergeExtensions(c: Dict, exts: ExtensionRecord[]): Added[] {
   const added: Added[] = [];
   const owner = new Map<string, string>(); // "section\0key" -> who declared it
@@ -565,12 +508,13 @@ export function mergeExtensions(c: Dict, exts: ExtensionRecord[]): Added[] {
   return added;
 }
 
-/** After validate() computed `locked`: an extension binding that ended up locked (its token sits in a contrast
- *  pair, or it is a focus ring / target) is a claim the extension may not make. */
+/** After the merge: an extension binding that `mustLock` would lock (its token is a focus or target token or sits in
+ *  a contrast pair, or its name is a focus ring / target) is a claim the extension may not make. */
 export function checkExtensionLocks(c: Dict, added: Added[]): void {
+  const pairTokens = contrastTokens(c);
   for (const [bName, binding] of Object.entries((truthy(c.styles) ? c.styles : {}) as Dict)) {
     for (const [item, file] of added) {
-      if (item === binding && truthy(binding.locked)) {
+      if (item === binding && mustLock(bName, binding.token, pairTokens, c.props)) {
         throw new DocError(`${file}: styles.${bName} binds '${binding.token}', which is locked (contrast pair, focus ring or target) — an extension may add only overridable bindings`);
       }
     }
@@ -654,7 +598,7 @@ export function writeModuleStubs(components: Dict[]): number {
     for (const ext of (truthy(e.extensions) ? e.extensions : []) as Dict[]) {
       for (const [modName, m] of Object.entries((truthy(ext.modules) ? ext.modules : {}) as Dict)) {
         for (const platform of m.platforms as string[]) {
-          if (!has(PKG, platform)) continue;
+          if (!isTsPlatform(platform)) continue; // a stub is a .d.ts: modules exist on the TypeScript packages only
           const f = join(paths.OUT, 'modules', platform, (m.path as string).replace(/\.(ts|tsx)$/, '.d.ts'));
           const entry = stubs.get(pathKey(f)) ?? { file: f, lines: [] };
           entry.lines.push(`/** ${e.component.name}.${ext.name}: ${m.wire} */\nexport declare const ${modName}: ${m.signature};`);
@@ -795,13 +739,13 @@ export function validateStructure(nodes: StructureNode[], comps: Record<string, 
 }
 
 export function patternComponentsSection(used: string[], comps: Record<string, Dict>, platform: string): string {
-  const lines = ['## Components used', '', `Every one exists in \`packages/${PKG[platform]}/src\`; import from there and read a file only when a prop's behaviour is unclear.`, ''];
+  const lines = ['## Components used', '', `Every one exists in \`packages/${PACKAGE_DIR[platform]}/src\`; import from there and read a file only when a prop's behaviour is unclear.`, ''];
   for (const compName of used) {
     const c = comps[compName] as Dict;
     const platforms: Dict = truthy(c.platforms) ? c.platforms : {};
     const notes: Dict = truthy(platforms[platform]) ? platforms[platform] : {};
     const where = truthy(notes.tag) ? notes.tag : truthy(notes.element) ? notes.element : '';
-    lines.push(`- \`${compName}\` — \`packages/${PKG[platform]}/src/${compName}.*\`` + (truthy(where) ? ` (${where})` : ''));
+    lines.push(`- \`${compName}\` — \`packages/${PACKAGE_DIR[platform]}/src/${compName}.*\`` + (truthy(where) ? ` (${where})` : ''));
   }
   return lines.join('\n');
 }
@@ -828,7 +772,8 @@ export function parsePatterns(components: Dict[]): [Dict[], string[]] {
       const behaviors = sections['Behaviors the page must show'] as string;
       const guidance = PATTERN_HEADINGS.filter((h) => has(sections, h) && h !== 'Structure' && h !== 'Behaviors the page must show').map((h) => `## ${h}\n\n${sections[h]}`).join('\n\n');
       const written: string[] = [];
-      for (const platform of Object.keys(PKG)) {
+      // A pattern page lands in the package's demo/, which only the TypeScript packages have.
+      for (const platform of TS_PLATFORMS) {
         const templatePath = join(paths.TEMPLATES, `pattern-${platform}.md`);
         if (!existsSync(templatePath)) continue;
         let prompt = readText(templatePath);

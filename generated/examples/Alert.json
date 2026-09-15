@@ -1,0 +1,304 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "tone": "info",
+        "heading": "Changes saved",
+        "children": "Your notification preferences apply from the next digest.",
+        "live": "status",
+        "dismissible": false
+      },
+      "snippets": {
+        "react": "import { Alert } from '@design-schema/react';\n\n<Alert heading=\"Changes saved\">Your notification preferences apply from the next digest.</Alert>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      live=\"off\"\n      heading=\"Changes saved\"\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n    >\n      <ds-text>Your notification preferences apply to every device you are signed in on.</ds-text>\n    </ds-alert>\n  </div>\n`;",
+        "rn": "import { Alert } from '@design-schema/rn';\n\n<Alert heading=\"Changes saved\">Your notification preferences apply from the next digest.</Alert>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "alert-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Tone Info",
+      "args": {
+        "tone": "info",
+        "heading": "Trial ends in 3 days",
+        "children": "Add a payment method to keep your workspace.",
+        "live": "status",
+        "dismissible": false
+      },
+      "snippets": {
+        "react": "import { Alert } from '@design-schema/react';\n\n<Alert tone=\"info\" heading=\"Trial ends in 3 days\">Add a payment method to keep your workspace.</Alert>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      tone=\"info\"\n      live=\"off\"\n      heading=\"Scheduled maintenance\"\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n    >\n      <ds-text>Sync pauses on Sunday from 02:00 to 03:00 UTC.</ds-text>\n    </ds-alert>\n  </div>\n`;",
+        "rn": "import { Alert } from '@design-schema/rn';\n\n<Alert tone=\"info\" heading=\"Maintenance on Saturday\">Sync pauses from 02:00 to 03:00 UTC.</Alert>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneInfo",
+        "lit": "ToneInfo",
+        "rn": "ToneInfo",
+        "swift": null
+      },
+      "storyId": "alert-react--tone-info",
+      "sweep": {
+        "prop": "tone",
+        "value": "info"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Tone Success",
+      "args": {
+        "tone": "success",
+        "heading": "Changes saved",
+        "children": "Your notification preferences apply from the next digest.",
+        "live": "status",
+        "dismissible": false
+      },
+      "snippets": {
+        "react": "import { Alert } from '@design-schema/react';\n\n<Alert tone=\"success\" heading=\"Changes saved\">Your notification preferences apply from the next digest.</Alert>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      tone=\"success\"\n      live=\"off\"\n      heading=\"Changes saved\"\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n    >\n      <ds-text>Your preferences are up to date.</ds-text>\n    </ds-alert>\n  </div>\n`;",
+        "rn": "import { Alert } from '@design-schema/rn';\n\n<Alert tone=\"success\" heading=\"Changes saved\">Your notification preferences apply from the next digest.</Alert>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneSuccess",
+        "lit": "ToneSuccess",
+        "rn": "ToneSuccess",
+        "swift": null
+      },
+      "storyId": "alert-react--tone-success",
+      "sweep": {
+        "prop": "tone",
+        "value": "success"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Tone Warning",
+      "args": {
+        "tone": "warning",
+        "heading": "Storage almost full",
+        "children": "You have used 9.5 GB of 10 GB.",
+        "live": "status",
+        "dismissible": false
+      },
+      "snippets": {
+        "react": "import { Alert } from '@design-schema/react';\n\n<Alert tone=\"warning\" heading=\"Storage almost full\">You have used 9.5 GB of 10 GB.</Alert>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      tone=\"warning\"\n      live=\"off\"\n      heading=\"Trial ends in 3 days\"\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n    >\n      <ds-text>Add a payment method to keep your workspace after the trial.</ds-text>\n    </ds-alert>\n  </div>\n`;",
+        "rn": "import { Alert } from '@design-schema/rn';\n\n<Alert tone=\"warning\" heading=\"Trial ends in 3 days\">Add a payment method to keep your projects.</Alert>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneWarning",
+        "lit": "ToneWarning",
+        "rn": "ToneWarning",
+        "swift": null
+      },
+      "storyId": "alert-react--tone-warning",
+      "sweep": {
+        "prop": "tone",
+        "value": "warning"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Tone Danger",
+      "args": {
+        "tone": "danger",
+        "heading": "Payment failed",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            " Your card was declined. ",
+            {
+              "$element": "Link",
+              "props": {
+                "href": "/billing",
+                "label": "Update your payment method",
+                "tone": "inherit"
+              },
+              "children": []
+            },
+            " to keep your plan. "
+          ]
+        },
+        "live": "alert",
+        "dismissible": false
+      },
+      "snippets": {
+        "react": "import { Alert, Link } from '@design-schema/react';\n\n<Alert tone=\"danger\" heading=\"Payment failed\" live=\"alert\">\n  <>\n    Your card was declined. <Link href=\"/billing\" label=\"Update your payment method\" tone=\"inherit\" /> to keep\n    your plan.\n  </>\n</Alert>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      tone=\"danger\"\n      live=\"alert\"\n      heading=\"Payment failed\"\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n    >\n      <ds-text>The card ending in 4242 was declined. Update the card or try another one.</ds-text>\n    </ds-alert>\n  </div>\n`;",
+        "rn": "import { Alert } from '@design-schema/rn';\n\n<Alert tone=\"danger\" heading=\"Payment failed\" live=\"alert\">The card ending 4242 was declined. Update it to continue.</Alert>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneDanger",
+        "lit": "ToneDanger",
+        "rn": "ToneDanger",
+        "swift": null
+      },
+      "storyId": "alert-react--tone-danger",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Live Status",
+      "args": {
+        "tone": "info",
+        "heading": "Changes saved",
+        "children": "Your notification preferences apply from the next digest.",
+        "live": "status",
+        "dismissible": false
+      },
+      "snippets": {
+        "react": "import { Alert } from '@design-schema/react';\n\n<Alert heading=\"Changes saved\" live=\"status\">Your notification preferences apply from the next digest.</Alert>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      tone=\"success\"\n      live=\"status\"\n      heading=\"Changes saved\"\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n    >\n      <ds-text>Your notification preferences apply to every device you are signed in on.</ds-text>\n    </ds-alert>\n  </div>\n`;",
+        "rn": "import { Alert } from '@design-schema/rn';\n\n<Alert heading=\"Changes saved\" live=\"status\">Your notification preferences apply from the next digest.</Alert>",
+        "swift": null
+      },
+      "stories": {
+        "react": "LiveStatus",
+        "lit": "LiveStatus",
+        "rn": "LiveStatus",
+        "swift": null
+      },
+      "storyId": "alert-react--live-status",
+      "sweep": {
+        "prop": "live",
+        "value": "status"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Live Alert",
+      "args": {
+        "tone": "danger",
+        "heading": "Payment failed",
+        "children": "Your card was declined.",
+        "live": "alert",
+        "dismissible": false
+      },
+      "snippets": {
+        "react": "import { Alert } from '@design-schema/react';\n\n<Alert tone=\"danger\" heading=\"Payment failed\" live=\"alert\">Your card was declined.</Alert>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      tone=\"danger\"\n      live=\"alert\"\n      heading=\"Payment failed\"\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n    >\n      <ds-text>Your notification preferences apply to every device you are signed in on.</ds-text>\n    </ds-alert>\n  </div>\n`;",
+        "rn": "import { Alert } from '@design-schema/rn';\n\n<Alert tone=\"danger\" heading=\"Payment failed\" live=\"alert\">Update your card to continue.</Alert>",
+        "swift": null
+      },
+      "stories": {
+        "react": "LiveAlert",
+        "lit": "LiveAlert",
+        "rn": "LiveAlert",
+        "swift": null
+      },
+      "storyId": "alert-react--live-alert",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Live Off",
+      "args": {
+        "tone": "info",
+        "heading": "Changes saved",
+        "children": "Your notification preferences apply from the next digest.",
+        "live": "off",
+        "dismissible": false
+      },
+      "snippets": {
+        "react": "import { Alert } from '@design-schema/react';\n\n<Alert heading=\"Changes saved\" live=\"off\">Your notification preferences apply from the next digest.</Alert>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      live=\"off\"\n      heading=\"Changes saved\"\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n    >\n      <ds-text>Your notification preferences apply to every device you are signed in on.</ds-text>\n    </ds-alert>\n  </div>\n`;",
+        "rn": "import { Alert } from '@design-schema/rn';\n\n<Alert heading=\"Changes saved\" live=\"off\">Your notification preferences apply from the next digest.</Alert>",
+        "swift": null
+      },
+      "stories": {
+        "react": "LiveOff",
+        "lit": "LiveOff",
+        "rn": "LiveOff",
+        "swift": null
+      },
+      "storyId": "alert-react--live-off",
+      "sweep": {
+        "prop": "live",
+        "value": "off"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Dismissible",
+      "args": {
+        "tone": "info",
+        "heading": "Changes saved",
+        "children": "Your notification preferences apply from the next digest.",
+        "live": "status",
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Alert } from '@design-schema/react';\n\n<Alert heading=\"Changes saved\" dismissible>Your notification preferences apply from the next digest.</Alert>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      live=\"off\"\n      heading=\"Changes saved\"\n      dismissible\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n    >\n      <ds-text>Your notification preferences apply to every device you are signed in on.</ds-text>\n    </ds-alert>\n  </div>\n`;",
+        "rn": "import * as React from 'react';\nimport { Alert } from '@design-schema/rn';\n\nfunction Example() {\n  const [visible, setVisible] = React.useState(true);\n  return visible ? <Alert heading=\"Changes saved\" dismissible onDismiss={() => setVisible(false)}>Your notification preferences apply from the next digest.</Alert> : <></>;\n}\n\n<Example />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Dismissible",
+        "lit": "DismissibleTrue",
+        "rn": "Dismissible",
+        "swift": null
+      },
+      "storyId": "alert-react--dismissible",
+      "sweep": {
+        "prop": "dismissible",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Without Heading",
+      "args": {
+        "tone": "info",
+        "children": "Some features are unavailable offline.",
+        "live": "status",
+        "dismissible": false
+      },
+      "snippets": {
+        "react": "import { Alert } from '@design-schema/react';\n\n<Alert>Some features are unavailable offline.</Alert>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      live=\"off\"\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n    >\n      <ds-text>You are offline. Changes will sync when you reconnect.</ds-text>\n    </ds-alert>\n  </div>\n`;",
+        "rn": "import { Alert } from '@design-schema/rn';\n\n<Alert>Some features are unavailable while offline.</Alert>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithoutHeading",
+        "lit": "WithoutHeading",
+        "rn": "WithoutHeading",
+        "swift": null
+      },
+      "storyId": "alert-react--without-heading",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

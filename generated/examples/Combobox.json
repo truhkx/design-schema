@@ -1,0 +1,877 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox label=\"Fruit\" name=\"fruit\" options={FRUITS} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxOption[] = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n];\n\nhtml`\n  <ds-combobox label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS}></ds-combobox>\n`;",
+        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Combobox label=\"Assignee\" name=\"assignee\" options={OPTIONS} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "combobox-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Filter Starts With",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ],
+        "filter": "startsWith"
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox label=\"Fruit\" name=\"fruit\" options={FRUITS} filter=\"startsWith\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxOption[] = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n];\n\nhtml`\n  <ds-combobox label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} filter=\"startsWith\"></ds-combobox>\n`;",
+        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Combobox\n  label=\"Assignee\"\n  name=\"assignee\"\n  options={OPTIONS}\n  filter=\"startsWith\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FilterStartsWith",
+        "lit": "FilterStartsWith",
+        "rn": "FilterStartsWith",
+        "swift": null
+      },
+      "storyId": "combobox-react--filter-starts-with",
+      "sweep": {
+        "prop": "filter",
+        "value": "startsWith"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Filter Contains",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ],
+        "filter": "contains"
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox label=\"Fruit\" name=\"fruit\" options={FRUITS} filter=\"contains\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxOption[] = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n];\n\nhtml`\n  <ds-combobox label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} filter=\"contains\"></ds-combobox>\n`;",
+        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Combobox\n  label=\"Assignee\"\n  name=\"assignee\"\n  options={OPTIONS}\n  filter=\"contains\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FilterContains",
+        "lit": "FilterContains",
+        "rn": "FilterContains",
+        "swift": null
+      },
+      "storyId": "combobox-react--filter-contains",
+      "sweep": {
+        "prop": "filter",
+        "value": "contains"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Filter None",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ],
+        "filter": "none"
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox label=\"Fruit\" name=\"fruit\" options={FRUITS} filter=\"none\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxOption[] = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n];\n\nhtml`\n  <ds-combobox label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} filter=\"none\"></ds-combobox>\n`;",
+        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Combobox label=\"Assignee\" name=\"assignee\" options={OPTIONS} filter=\"none\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "FilterNone",
+        "lit": "FilterNone",
+        "rn": "FilterNone",
+        "swift": null
+      },
+      "storyId": "combobox-react--filter-none",
+      "sweep": {
+        "prop": "filter",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Filter Async",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          }
+        ],
+        "filter": "async"
+      },
+      "snippets": {
+        "react": "import { useState } from 'react';\nimport { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\nfunction AsyncDemo() {\n  const [options, setOptions] = useState(FRUITS.slice(0, 3));\n  const [loading, setLoading] = useState(false);\n  return (\n    <Combobox\n      label=\"Fruit\"\n      name=\"fruit\"\n      filter=\"async\"\n      options={options}\n      loading={loading}\n      onInputChange={(text) => {\n        setLoading(true);\n        setTimeout(() => {\n          setOptions(FRUITS.filter((option) => 'label' in option && option.label.toLowerCase().includes(text.toLowerCase())));\n          setLoading(false);\n        }, 300);\n      }}\n    />\n  );\n}\n\n<AsyncDemo />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxOption[] = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n];\n\nhtml`\n  <ds-combobox label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} filter=\"async\"></ds-combobox>\n`;",
+        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Combobox\n  label=\"Assignee\"\n  name=\"assignee\"\n  options={OPTIONS}\n  filter=\"async\"\n  loading={false}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FilterAsync",
+        "lit": "FilterAsync",
+        "rn": "FilterAsync",
+        "swift": null
+      },
+      "storyId": "combobox-react--filter-async",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Multiple",
+      "args": {
+        "label": "Role",
+        "name": "role",
+        "options": [
+          {
+            "group": "Engineering",
+            "options": [
+              {
+                "value": "frontend",
+                "label": "Frontend"
+              },
+              {
+                "value": "backend",
+                "label": "Backend"
+              }
+            ]
+          },
+          {
+            "group": "Design",
+            "options": [
+              {
+                "value": "product",
+                "label": "Product design"
+              },
+              {
+                "value": "brand",
+                "label": "Brand design"
+              }
+            ]
+          }
+        ],
+        "multiple": true,
+        "defaultValue": [
+          "frontend"
+        ]
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst ROLES: ListboxOption[] = [\n  {\n    group: 'Engineering',\n    options: [\n      { value: 'frontend', label: 'Frontend' },\n      { value: 'backend', label: 'Backend' },\n    ],\n  },\n  {\n    group: 'Design',\n    options: [\n      { value: 'product', label: 'Product design' },\n      { value: 'brand', label: 'Brand design' },\n    ],\n  },\n];\n\n<Combobox\n  label=\"Role\"\n  name=\"role\"\n  options={ROLES}\n  multiple\n  defaultValue={['frontend']}\n/>",
+        "lit": null,
+        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Combobox\n  label=\"Reviewers\"\n  name=\"reviewers\"\n  options={OPTIONS}\n  multiple\n  defaultValue={['sam', 'jo']}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Multiple",
+        "lit": null,
+        "rn": "Multiple",
+        "swift": null
+      },
+      "storyId": "combobox-react--multiple",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Allow Custom",
+      "args": {
+        "label": "Tags",
+        "name": "tags",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ],
+        "multiple": true,
+        "allowCustom": true,
+        "defaultValue": [
+          "launch"
+        ]
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox\n  label=\"Tags\"\n  name=\"tags\"\n  options={FRUITS}\n  multiple\n  allowCustom\n  defaultValue={['launch']}\n/>",
+        "lit": null,
+        "rn": "import { Combobox } from '@design-schema/rn';\n\n<Combobox\n  label=\"Tags\"\n  name=\"tags\"\n  options={[\n    { value: 'bug', label: 'Bug' },\n    { value: 'feature', label: 'Feature' },\n  ]}\n  allowCustom\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AllowCustom",
+        "lit": null,
+        "rn": "AllowCustom",
+        "swift": null
+      },
+      "storyId": "combobox-react--allow-custom",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "With Description",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ],
+        "description": "Used for the produce order."
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUITS}\n  description=\"Used for the produce order.\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst PEOPLE_OPTIONS: ListboxOption[] = [\n  { value: 'ada', label: 'Ada Lovelace', description: 'ada@example.com' },\n  { value: 'grace', label: 'Grace Hopper', description: 'grace@example.com' },\n  { value: 'katherine', label: 'Katherine Johnson', description: 'katherine@example.com' },\n];\n\nhtml`\n  <ds-combobox\n    label=\"Assignee\"\n    name=\"assignee\"\n    .options=${PEOPLE_OPTIONS}\n    .defaultValue=${'ada'}\n    description=\"Search by name or email.\"\n  ></ds-combobox>\n`;",
+        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Combobox\n  label=\"Assignee\"\n  name=\"assignee\"\n  options={OPTIONS}\n  description=\"Searches everyone in the workspace.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithDescription",
+        "lit": "WithDescription",
+        "rn": "WithDescription",
+        "swift": null
+      },
+      "storyId": "combobox-react--with-description",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Required",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ],
+        "required": true
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox label=\"Fruit\" name=\"fruit\" options={FRUITS} required />",
+        "lit": null,
+        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Combobox label=\"Assignee\" name=\"assignee\" options={OPTIONS} required />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Required",
+        "lit": null,
+        "rn": "Required",
+        "swift": null
+      },
+      "storyId": "combobox-react--required",
+      "sweep": {
+        "prop": "required",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Placeholder",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ],
+        "placeholder": "Search fruit"
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUITS}\n  placeholder=\"Search fruit\"\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Placeholder",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "combobox-react--placeholder",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Disabled",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ],
+        "disabled": true,
+        "defaultValue": "banana"
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUITS}\n  disabled\n  defaultValue=\"banana\"\n/>",
+        "lit": null,
+        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Combobox\n  label=\"Assignee\"\n  name=\"assignee\"\n  options={OPTIONS}\n  disabled\n  defaultValue=\"sam\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Disabled",
+        "lit": null,
+        "rn": "Disabled",
+        "swift": null
+      },
+      "storyId": "combobox-react--disabled",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Invalid With Error",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ],
+        "invalid": true,
+        "error": "Fruit is required."
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUITS}\n  invalid\n  error=\"Fruit is required.\"\n/>",
+        "lit": null,
+        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Combobox label=\"Assignee\" name=\"assignee\" options={OPTIONS} invalid />",
+        "swift": null
+      },
+      "stories": {
+        "react": "InvalidWithError",
+        "lit": null,
+        "rn": "Invalid",
+        "swift": null
+      },
+      "storyId": "combobox-react--invalid-with-error",
+      "sweep": {
+        "prop": "invalid",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Default Value",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ],
+        "defaultValue": "cherry"
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox label=\"Fruit\" name=\"fruit\" options={FRUITS} defaultValue=\"cherry\" />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "DefaultValue",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "combobox-react--default-value",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Not Clearable",
+      "args": {
+        "label": "Fruit",
+        "name": "fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "apricot",
+            "label": "Apricot"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "blueberry",
+            "label": "Blueberry"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          },
+          {
+            "value": "grape",
+            "label": "Grape"
+          },
+          {
+            "value": "mango",
+            "label": "Mango"
+          },
+          {
+            "value": "papaya",
+            "label": "Papaya"
+          }
+        ],
+        "clearable": false,
+        "defaultValue": "mango"
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'blueberry', label: 'Blueberry' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUITS}\n  clearable={false}\n  defaultValue=\"mango\"\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "NotClearable",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "combobox-react--not-clearable",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "label": "Role",
+        "name": "role-keyboard",
+        "options": [
+          {
+            "group": "Engineering",
+            "options": [
+              {
+                "value": "frontend",
+                "label": "Frontend"
+              },
+              {
+                "value": "backend",
+                "label": "Backend"
+              }
+            ]
+          },
+          {
+            "group": "Design",
+            "options": [
+              {
+                "value": "product",
+                "label": "Product design"
+              },
+              {
+                "value": "brand",
+                "label": "Brand design"
+              }
+            ]
+          }
+        ],
+        "multiple": true,
+        "defaultValue": [
+          "frontend",
+          "backend"
+        ]
+      },
+      "snippets": {
+        "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst ROLES: ListboxOption[] = [\n  {\n    group: 'Engineering',\n    options: [\n      { value: 'frontend', label: 'Frontend' },\n      { value: 'backend', label: 'Backend' },\n    ],\n  },\n  {\n    group: 'Design',\n    options: [\n      { value: 'product', label: 'Product design' },\n      { value: 'brand', label: 'Brand design' },\n    ],\n  },\n];\n\n<Combobox\n  label=\"Role\"\n  name=\"role-keyboard\"\n  options={ROLES}\n  multiple\n  defaultValue={['frontend', 'backend']}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxOption[] = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n];\n\nhtml`\n  <ds-combobox\n    label=\"Country\"\n    name=\"country\"\n    .options=${COUNTRY_OPTIONS}\n    .defaultValue=${'us'}\n  ></ds-combobox>\n`;",
+        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Combobox label=\"Assignee\" name=\"assignee\" options={OPTIONS} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "combobox-react--keyboard",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

@@ -65,6 +65,12 @@ print('  events:', code.events);
 print('  bindings sample:', Object.fromEntries(Object.entries(code.tokenBindings as Dict).slice(0, 3)));
 print('  notes:', head(code.platformNotes as string, 160).replaceAll('\n', ' '), '...');
 
+const swift = lookupCode({ component: 'Icon', platform: 'swiftui', include: ['source', 'notes'] });
+const swiftFiles = Object.keys(swift.files as Dict).map((f) => f.replaceAll('\\', '/'));
+print('\n=== lookup_code Icon/swiftui');
+print('  label:', swift.platformLabel, '| files:', swiftFiles);
+assert(swiftFiles.includes('packages/swiftui/Sources/DesignSchema/Icon+Paths.swift'), 'lookup_code resolves swiftui files from the Swift package source');
+
 const comp = getComponent({ name: 'Input', platform: 'lit' });
 print('\n=== get_component Input/lit -> events on platform:', Object.fromEntries(Object.entries(comp.schema.events as Dict).map(([k, v]) => [k, (v as Dict).nameOnPlatform])));
 

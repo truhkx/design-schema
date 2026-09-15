@@ -1,0 +1,437 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "Uploading photos",
+        "value": 42,
+        "min": 0,
+        "max": 100,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "neutral",
+        "announce": "complete"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={42} />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-progress-bar label=\"Uploading photos\" value=\"42\"></ds-progress-bar>\n</div>",
+        "rn": "import { ProgressBar } from '@design-schema/rn';\n\n<ProgressBar label=\"Uploading photos\" value={42} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "progressbar-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Tone Neutral",
+      "args": {
+        "label": "Uploading photos",
+        "value": 42,
+        "min": 0,
+        "max": 100,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "neutral",
+        "announce": "complete"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={42} tone=\"neutral\" />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-progress-bar label=\"Uploading photos\" value=\"42\" tone=\"neutral\"></ds-progress-bar>\n</div>",
+        "rn": "import { ProgressBar } from '@design-schema/rn';\n\n<ProgressBar label=\"Uploading photos\" value={42} tone=\"neutral\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneNeutral",
+        "lit": "ToneNeutral",
+        "rn": "ToneNeutral",
+        "swift": null
+      },
+      "storyId": "progressbar-react--tone-neutral",
+      "sweep": {
+        "prop": "tone",
+        "value": "neutral"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Tone Success",
+      "args": {
+        "label": "Uploading photos",
+        "value": 100,
+        "min": 0,
+        "max": 100,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "success",
+        "announce": "complete"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={100} tone=\"success\" />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-progress-bar label=\"Uploading photos\" value=\"100\" tone=\"success\"></ds-progress-bar>\n</div>",
+        "rn": "import { ProgressBar } from '@design-schema/rn';\n\n<ProgressBar label=\"Photos uploaded\" value={100} tone=\"success\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneSuccess",
+        "lit": "ToneSuccess",
+        "rn": "ToneSuccess",
+        "swift": null
+      },
+      "storyId": "progressbar-react--tone-success",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Tone Danger",
+      "args": {
+        "label": "Uploading photos",
+        "value": 58,
+        "min": 0,
+        "max": 100,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "danger",
+        "announce": "complete"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={58} tone=\"danger\" />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-progress-bar label=\"Uploading photos\" value=\"58\" tone=\"danger\"></ds-progress-bar>\n</div>",
+        "rn": "import { ProgressBar } from '@design-schema/rn';\n\n<ProgressBar label=\"Upload failed\" value={58} tone=\"danger\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneDanger",
+        "lit": "ToneDanger",
+        "rn": "ToneDanger",
+        "swift": null
+      },
+      "storyId": "progressbar-react--tone-danger",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Announce None",
+      "args": {
+        "label": "Uploading photos",
+        "value": 42,
+        "min": 0,
+        "max": 100,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "neutral",
+        "announce": "none"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={42} announce=\"none\" />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-progress-bar label=\"Uploading photos\" value=\"42\" announce=\"none\"></ds-progress-bar>\n</div>",
+        "rn": "import { ProgressBar } from '@design-schema/rn';\n\n<ProgressBar label=\"Uploading photos\" value={42} announce=\"none\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "AnnounceNone",
+        "lit": "AnnounceNone",
+        "rn": "AnnounceNone",
+        "swift": null
+      },
+      "storyId": "progressbar-react--announce-none",
+      "sweep": {
+        "prop": "announce",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Announce Milestones",
+      "args": {
+        "label": "Uploading photos",
+        "value": 42,
+        "min": 0,
+        "max": 100,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "neutral",
+        "announce": "milestones"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={42} announce=\"milestones\" />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-progress-bar label=\"Uploading photos\" value=\"42\" announce=\"milestones\"></ds-progress-bar>\n</div>",
+        "rn": "import { ProgressBar } from '@design-schema/rn';\n\n<ProgressBar label=\"Uploading photos\" value={42} announce=\"milestones\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "AnnounceMilestones",
+        "lit": "AnnounceMilestones",
+        "rn": "AnnounceMilestones",
+        "swift": null
+      },
+      "storyId": "progressbar-react--announce-milestones",
+      "sweep": {
+        "prop": "announce",
+        "value": "milestones"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Announce Complete",
+      "args": {
+        "label": "Uploading photos",
+        "value": 42,
+        "min": 0,
+        "max": 100,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "neutral",
+        "announce": "complete"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={42} announce=\"complete\" />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-progress-bar label=\"Uploading photos\" value=\"42\" announce=\"complete\"></ds-progress-bar>\n</div>",
+        "rn": "import { ProgressBar } from '@design-schema/rn';\n\n<ProgressBar label=\"Uploading photos\" value={42} announce=\"complete\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "AnnounceComplete",
+        "lit": "AnnounceComplete",
+        "rn": "AnnounceComplete",
+        "swift": null
+      },
+      "storyId": "progressbar-react--announce-complete",
+      "sweep": {
+        "prop": "announce",
+        "value": "complete"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Indeterminate",
+      "args": {
+        "label": "Uploading photos",
+        "min": 0,
+        "max": 100,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "neutral",
+        "announce": "complete"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-progress-bar label=\"Uploading photos\"></ds-progress-bar>\n</div>",
+        "rn": "import { ProgressBar } from '@design-schema/rn';\n\n<ProgressBar label=\"Uploading photos\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Indeterminate",
+        "lit": "Indeterminate",
+        "rn": "Indeterminate",
+        "swift": null
+      },
+      "storyId": "progressbar-react--indeterminate",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Hidden Label",
+      "args": {
+        "label": "Uploading photos",
+        "value": 42,
+        "min": 0,
+        "max": 100,
+        "showValue": true,
+        "hideLabel": true,
+        "tone": "neutral",
+        "announce": "complete"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={42} hideLabel />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-progress-bar label=\"Uploading photos\" value=\"42\" hide-label></ds-progress-bar>\n</div>",
+        "rn": "import { ProgressBar } from '@design-schema/rn';\n\n<ProgressBar label=\"Uploading photos\" value={42} hideLabel />",
+        "swift": null
+      },
+      "stories": {
+        "react": "HiddenLabel",
+        "lit": "HideLabel",
+        "rn": "HideLabel",
+        "swift": null
+      },
+      "storyId": "progressbar-react--hidden-label",
+      "sweep": {
+        "prop": "hideLabel",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Hidden Value",
+      "args": {
+        "label": "Uploading photos",
+        "value": 42,
+        "min": 0,
+        "max": 100,
+        "showValue": false,
+        "hideLabel": false,
+        "tone": "neutral",
+        "announce": "complete"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={42} showValue={false} />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-progress-bar label=\"Uploading photos\" value=\"42\" hide-value></ds-progress-bar>\n</div>",
+        "rn": "import { ProgressBar } from '@design-schema/rn';\n\n<ProgressBar label=\"Uploading photos\" value={42} showValue={false} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "HiddenValue",
+        "lit": "HideValue",
+        "rn": "HideValue",
+        "swift": null
+      },
+      "storyId": "progressbar-react--hidden-value",
+      "sweep": {
+        "prop": "showValue",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Custom Format Value",
+      "args": {
+        "label": "Importing contacts",
+        "value": 3,
+        "min": 0,
+        "max": 12,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "neutral",
+        "announce": "complete",
+        "formatValue": {
+          "$unsupported": "(value, _min, max) => `${value} of ${max} files`"
+        }
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar\n  label=\"Importing contacts\"\n  value={3}\n  max={12}\n  formatValue={(value, _min, max) => `${value} of ${max} files`}\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "CustomFormatValue",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "progressbar-react--custom-format-value",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Custom Range",
+      "args": {
+        "label": "Uploading photos",
+        "value": 7,
+        "min": 0,
+        "max": 10,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "neutral",
+        "announce": "complete"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={7} min={0} max={10} />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "CustomRange",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "progressbar-react--custom-range",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Empty",
+      "args": {
+        "label": "Uploading photos",
+        "value": 0,
+        "min": 0,
+        "max": 100,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "neutral",
+        "announce": "complete"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={0} />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Empty",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "progressbar-react--empty",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Complete",
+      "args": {
+        "label": "Uploading photos",
+        "value": 100,
+        "min": 0,
+        "max": 100,
+        "showValue": true,
+        "hideLabel": false,
+        "tone": "success",
+        "announce": "complete"
+      },
+      "snippets": {
+        "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={100} tone=\"success\" />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-progress-bar label=\"Uploading photos\" value=\"100\" tone=\"success\"></ds-progress-bar>\n</div>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Complete",
+        "lit": "Complete",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "progressbar-react--complete",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'nod
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
+import { PLATFORMS, TS_PLATFORMS } from '../../schema/platforms.ts';
 import * as bt from '../behavior_tests.ts';
 import type { Dict } from '../behavior_tests.ts';
 import { pyReEscape } from '../lib/py.ts';
@@ -26,7 +27,7 @@ const WIDGET: Dict = {
 };
 
 const CLICK: Dict = { name: 'click-fires', when: { click: 'control' }, then: [{ event: 'onPress', with: true }] };
-const BAD: Dict = { name: 'has-weird-attr', then: [{ attribute: 'data-x', is: 'y' }] };
+const BAD: Dict = { name: 'focus-moves', then: [{ focused: 'moved' }] };
 const SCENARIOS = [CLICK, BAD];
 
 function titlesOf(content: string): string[] {
@@ -52,8 +53,8 @@ describe('scenarioBlock', () => {
 
   test('an unmappable assertion becomes a skip with its reason', () => {
     const block = bt.scenarioBlock(WIDGET, BAD, 'web');
-    expect(block.startsWith("  test.skip('has-weird-attr — ")).toBe(true);
-    expect(block).toContain('attribute');
+    expect(block.startsWith("  test.skip('focus-moves — ")).toBe(true);
+    expect(block).toContain('pre-action focus snapshot');
   });
 
   test('unrecognized `then` keys are unmappable', () => {
@@ -81,7 +82,7 @@ describe('generated files contain one test per scenario', () => {
     const content = (builder as (c: Dict, s: Dict[]) => string)(WIDGET, SCENARIOS);
     expect(titlesOf(content)).toEqual(['click-fires']);
     expect(skipsOf(content)).toHaveLength(1);
-    expect(skipsOf(content)[0]).toContain('has-weird-attr');
+    expect(skipsOf(content)[0]).toContain('focus-moves');
   });
 
   test('web event prop and call signature', () => {
@@ -110,11 +111,24 @@ describe('partLocator', () => {
     expect(bt.partLocatorBody(WIDGET, 'control', 'rn')).toBe("screen.queryByRole('button') ?? s.root()");
   });
 
-  test.each(['none', 'text', 'landmark', 'presentation'])('the role %s cannot be queried and never reaches getByRole', (role) => {
-    const c = { ...WIDGET, a11y: { role, requires: [] } };
+  const LANDMARK_PROPS = { role: { type: 'enum', values: ['navigation', 'main'], required: true, description: 'Which landmark.' } };
+
+  test.each([
+    ['none', { role: 'none', requires: [] }],
+    ['presentation', { role: 'presentation', requires: [] }],
+    ['generic', { role: 'generic', requires: [] }],
+    ['roleFrom with no default', { roleFrom: 'role', requires: [] }],
+  ])('the role %s cannot be queried and never reaches getByRole', (_label, a11y) => {
+    const c = { ...WIDGET, props: LANDMARK_PROPS, a11y };
     expect(bt.partLocatorBody(c, 'control', 'web')).toBe('s.root()');
     expect(bt.partLocatorBody(c, 'control', 'rn')).toBe('s.root()');
     expect(bt.partLocatorBody(c, 'control', 'lit')).not.toContain('role=');
+  });
+
+  test('a roleFrom prop with a default is queried by that role', () => {
+    const props = { role: { ...LANDMARK_PROPS.role, required: false, default: 'navigation' } };
+    const c = { ...WIDGET, props, a11y: { roleFrom: 'role', requires: [] } };
+    expect(bt.partLocatorBody(c, 'control', 'web')).toBe("(screen.queryByRole('navigation') ?? s.root()) as HTMLElement");
   });
 
   test('the root is the data-ds hook first', () => {
@@ -137,6 +151,16 @@ describe('partLocator', () => {
   test('a part matching a string prop is located by its text', () => {
     expect(bt.partLocatorBody(WIDGET, 'label', 'web')).toBe('screen.getByText(props.label)');
     expect(bt.partLocatorBody(WIDGET, 'label', 'rn')).toBe('screen.getByText(props.label)');
+  });
+
+  test('a union prop is a text prop only when its shape starts with string', () => {
+    const select: Dict = { ...WIDGET, anatomy: ['control', 'value', 'range'], props: {
+      value: { type: 'union', shape: 'string | string[]', description: 'x' },
+      range: { type: 'union', shape: 'number | [number, number]', description: 'x' },
+    } };
+    expect(bt.scalarType(select.props.value)).toBe('string');
+    expect(bt.partLocatorBody(select, 'value', 'web')).toBe('screen.getByText(props.value)');
+    expect(bt.partLocatorBody(select, 'range', 'web')).toContain('data-part="range"');
   });
 
   test('an unhooked part falls back to the data-part or testID convention', () => {
@@ -197,14 +221,14 @@ describe('main', () => {
     out = join(generated, 'behavior');
     mkdirSync(generated, { recursive: true });
     Object.assign(bt.paths, { ROOT: tmp(), GENERATED: generated, OUT: out });
-    for (const platform of bt.PLATFORMS) {
+    for (const platform of PLATFORMS) {
       // the component exists in every package
-      write(join(tmp(), (bt.SOURCE_FILE[platform] as string).replace('{name}', 'Widget')), 'export {};');
+      write(bt.sourceFile(tmp(), 'Widget', platform), 'export {};');
     }
   });
 
   test('a component not generated yet gets no test file', () => {
-    rmSync(join(tmp(), (bt.SOURCE_FILE.lit as string).replace('{name}', 'Widget')));
+    rmSync(bt.sourceFile(tmp(), 'Widget', 'lit'));
     writeEntries([entry([CLICK])]);
     bt.main();
     expect(files()).toEqual(['Widget.rn.test.tsx', 'Widget.web.test.tsx']);
@@ -261,9 +285,9 @@ describe('surfaces', () => {
     expect(bt.scenarioBlock(WIDGET, { name: 'renders', then: [{ renders: true }] }, 'web')).not.toContain('open');
   });
 
-  test('a hover surface is skipped with the reason', () => {
+  test('a hover surface is skipped with the reason on React Native', () => {
     const tip = { ...WIDGET, name: 'Tooltip', a11y: { role: 'tooltip', requires: [] } };
-    const block = bt.scenarioBlock(tip, { name: 'renders', then: [{ renders: true }] }, 'web');
+    const block = bt.scenarioBlock(tip, { name: 'renders', then: [{ renders: true }] }, 'rn');
     expect(block.startsWith("  test.skip('renders")).toBe(true);
     expect(block).toContain('needs its trigger hovered');
     expect(block).toContain("\\'tooltip\\'"); // quotes inside the reason are escaped for the JS string literal
@@ -272,7 +296,7 @@ describe('surfaces', () => {
 
 describe('name and renders', () => {
   test('renders never queries by role', () => {
-    for (const platform of bt.JS_PLATFORMS) {
+    for (const platform of TS_PLATFORMS) {
       expect(bt.thenRendersLines(WIDGET, platform).some((ln) => ln.includes('ByRole'))).toBe(false);
     }
   });
@@ -301,8 +325,10 @@ describe('name and renders', () => {
   });
 
   test('name on an unqueryable role is unmappable', () => {
-    const text = { ...WIDGET, a11y: { role: 'text', requires: [] } };
-    expect(() => bt.thenNameLines(text, 'web')).toThrow(/cannot be queried/);
+    const text = { ...WIDGET, a11y: { role: 'generic', requires: [] } };
+    expect(() => bt.thenNameLines(text, 'web')).toThrow("then.name: role 'generic' cannot be queried");
+    const landmark = { ...WIDGET, props: { role: { type: 'enum', values: ['main'], description: 'x' } }, a11y: { roleFrom: 'role', requires: [] } };
+    expect(() => bt.thenNameLines(landmark, 'web')).toThrow("then.name: role from prop 'role' cannot be queried");
   });
 });
 
@@ -440,6 +466,21 @@ describe('swiftInitArgs', () => {
     // parse.ts fills the derived accessible-name scenario in with a string even for a content prop
     expect(bt.swiftInitArgs(card, { children: 'Accessible name' })).toContain('children: { SwiftUI.Text("Accessible name") }');
   });
+
+  test('a union prop reads as the scalar its shape starts with, and a given value by its runtime type', () => {
+    const picker: Dict = {
+      ...SWIDGET,
+      props: {
+        value: { type: 'union', shape: 'string | string[]', required: true, description: 'x' },
+        range: { type: 'union', shape: 'number | [number, number]', required: true, description: 'x' },
+      },
+    };
+    expect(bt.swiftInitArgs(picker, {})).toEqual(['value: "Value"', 'range: 0', 'action: events.spy("onPress")']);
+    expect(bt.swiftInitArgs(picker, { value: 'a', range: 4 })).toEqual(['value: "a"', 'range: 4', 'action: events.spy("onPress")']);
+    expect(() => bt.swiftInitArgs(picker, { value: ['a', 'b'] })).toThrow(/given.value: no Swift literal/);
+    const grid: Dict = { ...SWIDGET, props: { rows: { type: 'union', shape: '{ id: string }[] | "lazy"', required: true, description: 'x' } } };
+    expect(() => bt.swiftInitArgs(grid, {})).toThrow(/is required and union: no literal this generator can synthesize/);
+  });
 });
 
 describe('swift when', () => {
@@ -507,7 +548,7 @@ describe('swift then', () => {
   });
 
   test('focus is the standing gap and names the gate that covers it', () => {
-    for (const item of [{ focusable: true }, { focused: 'control' }, { focus: 'none' }]) {
+    for (const item of [{ focusable: true }, { focusable: false }, { focused: 'control' }, { focused: 'none' }]) {
       expect(() => then(item)).toThrow(/iPad keyboard gate/);
     }
   });
@@ -540,7 +581,7 @@ describe('swiftFile', () => {
     const content = bt.swiftFile(SWIDGET, [CLICK_SWIFT, BAD]);
     expect(swiftTitles(content)).toEqual(['click-fires']);
     expect(swiftSkips(content)).toHaveLength(1);
-    expect(swiftSkips(content)[0]).toContain('has-weird-attr');
+    expect(swiftSkips(content)[0]).toContain('focus-moves');
   });
 
   test('the suite is main-actor and the component is module-qualified', () => {
@@ -572,8 +613,8 @@ describe('main — swiftui', () => {
     swiftOut = join(tmp(), 'packages', 'swiftui', 'Tests', 'DesignSchemaTests', 'Generated');
     mkdirSync(generated, { recursive: true });
     Object.assign(bt.paths, { ROOT: tmp(), GENERATED: generated, OUT: join(generated, 'behavior') });
-    for (const platform of bt.PLATFORMS) {
-      write(join(tmp(), (bt.SOURCE_FILE[platform] as string).replace('{name}', 'Widget')), 'export {};');
+    for (const platform of PLATFORMS) {
+      write(bt.sourceFile(tmp(), 'Widget', platform), 'export {};');
     }
     write(join(generated, 'components.json'), JSON.stringify([{ component: { ...SWIDGET, behavior: [{ name: 'renders', then: [{ renders: true }] }] } }]));
   });
@@ -590,7 +631,7 @@ describe('main — swiftui', () => {
   });
 
   test('a component not generated for swiftui yet gets no Swift file', () => {
-    rmSync(join(tmp(), (bt.SOURCE_FILE.swiftui as string).replace('{name}', 'Widget')));
+    rmSync(bt.sourceFile(tmp(), 'Widget', 'swiftui'));
     bt.main();
     expect(swiftFiles()).toEqual([]);
   });
@@ -618,6 +659,155 @@ describe('main — swiftui', () => {
     expect(bt.main(['--check'])).toBe(1);
     expect(std.err()).toContain('no longer derived');
     expect(swiftFiles()).toContain('GoneBehaviorTests.swift'); // --check is read-only
+  });
+});
+
+// ---------------------------------------------------------------------------
+// the typed clauses: set, hover, attribute, the negative and exact forms, keys
+// ---------------------------------------------------------------------------
+
+describe('when.set', () => {
+  const SET: Dict = { name: 'controlled-updates', given: { open: false }, when: { set: { open: true } }, then: [{ renders: true }] };
+
+  test('web and rn re-render through the harness with the new props merged', () => {
+    expect(bt.whenLines(WIDGET, SET, 'web')).toEqual(['s.rerender({"open": true});']);
+    expect(bt.whenLines(WIDGET, SET, 'rn')).toEqual(['s.rerender({"open": true});']);
+    expect(bt.webFile(WIDGET, [SET])).toContain('rerender: (next: Partial<WidgetProps>) => utils.rerender(<Widget {...props} {...next} />),');
+  });
+
+  test('lit assigns the properties and awaits the update', () => {
+    expect(bt.whenLines(WIDGET, SET, 'lit')).toEqual(['Object.assign(s.el, {"open": true});', 'await (s.el as unknown as { updateComplete: Promise<boolean> }).updateComplete;']);
+  });
+
+  test('swiftui is unmappable: a hosted view is built from literals', () => {
+    expect(() => bt.swiftWhenLines(SWIDGET, SET)).toThrow('when.set: a hosted view is built once from literal props; a controlled change needs a Binding the test owns');
+  });
+});
+
+describe('when.hover', () => {
+  const HOVER: Dict = { name: 'hover-label', when: { hover: 'label' }, then: [{ renders: true }] };
+
+  test('web and lit hover the part', () => {
+    expect(bt.whenLines(WIDGET, HOVER, 'web')).toEqual(['await s.user.hover(s.label());']);
+    expect(bt.whenLines(WIDGET, HOVER, 'lit')).toEqual(['await userEvent.hover(s.label());']);
+    expect(bt.usedParts(WIDGET, [HOVER])).toEqual(['control', 'label']);
+  });
+
+  test('rn and swiftui are unmappable', () => {
+    expect(() => bt.whenLines(WIDGET, HOVER, 'rn')).toThrow('when.hover: React Native has no pointer to hover with');
+    expect(() => bt.swiftWhenLines(SWIDGET, HOVER)).toThrow('when.hover: a hosted view has no pointer to hover with');
+  });
+});
+
+describe('tooltip surfaces', () => {
+  const TIP: Dict = { ...WIDGET, name: 'Tooltip', anatomy: ['trigger', 'popup'], a11y: { role: 'tooltip', requires: [] } };
+  const RENDERS: Dict = { name: 'renders', then: [{ renders: true }] };
+
+  test('web and lit hover the trigger, the first anatomy part, before asserting', () => {
+    const web = bt.scenarioBlock(TIP, RENDERS, 'web');
+    expect(web.startsWith("  test('renders',")).toBe(true);
+    const hover = web.indexOf('await s.user.hover(s.trigger());');
+    expect(hover).toBeGreaterThan(-1);
+    expect(hover).toBeLessThan(web.indexOf('expect(s.root())'));
+    const lit = bt.scenarioBlock(TIP, RENDERS, 'lit');
+    expect(lit.startsWith("  test('renders',")).toBe(true);
+    expect(lit).toContain('await userEvent.hover(s.trigger());');
+  });
+
+  test('a tooltip its controlled open prop already shows is not hovered', () => {
+    const openable: Dict = { ...TIP, props: { ...TIP.props, open: { type: 'boolean', description: 'x' } } };
+    for (const platform of ['web', 'lit']) {
+      const block = bt.scenarioBlock(openable, RENDERS, platform);
+      expect(block).toContain('"open": true');
+      expect(block).not.toContain('hover');
+    }
+    // an authored open: false leaves the surface closed, so the trigger is hovered
+    expect(bt.scenarioBlock(openable, { ...RENDERS, given: { open: false } }, 'web')).toContain('await s.user.hover(s.trigger());');
+  });
+
+  test('a scenario with its own interaction performs that instead', () => {
+    const block = bt.scenarioBlock(TIP, { name: 'focus-shows', when: { focus: 'trigger' }, then: [{ renders: true }] }, 'web');
+    expect(block).toContain('act(() => (s.trigger()).focus());');
+    expect(block).not.toContain('hover');
+  });
+
+  test('swiftui keeps the skip', () => {
+    const swift = bt.swiftFile({ ...SWIDGET, name: 'Tooltip', anatomy: ['trigger', 'popup'], a11y: { role: 'tooltip', requires: [] } }, [RENDERS]);
+    expect(swiftSkips(swift)[0]).toContain('needs its trigger hovered or focused');
+  });
+});
+
+describe('then.attribute', () => {
+  test('web and lit assert the value as a string, or the absence for null', () => {
+    for (const platform of ['web', 'lit']) {
+      expect(bt.thenItemLines(WIDGET, { attribute: 'aria-haspopup', is: 'dialog' }, platform)).toEqual(['expect(s.control()).toHaveAttribute("aria-haspopup", "dialog");']);
+      expect(bt.thenItemLines(WIDGET, { attribute: 'aria-busy', is: true }, platform)).toEqual(['expect(s.control()).toHaveAttribute("aria-busy", "true");']);
+      expect(bt.thenItemLines(WIDGET, { attribute: 'aria-busy', is: null }, platform)).toEqual(['expect(s.control()).not.toHaveAttribute("aria-busy");']);
+    }
+  });
+
+  test('on targets another part, which the harness then locates', () => {
+    expect(bt.thenItemLines(WIDGET, { attribute: 'data-state', is: 'on', on: 'label' }, 'web')).toEqual(['expect(s.label()).toHaveAttribute("data-state", "on");']);
+    expect(bt.usedParts(WIDGET, [{ name: 'x', then: [{ attribute: 'data-state', is: 'on', on: 'label' }] }])).toEqual(['control', 'label']);
+  });
+
+  test('rn asserts the prop, keeping the value type', () => {
+    expect(bt.thenItemLines(WIDGET, { attribute: 'accessibilityHint', is: 'Opens' }, 'rn')).toEqual(['expect(s.control()).toHaveProp("accessibilityHint", "Opens");']);
+    expect(bt.thenItemLines(WIDGET, { attribute: 'disabled', is: true }, 'rn')).toEqual(['expect(s.control()).toHaveProp("disabled", true);']);
+    expect(bt.thenItemLines(WIDGET, { attribute: 'accessibilityHint', is: null }, 'rn')).toEqual(['expect(s.control()).not.toHaveProp("accessibilityHint");']);
+  });
+
+  test('swiftui is unmappable: an accessibility tree has no attributes', () => {
+    expect(() => bt.swiftThenItemLines(SWIDGET, { attribute: 'data-x', is: 'y' }, {})).toThrow('then.attribute: an accessibility tree has no attributes; assert the label, value or trait instead');
+  });
+});
+
+describe('negative and exact assertions', () => {
+  test('focusable: false asserts focus does not land', () => {
+    expect(bt.thenItemLines(WIDGET, { focusable: false }, 'web')).toEqual(['act(() => (s.control()).focus());', 'expect(s.control()).not.toHaveFocus();']);
+    expect(bt.thenItemLines(WIDGET, { focusable: false }, 'lit')).toEqual(['s.el.focus();', 'expect(activeChain()).not.toContain(s.el);']);
+  });
+
+  test('renders: false asserts nothing rendered', () => {
+    expect(bt.thenItemLines(WIDGET, { renders: false }, 'web')).toEqual(['expect(s.root()).toBeNull();']);
+    expect(bt.thenItemLines(WIDGET, { renders: false }, 'rn')).toEqual(['expect(screen.toJSON()).toBeNull();']);
+    expect(bt.thenItemLines(WIDGET, { renders: false }, 'lit')).toEqual(['expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(false);']);
+    expect(bt.swiftThenItemLines(SWIDGET, { renders: false }, {})).toEqual(['#expect(host.exists("Widget") == false, "\\(host.dump())")']);
+  });
+
+  test('a string name asserts that exact name', () => {
+    expect(bt.thenItemLines(WIDGET, { name: 'Save draft' }, 'web')).toEqual(["expect(screen.getByRole('button', { name: \"Save draft\" })).toBeInTheDocument();"]);
+    expect(bt.thenItemLines(WIDGET, { name: 'Save draft' }, 'rn')).toEqual(["expect(screen.getByRole('button', { name: \"Save draft\" })).toBeOnTheScreen();"]);
+    expect(bt.thenItemLines(WIDGET, { name: 'Save draft' }, 'lit')).toEqual(['expect(s.control()).toHaveAccessibleName("Save draft");']);
+    expect(bt.swiftThenItemLines(SWIDGET, { name: 'Save draft' }, { label: 'Go' })).toEqual(['#expect(try host.require("Widget").label == "Save draft", "\\(host.dump())")']);
+  });
+
+  test('rn reads an open state from expanded, which React Native sets', () => {
+    expect(bt.thenItemLines(WIDGET, { state: 'open', is: true }, 'rn')).toEqual(['expect(s.control()).toBeExpanded();']);
+    expect(bt.thenItemLines(WIDGET, { state: 'open', is: false }, 'rn')).toEqual(['expect(s.control()).not.toBeExpanded();']);
+  });
+});
+
+describe('keyStroke', () => {
+  test('Space is normalized to a space, then spelled per platform', () => {
+    expect(bt.keyStroke('Space', 'web')).toBe('[Space]');
+    expect(bt.keyStroke(' ', 'web')).toBe('[Space]');
+    expect(bt.keyStroke('Space', 'lit')).toBe(' ');
+    expect(bt.keyStroke('Enter', 'lit')).toBe('{Enter}');
+    expect(bt.keyStroke('a', 'web')).toBe('a');
+  });
+
+  test('modifiers are held around the key and released in reverse', () => {
+    expect(bt.keyStroke('Shift+Tab', 'web')).toBe('{Shift>}{Tab}{/Shift}');
+    expect(bt.keyStroke('Control+Shift+a', 'lit')).toBe('{Control>}{Shift>}a{/Shift}{/Control}');
+  });
+
+  test('a typeahead range is not one key press', () => {
+    expect(() => bt.keyStroke('a-z', 'web')).toThrow("when.key: 'a-z' is a typeahead range, not one key press");
+  });
+
+  test('the when line presses it', () => {
+    expect(bt.whenLines(WIDGET, { name: 'k', when: { key: 'Shift+Tab' }, then: [] }, 'web')[1]).toBe("await s.user.keyboard('{Shift>}{Tab}{/Shift}');");
   });
 });
 

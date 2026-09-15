@@ -25,20 +25,12 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { basename, extname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { isPlatform, PLATFORMS, sourceDir } from '../schema/platforms.ts';
 import { pyLstrip, pyReEscape, pySplitlines, pyStrip, readText, sortedNames } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
 
 /** Every path the tool reads. The tests point these at a sandbox. */
 export const paths = { ROOT: REPO_ROOT };
-
-export const PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn', swiftui: 'swiftui' };
-
-/** Where a platform keeps its sources. SwiftPM's layout is `Sources/DesignSchema`, not `src/`, and it nests. */
-export function sourceDir(root: string, plat: string): string {
-  return plat === 'swiftui'
-    ? join(root, 'packages', 'swiftui', 'Sources', 'DesignSchema')
-    : join(root, 'packages', PKG[plat] as string, 'src');
-}
 
 const W = '\\p{L}\\p{N}_'; // Python's `\w` on str
 
@@ -235,7 +227,7 @@ export type Args = { platform: string | null; files: string[] | null };
 
 /** argparse's `--platform {web,lit,rn,swiftui}` and `--files [F ...]`, including its exit code 2 on a bad flag. */
 export function parseArgs(argv: string[], prog: string = 'lint_literals.ts'): Args {
-  const usage = `usage: ${prog} [-h] [--platform {${Object.keys(PKG).join(',')}}] [--files [FILES ...]]`;
+  const usage = `usage: ${prog} [-h] [--platform {${PLATFORMS.join(',')}}] [--files [FILES ...]]`;
   // The annotation is on the binding, not just the arrow: that is what lets TypeScript treat a `die(...)`
   // call as terminating the branch.
   const die: (message: string) => never = (message) => {
@@ -251,7 +243,7 @@ export function parseArgs(argv: string[], prog: string = 'lint_literals.ts'): Ar
     } else if (arg === '--platform' || arg.startsWith('--platform=')) {
       const value = arg.startsWith('--platform=') ? arg.slice('--platform='.length) : argv[++i];
       if (value === undefined) die('argument --platform: expected one argument');
-      if (!Object.hasOwn(PKG, value)) die(`argument --platform: invalid choice: '${value}' (choose from ${Object.keys(PKG).join(', ')})`);
+      if (!isPlatform(value)) die(`argument --platform: invalid choice: '${value}' (choose from ${PLATFORMS.join(', ')})`);
       args.platform = value;
     } else if (arg === '--files') {
       args.files = [];
@@ -275,7 +267,7 @@ export function main(argv: string[] = process.argv.slice(2)): number {
   if (a.files !== null && a.files.length > 0) {
     files = a.files.map((f) => (isAbsolute(f) ? normalize(f) : join(ROOT, f)));
   } else {
-    for (const plat of Object.keys(PKG)) {
+    for (const plat of PLATFORMS) {
       if (a.platform !== null && plat !== a.platform) continue;
       files = files.concat(listSources(sourceDir(ROOT, plat), plat === 'swiftui'));
     }

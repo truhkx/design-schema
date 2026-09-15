@@ -1,15 +1,41 @@
 /*
- * The header's own chrome: the rule at the top of the page, and the one viewport decision the site
- * makes — a nav row above layout.breakpoint.md, a hamburger below it.
+ * The header's own chrome: its dark surface, the row's layout, and the one viewport decision the
+ * site makes — a nav row above layout.breakpoint.md, a hamburger below it.
  *
  * The breakpoint's value is written out because a custom property cannot appear in a media
  * condition; foundations/layout.md ("Reading a breakpoint") says to do exactly this, comment and
  * all. Header.astro asserts the number against the token at build time so it cannot drift.
  */
 
+/*
+ * Always dark (Tony's review, 2026-09-15). Header.astro puts `data-mode="dark"` on the banner, and
+ * every theme's token sheet declares its whole dark palette — surfaces, borders, focus, every
+ * semantic color — on `[data-mode="dark"]`, not on `:root`. So the header and everything in it read
+ * the active theme's dark tokens whatever mode the page is in, and the surface below is those same
+ * tokens rather than a new inverse pair. The drawer is portaled to <body>, so it keeps the page's mode.
+ */
 .ds-site-header {
+  background: var(--color-background);
+  color: var(--color-foreground);
   border-block-end: var(--border-width-thin) solid var(--color-border);
   padding-block: var(--space-sm);
+}
+
+/*
+ * The logo lockup is the home link: a plain anchor, because `Link` renders only its label. The
+ * focus ring is Link's own (Link.css), from the same tokens.
+ */
+.ds-site-header__home {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--layout-gap-tight);
+  color: inherit;
+  border-radius: var(--radius-sm);
+}
+
+.ds-site-header__home:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
 }
 
 /*
@@ -17,21 +43,37 @@
  * so this follows Icon's precedent and takes one from the type scale rather than inventing a number.
  */
 .ds-site-header__mark {
+  flex: none;
   inline-size: var(--font-size-2xl);
   block-size: var(--font-size-2xl);
+}
+
+/*
+ * The nav takes all the room between the lockup and the theme control, and spaces its links evenly
+ * across it — equal space before, between and after — rather than clustering them at one end.
+ * No `gap`: space-evenly adds it between links but not at the ends, and the spacing stops being even.
+ * Doubled up to outrank the Stack's own `justify` and `gap` classes whatever order the sheets load in.
+ */
+.ds-site-header .ds-site-header__links {
+  flex: 1 1 auto;
+  justify-content: space-evenly;
+  gap: 0;
 }
 
 .ds-site-header__wide {
   display: none;
 }
 
+/* Below the breakpoint the hamburger is the row's only other item, so it goes to the end. */
 .ds-site-header__narrow {
   display: block;
+  margin-inline-start: auto;
 }
 
 @media (min-width: 768px) { /* layout.breakpoint.md */
   .ds-site-header__wide {
     display: block;
+    flex: 1 1 auto;
   }
 
   .ds-site-header__narrow {

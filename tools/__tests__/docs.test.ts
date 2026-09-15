@@ -7,8 +7,7 @@ import { basename, join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 import { expand } from '../check_contrast.ts';
-import { iterErrors } from '../lib/jsonschema.ts';
-import type { Schema } from '../lib/jsonschema.ts';
+import { themeFrontmatter } from '../../schema/theme.ts';
 import { readText, sortedNames } from '../lib/py.ts';
 import { REPO_ROOT } from '../lib/root.ts';
 import * as parse from '../parse.ts';
@@ -121,8 +120,6 @@ describe.skipIf(!generatedExists)('generated is in sync', () => {
  * of process/typescript-and-currency.md ported mcp/server.py — its last importer — and deleted it.
  */
 describe('the shipped docs against the token resolver', () => {
-  const themeSchema = (): Schema => JSON.parse(readFileSync(join(REPO_ROOT, 'schema', 'theme.schema.json'), 'utf8')) as Schema;
-
   test.each(COMPONENT_DOCS.map((f) => [basename(f), f]))('%s: every style token exists in every theme', (_name, path) => {
     // A style binding must resolve once its {slot}s are filled in.
     const [fm] = parse.splitFrontmatter(readText(path as string), path as string);
@@ -146,7 +143,7 @@ describe('the shipped docs against the token resolver', () => {
   test.each(THEME_DOCS.map((f) => [basename(f), f]))('%s: the frontmatter validates against the theme schema', (_name, path) => {
     const [fm] = parse.splitFrontmatter(readText(path as string), path as string);
     expect(fm).toHaveProperty('theme');
-    expect(iterErrors(themeSchema(), fm).map((e) => e.message)).toEqual([]);
+    expect((themeFrontmatter.safeParse(fm).error?.issues ?? []).map((e) => `${e.path.join('.')}: ${e.message}`)).toEqual([]);
   });
 
   test.each(THEME_DOCS.map((f) => [basename(f), f]))('%s: its tokens were derived', (_name, path) => {

@@ -1,0 +1,273 @@
+{
+  "top": [
+    {
+      "label": "Docs",
+      "href": "/docs"
+    },
+    {
+      "label": "GitHub",
+      "href": "https://github.com/design-schema/design-schema",
+      "external": true
+    },
+    {
+      "label": "About",
+      "href": "/about"
+    }
+  ],
+  "docs": [
+    {
+      "phase": "Primitives",
+      "components": [
+        {
+          "name": "Icon",
+          "slug": "icon"
+        },
+        {
+          "name": "Text",
+          "slug": "text"
+        },
+        {
+          "name": "Heading",
+          "slug": "heading"
+        },
+        {
+          "name": "Stack",
+          "slug": "stack"
+        },
+        {
+          "name": "Box",
+          "slug": "box"
+        }
+      ]
+    },
+    {
+      "phase": "Core",
+      "components": [
+        {
+          "name": "Button",
+          "slug": "button"
+        },
+        {
+          "name": "Link",
+          "slug": "link"
+        },
+        {
+          "name": "Input",
+          "slug": "input"
+        },
+        {
+          "name": "Form",
+          "slug": "form"
+        },
+        {
+          "name": "Container",
+          "slug": "container"
+        },
+        {
+          "name": "Card",
+          "slug": "card"
+        },
+        {
+          "name": "Divider",
+          "slug": "divider"
+        }
+      ]
+    },
+    {
+      "phase": "Controls",
+      "components": [
+        {
+          "name": "Checkbox",
+          "slug": "checkbox"
+        },
+        {
+          "name": "Switch",
+          "slug": "switch"
+        },
+        {
+          "name": "RadioGroup",
+          "slug": "radiogroup"
+        },
+        {
+          "name": "Disclosure",
+          "slug": "disclosure"
+        },
+        {
+          "name": "Alert",
+          "slug": "alert"
+        },
+        {
+          "name": "Landmark",
+          "slug": "landmark"
+        },
+        {
+          "name": "Breadcrumb",
+          "slug": "breadcrumb"
+        },
+        {
+          "name": "Meter",
+          "slug": "meter"
+        },
+        {
+          "name": "Fieldset",
+          "slug": "fieldset"
+        }
+      ]
+    },
+    {
+      "phase": "Focus",
+      "components": [
+        {
+          "name": "FocusScope",
+          "slug": "focusscope"
+        },
+        {
+          "name": "Tooltip",
+          "slug": "tooltip"
+        },
+        {
+          "name": "Toast",
+          "slug": "toast"
+        }
+      ]
+    },
+    {
+      "phase": "Overlays",
+      "components": [
+        {
+          "name": "Dialog",
+          "slug": "dialog"
+        },
+        {
+          "name": "AlertDialog",
+          "slug": "alertdialog"
+        },
+        {
+          "name": "Menu",
+          "slug": "menu"
+        },
+        {
+          "name": "Popover",
+          "slug": "popover"
+        },
+        {
+          "name": "BottomSheet",
+          "slug": "bottomsheet"
+        },
+        {
+          "name": "ActionSheet",
+          "slug": "actionsheet"
+        },
+        {
+          "name": "SidePanel",
+          "slug": "sidepanel"
+        }
+      ]
+    },
+    {
+      "phase": "Selection",
+      "components": [
+        {
+          "name": "Tabs",
+          "slug": "tabs"
+        },
+        {
+          "name": "SegmentedControl",
+          "slug": "segmentedcontrol"
+        },
+        {
+          "name": "Listbox",
+          "slug": "listbox"
+        },
+        {
+          "name": "Select",
+          "slug": "select"
+        },
+        {
+          "name": "Combobox",
+          "slug": "combobox"
+        },
+        {
+          "name": "Accordion",
+          "slug": "accordion"
+        }
+      ]
+    },
+    {
+      "phase": "Numeric",
+      "components": [
+        {
+          "name": "Slider",
+          "slug": "slider"
+        },
+        {
+          "name": "NumberInput",
+          "slug": "numberinput"
+        },
+        {
+          "name": "ProgressBar",
+          "slug": "progressbar"
+        },
+        {
+          "name": "Stepper",
+          "slug": "stepper"
+        },
+        {
+          "name": "Search",
+          "slug": "search"
+        },
+        {
+          "name": "DatePicker",
+          "slug": "datepicker"
+        }
+      ]
+    },
+    {
+      "phase": "Rows",
+      "components": [
+        {
+          "name": "Toolbar",
+          "slug": "toolbar"
+        },
+        {
+          "name": "Carousel",
+          "slug": "carousel"
+        },
+        {
+          "name": "Table",
+          "slug": "table"
+        }
+      ]
+    },
+    {
+      "phase": "Grids",
+      "components": [
+        {
+          "name": "DataGrid",
+          "slug": "datagrid"
+        },
+        {
+          "name": "TreeGrid",
+          "slug": "treegrid"
+        },
+        {
+          "name": "Tree",
+          "slug": "tree"
+        }
+      ]
+    },
+    {
+      "phase": "Streams",
+      "components": [
+        {
+          "name": "Splitter",
+          "slug": "splitter"
+        },
+        {
+          "name": "Feed",
+          "slug": "feed"
+        }
+      ]
+    }
+  ]
+}

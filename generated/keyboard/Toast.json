@@ -1,0 +1,34 @@
+{
+  "name": "Toast",
+  "role": "status",
+  "identifier": "Toast",
+  "rules": [
+    {
+      "keys": [
+        "F6"
+      ],
+      "action": "Moves focus into the toast region (the first toast's action or dismiss button) from anywhere; F6 again returns to where focus was.",
+      "from": "any",
+      "expect": "focus-first",
+      "when": "a toast is visible"
+    },
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Dismisses the focused toast and returns focus.",
+      "from": "first",
+      "expect": "closes",
+      "when": "focus inside a toast"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Moves between the action and dismiss buttons, then out of the region.",
+      "from": "first",
+      "expect": "focus-next",
+      "when": "focus inside a toast"
+    }
+  ]
+}

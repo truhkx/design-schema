@@ -1,0 +1,1629 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "bottom",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover trigger={<Button label=\"Filters\" variant=\"secondary\" />}>{defaultBody}</Popover>",
+        "lit": "<ds-popover heading=\"Filters\">\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "popover-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Heading Level 2",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "bottom",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true,
+        "heading": "Filters",
+        "headingLevel": "2"
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"2\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" heading-level=\"2\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"2\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeadingLevel2",
+        "lit": "HeadingLevel2",
+        "rn": "HeadingLevel2",
+        "swift": null
+      },
+      "storyId": "popover-react--heading-level-2",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "2"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Heading Level 3",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "bottom",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true,
+        "heading": "Filters",
+        "headingLevel": "3"
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"3\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" heading-level=\"3\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"3\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeadingLevel3",
+        "lit": "HeadingLevel3",
+        "rn": "HeadingLevel3",
+        "swift": null
+      },
+      "storyId": "popover-react--heading-level-3",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "3"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Heading Level 4",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "bottom",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true,
+        "heading": "Filters",
+        "headingLevel": "4"
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"4\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" heading-level=\"4\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"4\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeadingLevel4",
+        "lit": "HeadingLevel4",
+        "rn": "HeadingLevel4",
+        "swift": null
+      },
+      "storyId": "popover-react--heading-level-4",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "4"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Bottom Start",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "bottom-start",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"bottom-start\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" placement=\"bottom-start\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementBottomStart",
+        "lit": "PlacementBottomStart",
+        "rn": "PlacementBottomStart",
+        "swift": null
+      },
+      "storyId": "popover-react--placement-bottom-start",
+      "sweep": {
+        "prop": "placement",
+        "value": "bottom-start"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Bottom",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "bottom",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"bottom\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" placement=\"bottom\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementBottom",
+        "lit": "PlacementBottom",
+        "rn": "PlacementBottom",
+        "swift": null
+      },
+      "storyId": "popover-react--placement-bottom",
+      "sweep": {
+        "prop": "placement",
+        "value": "bottom"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Bottom End",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "bottom-end",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"bottom-end\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" placement=\"bottom-end\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-end\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementBottomEnd",
+        "lit": "PlacementBottomEnd",
+        "rn": "PlacementBottomEnd",
+        "swift": null
+      },
+      "storyId": "popover-react--placement-bottom-end",
+      "sweep": {
+        "prop": "placement",
+        "value": "bottom-end"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Top Start",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "top-start",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"top-start\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" placement=\"top-start\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-start\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementTopStart",
+        "lit": "PlacementTopStart",
+        "rn": "PlacementTopStart",
+        "swift": null
+      },
+      "storyId": "popover-react--placement-top-start",
+      "sweep": {
+        "prop": "placement",
+        "value": "top-start"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Top",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "top",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"top\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" placement=\"top\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementTop",
+        "lit": "PlacementTop",
+        "rn": "PlacementTop",
+        "swift": null
+      },
+      "storyId": "popover-react--placement-top",
+      "sweep": {
+        "prop": "placement",
+        "value": "top"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Top End",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "top-end",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"top-end\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" placement=\"top-end\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-end\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementTopEnd",
+        "lit": "PlacementTopEnd",
+        "rn": "PlacementTopEnd",
+        "swift": null
+      },
+      "storyId": "popover-react--placement-top-end",
+      "sweep": {
+        "prop": "placement",
+        "value": "top-end"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Start",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "start",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"start\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" placement=\"start\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"start\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementStart",
+        "lit": "PlacementStart",
+        "rn": "PlacementStart",
+        "swift": null
+      },
+      "storyId": "popover-react--placement-start",
+      "sweep": {
+        "prop": "placement",
+        "value": "start"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement End",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "end",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"end\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" placement=\"end\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"end\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementEnd",
+        "lit": "PlacementEnd",
+        "rn": "PlacementEnd",
+        "swift": null
+      },
+      "storyId": "popover-react--placement-end",
+      "sweep": {
+        "prop": "placement",
+        "value": "end"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "With Heading",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "bottom",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true,
+        "heading": "Filters"
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithHeading",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "popover-react--with-heading",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Show Arrow True",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "bottom",
+        "modal": false,
+        "showArrow": true,
+        "dismissible": true,
+        "heading": "Filters"
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  showArrow\n  heading=\"Filters\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" show-arrow open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ShowArrowTrue",
+        "lit": "ShowArrowTrue",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "popover-react--show-arrow-true",
+      "sweep": {
+        "prop": "showArrow",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Modal True",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Add link",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "URL",
+                "name": "url",
+                "placeholder": "https://example.com"
+              },
+              "children": []
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight",
+                "justify": "end"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "Cancel",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "Add",
+                    "variant": "primary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "placement": "bottom",
+        "modal": true,
+        "showArrow": false,
+        "dismissible": false,
+        "heading": "Add link"
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Input, Stack } from '@design-schema/react';\n\n<Popover\n  trigger={<Button label=\"Add link\" variant=\"secondary\" />}\n  modal\n  dismissible={false}\n  heading=\"Add link\"\n>\n  <Stack gap=\"normal\">\n    <Input label=\"URL\" name=\"url\" placeholder=\"https://example.com\" />\n    <Stack direction=\"horizontal\" gap=\"tight\" justify=\"end\">\n      <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"Add\" variant=\"primary\" size=\"sm\" />\n    </Stack>\n  </Stack>\n</Popover>",
+        "lit": "<ds-popover heading=\"Confirm export\" modal open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Export\"></ds-button>\n  <ds-text size=\"sm\">This can't be undone once started.</ds-text>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Start export\"></ds-button>\n</ds-popover>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ModalTrue",
+        "lit": "ModalTrue",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "popover-react--modal-true",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Not Dismissible",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "90 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "bottom",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": false,
+        "heading": "Filters"
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  dismissible={false}\n  heading=\"Filters\"\n>\n  {defaultBody}\n</Popover>",
+        "lit": null,
+        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  dismissible={false}\n  open\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "NotDismissible",
+        "lit": null,
+        "rn": "NotDismissible",
+        "swift": null
+      },
+      "storyId": "popover-react--not-dismissible",
+      "sweep": {
+        "prop": "dismissible",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "7 days",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "30 days",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "90 days",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Reset filters"
+              },
+              "children": []
+            }
+          ]
+        },
+        "placement": "bottom",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true,
+        "open": true,
+        "heading": "Filters"
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Link, Stack } from '@design-schema/react';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  open\n  heading=\"Filters\"\n>\n  <Stack gap=\"normal\">\n    <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-input label=\"Owner\" name=\"owner\" value=\"Me\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
+        "rn": "import * as React from 'react';\nimport { Button, Input, Link, Popover, Stack } from '@design-schema/rn';\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      heading=\"Filters\"\n      trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n      open={open}\n      onOpenChange={(next) => setOpen(next)}\n    >\n      <Stack gap=\"normal\" align=\"start\">\n        <Input label=\"Search\" name=\"search\" />\n        <Link href=\"https://example.com/filters\" label=\"Reset filters\" />\n        <Button label=\"Apply\" onPress={() => setOpen(false)} />\n      </Stack>\n    </Popover>\n  );\n}\n\n<Open />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "popover-react--keyboard",
+      "sweep": {
+        "prop": "open",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

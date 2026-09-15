@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{b as t,h as n}from"./decorators-BlUBDG4K.js";var r,i;function a(){return(a=e((()=>{r=e=>e.replace(/\./g,`-`).replace(/([a-z0-9])([A-Z])/g,`$1-$2`).toLowerCase(),i=e=>`var(--${r(e)})`})))()}var o;function s(){return(s=e((()=>{t(),o=e=>e??n})))()}function c(){return(c=e((()=>{s()})))()}export{a,i,s as n,o as r,c as t};

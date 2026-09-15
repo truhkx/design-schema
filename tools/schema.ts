@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Derive schema/component.schema.json and schema/naming.schema.json from the Zod schemas in
- * schema/component.ts and schema/naming.ts.
+ * Derive schema/{component,naming,theme,extension}.schema.json from the Zod schemas in
+ * schema/{component,naming,theme,extension}.ts.
  *
  *   node tools/schema.ts            writes the JSON schemas (only when they changed)
  *   node tools/schema.ts --check    exits 1 when a committed JSON schema is stale
@@ -18,12 +18,16 @@ import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
 import { componentFrontmatter } from '../schema/component.ts';
+import { extensionFrontmatter } from '../schema/extension.ts';
 import { namingFrontmatter } from '../schema/naming.ts';
+import { themeFrontmatter } from '../schema/theme.ts';
 import { readText, writeTextAtomic } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
 
 export const SCHEMA_FILE: string = join(REPO_ROOT, 'schema', 'component.schema.json');
 export const NAMING_SCHEMA_FILE: string = join(REPO_ROOT, 'schema', 'naming.schema.json');
+export const THEME_SCHEMA_FILE: string = join(REPO_ROOT, 'schema', 'theme.schema.json');
+export const EXTENSION_SCHEMA_FILE: string = join(REPO_ROOT, 'schema', 'extension.schema.json');
 
 export function componentJsonSchema(): Record<string, unknown> {
   const generated = z.toJSONSchema(componentFrontmatter, { target: 'draft-2020-12', io: 'input' }) as Record<string, unknown>;
@@ -49,11 +53,42 @@ export function namingJsonSchema(): Record<string, unknown> {
   };
 }
 
+export function themeJsonSchema(): Record<string, unknown> {
+  const generated = z.toJSONSchema(themeFrontmatter, { target: 'draft-2020-12', io: 'input' }) as Record<string, unknown>;
+  const { $schema, ...rest } = generated;
+  return {
+    $schema,
+    $id: 'https://design-schema.dev/schema/theme.schema.json',
+    title: 'Theme frontmatter',
+    description: "The decisions a theme is derived from. Lives under the `theme:` key of a theme doc's frontmatter. tools/theme.ts turns this into full DTCG token files for every mode. Derived from schema/theme.ts by tools/schema.ts — do not edit by hand.",
+    ...rest,
+  };
+}
+
+/**
+ * The component shapes an extension reuses are inlined as this file's own `$defs` rather than referenced across
+ * files: nothing resolves extension.schema.json's refs (the MCP server serves only component.schema.json, and
+ * tools/parse.ts validates with the Zod schema), so a self-contained file is the simpler contract.
+ */
+export function extensionJsonSchema(): Record<string, unknown> {
+  const generated = z.toJSONSchema(extensionFrontmatter, { target: 'draft-2020-12', io: 'input' }) as Record<string, unknown>;
+  const { $schema, ...rest } = generated;
+  return {
+    $schema,
+    $id: 'https://design-schema.dev/schema/extension.schema.json',
+    title: 'Extension frontmatter',
+    description: "The `extension:` block of site/src/content/docs/extensions/<Component>.<name>.md. Adds props, events, unlocked style bindings, copy, keyboard rules, behavior scenarios and hand-written modules to a system component; tools/parse.ts merges it into the component's schema. Prop/event/style/keyboard/behavior shapes are the component schema's own, inlined here as $defs. Derived from schema/extension.ts by tools/schema.ts — do not edit by hand.",
+    ...rest,
+  };
+}
+
 /** file → (its JSON text, the Zod module it came from). */
 export function targets(): { file: string; source: string; text: string }[] {
   return [
     { file: SCHEMA_FILE, source: 'schema/component.ts', text: JSON.stringify(componentJsonSchema(), null, 2) + '\n' },
     { file: NAMING_SCHEMA_FILE, source: 'schema/naming.ts', text: JSON.stringify(namingJsonSchema(), null, 2) + '\n' },
+    { file: THEME_SCHEMA_FILE, source: 'schema/theme.ts', text: JSON.stringify(themeJsonSchema(), null, 2) + '\n' },
+    { file: EXTENSION_SCHEMA_FILE, source: 'schema/extension.ts', text: JSON.stringify(extensionJsonSchema(), null, 2) + '\n' },
   ];
 }
 

@@ -1,0 +1,44 @@
+# Serves apps/website/dist, a fully static Astro build with one index.html per route.
+#
+# SITE_ADDRESS decides how Caddy listens:
+#   unset (default :80)   plain HTTP on port 80 — local use, or behind another reverse proxy
+#   example.com           automatic HTTPS: Caddy gets and renews a Let's Encrypt certificate, redirects
+#                         HTTP to HTTPS, and needs ports 80 and 443 reachable from the internet
+
+{
+	# No runtime config API inside the container; the Caddyfile is the whole configuration.
+	admin off
+}
+
+{$SITE_ADDRESS::80} {
+	root * /srv
+	encode zstd gzip
+
+	# Astro fingerprints everything under /_astro, so those files can be cached forever.
+	# HTML revalidates, so a redeploy is visible on the next page load.
+	@hashed path /_astro/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+	@html path / *.html */
+	header @html Cache-Control "no-cache"
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	# Directories serve their index.html, and /about redirects to /about/.
+	file_server
+
+	# Error responses (a 404 for a page that does not exist) bypass the header rules above, so they are
+	# repeated here. The site has no 404 page of its own yet, so the body is a plain line.
+	handle_errors {
+		header {
+			X-Content-Type-Options nosniff
+			Referrer-Policy strict-origin-when-cross-origin
+			Cache-Control no-cache
+			-Server
+		}
+		respond "{err.status_code} {err.status_text}"
+	}
+}

@@ -1,0 +1,526 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "width": "content",
+        "gutter": "default",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container>{content}</Container>",
+        "lit": "<ds-container>\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container><Text>Container content</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "container-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Width Prose",
+      "args": {
+        "width": "prose",
+        "gutter": "default",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container width=\"prose\">{content}</Container>",
+        "lit": "<ds-container width=\"prose\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\"><Text>Container content</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WidthProse",
+        "lit": "WidthProse",
+        "rn": "WidthProse",
+        "swift": null
+      },
+      "storyId": "container-react--width-prose",
+      "sweep": {
+        "prop": "width",
+        "value": "prose"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Width Content",
+      "args": {
+        "width": "content",
+        "gutter": "default",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container width=\"content\">{content}</Container>",
+        "lit": "<ds-container width=\"content\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"content\"><Text>Container content</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WidthContent",
+        "lit": "WidthContent",
+        "rn": "WidthContent",
+        "swift": null
+      },
+      "storyId": "container-react--width-content",
+      "sweep": {
+        "prop": "width",
+        "value": "content"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Width Page",
+      "args": {
+        "width": "page",
+        "gutter": "default",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container width=\"page\">{content}</Container>",
+        "lit": "<ds-container width=\"page\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"page\"><Text>Container content</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WidthPage",
+        "lit": "WidthPage",
+        "rn": "WidthPage",
+        "swift": null
+      },
+      "storyId": "container-react--width-page",
+      "sweep": {
+        "prop": "width",
+        "value": "page"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Width Full",
+      "args": {
+        "width": "full",
+        "gutter": "default",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container width=\"full\">{content}</Container>",
+        "lit": "<ds-container width=\"full\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"full\"><Text>Container content</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WidthFull",
+        "lit": "WidthFull",
+        "rn": "WidthFull",
+        "swift": null
+      },
+      "storyId": "container-react--width-full",
+      "sweep": {
+        "prop": "width",
+        "value": "full"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Gutter Narrow",
+      "args": {
+        "width": "content",
+        "gutter": "narrow",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container gutter=\"narrow\">{content}</Container>",
+        "lit": "<ds-container gutter=\"narrow\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"narrow\"><Text>Container content</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "GutterNarrow",
+        "lit": "GutterNarrow",
+        "rn": "GutterNarrow",
+        "swift": null
+      },
+      "storyId": "container-react--gutter-narrow",
+      "sweep": {
+        "prop": "gutter",
+        "value": "narrow"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Gutter Default",
+      "args": {
+        "width": "content",
+        "gutter": "default",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container gutter=\"default\">{content}</Container>",
+        "lit": "<ds-container gutter=\"default\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"default\"><Text>Container content</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "GutterDefault",
+        "lit": "GutterDefault",
+        "rn": "GutterDefault",
+        "swift": null
+      },
+      "storyId": "container-react--gutter-default",
+      "sweep": {
+        "prop": "gutter",
+        "value": "default"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Gutter Wide",
+      "args": {
+        "width": "content",
+        "gutter": "wide",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container gutter=\"wide\">{content}</Container>",
+        "lit": "<ds-container gutter=\"wide\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"wide\"><Text>Container content</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "GutterWide",
+        "lit": "GutterWide",
+        "rn": "GutterWide",
+        "swift": null
+      },
+      "storyId": "container-react--gutter-wide",
+      "sweep": {
+        "prop": "gutter",
+        "value": "wide"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Gutter None",
+      "args": {
+        "width": "content",
+        "gutter": "none",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container gutter=\"none\">{content}</Container>",
+        "lit": "<ds-container gutter=\"none\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"none\"><Text>Container content</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "GutterNone",
+        "lit": "GutterNone",
+        "rn": "GutterNone",
+        "swift": null
+      },
+      "storyId": "container-react--gutter-none",
+      "sweep": {
+        "prop": "gutter",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Align Center",
+      "args": {
+        "width": "content",
+        "gutter": "default",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container align=\"center\">{content}</Container>",
+        "lit": "<ds-container align=\"center\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container align=\"center\"><Text>Container content</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AlignCenter",
+        "lit": "AlignCenter",
+        "rn": "AlignCenter",
+        "swift": null
+      },
+      "storyId": "container-react--align-center",
+      "sweep": {
+        "prop": "align",
+        "value": "center"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Align Start",
+      "args": {
+        "width": "content",
+        "gutter": "default",
+        "align": "start",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container align=\"start\">{content}</Container>",
+        "lit": "<ds-container align=\"start\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container align=\"start\"><Text>Container content</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AlignStart",
+        "lit": "AlignStart",
+        "rn": "AlignStart",
+        "swift": null
+      },
+      "storyId": "container-react--align-start",
+      "sweep": {
+        "prop": "align",
+        "value": "start"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Element Div",
+      "args": {
+        "width": "content",
+        "gutter": "default",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container element=\"div\">{content}</Container>",
+        "lit": "<ds-container element=\"div\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementDiv",
+        "lit": "ElementDiv",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "container-react--element-div",
+      "sweep": {
+        "prop": "element",
+        "value": "div"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Element Main",
+      "args": {
+        "width": "content",
+        "gutter": "default",
+        "align": "center",
+        "element": "main",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container element=\"main\">{content}</Container>",
+        "lit": "<ds-container element=\"main\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementMain",
+        "lit": "ElementMain",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "container-react--element-main",
+      "sweep": {
+        "prop": "element",
+        "value": "main"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Element Section",
+      "args": {
+        "width": "content",
+        "gutter": "default",
+        "align": "center",
+        "element": "section",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "Container content."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container element=\"section\">{content}</Container>",
+        "lit": "<ds-container element=\"section\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementSection",
+        "lit": "ElementSection",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "container-react--element-section",
+      "sweep": {
+        "prop": "element",
+        "value": "section"
+      },
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

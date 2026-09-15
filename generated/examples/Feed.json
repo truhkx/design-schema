@@ -1,0 +1,935 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "Activity",
+        "items": [
+          {
+            "id": "1",
+            "heading": "Ana commented on Invoice 42",
+            "timestamp": {
+              "$unsupported": "minutesAgo(3)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "&quot;Looks good, approving now.&quot;"
+              ]
+            },
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Reply",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            "unread": true
+          },
+          {
+            "id": "2",
+            "heading": "Priya assigned you Ticket 118",
+            "timestamp": {
+              "$unsupported": "minutesAgo(47)"
+            },
+            "content": {
+              "$element": "Fragment",
+              "props": {},
+              "children": [
+                {
+                  "$element": "Text",
+                  "props": {},
+                  "children": [
+                    "&quot;Customer reports the export is missing line items.&quot;"
+                  ]
+                },
+                {
+                  "$element": "Link",
+                  "props": {
+                    "href": "#",
+                    "label": "Open ticket"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          },
+          {
+            "id": "3",
+            "heading": "System backup completed",
+            "timestamp": {
+              "$unsupported": "minutesAgo(180)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {
+                "tone": "muted"
+              },
+              "children": [
+                "All volumes archived successfully."
+              ]
+            }
+          }
+        ],
+        "hasMore": true,
+        "loading": false,
+        "headingLevel": "3"
+      },
+      "snippets": {
+        "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>&quot;Looks good, approving now.&quot;</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <>\n        <Text>&quot;Customer reports the export is missing line items.&quot;</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">\"Looks good, approving now.\"</ds-text>`,\n    actions: html`<ds-link href=\"/invoices/42\">View invoice</ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Priya archived Project Nimbus',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Moved to the archive after the Q3 review.</ds-text>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a new ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">\"Export is failing for large workspaces.\"</ds-text>`,\n    actions: html`<ds-link href=\"/tickets/108\">View ticket</ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" .items=${BASE_ITEMS} end-message=\"\"></ds-feed>\n`;",
+        "rn": "import { View } from 'react-native';\nimport { Button, Feed, type FeedItem, Link, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>\"Looks good, approving now.\"</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <View style={{ gap: 4 }}>\n        <Text>\"Customer reports the export is missing line items.\"</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </View>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "feed-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Heading Level 2",
+      "args": {
+        "label": "Activity",
+        "items": [
+          {
+            "id": "1",
+            "heading": "Ana commented on Invoice 42",
+            "timestamp": {
+              "$unsupported": "minutesAgo(3)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "&quot;Looks good, approving now.&quot;"
+              ]
+            },
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Reply",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            "unread": true
+          },
+          {
+            "id": "2",
+            "heading": "Priya assigned you Ticket 118",
+            "timestamp": {
+              "$unsupported": "minutesAgo(47)"
+            },
+            "content": {
+              "$element": "Fragment",
+              "props": {},
+              "children": [
+                {
+                  "$element": "Text",
+                  "props": {},
+                  "children": [
+                    "&quot;Customer reports the export is missing line items.&quot;"
+                  ]
+                },
+                {
+                  "$element": "Link",
+                  "props": {
+                    "href": "#",
+                    "label": "Open ticket"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          },
+          {
+            "id": "3",
+            "heading": "System backup completed",
+            "timestamp": {
+              "$unsupported": "minutesAgo(180)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {
+                "tone": "muted"
+              },
+              "children": [
+                "All volumes archived successfully."
+              ]
+            }
+          }
+        ],
+        "hasMore": true,
+        "loading": false,
+        "headingLevel": "2"
+      },
+      "snippets": {
+        "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>&quot;Looks good, approving now.&quot;</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <>\n        <Text>&quot;Customer reports the export is missing line items.&quot;</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore headingLevel=\"2\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">\"Looks good, approving now.\"</ds-text>`,\n    actions: html`<ds-link href=\"/invoices/42\">View invoice</ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Priya archived Project Nimbus',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Moved to the archive after the Q3 review.</ds-text>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a new ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">\"Export is failing for large workspaces.\"</ds-text>`,\n    actions: html`<ds-link href=\"/tickets/108\">View ticket</ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" heading-level=\"2\" .items=${BASE_ITEMS} end-message=\"\"></ds-feed>\n`;",
+        "rn": "import { View } from 'react-native';\nimport { Button, Feed, type FeedItem, Link, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>\"Looks good, approving now.\"</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <View style={{ gap: 4 }}>\n        <Text>\"Customer reports the export is missing line items.\"</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </View>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore headingLevel=\"2\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeadingLevel2",
+        "lit": "HeadingLevel2",
+        "rn": "HeadingLevel2",
+        "swift": null
+      },
+      "storyId": "feed-react--heading-level-2",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "2"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Heading Level 3",
+      "args": {
+        "label": "Activity",
+        "items": [
+          {
+            "id": "1",
+            "heading": "Ana commented on Invoice 42",
+            "timestamp": {
+              "$unsupported": "minutesAgo(3)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "&quot;Looks good, approving now.&quot;"
+              ]
+            },
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Reply",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            "unread": true
+          },
+          {
+            "id": "2",
+            "heading": "Priya assigned you Ticket 118",
+            "timestamp": {
+              "$unsupported": "minutesAgo(47)"
+            },
+            "content": {
+              "$element": "Fragment",
+              "props": {},
+              "children": [
+                {
+                  "$element": "Text",
+                  "props": {},
+                  "children": [
+                    "&quot;Customer reports the export is missing line items.&quot;"
+                  ]
+                },
+                {
+                  "$element": "Link",
+                  "props": {
+                    "href": "#",
+                    "label": "Open ticket"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          },
+          {
+            "id": "3",
+            "heading": "System backup completed",
+            "timestamp": {
+              "$unsupported": "minutesAgo(180)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {
+                "tone": "muted"
+              },
+              "children": [
+                "All volumes archived successfully."
+              ]
+            }
+          }
+        ],
+        "hasMore": true,
+        "loading": false,
+        "headingLevel": "3"
+      },
+      "snippets": {
+        "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>&quot;Looks good, approving now.&quot;</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <>\n        <Text>&quot;Customer reports the export is missing line items.&quot;</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore headingLevel=\"3\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">\"Looks good, approving now.\"</ds-text>`,\n    actions: html`<ds-link href=\"/invoices/42\">View invoice</ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Priya archived Project Nimbus',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Moved to the archive after the Q3 review.</ds-text>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a new ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">\"Export is failing for large workspaces.\"</ds-text>`,\n    actions: html`<ds-link href=\"/tickets/108\">View ticket</ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" heading-level=\"3\" .items=${BASE_ITEMS} end-message=\"\"></ds-feed>\n`;",
+        "rn": "import { View } from 'react-native';\nimport { Button, Feed, type FeedItem, Link, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>\"Looks good, approving now.\"</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <View style={{ gap: 4 }}>\n        <Text>\"Customer reports the export is missing line items.\"</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </View>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore headingLevel=\"3\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeadingLevel3",
+        "lit": "HeadingLevel3",
+        "rn": "HeadingLevel3",
+        "swift": null
+      },
+      "storyId": "feed-react--heading-level-3",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "3"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Heading Level 4",
+      "args": {
+        "label": "Activity",
+        "items": [
+          {
+            "id": "1",
+            "heading": "Ana commented on Invoice 42",
+            "timestamp": {
+              "$unsupported": "minutesAgo(3)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "&quot;Looks good, approving now.&quot;"
+              ]
+            },
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Reply",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            "unread": true
+          },
+          {
+            "id": "2",
+            "heading": "Priya assigned you Ticket 118",
+            "timestamp": {
+              "$unsupported": "minutesAgo(47)"
+            },
+            "content": {
+              "$element": "Fragment",
+              "props": {},
+              "children": [
+                {
+                  "$element": "Text",
+                  "props": {},
+                  "children": [
+                    "&quot;Customer reports the export is missing line items.&quot;"
+                  ]
+                },
+                {
+                  "$element": "Link",
+                  "props": {
+                    "href": "#",
+                    "label": "Open ticket"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          },
+          {
+            "id": "3",
+            "heading": "System backup completed",
+            "timestamp": {
+              "$unsupported": "minutesAgo(180)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {
+                "tone": "muted"
+              },
+              "children": [
+                "All volumes archived successfully."
+              ]
+            }
+          }
+        ],
+        "hasMore": true,
+        "loading": false,
+        "headingLevel": "4"
+      },
+      "snippets": {
+        "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>&quot;Looks good, approving now.&quot;</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <>\n        <Text>&quot;Customer reports the export is missing line items.&quot;</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore headingLevel=\"4\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">\"Looks good, approving now.\"</ds-text>`,\n    actions: html`<ds-link href=\"/invoices/42\">View invoice</ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Priya archived Project Nimbus',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Moved to the archive after the Q3 review.</ds-text>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a new ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">\"Export is failing for large workspaces.\"</ds-text>`,\n    actions: html`<ds-link href=\"/tickets/108\">View ticket</ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" heading-level=\"4\" .items=${BASE_ITEMS} end-message=\"\"></ds-feed>\n`;",
+        "rn": "import { View } from 'react-native';\nimport { Button, Feed, type FeedItem, Link, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>\"Looks good, approving now.\"</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <View style={{ gap: 4 }}>\n        <Text>\"Customer reports the export is missing line items.\"</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </View>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore headingLevel=\"4\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeadingLevel4",
+        "lit": "HeadingLevel4",
+        "rn": "HeadingLevel4",
+        "swift": null
+      },
+      "storyId": "feed-react--heading-level-4",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "4"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Loading",
+      "args": {
+        "label": "Activity",
+        "items": [
+          {
+            "id": "1",
+            "heading": "Ana commented on Invoice 42",
+            "timestamp": {
+              "$unsupported": "minutesAgo(3)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "&quot;Looks good, approving now.&quot;"
+              ]
+            },
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Reply",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            "unread": true
+          },
+          {
+            "id": "2",
+            "heading": "Priya assigned you Ticket 118",
+            "timestamp": {
+              "$unsupported": "minutesAgo(47)"
+            },
+            "content": {
+              "$element": "Fragment",
+              "props": {},
+              "children": [
+                {
+                  "$element": "Text",
+                  "props": {},
+                  "children": [
+                    "&quot;Customer reports the export is missing line items.&quot;"
+                  ]
+                },
+                {
+                  "$element": "Link",
+                  "props": {
+                    "href": "#",
+                    "label": "Open ticket"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          },
+          {
+            "id": "3",
+            "heading": "System backup completed",
+            "timestamp": {
+              "$unsupported": "minutesAgo(180)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {
+                "tone": "muted"
+              },
+              "children": [
+                "All volumes archived successfully."
+              ]
+            }
+          }
+        ],
+        "hasMore": true,
+        "loading": true,
+        "headingLevel": "3"
+      },
+      "snippets": {
+        "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>&quot;Looks good, approving now.&quot;</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <>\n        <Text>&quot;Customer reports the export is missing line items.&quot;</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore loading />",
+        "lit": null,
+        "rn": "import { View } from 'react-native';\nimport { Button, Feed, type FeedItem, Link, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>\"Looks good, approving now.\"</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <View style={{ gap: 4 }}>\n        <Text>\"Customer reports the export is missing line items.\"</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </View>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore loading />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Loading",
+        "lit": null,
+        "rn": "Loading",
+        "swift": null
+      },
+      "storyId": "feed-react--loading",
+      "sweep": {
+        "prop": "loading",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "End Of Feed",
+      "args": {
+        "label": "Activity",
+        "items": [
+          {
+            "id": "1",
+            "heading": "Ana commented on Invoice 42",
+            "timestamp": {
+              "$unsupported": "minutesAgo(3)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "&quot;Looks good, approving now.&quot;"
+              ]
+            },
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Reply",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            "unread": true
+          },
+          {
+            "id": "2",
+            "heading": "Priya assigned you Ticket 118",
+            "timestamp": {
+              "$unsupported": "minutesAgo(47)"
+            },
+            "content": {
+              "$element": "Fragment",
+              "props": {},
+              "children": [
+                {
+                  "$element": "Text",
+                  "props": {},
+                  "children": [
+                    "&quot;Customer reports the export is missing line items.&quot;"
+                  ]
+                },
+                {
+                  "$element": "Link",
+                  "props": {
+                    "href": "#",
+                    "label": "Open ticket"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          },
+          {
+            "id": "3",
+            "heading": "System backup completed",
+            "timestamp": {
+              "$unsupported": "minutesAgo(180)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {
+                "tone": "muted"
+              },
+              "children": [
+                "All volumes archived successfully."
+              ]
+            }
+          }
+        ],
+        "hasMore": false,
+        "loading": false,
+        "headingLevel": "3"
+      },
+      "snippets": {
+        "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>&quot;Looks good, approving now.&quot;</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <>\n        <Text>&quot;Customer reports the export is missing line items.&quot;</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore={false} />",
+        "lit": null,
+        "rn": "import { View } from 'react-native';\nimport { Button, Feed, type FeedItem, Link, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>\"Looks good, approving now.\"</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <View style={{ gap: 4 }}>\n        <Text>\"Customer reports the export is missing line items.\"</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </View>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore={false} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "EndOfFeed",
+        "lit": null,
+        "rn": "EndOfFeed",
+        "swift": null
+      },
+      "storyId": "feed-react--end-of-feed",
+      "sweep": {
+        "prop": "hasMore",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Custom End Message",
+      "args": {
+        "label": "Activity",
+        "items": [
+          {
+            "id": "1",
+            "heading": "Ana commented on Invoice 42",
+            "timestamp": {
+              "$unsupported": "minutesAgo(3)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "&quot;Looks good, approving now.&quot;"
+              ]
+            },
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Reply",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            "unread": true
+          },
+          {
+            "id": "2",
+            "heading": "Priya assigned you Ticket 118",
+            "timestamp": {
+              "$unsupported": "minutesAgo(47)"
+            },
+            "content": {
+              "$element": "Fragment",
+              "props": {},
+              "children": [
+                {
+                  "$element": "Text",
+                  "props": {},
+                  "children": [
+                    "&quot;Customer reports the export is missing line items.&quot;"
+                  ]
+                },
+                {
+                  "$element": "Link",
+                  "props": {
+                    "href": "#",
+                    "label": "Open ticket"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          },
+          {
+            "id": "3",
+            "heading": "System backup completed",
+            "timestamp": {
+              "$unsupported": "minutesAgo(180)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {
+                "tone": "muted"
+              },
+              "children": [
+                "All volumes archived successfully."
+              ]
+            }
+          }
+        ],
+        "hasMore": false,
+        "loading": false,
+        "headingLevel": "3",
+        "endMessage": "That's everything for today."
+      },
+      "snippets": {
+        "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>&quot;Looks good, approving now.&quot;</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <>\n        <Text>&quot;Customer reports the export is missing line items.&quot;</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed\n  label=\"Activity\"\n  items={SAMPLE_ITEMS}\n  hasMore={false}\n  endMessage=\"That's everything for today.\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">\"Looks good, approving now.\"</ds-text>`,\n    actions: html`<ds-link href=\"/invoices/42\">View invoice</ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Priya archived Project Nimbus',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Moved to the archive after the Q3 review.</ds-text>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a new ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">\"Export is failing for large workspaces.\"</ds-text>`,\n    actions: html`<ds-link href=\"/tickets/108\">View ticket</ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" .items=${BASE_ITEMS} end-message=\"No more activity today.\"></ds-feed>\n`;",
+        "rn": "import { View } from 'react-native';\nimport { Button, Feed, type FeedItem, Link, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>\"Looks good, approving now.\"</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <View style={{ gap: 4 }}>\n        <Text>\"Customer reports the export is missing line items.\"</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </View>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed\n  label=\"Activity\"\n  items={SAMPLE_ITEMS}\n  hasMore={false}\n  endMessage=\"That's everything for today.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "CustomEndMessage",
+        "lit": "CustomEndMessage",
+        "rn": "CustomEndMessage",
+        "swift": null
+      },
+      "storyId": "feed-react--custom-end-message",
+      "sweep": {
+        "prop": "hasMore",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "New Items Available",
+      "args": {
+        "label": "Activity",
+        "items": [
+          {
+            "id": "1",
+            "heading": "Ana commented on Invoice 42",
+            "timestamp": {
+              "$unsupported": "minutesAgo(3)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "&quot;Looks good, approving now.&quot;"
+              ]
+            },
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Reply",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            "unread": true
+          },
+          {
+            "id": "2",
+            "heading": "Priya assigned you Ticket 118",
+            "timestamp": {
+              "$unsupported": "minutesAgo(47)"
+            },
+            "content": {
+              "$element": "Fragment",
+              "props": {},
+              "children": [
+                {
+                  "$element": "Text",
+                  "props": {},
+                  "children": [
+                    "&quot;Customer reports the export is missing line items.&quot;"
+                  ]
+                },
+                {
+                  "$element": "Link",
+                  "props": {
+                    "href": "#",
+                    "label": "Open ticket"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          },
+          {
+            "id": "3",
+            "heading": "System backup completed",
+            "timestamp": {
+              "$unsupported": "minutesAgo(180)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {
+                "tone": "muted"
+              },
+              "children": [
+                "All volumes archived successfully."
+              ]
+            }
+          }
+        ],
+        "hasMore": true,
+        "loading": false,
+        "headingLevel": "3",
+        "newItemsCount": 4
+      },
+      "snippets": {
+        "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>&quot;Looks good, approving now.&quot;</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <>\n        <Text>&quot;Customer reports the export is missing line items.&quot;</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore newItemsCount={4} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">\"Looks good, approving now.\"</ds-text>`,\n    actions: html`<ds-link href=\"/invoices/42\">View invoice</ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Priya archived Project Nimbus',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Moved to the archive after the Q3 review.</ds-text>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a new ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">\"Export is failing for large workspaces.\"</ds-text>`,\n    actions: html`<ds-link href=\"/tickets/108\">View ticket</ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" new-items-count=\"4\" .items=${BASE_ITEMS} end-message=\"\"></ds-feed>\n`;",
+        "rn": "import { View } from 'react-native';\nimport { Button, Feed, type FeedItem, Link, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>\"Looks good, approving now.\"</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <View style={{ gap: 4 }}>\n        <Text>\"Customer reports the export is missing line items.\"</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </View>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore newItemsCount={4} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NewItemsAvailable",
+        "lit": "NewItemsCount",
+        "rn": "NewItemsAvailable",
+        "swift": null
+      },
+      "storyId": "feed-react--new-items-available",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Empty",
+      "args": {
+        "label": "Activity",
+        "items": [],
+        "hasMore": false,
+        "loading": false,
+        "headingLevel": "3"
+      },
+      "snippets": {
+        "react": "import { Feed } from '@design-schema/react';\n\n<Feed label=\"Activity\" items={[]} hasMore={false} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-feed label=\"Activity\" .items=${[]} end-message=\"\"></ds-feed>\n`;",
+        "rn": "import { Feed } from '@design-schema/rn';\n\n<Feed label=\"Activity\" items={[]} hasMore={false} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Empty",
+        "lit": "Empty",
+        "rn": "Empty",
+        "swift": null
+      },
+      "storyId": "feed-react--empty",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "label": "Activity",
+        "items": [
+          {
+            "id": "1",
+            "heading": "Ana commented on Invoice 42",
+            "timestamp": {
+              "$unsupported": "minutesAgo(3)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "&quot;Looks good, approving now.&quot;"
+              ]
+            },
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Reply",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            "unread": true
+          },
+          {
+            "id": "2",
+            "heading": "Priya assigned you Ticket 118",
+            "timestamp": {
+              "$unsupported": "minutesAgo(47)"
+            },
+            "content": {
+              "$element": "Fragment",
+              "props": {},
+              "children": [
+                {
+                  "$element": "Text",
+                  "props": {},
+                  "children": [
+                    "&quot;Customer reports the export is missing line items.&quot;"
+                  ]
+                },
+                {
+                  "$element": "Link",
+                  "props": {
+                    "href": "#",
+                    "label": "Open ticket"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          },
+          {
+            "id": "3",
+            "heading": "System backup completed",
+            "timestamp": {
+              "$unsupported": "minutesAgo(180)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {
+                "tone": "muted"
+              },
+              "children": [
+                "All volumes archived successfully."
+              ]
+            }
+          },
+          {
+            "id": "4",
+            "heading": "Diego mentioned you in Project Nova",
+            "timestamp": {
+              "$unsupported": "minutesAgo(240)"
+            },
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "&quot;Can you take a look at the latest draft?&quot;"
+              ]
+            },
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "View",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          }
+        ],
+        "hasMore": true,
+        "loading": false,
+        "headingLevel": "3"
+      },
+      "snippets": {
+        "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>&quot;Looks good, approving now.&quot;</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <>\n        <Text>&quot;Customer reports the export is missing line items.&quot;</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed\n  label=\"Activity\"\n  items={[\n    ...SAMPLE_ITEMS,\n    {\n      id: '4',\n      heading: 'Diego mentioned you in Project Nova',\n      timestamp: minutesAgo(240),\n      content: <Text>&quot;Can you take a look at the latest draft?&quot;</Text>,\n      actions: <Button label=\"View\" variant=\"secondary\" size=\"sm\" />,\n    },\n  ]}\n  hasMore\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">\"Looks good, approving now.\"</ds-text>`,\n    actions: html`<ds-link href=\"/invoices/42\">View invoice</ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Priya archived Project Nimbus',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Moved to the archive after the Q3 review.</ds-text>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a new ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">\"Export is failing for large workspaces.\"</ds-text>`,\n    actions: html`<ds-link href=\"/tickets/108\">View ticket</ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" new-items-count=\"2\" .items=${BASE_ITEMS} end-message=\"\"></ds-feed>\n`;",
+        "rn": "import { View } from 'react-native';\nimport { Button, Feed, type FeedItem, Link, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60 * 1000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>\"Looks good, approving now.\"</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <View style={{ gap: 4 }}>\n        <Text>\"Customer reports the export is missing line items.\"</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </View>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'System backup completed',\n    timestamp: minutesAgo(180),\n    content: <Text tone=\"muted\">All volumes archived successfully.</Text>,\n  },\n];\n\n<Feed\n  label=\"Activity\"\n  items={[\n    ...SAMPLE_ITEMS,\n    {\n      id: '4',\n      heading: 'Diego mentioned you in Project Nova',\n      timestamp: minutesAgo(240),\n      content: <Text>\"Can you take a look at the latest draft?\"</Text>,\n      actions: <Button label=\"View\" variant=\"secondary\" size=\"sm\" />,\n    },\n  ]}\n  hasMore\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "feed-react--keyboard",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

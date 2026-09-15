@@ -1,0 +1,159 @@
+[
+  {
+    "id": "calm-precise",
+    "title": "Calm & precise",
+    "description": "Quiet, cool neutrals with a slate-blue accent, small radii, and a tight type scale. The default theme.",
+    "published": true,
+    "theme": {
+      "id": "calm-precise",
+      "status": "review",
+      "tone": [
+        "calm",
+        "precise",
+        "quiet",
+        "trustworthy"
+      ],
+      "not": "playful",
+      "seed": {
+        "color": "#3B5BDB",
+        "typeface": "system",
+        "mono": "system"
+      },
+      "neutralTint": 0.25,
+      "scale": {
+        "base": 16,
+        "ratio": 1.2
+      },
+      "radius": "sm",
+      "density": "comfortable",
+      "motion": "subtle",
+      "elevation": "subtle",
+      "layout": {
+        "rhythm": "normal",
+        "contentWidth": 960
+      },
+      "modes": {
+        "default": "light",
+        "supports": [
+          "light",
+          "dark"
+        ]
+      }
+    },
+    "sections": {
+      "Overview": "Calm & precise is for products people live in for hours: editors, consoles, planning tools, anything where the interface should recede and the work should come forward. It is confident without raising its voice.",
+      "Feel": "Surfaces are near-white or near-black with a faint cool cast borrowed from the accent, so grays feel deliberate rather than default. The slate-blue accent appears in exactly the places that need it — the primary action, focus rings, links — and nowhere decorative. Corners are barely rounded: enough to feel finished, not enough to feel soft. Type uses the platform's own system face so every screen feels native to the device it is on, with a 1.2 modular scale that keeps headings close in size to body text; hierarchy comes from weight and spacing more than from size. Spacing sits on a comfortable 4px grid with no extra air.\n\nMotion, when it exists, is short (120–200 ms), eased-out, and never bounces. Nothing pulses, wiggles, or celebrates. Emphasis is created by removing things from around the element that matters, not by making it louder.",
+      "Not playful": "When a decision is borderline, this is the tiebreaker. Prefer the smaller radius. Prefer the less saturated color. Prefer the shorter, plainer word in the label. Prefer no animation over a tasteful one. Prefer a neutral surface over a tinted one. Prefer weight over size for hierarchy. If a choice would make a designer say \"fun\", make the other choice.",
+      "References": "Learn from Linear's restraint and focus handling, from GitHub Primer's neutral scales and density, and from Vercel's use of near-monochrome with a single accent. Avoid the look of consumer fintech onboarding: large rounded pills, gradients, and illustration-led empty states.",
+      "When to use": "Choose this theme for professional and productivity software, developer tools, dashboards used all day, and any product whose users would describe the ideal interface as \"gets out of the way\". It is the safest default when the brand is undefined.",
+      "When not to use": "Do not use it for consumer marketing pages, products aimed at children, or brands whose personality is warmth or energy — the restraint will read as cold. Use a warmer or bolder theme and keep this one for the settings screens.",
+      "Accessibility": "Both modes are derived to meet WCAG 2.2 AA on every action variant and AAA on headings against the page background; the build proves it. The focus ring is the accent at 2px, visible on every surface. The 24px minimum target is enforced in every component; the 44px comfortable target is used on touch platforms.",
+      "Platform notes": "### Web\n`system-ui` resolves to San Francisco, Segoe UI, or Roboto per OS. Apply the theme with `data-theme=\"calm-precise\"` and switch modes with `data-mode=\"dark\"` on the root element.\n\n### Lit\nToken custom properties inherit through shadow roots, so the same root attributes theme every custom element without extra wiring.\n\n### React Native\n`system` maps to the platform default family (leave `fontFamily` unset, or use `System` on iOS). Import `packages/tokens/dist/calm-precise/rn/tokens.light.js` or `.dark.js` and select with the `useColorScheme` hook."
+    },
+    "source": "site\\src\\content\\docs\\themes\\calm-precise.md"
+  },
+  {
+    "id": "warm-friendly",
+    "title": "Warm & friendly",
+    "description": "Sand surfaces with near-black type and actions, medium radii, a roomy rhythm and unhurried motion. Warm without being loud; the second theme, and the first two-seed palette.",
+    "published": true,
+    "theme": {
+      "id": "warm-friendly",
+      "status": "review",
+      "tone": [
+        "warm",
+        "tactile",
+        "calm",
+        "confident"
+      ],
+      "not": "loud",
+      "seed": {
+        "color": "#1E1A16",
+        "neutral": "#C9B99C",
+        "typeface": "system",
+        "mono": "system"
+      },
+      "scale": {
+        "base": 16,
+        "ratio": 1.25
+      },
+      "radius": "md",
+      "density": "roomy",
+      "motion": "subtle",
+      "elevation": "flat",
+      "layout": {
+        "rhythm": "loose",
+        "contentWidth": 1040
+      },
+      "modes": {
+        "default": "light",
+        "supports": [
+          "light",
+          "dark"
+        ]
+      }
+    },
+    "sections": {
+      "Overview": "Warm & friendly is a small business that wants to feel like a well-made object rather than a website: a coffee roaster, a furniture maker, a studio. The page is sand, not white; the type and the buttons are a warm near-black; nothing shouts. It borrows the confidence of matte consumer hardware — the kind sold on a tan page with black type — without borrowing anyone's brand: the values here are ours, derived from two seeds.",
+      "Feel": "Surfaces are sand in light mode and warm black in dark mode; there is no pure white or pure black anywhere. The primary action is ink on sand (and sand on ink in dark mode), so a button reads as the most solid thing on the page rather than the most colorful. Links are the text color with an underline. Corners are medium: rounded enough to feel handled, not pill-shaped. Type is the system face at a 1.25 scale, with hierarchy from weight and space. Spacing is roomy and the rhythm between sections is loose; elevation is flat, so surfaces are told apart by tone, not shadow.",
+      "Not loud": "When a decision is borderline: prefer the quieter tone, the flatter surface, the plainer label, the smaller motion. Status colors appear only where status is real (an error, a success message), never as decoration. If an element needs attention, give it space and ink, not color.",
+      "References": "The restraint of matte consumer hardware storefronts (tan paper, black type, one product per screen), the tonal layering of Kinfolk-style editorial layouts, and the flat, tone-separated surfaces of Notion's light theme. Avoid saturated accents, gradients, and glassy overlays.",
+      "When to use": "Product-led small businesses with photography to show; brand sites; anything where the object is the hero and the interface should feel like packaging.",
+      "When not to use": "Dense tools and data-heavy admin screens: the roomy rhythm and flat elevation cost density and separation. Use calm-precise there."
+    },
+    "source": "site\\src\\content\\docs\\themes\\warm-friendly.md"
+  },
+  {
+    "id": "warm-sleek",
+    "title": "Warm & sleek",
+    "description": "Cream surfaces with a pale-oak seed, ashy warm neutrals, medium radii, expressive motion and pronounced layering. Light by default, dark derived.",
+    "published": false,
+    "theme": {
+      "id": "warm-sleek",
+      "status": "draft",
+      "tone": [
+        "warm",
+        "sleek",
+        "modern",
+        "light"
+      ],
+      "not": "cold",
+      "seed": {
+        "color": "#FFEBBA",
+        "typeface": "Google Sans",
+        "mono": "system"
+      },
+      "neutralTint": 0.35,
+      "scale": {
+        "base": 16,
+        "ratio": 1.25
+      },
+      "radius": "md",
+      "density": "comfortable",
+      "motion": "expressive",
+      "elevation": "pronounced",
+      "layout": {
+        "rhythm": "normal",
+        "contentWidth": 1040
+      },
+      "modes": {
+        "default": "light",
+        "supports": [
+          "light",
+          "dark"
+        ]
+      }
+    },
+    "sections": {
+      "Overview": "Warm & sleek is for products people enjoy opening: media, lifestyle, consumer apps with a personality. It borrows the polish of a modern streaming app and turns the lights on — light surfaces, warm tone, generous motion — without the weight.",
+      "Feel": "Surfaces are cream rather than white: the pale-oak seed bleeds into the neutrals so light backgrounds feel like paper in daylight and the darkest neutral is an ashy, warm near-black rather than a cold one. The accent is the darker end of the same wood hue — amber on light surfaces, honey on dark — and it appears on primary actions, focus rings and links, never as decoration. Corners are clearly rounded (medium) so controls feel soft in the hand while staying rectangular enough to line up. Type is Google Sans throughout, on a 1.25 scale: headings are noticeably larger than body text and carry the hierarchy on their own, so weight can stay regular or medium. Spacing sits on a comfortable 4px grid with normal rhythm between sections.\n\nMotion is expressive: transitions are a little longer, ease with a soft overshoot, and content slides rather than fades. Layering is pronounced: cards, sheets and menus lift off the page with real shadows, and the page has depth even in light mode. Emphasis comes from elevation and warmth, not from saturation.",
+      "Not cold": "When a decision is borderline, this is the tiebreaker. Prefer the tinted neutral over the pure gray. Prefer the warmer of two accent steps. Prefer a shadow over a border. Prefer a rounded corner over a square one. Prefer motion that carries the user somewhere over an instant cut. Prefer a friendly, spoken label over a terse one. If a choice would make the screen look like a spreadsheet, make the other choice.",
+      "References": "Learn from Spotify's confidence with layering and motion, from Airbnb's warm neutrals and generous type, and from Material 3's tonal surfaces. Avoid the look of developer tooling: hairline borders, monochrome icons and nothing lifted off the page.",
+      "When to use": "Choose this theme for consumer products, media and entertainment, lifestyle and wellness apps, and marketing surfaces where warmth is part of the brand. It works best when the product has content — images, covers, cards — for the layering to hold.",
+      "When not to use": "Do not use it for dense professional tools, dashboards used all day, or data-heavy screens: the expressive motion and pronounced shadows compete with the work. Use Calm & precise there and keep this theme for the product's public face.",
+      "Accessibility": "Both modes are derived to meet WCAG 2.2 AA on every action variant and AAA on headings against the page background; the build proves it. The pale seed means the primary action is taken from the dark end of the wood ramp, so the check is what decides whether the warm accent is usable on cream. The focus ring is the accent at 2px, visible on every surface. Expressive motion is removed under reduced-motion preferences on every platform. The 24px minimum target is enforced in every component; the 44px comfortable target is used on touch platforms.",
+      "Platform notes": "### Web\nGoogle Sans is not a freely hosted web font; load it from your own font files and it falls back to the system stack (`system-ui`) when missing. Apply the theme with `data-theme=\"warm-sleek\"` and switch modes with `data-mode=\"dark\"` on the root element.\n\n### Lit\nToken custom properties inherit through shadow roots, so the same root attributes theme every custom element without extra wiring. Shadows are tokens too, so pronounced elevation reaches into every element.\n\n### React Native\nBundle Google Sans with the app and register it under that family name; when it is absent the family resolves to the platform default. Import `packages/tokens/dist/warm-sleek/rn/tokens.light.js` or `.dark.js` and select with the `useColorScheme` hook. Expressive durations are numbers here; pass them to `Animated` with the standard easing token."
+    },
+    "source": "site\\src\\content\\docs\\themes\\warm-sleek.md"
+  }
+]

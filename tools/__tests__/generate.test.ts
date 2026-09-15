@@ -10,6 +10,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync,
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
+import { PACKAGE_DIR, PLATFORM_LABEL } from '../../schema/platforms.ts';
 import type { GateResult } from '../checks.ts';
 import * as g from '../generate.ts';
 import { readText } from '../lib/py.ts';
@@ -48,6 +49,7 @@ beforeEach(() => {
     LOGS: join(dir, 'logs'),
     GAPS: join(dir, 'gaps'),
     CONVENTIONS: join(dir, 'conventions'),
+    COMPONENTS: join(dir, 'components.json'),
   });
   mkdirSync(g.paths.PROMPTS, { recursive: true });
   // The gates are the previous job's tests; every case here stubs them out.
@@ -184,12 +186,12 @@ describe('the legacy lockfile', () => {
 
   test('is kept while a generator run is active, then removed', () => {
     mkdirSync(g.paths.LOGS, { recursive: true });
-    write(join(g.paths.LOGS, 'tier2.log'), '== tier2 ==\nround 1: model');
+    write(join(g.paths.LOGS, 'regen.log'), '== regen ==\nround 1: model');
     write(g.paths.LEGACY_LOCK, JSON.stringify({ 'Button.rn': entry('r') }));
     expect(g.loadLock()['Button.rn']).toEqual(entry('r'));
     expect(existsSync(g.paths.LEGACY_LOCK), 'an older process would rewrite it; merge instead of delete').toBe(true);
     expect(std.out()).toContain('kept');
-    write(join(g.paths.LOGS, 'tier2.log'), '== tier2 ==\n== done ==');
+    write(join(g.paths.LOGS, 'regen.log'), '== regen ==\n== done ==');
     g.loadLock();
     expect(existsSync(g.paths.LEGACY_LOCK)).toBe(false);
   });
@@ -198,19 +200,19 @@ describe('the legacy lockfile', () => {
 describe('generatorRunning', () => {
   test('a stale log without its end marker does not count as running', () => {
     mkdirSync(g.paths.LOGS, { recursive: true });
-    const log = join(g.paths.LOGS, 'tier2.log');
-    write(log, '== tier2 ==\nround 1: model');
+    const log = join(g.paths.LOGS, 'regen.log');
+    write(log, '== regen ==\nround 1: model');
     const old = Date.now() / 1000 - g.RUNNING_LOG_MAX_AGE_S - 60;
     utimesSync(log, old, old);
     expect(g.generatorRunning()).toBe(false);
-    write(log, '== tier2 ==\nround 2: model'); // touched now
+    write(log, '== regen ==\nround 2: model'); // touched now
     expect(g.generatorRunning()).toBe(true);
   });
 
-  test('either end marker, a regen log, or no logs folder at all', () => {
+  test('either end marker, a per-platform regen log, or no logs folder at all', () => {
     expect(g.generatorRunning()).toBe(false); // no logs/
     mkdirSync(g.paths.LOGS, { recursive: true });
-    write(join(g.paths.LOGS, 'tier2.log'), 'queue complete');
+    write(join(g.paths.LOGS, 'regen.log'), 'queue complete');
     expect(g.generatorRunning()).toBe(false);
     write(join(g.paths.LOGS, 'regen-web.log'), '== regen ==\nround 1');
     expect(g.generatorRunning()).toBe(true);
@@ -226,6 +228,17 @@ describe('targets', () => {
 
   test('every prompt but the theme becomes a target, the platform split off the end', () => {
     expect(g.allTargets()).toEqual([['Button', 'web'], ['Pattern.SettingsPage', 'rn']]);
+  });
+
+  test('a pair the doc marks supported: false is never a target, from a leftover prompt or from --component', async () => {
+    write(join(g.paths.PROMPTS, 'Button.rn.md'), 'spec for Button.rn.md\n'); // written before the doc ruled rn out
+    write(g.paths.COMPONENTS, JSON.stringify([{ component: { name: 'Button', platforms: { web: {}, rn: { supported: false } } } }]));
+    expect(g.unsupportedTargets()).toEqual(new Set(['Button.rn']));
+    expect(g.allTargets()).toEqual([['Button', 'web'], ['Pattern.SettingsPage', 'rn']]);
+    g.hooks.taskPrompt = () => 'task';
+    expect(await g.main(['--platform', 'web,rn', '--component', 'Button', '--dry-run'])).toBe(0);
+    expect(std.out()).toContain('skip   Button.rn: platforms.rn.supported is false\n');
+    expect(std.out()).toContain('targets: Button.web\n');
   });
 
   test('a target is stale until its lock entry carries the prompt hash', () => {
@@ -871,7 +884,7 @@ describe('the command line', () => {
   });
 
   test('an unknown platform exits 1 with the message on stderr', async () => {
-    // `compose` is the other platform id the schema reserves; nothing generates it yet.
+    // `compose` was a reserved platform id until job 607 dropped it from the table.
     expect(await g.main(['--platform', 'compose', '--component', 'Icon'])).toBe(1);
     expect(std.err()).toBe('unknown platform compose\n');
   });
@@ -957,8 +970,8 @@ describe('the swiftui platform', () => {
   }
 
   test('the platform is known, labelled, and points at the Swift package', () => {
-    expect(g.PKG['swiftui']).toBe('swiftui');
-    expect(g.PLATFORM_LABEL['swiftui']).toBe('SwiftUI (iOS)');
+    expect(PACKAGE_DIR['swiftui']).toBe('swiftui');
+    expect(PLATFORM_LABEL['swiftui']).toBe('SwiftUI (iOS)');
     expect(g.REMOTE_GATE.has('swiftui')).toBe(true);
     expect(g.CONVENTION_FILES['swiftui']?.[0]).toBe('packages/swiftui/Sources/DesignSchema/Support/Gallery.swift');
     expect(g.CONVENTION_FILES['swiftui']?.[1]).toBe('packages/swiftui/Sources/DesignSchema/Button.swift');

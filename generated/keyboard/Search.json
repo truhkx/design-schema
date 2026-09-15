@@ -1,0 +1,49 @@
+{
+  "name": "Search",
+  "role": "searchbox",
+  "identifier": "Search",
+  "rules": [
+    {
+      "keys": [
+        "Enter"
+      ],
+      "action": "Submits the query (or the highlighted suggestion).",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Closes suggestions if open; otherwise clears the field.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "Opens suggestions and highlights the first; then moves down.",
+      "from": "first",
+      "expect": "manual",
+      "when": "suggestions"
+    },
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "Moves up; from the first, back to the input with no highlight.",
+      "from": "first",
+      "expect": "manual",
+      "when": "suggestions"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Leaves the field: to the clear button when the field has text, then the submit button.",
+      "from": "first",
+      "expect": "focus-next"
+    }
+  ]
+}

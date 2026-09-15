@@ -1,0 +1,446 @@
+{
+  "layout": "sweep",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "level": "2",
+        "children": "Account settings",
+        "align": "start"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"2\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2}>Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "heading-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Level 1",
+      "args": {
+        "level": "1",
+        "children": "Account settings",
+        "align": "start"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"1\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"1\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={1}>Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Level1",
+        "lit": "Level1",
+        "rn": "Level1",
+        "swift": null
+      },
+      "storyId": "heading-react--level-1",
+      "sweep": {
+        "prop": "level",
+        "value": "1"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Level 2",
+      "args": {
+        "level": "2",
+        "children": "Account settings",
+        "align": "start"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"2\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2}>Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Level2",
+        "lit": "Level2",
+        "rn": "Level2",
+        "swift": null
+      },
+      "storyId": "heading-react--level-2",
+      "sweep": {
+        "prop": "level",
+        "value": "2"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Level 3",
+      "args": {
+        "level": "3",
+        "children": "Account settings",
+        "align": "start"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"3\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"3\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={3}>Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Level3",
+        "lit": "Level3",
+        "rn": "Level3",
+        "swift": null
+      },
+      "storyId": "heading-react--level-3",
+      "sweep": {
+        "prop": "level",
+        "value": "3"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Level 4",
+      "args": {
+        "level": "4",
+        "children": "Account settings",
+        "align": "start"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"4\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"4\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={4}>Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Level4",
+        "lit": "Level4",
+        "rn": "Level4",
+        "swift": null
+      },
+      "storyId": "heading-react--level-4",
+      "sweep": {
+        "prop": "level",
+        "value": "4"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Level 5",
+      "args": {
+        "level": "5",
+        "children": "Account settings",
+        "align": "start"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"5\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"5\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={5}>Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Level5",
+        "lit": "Level5",
+        "rn": "Level5",
+        "swift": null
+      },
+      "storyId": "heading-react--level-5",
+      "sweep": {
+        "prop": "level",
+        "value": "5"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Level 6",
+      "args": {
+        "level": "6",
+        "children": "Account settings",
+        "align": "start"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"6\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"6\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={6}>Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Level6",
+        "lit": "Level6",
+        "rn": "Level6",
+        "swift": null
+      },
+      "storyId": "heading-react--level-6",
+      "sweep": {
+        "prop": "level",
+        "value": "6"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size 4 Xl",
+      "args": {
+        "level": "2",
+        "children": "Account settings",
+        "align": "start",
+        "size": "4xl"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"4xl\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"2\" size=\"4xl\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"4xl\">Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Size4xl",
+        "lit": "Size4xl",
+        "rn": "Size4xl",
+        "swift": null
+      },
+      "storyId": "heading-react--size-4-xl",
+      "sweep": {
+        "prop": "size",
+        "value": "4xl"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size 3 Xl",
+      "args": {
+        "level": "2",
+        "children": "Account settings",
+        "align": "start",
+        "size": "3xl"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"3xl\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"2\" size=\"3xl\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"3xl\">Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Size3xl",
+        "lit": "Size3xl",
+        "rn": "Size3xl",
+        "swift": null
+      },
+      "storyId": "heading-react--size-3-xl",
+      "sweep": {
+        "prop": "size",
+        "value": "3xl"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size 2 Xl",
+      "args": {
+        "level": "2",
+        "children": "Account settings",
+        "align": "start",
+        "size": "2xl"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"2xl\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"2\" size=\"2xl\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"2xl\">Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Size2xl",
+        "lit": "Size2xl",
+        "rn": "Size2xl",
+        "swift": null
+      },
+      "storyId": "heading-react--size-2-xl",
+      "sweep": {
+        "prop": "size",
+        "value": "2xl"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Xl",
+      "args": {
+        "level": "2",
+        "children": "Account settings",
+        "align": "start",
+        "size": "xl"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"xl\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"2\" size=\"xl\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"xl\">Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeXl",
+        "lit": "SizeXl",
+        "rn": "SizeXl",
+        "swift": null
+      },
+      "storyId": "heading-react--size-xl",
+      "sweep": {
+        "prop": "size",
+        "value": "xl"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Lg",
+      "args": {
+        "level": "2",
+        "children": "Account settings",
+        "align": "start",
+        "size": "lg"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"lg\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"2\" size=\"lg\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"lg\">Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeLg",
+        "lit": "SizeLg",
+        "rn": "SizeLg",
+        "swift": null
+      },
+      "storyId": "heading-react--size-lg",
+      "sweep": {
+        "prop": "size",
+        "value": "lg"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Md",
+      "args": {
+        "level": "2",
+        "children": "Account settings",
+        "align": "start",
+        "size": "md"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"md\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"2\" size=\"md\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"md\">Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeMd",
+        "lit": "SizeMd",
+        "rn": "SizeMd",
+        "swift": null
+      },
+      "storyId": "heading-react--size-md",
+      "sweep": {
+        "prop": "size",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Align Start",
+      "args": {
+        "level": "2",
+        "children": "Account settings",
+        "align": "start"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" align=\"start\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"2\" align=\"start\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} align=\"start\">Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AlignStart",
+        "lit": "AlignStart",
+        "rn": "AlignStart",
+        "swift": null
+      },
+      "storyId": "heading-react--align-start",
+      "sweep": {
+        "prop": "align",
+        "value": "start"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Align Center",
+      "args": {
+        "level": "2",
+        "children": "Account settings",
+        "align": "center"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" align=\"center\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"2\" align=\"center\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} align=\"center\">Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AlignCenter",
+        "lit": "AlignCenter",
+        "rn": "AlignCenter",
+        "swift": null
+      },
+      "storyId": "heading-react--align-center",
+      "sweep": {
+        "prop": "align",
+        "value": "center"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Align End",
+      "args": {
+        "level": "2",
+        "children": "Account settings",
+        "align": "end"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" align=\"end\">Account settings</Heading>",
+        "lit": "<ds-heading level=\"2\" align=\"end\">Account settings</ds-heading>",
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} align=\"end\">Account settings</Heading>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AlignEnd",
+        "lit": "AlignEnd",
+        "rn": "AlignEnd",
+        "swift": null
+      },
+      "storyId": "heading-react--align-end",
+      "sweep": {
+        "prop": "align",
+        "value": "end"
+      },
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

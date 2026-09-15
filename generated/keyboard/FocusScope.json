@@ -1,0 +1,31 @@
+{
+  "name": "FocusScope",
+  "role": "none",
+  "identifier": "FocusScope",
+  "rules": [
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "From the last focusable descendant, wraps to the first.",
+      "from": "last",
+      "expect": "focus-wraps-to-first"
+    },
+    {
+      "keys": [
+        "Shift+Tab"
+      ],
+      "action": "From the first focusable descendant, wraps to the last.",
+      "from": "first",
+      "expect": "focus-wraps-to-last"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Ordinary forward movement inside the scope.",
+      "from": "first",
+      "expect": "focus-next"
+    }
+  ]
+}

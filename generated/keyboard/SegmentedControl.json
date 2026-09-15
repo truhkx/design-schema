@@ -1,0 +1,49 @@
+{
+  "name": "SegmentedControl",
+  "role": "radiogroup",
+  "identifier": "SegmentedControl",
+  "rules": [
+    {
+      "keys": [
+        "ArrowRight",
+        "ArrowDown"
+      ],
+      "action": "Moves to and selects the next enabled segment, wrapping.",
+      "from": "first",
+      "expect": "focus-next"
+    },
+    {
+      "keys": [
+        "ArrowLeft",
+        "ArrowUp"
+      ],
+      "action": "Moves to and selects the previous enabled segment, wrapping.",
+      "from": "last",
+      "expect": "focus-prev"
+    },
+    {
+      "keys": [
+        "ArrowRight"
+      ],
+      "action": "From the last segment wraps to the first.",
+      "from": "last",
+      "expect": "focus-wraps-to-first"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "First segment.",
+      "from": "last",
+      "expect": "focus-first"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Last segment.",
+      "from": "first",
+      "expect": "focus-last"
+    }
+  ]
+}

@@ -28,11 +28,11 @@ component:
       shape: 'ListboxOption[] (flat or grouped, as Listbox)'
       description: The options, passed through to the Listbox.
     value:
-      type: string
+      type: union
       description: Controlled value (array with `multiple`).
       shape: 'string | string[]'
     defaultValue:
-      type: string
+      type: union
       description: Initial value (array with `multiple`).
       shape: 'string | string[]'
     placeholder:

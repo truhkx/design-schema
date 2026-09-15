@@ -1,0 +1,1351 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\">\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Side Start",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  side=\"start\"\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" side=\"start\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\" side=\"start\">\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SideStart",
+        "lit": "SideStart",
+        "rn": "SideStart",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--side-start",
+      "sweep": {
+        "prop": "side",
+        "value": "start"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Side End",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open cart",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Your cart",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "end",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open cart\" variant=\"secondary\" />}\n  heading=\"Your cart\"\n  side=\"end\"\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" side=\"end\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { SidePanel, Text } from '@design-schema/rn';\n\n<SidePanel open heading=\"Your cart\" side=\"end\"><Text>Cart contents go here.</Text></SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SideEnd",
+        "lit": "SideEnd",
+        "rn": "SideEnd",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--side-end",
+      "sweep": {
+        "prop": "side",
+        "value": "end"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Width Narrow",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "narrow",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  width=\"narrow\"\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" width=\"narrow\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\" width=\"narrow\">\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WidthNarrow",
+        "lit": "WidthNarrow",
+        "rn": "WidthNarrow",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--width-narrow",
+      "sweep": {
+        "prop": "width",
+        "value": "narrow"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Width Default",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  width=\"default\"\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" width=\"default\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\" width=\"default\">\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WidthDefault",
+        "lit": "WidthDefault",
+        "rn": "WidthDefault",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--width-default",
+      "sweep": {
+        "prop": "width",
+        "value": "default"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Width Wide",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Filters",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Stack",
+              "props": {
+                "direction": "horizontal",
+                "gap": "tight"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "7 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "label": "30 days",
+                    "variant": "secondary",
+                    "size": "sm"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "side": "start",
+        "width": "wide",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true,
+        "footer": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Clear",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Stack, Text } from '@design-schema/react';\n\n<SidePanel\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  width=\"wide\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Clear\" variant=\"secondary\" size=\"sm\" />\n  </>}\n>\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n  </Stack>\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" width=\"wide\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { SidePanel, Text } from '@design-schema/rn';\n\n<SidePanel open heading=\"Filters\" width=\"wide\"><Text>A wider panel for a form of filters.</Text></SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WidthWide",
+        "lit": "WidthWide",
+        "rn": "WidthWide",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--width-wide",
+      "sweep": {
+        "prop": "width",
+        "value": "wide"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Persistent Never",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  persistent=\"never\"\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" persistent=\"never\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\" persistent=\"never\">\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PersistentNever",
+        "lit": "PersistentNever",
+        "rn": "PersistentNever",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--persistent-never",
+      "sweep": {
+        "prop": "persistent",
+        "value": "never"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Persistent Content",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "content",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  persistent=\"content\"\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" persistent=\"content\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\" persistent=\"content\">\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PersistentContent",
+        "lit": "PersistentContent",
+        "rn": "PersistentContent",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--persistent-content",
+      "sweep": {
+        "prop": "persistent",
+        "value": "content"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Persistent Page",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "page",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  persistent=\"page\"\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" persistent=\"page\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\" persistent=\"page\">\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PersistentPage",
+        "lit": "PersistentPage",
+        "rn": "PersistentPage",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--persistent-page",
+      "sweep": {
+        "prop": "persistent",
+        "value": "page"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Role Complementary",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  role=\"complementary\"\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\" role=\"complementary\">\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RoleComplementary",
+        "lit": "RoleComplementary",
+        "rn": "RoleComplementary",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--role-complementary",
+      "sweep": {
+        "prop": "role",
+        "value": "complementary"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Role Navigation",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "navigation",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  role=\"navigation\"\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" landmark=\"navigation\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\" role=\"navigation\">\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RoleNavigation",
+        "lit": "RoleNavigation",
+        "rn": "RoleNavigation",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--role-navigation",
+      "sweep": {
+        "prop": "role",
+        "value": "navigation"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Modal True",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Checkout",
+            "variant": "primary"
+          },
+          "children": []
+        },
+        "heading": "Checkout",
+        "hideHeading": false,
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Review your order before continuing."
+          ]
+        },
+        "side": "end",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": true,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true,
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Continue",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Text } from '@design-schema/react';\n\n<SidePanel\n  trigger={<Button label=\"Checkout\" variant=\"primary\" />}\n  heading=\"Checkout\"\n  side=\"end\"\n  modal\n  footer={<Button label=\"Continue\" variant=\"primary\" size=\"sm\" />}\n>\n  <Text>Review your order before continuing.</Text>\n</SidePanel>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ModalTrue",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "sidepanel-react--modal-true",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Scrim False",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": false,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  scrim={false}\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\" scrim={false}>\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ScrimFalse",
+        "lit": "ScrimFalse",
+        "rn": "NoScrim",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--scrim-false",
+      "sweep": {
+        "prop": "scrim",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Dismissible False",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            " The close button is not rendered and the scrim does nothing — use the trigger or a footer action to close this panel. Escape still reports through onOpenChange for the consumer to decide. "
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": false,
+        "swipeable": false,
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Done",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Text } from '@design-schema/react';\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  dismissible={false}\n  swipeable={false}\n  footer={<Button label=\"Done\" variant=\"primary\" size=\"sm\" />}\n>\n  <Text>\n    The close button is not rendered and the scrim does nothing — use the trigger or a footer action to close this panel. Escape\n    still reports through onOpenChange for the consumer to decide.\n  </Text>\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Required filters\" modal>\n  <ds-button slot=\"trigger\" label=\"Open filters\"></ds-button>\n  <ds-text>Choose at least one filter to continue.</ds-text>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-side-panel>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "DismissibleFalse",
+        "lit": "DismissibleFalse",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "sidepanel-react--dismissible-false",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Swipeable False",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": false
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  swipeable={false}\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\" swipeable={false}>\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SwipeableFalse",
+        "lit": "SwipeableFalse",
+        "rn": "NotSwipeable",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--swipeable-false",
+      "sweep": {
+        "prop": "swipeable",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Hide Heading True",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Navigation",
+        "hideHeading": true,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Navigation\"\n  hideHeading\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\" hide-heading landmark=\"complementary\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-link href=\"#settings\">Settings</ds-link>\n</ds-side-panel>",
+        "rn": "import { Link, SidePanel, Stack } from '@design-schema/rn';\n\n<SidePanel open heading=\"Menu\" hideHeading>\n  <Stack gap=\"tight\" align=\"start\">\n    <Link href=\"#\" label=\"Home\" />\n    <Link href=\"#\" label=\"Products\" />\n    <Link href=\"#\" label=\"About\" />\n  </Stack>\n</SidePanel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HideHeadingTrue",
+        "lit": "HideHeading",
+        "rn": "HideHeading",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--hide-heading-true",
+      "sweep": {
+        "prop": "hideHeading",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Without Footer",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n>\n  {defaultBody}\n</SidePanel>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithoutFooter",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "sidepanel-react--without-footer",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Open menu",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "heading": "Menu",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "element": "nav",
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Dashboard"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Projects"
+              },
+              "children": []
+            },
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Settings"
+              },
+              "children": []
+            }
+          ]
+        },
+        "side": "start",
+        "width": "default",
+        "persistent": "never",
+        "role": "complementary",
+        "modal": false,
+        "scrim": true,
+        "dismissible": true,
+        "swipeable": true,
+        "open": true
+      },
+      "snippets": {
+        "react": "import { SidePanel, Button, Link, Stack } from '@design-schema/react';\n\n<SidePanel\n  trigger={<Button label=\"Open menu\" variant=\"secondary\" />}\n  heading=\"Menu\"\n  open\n>\n  <Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Dashboard\" />\n    <Link href=\"#\" label=\"Projects\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n</SidePanel>",
+        "lit": "<ds-side-panel open heading=\"Menu\">\n  <ds-button slot=\"trigger\" label=\"Open menu\"></ds-button>\n  <ds-link href=\"#home\" aria-current=\"page\">Home</ds-link>\n  <ds-link href=\"#account\">Account</ds-link>\n  <ds-input label=\"Search\" name=\"search\" value=\"\"></ds-input>\n</ds-side-panel>",
+        "rn": "import * as React from 'react';\nimport { Button, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <SidePanel\n      heading=\"Menu\"\n      trigger={<Button label=\"Menu\" variant=\"secondary\" />}\n      open={open}\n      onOpenChange={(next) => setOpen(next)}\n    >\n      <Stack gap=\"tight\" align=\"start\">\n        <Link href=\"#\" label=\"Home\" />\n        <Link href=\"#\" label=\"Products\" />\n        <Button label=\"Sign out\" variant=\"secondary\" onPress={() => setOpen(false)} />\n      </Stack>\n    </SidePanel>\n  );\n}\n\n<Open />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "sidepanel-react--keyboard",
+      "sweep": {
+        "prop": "open",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

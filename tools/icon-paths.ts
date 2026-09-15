@@ -22,6 +22,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { sourceDir } from '../schema/platforms.ts';
 import { readText, writeTextAtomic } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
 
@@ -30,7 +31,7 @@ export const paths = {
   ROOT: REPO_ROOT,
   TABLE: join(REPO_ROOT, 'tools', 'icon-paths.json'),
   DOC: join(REPO_ROOT, 'site', 'src', 'content', 'docs', 'components', 'icon.md'),
-  SWIFT: join(REPO_ROOT, 'packages', 'swiftui', 'Sources', 'DesignSchema', 'Icon+Paths.swift'),
+  SWIFT: join(sourceDir(REPO_ROOT, 'swiftui'), 'Icon+Paths.swift'),
 };
 
 /** One glyph: the path data, and whether it fills (even-odd) instead of stroking. */

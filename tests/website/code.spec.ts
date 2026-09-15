@@ -99,7 +99,7 @@ test.describe('code presentation', () => {
         await useTheme(page, theme);
         await useMode(page, mode);
 
-        const example = page.getByRole('tabpanel').locator('.ds-code');
+        const example = page.locator('[data-platform-panel] .ds-code');
         await example.scrollIntoViewIfNeeded();
         const colours = await palette(example);
 
@@ -115,7 +115,7 @@ test.describe('code presentation', () => {
 
   test('the colours are the theme’s: they change with the theme and with the mode', async ({ page }) => {
     await open(page);
-    const example = page.getByRole('tabpanel').locator('.ds-code');
+    const example = page.locator('[data-platform-panel] .ds-code');
     await example.scrollIntoViewIfNeeded();
 
     const [first, second] = THEMES;

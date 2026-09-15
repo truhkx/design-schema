@@ -1,0 +1,44 @@
+{
+  "name": "Popover",
+  "role": "dialog",
+  "identifier": "Popover",
+  "rules": [
+    {
+      "keys": [
+        "Enter",
+        " "
+      ],
+      "action": "Toggles the popover from the trigger.",
+      "from": "trigger",
+      "expect": "manual",
+      "when": "focus on trigger"
+    },
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Closes and returns focus to the trigger.",
+      "from": "inside",
+      "expect": "focus-trigger",
+      "when": "open"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Non-modal: after the last element in the panel, closes and moves focus to the element after the trigger. Modal: wraps within the panel.",
+      "from": "last",
+      "expect": "manual",
+      "when": "open"
+    },
+    {
+      "keys": [
+        "Shift+Tab"
+      ],
+      "action": "Non-modal: from the first element in the panel, returns focus to the trigger and closes.",
+      "from": "first",
+      "expect": "focus-trigger",
+      "when": "open"
+    }
+  ]
+}

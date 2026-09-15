@@ -75,9 +75,12 @@ function getControls(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
 }
 
+// Writes only on a real change: a same-value tabIndex write still queues a mutation record, and the
+// roving effect's MutationObserver watches `tabindex`, so an unconditional write re-fires it forever.
 function applyRovingTabIndex(controls: HTMLElement[], currentIndex: number) {
   controls.forEach((control, index) => {
-    control.tabIndex = index === currentIndex ? 0 : -1;
+    const next = index === currentIndex ? 0 : -1;
+    if (control.tabIndex !== next) control.tabIndex = next;
   });
 }
 
@@ -199,6 +202,7 @@ export const Toolbar = function Toolbar({
   const itemNodesRef = useRef<Array<HTMLElement | null>>([]);
   const moreItemRef = useRef<HTMLElement | null>(null);
   const overflowElementsRef = useRef(new Map<string, ReactElement<any>>());
+  const observedWidthRef = useRef<number | null>(null);
 
   const isMenuOverflow = overflow === 'menu';
   const [renderCount, setRenderCount] = useState<number | null>(null);
@@ -247,7 +251,15 @@ export const Toolbar = function Toolbar({
     // jsdom (used by the test suite) has no ResizeObserver; the single measurement pass above
     // still runs, it just never reacts to a later resize.
     if (typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(() => setRenderCount(null));
+    // observe() always delivers one initial notification, and this observer is re-created after every
+    // remeasure; resetting on that alone remeasures every frame, so only a changed width counts.
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry!.contentRect.width;
+      if (observedWidthRef.current === width) return;
+      const isFirst = observedWidthRef.current === null;
+      observedWidthRef.current = width;
+      if (!isFirst) setRenderCount(null);
+    });
     observer.observe(container);
     return () => observer.disconnect();
   }, [isMenuOverflow, renderCount]);

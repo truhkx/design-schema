@@ -2,46 +2,747 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://design-schema.dev/schema/extension.schema.json",
   "title": "Extension frontmatter",
-  "description": "The `extension:` block of site/src/content/docs/extensions/<Component>.<name>.md. Adds props, events, unlocked style bindings, copy, keyboard rules, behavior scenarios and hand-written modules to a system component; tools/parse.ts merges it into the component's schema. Prop/event/style/keyboard/behavior shapes are the component schema's own ($ref across files; tools/parse.ts validates against the Zod schema in schema/component.ts). Mirrors schema/extension.ts.",
+  "description": "The `extension:` block of site/src/content/docs/extensions/<Component>.<name>.md. Adds props, events, unlocked style bindings, copy, keyboard rules, behavior scenarios and hand-written modules to a system component; tools/parse.ts merges it into the component's schema. Prop/event/style/keyboard/behavior shapes are the component schema's own, inlined here as $defs. Derived from schema/extension.ts by tools/schema.ts — do not edit by hand.",
   "type": "object",
-  "required": ["extension"],
   "properties": {
-    "extension": { "$ref": "#/$defs/extensionDef" }
+    "extension": {
+      "$ref": "#/$defs/extensionDef"
+    }
   },
+  "required": [
+    "extension"
+  ],
   "$defs": {
-    "moduleDef": {
-      "type": "object",
-      "required": ["path", "signature", "wire"],
-      "additionalProperties": false,
-      "description": "A hand-written module the generated component must import and call. Lives at packages/<platform>/src/<path>; the parser writes a .d.ts stub from `signature` and the `modules` gate typechecks the real file against it.",
-      "properties": {
-        "path": { "type": "string", "pattern": "^custom/[A-Za-z0-9_./-]+\\.(ts|tsx)$", "description": "Relative to packages/<platform>/src/, always under custom/." },
-        "signature": { "type": "string", "description": "TypeScript function type, e.g. '(name: string, label: string) => void'." },
-        "wire": { "type": "string", "description": "Exactly where the component calls it, in one sentence." },
-        "platforms": { "type": "array", "minItems": 1, "items": { "$ref": "component.schema.json#/$defs/platformId" }, "description": "Omit = every platform the component supports." }
-      }
-    },
     "extensionDef": {
       "type": "object",
-      "required": ["extends", "name"],
-      "additionalProperties": false,
       "properties": {
-        "extends": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$", "description": "The component this extends, by schema name." },
-        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "The concern, kebab-case; the file is <Component>.<name>.md." },
-        "description": { "type": "string" },
-        "props": { "type": "object", "additionalProperties": { "$ref": "component.schema.json#/$defs/propDef" } },
-        "events": { "type": "object", "additionalProperties": { "$ref": "component.schema.json#/$defs/eventDef" } },
-        "styles": { "type": "object", "additionalProperties": { "$ref": "component.schema.json#/$defs/styleBinding" }, "description": "Unlocked bindings only; the parser rejects `locked: true` and any token a contrast pair locks." },
-        "copy": { "type": "object", "additionalProperties": { "type": "string" } },
-        "keyboard": { "type": "array", "items": { "$ref": "component.schema.json#/$defs/keyboardRule" } },
-        "behavior": { "type": "array", "items": { "$ref": "component.schema.json#/$defs/behaviorScenario" } },
-        "modules": {
+        "extends": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z0-9]*$",
+          "description": "The component this extends, by schema name."
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "The concern, kebab-case; the file is <Component>.<name>.md."
+        },
+        "description": {
+          "type": "string"
+        },
+        "props": {
           "type": "object",
-          "propertyNames": { "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
-          "additionalProperties": { "$ref": "#/$defs/moduleDef" },
-          "description": "Export name → module contract."
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/propDef"
+          }
+        },
+        "events": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/eventDef"
+          }
+        },
+        "styles": {
+          "description": "Unlocked bindings only; the parser rejects `locked: true` and any token a contrast pair locks.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/styleBinding"
+          }
+        },
+        "copy": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "keyboard": {
+          "description": "The keyboard model, key → action, taken from the APG pattern. Generators implement every rule; the planned keyboard gate presses every key and checks the action.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/keyboardRule"
+          }
+        },
+        "behavior": {
+          "description": "Authored given/when/then scenarios the behavior gate turns into tests on every platform. Schema-derived scenarios (renders, accessible name, focusable, error identified, one per enum value) are added by the parser; author only what the schema cannot infer.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/behaviorScenario"
+          }
+        },
+        "modules": {
+          "description": "Export name → module contract.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/moduleDef"
+          }
         }
-      }
+      },
+      "required": [
+        "extends",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "propDef": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "enum",
+            "content",
+            "array",
+            "object",
+            "function",
+            "union"
+          ],
+          "description": "A value of more than one kind (a single id or an array of them) is 'union', with the kinds spelled out in shape."
+        },
+        "description": {
+          "type": "string"
+        },
+        "shape": {
+          "description": "For array/object/function/union props: the item or field shape in TypeScript-like notation, e.g. '{ value: string; label: string; description?: string; disabled?: boolean }[]' or 'string | string[]'. Required for union.",
+          "type": "string"
+        },
+        "required": {
+          "default": false,
+          "type": "boolean"
+        },
+        "default": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "a11y": {
+          "type": "string"
+        },
+        "a11yRole": {
+          "description": "What this prop contributes to the accessibility tree.",
+          "type": "string",
+          "enum": [
+            "accessible-name",
+            "description",
+            "error"
+          ]
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platformId"
+          }
+        },
+        "source": {
+          "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "description"
+      ],
+      "additionalProperties": false
+    },
+    "platformId": {
+      "type": "string",
+      "enum": [
+        "web",
+        "lit",
+        "rn",
+        "swiftui"
+      ]
+    },
+    "eventDef": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "gesture": {
+          "default": false,
+          "description": "True when the natural trigger is a touch gesture (swipe, drag, long-press). Components declaring a gesture event must also list gesture-alternative in a11y.requires.",
+          "type": "boolean"
+        },
+        "platforms": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/platformId"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "source": {
+          "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "description",
+        "platforms"
+      ],
+      "additionalProperties": false
+    },
+    "styleBinding": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "$ref": "#/$defs/tokenRef"
+        },
+        "description": {
+          "type": "string"
+        },
+        "locked": {
+          "default": false,
+          "description": "Not overridable per instance. The parser locks a binding automatically when (1) its token is a focus-indicator or target-size token (color.border.focus, color.inverse.focus, border.width.focus, size.target.*), (2) its token appears in an a11y.contrast pair, literally or after expanding {slot} interpolation over the enum values, or (3) its name starts with focusRing or is minTarget or dismissTarget. Setting locked: false on such a binding is an error; set locked: true for others (e.g. a size that keeps a target reachable).",
+          "type": "boolean"
+        },
+        "source": {
+          "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "token"
+      ],
+      "additionalProperties": false
+    },
+    "tokenRef": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(\\.(\\{[a-zA-Z]+\\}|[a-zA-Z0-9-]+))+$",
+      "description": "Dotted token path, e.g. color.foreground.strong. Braces interpolate a prop value: space.{size}."
+    },
+    "keyboardRule": {
+      "type": "object",
+      "properties": {
+        "keys": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/keyChord"
+          },
+          "description": "Key chords: KeyboardEvent.key names (Escape, Enter, ' ' or Space, ArrowDown, Tab, Home, End), optionally behind Shift+/Control+/Alt+/Meta+ ('Shift+Tab', 'Control+a', 'Control+Home'), or a-z for typeahead."
+        },
+        "action": {
+          "type": "string",
+          "description": "What happens, in one sentence, from the APG pattern."
+        },
+        "when": {
+          "description": "Focus location or state the rule applies in, e.g. 'focus on trigger', 'menu open'.",
+          "type": "string"
+        },
+        "from": {
+          "default": "inside",
+          "description": "Where focus is before the key is pressed, for the keyboard gate: the element with aria-haspopup/aria-expanded (trigger), the first/last focusable inside the component, anywhere inside, or wherever it is.",
+          "type": "string",
+          "enum": [
+            "trigger",
+            "first",
+            "last",
+            "inside",
+            "any"
+          ]
+        },
+        "expect": {
+          "default": "manual",
+          "description": "Machine-checkable outcome the keyboard gate asserts after the key: the component's role element disappears/appears, focus moves as named, aria-expanded/aria-checked flips (toggles) or the focused item becomes checked/selected (selects). `manual` means the rule is documented but not auto-tested.",
+          "type": "string",
+          "enum": [
+            "closes",
+            "opens",
+            "focus-next",
+            "focus-prev",
+            "focus-first",
+            "focus-last",
+            "focus-wraps-to-first",
+            "focus-wraps-to-last",
+            "focus-trigger",
+            "focus-unchanged",
+            "toggles",
+            "selects",
+            "manual"
+          ]
+        },
+        "source": {
+          "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "keys",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "keyChord": {
+      "type": "string",
+      "pattern": "^((Shift|Control|Alt|Meta)\\+)*(Escape|Enter| |Space|Tab|Backspace|Delete|Home|End|PageUp|PageDown|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|F([1-9]|1[0-2])|\\*|,|a-z|[a-z0-9])$",
+      "description": "A KeyboardEvent.key name, optionally behind Shift+/Control+/Alt+/Meta+ modifiers: Escape, Enter, ' ' (or Space), Tab, Backspace, Delete, Home, End, PageUp, PageDown, the four arrows, F1-F12, *, a comma, a lowercase letter or digit, or a-z for a typeahead range."
+    },
+    "behaviorScenario": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "kebab-case; becomes the test name."
+        },
+        "description": {
+          "description": "Why this scenario exists, when the name is not enough.",
+          "type": "string"
+        },
+        "given": {
+          "description": "Props to render with (prop name -> value), over the Default story's args. Omit for defaults.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        "when": {
+          "description": "Exactly one interaction: { click: <part> }, { key: <keyChord> } pressed on the primary part, { type: <text> } into the primary part, { focus: <part> }, { blur: true }, { set: { <prop>: <value> } } (a controlled prop change, applied as a re-render), { hover: <part> }. Omit for a pure render assertion.",
+          "$ref": "#/$defs/whenClause"
+        },
+        "then": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/thenClause"
+          },
+          "description": "Assertions, one object each, each with optional platforms: [<platformId>] to narrow just itself: { event, with? } or { event, fired: false }; { state: checked|expanded|selected|disabled|invalid|pressed|open, is: true|false|'mixed' }; { focusable: <bool> }; { renders: <bool> }; { focused: <part>|none|moved|unchanged }; { text: <text> }; { copy: <copy key> }; { role: <role> }; { name: true } (non-empty) or { name: <exact accessible name> }; { attribute: <name>, is: <string>|<bool>|null, on?: <part> } (null asserts the attribute is absent)."
+        },
+        "platforms": {
+          "description": "Restrict to these platforms (default: all).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platformId"
+          }
+        },
+        "derived": {
+          "description": "Set by the parser on scenarios it derives from the schema (generated/components.json behaviorDerived). Never authored.",
+          "type": "boolean"
+        },
+        "source": {
+          "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "then"
+      ],
+      "additionalProperties": false
+    },
+    "whenClause": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "click": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "click"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/keyChord"
+            }
+          },
+          "required": [
+            "key"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "focus": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "focus"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "blur": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "blur"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "set": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            }
+          },
+          "required": [
+            "set"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "hover": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "hover"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "thenClause": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "event": {
+              "type": "string"
+            },
+            "with": {},
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "event"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event": {
+              "type": "string"
+            },
+            "fired": {
+              "type": "boolean",
+              "const": false
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "event",
+            "fired"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "type": "string",
+              "enum": [
+                "checked",
+                "expanded",
+                "selected",
+                "disabled",
+                "invalid",
+                "pressed",
+                "open"
+              ]
+            },
+            "is": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "const": "mixed"
+                }
+              ]
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "state",
+            "is"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "focusable": {
+              "type": "boolean"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "focusable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "renders": {
+              "type": "boolean"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "renders"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "focused": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "moved",
+                    "unchanged"
+                  ]
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "focused"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "copy": {
+              "type": "string"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "copy"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "role": {
+              "type": "string"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "role"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "anyOf": [
+                {
+                  "type": "boolean",
+                  "const": true
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "attribute": {
+              "type": "string"
+            },
+            "is": {
+              "type": [
+                "string",
+                "boolean",
+                "null"
+              ]
+            },
+            "on": {
+              "type": "string"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "attribute",
+            "is"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "moduleDef": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^custom\\/[A-Za-z0-9_./-]+\\.(ts|tsx)$",
+          "description": "Relative to packages/<platform>/src/, always under custom/."
+        },
+        "signature": {
+          "type": "string",
+          "description": "TypeScript function type, e.g. '(name: string, label: string) => void'."
+        },
+        "wire": {
+          "type": "string",
+          "description": "Exactly where the component calls it, in one sentence."
+        },
+        "platforms": {
+          "description": "Omit = every platform the component supports.",
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platformId"
+          }
+        }
+      },
+      "required": [
+        "path",
+        "signature",
+        "wire"
+      ],
+      "additionalProperties": false
     }
   }
 }

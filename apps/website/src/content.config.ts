@@ -15,50 +15,15 @@ import { glob } from 'astro/loaders';
 import { componentsLoader } from './loaders/components';
 import { componentDef, type ComponentDef } from '../../../schema/component';
 
-/** The sections an extension doc may add to, and which therefore carry `source` markers.
- *  Kept in step with tools/parse.ts's EXT_SECTIONS (the record-shaped ones) and the two lists. */
-const EXTENDED_RECORDS = ['props', 'events', 'styles', 'copy'] as const;
-const EXTENDED_LISTS = ['keyboard', 'behavior'] as const;
-
-function withoutSource(item: unknown): unknown {
-  if (typeof item !== 'object' || item === null || Array.isArray(item)) return item;
-  const { source: _source, ...rest } = item as Record<string, unknown>;
-  return rest;
-}
-
-/**
- * tools/parse.ts stamps `source: extensions/<doc>.md` onto every prop, event, style binding, copy
- * string, keyboard rule and behavior scenario an extension contributed — and it does so *after*
- * validating, because componentDef's item schemas reject unknown keys (parse.ts `stampSources`).
- * So the generated block is componentDef plus that marker. Drop the markers before validating;
- * nothing is lost, because each entry's top-level `extensions[].adds` already names exactly which
- * props and events came from which extension doc.
- */
-function withoutExtensionSources(value: unknown): unknown {
-  if (typeof value !== 'object' || value === null) return value;
-  const block = { ...(value as Record<string, unknown>) };
-  for (const section of EXTENDED_RECORDS) {
-    const items = block[section];
-    if (typeof items !== 'object' || items === null || Array.isArray(items)) continue;
-    block[section] = Object.fromEntries(
-      Object.entries(items as Record<string, unknown>).map(([key, item]) => [key, withoutSource(item)]),
-    );
-  }
-  for (const section of EXTENDED_LISTS) {
-    const items = block[section];
-    if (Array.isArray(items)) block[section] = items.map(withoutSource);
-  }
-  return block;
-}
-
 // `componentDef` is a Zod 4 schema (schema/component.ts is the single source of truth and runs
 // under Node without a build), while Astro's collection schemas are its bundled Zod 3. Parse with
 // the Zod 4 schema and report its issues through Zod 3 — the same bridge site/src/content.config.ts
 // uses, so both sites reject exactly the same malformed schema. Parsing rather than passing through
 // also fills the defaults the docs leave implicit (`required: false`, `locked: false`, …), which is
-// what a props table wants to read.
+// what a props table wants to read. The `source` markers tools/parse.ts stamps on extension-added
+// items are schema fields, so the block parses as generated.
 const component = z.unknown().transform((value, ctx): ComponentDef => {
-  const result = componentDef.safeParse(withoutExtensionSources(value));
+  const result = componentDef.safeParse(value);
   if (result.success) return result.data;
   for (const issue of result.error.issues) {
     ctx.addIssue({ code: 'custom', path: issue.path.map(String), message: issue.message });

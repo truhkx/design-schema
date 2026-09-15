@@ -14,7 +14,7 @@ Guidance is embedded into a local vector database (`mcp/.chroma`, file-based, no
 | Field | Values | What it does |
 | --- | --- | --- |
 | `kind` | guidance, schema, platform-mapping, theme, code, story, demo, prompt | Lets a search target prose, schemas, or implementations |
-| `platform` | all, web, lit, rn, swiftui, compose | `all` is platform-agnostic guidance; platform notes and code carry their own platform |
+| `platform` | all, web, lit, rn, swiftui | `all` is platform-agnostic guidance; platform notes and code carry their own platform |
 | `component` / `theme` | Button, Input… / calm-precise… | Exact filter |
 | `section` | When to use, Accessibility, Behavior, Platform notes… | Which part of the doc the chunk came from |
 

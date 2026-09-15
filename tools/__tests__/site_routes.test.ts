@@ -15,7 +15,7 @@ afterEach(() => {
 
 /** A nav.json with the shape tools/site_nav.ts writes: two phases, three components. */
 const NAV = JSON.stringify({
-  top: [{ label: 'Homepage', href: '/' }],
+  top: [{ label: 'Docs', href: '/docs' }],
   docs: [
     { phase: 'Primitives', components: [{ name: 'Icon', slug: 'icon' }, { name: 'Text', slug: 'text' }] },
     { phase: 'Core', components: [{ name: 'Button', slug: 'button' }] },

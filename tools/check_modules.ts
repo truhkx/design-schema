@@ -30,14 +30,13 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { isTsPlatform, PACKAGE_DIR, TS_PLATFORMS } from '../schema/platforms.ts';
 import { which, winQuote } from './lib/proc.ts';
 import { pyJsonDumps, pyReEscape, pyStrip, readText, truthy, writeText } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
 
 /** Every path the tool reads or writes. The tests pass their own sandbox to `run`. */
 export const paths = { ROOT: REPO_ROOT, GENERATED: join(REPO_ROOT, 'generated'), PACKAGES: join(REPO_ROOT, 'packages') };
-
-export const PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn' };
 export const CHECK_DIR = '.modules-check'; // inside the package, git-ignored
 // What the check program imports so the platform's globals (`__DEV__`) are declared in the program.
 const PREAMBLE: Record<string, string[]> = { web: [], lit: [], rn: ["import 'react-native';"] };
@@ -126,7 +125,7 @@ export function run(platform: string, options: RunOptions = {}): string[] {
   const modules = declaredModules(components, platform);
   if (!modules.length) return [];
   const findings: string[] = [];
-  const pkg = PKG[platform] as string;
+  const pkg = PACKAGE_DIR[platform] as string;
   const pkgDir = join(packages, pkg);
   const present: Module[] = [];
   for (const m of modules) {
@@ -164,7 +163,7 @@ export type Args = { platform: string; noTypecheck: boolean };
 
 /** argparse's `--platform {web,lit,rn}` (required) and `--no-typecheck`. */
 export function parseArgs(argv: string[], prog: string = 'check_modules.ts'): Args {
-  const usage = `usage: ${prog} [-h] --platform {web,lit,rn} [--no-typecheck]`;
+  const usage = `usage: ${prog} [-h] --platform {${TS_PLATFORMS.join(',')}} [--no-typecheck]`;
   const die: (message: string) => never = (message) => {
     process.stderr.write(`${usage}\n${prog}: error: ${message}\n`);
     throw Object.assign(new Error(message), { exitCode: 2 });
@@ -179,7 +178,7 @@ export function parseArgs(argv: string[], prog: string = 'check_modules.ts'): Ar
     } else if (arg === '--platform' || arg.startsWith('--platform=')) {
       const value = arg.startsWith('--platform=') ? arg.slice('--platform='.length) : argv[++i];
       if (value === undefined) die('argument --platform: expected one argument');
-      if (!Object.hasOwn(PKG, value)) die(`argument --platform: invalid choice: '${value}' (choose from ${Object.keys(PKG).join(', ')})`);
+      if (!isTsPlatform(value)) die(`argument --platform: invalid choice: '${value}' (choose from ${TS_PLATFORMS.join(', ')})`);
       args.platform = value;
     } else if (arg === '--no-typecheck') {
       args.noTypecheck = true;

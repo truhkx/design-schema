@@ -1,0 +1,56 @@
+{
+  "name": "Toolbar",
+  "role": "toolbar",
+  "identifier": "Toolbar",
+  "rules": [
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Moves focus into the toolbar (to the last-focused control, initially the first) and, from inside, out of it — the toolbar is one tab stop.",
+      "from": "any",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowRight"
+      ],
+      "action": "Next control (ArrowDown when vertical). Skips disabled controls; does not wrap.",
+      "from": "first",
+      "expect": "focus-next"
+    },
+    {
+      "keys": [
+        "ArrowLeft"
+      ],
+      "action": "Previous control (ArrowUp when vertical).",
+      "from": "last",
+      "expect": "focus-prev"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "First control.",
+      "from": "last",
+      "expect": "focus-first"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Last control.",
+      "from": "first",
+      "expect": "focus-last"
+    },
+    {
+      "keys": [
+        "Enter",
+        " "
+      ],
+      "action": "Activates the focused control (its own behavior).",
+      "from": "first",
+      "expect": "manual"
+    }
+  ]
+}

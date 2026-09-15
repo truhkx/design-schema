@@ -1,0 +1,49 @@
+{
+  "name": "NumberInput",
+  "role": "spinbutton",
+  "identifier": "NumberInput",
+  "rules": [
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "Increases by `step` (clamped to max).",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "Decreases by `step` (clamped to min).",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "PageUp",
+        "PageDown"
+      ],
+      "action": "Changes by ten steps.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Home",
+        "End"
+      ],
+      "action": "Sets min / max when they are defined; otherwise the input's native caret movement.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Enter"
+      ],
+      "action": "Commits (rounds and clamps) the typed value; inside a Form, submits.",
+      "from": "first",
+      "expect": "manual"
+    }
+  ]
+}

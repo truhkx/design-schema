@@ -1,0 +1,31 @@
+{
+  "name": "BottomSheet",
+  "role": "dialog",
+  "identifier": "BottomSheet",
+  "rules": [
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Requests close with reason escape.",
+      "from": "inside",
+      "expect": "closes"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "From the last element wraps to the first; the handle is never a stop.",
+      "from": "last",
+      "expect": "focus-wraps-to-first"
+    },
+    {
+      "keys": [
+        "Shift+Tab"
+      ],
+      "action": "From the first element wraps to the last.",
+      "from": "first",
+      "expect": "focus-wraps-to-last"
+    }
+  ]
+}

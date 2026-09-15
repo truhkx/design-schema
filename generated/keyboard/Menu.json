@@ -1,0 +1,110 @@
+{
+  "name": "Menu",
+  "role": "menu",
+  "identifier": "Menu",
+  "rules": [
+    {
+      "keys": [
+        "Enter",
+        " ",
+        "ArrowDown"
+      ],
+      "action": "Opens the menu and focuses the first item.",
+      "from": "trigger",
+      "expect": "manual",
+      "when": "focus on trigger"
+    },
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "Opens the menu and focuses the last item.",
+      "from": "trigger",
+      "expect": "manual",
+      "when": "focus on trigger"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "Moves to the next enabled item.",
+      "from": "first",
+      "expect": "focus-next",
+      "when": "menu open"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "From the last item wraps to the first.",
+      "from": "last",
+      "expect": "focus-wraps-to-first",
+      "when": "menu open"
+    },
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "From the first item wraps to the last.",
+      "from": "first",
+      "expect": "focus-wraps-to-last",
+      "when": "menu open"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "First enabled item.",
+      "from": "inside",
+      "expect": "focus-first",
+      "when": "menu open"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Last enabled item.",
+      "from": "inside",
+      "expect": "focus-last",
+      "when": "menu open"
+    },
+    {
+      "keys": [
+        "Enter",
+        " "
+      ],
+      "action": "Activates the focused item and closes.",
+      "from": "first",
+      "expect": "closes",
+      "when": "menu open"
+    },
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Closes and returns focus to the trigger.",
+      "from": "inside",
+      "expect": "focus-trigger",
+      "when": "menu open"
+    },
+    {
+      "keys": [
+        "Tab",
+        "Shift+Tab"
+      ],
+      "action": "Closes and moves focus to the next/previous tabbable element after the trigger.",
+      "from": "inside",
+      "expect": "closes",
+      "when": "menu open"
+    },
+    {
+      "keys": [
+        "a-z"
+      ],
+      "action": "Typeahead — moves to the next item whose label starts with the typed characters.",
+      "from": "first",
+      "expect": "manual",
+      "when": "menu open"
+    }
+  ]
+}

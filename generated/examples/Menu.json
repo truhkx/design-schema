@@ -1,0 +1,951 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS}></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "menu-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Trigger Variant Ghost",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "triggerVariant": "ghost"
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"ghost\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} trigger-variant=\"ghost\" open></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"ghost\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "TriggerVariantGhost",
+        "lit": "TriggerVariantGhost",
+        "rn": "TriggerVariantGhost",
+        "swift": null
+      },
+      "storyId": "menu-react--trigger-variant-ghost",
+      "sweep": {
+        "prop": "triggerVariant",
+        "value": "ghost"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Trigger Variant Secondary",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "triggerVariant": "secondary"
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"secondary\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} trigger-variant=\"secondary\" open></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"secondary\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "TriggerVariantSecondary",
+        "lit": "TriggerVariantSecondary",
+        "rn": "TriggerVariantSecondary",
+        "swift": null
+      },
+      "storyId": "menu-react--trigger-variant-secondary",
+      "sweep": {
+        "prop": "triggerVariant",
+        "value": "secondary"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Trigger Variant Primary",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "triggerVariant": "primary"
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"primary\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} trigger-variant=\"primary\" open></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"primary\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "TriggerVariantPrimary",
+        "lit": "TriggerVariantPrimary",
+        "rn": "TriggerVariantPrimary",
+        "swift": null
+      },
+      "storyId": "menu-react--trigger-variant-primary",
+      "sweep": {
+        "prop": "triggerVariant",
+        "value": "primary"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Trigger Icon Ellipsis",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "triggerIcon": "ellipsis",
+        "iconOnly": true
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"ellipsis\" iconOnly />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} trigger-icon=\"ellipsis\" icon-only open></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"ellipsis\" iconOnly />",
+        "swift": null
+      },
+      "stories": {
+        "react": "TriggerIconEllipsis",
+        "lit": "TriggerIconEllipsis",
+        "rn": "TriggerIconEllipsis",
+        "swift": null
+      },
+      "storyId": "menu-react--trigger-icon-ellipsis",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Trigger Icon Chevron Down",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "triggerIcon": "chevron-down"
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"chevron-down\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} trigger-icon=\"chevron-down\" open></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"chevron-down\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "TriggerIconChevronDown",
+        "lit": "TriggerIconChevronDown",
+        "rn": "TriggerIconChevronDown",
+        "swift": null
+      },
+      "storyId": "menu-react--trigger-icon-chevron-down",
+      "sweep": {
+        "prop": "triggerIcon",
+        "value": "chevron-down"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Trigger Icon None",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "triggerIcon": "none"
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"none\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} trigger-icon=\"none\" open></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"none\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "TriggerIconNone",
+        "lit": "TriggerIconNone",
+        "rn": "TriggerIconNone",
+        "swift": null
+      },
+      "storyId": "menu-react--trigger-icon-none",
+      "sweep": {
+        "prop": "triggerIcon",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Bottom Start",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "placement": "bottom-start"
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"bottom-start\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} placement=\"bottom-start\" open></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"bottom-start\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementBottomStart",
+        "lit": "PlacementBottomStart",
+        "rn": "PlacementBottomStart",
+        "swift": null
+      },
+      "storyId": "menu-react--placement-bottom-start",
+      "sweep": {
+        "prop": "placement",
+        "value": "bottom-start"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Bottom End",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "placement": "bottom-end"
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"bottom-end\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} placement=\"bottom-end\" open></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"bottom-end\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementBottomEnd",
+        "lit": "PlacementBottomEnd",
+        "rn": "PlacementBottomEnd",
+        "swift": null
+      },
+      "storyId": "menu-react--placement-bottom-end",
+      "sweep": {
+        "prop": "placement",
+        "value": "bottom-end"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Top Start",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "placement": "top-start"
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"top-start\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} placement=\"top-start\" open></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"top-start\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementTopStart",
+        "lit": "PlacementTopStart",
+        "rn": "PlacementTopStart",
+        "swift": null
+      },
+      "storyId": "menu-react--placement-top-start",
+      "sweep": {
+        "prop": "placement",
+        "value": "top-start"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Placement Top End",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "placement": "top-end"
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"top-end\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} placement=\"top-end\" open></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"top-end\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlacementTopEnd",
+        "lit": "PlacementTopEnd",
+        "rn": "PlacementTopEnd",
+        "swift": null
+      },
+      "storyId": "menu-react--placement-top-end",
+      "sweep": {
+        "prop": "placement",
+        "value": "top-end"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Icon Only Overflow",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "triggerIcon": "ellipsis",
+        "iconOnly": true
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"ellipsis\" iconOnly />",
+        "lit": null,
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"ellipsis\" iconOnly />",
+        "swift": null
+      },
+      "stories": {
+        "react": "IconOnlyOverflow",
+        "lit": null,
+        "rn": "IconOnlyOverflow",
+        "swift": null
+      },
+      "storyId": "menu-react--icon-only-overflow",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ],
+        "open": true
+      },
+      "snippets": {
+        "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} open />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { MenuItem } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} open></ds-menu>\n`;",
+        "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} open />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "menu-react--keyboard",
+      "sweep": {
+        "prop": "open",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Anchor Positioned",
+      "args": {
+        "label": "More actions",
+        "items": [
+          {
+            "id": "open",
+            "label": "Open",
+            "icon": "external"
+          },
+          {
+            "id": "rename",
+            "label": "Rename",
+            "shortcut": "Ctrl+R"
+          },
+          {
+            "id": "duplicate",
+            "label": "Duplicate"
+          },
+          {
+            "group": "Sort by",
+            "items": [
+              {
+                "id": "sort-name",
+                "label": "Name"
+              },
+              {
+                "id": "sort-date",
+                "label": "Date modified"
+              }
+            ]
+          },
+          {
+            "separator": true
+          },
+          {
+            "id": "archive",
+            "label": "Archive",
+            "disabled": true
+          },
+          {
+            "id": "delete",
+            "label": "Delete",
+            "tone": "danger"
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { useRef } from 'react';\nimport { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction Example() {\n  const anchor = useRef<HTMLDivElement>(null);\n  return (\n    <div\n      ref={anchor}\n      style={{ display: 'inline-block', padding: '2rem', border: '1px dashed currentColor' }} // literal-ok: Storybook canvas decoration, not a component style\n    >\n      Right-click target (anchor)\n      <Menu label=\"More actions\" items={ITEMS} anchor={anchor} open />\n    </div>\n  );\n}\n\n<Example />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "AnchorPositioned",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "menu-react--anchor-positioned",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

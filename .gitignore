@@ -1,26 +1,15 @@
 # Dependencies
 node_modules/
 
-# Build outputs: everything below is recreated by `pnpm check`, `pnpm tokens`, `pnpm build` or a gate.
-site/dist/
+# Build outputs are committed for now (2026-09-14), so the repository carries the current generation of the
+# design system: generated/ (parsed schema, prompts, behavior and keyboard tests, examples, nav, themes), the
+# spec sheet, packages/*/dist, the three Storybook builds, and both site builds. Every one is still recreated
+# by `pnpm check`, `pnpm tokens`, `pnpm build` or a gate, so a regeneration shows up as a reviewable diff.
+# Only caches and machine-local state stay ignored.
 site/.astro/
-apps/website/dist/
 apps/website/.astro/
-packages/*/dist/
-packages/*/storybook-static/
 packages/*/.modules-check/
 apps/*/.expo/
-site/src/content/docs/foundations/spec-sheet.md
-generated/components.json
-generated/nav.json
-generated/themes.json
-generated/examples/
-generated/prompts/
-generated/behavior/
-generated/keyboard/
-# Kept on purpose: generated/generate.lock.json (the hash CI checks), generated/gaps/ (what the docs left
-# ambiguous), and generated/chromatic.json (the three hosted Storybook URLs — typed in by hand once, since a
-# Chromatic project URL only exists after somebody creates the project; `pnpm chromatic:check` guards it).
 
 # SwiftPM / Xcode build state (packages/swiftui, apps/ios-gallery)
 .build/

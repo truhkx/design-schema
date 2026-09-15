@@ -1,5 +1,5 @@
 ---
-import type { ComponentDef } from '../../../schema/component';
+import { resolveRole, type ComponentDef } from '../../../schema/component';
 
 interface Props {
   component: ComponentDef;
@@ -12,7 +12,7 @@ const fmt = (v: unknown) => (v === undefined ? '—' : typeof v === 'string' ? v
 <p>
   <span class="ds-badge">{c.category}</span>
   <span class="ds-badge">status: {c.status}</span>
-  <span class="ds-badge">role: {c.a11y.role}</span>
+  <span class="ds-badge">{c.a11y.roleFrom !== undefined ? `roleFrom: ${c.a11y.roleFrom}` : `role: ${resolveRole(c)}`}</span>
 </p>
 
 <h2 id="anatomy">Anatomy</h2>
@@ -27,7 +27,7 @@ const fmt = (v: unknown) => (v === undefined ? '—' : typeof v === 'string' ? v
     {Object.entries(c.props).map(([name, p]) => (
       <tr>
         <td><code>{name}</code>{p.required && ' *'}</td>
-        <td><code>{p.type === 'enum' ? (p.values ?? []).join(' | ') : p.type}</code></td>
+        <td><code>{p.type === 'enum' ? (p.values ?? []).join(' | ') : p.type === 'union' ? (p.shape ?? p.type) : p.type}</code></td>
         <td><code>{fmt(p.default)}</code></td>
         <td>{p.description}{p.a11y && <><br /><small>♿ {p.a11y}</small></>}</td>
         <td>{(p.platforms ?? platformIds).join(', ')}</td>

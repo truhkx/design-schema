@@ -25,15 +25,19 @@ import { AccessibilityContract, type KeyboardLine } from '../../../components/Ac
 import { Examples } from '../../../components/Examples';
 import { Mono } from '../../../components/Mono';
 import { PropsTables } from '../../../components/PropsTables';
-import { examplesFor, reactStorybookUrl } from '../../../examples';
+import { examplesFor, joinSnippets, PLATFORM_ORDER, reactStorybookUrl, type Snippets } from '../../../examples';
 import { renderableExamples } from '../../../example-probe';
-import { CODE_THEME, highlightSource } from '../../../highlight';
+import { sweepCaptions, variantCss } from '../../../example-sweep';
+import { CODE_THEME, highlightSnippets } from '../../../highlight';
+import { publishedThemeTokens } from '../../../themes';
 import '../../../components/code.css';
+import '../../../components/examples.css';
 import {
   basicUsage,
   consumerChoices,
   contrastRows,
   eventRows,
+  litRegistration,
   propRows,
   reducedMotionNote,
   requirementLines,
@@ -81,16 +85,31 @@ const name = definition.name;
  */
 const generated = Object.hasOwn(reactPackage, name);
 
-/** Storybook's own stories for this component, via `generated/examples/<Name>.json`. */
-const examples = examplesFor(name);
+/** Storybook's own stories for this component, via `generated/examples/<Name>.json`, and how to lay them out. */
+const { layout, platforms, examples } = examplesFor(name);
+const sweep = layout === 'sweep';
 /** Absent until job 510 publishes a Storybook, which is when the deep links start being rendered. */
 const storybookUrl = reactStorybookUrl();
 /** The install command and the import lines, both derived from `packages/react/package.json`. */
 const usage = basicUsage(name);
-/** Each story's source, highlighted here so the island ships no highlighter — see ../../../highlight.ts. */
-const exampleCode = await Promise.all(examples.map((example) => highlightSource(example.sourceText)));
+/**
+ * Each example's code on every platform, highlighted here so the island ships no highlighter — see
+ * ../../../highlight.ts. A tab panel shows its own story's; a sweep grid shows the whole set's, joined
+ * per platform, in one block under the tiles.
+ */
+const exampleCode = sweep ? [] : await Promise.all(examples.map((example) => highlightSnippets(example.snippets)));
+const sweepCode = sweep
+  ? await highlightSnippets(
+      Object.fromEntries(PLATFORM_ORDER.map((platform) => [platform, joinSnippets(examples.map((example) => example.snippets[platform]))])) as Snippets,
+    )
+  : undefined;
+/** The island gets the highlighted code above, not the raw snippets a second time. */
+const exampleViews = examples.map(({ snippets: _snippets, stories: _stories, ...view }) => view);
 /** Which of them render from args alone, established by rendering them — see ../../../example-probe.ts. */
 const renderable = renderableExamples(name, examples);
+/** A grid's captions: each tile's token, and its built value in every published theme — see ../../../example-sweep.ts. */
+const themeTokens = sweep ? publishedThemeTokens() : [];
+const captions = sweep ? sweepCaptions(definition, examples, renderable, themeTokens) : [];
 
 const spec = keyboardSpec(name);
 const keyboard: KeyboardLine[] | undefined = spec?.rules.map((rule) => ({
@@ -164,13 +183,23 @@ const keyboard: KeyboardLine[] | undefined = spec?.rules.map((rule) => ({
     {/* The examples, between the header block and the props table (website-plan.md, step 4). The
         source snippets are highlighted here rather than inside the island: it is a build-time
         transform of a string the JSON already carries, so the island ships no highlighter. */}
+    {
+      /* A grid's captions carry one reading per published theme × mode; these rules show the one the
+         root is in. Generated from the themes, so they are inline rather than a stylesheet of their own. */
+      sweep ? <style is:inline set:html={variantCss(themeTokens)}></style> : null
+    }
     <Examples
       client:visible
       name={name}
-      examples={examples}
+      layout={layout}
+      examples={exampleViews}
       renderable={renderable}
       storybookUrl={storybookUrl}
+      platforms={platforms}
       code={exampleCode}
+      captions={captions}
+      sweepCode={sweepCode}
+      litRegister={litRegistration()}
     />
 
     <PropsTables name={name} props={propRows(definition)} events={eventRows(definition)} />

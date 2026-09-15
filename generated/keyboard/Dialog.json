@@ -1,0 +1,39 @@
+{
+  "name": "Dialog",
+  "role": "dialog",
+  "identifier": "Dialog",
+  "rules": [
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Requests close with reason escape (even when not dismissible).",
+      "from": "inside",
+      "expect": "closes"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Moves to the next focusable element inside the dialog.",
+      "from": "first",
+      "expect": "focus-next"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "From the last element, wraps to the first.",
+      "from": "last",
+      "expect": "focus-wraps-to-first"
+    },
+    {
+      "keys": [
+        "Shift+Tab"
+      ],
+      "action": "From the first element, wraps to the last.",
+      "from": "first",
+      "expect": "focus-wraps-to-last"
+    }
+  ]
+}

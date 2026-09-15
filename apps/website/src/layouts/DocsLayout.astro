@@ -9,6 +9,10 @@
  *
  * The swap is CSS, never a check in script or a guess at the user agent: Astro's output here is
  * static, both markups are in it, and the browser picks before a line of JavaScript runs.
+ *
+ * Above the breakpoint the shell also fills the space between the header and the footer, however
+ * short the page (Tony's review, 2026-09-15), so the sidebar column runs all the way down to the
+ * footer rather than stopping at its last link. `ds-docs-page` is the hook docs-layout.css stretches.
  */
 import { Container } from '@design-schema/react';
 
@@ -27,7 +31,7 @@ const { title, description } = Astro.props;
 ---
 
 <Layout title={title} description={description}>
-  <Container width="page">
+  <Container width="page" className="ds-docs-page">
     <div class="ds-docs-shell">
       <DocsSidebar />
       <div class="ds-docs-shell__content">

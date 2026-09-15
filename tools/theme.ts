@@ -2,7 +2,7 @@
  * Theme generator: theme doc frontmatter → DTCG token files. Port of tools/theme.py.
  *
  * For every site/src/content/docs/themes/*.md with a `theme:` block:
- *   1. validate against schema/theme.schema.json
+ *   1. validate against the Zod schema in schema/theme.ts
  *   2. derive ramps in OKLCH (neutral tinted toward the seed hue, brand around the seed, status hues)
  *   3. derive type scale, spacing, radius, target sizes from scale/density/radius
  *   4. choose semantic mappings per mode so declared contrast floors hold (then check_contrast.ts proves it)
@@ -15,11 +15,11 @@
  * built as `Map`s, because a plain JavaScript object hoists integer-like keys to the front and the token
  * files have to come out in the Python order, byte for byte.
  */
-import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readdirSync } from 'node:fs';
 import { basename, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { iterErrors, errorLine, sortedErrors } from './lib/jsonschema.ts';
+import { themeFrontmatter } from '../schema/theme.ts';
 import { has, pyGet, pyJsonDumps, pyRound, pyRoundTo, readText, sortedNames, truthy, writeText } from './lib/py.ts';
 import { load as yamlLoad } from './lib/pyyaml.ts';
 import { REPO_ROOT } from './lib/root.ts';
@@ -33,7 +33,6 @@ export type Group = Map<string, unknown>;
 export const paths = {
   ROOT: REPO_ROOT,
   DOCS: join(REPO_ROOT, 'site', 'src', 'content', 'docs', 'themes'),
-  SCHEMA: join(REPO_ROOT, 'schema', 'theme.schema.json'),
   OUT: join(REPO_ROOT, 'tokens', 'themes'),
 };
 const FRONTMATTER = /^---\s*\n([\s\S]*?)\n---\s*\n/;
@@ -446,18 +445,18 @@ function themeDocs(dir: string): string[] {
 }
 
 export function main(): number {
-  const schema = JSON.parse(readFileSync(paths.SCHEMA, 'utf8')) as Dict;
   const errors: string[] = [];
   const built: string[] = [];
   for (const path of themeDocs(paths.DOCS)) {
     const m = FRONTMATTER.exec(readText(path));
     const fm = (m ? yamlLoad(m[1] as string) : {}) as Dict;
     if (!has(fm, 'theme')) continue;
-    const errs = sortedErrors(iterErrors(schema, fm));
-    if (errs.length) {
-      errors.push(`${basename(path)}:\n` + errs.map(errorLine).join('\n'));
+    const parsed = themeFrontmatter.safeParse(fm);
+    if (!parsed.success) {
+      errors.push(`${basename(path)}:\n` + parsed.error.issues.map((i) => `  - ${i.path.map(String).join('.') || '(root)'}: ${i.message}`).join('\n'));
       continue;
     }
+    // Derive from the doc as written, not the parsed copy: theme.json records the author's decisions without the defaults.
     const t = fm.theme as Dict;
     if (t.id !== basename(path, '.md')) {
       errors.push(`${basename(path)}: theme.id '${t.id}' should match file name`);

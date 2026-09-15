@@ -5,7 +5,7 @@ component:
   name: Popover
   category: overlay
   status: review
-  apg: dialog-modal
+  apg: disclosure
   anatomy: [trigger, panel, focusScope, heading, body, closeButton, arrow]
   composition:
     focusScope: FocusScope

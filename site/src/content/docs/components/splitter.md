@@ -104,7 +104,7 @@ component:
     sizeText: '{percent}%'
   a11y:
     role: separator
-    requires: [accessible-name, keyboard-operable, focus-visible, contrast-aa, target-24px, gesture-alternative, reduced-motion]
+    requires: [accessible-name, keyboard-operable, arrow-navigation, focus-visible, contrast-aa, target-24px, gesture-alternative, reduced-motion]
     contrast:
       - { foreground: color.border.strong, background: color.background, level: AA, large: true }
       - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }

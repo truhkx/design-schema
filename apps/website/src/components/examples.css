@@ -1,0 +1,26 @@
+/*
+ * The sweep grid: one tile per story, for a component whose examples step a single prop
+ * (`layout: "sweep"` in generated/examples/<Name>.json — tools/docs_examples.ts decides).
+ *
+ * The one plain list on a component page. No system component lays out equal columns — Stack is a
+ * flex line and Box a single surface — and a small multiple is only readable when every tile is the
+ * same width. Layout only, and every value a token, the same rule ../layouts/docs-layout.css keeps.
+ */
+
+.ds-example-grid {
+  display: grid;
+  /* A tile about a navigation column wide: half the prose measure, the ratio docs-layout.css already
+     uses for the sidebar. Three across in the docs column at desktop width, one on a phone. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--layout-max-width-prose) / 2)), 1fr)); /* literal-ok: a ratio, not a dimension */
+  gap: var(--layout-gap-loose);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ds-example-grid__tile {
+  /* The same guard as the docs column: a long caption or a wide sample scrolls inside its tile
+     rather than stretching the track. */
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}

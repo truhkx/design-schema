@@ -1,0 +1,115 @@
+{
+  "name": "Tree",
+  "role": "tree",
+  "identifier": "Tree",
+  "rules": [
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Moves into the tree (to the selected node, else the first) and out of it — one tab stop.",
+      "from": "any",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "Next visible node.",
+      "from": "first",
+      "expect": "focus-next"
+    },
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "Previous visible node.",
+      "from": "last",
+      "expect": "focus-prev"
+    },
+    {
+      "keys": [
+        "ArrowRight"
+      ],
+      "action": "On a closed parent: opens it. On an open parent: moves to its first enabled child (disabled nodes are skipped). On a leaf: nothing.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowLeft"
+      ],
+      "action": "On an open parent: closes it. Otherwise: moves to the parent.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "First node.",
+      "from": "last",
+      "expect": "focus-first"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Last visible node.",
+      "from": "first",
+      "expect": "focus-last"
+    },
+    {
+      "keys": [
+        "Enter"
+      ],
+      "action": "Activates the node (onActivate, or follows href); with `selectable: single`, also selects it.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        " "
+      ],
+      "action": "Selects (single) or toggles selection (multiple) of the focused node.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "selectable"
+    },
+    {
+      "keys": [
+        "*"
+      ],
+      "action": "Opens every sibling of the focused node.",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Shift+ArrowDown",
+        "Shift+ArrowUp"
+      ],
+      "action": "Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range).",
+      "from": "inside",
+      "expect": "manual",
+      "when": "multiple"
+    },
+    {
+      "keys": [
+        "Control+a"
+      ],
+      "action": "Selects every visible, enabled node at the current expansion state; bound by key code KeyA.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "multiple"
+    },
+    {
+      "keys": [
+        "a-z"
+      ],
+      "action": "Type-ahead: moves to the next visible node whose label starts with the typed characters; the buffer clears after 500 ms (literal-ok, as Listbox).",
+      "from": "inside",
+      "expect": "manual"
+    }
+  ]
+}

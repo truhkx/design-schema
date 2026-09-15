@@ -15,6 +15,8 @@
  */
 import { parse as yamlParse, type ScalarTag } from 'yaml';
 
+import { pyFloatRepr } from '../../schema/lib.ts';
+
 // ---------------------------------------------------------------- PyYAML implicit resolvers (resolver.py)
 // The dumper quotes a string that a reader would take for something else; the loader turns the same forms
 // into values. `$` in Python also matches before a trailing newline, hence `matches()`.
@@ -91,32 +93,8 @@ type Node = ScalarNode | CollectionNode;
 type ScalarNode = { kind: 'scalar'; tag: string; value: string; implicit: [boolean, boolean] };
 type CollectionNode = { kind: 'seq'; items: Node[]; anchor: string | null; obj: object } | { kind: 'map'; items: [Node, Node][]; anchor: string | null; obj: object };
 
-/** Python's `repr(float)`: shortest round-trip digits, exponent form outside 1e-4 ≤ |x| < 1e16, always a `.` or `e`. */
-export function pyFloatRepr(n: number): string {
-  if (Number.isNaN(n)) return 'nan';
-  if (n === Infinity) return 'inf';
-  if (n === -Infinity) return '-inf';
-  if (n === 0) return Object.is(n, -0) ? '-0.0' : '0.0';
-  const [mant = '', expStr = '0'] = n.toExponential().split('e');
-  const exp = Number(expStr);
-  const neg = mant.startsWith('-');
-  const digits = mant.replace('-', '').replace('.', '');
-  let out: string;
-  if (exp >= -4 && exp < 16) {
-    if (exp >= 0) {
-      const intPart = digits.slice(0, exp + 1).padEnd(exp + 1, '0');
-      const frac = digits.slice(exp + 1);
-      out = `${intPart}.${frac || '0'}`;
-    } else {
-      out = `0.${'0'.repeat(-exp - 1)}${digits}`;
-    }
-  } else {
-    const frac = digits.slice(1);
-    const e = `${exp < 0 ? '-' : '+'}${String(Math.abs(exp)).padStart(2, '0')}`;
-    out = `${digits[0]}${frac ? '.' + frac : ''}e${e}`;
-  }
-  return neg ? `-${out}` : out;
-}
+// Python's `repr(float)` lives in schema/lib.ts (the schema quotes numbers in its issues); re-exported here.
+export { pyFloatRepr };
 
 class Representer {
   private represented = new Map<object, CollectionNode>();

@@ -5,7 +5,6 @@ component:
   name: Divider
   category: layout
   status: review
-  apg: separator
   anatomy: [line, label]
   composition:
     label: Text

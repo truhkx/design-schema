@@ -46,11 +46,11 @@ component:
       default: false
       description: Marks the slider invalid (`copy.invalid` when no `error`).
     value:
-      type: number
+      type: union
       description: Controlled value; for a range, a two-number array.
       shape: 'number | [number, number]'
     defaultValue:
-      type: number
+      type: union
       description: Initial value (or pair). Defaults to `min` (or `[min, max]`).
       shape: 'number | [number, number]'
     range:
@@ -135,7 +135,7 @@ component:
     invalid: '{label} is not valid.'
   a11y:
     role: slider
-    requires: [accessible-name, label-association, keyboard-operable, focus-visible, contrast-aa, target-44px, gesture-alternative, error-identification, reduced-motion]
+    requires: [accessible-name, label-association, keyboard-operable, arrow-navigation, focus-visible, contrast-aa, target-44px, gesture-alternative, error-identification, reduced-motion]
     contrast:
       - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }
       - { foreground: color.foreground, background: color.background, level: AA }

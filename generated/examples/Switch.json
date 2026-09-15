@@ -1,0 +1,254 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "Email notifications",
+        "defaultChecked": false,
+        "disabled": false,
+        "labelPosition": "start"
+      },
+      "snippets": {
+        "react": "import { Switch } from '@design-schema/react';\n\n<Switch label=\"Email notifications\" />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-switch label=\"Email notifications\"></ds-switch>\n</div>",
+        "rn": "import { Switch } from '@design-schema/rn';\n\n<Switch label=\"Email notifications\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "switch-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Label Position Start",
+      "args": {
+        "label": "Email notifications",
+        "defaultChecked": false,
+        "disabled": false,
+        "labelPosition": "start"
+      },
+      "snippets": {
+        "react": "import { Switch } from '@design-schema/react';\n\n<Switch label=\"Email notifications\" labelPosition=\"start\" />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-switch label=\"Email notifications\" label-position=\"start\"></ds-switch>\n</div>",
+        "rn": "import { Switch } from '@design-schema/rn';\n\n<Switch label=\"Email notifications\" labelPosition=\"start\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "LabelPositionStart",
+        "lit": "LabelPositionStart",
+        "rn": "LabelPositionStart",
+        "swift": null
+      },
+      "storyId": "switch-react--label-position-start",
+      "sweep": {
+        "prop": "labelPosition",
+        "value": "start"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Label Position End",
+      "args": {
+        "label": "Email notifications",
+        "defaultChecked": false,
+        "disabled": false,
+        "labelPosition": "end"
+      },
+      "snippets": {
+        "react": "import { Switch } from '@design-schema/react';\n\n<Switch label=\"Email notifications\" labelPosition=\"end\" />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-switch label=\"Email notifications\" label-position=\"end\"></ds-switch>\n</div>",
+        "rn": "import { Switch } from '@design-schema/rn';\n\n<Switch label=\"Email notifications\" labelPosition=\"end\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "LabelPositionEnd",
+        "lit": "LabelPositionEnd",
+        "rn": "LabelPositionEnd",
+        "swift": null
+      },
+      "storyId": "switch-react--label-position-end",
+      "sweep": {
+        "prop": "labelPosition",
+        "value": "end"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "On",
+      "args": {
+        "label": "Email notifications",
+        "defaultChecked": true,
+        "disabled": false,
+        "labelPosition": "start"
+      },
+      "snippets": {
+        "react": "import { Switch } from '@design-schema/react';\n\n<Switch label=\"Email notifications\" defaultChecked />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-switch label=\"Email notifications\" default-checked></ds-switch>\n</div>",
+        "rn": "import { Switch } from '@design-schema/rn';\n\n<Switch label=\"Email notifications\" defaultChecked />",
+        "swift": null
+      },
+      "stories": {
+        "react": "On",
+        "lit": "DefaultCheckedTrue",
+        "rn": "On",
+        "swift": null
+      },
+      "storyId": "switch-react--on",
+      "sweep": {
+        "prop": "defaultChecked",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Disabled",
+      "args": {
+        "label": "Email notifications",
+        "defaultChecked": false,
+        "disabled": true,
+        "labelPosition": "start"
+      },
+      "snippets": {
+        "react": "import { Switch } from '@design-schema/react';\n\n<Switch label=\"Email notifications\" disabled />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-switch label=\"Email notifications\" disabled></ds-switch>\n</div>",
+        "rn": "import { Switch } from '@design-schema/rn';\n\n<Switch label=\"Email notifications\" defaultChecked disabled />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Disabled",
+        "lit": "DisabledTrue",
+        "rn": "Disabled",
+        "swift": null
+      },
+      "storyId": "switch-react--disabled",
+      "sweep": {
+        "prop": "disabled",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Disabled On",
+      "args": {
+        "label": "Email notifications",
+        "defaultChecked": true,
+        "disabled": true,
+        "labelPosition": "start"
+      },
+      "snippets": {
+        "react": "import { Switch } from '@design-schema/react';\n\n<Switch label=\"Email notifications\" defaultChecked disabled />",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-switch label=\"Email notifications\" default-checked disabled></ds-switch>\n</div>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "DisabledOn",
+        "lit": "DisabledOn",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "switch-react--disabled-on",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "With Description",
+      "args": {
+        "label": "Email notifications",
+        "defaultChecked": false,
+        "disabled": false,
+        "labelPosition": "start",
+        "description": "Sends a daily summary at 9:00."
+      },
+      "snippets": {
+        "react": "import { Switch } from '@design-schema/react';\n\n<Switch\n  label=\"Email notifications\"\n  description=\"Sends a daily summary at 9:00.\"\n/>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-switch label=\"Email notifications\" description=\"Sends a daily summary at 9:00.\"></ds-switch>\n</div>",
+        "rn": "import { Switch } from '@design-schema/rn';\n\n<Switch\n  label=\"Email notifications\"\n  description=\"Sends a daily summary at 9:00.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithDescription",
+        "lit": "WithDescription",
+        "rn": "WithDescription",
+        "swift": null
+      },
+      "storyId": "switch-react--with-description",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "With Name",
+      "args": {
+        "label": "Push notifications",
+        "defaultChecked": false,
+        "disabled": false,
+        "labelPosition": "start",
+        "name": "notifications"
+      },
+      "snippets": {
+        "react": "import { Switch } from '@design-schema/react';\n\n<Switch label=\"Push notifications\" name=\"notifications\" />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithName",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "switch-react--with-name",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Controlled",
+      "args": {
+        "label": "Email notifications",
+        "defaultChecked": false,
+        "disabled": false,
+        "labelPosition": "start",
+        "checked": true
+      },
+      "snippets": {
+        "react": "import { Switch } from '@design-schema/react';\n\n<Switch label=\"Email notifications\" checked />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Controlled",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "switch-react--controlled",
+      "sweep": {
+        "prop": "checked",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

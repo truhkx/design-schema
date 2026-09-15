@@ -6,13 +6,15 @@ component:
   category: overlay
   status: review
   apg: alertdialog
-  anatomy: [scrim, surface, focusScope, icon, heading, description, footer]
+  anatomy: [scrim, surface, focusScope, icon, heading, description, footer, cancelButton, confirmButton]
   composition:
     focusScope: FocusScope
     icon: Icon
     heading: Heading
     description: Text
     footer: Stack
+    cancelButton: Button
+    confirmButton: Button
   props:
     open:
       type: boolean

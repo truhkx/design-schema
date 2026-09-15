@@ -12,7 +12,7 @@
  *
  * Writes generated/nav.json:
  *
- *   { "top":  [{ "label": "Homepage", "href": "/" }, ..., { ..., "external": true }],
+ *   { "top":  [{ "label": "Docs", "href": "/docs" }, ..., { ..., "external": true }],
  *     "docs": [{ "phase": "Primitives", "components": [{ "name": "Icon", "slug": "icon" }, ...] }, ...] }
  *
  * Every component in components.json must belong to exactly one phase and every phase component
@@ -45,9 +45,9 @@ export type Nav = { top: TopItem[]; docs: NavGroup[] };
 /** The repository, for the GitHub entry (vision-and-decisions.md #1). */
 export const REPO_URL = 'https://github.com/design-schema/design-schema';
 
-/** Top-level nav: fixed pages, not schema-derived. GitHub is an external link, never a route. */
+/** Top-level nav: fixed pages, not schema-derived. GitHub is an external link, never a route.
+ *  No entry for `/`: the header's logo lockup is the home link (Tony's review, 2026-09-15). */
 export const TOP: readonly TopItem[] = [
-  { label: 'Homepage', href: '/' },
   { label: 'Docs', href: '/docs' },
   { label: 'GitHub', href: REPO_URL, external: true },
   { label: 'About', href: '/about' },

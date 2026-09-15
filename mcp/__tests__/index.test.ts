@@ -3,6 +3,7 @@
  */
 import { describe, expect, test } from 'vitest';
 
+import { PLATFORMS } from '../../schema/platforms.ts';
 import { component } from '../../tools/__tests__/fixtures.ts';
 import * as ix from '../index.ts';
 
@@ -44,9 +45,14 @@ describe('splitPlatformNotes', () => {
 
   test.each([
     ['Web', 'web'], ['React', 'web'], ['Lit', 'lit'], ['React Native', 'rn'],
-    ['RN', 'rn'], ['SwiftUI', 'swiftui'], ['Jetpack Compose', 'compose'],
+    ['RN', 'rn'], ['SwiftUI', 'swiftui'],
   ])('the headings authors actually write are recognised: %s', (heading, key) => {
     expect(Object.keys(ix.splitPlatformNotes(`### ${heading}\nbody`))).toEqual([key]);
+  });
+
+  test('every heading maps onto the platform table, and every platform is its own heading', () => {
+    for (const platform of Object.values(ix.PLATFORM_HEADINGS)) expect(PLATFORMS).toContain(platform);
+    for (const platform of PLATFORMS) expect(ix.PLATFORM_HEADINGS[platform]).toBe(platform);
   });
 
   test('heading matching is case insensitive', () => {
@@ -105,6 +111,12 @@ describe('schemaSummary', () => {
     const c = component();
     c.props.variant.platforms = ['web', 'lit'];
     expect(ix.schemaSummary(c)).toContain('(platforms: web, lit)');
+  });
+
+  test('a union prop reads as its shape', () => {
+    const c = component();
+    c.props.value = { type: 'union', shape: 'string | string[]', description: 'Selected ids.' };
+    expect(ix.schemaSummary(c)).toContain('value: string | string[]. Selected ids.');
   });
 
   test('a summary over the budget is split into continuation chunks', () => {
@@ -198,14 +210,14 @@ describe('the real chunks (built from the repo\'s own build outputs)', () => {
   });
 
   test('platform is always a known value', () => {
-    const allowed = new Set(['all', 'web', 'lit', 'rn', 'swiftui', 'compose']);
+    const allowed = new Set<string>(['all', ...PLATFORMS]);
     for (const c of chunks) expect(allowed, c.id).toContain(c.meta.platform);
   });
 
   test('code chunks are tagged with their platform and component', () => {
     const code = chunks.filter((c) => ['code', 'story', 'demo'].includes(c.meta.kind as string));
     expect(code.length, 'no generated sources were indexed').toBeGreaterThan(0);
-    for (const c of code) expect(['web', 'lit', 'rn']).toContain(c.meta.platform);
+    for (const c of code) expect(PLATFORMS).toContain(c.meta.platform);
     expect(code.some((c) => c.meta.component === 'Button')).toBe(true);
   });
 

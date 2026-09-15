@@ -8,10 +8,11 @@
  * or one of the fixed prose lines below, which exist because the schema's `a11y.requires` is a list
  * of slugs (`focus-restore`, `no-hover-only`) and a docs page owes the reader a sentence.
  */
-import type { ComponentDef, PlatformId } from '../../../schema/component';
+import { resolveRole, type ComponentDef, type PlatformId } from '../../../schema/component';
 // The package the Basic Usage snippet installs, read from its own manifest rather than typed out:
 // a rename or a moved CSS export then reaches the docs with a build, not with a search-and-replace.
 import reactManifest from '../../../packages/react/package.json';
+import litManifest from '../../../packages/lit/package.json';
 
 /** One entry of `a11y.requires`. Taken from the schema so a new requirement fails typecheck here. */
 export type Requirement = ComponentDef['a11y']['requires'][number];
@@ -200,9 +201,11 @@ const CONSUMER_CHOICE: Partial<Record<Requirement, string>> = {
     'If you wire up the gesture events, provide the pointer and keyboard path to the same outcome.',
 };
 
-/** `enum` props render their values; `array`/`object`/`function` props render their declared shape. */
+/** `enum` props render their values; `array`/`object`/`function` props render their declared shape, and
+ *  `union` props the shape alone, which already names every kind (`string | string[]`). */
 function propType(prop: ComponentDef['props'][string]): string {
   if (prop.type === 'enum') return (prop.values ?? []).join(' | ');
+  if (prop.type === 'union') return prop.shape ?? prop.type;
   return prop.shape !== undefined ? `${prop.type} ${prop.shape}` : prop.type;
 }
 
@@ -342,9 +345,24 @@ export function basicUsage(name: string): BasicUsage {
   };
 }
 
-/** `status` and the like are roles; `none` and `presentation` are the absence of one. */
+/**
+ * The one line a Lit app writes before any `<ds-*>` element works: the package's side-effect import,
+ * which registers every custom element. A Lit example that is plain HTML shows it beside the markup,
+ * since markup has no import line of its own to carry it.
+ */
+export function litRegistration(): string {
+  return `import '${litManifest.name}';`;
+}
+
+/** `status` and the like are roles; `none` and `presentation` are the absence of one. A `roleFrom` component's
+ *  role is whichever value its prop takes. */
 export function roleSentence(def: ComponentDef): string {
-  const role = def.a11y.role;
+  const { roleFrom } = def.a11y;
+  if (roleFrom !== undefined) {
+    const values = def.props[roleFrom]?.values ?? [];
+    return `ARIA role: set by the ${roleFrom} prop, one of ${values.join(', ')}.`;
+  }
+  const role = resolveRole(def);
   return role === 'none' || role === 'presentation'
     ? 'No implicit ARIA role — the component is styling and structure, and adds nothing to the accessibility tree.'
     : `Implicit ARIA role: ${role}.`;

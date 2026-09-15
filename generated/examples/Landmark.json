@@ -1,0 +1,583 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "role": "region",
+        "label": "Related articles",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Content of the region."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"region\" label=\"Related articles\"><Text>Content of the region.</Text></Landmark>",
+        "lit": "<ds-landmark role=\"region\" aria-label=\"Related articles\">\n  <ds-stack gap=\"2\">\n    <ds-heading level=\"2\">Related articles</ds-heading>\n    <ds-text tone=\"muted\">This element is a <code>region</code> landmark with no shadow root; inspect it to see\n      the role and name on the host.</ds-text>\n  </ds-stack>\n</ds-landmark>",
+        "rn": "import { Heading, Landmark, Text } from '@design-schema/rn';\n\n<Landmark role=\"main\">\n  <Heading level={2} size=\"lg\">\n    {undefined ?? 'main'}\n  </Heading>\n  <Text tone=\"muted\">Landmark has no visual bindings; it only gives this region a role and a name.</Text>\n</Landmark>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "landmark-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Role Banner",
+      "args": {
+        "role": "banner",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "weight": "semibold"
+          },
+          "children": [
+            "Site header"
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"banner\"><Text weight=\"semibold\">Site header</Text></Landmark>",
+        "lit": "<ds-landmark role=\"banner\">\n  <ds-stack gap=\"2\">\n    <ds-heading level=\"2\">banner</ds-heading>\n    <ds-text tone=\"muted\">This element is a <code>banner</code> landmark with no shadow root; inspect it to see\n      the role and name on the host.</ds-text>\n  </ds-stack>\n</ds-landmark>",
+        "rn": "import { Heading, Landmark, Text } from '@design-schema/rn';\n\n<Landmark role=\"banner\">\n  <Heading level={2} size=\"lg\">\n    {undefined ?? 'banner'}\n  </Heading>\n  <Text tone=\"muted\">Landmark has no visual bindings; it only gives this region a role and a name.</Text>\n</Landmark>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RoleBanner",
+        "lit": "RoleBanner",
+        "rn": "RoleBanner",
+        "swift": null
+      },
+      "storyId": "landmark-react--role-banner",
+      "sweep": {
+        "prop": "role",
+        "value": "banner"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Role Navigation",
+      "args": {
+        "role": "navigation",
+        "label": "Main",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Navigation links"
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"navigation\" label=\"Main\"><Text>Navigation links</Text></Landmark>",
+        "lit": "<ds-landmark role=\"navigation\" aria-label=\"Main\">\n  <ds-stack element=\"ul\" direction=\"horizontal\" gap=\"4\">\n    <ds-link href=\"#docs\" label=\"Docs\"></ds-link>\n    <ds-link href=\"#pricing\" label=\"Pricing\"></ds-link>\n    <ds-link href=\"#changelog\" label=\"Changelog\"></ds-link>\n  </ds-stack>\n</ds-landmark>",
+        "rn": "import { Heading, Landmark, Text } from '@design-schema/rn';\n\n<Landmark role=\"navigation\" label=\"Main\">\n  <Heading level={2} size=\"lg\">\n    {'Main' ?? 'navigation'}\n  </Heading>\n  <Text tone=\"muted\">Landmark has no visual bindings; it only gives this region a role and a name.</Text>\n</Landmark>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RoleNavigation",
+        "lit": "RoleNavigation",
+        "rn": "RoleNavigation",
+        "swift": null
+      },
+      "storyId": "landmark-react--role-navigation",
+      "sweep": {
+        "prop": "role",
+        "value": "navigation"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Role Main",
+      "args": {
+        "role": "main",
+        "children": {
+          "$element": "Heading",
+          "props": {
+            "level": "1"
+          },
+          "children": [
+            "Page title"
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Landmark, Heading } from '@design-schema/react';\n\n<Landmark role=\"main\"><Heading level=\"1\">Page title</Heading></Landmark>",
+        "lit": "<ds-landmark role=\"main\">\n  <ds-stack gap=\"2\">\n    <ds-heading level=\"2\">main</ds-heading>\n    <ds-text tone=\"muted\">This element is a <code>main</code> landmark with no shadow root; inspect it to see\n      the role and name on the host.</ds-text>\n  </ds-stack>\n</ds-landmark>",
+        "rn": "import { Heading, Landmark, Text } from '@design-schema/rn';\n\n<Landmark role=\"main\">\n  <Heading level={2} size=\"lg\">\n    {undefined ?? 'main'}\n  </Heading>\n  <Text tone=\"muted\">Landmark has no visual bindings; it only gives this region a role and a name.</Text>\n</Landmark>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RoleMain",
+        "lit": "RoleMain",
+        "rn": "RoleMain",
+        "swift": null
+      },
+      "storyId": "landmark-react--role-main",
+      "sweep": {
+        "prop": "role",
+        "value": "main"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Role Complementary",
+      "args": {
+        "role": "complementary",
+        "label": "Sidebar",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Sidebar content"
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"complementary\" label=\"Sidebar\"><Text>Sidebar content</Text></Landmark>",
+        "lit": "<ds-landmark role=\"complementary\" aria-label=\"Related\">\n  <ds-stack gap=\"2\">\n    <ds-heading level=\"2\">Related</ds-heading>\n    <ds-text tone=\"muted\">This element is a <code>complementary</code> landmark with no shadow root; inspect it to see\n      the role and name on the host.</ds-text>\n  </ds-stack>\n</ds-landmark>",
+        "rn": "import { Heading, Landmark, Text } from '@design-schema/rn';\n\n<Landmark role=\"complementary\">\n  <Heading level={2} size=\"lg\">\n    {undefined ?? 'complementary'}\n  </Heading>\n  <Text tone=\"muted\">Landmark has no visual bindings; it only gives this region a role and a name.</Text>\n</Landmark>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RoleComplementary",
+        "lit": "RoleComplementary",
+        "rn": "RoleComplementary",
+        "swift": null
+      },
+      "storyId": "landmark-react--role-complementary",
+      "sweep": {
+        "prop": "role",
+        "value": "complementary"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Role Contentinfo",
+      "args": {
+        "role": "contentinfo",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "size": "sm"
+          },
+          "children": [
+            "Site footer"
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"contentinfo\"><Text size=\"sm\">Site footer</Text></Landmark>",
+        "lit": "<ds-landmark role=\"contentinfo\">\n  <ds-stack gap=\"2\">\n    <ds-heading level=\"2\">contentinfo</ds-heading>\n    <ds-text tone=\"muted\">This element is a <code>contentinfo</code> landmark with no shadow root; inspect it to see\n      the role and name on the host.</ds-text>\n  </ds-stack>\n</ds-landmark>",
+        "rn": "import { Heading, Landmark, Text } from '@design-schema/rn';\n\n<Landmark role=\"contentinfo\">\n  <Heading level={2} size=\"lg\">\n    {undefined ?? 'contentinfo'}\n  </Heading>\n  <Text tone=\"muted\">Landmark has no visual bindings; it only gives this region a role and a name.</Text>\n</Landmark>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RoleContentinfo",
+        "lit": "RoleContentinfo",
+        "rn": "RoleContentinfo",
+        "swift": null
+      },
+      "storyId": "landmark-react--role-contentinfo",
+      "sweep": {
+        "prop": "role",
+        "value": "contentinfo"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Role Region",
+      "args": {
+        "role": "region",
+        "label": "Related articles",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Content of the region."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"region\" label=\"Related articles\"><Text>Content of the region.</Text></Landmark>",
+        "lit": "<ds-landmark role=\"region\" aria-label=\"Related articles\">\n  <ds-stack gap=\"2\">\n    <ds-heading level=\"2\">Related articles</ds-heading>\n    <ds-text tone=\"muted\">This element is a <code>region</code> landmark with no shadow root; inspect it to see\n      the role and name on the host.</ds-text>\n  </ds-stack>\n</ds-landmark>",
+        "rn": "import { Heading, Landmark, Text } from '@design-schema/rn';\n\n<Landmark role=\"region\" label=\"Related articles\">\n  <Heading level={2} size=\"lg\">\n    {'Related articles' ?? 'region'}\n  </Heading>\n  <Text tone=\"muted\">Landmark has no visual bindings; it only gives this region a role and a name.</Text>\n</Landmark>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RoleRegion",
+        "lit": "RoleRegion",
+        "rn": "RoleRegion",
+        "swift": null
+      },
+      "storyId": "landmark-react--role-region",
+      "sweep": {
+        "prop": "role",
+        "value": "region"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Role Search",
+      "args": {
+        "role": "search",
+        "label": "Site",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Search form"
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"search\" label=\"Site\"><Text>Search form</Text></Landmark>",
+        "lit": "<ds-landmark role=\"search\">\n  <ds-stack gap=\"2\">\n    <ds-heading level=\"2\">search</ds-heading>\n    <ds-text tone=\"muted\">This element is a <code>search</code> landmark with no shadow root; inspect it to see\n      the role and name on the host.</ds-text>\n  </ds-stack>\n</ds-landmark>",
+        "rn": "import { Heading, Landmark, Text } from '@design-schema/rn';\n\n<Landmark role=\"search\">\n  <Heading level={2} size=\"lg\">\n    {undefined ?? 'search'}\n  </Heading>\n  <Text tone=\"muted\">Landmark has no visual bindings; it only gives this region a role and a name.</Text>\n</Landmark>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RoleSearch",
+        "lit": "RoleSearch",
+        "rn": "RoleSearch",
+        "swift": null
+      },
+      "storyId": "landmark-react--role-search",
+      "sweep": {
+        "prop": "role",
+        "value": "search"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Role Form",
+      "args": {
+        "role": "form",
+        "label": "Feedback",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Form fields"
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"form\" label=\"Feedback\"><Text>Form fields</Text></Landmark>",
+        "lit": "<ds-landmark role=\"form\" aria-label=\"Newsletter\">\n  <ds-stack gap=\"2\">\n    <ds-heading level=\"2\">Newsletter</ds-heading>\n    <ds-text tone=\"muted\">This element is a <code>form</code> landmark with no shadow root; inspect it to see\n      the role and name on the host.</ds-text>\n  </ds-stack>\n</ds-landmark>",
+        "rn": "import { Heading, Landmark, Text } from '@design-schema/rn';\n\n<Landmark role=\"form\" label=\"Sign in\">\n  <Heading level={2} size=\"lg\">\n    {'Sign in' ?? 'form'}\n  </Heading>\n  <Text tone=\"muted\">Landmark has no visual bindings; it only gives this region a role and a name.</Text>\n</Landmark>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RoleForm",
+        "lit": "RoleForm",
+        "rn": "RoleForm",
+        "swift": null
+      },
+      "storyId": "landmark-react--role-form",
+      "sweep": {
+        "prop": "role",
+        "value": "form"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "As Header",
+      "args": {
+        "role": "banner",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Content of the region."
+          ]
+        },
+        "as": "header"
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"banner\" as=\"header\"><Text>Content of the region.</Text></Landmark>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "AsHeader",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "landmark-react--as-header",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "As Nav",
+      "args": {
+        "role": "navigation",
+        "label": "Footer",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Content of the region."
+          ]
+        },
+        "as": "nav"
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"navigation\" label=\"Footer\" as=\"nav\"><Text>Content of the region.</Text></Landmark>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "AsNav",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "landmark-react--as-nav",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "As Main",
+      "args": {
+        "role": "main",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Content of the region."
+          ]
+        },
+        "as": "main"
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"main\" as=\"main\"><Text>Content of the region.</Text></Landmark>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "AsMain",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "landmark-react--as-main",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "As Aside",
+      "args": {
+        "role": "complementary",
+        "label": "Sidebar",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Content of the region."
+          ]
+        },
+        "as": "aside"
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"complementary\" label=\"Sidebar\" as=\"aside\"><Text>Content of the region.</Text></Landmark>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "AsAside",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "landmark-react--as-aside",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "As Footer",
+      "args": {
+        "role": "contentinfo",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Content of the region."
+          ]
+        },
+        "as": "footer"
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"contentinfo\" as=\"footer\"><Text>Content of the region.</Text></Landmark>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "AsFooter",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "landmark-react--as-footer",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "As Section",
+      "args": {
+        "role": "region",
+        "label": "Related articles",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Content of the region."
+          ]
+        },
+        "as": "section"
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"region\" label=\"Related articles\" as=\"section\"><Text>Content of the region.</Text></Landmark>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "AsSection",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "landmark-react--as-section",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "As Form",
+      "args": {
+        "role": "search",
+        "label": "Site",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Content of the region."
+          ]
+        },
+        "as": "form"
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"search\" label=\"Site\" as=\"form\"><Text>Content of the region.</Text></Landmark>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "AsForm",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "landmark-react--as-form",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "As Div",
+      "args": {
+        "role": "banner",
+        "label": "Promotion",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Content of the region."
+          ]
+        },
+        "as": "div"
+      },
+      "snippets": {
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"banner\" label=\"Promotion\" as=\"div\"><Text>Content of the region.</Text></Landmark>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "AsDiv",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "landmark-react--as-div",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Page Skeleton",
+      "args": {
+        "role": "region",
+        "label": "Related articles",
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Content of the region."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Landmark, Heading, Text, Stack } from '@design-schema/react';\n\n<Stack gap=\"section\">\n  <Landmark role=\"banner\">\n    <Landmark role=\"navigation\" label=\"Main\">\n      <Text>Main navigation</Text>\n    </Landmark>\n  </Landmark>\n  <Landmark role=\"main\">\n    <Heading level=\"1\">Notifications</Heading>\n  </Landmark>\n  <Landmark role=\"complementary\" label=\"Help\">\n    <Text>Help panel</Text>\n  </Landmark>\n  <Landmark role=\"contentinfo\">\n    <Landmark role=\"navigation\" label=\"Footer\">\n      <Text size=\"sm\">Footer navigation</Text>\n    </Landmark>\n  </Landmark>\n</Stack>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "PageSkeleton",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "landmark-react--page-skeleton",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

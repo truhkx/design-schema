@@ -663,7 +663,31 @@ describe('main', () => {
     const t = themeFixture();
     t.density = 'cavernous';
     expect(run(doc(t))[0]).toBe(1);
-    expect(std.err()).toContain("theme.density: 'cavernous' is not one of ['compact', 'comfortable', 'roomy']");
+    expect(std.err()).toContain('✖ test-theme.md:\n  - theme.density: Invalid option: expected one of "compact"|"comfortable"|"roomy"\n');
+  });
+
+  // One failing fixture per rule schema/theme.ts adds: combinations tools/theme.ts would otherwise ignore, and
+  // values the hand-written JSON schema let through.
+  test.each<[string, (t: Dict) => void, string]>([
+    ['neutralTint beside seed.neutral', (t) => { t.seed.neutral = '#C9B99C'; },
+      'theme.neutralTint: neutralTint has no effect when seed.neutral is set: the neutral ramp takes its hue and chroma from seed.neutral; remove one'],
+    ['a mode listed twice', (t) => { t.modes = { default: 'light', supports: ['light', 'dark', 'light'] }; },
+      "theme.modes.supports.2: 'light' is listed twice"],
+    ['a default mode not supported', (t) => { t.modes = { default: 'dark', supports: ['light'] }; },
+      "theme.modes.default: default mode 'dark' is not in modes.supports"],
+    ['a fractional content width', (t) => { t.layout = { rhythm: 'normal', contentWidth: 960.5 }; },
+      'theme.layout.contentWidth: Invalid input: expected int, received number'],
+    ['a status hue past 360', (t) => { t.statusHues = { danger: 400 }; },
+      'theme.statusHues.danger: Too big: expected number to be <=360'],
+    ['an empty tone word', (t) => { t.tone = ['calm', '']; },
+      'theme.tone.1: Too small: expected string to have >=1 characters'],
+  ])('rejects %s', (_name, mutate, line) => {
+    const t = themeFixture();
+    mutate(t);
+    const [code, out] = run(doc(t));
+    expect(code).toBe(1);
+    expect(std.err()).toBe(`✖ test-theme.md:\n  - ${line}\n`);
+    expect(existsSync(join(out, 'test-theme'))).toBe(false);
   });
 
   test('docs without a theme block are ignored', () => {

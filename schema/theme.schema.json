@@ -2,41 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://design-schema.dev/schema/theme.schema.json",
   "title": "Theme frontmatter",
-  "description": "The decisions a theme is derived from. Lives under the `theme:` key of a theme doc's frontmatter. tools/theme.ts turns this into full DTCG token files for every mode.",
+  "description": "The decisions a theme is derived from. Lives under the `theme:` key of a theme doc's frontmatter. tools/theme.ts turns this into full DTCG token files for every mode. Derived from schema/theme.ts by tools/schema.ts — do not edit by hand.",
   "type": "object",
-  "required": [
-    "theme"
-  ],
   "properties": {
     "theme": {
       "$ref": "#/$defs/themeDef"
     }
   },
+  "required": [
+    "theme"
+  ],
   "$defs": {
-    "hex": {
-      "type": "string",
-      "pattern": "^#[0-9a-fA-F]{6}$"
-    },
-    "mode": {
-      "type": "string",
-      "enum": [
-        "light",
-        "dark"
-      ]
-    },
     "themeDef": {
       "type": "object",
-      "required": [
-        "id",
-        "tone",
-        "not",
-        "seed",
-        "scale",
-        "radius",
-        "density",
-        "modes"
-      ],
-      "additionalProperties": false,
       "properties": {
         "id": {
           "type": "string",
@@ -44,21 +22,22 @@
           "description": "Folder and CSS attribute value: tokens/themes/<id>, [data-theme=<id>]."
         },
         "status": {
+          "default": "draft",
           "type": "string",
           "enum": [
             "draft",
             "review",
             "stable",
             "deprecated"
-          ],
-          "default": "draft"
+          ]
         },
         "tone": {
-          "type": "array",
           "minItems": 2,
           "maxItems": 5,
+          "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "description": "Adjectives that describe the feel. Used by AI tools as the tie-breaker for borderline decisions."
         },
@@ -68,48 +47,45 @@
         },
         "seed": {
           "type": "object",
-          "required": [
-            "color"
-          ],
-          "additionalProperties": false,
           "properties": {
             "color": {
-              "$ref": "#/$defs/hex",
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$",
               "description": "Brand color. The brand ramp is built around it; neutrals are tinted toward its hue unless `neutral` is set. A near-achromatic color (OKLCH chroma below 0.03) is treated as ink: the primary action is the darkest neutral on a light page and the lightest on a dark one, links take the text color, and the focus ring is the brand step that reads at 3:1 on both surfaces."
             },
             "neutral": {
-              "$ref": "#/$defs/hex",
-              "description": "Optional second seed for two-seed palettes (sand-and-black, navy-and-cream): the neutral ramp takes this color's hue and chroma (capped at 0.06) instead of a faint cast of the brand hue, the light-mode page is this color lifted (lightness min(L + 0.15, 0.96)) rather than white, and the darkest neutral keeps the hue at low chroma so dark mode is a warm black. Every contrast-chosen step is still chosen against the new surfaces."
+              "description": "Optional second seed for two-seed palettes (sand-and-black, navy-and-cream): the neutral ramp takes this color's hue and chroma (capped at 0.06) instead of a faint cast of the brand hue, the light-mode page is this color lifted (lightness min(L + 0.15, 0.96)) rather than white, and the darkest neutral keeps the hue at low chroma so dark mode is a warm black. Every contrast-chosen step is still chosen against the new surfaces.",
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
             },
             "typeface": {
-              "type": "string",
               "default": "system",
-              "description": "'system' or a family name. Named families are prepended to the system stack."
+              "description": "'system' or a family name. Named families are prepended to the system stack.",
+              "type": "string"
             },
             "headingTypeface": {
-              "type": "string",
-              "description": "Defaults to typeface."
+              "description": "Defaults to typeface.",
+              "type": "string"
             },
             "mono": {
-              "type": "string",
-              "default": "system"
+              "default": "system",
+              "type": "string"
             }
-          }
+          },
+          "required": [
+            "color"
+          ],
+          "additionalProperties": false
         },
         "neutralTint": {
+          "default": 0.2,
+          "description": "How much of the seed hue bleeds into the neutral ramp. 0 = pure gray.",
           "type": "number",
           "minimum": 0,
-          "maximum": 1,
-          "default": 0.2,
-          "description": "How much of the seed hue bleeds into the neutral ramp. 0 = pure gray."
+          "maximum": 1
         },
         "scale": {
           "type": "object",
-          "required": [
-            "base",
-            "ratio"
-          ],
-          "additionalProperties": false,
           "properties": {
             "base": {
               "type": "number",
@@ -123,7 +99,12 @@
               "maximum": 1.5,
               "description": "Modular scale ratio. 1.2 dense/technical, 1.25 balanced, 1.333 editorial."
             }
-          }
+          },
+          "required": [
+            "base",
+            "ratio"
+          ],
+          "additionalProperties": false
         },
         "radius": {
           "type": "string",
@@ -146,111 +127,147 @@
           "description": "Spacing multiplier 0.75 / 1 / 1.25 on the 4px grid."
         },
         "motion": {
+          "default": "subtle",
+          "description": "Transition durations: none 0ms, subtle 120/200ms, expressive 160/320ms. Loop (spinner) is always 800ms. Reduced-motion preferences override at runtime.",
           "type": "string",
           "enum": [
             "none",
             "subtle",
             "expressive"
-          ],
-          "default": "subtle",
-          "description": "Transition durations: none 0ms, subtle 120/200ms, expressive 160/320ms. Loop (spinner) is always 800ms. Reduced-motion preferences override at runtime."
+          ]
         },
         "elevation": {
+          "default": "subtle",
+          "description": "Overlay shadows: flat = none (overlays rely on the scrim and border), subtle = soft (default), pronounced = deeper and darker. Scales shadow.raised / shadow.overlay in both modes.",
           "type": "string",
           "enum": [
             "flat",
             "subtle",
             "pronounced"
-          ],
-          "default": "subtle",
-          "description": "Overlay shadows: flat = none (overlays rely on the scrim and border), subtle = soft (default), pronounced = deeper and darker. Scales shadow.raised / shadow.overlay in both modes."
+          ]
         },
         "layout": {
-          "type": "object",
-          "additionalProperties": false,
           "description": "Rhythm BETWEEN components and at page level. Everything inside a component comes from `space.*` via its own bindings; this decides gutters, section spacing, stack presets and measure.",
+          "type": "object",
           "properties": {
             "rhythm": {
+              "default": "normal",
+              "description": "Multiplier on section and stack spacing (0.75 / 1 / 1.5) on top of density. tight for dense tools, loose for marketing and editorial.",
               "type": "string",
               "enum": [
                 "tight",
                 "normal",
                 "loose"
-              ],
-              "default": "normal",
-              "description": "Multiplier on section and stack spacing (0.75 / 1 / 1.5) on top of density. tight for dense tools, loose for marketing and editorial."
+              ]
             },
             "contentWidth": {
-              "type": "number",
-              "minimum": 480,
-              "maximum": 1600,
               "default": 960,
-              "description": "Max width in px of the main content column (layout.maxWidth.content). Page width is 4/3 of it; prose measure is 65 characters at the body size regardless."
+              "description": "Max width in px of the main content column (layout.maxWidth.content). Page width is 4/3 of it; prose measure is 65 characters at the body size regardless.",
+              "type": "integer",
+              "minimum": 480,
+              "maximum": 1600
             }
-          }
+          },
+          "additionalProperties": false
         },
         "modes": {
           "type": "object",
-          "required": [
-            "default",
-            "supports"
-          ],
-          "additionalProperties": false,
           "properties": {
             "default": {
               "$ref": "#/$defs/mode"
             },
             "supports": {
-              "type": "array",
               "minItems": 1,
+              "type": "array",
               "items": {
                 "$ref": "#/$defs/mode"
               }
             }
-          }
+          },
+          "required": [
+            "default",
+            "supports"
+          ],
+          "additionalProperties": false
         },
         "statusHues": {
           "type": "object",
-          "additionalProperties": false,
           "properties": {
             "danger": {
+              "default": 25,
               "type": "number",
-              "default": 25
+              "minimum": 0,
+              "maximum": 360
             },
             "success": {
+              "default": 145,
               "type": "number",
-              "default": 145
+              "minimum": 0,
+              "maximum": 360
             },
             "warning": {
+              "default": 80,
               "type": "number",
-              "default": 80
+              "minimum": 0,
+              "maximum": 360
             },
             "info": {
-              "type": [
-                "number",
-                "null"
-              ],
               "default": null,
-              "description": "null = seed hue"
+              "description": "null = seed hue",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 360
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
-          }
+          },
+          "additionalProperties": false
         },
         "overrides": {
-          "type": "object",
           "description": "Escape hatch: explicit token values per mode, keyed by dotted path. Applied after derivation; still contrast-checked.",
-          "additionalProperties": false,
+          "type": "object",
           "properties": {
             "light": {
               "type": "object",
-              "additionalProperties": true
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
             },
             "dark": {
               "type": "object",
-              "additionalProperties": true
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
             }
-          }
+          },
+          "additionalProperties": false
         }
-      }
+      },
+      "required": [
+        "id",
+        "tone",
+        "not",
+        "seed",
+        "scale",
+        "radius",
+        "density",
+        "modes"
+      ],
+      "additionalProperties": false
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "light",
+        "dark"
+      ]
     }
   }
 }

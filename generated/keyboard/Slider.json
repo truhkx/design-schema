@@ -1,0 +1,59 @@
+{
+  "name": "Slider",
+  "role": "slider",
+  "identifier": "Slider",
+  "rules": [
+    {
+      "keys": [
+        "ArrowRight",
+        "ArrowUp"
+      ],
+      "action": "Increases by `step`.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowLeft",
+        "ArrowDown"
+      ],
+      "action": "Decreases by `step`.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "PageUp",
+        "PageDown"
+      ],
+      "action": "Changes by ten steps (or to the next mark).",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "Sets the minimum.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Sets the maximum.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Moves between the two thumbs of a range slider; each thumb is a tab stop.",
+      "from": "first",
+      "expect": "focus-next",
+      "when": "range"
+    }
+  ]
+}

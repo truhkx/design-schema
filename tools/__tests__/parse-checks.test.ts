@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 
 import { dump } from '../lib/pyyaml.ts';
 import * as parse from '../parse.ts';
-import { component, expectDocError, usePaths, useTmp, write } from './fixtures.ts';
+import { component, expectDocError, fmText, usePaths, useTmp, write } from './fixtures.ts';
 
 const tmp = useTmp();
 usePaths();
@@ -64,8 +64,58 @@ describe('composition', () => {
   });
 });
 
+describe('requirements met through a composed component', () => {
+  /** The halves of the target and keyboard-operable rules that read another doc: the schema accepts a composition
+   *  entry, and the parser then needs one composed component to declare the requirement itself. */
+  const doc = (requires: string[]): string => '---\n' + fmText({ a11y: { role: 'button', requires } }) + '---\n';
+
+  beforeEach(() => {
+    const d = join(tmp(), 'components');
+    write(join(d, 'button.md'), doc(['keyboard-operable', 'target-24px']));
+    write(join(d, 'text.md'), doc([]));
+    parse.paths.DOCS = d;
+  });
+
+  test('a target requirement is met by a composed component that declares one', () => {
+    const c = component();
+    c.a11y.requires.push('target-44px');
+    c.composition = { label: 'Button' };
+    check(c);
+  });
+
+  test('a target requirement with no composed target is an error', () => {
+    const c = component();
+    c.a11y.requires.push('target-24px');
+    c.composition = { label: 'Text' };
+    expectDocError(() => check(c), "widget.md: a11y.requires has 'target-24px' but no styles binding is on a size.target.* token and no composed component declares a target requirement");
+  });
+
+  test('a planned component cannot meet a requirement', () => {
+    const c = component();
+    c.a11y.requires.push('target-24px');
+    c.composition = { label: 'Gadget (planned)' };
+    expectDocError(() => check(c), 'no composed component declares a target requirement');
+  });
+
+  test('keyboard-operable is met by a composed component that declares it', () => {
+    const c = component();
+    c.a11y.role = 'group';
+    c.a11y.requires.push('keyboard-operable');
+    c.composition = { label: 'Button' };
+    check(c);
+  });
+
+  test('keyboard-operable with no operable composed component is an error', () => {
+    const c = component();
+    c.a11y.role = 'group';
+    c.a11y.requires.push('keyboard-operable');
+    c.composition = { label: 'Text' };
+    expectDocError(() => check(c), "widget.md: a11y.requires has 'keyboard-operable' but there is no keyboard block, a11y.role 'group' is not a natively focusable widget role, and no composed component declares 'keyboard-operable'");
+  });
+});
+
 describe('keyboard', () => {
-  const RULE = { keys: ['ArrowDown'], action: 'Moves to the next item.', expect: 'focus-next' };
+  const RULE = { keys: ['Home'], action: 'Moves to the first item.', expect: 'focus-first' };
   const ESCAPE = { keys: ['Escape'], action: 'Closes.', expect: 'closes' };
 
   test('a keyboard block requires keyboard operable', () => {
@@ -102,7 +152,7 @@ describe('keyboard', () => {
     expectDocError(() => check(c), 'escape-dismiss');
   });
 
-  test('keyboard operable is checked before escape', () => {
+  test('keyboard operable is reported alongside escape', () => {
     const c = component();
     c.keyboard = [ESCAPE];
     expectDocError(() => check(c), 'keyboard-operable');
@@ -144,12 +194,60 @@ describe('locked bindings', () => {
     expect(c.styles.color.locked).toBe(true);
   });
 
-  test('the match is on the unexpanded token string', () => {
-    // The pair says color.action.{variant}.background; a binding to one concrete step is a different token.
+  test('a literal binding matches a pair written with a slot', () => {
+    // The pair says color.action.{variant}.background and variant's enum includes primary.
     const c = component();
     c.styles.primaryOnly = { token: 'color.action.primary.background' };
     check(c);
-    expect(c.styles.primaryOnly.locked).toBe(false);
+    expect(c.styles.primaryOnly.locked).toBe(true);
+  });
+
+  test('a slot binding matches a literal pair over the enum values', () => {
+    const c = component();
+    c.a11y.contrast = [{ foreground: 'color.action.danger.foreground', background: 'color.action.danger.background', level: 'AA' }];
+    check(c);
+    expect(c.styles.background.locked).toBe(true);
+  });
+
+  test('a literal outside the enum values stays overridable', () => {
+    const c = component();
+    c.styles.ghostOnly = { token: 'color.action.ghost.background' };
+    check(c);
+    expect(c.styles.ghostOnly.locked).toBe(false);
+  });
+
+  test.each(['color.border.focus', 'color.inverse.focus', 'border.width.focus', 'size.target.min', 'size.target.comfortable'])('a binding on %s locks under any name', (token) => {
+    const c = component();
+    c.styles.fieldBorderFocus = { token };
+    check(c);
+    expect(c.styles.fieldBorderFocus.locked).toBe(true);
+  });
+
+  test('a locked token behind interpolation locks', () => {
+    const c = component();
+    c.props.emphasis = { type: 'enum', values: ['thin', 'focus'], default: 'thin', description: 'Border weight.' };
+    c.styles.borderWidth = { token: 'border.width.{emphasis}' };
+    check(c);
+    expect(c.styles.borderWidth.locked).toBe(true);
+  });
+
+  test('an explicit false on a focus token binding is an error', () => {
+    const c = component();
+    c.styles.borderFocus = { token: 'color.border.focus', locked: false };
+    expectDocError(() => check(c), "styles.borderFocus sets locked: false, but 'color.border.focus' must be locked (LOCKED_TOKENS has 'color.border.focus')");
+  });
+
+  test('an explicit false on a named focus ring is an error', () => {
+    const c = component();
+    c.styles.focusRingWidth = { token: 'space.1', locked: false };
+    expectDocError(() => check(c), "must be locked (LOCKED_BINDING_NAMES has 'focusRing*')");
+  });
+
+  test('an explicit false on an overridable binding is kept', () => {
+    const c = component();
+    c.styles.radius.locked = false;
+    check(c);
+    expect(c.styles.radius.locked).toBe(false);
   });
 
   test.each(['focusRing', 'focusRingWidth', 'focusRingOffset', 'minTarget', 'dismissTarget'])('%s locks by name', (name) => {
@@ -169,8 +267,15 @@ describe('locked bindings', () => {
   test('an explicit false cannot unlock a contrast bearing binding', () => {
     const c = component();
     c.styles.background.locked = false;
+    expectDocError(() => check(c), "styles.background sets locked: false, but 'color.action.{variant}.background' must be locked (a11y.contrast pairs 'color.action.{variant}.background')");
+  });
+
+  test('an extension adding a focus token binding fails', () => {
+    const c = component();
+    const ext = { file: 'extensions/Widget.glow.md', name: 'glow', extends: 'Widget', body: '', title: 'glow', extension: { extends: 'Widget', name: 'glow', styles: { glow: { token: 'color.border.focus' } } } };
+    const added = parse.mergeExtensions(c, [ext]);
     check(c);
-    expect(c.styles.background.locked).toBe(true);
+    expectDocError(() => parse.checkExtensionLocks(c, added), "extensions/Widget.glow.md: styles.glow binds 'color.border.focus', which is locked");
   });
 
   test('every binding ends up with a boolean locked flag', () => {
@@ -218,6 +323,7 @@ describe('interpolation targets', () => {
   test('an enum value with no token is named in the error', () => {
     const c = component();
     c.props.size.values = ['sm', 'huge'];
+    c.props.size.default = 'sm'; // the fixture's 'md' default is no longer one of the values
     c.styles.paddingInline.token = 'space.md'; // the fixture's own {size} binding would trip first
     c.styles.fontSize = { token: 'font.size.{size}' };
     let message = '';
@@ -262,6 +368,7 @@ describe('interpolation targets', () => {
     parse.hooks.tokenNames = () => null;
     const c = component();
     c.props.size.values = ['sm', 'huge'];
+    c.props.size.default = 'sm';
     c.styles.fontSize = { token: 'font.size.{size}' };
     check(c);
   });

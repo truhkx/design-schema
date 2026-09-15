@@ -8,7 +8,12 @@
 import { appendFileSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
+import { product, pyGet, pyRepr, truthy } from '../../schema/lib.ts';
 import { pyFloatRepr } from './pyyaml.ts';
+
+// Truthiness, `dict.get`, `repr()` and `itertools.product` live in schema/lib.ts, which the schema's own checks
+// import; re-exported so the tools keep one implementation.
+export { product, pyGet, pyRepr, truthy };
 
 const LINESEP = process.platform === 'win32' ? '\r\n' : '\n';
 
@@ -197,50 +202,9 @@ export function ljust(s: string, width: number): string {
   return s.length >= width ? s : s + ' '.repeat(width - s.length);
 }
 
-/** Python truthiness: `None`, `False`, `0`, `''`, `[]`, `{}` are false. */
-export function truthy(v: unknown): boolean {
-  if (v === null || v === undefined || v === false || v === 0 || v === '') return false;
-  if (Number.isNaN(v)) return true;
-  if (Array.isArray(v)) return v.length > 0;
-  if (typeof v === 'object') return Object.keys(v as object).length > 0;
-  return true;
-}
-
-/** `dict.get(key, default)`: the stored value (even `None`) when the key exists, else the default. */
-export function pyGet<T>(obj: Record<string, unknown> | null | undefined, key: string, dflt: T): unknown | T {
-  return obj && Object.hasOwn(obj, key) ? obj[key] : dflt;
-}
-
 /** `key in dict`. */
 export function has(obj: unknown, key: string): boolean {
   return typeof obj === 'object' && obj !== null && Object.hasOwn(obj, key);
-}
-
-function reprString(s: string): string {
-  const quote = s.includes("'") && !s.includes('"') ? '"' : "'";
-  let out = quote;
-  for (const ch of s) {
-    const cp = ch.codePointAt(0) as number;
-    if (ch === quote || ch === '\\') out += '\\' + ch;
-    else if (ch === '\n') out += '\\n';
-    else if (ch === '\r') out += '\\r';
-    else if (ch === '\t') out += '\\t';
-    else if (cp < 0x20 || cp === 0x7f) out += '\\x' + cp.toString(16).padStart(2, '0');
-    else out += ch;
-  }
-  return out + quote;
-}
-
-/** `repr(value)` for the JSON-like values that reach an error message. */
-export function pyRepr(v: unknown): string {
-  if (v === null || v === undefined) return 'None';
-  if (v === true) return 'True';
-  if (v === false) return 'False';
-  if (typeof v === 'number') return Number.isInteger(v) && !Object.is(v, -0) ? String(v) : pyFloatRepr(v);
-  if (typeof v === 'string') return reprString(v);
-  if (Array.isArray(v)) return '[' + v.map(pyRepr).join(', ') + ']';
-  if (typeof v === 'object') return '{' + Object.entries(v as Record<string, unknown>).map(([k, x]) => `${reprString(k)}: ${pyRepr(x)}`).join(', ') + '}';
-  return String(v);
 }
 
 /** `str(value)`: a string as is, anything else as `repr()` would show it. */
@@ -258,13 +222,3 @@ export function sortedNames(names: string[]): string[] {
   });
 }
 
-/** `itertools.product(*lists)`: the rightmost list varies fastest. */
-export function product<T>(lists: T[][]): T[][] {
-  let out: T[][] = [[]];
-  for (const list of lists) {
-    const next: T[][] = [];
-    for (const prefix of out) for (const item of list) next.push([...prefix, item]);
-    out = next;
-  }
-  return out;
-}

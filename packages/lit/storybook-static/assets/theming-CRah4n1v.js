@@ -1,0 +1,1 @@
+import"./react-CF3TzCu_.js";import{Dt as e,It as t}from"./DocsRenderer-JROSPFPF-DKzmVVW7.js";e();export{t as color};

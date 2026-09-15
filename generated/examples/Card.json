@@ -1,0 +1,963 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "3",
+        "inset": "md",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" footer={footer}>{body}</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\"><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "card-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Heading Level 2",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "2",
+        "inset": "md",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" headingLevel=\"2\" footer={footer}>{body}</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" heading-level=\"2\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" headingLevel=\"2\"><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeadingLevel2",
+        "lit": "HeadingLevel2",
+        "rn": "HeadingLevel2",
+        "swift": null
+      },
+      "storyId": "card-react--heading-level-2",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "2"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Heading Level 3",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "3",
+        "inset": "md",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" headingLevel=\"3\" footer={footer}>{body}</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" heading-level=\"3\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" headingLevel=\"3\"><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeadingLevel3",
+        "lit": "HeadingLevel3",
+        "rn": "HeadingLevel3",
+        "swift": null
+      },
+      "storyId": "card-react--heading-level-3",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "3"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Heading Level 4",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "4",
+        "inset": "md",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" headingLevel=\"4\" footer={footer}>{body}</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" heading-level=\"4\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" headingLevel=\"4\"><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeadingLevel4",
+        "lit": "HeadingLevel4",
+        "rn": "HeadingLevel4",
+        "swift": null
+      },
+      "storyId": "card-react--heading-level-4",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "4"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Heading Level 5",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "5",
+        "inset": "md",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" headingLevel=\"5\" footer={footer}>{body}</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" heading-level=\"5\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" headingLevel=\"5\"><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeadingLevel5",
+        "lit": "HeadingLevel5",
+        "rn": "HeadingLevel5",
+        "swift": null
+      },
+      "storyId": "card-react--heading-level-5",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "5"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Heading Level 6",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "6",
+        "inset": "md",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" headingLevel=\"6\" footer={footer}>{body}</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" heading-level=\"6\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" headingLevel=\"6\"><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeadingLevel6",
+        "lit": "HeadingLevel6",
+        "rn": "HeadingLevel6",
+        "swift": null
+      },
+      "storyId": "card-react--heading-level-6",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "6"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Sm",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "3",
+        "inset": "sm",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" inset=\"sm\" footer={footer}>{body}</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" inset=\"sm\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" inset=\"sm\"><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetSm",
+        "lit": "InsetSm",
+        "rn": "InsetSm",
+        "swift": null
+      },
+      "storyId": "card-react--inset-sm",
+      "sweep": {
+        "prop": "inset",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Md",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "3",
+        "inset": "md",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" inset=\"md\" footer={footer}>{body}</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" inset=\"md\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" inset=\"md\"><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetMd",
+        "lit": "InsetMd",
+        "rn": "InsetMd",
+        "swift": null
+      },
+      "storyId": "card-react--inset-md",
+      "sweep": {
+        "prop": "inset",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inset Lg",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "3",
+        "inset": "lg",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" inset=\"lg\" footer={footer}>{body}</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" inset=\"lg\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" inset=\"lg\"><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsetLg",
+        "lit": "InsetLg",
+        "rn": "InsetLg",
+        "swift": null
+      },
+      "storyId": "card-react--inset-lg",
+      "sweep": {
+        "prop": "inset",
+        "value": "lg"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Surface Default",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "3",
+        "inset": "md",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" surface=\"default\" footer={footer}>{body}</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" surface=\"default\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" surface=\"default\"><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SurfaceDefault",
+        "lit": "SurfaceDefault",
+        "rn": "SurfaceDefault",
+        "swift": null
+      },
+      "storyId": "card-react--surface-default",
+      "sweep": {
+        "prop": "surface",
+        "value": "default"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Surface Subtle",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "3",
+        "inset": "md",
+        "surface": "subtle",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" surface=\"subtle\" footer={footer}>{body}</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" surface=\"subtle\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" surface=\"subtle\"><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SurfaceSubtle",
+        "lit": "SurfaceSubtle",
+        "rn": "SurfaceSubtle",
+        "swift": null
+      },
+      "storyId": "card-react--surface-subtle",
+      "sweep": {
+        "prop": "surface",
+        "value": "subtle"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Without Heading",
+      "args": {
+        "headingLevel": "3",
+        "inset": "md",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\n<Card>{body}</Card>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithoutHeading",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "card-react--without-heading",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "With Header Actions",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "3",
+        "inset": "md",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        },
+        "headerActions": {
+          "$element": "Button",
+          "props": {
+            "label": "Dismiss",
+            "variant": "ghost",
+            "size": "sm",
+            "iconOnly": true
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card\n  heading=\"Team plan\"\n  footer={footer}\n  headerActions={<Button label=\"Dismiss\" variant=\"ghost\" size=\"sm\" iconOnly />}\n>\n  {body}\n</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\">\n    <ds-link slot=\"header-actions\" href=\"#details\" label=\"Details\"></ds-link>\n    <ds-button slot=\"header-actions\" variant=\"ghost\" size=\"sm\" icon-only label=\"More options\">\n      <svg slot=\"leading-icon\" aria-hidden=\"true\" focusable=\"false\" viewBox=\"0 0 16 16\" width=\"1em\" height=\"1em\" fill=\"currentColor\">\n        <circle cx=\"3\" cy=\"8\" r=\"1.5\" />\n        <circle cx=\"8\" cy=\"8\" r=\"1.5\" />\n        <circle cx=\"13\" cy=\"8\" r=\"1.5\" />\n      </svg>\n    </ds-button>\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "rn": "import { Button, Card, Text } from '@design-schema/rn';\n\n<Card\n  heading=\"Card title\"\n  headerActions={<Button label=\"Edit\" variant=\"ghost\" size=\"sm\" />}\n>\n  <Text>Body content.</Text>\n</Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithHeaderActions",
+        "lit": "WithHeaderActions",
+        "rn": "WithHeaderActions",
+        "swift": null
+      },
+      "storyId": "card-react--with-header-actions",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Interactive",
+      "args": {
+        "headingLevel": "3",
+        "inset": "md",
+        "surface": "default",
+        "interactive": true,
+        "children": {
+          "$element": "Link",
+          "props": {
+            "href": "#",
+            "label": "View plan details"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Link } from '@design-schema/react';\n\n<Card interactive><Link href=\"#\" label=\"View plan details\" /></Card>",
+        "lit": null,
+        "rn": "import { Card, Link, Text } from '@design-schema/rn';\n\n<Card heading=\"Growth plan\" interactive>\n  <>\n    <Text>10 seats, unlimited projects, priority support.</Text>\n    <Link href=\"/plans/growth\" label=\"View plan\" />\n  </>\n</Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Interactive",
+        "lit": null,
+        "rn": "Interactive",
+        "swift": null
+      },
+      "storyId": "card-react--interactive",
+      "sweep": {
+        "prop": "interactive",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Focusable",
+      "args": {
+        "heading": "Team plan",
+        "headingLevel": "3",
+        "inset": "md",
+        "surface": "default",
+        "interactive": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p"
+              },
+              "children": [
+                "Unlimited projects, priority support and advanced analytics for growing teams."
+              ]
+            },
+            {
+              "$element": "Text",
+              "props": {
+                "element": "p",
+                "tone": "muted",
+                "size": "sm"
+              },
+              "children": [
+                " $24/month, billed annually. "
+              ]
+            }
+          ]
+        },
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        },
+        "focusable": true
+      },
+      "snippets": {
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" footer={footer} focusable>{body}</Card>",
+        "lit": null,
+        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" focusable><Text>Body content.</Text></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Focusable",
+        "lit": null,
+        "rn": "Focusable",
+        "swift": null
+      },
+      "storyId": "card-react--focusable",
+      "sweep": {
+        "prop": "focusable",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

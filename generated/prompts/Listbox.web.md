@@ -1,0 +1,551 @@
+# Generate: Listbox for React (web)
+
+You are generating a production component for the **Design Schema** design system. The component schema below is the source of truth. Do not invent props, events, or styles that are not in it, and do not omit any that are.
+
+## Output
+
+Write `packages/react/src/Listbox.tsx` exporting a typed React function component named `Listbox`, plus `Listbox.stories.tsx` covering every enum value of every enum prop.
+
+## Rules
+
+- React 19: `ref` is a prop; no forwardRef; `useId`; Actions are not used by components. Type the component as `function Listbox({ ref, …rest }: ListboxProps & { ref?: Ref<HTMLElement> })` (the root element's type in place of `HTMLElement`) and attach `ref` to the root; generated ids come from `useId()`; never `useActionState`, `useFormStatus`, or a form `action` prop.
+- Render the element and attributes declared under `platforms.web`. Map each event to its `platforms.web` name.
+- Style ONLY through the CSS custom properties generated from tokens (`--color-…`, `--space-…`, `--font-…`, `--radius-…`). Never hard-code a color, size, or font. A style binding like `color.action.{variant}.background` becomes `var(--color-action-${variant}-background)`.
+- Implement every item in `a11y.requires`:
+  - `accessible-name`: the `label` prop is rendered as visible text or `aria-label`; never both empty.
+  - `focus-visible`: a `:focus-visible` outline using `--color-border-focus` and `--border-width-focus`. Never remove the outline without replacing it.
+  - `keyboard-operable`: native element semantics (do not build interactive elements from `<div>`).
+  - `target-24px` / `target-44px`: `min-inline-size`/`min-block-size` from `--size-target-min` / `--size-target-comfortable`.
+  - `heading-hierarchy`: render the heading level as the matching `<h1>`–`<h6>`; do not pick the element by visual size.
+- `disabled` uses `aria-disabled="true"` and keeps the element focusable (WCAG-friendly) unless the schema says otherwise. On native checkable inputs (checkbox, radio, switch) `readOnly` has no effect, so guard with `preventDefault()` in both `click` and `change`.
+- Visually hidden text (for accessible-name suffixes) uses the standard clip pattern — absolute, 1px box, `clip-path: inset(50%)`, `white-space: nowrap` — the one sanctioned use of pixel literals.
+- Support light and dark by relying on the token variables only — no theme logic in the component.
+- `disabled` uses `opacity.disabled`; transitions use `motion.duration.fast` + `motion.easing.standard` and are removed under `prefers-reduced-motion`.
+- Use every `copy.*` string verbatim; do not write your own user-facing text.
+- Testability hooks for the gates: the component root carries `data-ds="<Name>"`; a component with a `keyboard` block ships a story exported as `Keyboard` that renders it open/present with its trigger (if any) and at least three focusable children, no decorators that add other focusable elements.
+- `keyboard` rules are the keyboard model: implement every key → action exactly as listed and nothing else; `composition` parts must render the named system component. Overlays: render into a portal at `document.body` (a `container` prop may override), lock body scroll while open, make the rest of the page `inert` for modal dialogs (`focus-trap` + `inert-background`), restore focus to the opener on close (`focus-restore`), position non-modal popups with `position: fixed` from the trigger's `getBoundingClientRect()` and flip when they would overflow the viewport, and put them on the right stacking layer with `z-index: var(--layer-<name>)`.
+- Props of type `array`, `object`, or `function` carry a `shape` string in TypeScript notation; use it verbatim as the type. Prop type `content` is `ReactNode` / a slot / `ReactNode` by platform.
+- Interpolated style bindings (`color.status.{tone}.background`) resolve per enum value at render time; never enumerate them by hand where a lookup will do. A resolved path ending in `.default` drops that segment (`color.background.{surface}` with `default` is `color.background`, i.e. `--color-background` / `colorBackground`); an enum value of `none` for a background/border/max-width binding renders nothing rather than a token.
+- Composite components (Breadcrumb, Alert, RadioGroup) reuse the system's existing components (Link, Button, Text) from the same package rather than re-implementing them, and never restyle a child (no class overrides, no `::part`, no style props reaching into it): if a child needs a variation, the child's schema grows.
+- Transitions use the component's own `transition` binding (its token and description), with `motion.easing.standard`; `motion.duration.fast` is only the default when a component has no `transition` binding.
+- Development-only warnings the docs ask for use the platform convention: `process.env.NODE_ENV !== 'production'` (React), `import.meta.env.DEV` (Lit), `__DEV__` (React Native).
+- Stories are named after the prop and value in PascalCase (`ToneInfo`, `RoleBanner`); demo stories are titled `Demo/<Name>/<Platform>`.
+- Icons: use the system `Icon` component for every glyph the docs name (`<Icon name="external" inline />`, `<ds-icon name="close">`, `<Icon name="check" color={…} />`); never draw an inline SVG or a Unicode glyph by hand. Decorative icons take no label; a glyph that carries meaning gets one.
+- Enum props whose values are quoted digits (Heading `level`, Stack `gap`) accept both the string and the number.
+- Stories: Storybook 10 CSF3 with `@storybook/react-vite`; title `'<Name>/React'`; one story per enum value plus Default.
+- TypeScript 7 with `isolatedDeclarations`: every exported symbol carries an explicit type annotation and no export type is inferred — the component returns `ReactElement` (`ReactElement | null` when it can render nothing), exported constants, contexts and helpers are annotated, and `const meta: Meta<typeof Listbox> = …` in stories. `exactOptionalPropertyTypes` (`name?: T | undefined`), `noUncheckedIndexedAccess` and `verbatimModuleSyntax` (`import type`) are on.
+- Tests run on Vitest 5 over Vite 8 (jsdom, `@testing-library/react`); the behavior scenarios below become `Listbox.test.tsx`.
+- Add a short JSDoc block that includes the "When to use" guidance verbatim.
+
+## Component schema
+
+```yaml
+component:
+  name: Listbox
+  category: input
+  status: review
+  apg: listbox
+  anatomy:
+  - list
+  - group
+  - groupLabel
+  - option
+  - optionLabel
+  - optionDescription
+  - optionIcon
+  - optionCheck
+  - emptyState
+  composition:
+    optionIcon: Icon
+    optionCheck: Icon
+    emptyState: Text
+  props:
+    label:
+      type: string
+      required: true
+      description: Accessible name of the list. When a visible Text label exists,
+        pass its id via `labelledBy` instead and this is ignored.
+    labelledBy:
+      type: string
+      description: Id of a visible element that labels the list.
+      platforms:
+      - web
+      - lit
+    options:
+      type: array
+      required: true
+      shape: '({ value: string; label: string; description?: string; icon?: IconName;
+        disabled?: boolean } | { group: string; options: ListboxOption[] })[]'
+      description: Flat or grouped options. Export the item type as `ListboxOption`.
+    multiple:
+      type: boolean
+      default: false
+      description: Allow any number of selections. The value becomes an array; each
+        option shows a check indicator; selection toggles rather than moves. This
+        is the same engine Combobox uses for multi-select.
+    value:
+      type: union
+      description: 'Controlled selection: a value, or with `multiple` the exported
+        `ListboxValue` (`string | string[]`). Omit for uncontrolled.'
+      shape: string | string[]
+    defaultValue:
+      type: union
+      description: Initial selection (or array).
+      shape: string | string[]
+    selectionFollowsFocus:
+      type: boolean
+      default: true
+      description: 'Single-select only: arrow keys select as they move (the common
+        picker feel). Set false when selection has side effects, so arrows only move
+        and Space selects.'
+    required:
+      type: boolean
+      default: false
+      description: At least one option must be selected to submit when inside a Form.
+    invalid:
+      type: boolean
+      default: false
+      description: Marks the list invalid (aria-invalid) with `copy.invalid`.
+    error:
+      type: string
+      description: Error message rendered below the list and linked by aria-describedby;
+        implies invalid.
+    embedded:
+      type: boolean
+      default: false
+      description: The list lives inside a popup (Select, Combobox) that owns the
+        border, surface and radius; the list draws none of its own.
+    defaultActiveValue:
+      type: string
+      description: The option that is active when the list first receives focus (Select
+        opens with the selected option active). Defaults to the first selected, else
+        the first enabled option.
+    loading:
+      type: boolean
+      default: false
+      description: Options are being fetched (async Combobox); the list shows `copy.loading`
+        in place of the empty message and is aria-busy.
+    disabled:
+      type: boolean
+      default: false
+      description: The whole list is inert but readable.
+    name:
+      type: string
+      description: Field name for Form collection. Multiple values are collected as
+        an array.
+    emptyMessage:
+      type: string
+      description: Shown when `options` is empty (a filtered Combobox with no matches).
+        Defaults to `copy.empty`.
+    maxVisible:
+      type: enum
+      values:
+      - '5'
+      - '8'
+      - '12'
+      - all
+      default: '8'
+      description: Height in rows before the list scrolls; `all` never scrolls.
+  events:
+    onChange:
+      description: Fired when the selection changes, with the new value (array when
+        `multiple`).
+      platforms:
+        web: onChange
+        lit: change
+        rn: onChange
+        swiftui: onChange
+    onActiveChange:
+      description: Fired as the focused (active) option changes, with its value —
+        Combobox uses this to keep aria-activedescendant in sync; consumers rarely
+        need it.
+      platforms:
+        web: onActiveChange
+        lit: active-change
+        rn: onActiveChange
+        swiftui: onActiveChange
+  keyboard:
+  - keys:
+    - ArrowDown
+    action: Moves to the next enabled option (and selects it when selection follows
+      focus).
+    from: first
+    expect: focus-next
+  - keys:
+    - ArrowUp
+    action: Moves to the previous enabled option.
+    from: last
+    expect: focus-prev
+  - keys:
+    - Home
+    action: First option.
+    from: last
+    expect: focus-first
+  - keys:
+    - End
+    action: Last option.
+    from: first
+    expect: focus-last
+  - keys:
+    - ' '
+    action: Selects the focused option; with `multiple`, toggles it.
+    from: first
+    expect: selects
+  - keys:
+    - Enter
+    action: Selects the focused option (single) — inside a Select or Combobox, also
+      closes the popup.
+    from: first
+    expect: selects
+  - keys:
+    - Shift+ArrowDown
+    - Shift+ArrowUp
+    action: 'Multiple: moves and adds the next/previous option to the selection.'
+    when: multiple
+    from: first
+    expect: manual
+  - keys:
+    - Control+a
+    action: 'Multiple: selects all enabled options; again clears.'
+    when: multiple
+    from: first
+    expect: manual
+  - keys:
+    - a-z
+    action: Typeahead to the next option whose label starts with the typed characters.
+    from: first
+    expect: manual
+  - keys:
+    - PageDown
+    - PageUp
+    action: Moves by the visible row count.
+    from: first
+    expect: manual
+  styles:
+    surface:
+      token: color.background
+      locked: true
+    border:
+      token: color.border.strong
+      description: Only when not `embedded`; inside a popup the popup owns the border.
+      locked: false
+    borderWidth:
+      token: border.width.thin
+      locked: false
+    radius:
+      token: radius.md
+      locked: false
+    listPadding:
+      token: space.1
+      locked: false
+    optionPaddingBlock:
+      token: space.sm
+      locked: false
+    optionPaddingInline:
+      token: space.md
+      locked: false
+    optionGap:
+      token: layout.gap.normal
+      description: Between check, icon, label and description.
+      locked: false
+    optionRadius:
+      token: radius.sm
+      locked: false
+    optionColor:
+      token: color.foreground
+      locked: true
+    optionDescriptionColor:
+      token: color.foreground.muted
+      locked: true
+    optionDescriptionSize:
+      token: font.size.sm
+      locked: false
+    optionActiveBackground:
+      token: color.background.subtle
+      description: The focused/active option (keyboard or hover). Selection is shown
+        by the check and weight, so active and selected are never confused.
+      locked: true
+    optionSelectedWeight:
+      token: font.weight.medium
+      locked: false
+    optionSelectedCheck:
+      token: color.control.selectedBackground
+      description: The check icon on selected options (rendered only with `multiple`;
+        single-select shows selection by the row fill), in the selected-control fill
+        (3:1 on both surfaces by derivation); always rendered (invisible slot when
+        unselected) so labels align.
+      locked: true
+    groupLabelColor:
+      token: color.foreground.muted
+      locked: true
+    groupLabelSize:
+      token: font.size.xs
+      locked: false
+    groupLabelWeight:
+      token: font.weight.semibold
+      locked: false
+    groupLabelPaddingBlock:
+      token: space.1
+      locked: false
+    emptyColor:
+      token: color.foreground.muted
+      locked: true
+    fontFamily:
+      token: font.family.body
+      locked: false
+    fontSize:
+      token: font.size.md
+      locked: false
+    lineHeight:
+      token: font.lineHeight.normal
+      locked: false
+    minTarget:
+      token: size.target.min
+      locked: true
+    focusRing:
+      token: color.border.focus
+      locked: true
+    focusRingWidth:
+      token: border.width.focus
+      locked: true
+    disabledOpacity:
+      token: opacity.disabled
+      locked: false
+  copy:
+    empty: No options
+    required: '{label} is required.'
+    selectedCount: '{count} selected'
+    loading: Loading…
+  a11y:
+    role: listbox
+    requires:
+    - accessible-name
+    - selected-state
+    - arrow-navigation
+    - keyboard-operable
+    - focus-visible
+    - contrast-aa
+    - target-24px
+    - error-identification
+    contrast:
+    - foreground: color.foreground
+      background: color.background
+      level: AA
+    - foreground: color.foreground
+      background: color.background.subtle
+      level: AA
+    - foreground: color.foreground.muted
+      background: color.background
+      level: AA
+    - foreground: color.foreground.muted
+      background: color.background.subtle
+      level: AA
+    - foreground: color.control.selectedBackground
+      background: color.background
+      level: AA
+      large: true
+    - foreground: color.control.selectedBackground
+      background: color.background.subtle
+      level: AA
+      large: true
+  platforms:
+    web:
+      element: div
+      attributes:
+      - role=listbox
+      - aria-label
+      - aria-labelledby
+      - aria-multiselectable
+      - aria-activedescendant
+      - aria-invalid
+      - aria-required
+      - aria-describedby
+      - aria-busy
+      - tabindex=0
+      - role=option
+      - aria-selected
+      - aria-disabled
+      - role=group
+      notes: 'The list is ONE focusable element (tabindex=0) and moves an aria-activedescendant
+        pointer between <div role="option"> children instead of moving DOM focus —
+        this is the one composite in the system that uses activedescendant, because
+        Combobox must keep focus in its input while the list is navigated. Standalone,
+        DOM focus sits on the list and the active option is scrolled into view. Options
+        carry aria-selected; groups are role=group with aria-labelledby. Hover sets
+        the active option. Native <select multiple> is not used: it cannot be styled
+        or grouped consistently and its keyboard model differs per browser.'
+    lit:
+      tag: ds-listbox
+      reflect:
+      - multiple
+      - disabled
+      - required
+      notes: '`options` and `value` are properties. Form-associated: setFormValue
+        with a FormData carrying one entry per selected value when `multiple`, so
+        a native <form> gets the same shape as a <select multiple>. Composed `change`
+        (detail { value }) and `active-change`. aria-activedescendant referencing
+        shadow options works because list and options share the shadow root; Combobox
+        composes ds-listbox inside its own shadow root for the same reason.'
+    rn:
+      element: FlatList
+      props:
+      - accessibilityRole=list
+      - accessibilityState
+      - accessibilityRole=menuitem
+      notes: 'A FlatList (virtualised — long option lists are common) of Pressable
+        rows with accessibilityRole="menuitem" (no listbox/option roles on native)
+        and accessibilityState={{ selected, disabled }}; multiple: accessibilityState.checked.
+        maxVisible → maxHeight = rows × row height measured from the first row. Each
+        option is its own accessibility stop; typeahead and arrows apply with a hardware
+        keyboard only.'
+    swiftui:
+      element: ScrollView
+      props:
+      - ScrollView
+      - LazyVStack
+      - Button
+      - .accessibilityAddTraits=isSelected
+      - .focusable
+      - .onMoveCommand
+      - .onKeyPress
+      - '@FocusState'
+      - ScrollViewReader
+      - .accessibilityElement=contain
+      notes: 'A `ScrollView` + `LazyVStack` of option rows (`Button`s with `.isSelected`,
+        group headers as `Text` with `.isHeader`) inside a `.contain` element labelled
+        by `label`/`labelledBy`; not `List`. The list is one focus section: arrows
+        move the active `@FocusState` index, type-ahead via `.onKeyPress(characters:)`,
+        Home/End via `.onKeyPress(.home/.end)`, Space/Enter select per mode; `ScrollViewReader`
+        keeps the active option in view and `maxVisible` sets the frame height from
+        the measured row height. `multiple` rows show the check Icon and the count
+        is announced. `embedded` drops the surface bindings for Select/Combobox/Search
+        hosts.'
+```
+
+## Overrides (per-instance styling contract)
+
+Every style binding above becomes a CSS custom-property hook on the component root, named `--ds-<component>-<binding>` (kebab-case), defaulting to its token: `.ds-button {{ --ds-button-padding-inline: var(--space-md); padding-inline: var(--ds-button-padding-inline); }}`. Interpolated bindings set the hook per modifier class (`.ds-button--primary {{ --ds-button-background: var(--color-action-primary-background) }}`). Rules always read the hook, never the token directly.
+
+The component accepts `overrides?: Partial<Record<OverridableBinding, TokenRef>>` where `OverridableBinding` is the union of the overridable bindings below and `TokenRef` is the token-name union exported by `@design-schema/tokens` (`import type {{ TokenRef }} from '@design-schema/tokens'`). Each entry sets the hook inline as `var(--<token-kebab>)`. Locked bindings are not in the type and are ignored if passed. Consumers may also set the hooks from their own CSS; that is the sanctioned escape hatch and the docs say so.
+
+Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
+
+Overridable: `border`, `borderWidth`, `radius`, `listPadding`, `optionPaddingBlock`, `optionPaddingInline`, `optionGap`, `optionRadius`, `optionDescriptionSize`, `optionSelectedWeight`, `groupLabelSize`, `groupLabelWeight`, `groupLabelPaddingBlock`, `fontFamily`, `fontSize`, `lineHeight`, `disabledOpacity`
+Locked (accessibility-bearing, never overridable): `surface`, `optionColor`, `optionDescriptionColor`, `optionActiveBackground`, `optionSelectedCheck`, `groupLabelColor`, `emptyColor`, `minTarget`, `focusRing`, `focusRingWidth`
+
+## Behavior scenarios (7)
+
+Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
+
+```yaml
+- name: renders
+  then:
+  - renders: true
+  derived: true
+- name: renders-max-visible-5
+  given:
+    maxVisible: '5'
+  then:
+  - renders: true
+  derived: true
+- name: renders-max-visible-8
+  given:
+    maxVisible: '8'
+  then:
+  - renders: true
+  derived: true
+- name: renders-max-visible-12
+  given:
+    maxVisible: '12'
+  then:
+  - renders: true
+  derived: true
+- name: renders-max-visible-all
+  given:
+    maxVisible: all
+  then:
+  - renders: true
+  derived: true
+- name: has-accessible-name
+  then:
+  - name: true
+  derived: true
+- name: error-is-identified
+  given:
+    error: Fix this before continuing.
+  then:
+  - text: Fix this before continuing.
+  - state: invalid
+    is: true
+  derived: true
+```
+
+## Platform notes (web)
+
+```yaml
+element: div
+attributes:
+- role=listbox
+- aria-label
+- aria-labelledby
+- aria-multiselectable
+- aria-activedescendant
+- aria-invalid
+- aria-required
+- aria-describedby
+- aria-busy
+- tabindex=0
+- role=option
+- aria-selected
+- aria-disabled
+- role=group
+notes: "The list is ONE focusable element (tabindex=0) and moves an aria-activedescendant\
+  \ pointer between <div role=\"option\"> children instead of moving DOM focus \u2014\
+  \ this is the one composite in the system that uses activedescendant, because Combobox\
+  \ must keep focus in its input while the list is navigated. Standalone, DOM focus\
+  \ sits on the list and the active option is scrolled into view. Options carry aria-selected;\
+  \ groups are role=group with aria-labelledby. Hover sets the active option. Native\
+  \ <select multiple> is not used: it cannot be styled or grouped consistently and\
+  \ its keyboard model differs per browser."
+```
+
+## Guidance
+
+## Overview
+
+A listbox is a list you choose from. It is the part of a dropdown that actually does the work — the arrows, the typeahead, the selection — extracted so that a visible picker, a Select's popup and a Combobox's suggestions all behave identically, including for multi-select. If Select is the trigger and Combobox is the input, Listbox is the engine.
+
+## When to use
+
+Use a standalone Listbox when the options should stay visible: a settings picker with five to twenty entries, a transfer list, the sidebar of a two-pane chooser. Use `multiple` for "pick any": tags, recipients, filters. Set `selectionFollowsFocus: false` when selecting has side effects (loading a preview), so arrow-key browsing does not trigger them. Everywhere else, use Select (short lists, form fields) or Combobox (long lists, typing to filter) — both open a Listbox.
+
+## When not to use
+
+Do not use a Listbox for two to seven options that fit on screen and need no scrolling; a RadioGroup (single) or a set of Checkboxes (multiple) is simpler and has native semantics. Do not use it for actions (Menu) or for navigation (Links). Do not present a multi-select without showing the selected count or chips somewhere, or users lose track of what they picked.
+
+## Behavior
+
+The list is one tab stop. Arrow keys move the active option and, in single-select with `selectionFollowsFocus`, select it; Space selects or toggles, Enter selects; Home/End and PageUp/PageDown jump; typing letters moves to the matching label. In `multiple`, each option shows a check, Space toggles, Shift+Arrow extends, Ctrl/Cmd+A selects all, and `onChange` receives the array in option order. Disabled options are visible, announced, skipped by arrows and not selectable. The active option is always scrolled into view; the list scrolls after `maxVisible` rows. When `options` is empty, `emptyMessage` shows and the list is still focusable so a Combobox user hears "No options". Inside a Form, `name` collects the value (array for `multiple`) and `required` fails when nothing is selected. Arrow keys clamp at the first and last enabled option (no wrapping; Home and End reach the ends). Home, End and type-ahead follow `selectionFollowsFocus` exactly as the arrows do. Enter selects only in single-select (a no-op with `multiple`, where Space toggles). Rows are `fontSize × lineHeight + 2 × optionPaddingBlock` tall, which is what `maxVisible` and PageUp/PageDown count; the first option row, not a group label, is the measure on native. Option icons render at Icon `size: sm`. Empty groups are omitted. Without `name` the list does not register with a Form.
+
+## Content guidelines
+
+Option labels are short, unique within the list, sentence case, no trailing punctuation; use `description` for the second line rather than a longer label. Group labels are one or two words. The empty message states the situation, not an instruction ("No matching people", not "Try another search"). When the list is multi-select, the surrounding UI shows `copy.selectedCount` or the selected items.
+
+## Accessibility
+
+Role `listbox` with a name, `aria-multiselectable` when `multiple`, options with `aria-selected`, groups with names (WCAG 4.1.2; APG listbox). One tab stop with arrow navigation and typeahead; the active option is announced via `aria-activedescendant` while DOM focus stays on the list (or, in Combobox, on the input). Selected and active states are visually distinct — check mark and weight for selected, background for active — so neither is color alone (1.4.1) and a sighted keyboard user can tell "where I am" from "what I chose". Options meet 24px (2.5.8) and text meets AA on both the surface and the active background; the check meets 3:1.
+
+## Platform notes
+
+### Web
+`<div role="listbox" tabindex="0" aria-label|aria-labelledby aria-multiselectable aria-activedescendant={activeId}>` containing `<div role="group" aria-labelledby>` and `<div role="option" id aria-selected aria-disabled>` rows with `<Icon name="check">` (invisible when unselected, so labels align), optional `<Icon>`, label and description. Keydown on the list implements the table; `pointermove` over an option sets it active; click selects. Scroll the active option into view with `block: 'nearest'`. Expose `activeId` and the keydown handler through a ref/hook (`useListbox`) so Combobox can forward its input's keys to the list. Form registration as Input, with `getValue` returning the array for `multiple`.
+
+### Lit
+`<ds-listbox label="Assignees" multiple .options=${…}>`; form-associated (`setFormValue(FormData)` for multiple, string otherwise); `aria-activedescendant` between shadow siblings; composed `change` and `active-change`. Expose a `handleKey(event)` method and `activeValue` for `ds-combobox`.
+
+### React Native
+`FlatList` of `Pressable` rows with `accessibilityRole="menuitem"`, `accessibilityState={{ selected, checked: multiple ? selected : undefined, disabled }}`, and `accessibilityLabel` = label plus description. `maxVisible` becomes `maxHeight`. Groups are plain `Text` rows (not the header trait, which would enter the headings rotor). No activedescendant on native; each row is a stop. Form registration as Input.
+
+## Related
+
+Select, Combobox, RadioGroup, Checkbox, Menu.

@@ -1,0 +1,589 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "Featured products",
+        "picker": "dots",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Aria desk lamp"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Aria desk lamp"
+                  },
+                  "children": [
+                    "A dimmable lamp with a warm-to-cool range."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Solstice mug"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Solstice mug"
+                  },
+                  "children": [
+                    "Double-walled ceramic that holds its heat for hours."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Range planter"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Range planter"
+                  },
+                  "children": [
+                    "Self-watering, fits a windowsill."
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\n<Carousel label=\"Featured products\">\n  <>\n    <CarouselSlide label=\"Aria desk lamp\">\n      <Card heading=\"Aria desk lamp\">A dimmable lamp with a warm-to-cool range.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Solstice mug\">\n      <Card heading=\"Solstice mug\">Double-walled ceramic that holds its heat for hours.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Range planter\">\n      <Card heading=\"Range planter\">Self-watering, fits a windowsill.</Card>\n    </CarouselSlide>\n  </>\n</Carousel>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface SlideContent {\n  heading: string;\n  body: string;\n}\n\nconst SLIDES: SlideContent[] = [\n  { heading: 'Trail runner', body: 'Grippy sole, breathable mesh, built for wet rock.' },\n  { heading: 'Everyday backpack', body: 'A padded laptop sleeve and one zip pocket for keys.' },\n  { heading: 'Insulated bottle', body: 'Keeps cold drinks cold for a full day on the trail.' },\n  { heading: 'Packable jacket', body: 'Folds into its own pocket; blocks wind, not rain.' },\n];\n\nconst renderSlides = () =>\n  SLIDES.map(\n    (slide) => html`\n      <ds-carousel-slide heading=${slide.heading}>\n        <ds-card heading=${slide.heading} heading-level=\"3\">${slide.body}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <div style=\"max-inline-size: 32rem;\">\n    <ds-carousel label=\"Featured products\">\n      ${renderSlides()}\n    </ds-carousel>\n  </div>\n`;",
+        "rn": "import { Carousel, CarouselSlide, Text } from '@design-schema/rn';\n\n<Carousel label=\"Featured products\">\n  <CarouselSlide heading=\"Desk lamp\">\n    <Text>A warm, dimmable desk lamp.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Ceramic mug\">\n    <Text>Holds a full press of coffee.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Wool blanket\">\n    <Text>Woven from recycled wool.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Reading chair\">\n    <Text>A low, deep chair for long books.</Text>\n  </CarouselSlide>\n</Carousel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "carousel-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Picker Dots",
+      "args": {
+        "label": "Featured products",
+        "picker": "dots",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Aria desk lamp"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Aria desk lamp"
+                  },
+                  "children": [
+                    "A dimmable lamp with a warm-to-cool range."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Solstice mug"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Solstice mug"
+                  },
+                  "children": [
+                    "Double-walled ceramic that holds its heat for hours."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Range planter"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Range planter"
+                  },
+                  "children": [
+                    "Self-watering, fits a windowsill."
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\n<Carousel label=\"Featured products\" picker=\"dots\">\n  <>\n    <CarouselSlide label=\"Aria desk lamp\">\n      <Card heading=\"Aria desk lamp\">A dimmable lamp with a warm-to-cool range.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Solstice mug\">\n      <Card heading=\"Solstice mug\">Double-walled ceramic that holds its heat for hours.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Range planter\">\n      <Card heading=\"Range planter\">Self-watering, fits a windowsill.</Card>\n    </CarouselSlide>\n  </>\n</Carousel>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface SlideContent {\n  heading: string;\n  body: string;\n}\n\nconst SLIDES: SlideContent[] = [\n  { heading: 'Trail runner', body: 'Grippy sole, breathable mesh, built for wet rock.' },\n  { heading: 'Everyday backpack', body: 'A padded laptop sleeve and one zip pocket for keys.' },\n  { heading: 'Insulated bottle', body: 'Keeps cold drinks cold for a full day on the trail.' },\n  { heading: 'Packable jacket', body: 'Folds into its own pocket; blocks wind, not rain.' },\n];\n\nconst renderSlides = () =>\n  SLIDES.map(\n    (slide) => html`\n      <ds-carousel-slide heading=${slide.heading}>\n        <ds-card heading=${slide.heading} heading-level=\"3\">${slide.body}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <div style=\"max-inline-size: 32rem;\">\n    <ds-carousel label=\"Featured products\" picker=\"dots\">\n      ${renderSlides()}\n    </ds-carousel>\n  </div>\n`;",
+        "rn": "import { Carousel, CarouselSlide, Text } from '@design-schema/rn';\n\n<Carousel label=\"Featured products\" picker=\"dots\">\n  <CarouselSlide heading=\"Desk lamp\">\n    <Text>A warm, dimmable desk lamp.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Ceramic mug\">\n    <Text>Holds a full press of coffee.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Wool blanket\">\n    <Text>Woven from recycled wool.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Reading chair\">\n    <Text>A low, deep chair for long books.</Text>\n  </CarouselSlide>\n</Carousel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PickerDots",
+        "lit": "PickerDots",
+        "rn": "PickerDots",
+        "swift": null
+      },
+      "storyId": "carousel-react--picker-dots",
+      "sweep": {
+        "prop": "picker",
+        "value": "dots"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Picker Tabs",
+      "args": {
+        "label": "Featured products",
+        "picker": "tabs",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Aria desk lamp"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Aria desk lamp"
+                  },
+                  "children": [
+                    "A dimmable lamp with a warm-to-cool range."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Solstice mug"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Solstice mug"
+                  },
+                  "children": [
+                    "Double-walled ceramic that holds its heat for hours."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Range planter"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Range planter"
+                  },
+                  "children": [
+                    "Self-watering, fits a windowsill."
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\n<Carousel label=\"Featured products\" picker=\"tabs\">\n  <>\n    <CarouselSlide label=\"Aria desk lamp\">\n      <Card heading=\"Aria desk lamp\">A dimmable lamp with a warm-to-cool range.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Solstice mug\">\n      <Card heading=\"Solstice mug\">Double-walled ceramic that holds its heat for hours.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Range planter\">\n      <Card heading=\"Range planter\">Self-watering, fits a windowsill.</Card>\n    </CarouselSlide>\n  </>\n</Carousel>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface SlideContent {\n  heading: string;\n  body: string;\n}\n\nconst SLIDES: SlideContent[] = [\n  { heading: 'Trail runner', body: 'Grippy sole, breathable mesh, built for wet rock.' },\n  { heading: 'Everyday backpack', body: 'A padded laptop sleeve and one zip pocket for keys.' },\n  { heading: 'Insulated bottle', body: 'Keeps cold drinks cold for a full day on the trail.' },\n  { heading: 'Packable jacket', body: 'Folds into its own pocket; blocks wind, not rain.' },\n];\n\nconst renderSlides = () =>\n  SLIDES.map(\n    (slide) => html`\n      <ds-carousel-slide heading=${slide.heading}>\n        <ds-card heading=${slide.heading} heading-level=\"3\">${slide.body}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <div style=\"max-inline-size: 32rem;\">\n    <ds-carousel label=\"Featured products\" picker=\"tabs\">\n      ${renderSlides()}\n    </ds-carousel>\n  </div>\n`;",
+        "rn": "import { Carousel, CarouselSlide, Text } from '@design-schema/rn';\n\n<Carousel label=\"Featured products\" picker=\"tabs\">\n  <CarouselSlide heading=\"Desk lamp\">\n    <Text>A warm, dimmable desk lamp.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Ceramic mug\">\n    <Text>Holds a full press of coffee.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Wool blanket\">\n    <Text>Woven from recycled wool.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Reading chair\">\n    <Text>A low, deep chair for long books.</Text>\n  </CarouselSlide>\n</Carousel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PickerTabs",
+        "lit": "PickerTabs",
+        "rn": "PickerTabs",
+        "swift": null
+      },
+      "storyId": "carousel-react--picker-tabs",
+      "sweep": {
+        "prop": "picker",
+        "value": "tabs"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Picker None",
+      "args": {
+        "label": "Featured products",
+        "picker": "none",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Aria desk lamp"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Aria desk lamp"
+                  },
+                  "children": [
+                    "A dimmable lamp with a warm-to-cool range."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Solstice mug"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Solstice mug"
+                  },
+                  "children": [
+                    "Double-walled ceramic that holds its heat for hours."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Range planter"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Range planter"
+                  },
+                  "children": [
+                    "Self-watering, fits a windowsill."
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\n<Carousel label=\"Featured products\" picker=\"none\">\n  <>\n    <CarouselSlide label=\"Aria desk lamp\">\n      <Card heading=\"Aria desk lamp\">A dimmable lamp with a warm-to-cool range.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Solstice mug\">\n      <Card heading=\"Solstice mug\">Double-walled ceramic that holds its heat for hours.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Range planter\">\n      <Card heading=\"Range planter\">Self-watering, fits a windowsill.</Card>\n    </CarouselSlide>\n  </>\n</Carousel>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface SlideContent {\n  heading: string;\n  body: string;\n}\n\nconst SLIDES: SlideContent[] = [\n  { heading: 'Trail runner', body: 'Grippy sole, breathable mesh, built for wet rock.' },\n  { heading: 'Everyday backpack', body: 'A padded laptop sleeve and one zip pocket for keys.' },\n  { heading: 'Insulated bottle', body: 'Keeps cold drinks cold for a full day on the trail.' },\n  { heading: 'Packable jacket', body: 'Folds into its own pocket; blocks wind, not rain.' },\n];\n\nconst renderSlides = () =>\n  SLIDES.map(\n    (slide) => html`\n      <ds-carousel-slide heading=${slide.heading}>\n        <ds-card heading=${slide.heading} heading-level=\"3\">${slide.body}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <div style=\"max-inline-size: 32rem;\">\n    <ds-carousel label=\"Featured products\" picker=\"none\">\n      ${renderSlides()}\n    </ds-carousel>\n  </div>\n`;",
+        "rn": "import { Carousel, CarouselSlide, Text } from '@design-schema/rn';\n\n<Carousel label=\"Featured products\" picker=\"none\">\n  <CarouselSlide heading=\"Desk lamp\">\n    <Text>A warm, dimmable desk lamp.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Ceramic mug\">\n    <Text>Holds a full press of coffee.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Wool blanket\">\n    <Text>Woven from recycled wool.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Reading chair\">\n    <Text>A low, deep chair for long books.</Text>\n  </CarouselSlide>\n</Carousel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PickerNone",
+        "lit": "PickerNone",
+        "rn": "PickerNone",
+        "swift": null
+      },
+      "storyId": "carousel-react--picker-none",
+      "sweep": {
+        "prop": "picker",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Loop",
+      "args": {
+        "label": "Featured products",
+        "picker": "dots",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Aria desk lamp"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Aria desk lamp"
+                  },
+                  "children": [
+                    "A dimmable lamp with a warm-to-cool range."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Solstice mug"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Solstice mug"
+                  },
+                  "children": [
+                    "Double-walled ceramic that holds its heat for hours."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Range planter"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Range planter"
+                  },
+                  "children": [
+                    "Self-watering, fits a windowsill."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "loop": true
+      },
+      "snippets": {
+        "react": "import { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\n<Carousel label=\"Featured products\" loop>\n  <>\n    <CarouselSlide label=\"Aria desk lamp\">\n      <Card heading=\"Aria desk lamp\">A dimmable lamp with a warm-to-cool range.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Solstice mug\">\n      <Card heading=\"Solstice mug\">Double-walled ceramic that holds its heat for hours.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Range planter\">\n      <Card heading=\"Range planter\">Self-watering, fits a windowsill.</Card>\n    </CarouselSlide>\n  </>\n</Carousel>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface SlideContent {\n  heading: string;\n  body: string;\n}\n\nconst SLIDES: SlideContent[] = [\n  { heading: 'Trail runner', body: 'Grippy sole, breathable mesh, built for wet rock.' },\n  { heading: 'Everyday backpack', body: 'A padded laptop sleeve and one zip pocket for keys.' },\n  { heading: 'Insulated bottle', body: 'Keeps cold drinks cold for a full day on the trail.' },\n  { heading: 'Packable jacket', body: 'Folds into its own pocket; blocks wind, not rain.' },\n];\n\nconst renderSlides = () =>\n  SLIDES.map(\n    (slide) => html`\n      <ds-carousel-slide heading=${slide.heading}>\n        <ds-card heading=${slide.heading} heading-level=\"3\">${slide.body}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <div style=\"max-inline-size: 32rem;\">\n    <ds-carousel label=\"Featured products\" loop>\n      ${renderSlides()}\n    </ds-carousel>\n  </div>\n`;",
+        "rn": "import { Carousel, CarouselSlide, Text } from '@design-schema/rn';\n\n<Carousel label=\"Featured products\" loop>\n  <CarouselSlide heading=\"Desk lamp\">\n    <Text>A warm, dimmable desk lamp.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Ceramic mug\">\n    <Text>Holds a full press of coffee.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Wool blanket\">\n    <Text>Woven from recycled wool.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Reading chair\">\n    <Text>A low, deep chair for long books.</Text>\n  </CarouselSlide>\n</Carousel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Loop",
+        "lit": "Loop",
+        "rn": "Loop",
+        "swift": null
+      },
+      "storyId": "carousel-react--loop",
+      "sweep": {
+        "prop": "loop",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Autoplay",
+      "args": {
+        "label": "Featured products",
+        "picker": "dots",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Aria desk lamp"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Aria desk lamp"
+                  },
+                  "children": [
+                    "A dimmable lamp with a warm-to-cool range."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Solstice mug"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Solstice mug"
+                  },
+                  "children": [
+                    "Double-walled ceramic that holds its heat for hours."
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Range planter"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Range planter"
+                  },
+                  "children": [
+                    "Self-watering, fits a windowsill."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "autoplay": true,
+        "interval": 6000
+      },
+      "snippets": {
+        "react": "import { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\n<Carousel label=\"Featured products\" autoplay interval={6000}>\n  <>\n    <CarouselSlide label=\"Aria desk lamp\">\n      <Card heading=\"Aria desk lamp\">A dimmable lamp with a warm-to-cool range.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Solstice mug\">\n      <Card heading=\"Solstice mug\">Double-walled ceramic that holds its heat for hours.</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Range planter\">\n      <Card heading=\"Range planter\">Self-watering, fits a windowsill.</Card>\n    </CarouselSlide>\n  </>\n</Carousel>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface SlideContent {\n  heading: string;\n  body: string;\n}\n\nconst SLIDES: SlideContent[] = [\n  { heading: 'Trail runner', body: 'Grippy sole, breathable mesh, built for wet rock.' },\n  { heading: 'Everyday backpack', body: 'A padded laptop sleeve and one zip pocket for keys.' },\n  { heading: 'Insulated bottle', body: 'Keeps cold drinks cold for a full day on the trail.' },\n  { heading: 'Packable jacket', body: 'Folds into its own pocket; blocks wind, not rain.' },\n];\n\nconst renderSlides = () =>\n  SLIDES.map(\n    (slide) => html`\n      <ds-carousel-slide heading=${slide.heading}>\n        <ds-card heading=${slide.heading} heading-level=\"3\">${slide.body}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <div style=\"max-inline-size: 32rem;\">\n    <ds-carousel label=\"Featured products\" interval=\"6000\" autoplay>\n      ${renderSlides()}\n    </ds-carousel>\n  </div>\n`;",
+        "rn": "import { Carousel, CarouselSlide, Text } from '@design-schema/rn';\n\n<Carousel label=\"Featured products\" autoplay interval={6000}>\n  <CarouselSlide heading=\"Desk lamp\">\n    <Text>A warm, dimmable desk lamp.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Ceramic mug\">\n    <Text>Holds a full press of coffee.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Wool blanket\">\n    <Text>Woven from recycled wool.</Text>\n  </CarouselSlide>\n  <CarouselSlide heading=\"Reading chair\">\n    <Text>A low, deep chair for long books.</Text>\n  </CarouselSlide>\n</Carousel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Autoplay",
+        "lit": "Autoplay",
+        "rn": "Autoplay",
+        "swift": null
+      },
+      "storyId": "carousel-react--autoplay",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "label": "Featured products",
+        "picker": "tabs",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "First"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "First"
+                  },
+                  "children": [
+                    "One"
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Second"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Second"
+                  },
+                  "children": [
+                    "Two"
+                  ]
+                }
+              ]
+            },
+            {
+              "$element": "CarouselSlide",
+              "props": {
+                "label": "Third"
+              },
+              "children": [
+                {
+                  "$element": "Card",
+                  "props": {
+                    "heading": "Third"
+                  },
+                  "children": [
+                    "Three"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\n<Carousel label=\"Featured products\" picker=\"tabs\">\n  <>\n    <CarouselSlide label=\"First\">\n      <Card heading=\"First\">One</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Second\">\n      <Card heading=\"Second\">Two</Card>\n    </CarouselSlide>\n    <CarouselSlide label=\"Third\">\n      <Card heading=\"Third\">Three</Card>\n    </CarouselSlide>\n  </>\n</Carousel>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface SlideContent {\n  heading: string;\n  body: string;\n}\n\nconst SLIDES: SlideContent[] = [\n  { heading: 'Trail runner', body: 'Grippy sole, breathable mesh, built for wet rock.' },\n  { heading: 'Everyday backpack', body: 'A padded laptop sleeve and one zip pocket for keys.' },\n  { heading: 'Insulated bottle', body: 'Keeps cold drinks cold for a full day on the trail.' },\n  { heading: 'Packable jacket', body: 'Folds into its own pocket; blocks wind, not rain.' },\n];\n\nconst renderSlides = () =>\n  SLIDES.map(\n    (slide) => html`\n      <ds-carousel-slide heading=${slide.heading}>\n        <ds-card heading=${slide.heading} heading-level=\"3\">${slide.body}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <div style=\"max-inline-size: 32rem;\">\n    <ds-carousel label=\"Featured products\" per-view=\"1\" picker=\"tabs\">\n      ${renderSlides()}\n    </ds-carousel>\n  </div>\n`;",
+        "rn": "import { Carousel, CarouselSlide, Button, Text } from '@design-schema/rn';\n\n<Carousel label=\"Featured products\">\n  <CarouselSlide heading=\"Desk lamp\">\n    <Text>A warm, dimmable desk lamp.</Text>\n    <Button label=\"Add to cart\" variant=\"secondary\" />\n  </CarouselSlide>\n  <CarouselSlide heading=\"Ceramic mug\">\n    <Text>Holds a full press of coffee.</Text>\n    <Button label=\"Add to cart\" variant=\"secondary\" />\n  </CarouselSlide>\n  <CarouselSlide heading=\"Wool blanket\">\n    <Text>Woven from recycled wool.</Text>\n    <Button label=\"Add to cart\" variant=\"secondary\" />\n  </CarouselSlide>\n</Carousel>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "carousel-react--keyboard",
+      "sweep": {
+        "prop": "picker",
+        "value": "tabs"
+      },
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

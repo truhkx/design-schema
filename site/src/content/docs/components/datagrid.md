@@ -118,8 +118,8 @@ component:
     - { keys: [' '], action: 'Row mode: toggles the focused row; Shift+Space extends the row selection from the anchor (the last row toggled) through the focused row. Range mode: selects the focused row as a full-width range, Shift+Space extends that row range, Ctrl+Space selects the focused column as a range over the loaded rows.', when: selectable is row or range, from: inside, expect: manual }
     - { keys: [Shift+ArrowRight, Shift+ArrowLeft, Shift+ArrowDown, Shift+ArrowUp], action: 'Extends the range selection from the anchor; a plain arrow collapses the range to the newly focused cell and makes it the anchor.', when: selectable is range and focus in the body, from: inside, expect: manual }
     - { keys: [Shift+ArrowRight, Shift+ArrowLeft], action: 'Widens / narrows the column by resizeStep and fires onColumnResize on release of Shift.', when: focus on the header cell of a resizable column, from: inside, expect: manual }
-    - { keys: [Ctrl+A], action: 'Selects all loaded rows or cells (bound by key code KeyA, so it works on any layout).', when: selectable is row or range, from: inside, expect: manual }
-    - { keys: [Ctrl+C], action: 'Copies the selection as tab-separated text (with headers when whole columns are selected); bound by key code KeyC.', when: selectable is range, from: inside, expect: manual }
+    - { keys: [Control+a], action: 'Selects all loaded rows or cells (bound by key code KeyA, so it works on any layout).', when: selectable is row or range, from: inside, expect: manual }
+    - { keys: [Control+c], action: 'Copies the selection as tab-separated text (with headers when whole columns are selected); bound by key code KeyC.', when: selectable is range, from: inside, expect: manual }
     - { keys: [Delete, Backspace], action: Clears the value of editable cells in the selection., when: editable and selection, from: inside, expect: manual }
   styles:
     surface: { token: color.background }
@@ -190,7 +190,7 @@ component:
     scrollHint: Scroll sideways to see more columns
   a11y:
     role: grid
-    requires: [accessible-name, keyboard-operable, arrow-navigation, roving-tabindex, focus-visible, selected-state, live-region, contrast-aa, target-24px, error-identification, no-hover-only, escape-dismiss]
+    requires: [accessible-name, keyboard-operable, arrow-navigation, roving-tabindex, focus-visible, selected-state, live-region, contrast-aa, target-24px, no-hover-only, escape-dismiss]
     contrast:
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }

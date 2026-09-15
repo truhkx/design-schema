@@ -47,7 +47,39 @@
         },
         "apg": {
           "description": "Slug of the W3C ARIA Authoring Practices pattern this component implements, e.g. 'dialog-modal'. Behavior follows the APG when systems disagree.",
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "accordion",
+            "alert",
+            "alertdialog",
+            "breadcrumb",
+            "button",
+            "carousel",
+            "checkbox",
+            "combobox",
+            "dialog-modal",
+            "disclosure",
+            "feed",
+            "grid",
+            "landmarks",
+            "link",
+            "listbox",
+            "menubar",
+            "menu-button",
+            "meter",
+            "radio",
+            "slider",
+            "slider-multithumb",
+            "spinbutton",
+            "switch",
+            "table",
+            "tabs",
+            "toolbar",
+            "tooltip",
+            "treeview",
+            "treegrid",
+            "windowsplitter"
+          ]
         },
         "anatomy": {
           "minItems": 1,
@@ -155,14 +187,16 @@
             "content",
             "array",
             "object",
-            "function"
-          ]
+            "function",
+            "union"
+          ],
+          "description": "A value of more than one kind (a single id or an array of them) is 'union', with the kinds spelled out in shape."
         },
         "description": {
           "type": "string"
         },
         "shape": {
-          "description": "For array/object/function props: the item or field shape in TypeScript-like notation, e.g. '{ value: string; label: string; description?: string; disabled?: boolean }[]'.",
+          "description": "For array/object/function/union props: the item or field shape in TypeScript-like notation, e.g. '{ value: string; label: string; description?: string; disabled?: boolean }[]' or 'string | string[]'. Required for union.",
           "type": "string"
         },
         "required": {
@@ -185,11 +219,24 @@
         "a11y": {
           "type": "string"
         },
+        "a11yRole": {
+          "description": "What this prop contributes to the accessibility tree.",
+          "type": "string",
+          "enum": [
+            "accessible-name",
+            "description",
+            "error"
+          ]
+        },
         "platforms": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/platformId"
           }
+        },
+        "source": {
+          "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
+          "type": "string"
         }
       },
       "required": [
@@ -204,8 +251,7 @@
         "web",
         "lit",
         "rn",
-        "swiftui",
-        "compose"
+        "swiftui"
       ]
     },
     "eventDef": {
@@ -227,6 +273,10 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "source": {
+          "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
+          "type": "string"
         }
       },
       "required": [
@@ -246,8 +296,12 @@
         },
         "locked": {
           "default": false,
-          "description": "Not overridable per instance. Bindings whose tokens appear in a11y.contrast, and every focusRing*/minTarget binding, are locked automatically by the parser; set this for others (e.g. a size that keeps a target reachable).",
+          "description": "Not overridable per instance. The parser locks a binding automatically when (1) its token is a focus-indicator or target-size token (color.border.focus, color.inverse.focus, border.width.focus, size.target.*), (2) its token appears in an a11y.contrast pair, literally or after expanding {slot} interpolation over the enum values, or (3) its name starts with focusRing or is minTarget or dismissTarget. Setting locked: false on such a binding is an error; set locked: true for others (e.g. a size that keeps a target reachable).",
           "type": "boolean"
+        },
+        "source": {
+          "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
+          "type": "string"
         }
       },
       "required": [
@@ -264,6 +318,11 @@
       "type": "object",
       "properties": {
         "role": {
+          "description": "The WAI-ARIA 1.2 role the component root renders (none or presentation when it adds nothing). Exactly one of role and roleFrom.",
+          "$ref": "#/$defs/ariaRole"
+        },
+        "roleFrom": {
+          "description": "the enum prop whose value is the rendered role",
           "type": "string"
         },
         "requires": {
@@ -306,10 +365,96 @@
         }
       },
       "required": [
-        "role",
         "requires"
       ],
       "additionalProperties": false
+    },
+    "ariaRole": {
+      "type": "string",
+      "enum": [
+        "button",
+        "checkbox",
+        "gridcell",
+        "link",
+        "menuitem",
+        "menuitemcheckbox",
+        "menuitemradio",
+        "option",
+        "progressbar",
+        "radio",
+        "scrollbar",
+        "searchbox",
+        "separator",
+        "slider",
+        "spinbutton",
+        "switch",
+        "tab",
+        "tabpanel",
+        "textbox",
+        "treeitem",
+        "combobox",
+        "grid",
+        "listbox",
+        "menu",
+        "menubar",
+        "radiogroup",
+        "tablist",
+        "tree",
+        "treegrid",
+        "application",
+        "article",
+        "blockquote",
+        "caption",
+        "cell",
+        "code",
+        "columnheader",
+        "definition",
+        "deletion",
+        "directory",
+        "document",
+        "emphasis",
+        "feed",
+        "figure",
+        "generic",
+        "group",
+        "heading",
+        "img",
+        "insertion",
+        "list",
+        "listitem",
+        "math",
+        "meter",
+        "note",
+        "paragraph",
+        "row",
+        "rowgroup",
+        "rowheader",
+        "strong",
+        "subscript",
+        "superscript",
+        "table",
+        "term",
+        "time",
+        "toolbar",
+        "tooltip",
+        "banner",
+        "complementary",
+        "contentinfo",
+        "form",
+        "main",
+        "navigation",
+        "region",
+        "search",
+        "alert",
+        "log",
+        "marquee",
+        "status",
+        "timer",
+        "alertdialog",
+        "dialog",
+        "none",
+        "presentation"
+      ]
     },
     "contrastPair": {
       "type": "object",
@@ -346,9 +491,9 @@
           "minItems": 1,
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/keyChord"
           },
-          "description": "Key names as in KeyboardEvent.key (Escape, Enter, ' ', ArrowDown, Tab, Home, End) or 'Shift+Tab'."
+          "description": "Key chords: KeyboardEvent.key names (Escape, Enter, ' ' or Space, ArrowDown, Tab, Home, End), optionally behind Shift+/Control+/Alt+/Meta+ ('Shift+Tab', 'Control+a', 'Control+Home'), or a-z for typeahead."
         },
         "action": {
           "type": "string",
@@ -389,6 +534,10 @@
             "selects",
             "manual"
           ]
+        },
+        "source": {
+          "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
+          "type": "string"
         }
       },
       "required": [
@@ -396,6 +545,11 @@
         "action"
       ],
       "additionalProperties": false
+    },
+    "keyChord": {
+      "type": "string",
+      "pattern": "^((Shift|Control|Alt|Meta)\\+)*(Escape|Enter| |Space|Tab|Backspace|Delete|Home|End|PageUp|PageDown|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|F([1-9]|1[0-2])|\\*|,|a-z|[a-z0-9])$",
+      "description": "A KeyboardEvent.key name, optionally behind Shift+/Control+/Alt+/Meta+ modifiers: Escape, Enter, ' ' (or Space), Tab, Backspace, Delete, Home, End, PageUp, PageDown, the four arrows, F1-F12, *, a comma, a lowercase letter or digit, or a-z for a typeahead range."
     },
     "behaviorScenario": {
       "type": "object",
@@ -410,7 +564,7 @@
           "type": "string"
         },
         "given": {
-          "description": "Props to render with (prop name -> value). Omit for defaults.",
+          "description": "Props to render with (prop name -> value), over the Default story's args. Omit for defaults.",
           "type": "object",
           "propertyNames": {
             "type": "string"
@@ -418,24 +572,16 @@
           "additionalProperties": {}
         },
         "when": {
-          "description": "One interaction: { click: <anatomy part> }, { key: <Key> }, { type: <text> }, { focus: <part> }, { blur: true }. Omit for a pure render assertion.",
-          "type": "object",
-          "propertyNames": {
-            "type": "string"
-          },
-          "additionalProperties": {}
+          "description": "Exactly one interaction: { click: <part> }, { key: <keyChord> } pressed on the primary part, { type: <text> } into the primary part, { focus: <part> }, { blur: true }, { set: { <prop>: <value> } } (a controlled prop change, applied as a re-render), { hover: <part> }. Omit for a pure render assertion.",
+          "$ref": "#/$defs/whenClause"
         },
         "then": {
           "minItems": 1,
           "type": "array",
           "items": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {}
+            "$ref": "#/$defs/thenClause"
           },
-          "description": "Assertions, one object each: { event, with? | fired: false }, { state: checked|expanded|selected|disabled|invalid|pressed|open, is }, { focusable }, { focused: <part> }, { text }, { copy: <copy key> }, { role }, { name }, { attribute, is }, { renders: true }."
+          "description": "Assertions, one object each, each with optional platforms: [<platformId>] to narrow just itself: { event, with? } or { event, fired: false }; { state: checked|expanded|selected|disabled|invalid|pressed|open, is: true|false|'mixed' }; { focusable: <bool> }; { renders: <bool> }; { focused: <part>|none|moved|unchanged }; { text: <text> }; { copy: <copy key> }; { role: <role> }; { name: true } (non-empty) or { name: <exact accessible name> }; { attribute: <name>, is: <string>|<bool>|null, on?: <part> } (null asserts the attribute is absent)."
         },
         "platforms": {
           "description": "Restrict to these platforms (default: all).",
@@ -443,6 +589,14 @@
           "items": {
             "$ref": "#/$defs/platformId"
           }
+        },
+        "derived": {
+          "description": "Set by the parser on scenarios it derives from the schema (generated/components.json behaviorDerived). Never authored.",
+          "type": "boolean"
+        },
+        "source": {
+          "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
+          "type": "string"
         }
       },
       "required": [
@@ -451,6 +605,359 @@
       ],
       "additionalProperties": false
     },
+    "whenClause": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "click": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "click"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/keyChord"
+            }
+          },
+          "required": [
+            "key"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "focus": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "focus"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "blur": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "blur"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "set": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            }
+          },
+          "required": [
+            "set"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "hover": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "hover"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "thenClause": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "event": {
+              "type": "string"
+            },
+            "with": {},
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "event"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event": {
+              "type": "string"
+            },
+            "fired": {
+              "type": "boolean",
+              "const": false
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "event",
+            "fired"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "type": "string",
+              "enum": [
+                "checked",
+                "expanded",
+                "selected",
+                "disabled",
+                "invalid",
+                "pressed",
+                "open"
+              ]
+            },
+            "is": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "const": "mixed"
+                }
+              ]
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "state",
+            "is"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "focusable": {
+              "type": "boolean"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "focusable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "renders": {
+              "type": "boolean"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "renders"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "focused": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "moved",
+                    "unchanged"
+                  ]
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "focused"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "copy": {
+              "type": "string"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "copy"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "role": {
+              "type": "string"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "role"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "anyOf": [
+                {
+                  "type": "boolean",
+                  "const": true
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "attribute": {
+              "type": "string"
+            },
+            "is": {
+              "type": [
+                "string",
+                "boolean",
+                "null"
+              ]
+            },
+            "on": {
+              "type": "string"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/platformId"
+              }
+            }
+          },
+          "required": [
+            "attribute",
+            "is"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
     "platformNotes": {
       "type": "object",
       "properties": {
@@ -458,6 +965,7 @@
           "type": "string"
         },
         "tag": {
+          "description": "The Lit custom element tag, e.g. ds-button. Required in a platforms.lit block unless supported is false.",
           "type": "string"
         },
         "attributes": {

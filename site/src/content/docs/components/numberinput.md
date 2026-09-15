@@ -140,7 +140,7 @@ component:
     requiredIndicator: ' (required)'
   a11y:
     role: spinbutton
-    requires: [label-association, accessible-name, error-identification, keyboard-operable, focus-visible, contrast-aa, target-44px]
+    requires: [label-association, accessible-name, error-identification, keyboard-operable, arrow-navigation, focus-visible, contrast-aa, target-44px]
     contrast:
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }

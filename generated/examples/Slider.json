@@ -1,0 +1,486 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "Volume",
+        "name": "volume",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "defaultValue": 40,
+        "range": false,
+        "showValue": "always",
+        "disabled": false
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-slider label=\"Volume\" name=\"volume\" .marks=${undefined ?? []}></ds-slider>\n  </div>\n`;",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "slider-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Show Value Always",
+      "args": {
+        "label": "Volume",
+        "name": "volume",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "defaultValue": 40,
+        "range": false,
+        "showValue": "always",
+        "disabled": false
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"always\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-slider\n      label=\"Volume\"\n      name=\"volume\"\n      .defaultValue=${40}\n      show-value=\"always\"\n      .marks=${undefined ?? []}\n    ></ds-slider>\n  </div>\n`;",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"always\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "ShowValueAlways",
+        "lit": "ShowValueAlways",
+        "rn": "ShowValueAlways",
+        "swift": null
+      },
+      "storyId": "slider-react--show-value-always",
+      "sweep": {
+        "prop": "showValue",
+        "value": "always"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Show Value Hover",
+      "args": {
+        "label": "Volume",
+        "name": "volume",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "defaultValue": 40,
+        "range": false,
+        "showValue": "hover",
+        "disabled": false
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"hover\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-slider\n      label=\"Volume\"\n      name=\"volume\"\n      .defaultValue=${40}\n      show-value=\"hover\"\n      .marks=${undefined ?? []}\n    ></ds-slider>\n  </div>\n`;",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"hover\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "ShowValueHover",
+        "lit": "ShowValueHover",
+        "rn": "ShowValueHover",
+        "swift": null
+      },
+      "storyId": "slider-react--show-value-hover",
+      "sweep": {
+        "prop": "showValue",
+        "value": "hover"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Show Value Never",
+      "args": {
+        "label": "Volume",
+        "name": "volume",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "defaultValue": 40,
+        "range": false,
+        "showValue": "never",
+        "disabled": false
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"never\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-slider\n      label=\"Volume\"\n      name=\"volume\"\n      .defaultValue=${40}\n      show-value=\"never\"\n      .marks=${undefined ?? []}\n    ></ds-slider>\n  </div>\n`;",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"never\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "ShowValueNever",
+        "lit": "ShowValueNever",
+        "rn": "ShowValueNever",
+        "swift": null
+      },
+      "storyId": "slider-react--show-value-never",
+      "sweep": {
+        "prop": "showValue",
+        "value": "never"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Range",
+      "args": {
+        "label": "Price range",
+        "name": "price",
+        "min": 0,
+        "max": 500,
+        "step": 10,
+        "defaultValue": [
+          100,
+          350
+        ],
+        "range": true,
+        "showValue": "always",
+        "disabled": false,
+        "formatValue": {
+          "$unsupported": "(value: number) => `$${value}`"
+        }
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider\n  label=\"Price range\"\n  name=\"price\"\n  min={0}\n  max={500}\n  step={10}\n  defaultValue={[100, 350]}\n  range\n  formatValue={(value: number) => `$${value}`}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-slider\n      label=\"Price range\"\n      name=\"price\"\n      min=\"0\"\n      max=\"500\"\n      step=\"10\"\n      .defaultValue=${[100, 350]}\n      range\n      .marks=${undefined ?? []}\n    ></ds-slider>\n  </div>\n`;",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider\n  label=\"Price range\"\n  name=\"price\"\n  min={0}\n  max={500}\n  step={10}\n  defaultValue={[100, 350]}\n  range\n  formatValue={(v: number) => `$${v}`}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Range",
+        "lit": "Range",
+        "rn": "Range",
+        "swift": null
+      },
+      "storyId": "slider-react--range",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "With Marks",
+      "args": {
+        "label": "Playback speed",
+        "name": "speed",
+        "min": 0,
+        "max": 4,
+        "step": 1,
+        "defaultValue": 2,
+        "range": false,
+        "showValue": "always",
+        "disabled": false,
+        "marks": [
+          {
+            "value": 0,
+            "label": "0.5×"
+          },
+          {
+            "value": 1,
+            "label": "0.75×"
+          },
+          {
+            "value": 2,
+            "label": "1×"
+          },
+          {
+            "value": 3,
+            "label": "1.5×"
+          },
+          {
+            "value": 4,
+            "label": "2×"
+          }
+        ],
+        "formatValue": {
+          "$unsupported": "(value: number) => ['0.5×', '0.75×', '1×', '1.5×', '2×'][value] ?? String(value)"
+        }
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider\n  label=\"Playback speed\"\n  name=\"speed\"\n  min={0}\n  max={4}\n  step={1}\n  defaultValue={2}\n  marks={[\n    { value: 0, label: '0.5×' },\n    { value: 1, label: '0.75×' },\n    { value: 2, label: '1×' },\n    { value: 3, label: '1.5×' },\n    { value: 4, label: '2×' },\n  ]}\n  formatValue={(value: number) => ['0.5×', '0.75×', '1×', '1.5×', '2×'][value] ?? String(value)}\n/>",
+        "lit": null,
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider\n  label=\"Playback speed\"\n  name=\"speed\"\n  min={0.5}\n  max={2}\n  step={0.5}\n  defaultValue={1}\n  snapToMarks\n  formatValue={(v: number) => `${v}×`}\n  marks={[\n    { value: 0.5, label: '0.5×' },\n    { value: 1, label: '1×' },\n    { value: 1.5, label: '1.5×' },\n    { value: 2, label: '2×' },\n  ]}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithMarks",
+        "lit": null,
+        "rn": "WithMarks",
+        "swift": null
+      },
+      "storyId": "slider-react--with-marks",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Snap To Marks",
+      "args": {
+        "label": "Playback speed",
+        "name": "speed",
+        "min": 0,
+        "max": 4,
+        "step": 1,
+        "defaultValue": 2,
+        "range": false,
+        "showValue": "always",
+        "disabled": false,
+        "snapToMarks": true,
+        "marks": [
+          {
+            "value": 0,
+            "label": "0.5×"
+          },
+          {
+            "value": 1,
+            "label": "0.75×"
+          },
+          {
+            "value": 2,
+            "label": "1×"
+          },
+          {
+            "value": 3,
+            "label": "1.5×"
+          },
+          {
+            "value": 4,
+            "label": "2×"
+          }
+        ],
+        "formatValue": {
+          "$unsupported": "(value: number) => ['0.5×', '0.75×', '1×', '1.5×', '2×'][value] ?? String(value)"
+        }
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider\n  label=\"Playback speed\"\n  name=\"speed\"\n  min={0}\n  max={4}\n  step={1}\n  defaultValue={2}\n  snapToMarks\n  marks={[\n    { value: 0, label: '0.5×' },\n    { value: 1, label: '0.75×' },\n    { value: 2, label: '1×' },\n    { value: 3, label: '1.5×' },\n    { value: 4, label: '2×' },\n  ]}\n  formatValue={(value: number) => ['0.5×', '0.75×', '1×', '1.5×', '2×'][value] ?? String(value)}\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "SnapToMarks",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "slider-react--snap-to-marks",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Disabled",
+      "args": {
+        "label": "Volume",
+        "name": "volume",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "defaultValue": 40,
+        "range": false,
+        "showValue": "always",
+        "disabled": true
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} disabled />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-slider label=\"Volume\" name=\"volume\" .defaultValue=${60} .marks=${undefined ?? []} disabled></ds-slider>\n  </div>\n`;",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={65} disabled />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Disabled",
+        "lit": "Disabled",
+        "rn": "Disabled",
+        "swift": null
+      },
+      "storyId": "slider-react--disabled",
+      "sweep": {
+        "prop": "disabled",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Required",
+      "args": {
+        "label": "Volume",
+        "name": "volume",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "defaultValue": 40,
+        "range": false,
+        "showValue": "always",
+        "disabled": false,
+        "required": true
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} required />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-slider label=\"Volume\" name=\"volume\" required .marks=${undefined ?? []}></ds-slider>\n  </div>\n`;",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} required />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Required",
+        "lit": "Required",
+        "rn": "Required",
+        "swift": null
+      },
+      "storyId": "slider-react--required",
+      "sweep": {
+        "prop": "required",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Invalid",
+      "args": {
+        "label": "Volume",
+        "name": "volume",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "defaultValue": 40,
+        "range": false,
+        "showValue": "always",
+        "disabled": false,
+        "invalid": true
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} invalid />",
+        "lit": null,
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} invalid />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Invalid",
+        "lit": null,
+        "rn": "Invalid",
+        "swift": null
+      },
+      "storyId": "slider-react--invalid",
+      "sweep": {
+        "prop": "invalid",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "With Description",
+      "args": {
+        "label": "Volume",
+        "name": "volume",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "defaultValue": 40,
+        "range": false,
+        "showValue": "always",
+        "disabled": false,
+        "description": "Changes take effect immediately."
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider\n  label=\"Volume\"\n  name=\"volume\"\n  defaultValue={40}\n  description=\"Changes take effect immediately.\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-slider\n      label=\"Volume\"\n      name=\"volume\"\n      .defaultValue=${30}\n      .marks=${undefined ?? []}\n      description=\"Drag or use arrow keys to adjust.\"\n    ></ds-slider>\n  </div>\n`;",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider\n  label=\"Volume\"\n  name=\"volume\"\n  defaultValue={40}\n  description=\"Applies to notification sounds only.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithDescription",
+        "lit": "WithDescription",
+        "rn": "WithDescription",
+        "swift": null
+      },
+      "storyId": "slider-react--with-description",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "With Error",
+      "args": {
+        "label": "Volume",
+        "name": "volume",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "defaultValue": 40,
+        "range": false,
+        "showValue": "always",
+        "disabled": false,
+        "error": "Volume must be above 10 for notifications to be audible."
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider\n  label=\"Volume\"\n  name=\"volume\"\n  defaultValue={40}\n  error=\"Volume must be above 10 for notifications to be audible.\"\n/>",
+        "lit": null,
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider\n  label=\"Volume\"\n  name=\"volume\"\n  defaultValue={40}\n  error=\"Choose a volume above 0.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithError",
+        "lit": null,
+        "rn": "WithError",
+        "swift": null
+      },
+      "storyId": "slider-react--with-error",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "label": "Price range",
+        "name": "price",
+        "min": 0,
+        "max": 500,
+        "step": 10,
+        "defaultValue": [
+          100,
+          350
+        ],
+        "range": true,
+        "showValue": "always",
+        "disabled": false,
+        "formatValue": {
+          "$unsupported": "(value: number) => `$${value}`"
+        }
+      },
+      "snippets": {
+        "react": "import { Slider } from '@design-schema/react';\n\n<Slider\n  label=\"Price range\"\n  name=\"price\"\n  min={0}\n  max={500}\n  step={10}\n  defaultValue={[100, 350]}\n  range\n  formatValue={(value: number) => `$${value}`}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { SliderMark } from '@design-schema/lit';\n\nconst PRICE_MARKS: SliderMark[] = [\n  { value: 0, label: 'Min' },\n  { value: 250, label: '$250' },\n  { value: 500, label: 'Max' },\n];\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-slider\n      label=\"Price range\"\n      name=\"price\"\n      min=\"0\"\n      max=\"500\"\n      step=\"10\"\n      .defaultValue=${[100, 350]}\n      range\n      .marks=${PRICE_MARKS ?? []}\n    ></ds-slider>\n  </div>\n`;",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Price range\" name=\"price\" min={0} max={500} step={10} defaultValue={[100, 350]} range formatValue={(v) => `$${v}`} />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "slider-react--keyboard",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

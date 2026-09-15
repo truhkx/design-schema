@@ -50,9 +50,37 @@ describe('rootLocator', () => {
     expect(kt.rootLocator(DIALOG)).toBe("page.getByRole('dialog').first()");
   });
 
-  test.each(['none', 'landmark', 'img'])('the role %s cannot be queried and falls back to the data attribute', (role) => {
+  test.each(['none', 'presentation', 'generic'])('the role %s cannot be queried and falls back to the data attribute', (role) => {
     const c = { ...DIALOG, name: 'Stack', a11y: { role, requires: [] } };
     expect(kt.rootLocator(c)).toBe('page.locator(\'[data-ds="Stack"]\').first()');
+  });
+
+  test('Landmark: a roleFrom prop with no default has no role to query, so the spec locates by data-ds', () => {
+    const props = { role: { type: 'enum', values: ['navigation', 'main'], required: true, description: 'Which landmark.' } };
+    const c = { ...DIALOG, name: 'Landmark', props, a11y: { roleFrom: 'role', requires: [] } };
+    const spec = kt.specFor(c, 'web');
+    expect(spec).toContain('await expect(page.locator(\'[data-ds="Landmark"]\').first()).toBeVisible();');
+    expect(spec).not.toContain('getByRole');
+    expect(kt.specData(c).role).toBeNull();
+  });
+
+  test('a roleFrom prop with a default locates by that role', () => {
+    const props = { role: { type: 'enum', values: ['navigation', 'main'], default: 'navigation', description: 'Which landmark.' } };
+    expect(kt.rootLocator({ ...DIALOG, props, a11y: { roleFrom: 'role', requires: [] } })).toBe("page.getByRole('navigation').first()");
+  });
+});
+
+describe('playwrightKey', () => {
+  test.each([
+    [' ', 'Space'],
+    ['Space', 'Space'],
+    ['Shift+Space', 'Shift+Space'],
+    ['Shift+Tab', 'Shift+Tab'],
+    ['Control+a', 'Control+a'],
+    ['Control+Home', 'Control+Home'],
+    ['ArrowDown', 'ArrowDown'],
+  ])('%j is pressed as %s', (chord, pressed) => {
+    expect(kt.playwrightKey(chord)).toBe(pressed);
   });
 });
 

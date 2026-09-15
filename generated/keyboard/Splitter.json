@@ -1,0 +1,66 @@
+{
+  "name": "Splitter",
+  "role": "separator",
+  "identifier": "Splitter",
+  "rules": [
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "The separator is a tab stop between the two panes' content.",
+      "from": "any",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowRight",
+        "ArrowDown"
+      ],
+      "action": "Grows the primary pane by `step` (ArrowDown when vertical; ArrowRight when horizontal).",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowLeft",
+        "ArrowUp"
+      ],
+      "action": "Shrinks the primary pane by `step`.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "Sets the primary pane to `minSize`.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Sets the primary pane to `maxSize`.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Enter"
+      ],
+      "action": "Collapses the primary pane, or restores it to its previous size. While collapsed, arrows, Home, End and pointer drag do nothing; only Enter or the collapse button restores.",
+      "from": "first",
+      "expect": "manual",
+      "when": "collapsible"
+    },
+    {
+      "keys": [
+        "F6"
+      ],
+      "action": "Cycles focus primary pane → separator → secondary pane → primary pane (wrapping), landing on the region's first focusable descendant or, when it has none, on the pane wrapper itself (tabindex -1). The APG convenience for cycling panes; not available on native.",
+      "from": "any",
+      "expect": "manual"
+    }
+  ]
+}

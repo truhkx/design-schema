@@ -1,0 +1,16 @@
+{
+  "name": "Tooltip",
+  "role": "tooltip",
+  "identifier": "Tooltip",
+  "rules": [
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Hides the tooltip without moving focus.",
+      "from": "trigger",
+      "expect": "closes",
+      "when": "tooltip visible"
+    }
+  ]
+}

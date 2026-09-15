@@ -1,0 +1,44 @@
+{
+  "name": "SidePanel",
+  "role": "none",
+  "identifier": "SidePanel",
+  "rules": [
+    {
+      "keys": [
+        "Enter",
+        " "
+      ],
+      "action": "Toggles the panel from the trigger (aria-expanded flips). Non-modal: focus stays on the trigger. Modal: focus moves into the panel.",
+      "from": "trigger",
+      "expect": "toggles",
+      "when": "focus on trigger"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Non-modal: from the trigger, moves into the open panel (it is next in DOM order); from the last element in the panel, continues into the page. Modal: from the last element wraps to the first.",
+      "from": "trigger",
+      "expect": "manual",
+      "when": "open"
+    },
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Closes and returns focus to the trigger (from inside the panel; a persistent sidebar ignores it).",
+      "from": "inside",
+      "expect": "closes",
+      "when": "open"
+    },
+    {
+      "keys": [
+        "Shift+Tab"
+      ],
+      "action": "Non-modal: from the first element in the panel, returns to the trigger and leaves the panel open. Modal: wraps to the last element.",
+      "from": "first",
+      "expect": "focus-trigger",
+      "when": "open"
+    }
+  ]
+}

@@ -1,0 +1,509 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "Shipping method",
+        "name": "shipping",
+        "options": [
+          {
+            "value": "standard",
+            "label": "Standard",
+            "description": "Free, 3–5 business days"
+          },
+          {
+            "value": "express",
+            "label": "Express",
+            "description": "$9, next business day"
+          },
+          {
+            "value": "pickup",
+            "label": "Pick up in store",
+            "description": "Free, ready in 2 hours"
+          }
+        ],
+        "orientation": "vertical",
+        "required": false,
+        "invalid": false,
+        "disabled": false
+      },
+      "snippets": {
+        "react": "import { RadioGroup } from '@design-schema/react';\n\nconst shipping = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n  { value: 'express', label: 'Express', description: '$9, next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Free, ready in 2 hours' },\n];\n\n<RadioGroup label=\"Shipping method\" name=\"shipping\" options={shipping} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { RadioGroupOption } from '@design-schema/lit';\n\nconst shippingOptions: RadioGroupOption[] = [\n  { value: 'standard', label: 'Standard', description: 'Arrives in 3–5 business days' },\n  { value: 'express', label: 'Express', description: 'Arrives in 1–2 business days' },\n  { value: 'pickup', label: 'Store pickup', description: 'Ready today' },\n];\n\nhtml`\n  <ds-radio-group label=\"Shipping method\" name=\"shipping\" .options=${shippingOptions}></ds-radio-group>\n`;",
+        "rn": "import { RadioGroup } from '@design-schema/rn';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n    { value: 'express', label: 'Express', description: '$9, next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n  defaultValue=\"standard\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "radiogroup-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Orientation Vertical",
+      "args": {
+        "label": "Shipping method",
+        "name": "shipping",
+        "options": [
+          {
+            "value": "standard",
+            "label": "Standard",
+            "description": "Free, 3–5 business days"
+          },
+          {
+            "value": "express",
+            "label": "Express",
+            "description": "$9, next business day"
+          },
+          {
+            "value": "pickup",
+            "label": "Pick up in store",
+            "description": "Free, ready in 2 hours"
+          }
+        ],
+        "orientation": "vertical",
+        "required": false,
+        "invalid": false,
+        "disabled": false
+      },
+      "snippets": {
+        "react": "import { RadioGroup } from '@design-schema/react';\n\nconst shipping = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n  { value: 'express', label: 'Express', description: '$9, next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Free, ready in 2 hours' },\n];\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={shipping}\n  orientation=\"vertical\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { RadioGroupOption } from '@design-schema/lit';\n\nconst shippingOptions: RadioGroupOption[] = [\n  { value: 'standard', label: 'Standard', description: 'Arrives in 3–5 business days' },\n  { value: 'express', label: 'Express', description: 'Arrives in 1–2 business days' },\n  { value: 'pickup', label: 'Store pickup', description: 'Ready today' },\n];\n\nhtml`\n  <ds-radio-group\n    label=\"Shipping method\"\n    name=\"shipping\"\n    .options=${shippingOptions}\n    orientation=\"vertical\"\n  ></ds-radio-group>\n`;",
+        "rn": "import { RadioGroup } from '@design-schema/rn';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n    { value: 'express', label: 'Express', description: '$9, next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n  defaultValue=\"standard\"\n  orientation=\"vertical\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OrientationVertical",
+        "lit": "OrientationVertical",
+        "rn": "OrientationVertical",
+        "swift": null
+      },
+      "storyId": "radiogroup-react--orientation-vertical",
+      "sweep": {
+        "prop": "orientation",
+        "value": "vertical"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Orientation Horizontal",
+      "args": {
+        "label": "Units",
+        "name": "units",
+        "options": [
+          {
+            "value": "metric",
+            "label": "Metric"
+          },
+          {
+            "value": "imperial",
+            "label": "Imperial"
+          }
+        ],
+        "orientation": "horizontal",
+        "required": false,
+        "invalid": false,
+        "disabled": false
+      },
+      "snippets": {
+        "react": "import { RadioGroup } from '@design-schema/react';\n\n<RadioGroup\n  label=\"Units\"\n  name=\"units\"\n  options={[\n    { value: 'metric', label: 'Metric' },\n    { value: 'imperial', label: 'Imperial' },\n  ]}\n  orientation=\"horizontal\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-radio-group\n        label=\"Units\"\n        name=\"units\"\n        .options=${[\n    { value: 'metric', label: 'Metric' },\n    { value: 'imperial', label: 'Imperial' },\n  ]}\n        default-value=\"metric\"\n        orientation=\"horizontal\"\n      ></ds-radio-group>\n`;",
+        "rn": "import { RadioGroup } from '@design-schema/rn';\n\n<RadioGroup\n  label=\"Units\"\n  name=\"units\"\n  options={[\n    { value: 'metric', label: 'Metric' },\n    { value: 'imperial', label: 'Imperial' },\n  ]}\n  defaultValue=\"metric\"\n  orientation=\"horizontal\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OrientationHorizontal",
+        "lit": "OrientationHorizontal",
+        "rn": "OrientationHorizontal",
+        "swift": null
+      },
+      "storyId": "radiogroup-react--orientation-horizontal",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "With Default Value",
+      "args": {
+        "label": "Shipping method",
+        "name": "shipping",
+        "options": [
+          {
+            "value": "standard",
+            "label": "Standard",
+            "description": "Free, 3–5 business days"
+          },
+          {
+            "value": "express",
+            "label": "Express",
+            "description": "$9, next business day"
+          },
+          {
+            "value": "pickup",
+            "label": "Pick up in store",
+            "description": "Free, ready in 2 hours"
+          }
+        ],
+        "orientation": "vertical",
+        "required": false,
+        "invalid": false,
+        "disabled": false,
+        "defaultValue": "standard"
+      },
+      "snippets": {
+        "react": "import { RadioGroup } from '@design-schema/react';\n\nconst shipping = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n  { value: 'express', label: 'Express', description: '$9, next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Free, ready in 2 hours' },\n];\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={shipping}\n  defaultValue=\"standard\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { RadioGroupOption } from '@design-schema/lit';\n\nconst shippingOptions: RadioGroupOption[] = [\n  { value: 'standard', label: 'Standard', description: 'Arrives in 3–5 business days' },\n  { value: 'express', label: 'Express', description: 'Arrives in 1–2 business days' },\n  { value: 'pickup', label: 'Store pickup', description: 'Ready today' },\n];\n\nhtml`\n  <ds-radio-group\n    label=\"Shipping method\"\n    name=\"shipping\"\n    .options=${shippingOptions}\n    default-value=\"standard\"\n  ></ds-radio-group>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithDefaultValue",
+        "lit": "WithDefaultValue",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "radiogroup-react--with-default-value",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Required",
+      "args": {
+        "label": "Shipping method",
+        "name": "shipping",
+        "options": [
+          {
+            "value": "standard",
+            "label": "Standard",
+            "description": "Free, 3–5 business days"
+          },
+          {
+            "value": "express",
+            "label": "Express",
+            "description": "$9, next business day"
+          },
+          {
+            "value": "pickup",
+            "label": "Pick up in store",
+            "description": "Free, ready in 2 hours"
+          }
+        ],
+        "orientation": "vertical",
+        "required": true,
+        "invalid": false,
+        "disabled": false
+      },
+      "snippets": {
+        "react": "import { RadioGroup } from '@design-schema/react';\n\nconst shipping = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n  { value: 'express', label: 'Express', description: '$9, next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Free, ready in 2 hours' },\n];\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={shipping}\n  required\n/>",
+        "lit": null,
+        "rn": "import { RadioGroup } from '@design-schema/rn';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n    { value: 'express', label: 'Express', description: '$9, next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n  required\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Required",
+        "lit": null,
+        "rn": "Required",
+        "swift": null
+      },
+      "storyId": "radiogroup-react--required",
+      "sweep": {
+        "prop": "required",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Disabled",
+      "args": {
+        "label": "Shipping method",
+        "name": "shipping",
+        "options": [
+          {
+            "value": "standard",
+            "label": "Standard",
+            "description": "Free, 3–5 business days"
+          },
+          {
+            "value": "express",
+            "label": "Express",
+            "description": "$9, next business day"
+          },
+          {
+            "value": "pickup",
+            "label": "Pick up in store",
+            "description": "Free, ready in 2 hours"
+          }
+        ],
+        "orientation": "vertical",
+        "required": false,
+        "invalid": false,
+        "disabled": true,
+        "defaultValue": "standard"
+      },
+      "snippets": {
+        "react": "import { RadioGroup } from '@design-schema/react';\n\nconst shipping = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n  { value: 'express', label: 'Express', description: '$9, next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Free, ready in 2 hours' },\n];\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={shipping}\n  disabled\n  defaultValue=\"standard\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { RadioGroupOption } from '@design-schema/lit';\n\nconst shippingOptions: RadioGroupOption[] = [\n  { value: 'standard', label: 'Standard', description: 'Arrives in 3–5 business days' },\n  { value: 'express', label: 'Express', description: 'Arrives in 1–2 business days' },\n  { value: 'pickup', label: 'Store pickup', description: 'Ready today' },\n];\n\nhtml`\n  <ds-radio-group\n    label=\"Shipping method\"\n    name=\"shipping\"\n    .options=${shippingOptions}\n    default-value=\"standard\"\n    disabled\n  ></ds-radio-group>\n`;",
+        "rn": "import { RadioGroup } from '@design-schema/rn';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n    { value: 'express', label: 'Express', description: '$9, next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n  defaultValue=\"standard\"\n  disabled\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Disabled",
+        "lit": "DisabledTrue",
+        "rn": "Disabled",
+        "swift": null
+      },
+      "storyId": "radiogroup-react--disabled",
+      "sweep": {
+        "prop": "disabled",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Disabled Option",
+      "args": {
+        "label": "Shipping method",
+        "name": "shipping",
+        "options": [
+          {
+            "value": "standard",
+            "label": "Standard",
+            "description": "Free, 3–5 business days"
+          },
+          {
+            "value": "express",
+            "label": "Express",
+            "description": "$9, next business day"
+          },
+          {
+            "value": "pickup",
+            "label": "Pick up in store",
+            "description": "Not available in your area",
+            "disabled": true
+          }
+        ],
+        "orientation": "vertical",
+        "required": false,
+        "invalid": false,
+        "disabled": false
+      },
+      "snippets": {
+        "react": "import { RadioGroup } from '@design-schema/react';\n\nconst shipping = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n  { value: 'express', label: 'Express', description: '$9, next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Free, ready in 2 hours' },\n];\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    ...shipping.slice(0, 2),\n    { value: 'pickup', label: 'Pick up in store', description: 'Not available in your area', disabled: true },\n  ]}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { RadioGroupOption } from '@design-schema/lit';\n\nconst shippingOptions: RadioGroupOption[] = [\n  { value: 'standard', label: 'Standard', description: 'Arrives in 3–5 business days' },\n  { value: 'express', label: 'Express', description: 'Arrives in 1–2 business days' },\n  { value: 'pickup', label: 'Store pickup', description: 'Ready today' },\n];\n\nhtml`\n      <ds-radio-group\n        label=\"Shipping method\"\n        name=\"shipping\"\n        .options=${[\n    ...shippingOptions.slice(0, 2),\n    { value: 'pickup', label: 'Store pickup', description: 'Not available in your area', disabled: true },\n  ]}\n      ></ds-radio-group>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "DisabledOption",
+        "lit": "DisabledOption",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "radiogroup-react--disabled-option",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "With Description",
+      "args": {
+        "label": "Shipping method",
+        "name": "shipping",
+        "options": [
+          {
+            "value": "standard",
+            "label": "Standard",
+            "description": "Free, 3–5 business days"
+          },
+          {
+            "value": "express",
+            "label": "Express",
+            "description": "$9, next business day"
+          },
+          {
+            "value": "pickup",
+            "label": "Pick up in store",
+            "description": "Free, ready in 2 hours"
+          }
+        ],
+        "orientation": "vertical",
+        "required": false,
+        "invalid": false,
+        "disabled": false,
+        "description": "Delivery times are estimates from the day the order ships."
+      },
+      "snippets": {
+        "react": "import { RadioGroup } from '@design-schema/react';\n\nconst shipping = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n  { value: 'express', label: 'Express', description: '$9, next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Free, ready in 2 hours' },\n];\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={shipping}\n  description=\"Delivery times are estimates from the day the order ships.\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { RadioGroupOption } from '@design-schema/lit';\n\nconst shippingOptions: RadioGroupOption[] = [\n  { value: 'standard', label: 'Standard', description: 'Arrives in 3–5 business days' },\n  { value: 'express', label: 'Express', description: 'Arrives in 1–2 business days' },\n  { value: 'pickup', label: 'Store pickup', description: 'Ready today' },\n];\n\nhtml`\n  <ds-radio-group\n    label=\"Shipping method\"\n    name=\"shipping\"\n    .options=${shippingOptions}\n    description=\"Delivery times are estimates.\"\n  ></ds-radio-group>\n`;",
+        "rn": "import { RadioGroup } from '@design-schema/rn';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n    { value: 'express', label: 'Express', description: '$9, next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n  defaultValue=\"standard\"\n  description=\"Delivery times are estimates.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithDescription",
+        "lit": "WithDescription",
+        "rn": "WithDescription",
+        "swift": null
+      },
+      "storyId": "radiogroup-react--with-description",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Invalid",
+      "args": {
+        "label": "Shipping method",
+        "name": "shipping",
+        "options": [
+          {
+            "value": "standard",
+            "label": "Standard",
+            "description": "Free, 3–5 business days"
+          },
+          {
+            "value": "express",
+            "label": "Express",
+            "description": "$9, next business day"
+          },
+          {
+            "value": "pickup",
+            "label": "Pick up in store",
+            "description": "Free, ready in 2 hours"
+          }
+        ],
+        "orientation": "vertical",
+        "required": false,
+        "invalid": true,
+        "disabled": false
+      },
+      "snippets": {
+        "react": "import { RadioGroup } from '@design-schema/react';\n\nconst shipping = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n  { value: 'express', label: 'Express', description: '$9, next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Free, ready in 2 hours' },\n];\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={shipping}\n  invalid\n/>",
+        "lit": null,
+        "rn": "import { RadioGroup } from '@design-schema/rn';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n    { value: 'express', label: 'Express', description: '$9, next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n  defaultValue=\"standard\"\n  invalid\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Invalid",
+        "lit": null,
+        "rn": "Invalid",
+        "swift": null
+      },
+      "storyId": "radiogroup-react--invalid",
+      "sweep": {
+        "prop": "invalid",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "With Error",
+      "args": {
+        "label": "Shipping method",
+        "name": "shipping",
+        "options": [
+          {
+            "value": "standard",
+            "label": "Standard",
+            "description": "Free, 3–5 business days"
+          },
+          {
+            "value": "express",
+            "label": "Express",
+            "description": "$9, next business day"
+          },
+          {
+            "value": "pickup",
+            "label": "Pick up in store",
+            "description": "Free, ready in 2 hours"
+          }
+        ],
+        "orientation": "vertical",
+        "required": true,
+        "invalid": false,
+        "disabled": false,
+        "error": "Shipping method is required."
+      },
+      "snippets": {
+        "react": "import { RadioGroup } from '@design-schema/react';\n\nconst shipping = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n  { value: 'express', label: 'Express', description: '$9, next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Free, ready in 2 hours' },\n];\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={shipping}\n  required\n  error=\"Shipping method is required.\"\n/>",
+        "lit": null,
+        "rn": "import { RadioGroup } from '@design-schema/rn';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n    { value: 'express', label: 'Express', description: '$9, next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n  required\n  error=\"Choose a shipping method.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithError",
+        "lit": null,
+        "rn": "WithError",
+        "swift": null
+      },
+      "storyId": "radiogroup-react--with-error",
+      "sweep": {
+        "prop": "required",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Controlled",
+      "args": {
+        "label": "Shipping method",
+        "name": "shipping",
+        "options": [
+          {
+            "value": "standard",
+            "label": "Standard",
+            "description": "Free, 3–5 business days"
+          },
+          {
+            "value": "express",
+            "label": "Express",
+            "description": "$9, next business day"
+          },
+          {
+            "value": "pickup",
+            "label": "Pick up in store",
+            "description": "Free, ready in 2 hours"
+          }
+        ],
+        "orientation": "vertical",
+        "required": false,
+        "invalid": false,
+        "disabled": false,
+        "value": "express"
+      },
+      "snippets": {
+        "react": "import { RadioGroup } from '@design-schema/react';\n\nconst shipping = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3–5 business days' },\n  { value: 'express', label: 'Express', description: '$9, next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Free, ready in 2 hours' },\n];\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={shipping}\n  value=\"express\"\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Controlled",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "radiogroup-react--controlled",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

@@ -5,7 +5,7 @@
  *
  *     node tools/checks.ts --platform web            # all gates for one platform
  *     node tools/checks.ts --platform rn --skip typecheck
- *     node tools/checks.ts --platform swiftui        # the doc gates only — the Swift build is a macOS workflow
+ *     node tools/checks.ts --platform swiftui        # the doc and literal gates only — the Swift build is a macOS workflow
  *
  * Each gate is a (name, argv, cwd) triple. A gate passes when its process exits 0. The
  * model never sees the gate definitions, only their output — the docs are the spec, these
@@ -39,20 +39,18 @@ import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { isPlatform, isTsPlatform, PACKAGE_DIR, PLATFORMS } from '../schema/platforms.ts';
 import { which, winQuote } from './lib/proc.ts';
 import { ljust, pySplitlines, pyStrip } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
 
 export const ROOT: string = REPO_ROOT;
-export const PKG: Record<string, string> = { web: 'react', lit: 'lit', rn: 'rn', swiftui: 'swiftui' };
 
-/** Platforms whose package is TypeScript, and so whose typecheck, dependency and module gates are a
- *  `pnpm --filter` away. `swiftui` is a Swift package: `swift build`, the Swift Testing suite and the
- *  XCUITest audit run on the macOS workflow (tools/swiftui_gate.ts), because SwiftUI compiles nowhere
- *  else — process/ios-platform.md, "Gates, and the Mac problem". What is left here are the doc-level
- *  gates, which read the docs and so run anywhere. (The literals gate joins them when job 450 teaches
- *  tools/lint_literals.ts to read Swift.) */
-export const TS_PACKAGE: ReadonlySet<string> = new Set(['web', 'lit', 'rn']);
+// Only the TypeScript packages (TS_PLATFORMS in schema/platforms.ts) get the typecheck, dependency, module,
+// axe and behavior gates, which are a `pnpm --filter` away. `swiftui` is a Swift package: `swift build`, the
+// Swift Testing suite and the XCUITest audit run on the macOS workflow (tools/swiftui_gate.ts), because SwiftUI
+// compiles nowhere else — process/ios-platform.md, "Gates, and the Mac problem". What runs here for it are the
+// doc-level gates, which read the docs, and the literal gate, which reads Swift as well as TypeScript and CSS.
 
 export type Gate = { name: string; argv: string[]; cwd: string };
 export type GateResult = { name: string; ok: boolean; output: string };
@@ -68,7 +66,7 @@ export function node(): string {
 export const BROWSER_GATES: ReadonlySet<string> = new Set(['keyboard', 'axe']); // need Playwright + browsers; opt in with --with
 
 export function gatesFor(platform: string, skip: Set<string> = new Set(), extra: Set<string> = new Set()): Gate[] {
-  const pkg = PKG[platform] as string;
+  const pkg = PACKAGE_DIR[platform] as string;
   const gate = (name: string, argv: string[]): Gate => ({ name, argv, cwd: ROOT });
   const tool = (file: string, ...args: string[]): string[] => [node(), '--import', 'tsx', join(ROOT, 'tools', file), ...args];
   const allGates: Gate[] = [
@@ -76,10 +74,10 @@ export function gatesFor(platform: string, skip: Set<string> = new Set(), extra:
     // stripping needs 22.18+).
     gate('parse', tool('parse.ts')),
     gate('contrast', tool('check_contrast.ts')),
+    gate('literals', tool('lint_literals.ts', '--platform', platform)),
   ];
-  if (TS_PACKAGE.has(platform)) {
+  if (isTsPlatform(platform)) {
     allGates.push(
-      gate('literals', tool('lint_literals.ts', '--platform', platform)),
       gate('typecheck', [pnpm(), '--filter', `@design-schema/${pkg}`, 'typecheck']),
       gate('deps', tool('check_deps.ts', '--platform', platform)),
       gate('modules', tool('check_modules.ts', '--platform', platform)),
@@ -89,11 +87,11 @@ export function gatesFor(platform: string, skip: Set<string> = new Set(), extra:
     allGates.push(gate('keyboard', tool('keyboard_tests.ts')));
     allGates.push(gate('keyboard-run', [pnpm(), 'exec', 'playwright', 'test', `--project=keyboard-${platform}`]));
   }
-  if (extra.has('axe') && TS_PACKAGE.has(platform)) {
+  if (extra.has('axe') && isTsPlatform(platform)) {
     allGates.push(gate('axe', [pnpm(), 'exec', 'playwright', 'test', `--project=axe-${platform}`]));
   }
   // The Swift behavior suite is Swift Testing on the macOS runner (job 460), not Vitest here.
-  if (extra.has('behavior') && TS_PACKAGE.has(platform)) {
+  if (extra.has('behavior') && isTsPlatform(platform)) {
     allGates.push(gate('behavior', tool('behavior_tests.ts')));
     // `pnpm --filter <pkg> test -- <pattern>` forwards a literal "--" into vitest/jest on this
     // pnpm (10.17), which then ignores the pattern and runs every test file; `run test <pattern>`
@@ -154,7 +152,7 @@ export type Args = { platform: string; skip: string[]; extra: string[]; json: bo
  * which stays out of the usage line the way an `argparse.SUPPRESS` help does.
  */
 export function parseArgs(argv: string[], prog: string = 'checks.ts'): Args {
-  const usage = `usage: ${prog} [-h] --platform {web,lit,rn,swiftui} [--skip SKIP] [--with EXTRA]`;
+  const usage = `usage: ${prog} [-h] --platform {${PLATFORMS.join(',')}} [--skip SKIP] [--with EXTRA]`;
   const die: (message: string) => never = (message) => {
     process.stderr.write(`${usage}\n${prog}: error: ${message}\n`);
     throw Object.assign(new Error(message), { exitCode: 2 });
@@ -174,7 +172,7 @@ export function parseArgs(argv: string[], prog: string = 'checks.ts'): Args {
       throw Object.assign(new Error('help'), { exitCode: 0 });
     } else if (arg === '--platform' || arg.startsWith('--platform=')) {
       const v = value(arg, '--platform', i);
-      if (!Object.hasOwn(PKG, v)) die(`argument --platform: invalid choice: '${v}' (choose from ${Object.keys(PKG).join(', ')})`);
+      if (!isPlatform(v)) die(`argument --platform: invalid choice: '${v}' (choose from ${PLATFORMS.join(', ')})`);
       args.platform = v;
     } else if (arg === '--skip' || arg.startsWith('--skip=')) {
       args.skip.push(value(arg, '--skip', i));

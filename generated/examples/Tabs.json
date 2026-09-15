@@ -1,0 +1,905 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "tabs": [
+          {
+            "id": "overview",
+            "label": "Overview"
+          },
+          {
+            "id": "activity",
+            "label": "Activity",
+            "badge": "3"
+          },
+          {
+            "id": "files",
+            "label": "Files",
+            "icon": "external"
+          },
+          {
+            "id": "settings",
+            "label": "Settings",
+            "disabled": true
+          }
+        ],
+        "label": "Project sections",
+        "activation": "automatic",
+        "orientation": "horizontal",
+        "fit": "start",
+        "keepMounted": false,
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Project overview and key metrics."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Recent activity across the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files attached to the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Project settings."
+            ]
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nconst panels = [\n  <TabPanel key=\"overview\" id=\"overview\">Project overview and key metrics.</TabPanel>,\n  <TabPanel key=\"activity\" id=\"activity\">Recent activity across the project.</TabPanel>,\n  <TabPanel key=\"files\" id=\"files\">Files attached to the project.</TabPanel>,\n  <TabPanel key=\"settings\" id=\"settings\">Project settings.</TabPanel>,\n];\n\n<Tabs tabs={TABS} label=\"Project sections\">{panels}</Tabs>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TabsTab } from '@design-schema/lit';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'members', label: 'Members', disabled: true },\n];\n\nhtml`\n  <ds-tabs label=\"Project sections\" .tabs=${TABS}>\n    <ds-tab-panel id=\"overview\">A summary of the project: status, owner and recent changes.</ds-tab-panel>\n    <ds-tab-panel id=\"activity\">A chronological feed of comments, edits and status changes.</ds-tab-panel>\n    <ds-tab-panel id=\"files\">Every file attached to this project, newest first.</ds-tab-panel>\n    <ds-tab-panel id=\"members\">The people with access to this project and their roles.</ds-tab-panel>\n  </ds-tabs>\n`;",
+        "rn": "import { Tabs, TabPanel, type TabsTab, Text } from '@design-schema/rn';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\n<Tabs label=\"Project sections\" tabs={TABS}>\n  <TabPanel id=\"overview\">\n    <Text>Summary of the project's health and recent activity.</Text>\n  </TabPanel>\n  <TabPanel id=\"activity\">\n    <Text>A log of recent changes.</Text>\n  </TabPanel>\n  <TabPanel id=\"files\">\n    <Text>The project's file tree.</Text>\n  </TabPanel>\n  <TabPanel id=\"settings\">\n    <Text>Project settings.</Text>\n  </TabPanel>\n</Tabs>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "tabs-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Activation Automatic",
+      "args": {
+        "tabs": [
+          {
+            "id": "overview",
+            "label": "Overview"
+          },
+          {
+            "id": "activity",
+            "label": "Activity",
+            "badge": "3"
+          },
+          {
+            "id": "files",
+            "label": "Files",
+            "icon": "external"
+          },
+          {
+            "id": "settings",
+            "label": "Settings",
+            "disabled": true
+          }
+        ],
+        "label": "Project sections",
+        "activation": "automatic",
+        "orientation": "horizontal",
+        "fit": "start",
+        "keepMounted": false,
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Project overview and key metrics."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Recent activity across the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files attached to the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Project settings."
+            ]
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nconst panels = [\n  <TabPanel key=\"overview\" id=\"overview\">Project overview and key metrics.</TabPanel>,\n  <TabPanel key=\"activity\" id=\"activity\">Recent activity across the project.</TabPanel>,\n  <TabPanel key=\"files\" id=\"files\">Files attached to the project.</TabPanel>,\n  <TabPanel key=\"settings\" id=\"settings\">Project settings.</TabPanel>,\n];\n\n<Tabs tabs={TABS} label=\"Project sections\" activation=\"automatic\">{panels}</Tabs>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TabsTab } from '@design-schema/lit';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'members', label: 'Members', disabled: true },\n];\n\nhtml`\n  <ds-tabs label=\"Project sections\" .tabs=${TABS} activation=\"automatic\">\n    <ds-tab-panel id=\"overview\">A summary of the project: status, owner and recent changes.</ds-tab-panel>\n    <ds-tab-panel id=\"activity\">A chronological feed of comments, edits and status changes.</ds-tab-panel>\n    <ds-tab-panel id=\"files\">Every file attached to this project, newest first.</ds-tab-panel>\n    <ds-tab-panel id=\"members\">The people with access to this project and their roles.</ds-tab-panel>\n  </ds-tabs>\n`;",
+        "rn": "import { Tabs, TabPanel, type TabsTab, Text } from '@design-schema/rn';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\n<Tabs label=\"Project sections\" tabs={TABS} activation=\"automatic\">\n  <TabPanel id=\"overview\">\n    <Text>Summary of the project's health and recent activity.</Text>\n  </TabPanel>\n  <TabPanel id=\"activity\">\n    <Text>A log of recent changes.</Text>\n  </TabPanel>\n  <TabPanel id=\"files\">\n    <Text>The project's file tree.</Text>\n  </TabPanel>\n  <TabPanel id=\"settings\">\n    <Text>Project settings.</Text>\n  </TabPanel>\n</Tabs>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ActivationAutomatic",
+        "lit": "ActivationAutomatic",
+        "rn": "ActivationAutomatic",
+        "swift": null
+      },
+      "storyId": "tabs-react--activation-automatic",
+      "sweep": {
+        "prop": "activation",
+        "value": "automatic"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Activation Manual",
+      "args": {
+        "tabs": [
+          {
+            "id": "overview",
+            "label": "Overview"
+          },
+          {
+            "id": "activity",
+            "label": "Activity",
+            "badge": "3"
+          },
+          {
+            "id": "files",
+            "label": "Files",
+            "icon": "external"
+          },
+          {
+            "id": "settings",
+            "label": "Settings",
+            "disabled": true
+          }
+        ],
+        "label": "Project sections",
+        "activation": "manual",
+        "orientation": "horizontal",
+        "fit": "start",
+        "keepMounted": false,
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Project overview and key metrics."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Recent activity across the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files attached to the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Project settings."
+            ]
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nconst panels = [\n  <TabPanel key=\"overview\" id=\"overview\">Project overview and key metrics.</TabPanel>,\n  <TabPanel key=\"activity\" id=\"activity\">Recent activity across the project.</TabPanel>,\n  <TabPanel key=\"files\" id=\"files\">Files attached to the project.</TabPanel>,\n  <TabPanel key=\"settings\" id=\"settings\">Project settings.</TabPanel>,\n];\n\n<Tabs tabs={TABS} label=\"Project sections\" activation=\"manual\">{panels}</Tabs>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TabsTab } from '@design-schema/lit';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'members', label: 'Members', disabled: true },\n];\n\nhtml`\n  <ds-tabs label=\"Project sections\" .tabs=${TABS} activation=\"manual\">\n    <ds-tab-panel id=\"overview\">A summary of the project: status, owner and recent changes.</ds-tab-panel>\n    <ds-tab-panel id=\"activity\">A chronological feed of comments, edits and status changes.</ds-tab-panel>\n    <ds-tab-panel id=\"files\">Every file attached to this project, newest first.</ds-tab-panel>\n    <ds-tab-panel id=\"members\">The people with access to this project and their roles.</ds-tab-panel>\n  </ds-tabs>\n`;",
+        "rn": "import { Tabs, TabPanel, type TabsTab, Text } from '@design-schema/rn';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\n<Tabs label=\"Project sections\" tabs={TABS} activation=\"manual\">\n  <TabPanel id=\"overview\">\n    <Text>Summary of the project's health and recent activity.</Text>\n  </TabPanel>\n  <TabPanel id=\"activity\">\n    <Text>A log of recent changes.</Text>\n  </TabPanel>\n  <TabPanel id=\"files\">\n    <Text>The project's file tree.</Text>\n  </TabPanel>\n  <TabPanel id=\"settings\">\n    <Text>Project settings.</Text>\n  </TabPanel>\n</Tabs>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ActivationManual",
+        "lit": "ActivationManual",
+        "rn": "ActivationManual",
+        "swift": null
+      },
+      "storyId": "tabs-react--activation-manual",
+      "sweep": {
+        "prop": "activation",
+        "value": "manual"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Orientation Horizontal",
+      "args": {
+        "tabs": [
+          {
+            "id": "overview",
+            "label": "Overview"
+          },
+          {
+            "id": "activity",
+            "label": "Activity",
+            "badge": "3"
+          },
+          {
+            "id": "files",
+            "label": "Files",
+            "icon": "external"
+          },
+          {
+            "id": "settings",
+            "label": "Settings",
+            "disabled": true
+          }
+        ],
+        "label": "Project sections",
+        "activation": "automatic",
+        "orientation": "horizontal",
+        "fit": "start",
+        "keepMounted": false,
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Project overview and key metrics."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Recent activity across the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files attached to the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Project settings."
+            ]
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nconst panels = [\n  <TabPanel key=\"overview\" id=\"overview\">Project overview and key metrics.</TabPanel>,\n  <TabPanel key=\"activity\" id=\"activity\">Recent activity across the project.</TabPanel>,\n  <TabPanel key=\"files\" id=\"files\">Files attached to the project.</TabPanel>,\n  <TabPanel key=\"settings\" id=\"settings\">Project settings.</TabPanel>,\n];\n\n<Tabs tabs={TABS} label=\"Project sections\" orientation=\"horizontal\">{panels}</Tabs>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TabsTab } from '@design-schema/lit';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'members', label: 'Members', disabled: true },\n];\n\nhtml`\n  <ds-tabs label=\"Project sections\" .tabs=${TABS} orientation=\"horizontal\">\n    <ds-tab-panel id=\"overview\">A summary of the project: status, owner and recent changes.</ds-tab-panel>\n    <ds-tab-panel id=\"activity\">A chronological feed of comments, edits and status changes.</ds-tab-panel>\n    <ds-tab-panel id=\"files\">Every file attached to this project, newest first.</ds-tab-panel>\n    <ds-tab-panel id=\"members\">The people with access to this project and their roles.</ds-tab-panel>\n  </ds-tabs>\n`;",
+        "rn": "import { Tabs, TabPanel, type TabsTab, Text } from '@design-schema/rn';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\n<Tabs\n  label=\"Project sections\"\n  tabs={TABS}\n  orientation=\"horizontal\"\n>\n  <TabPanel id=\"overview\">\n    <Text>Summary of the project's health and recent activity.</Text>\n  </TabPanel>\n  <TabPanel id=\"activity\">\n    <Text>A log of recent changes.</Text>\n  </TabPanel>\n  <TabPanel id=\"files\">\n    <Text>The project's file tree.</Text>\n  </TabPanel>\n  <TabPanel id=\"settings\">\n    <Text>Project settings.</Text>\n  </TabPanel>\n</Tabs>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OrientationHorizontal",
+        "lit": "OrientationHorizontal",
+        "rn": "OrientationHorizontal",
+        "swift": null
+      },
+      "storyId": "tabs-react--orientation-horizontal",
+      "sweep": {
+        "prop": "orientation",
+        "value": "horizontal"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Orientation Vertical",
+      "args": {
+        "tabs": [
+          {
+            "id": "overview",
+            "label": "Overview"
+          },
+          {
+            "id": "activity",
+            "label": "Activity",
+            "badge": "3"
+          },
+          {
+            "id": "files",
+            "label": "Files",
+            "icon": "external"
+          },
+          {
+            "id": "settings",
+            "label": "Settings",
+            "disabled": true
+          }
+        ],
+        "label": "Project sections",
+        "activation": "automatic",
+        "orientation": "vertical",
+        "fit": "start",
+        "keepMounted": false,
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Project overview and key metrics."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Recent activity across the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files attached to the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Project settings."
+            ]
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nconst panels = [\n  <TabPanel key=\"overview\" id=\"overview\">Project overview and key metrics.</TabPanel>,\n  <TabPanel key=\"activity\" id=\"activity\">Recent activity across the project.</TabPanel>,\n  <TabPanel key=\"files\" id=\"files\">Files attached to the project.</TabPanel>,\n  <TabPanel key=\"settings\" id=\"settings\">Project settings.</TabPanel>,\n];\n\n<Tabs tabs={TABS} label=\"Project sections\" orientation=\"vertical\">{panels}</Tabs>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TabsTab } from '@design-schema/lit';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'members', label: 'Members', disabled: true },\n];\n\nhtml`\n  <ds-tabs label=\"Project sections\" .tabs=${TABS} orientation=\"vertical\">\n    <ds-tab-panel id=\"overview\">A summary of the project: status, owner and recent changes.</ds-tab-panel>\n    <ds-tab-panel id=\"activity\">A chronological feed of comments, edits and status changes.</ds-tab-panel>\n    <ds-tab-panel id=\"files\">Every file attached to this project, newest first.</ds-tab-panel>\n    <ds-tab-panel id=\"members\">The people with access to this project and their roles.</ds-tab-panel>\n  </ds-tabs>\n`;",
+        "rn": "import { Tabs, TabPanel, type TabsTab, Text } from '@design-schema/rn';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\n<Tabs label=\"Project sections\" tabs={TABS} orientation=\"vertical\">\n  <TabPanel id=\"overview\">\n    <Text>Summary of the project's health and recent activity.</Text>\n  </TabPanel>\n  <TabPanel id=\"activity\">\n    <Text>A log of recent changes.</Text>\n  </TabPanel>\n  <TabPanel id=\"files\">\n    <Text>The project's file tree.</Text>\n  </TabPanel>\n  <TabPanel id=\"settings\">\n    <Text>Project settings.</Text>\n  </TabPanel>\n</Tabs>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OrientationVertical",
+        "lit": "OrientationVertical",
+        "rn": "OrientationVertical",
+        "swift": null
+      },
+      "storyId": "tabs-react--orientation-vertical",
+      "sweep": {
+        "prop": "orientation",
+        "value": "vertical"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Fit Start",
+      "args": {
+        "tabs": [
+          {
+            "id": "overview",
+            "label": "Overview"
+          },
+          {
+            "id": "activity",
+            "label": "Activity",
+            "badge": "3"
+          },
+          {
+            "id": "files",
+            "label": "Files",
+            "icon": "external"
+          },
+          {
+            "id": "settings",
+            "label": "Settings",
+            "disabled": true
+          }
+        ],
+        "label": "Project sections",
+        "activation": "automatic",
+        "orientation": "horizontal",
+        "fit": "start",
+        "keepMounted": false,
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Project overview and key metrics."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Recent activity across the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files attached to the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Project settings."
+            ]
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nconst panels = [\n  <TabPanel key=\"overview\" id=\"overview\">Project overview and key metrics.</TabPanel>,\n  <TabPanel key=\"activity\" id=\"activity\">Recent activity across the project.</TabPanel>,\n  <TabPanel key=\"files\" id=\"files\">Files attached to the project.</TabPanel>,\n  <TabPanel key=\"settings\" id=\"settings\">Project settings.</TabPanel>,\n];\n\n<Tabs tabs={TABS} label=\"Project sections\" fit=\"start\">{panels}</Tabs>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TabsTab } from '@design-schema/lit';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'members', label: 'Members', disabled: true },\n];\n\nhtml`\n  <ds-tabs label=\"Project sections\" .tabs=${TABS} fit=\"start\">\n    <ds-tab-panel id=\"overview\">A summary of the project: status, owner and recent changes.</ds-tab-panel>\n    <ds-tab-panel id=\"activity\">A chronological feed of comments, edits and status changes.</ds-tab-panel>\n    <ds-tab-panel id=\"files\">Every file attached to this project, newest first.</ds-tab-panel>\n    <ds-tab-panel id=\"members\">The people with access to this project and their roles.</ds-tab-panel>\n  </ds-tabs>\n`;",
+        "rn": "import { Tabs, TabPanel, type TabsTab, Text } from '@design-schema/rn';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\n<Tabs label=\"Project sections\" tabs={TABS} fit=\"start\">\n  <TabPanel id=\"overview\">\n    <Text>Summary of the project's health and recent activity.</Text>\n  </TabPanel>\n  <TabPanel id=\"activity\">\n    <Text>A log of recent changes.</Text>\n  </TabPanel>\n  <TabPanel id=\"files\">\n    <Text>The project's file tree.</Text>\n  </TabPanel>\n  <TabPanel id=\"settings\">\n    <Text>Project settings.</Text>\n  </TabPanel>\n</Tabs>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FitStart",
+        "lit": "FitStart",
+        "rn": "FitStart",
+        "swift": null
+      },
+      "storyId": "tabs-react--fit-start",
+      "sweep": {
+        "prop": "fit",
+        "value": "start"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Fit Fill",
+      "args": {
+        "tabs": [
+          {
+            "id": "overview",
+            "label": "Overview"
+          },
+          {
+            "id": "activity",
+            "label": "Activity",
+            "badge": "3"
+          },
+          {
+            "id": "files",
+            "label": "Files",
+            "icon": "external"
+          }
+        ],
+        "label": "Project sections",
+        "activation": "automatic",
+        "orientation": "horizontal",
+        "fit": "fill",
+        "keepMounted": false,
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Project overview and key metrics."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Recent activity across the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files attached to the project."
+            ]
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nconst panels = [\n  <TabPanel key=\"overview\" id=\"overview\">Project overview and key metrics.</TabPanel>,\n  <TabPanel key=\"activity\" id=\"activity\">Recent activity across the project.</TabPanel>,\n  <TabPanel key=\"files\" id=\"files\">Files attached to the project.</TabPanel>,\n  <TabPanel key=\"settings\" id=\"settings\">Project settings.</TabPanel>,\n];\n\n<Tabs tabs={TABS.slice(0, 3)} label=\"Project sections\" fit=\"fill\">{panels.slice(0, 3)}</Tabs>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TabsTab } from '@design-schema/lit';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'members', label: 'Members', disabled: true },\n];\n\nhtml`\n  <ds-tabs label=\"Project sections\" .tabs=${TABS} fit=\"fill\">\n    <ds-tab-panel id=\"overview\">A summary of the project: status, owner and recent changes.</ds-tab-panel>\n    <ds-tab-panel id=\"activity\">A chronological feed of comments, edits and status changes.</ds-tab-panel>\n    <ds-tab-panel id=\"files\">Every file attached to this project, newest first.</ds-tab-panel>\n    <ds-tab-panel id=\"members\">The people with access to this project and their roles.</ds-tab-panel>\n  </ds-tabs>\n`;",
+        "rn": "import { Tabs, TabPanel, type TabsTab, Text } from '@design-schema/rn';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\n<Tabs label=\"Project sections\" tabs={TABS} fit=\"fill\">\n  <TabPanel id=\"overview\">\n    <Text>Summary of the project's health and recent activity.</Text>\n  </TabPanel>\n  <TabPanel id=\"activity\">\n    <Text>A log of recent changes.</Text>\n  </TabPanel>\n  <TabPanel id=\"files\">\n    <Text>The project's file tree.</Text>\n  </TabPanel>\n  <TabPanel id=\"settings\">\n    <Text>Project settings.</Text>\n  </TabPanel>\n</Tabs>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FitFill",
+        "lit": "FitFill",
+        "rn": "FitFill",
+        "swift": null
+      },
+      "storyId": "tabs-react--fit-fill",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Keep Mounted",
+      "args": {
+        "tabs": [
+          {
+            "id": "overview",
+            "label": "Overview"
+          },
+          {
+            "id": "activity",
+            "label": "Activity",
+            "badge": "3"
+          },
+          {
+            "id": "files",
+            "label": "Files",
+            "icon": "external"
+          },
+          {
+            "id": "settings",
+            "label": "Settings",
+            "disabled": true
+          }
+        ],
+        "label": "Project sections",
+        "activation": "automatic",
+        "orientation": "horizontal",
+        "fit": "start",
+        "keepMounted": true,
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Project overview and key metrics."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Recent activity across the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files attached to the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Project settings."
+            ]
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nconst panels = [\n  <TabPanel key=\"overview\" id=\"overview\">Project overview and key metrics.</TabPanel>,\n  <TabPanel key=\"activity\" id=\"activity\">Recent activity across the project.</TabPanel>,\n  <TabPanel key=\"files\" id=\"files\">Files attached to the project.</TabPanel>,\n  <TabPanel key=\"settings\" id=\"settings\">Project settings.</TabPanel>,\n];\n\n<Tabs tabs={TABS} label=\"Project sections\" keepMounted>{panels}</Tabs>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TabsTab } from '@design-schema/lit';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'members', label: 'Members', disabled: true },\n];\n\nhtml`\n  <ds-tabs label=\"Project sections\" .tabs=${TABS} keep-mounted>\n    <ds-tab-panel id=\"overview\">A summary of the project: status, owner and recent changes.</ds-tab-panel>\n    <ds-tab-panel id=\"activity\">A chronological feed of comments, edits and status changes.</ds-tab-panel>\n    <ds-tab-panel id=\"files\">Every file attached to this project, newest first.</ds-tab-panel>\n    <ds-tab-panel id=\"members\">The people with access to this project and their roles.</ds-tab-panel>\n  </ds-tabs>\n`;",
+        "rn": "import { Tabs, TabPanel, type TabsTab, Text } from '@design-schema/rn';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\n<Tabs label=\"Project sections\" tabs={TABS} keepMounted>\n  <TabPanel id=\"overview\">\n    <Text>Summary of the project's health and recent activity.</Text>\n  </TabPanel>\n  <TabPanel id=\"activity\">\n    <Text>A log of recent changes.</Text>\n  </TabPanel>\n  <TabPanel id=\"files\">\n    <Text>The project's file tree.</Text>\n  </TabPanel>\n  <TabPanel id=\"settings\">\n    <Text>Project settings.</Text>\n  </TabPanel>\n</Tabs>",
+        "swift": null
+      },
+      "stories": {
+        "react": "KeepMounted",
+        "lit": "KeepMountedTrue",
+        "rn": "KeepMounted",
+        "swift": null
+      },
+      "storyId": "tabs-react--keep-mounted",
+      "sweep": {
+        "prop": "keepMounted",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Controlled",
+      "args": {
+        "tabs": [
+          {
+            "id": "overview",
+            "label": "Overview"
+          },
+          {
+            "id": "activity",
+            "label": "Activity",
+            "badge": "3"
+          },
+          {
+            "id": "files",
+            "label": "Files",
+            "icon": "external"
+          },
+          {
+            "id": "settings",
+            "label": "Settings",
+            "disabled": true
+          }
+        ],
+        "label": "Project sections",
+        "activation": "automatic",
+        "orientation": "horizontal",
+        "fit": "start",
+        "keepMounted": false,
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Project overview and key metrics."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Recent activity across the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files attached to the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Project settings."
+            ]
+          }
+        ],
+        "value": "activity"
+      },
+      "snippets": {
+        "react": "import { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nconst panels = [\n  <TabPanel key=\"overview\" id=\"overview\">Project overview and key metrics.</TabPanel>,\n  <TabPanel key=\"activity\" id=\"activity\">Recent activity across the project.</TabPanel>,\n  <TabPanel key=\"files\" id=\"files\">Files attached to the project.</TabPanel>,\n  <TabPanel key=\"settings\" id=\"settings\">Project settings.</TabPanel>,\n];\n\n<Tabs tabs={TABS} label=\"Project sections\" value=\"activity\">{panels}</Tabs>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Controlled",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "tabs-react--controlled",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "tabs": [
+          {
+            "id": "overview",
+            "label": "Overview"
+          },
+          {
+            "id": "activity",
+            "label": "Activity",
+            "badge": "3"
+          },
+          {
+            "id": "files",
+            "label": "Files",
+            "icon": "external"
+          },
+          {
+            "id": "settings",
+            "label": "Settings",
+            "disabled": true
+          }
+        ],
+        "label": "Project sections",
+        "activation": "automatic",
+        "orientation": "horizontal",
+        "fit": "start",
+        "keepMounted": false,
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Project overview and key metrics."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Recent activity across the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files attached to the project."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Project settings."
+            ]
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nconst panels = [\n  <TabPanel key=\"overview\" id=\"overview\">Project overview and key metrics.</TabPanel>,\n  <TabPanel key=\"activity\" id=\"activity\">Recent activity across the project.</TabPanel>,\n  <TabPanel key=\"files\" id=\"files\">Files attached to the project.</TabPanel>,\n  <TabPanel key=\"settings\" id=\"settings\">Project settings.</TabPanel>,\n];\n\n<Tabs tabs={TABS} label=\"Project sections\">{panels}</Tabs>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TabsTab } from '@design-schema/lit';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'members', label: 'Members', disabled: true },\n];\n\nhtml`\n  <ds-tabs label=\"Project sections\" .tabs=${TABS} activation=\"manual\">\n    <ds-tab-panel id=\"overview\">A summary of the project: status, owner and recent changes.</ds-tab-panel>\n    <ds-tab-panel id=\"activity\">A chronological feed of comments, edits and status changes.</ds-tab-panel>\n    <ds-tab-panel id=\"files\">Every file attached to this project, newest first.</ds-tab-panel>\n    <ds-tab-panel id=\"members\">The people with access to this project and their roles.</ds-tab-panel>\n  </ds-tabs>\n`;",
+        "rn": "import { Tabs, TabPanel, type TabsTab, Text } from '@design-schema/rn';\n\nconst TABS: TabsTab[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\n<Tabs label=\"Project sections\" tabs={TABS}>\n  <TabPanel id=\"overview\">\n    <Text>Summary of the project's health and recent activity.</Text>\n  </TabPanel>\n  <TabPanel id=\"activity\">\n    <Text>A log of recent changes.</Text>\n  </TabPanel>\n  <TabPanel id=\"files\">\n    <Text>The project's file tree.</Text>\n  </TabPanel>\n  <TabPanel id=\"settings\">\n    <Text>Project settings.</Text>\n  </TabPanel>\n</Tabs>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "tabs-react--keyboard",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    }
+  ]
+}

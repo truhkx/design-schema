@@ -1,0 +1,85 @@
+{
+  "name": "Combobox",
+  "role": "combobox",
+  "identifier": "Combobox",
+  "rules": [
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "Opens the list (if closed) and moves the active option down; focus stays in the input.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "Opens the list and moves the active option up.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Enter"
+      ],
+      "action": "Commits the active option (single: closes; multiple: toggles and stays open); with allowCustom and no active option, commits the typed text.",
+      "from": "first",
+      "expect": "manual",
+      "when": "list open"
+    },
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Closes the list if open; if closed and clearable, clears the input text.",
+      "from": "first",
+      "expect": "closes",
+      "when": "list open"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Closes the list and moves focus on. Under single-select a highlighted option is NOT committed by Tab (typing intent is ambiguous).",
+      "from": "first",
+      "expect": "closes",
+      "when": "list open"
+    },
+    {
+      "keys": [
+        "Backspace"
+      ],
+      "action": "In an empty input with chips, removes the last chip.",
+      "from": "first",
+      "expect": "manual",
+      "when": "multiple"
+    },
+    {
+      "keys": [
+        "Home",
+        "End"
+      ],
+      "action": "Move the text caret (input semantics), never the list.",
+      "from": "first",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        ","
+      ],
+      "action": "With allowCustom, commits the typed text as a custom value (as Enter does) and clears the input.",
+      "from": "first",
+      "expect": "manual",
+      "when": "allowCustom"
+    },
+    {
+      "keys": [
+        "Alt+ArrowDown"
+      ],
+      "action": "Opens the list without moving the active option.",
+      "from": "first",
+      "expect": "manual"
+    }
+  ]
+}

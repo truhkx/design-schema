@@ -1,0 +1,36 @@
+# Build context rules for apps/website/Dockerfile (BuildKit reads <Dockerfile>.dockerignore beside it).
+# The context is the repo root, because the site is built from the whole workspace.
+
+# Installs and build output: always derived inside the image, never copied from a working tree.
+**/node_modules
+**/dist
+**/.astro
+**/storybook-static
+**/.modules-check
+**/.expo
+**/.build
+**/.swiftpm
+**/DerivedData
+
+# Generated inputs, committed or not: the image always regenerates them from the docs, so the site it
+# serves can never disagree with the schema it was built from.
+generated/components.json
+generated/nav.json
+generated/themes.json
+generated/examples
+generated/prompts
+generated/behavior
+generated/keyboard
+site/src/content/docs/foundations/spec-sheet.md
+
+# Local state and scratch.
+.git
+.claude
+logs
+test-results
+playwright-report
+mcp/.chroma
+_xfer
+_to_delete
+Claude outputs
+**/*.log

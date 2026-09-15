@@ -1,0 +1,209 @@
+/**
+ * FocusScope — restore-to-opener, through a parent that moves focus in its own layout effect.
+ * Every overlay composite renders <FocusScope autoFocus="none" restoreFocus> and focuses its own
+ * content in useLayoutEffect; the scope must record the opener before that move, or it "restores"
+ * to an element inside the overlay that is gone once it unmounts.
+ */
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { ActionSheet } from './ActionSheet';
+import { AlertDialog } from './AlertDialog';
+import { BottomSheet } from './BottomSheet';
+import { Button } from './Button';
+import { Dialog } from './Dialog';
+import { FocusScope } from './FocusScope';
+import { SidePanel } from './SidePanel';
+
+// jsdom has no matchMedia and never fires transitionend: report reduced motion so exits finish
+// synchronously, and no wide viewport so the sheets keep their bottom-edge presentation.
+const originalMatchMedia = window.matchMedia;
+beforeAll(() => {
+  window.matchMedia = ((query: string) => ({
+    matches: query.includes('prefers-reduced-motion'),
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+});
+afterAll(() => {
+  window.matchMedia = originalMatchMedia;
+});
+
+type Overlay = (props: { open: boolean; close: () => void }) => ReactElement;
+
+/** An "Open" button that controls `overlay`; focuses and clicks it, as a user would. */
+function openFrom(overlay: Overlay) {
+  function Harness() {
+    const [open, setOpen] = useState(false);
+    return (
+      <>
+        {/* Focusable content before the opener, so a fallback to "first focusable" can't pass by accident. */}
+        <a href="#top">Page header link</a>
+        <Button label="Open" onClick={() => setOpen(true)} />
+        {overlay({ open, close: () => setOpen(false) })}
+      </>
+    );
+  }
+  render(<Harness />);
+  const opener = screen.getByRole('button', { name: 'Open' });
+  opener.focus();
+  fireEvent.click(opener);
+  const dialog = document.body.querySelector('dialog') as HTMLDialogElement;
+  expect(dialog).not.toBeNull();
+  expect(dialog.contains(document.activeElement)).toBe(true);
+  return { opener, dialog };
+}
+
+const cancel = (dialog: HTMLDialogElement) => fireEvent(dialog, new Event('cancel', { cancelable: true }));
+
+function FocusesChildOnMount({ children }: { children: ReactNode }) {
+  const inner = useRef<HTMLButtonElement | null>(null);
+  useLayoutEffect(() => inner.current?.focus(), []);
+  return (
+    <FocusScope trapped autoFocus="none" restoreFocus>
+      <button ref={inner}>Inner</button>
+      {children}
+    </FocusScope>
+  );
+}
+
+describe('FocusScope', () => {
+  it('restores focus to the opener when the parent moved focus in during layout', () => {
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <a href="#top">Page header link</a>
+          <button onClick={() => setOpen(true)}>Open</button>
+          {open ? (
+            <FocusesChildOnMount>
+              <button onClick={() => setOpen(false)}>Done</button>
+            </FocusesChildOnMount>
+          ) : null}
+        </>
+      );
+    }
+    render(<Harness />);
+    const opener = screen.getByRole('button', { name: 'Open' });
+    opener.focus();
+    fireEvent.click(opener);
+    expect(screen.getByRole('button', { name: 'Inner' })).toHaveFocus();
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(opener).toHaveFocus();
+  });
+});
+
+describe('overlay composites restore focus to their opener', () => {
+  const dialog: Overlay = ({ open, close }) => (
+    <Dialog open={open} heading="Rename project" onClose={close}>
+      <input aria-label="Project name" />
+    </Dialog>
+  );
+
+  it('Dialog — Escape', () => {
+    const { opener, dialog: el } = openFrom(dialog);
+    cancel(el);
+    expect(opener).toHaveFocus();
+  });
+
+  it('Dialog — close button', () => {
+    const { opener } = openFrom(dialog);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(opener).toHaveFocus();
+  });
+
+  it('Dialog — scrim click', () => {
+    const { opener, dialog: el } = openFrom(dialog);
+    fireEvent.click(el);
+    expect(opener).toHaveFocus();
+  });
+
+  const alertDialog: Overlay = ({ open, close }) => (
+    <AlertDialog
+      open={open}
+      heading="Delete 3 files?"
+      description="This cannot be undone."
+      confirmLabel="Delete files"
+      onCancel={close}
+      onConfirm={close}
+    />
+  );
+
+  it('AlertDialog — Escape', () => {
+    const { opener, dialog: el } = openFrom(alertDialog);
+    cancel(el);
+    expect(opener).toHaveFocus();
+  });
+
+  it('AlertDialog — confirm', () => {
+    const { opener } = openFrom(alertDialog);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete files' }));
+    expect(opener).toHaveFocus();
+  });
+
+  const bottomSheet: Overlay = ({ open, close }) => (
+    <BottomSheet open={open} heading="Share" onClose={close}>
+      <input aria-label="Recipient" />
+    </BottomSheet>
+  );
+
+  it('BottomSheet — Escape', () => {
+    const { opener, dialog: el } = openFrom(bottomSheet);
+    cancel(el);
+    expect(opener).toHaveFocus();
+  });
+
+  it('BottomSheet — close button', () => {
+    const { opener } = openFrom(bottomSheet);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(opener).toHaveFocus();
+  });
+
+  const actionSheet: Overlay = ({ open, close }) => (
+    <ActionSheet
+      open={open}
+      heading="Photo.jpg"
+      actions={[
+        { id: 'share', label: 'Share' },
+        { id: 'rename', label: 'Rename' },
+      ]}
+      onAction={close}
+      onClose={close}
+    />
+  );
+
+  it('ActionSheet — Escape', () => {
+    const { opener, dialog: el } = openFrom(actionSheet);
+    cancel(el);
+    expect(opener).toHaveFocus();
+  });
+
+  it('ActionSheet — choosing an action', () => {
+    const { opener } = openFrom(actionSheet);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Share' }));
+    expect(opener).toHaveFocus();
+  });
+
+  const sidePanel: Overlay = ({ open, close }) => (
+    <SidePanel modal open={open} heading="Filters" onOpenChange={(next) => (next ? undefined : close())}>
+      <input aria-label="Keyword" />
+    </SidePanel>
+  );
+
+  it('SidePanel (modal) — Escape', () => {
+    const { opener, dialog: el } = openFrom(sidePanel);
+    cancel(el);
+    expect(opener).toHaveFocus();
+  });
+
+  it('SidePanel (modal) — close button', () => {
+    const { opener } = openFrom(sidePanel);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(opener).toHaveFocus();
+  });
+});

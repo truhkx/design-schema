@@ -30,29 +30,29 @@ describe('Expander', () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();
   });
-  test('renders-headingLevel-2', async () => {
+  test('renders-heading-level-2', async () => {
     const s = setup({"headingLevel": "2", "open": true});
     expect(s.root()).not.toBeNull();
   });
-  test('renders-headingLevel-3', async () => {
+  test('renders-heading-level-3', async () => {
     const s = setup({"headingLevel": "3", "open": true});
     expect(s.root()).not.toBeNull();
   });
-  test('renders-headingLevel-4', async () => {
+  test('renders-heading-level-4', async () => {
     const s = setup({"headingLevel": "4", "open": true});
     expect(s.root()).not.toBeNull();
   });
-  test('renders-headingLevel-5', async () => {
+  test('renders-heading-level-5', async () => {
     const s = setup({"headingLevel": "5", "open": true});
     expect(s.root()).not.toBeNull();
   });
-  test('renders-headingLevel-6', async () => {
+  test('renders-heading-level-6', async () => {
     const s = setup({"headingLevel": "6", "open": true});
     expect(s.root()).not.toBeNull();
   });
   test('has-accessible-name', async () => {
     const s = setup({"open": true});
-    expect(screen.getByRole('button')).toHaveAccessibleName();
+    expect(screen.getByRole('button', { name: s.props.summary })).toBeInTheDocument();
   });
   test('control-is-focusable', async () => {
     const s = setup({"open": true});

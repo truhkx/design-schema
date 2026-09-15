@@ -166,7 +166,7 @@ component:
     rowCount: '{count} rows'
   a11y:
     role: table
-    requires: [accessible-name, keyboard-operable, focus-visible, contrast-aa, target-24px, selected-state, live-region, no-hover-only]
+    requires: [accessible-name, keyboard-operable, arrow-navigation, focus-visible, contrast-aa, target-24px, selected-state, live-region, no-hover-only]
     contrast:
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }

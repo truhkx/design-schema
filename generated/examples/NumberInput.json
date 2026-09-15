@@ -1,0 +1,654 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={10}\n/>",
+        "lit": "<div style=\"inline-size: min(100%, 20rem)\">\n  <ds-number-input label=\"Quantity\" name=\"qty\" min=\"1\" max=\"99\" hide-steppers></ds-number-input>\n</div>",
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={99}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "numberinput-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Format Decimal",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1234.5,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false,
+        "precision": 1
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1234.5}\n  format=\"decimal\"\n  precision={1}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 20rem)\">\n    <ds-number-input\n      label=\"Quantity\"\n      name=\"qty\"\n      format=\"decimal\"\n      hide-steppers\n      .defaultValue=${1234.5}\n    ></ds-number-input>\n  </div>\n`;",
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={99}\n  format=\"decimal\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FormatDecimal",
+        "lit": "FormatDecimal",
+        "rn": "FormatDecimal",
+        "swift": null
+      },
+      "storyId": "numberinput-react--format-decimal",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Format Currency",
+      "args": {
+        "label": "Price",
+        "name": "price",
+        "defaultValue": 19.99,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "currency",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false,
+        "currency": "USD",
+        "precision": 2
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Price\"\n  name=\"price\"\n  defaultValue={19.99}\n  min={0}\n  max={10}\n  format=\"currency\"\n  currency=\"USD\"\n  precision={2}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 20rem)\">\n    <ds-number-input\n      label=\"Price\"\n      name=\"price\"\n      min=\"0\"\n      precision=\"2\"\n      format=\"currency\"\n      currency=\"USD\"\n      hide-steppers\n      .defaultValue=${19.99}\n    ></ds-number-input>\n  </div>\n`;",
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Price\"\n  name=\"price\"\n  defaultValue={19.99}\n  min={0}\n  step={0.01}\n  format=\"currency\"\n  currency=\"USD\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FormatCurrency",
+        "lit": "FormatCurrency",
+        "rn": "FormatCurrency",
+        "swift": null
+      },
+      "storyId": "numberinput-react--format-currency",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Format Percent",
+      "args": {
+        "label": "Discount",
+        "name": "discount",
+        "defaultValue": 25,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "format": "percent",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Discount\"\n  name=\"discount\"\n  defaultValue={25}\n  min={0}\n  max={100}\n  format=\"percent\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 20rem)\">\n    <ds-number-input\n      label=\"Discount\"\n      name=\"discount\"\n      min=\"0\"\n      max=\"100\"\n      format=\"percent\"\n      hide-steppers\n      .defaultValue=${15}\n    ></ds-number-input>\n  </div>\n`;",
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Discount\"\n  name=\"discount\"\n  defaultValue={25}\n  min={0}\n  max={100}\n  step={1}\n  format=\"percent\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FormatPercent",
+        "lit": "FormatPercent",
+        "rn": "FormatPercent",
+        "swift": null
+      },
+      "storyId": "numberinput-react--format-percent",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Format Unit",
+      "args": {
+        "label": "Weight",
+        "name": "weight",
+        "defaultValue": 3.5,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "unit",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false,
+        "unit": "kilogram",
+        "precision": 1
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Weight\"\n  name=\"weight\"\n  defaultValue={3.5}\n  min={0}\n  max={10}\n  format=\"unit\"\n  unit=\"kilogram\"\n  precision={1}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 20rem)\">\n    <ds-number-input\n      label=\"Weight\"\n      name=\"weight\"\n      min=\"0\"\n      precision=\"1\"\n      format=\"unit\"\n      unit=\"kilogram\"\n      hide-steppers\n      .defaultValue=${2.5}\n    ></ds-number-input>\n  </div>\n`;",
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Weight\"\n  name=\"weight\"\n  defaultValue={2.5}\n  min={0}\n  step={0.1}\n  format=\"unit\"\n  unit=\"kilogram\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FormatUnit",
+        "lit": "FormatUnit",
+        "rn": "FormatUnit",
+        "swift": null
+      },
+      "storyId": "numberinput-react--format-unit",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Sm",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "sm",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={10}\n  size=\"sm\"\n/>",
+        "lit": null,
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={99}\n  size=\"sm\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeSm",
+        "lit": null,
+        "rn": "SizeSm",
+        "swift": null
+      },
+      "storyId": "numberinput-react--size-sm",
+      "sweep": {
+        "prop": "size",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Md",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={10}\n  size=\"md\"\n/>",
+        "lit": null,
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={99}\n  size=\"md\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeMd",
+        "lit": null,
+        "rn": "SizeMd",
+        "swift": null
+      },
+      "storyId": "numberinput-react--size-md",
+      "sweep": {
+        "prop": "size",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Hide Steppers False",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={10}\n  hideSteppers={false}\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "HideSteppersFalse",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "numberinput-react--hide-steppers-false",
+      "sweep": {
+        "prop": "hideSteppers",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Hide Steppers True",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": true,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={10}\n  hideSteppers\n/>",
+        "lit": null,
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={99}\n  hideSteppers\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HideSteppersTrue",
+        "lit": null,
+        "rn": "HideSteppers",
+        "swift": null
+      },
+      "storyId": "numberinput-react--hide-steppers-true",
+      "sweep": {
+        "prop": "hideSteppers",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "With Leading Text",
+      "args": {
+        "label": "Budget",
+        "name": "budget",
+        "defaultValue": 500,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false,
+        "leadingText": "$"
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Budget\"\n  name=\"budget\"\n  defaultValue={500}\n  min={0}\n  max={10}\n  format=\"decimal\"\n  leadingText=\"$\"\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithLeadingText",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "numberinput-react--with-leading-text",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "With Trailing Text",
+      "args": {
+        "label": "Duration",
+        "name": "duration",
+        "defaultValue": 30,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false,
+        "trailingText": "min"
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Duration\"\n  name=\"duration\"\n  defaultValue={30}\n  min={0}\n  max={10}\n  format=\"decimal\"\n  trailingText=\"min\"\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithTrailingText",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "numberinput-react--with-trailing-text",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Required",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": true,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={10}\n  required\n/>",
+        "lit": "<div style=\"inline-size: min(100%, 20rem)\">\n  <ds-number-input label=\"Quantity\" name=\"qty\" min=\"1\" max=\"99\" hide-steppers required></ds-number-input>\n</div>",
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={99}\n  required\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Required",
+        "lit": "RequiredField",
+        "rn": "Required",
+        "swift": null
+      },
+      "storyId": "numberinput-react--required",
+      "sweep": {
+        "prop": "required",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Hide Label",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": true,
+        "disabled": false,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={10}\n  hideLabel\n/>",
+        "lit": null,
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={99}\n  hideLabel\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HideLabel",
+        "lit": null,
+        "rn": "HideLabel",
+        "swift": null
+      },
+      "storyId": "numberinput-react--hide-label",
+      "sweep": {
+        "prop": "hideLabel",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Disabled",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": true,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={10}\n  disabled\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 20rem)\">\n    <ds-number-input\n      label=\"Quantity\"\n      name=\"qty\"\n      min=\"1\"\n      max=\"99\"\n      hide-steppers\n      .defaultValue=${5}\n      disabled\n    ></ds-number-input>\n  </div>\n`;",
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={99}\n  disabled\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Disabled",
+        "lit": "Disabled",
+        "rn": "Disabled",
+        "swift": null
+      },
+      "storyId": "numberinput-react--disabled",
+      "sweep": {
+        "prop": "disabled",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Invalid",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": true
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={10}\n  invalid\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 20rem)\">\n    <ds-number-input\n      label=\"Quantity\"\n      name=\"qty\"\n      min=\"1\"\n      max=\"99\"\n      hide-steppers\n      .defaultValue=${5}\n      invalid\n    ></ds-number-input>\n  </div>\n`;",
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={99}\n  invalid\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Invalid",
+        "lit": "Invalid",
+        "rn": "Invalid",
+        "swift": null
+      },
+      "storyId": "numberinput-react--invalid",
+      "sweep": {
+        "prop": "invalid",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "With Description",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false,
+        "description": "Whole units only."
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={10}\n  description=\"Whole units only.\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 20rem)\">\n    <ds-number-input\n      label=\"Quantity\"\n      name=\"qty\"\n      min=\"1\"\n      max=\"99\"\n      hide-steppers\n      description=\"How many to order.\"\n      .defaultValue=${3}\n    ></ds-number-input>\n  </div>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithDescription",
+        "lit": "WithDescription",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "numberinput-react--with-description",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "With Error",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false,
+        "error": "Quantity must be between 0 and 10."
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={10}\n  error=\"Quantity must be between 0 and 10.\"\n/>",
+        "lit": null,
+        "rn": "import { NumberInput } from '@design-schema/rn';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={1}\n  min={0}\n  max={99}\n  error=\"Quantity must be a number.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithError",
+        "lit": null,
+        "rn": "WithError",
+        "swift": null
+      },
+      "storyId": "numberinput-react--with-error",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "defaultValue": 5,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "format": "decimal",
+        "size": "md",
+        "hideSteppers": false,
+        "required": false,
+        "hideLabel": false,
+        "disabled": false,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { NumberInput } from '@design-schema/react';\n\n<NumberInput\n  label=\"Quantity\"\n  name=\"quantity\"\n  defaultValue={5}\n  min={0}\n  max={10}\n  step={1}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 20rem)\">\n    <ds-number-input label=\"Quantity\" name=\"qty\" min=\"1\" max=\"99\" hide-steppers .defaultValue=${5}></ds-number-input>\n  </div>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "numberinput-react--keyboard",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

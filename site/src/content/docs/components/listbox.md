@@ -30,11 +30,11 @@ component:
       default: false
       description: 'Allow any number of selections. The value becomes an array; each option shows a check indicator; selection toggles rather than moves. This is the same engine Combobox uses for multi-select.'
     value:
-      type: string
+      type: union
       description: 'Controlled selection: a value, or with `multiple` the exported `ListboxValue` (`string | string[]`). Omit for uncontrolled.'
       shape: 'string | string[]'
     defaultValue:
-      type: string
+      type: union
       description: Initial selection (or array).
       shape: 'string | string[]'
     selectionFollowsFocus:

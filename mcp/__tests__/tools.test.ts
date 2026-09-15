@@ -11,8 +11,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { useTmp, write } from '../../tools/__tests__/fixtures.ts';
-import { iterErrors } from '../../tools/lib/jsonschema.ts';
-import type { Schema } from '../../tools/lib/jsonschema.ts';
+import { themeFrontmatter } from '../../schema/theme.ts';
 import { load as yamlLoad } from '../../tools/lib/pyyaml.ts';
 import * as s from '../server.ts';
 
@@ -42,6 +41,33 @@ afterEach(() => {
   Object.assign(s.paths, savedPaths);
   mocked.spawn = null;
   mocked.modes = null;
+});
+
+describe('lookup_code on swiftui', () => {
+  const swiftSource = (root: string): string => join(root, 'packages', 'swiftui', 'Sources', 'DesignSchema');
+
+  test('the files come from the Swift package source: the type and its extension files, nothing else', () => {
+    const root = tmp();
+    const src = swiftSource(root);
+    write(join(src, 'Icon.swift'), 'public struct Icon: View {}');
+    write(join(src, 'Icon+Paths.swift'), 'extension Icon {}');
+    write(join(src, 'IconButton.swift'), 'public struct IconButton: View {}');
+    write(join(src, 'Support', 'Gallery+Icon.swift'), 'extension Gallery {}');
+    s.paths.ROOT = root;
+    const out = s.lookupCode({ component: 'Icon', platform: 'swiftui', include: ['source', 'styles', 'stories'] });
+    expect(out.platformLabel).toBe('SwiftUI (iOS)');
+    expect(out.supported).toBe(true);
+    expect(Object.keys(out.files).map((f) => f.replaceAll('\\', '/'))).toEqual([
+      'packages/swiftui/Sources/DesignSchema/Icon.swift',
+      'packages/swiftui/Sources/DesignSchema/Icon+Paths.swift',
+    ]);
+    expect(out.files[join('packages', 'swiftui', 'Sources', 'DesignSchema', 'Icon+Paths.swift')]).toBe('extension Icon {}');
+  });
+
+  test('a component not generated for swiftui yet returns no files', () => {
+    s.paths.ROOT = tmp();
+    expect(s.lookupCode({ component: 'Button', platform: 'swiftui', include: ['source'] }).files).toEqual({});
+  });
 });
 
 describe('get_keyboard_model', () => {
@@ -249,8 +275,7 @@ describe('write_theme', () => {
     s.writeTheme({ id: 'warm-test', answers: GOOD });
     const raw = readFileSync(join(docs, 'warm-test.md'), 'utf8').replace(/\r\n/g, '\n');
     const fm = yamlLoad(raw.split('\n---\n')[0]?.replace(/^-+\n/, '') as string) as Dict;
-    const schema = JSON.parse(readFileSync(savedPaths.THEME_SCHEMA, 'utf8')) as Schema;
-    expect(iterErrors(schema, fm)).toEqual([]);
+    expect(themeFrontmatter.safeParse(fm).error?.issues ?? []).toEqual([]);
     expect(fm.theme.layout).toEqual({ rhythm: 'normal', contentWidth: 1040 });
   });
 
@@ -261,6 +286,13 @@ describe('write_theme', () => {
     expect((out.errors as string[]).some((e) => e.includes('seed.color'))).toBe(true);
     expect((out.errors as string[]).some((e) => e.includes('radius'))).toBe(true);
     expect(existsSync(join(docs, 'warm-test.md'))).toBe(false);
+    expect(calls).toEqual([]);
+  });
+
+  test('a combination tools/theme.ts would ignore is an error, in the Zod message', () => {
+    const out = s.writeTheme({ id: 'warm-test', answers: { ...GOOD, seed: { color: '#1E1A16', neutral: '#C9B99C' } } });
+    expect(out.ok).toBe(false);
+    expect(out.errors).toEqual(['theme.neutralTint: neutralTint has no effect when seed.neutral is set: the neutral ramp takes its hue and chroma from seed.neutral; remove one']);
     expect(calls).toEqual([]);
   });
 

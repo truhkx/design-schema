@@ -9,6 +9,7 @@ site/src/content/docs/themes/*.md      Stage 1: theme docs — frontmatter = the
 tokens/themes/<id>/                    Stages 2–3: DERIVED base.json + light.json/dark.json (do not edit)
 tokens/build.mjs                       Style Dictionary → packages/tokens/dist/<id>/{css,js,rn,json}
 schema/                                component.ts (Zod, the source of truth; tools/schema.ts derives component.schema.json) + theme.*
+tools/publish_schema.ts                `pnpm schema:publish` copies schema/ into ../design-schema-public (github.com/truhkx/design-schema)
 site/src/content/docs/components/*.md  Stage 4: component docs — frontmatter = schema, body = guidance
 prompts/templates/                     theme.md (the "feel" skill) + web/lit/rn.md (per-component generators)
 packages/{tokens,react,lit,rn}/        built tokens + GENERATED components, stories and a sign-in demo per platform

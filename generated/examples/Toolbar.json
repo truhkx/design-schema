@@ -1,0 +1,1311 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Text style"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Bold",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Italic",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Alignment"
+              },
+              "children": [
+                {
+                  "$element": "SegmentedControl",
+                  "props": {
+                    "label": "Alignment",
+                    "size": "sm",
+                    "iconOnly": true,
+                    "options": [
+                      {
+                        "value": "left",
+                        "label": "Left",
+                        "icon": "chevron-left"
+                      },
+                      {
+                        "value": "center",
+                        "label": "Center",
+                        "icon": "dash"
+                      },
+                      {
+                        "value": "right",
+                        "label": "Right",
+                        "icon": "chevron-right"
+                      }
+                    ]
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert link"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert image"
+              },
+              "children": []
+            }
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
+        "lit": "<ds-toolbar label=\"Formatting\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
+        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "toolbar-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Orientation Horizontal",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Text style"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Bold",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Italic",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Alignment"
+              },
+              "children": [
+                {
+                  "$element": "SegmentedControl",
+                  "props": {
+                    "label": "Alignment",
+                    "size": "sm",
+                    "iconOnly": true,
+                    "options": [
+                      {
+                        "value": "left",
+                        "label": "Left",
+                        "icon": "chevron-left"
+                      },
+                      {
+                        "value": "center",
+                        "label": "Center",
+                        "icon": "dash"
+                      },
+                      {
+                        "value": "right",
+                        "label": "Right",
+                        "icon": "chevron-right"
+                      }
+                    ]
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert link"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert image"
+              },
+              "children": []
+            }
+          ]
+        },
+        "orientation": "horizontal"
+      },
+      "snippets": {
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" orientation=\"horizontal\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
+        "lit": "<ds-toolbar label=\"Formatting\" orientation=\"horizontal\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
+        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" orientation=\"horizontal\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OrientationHorizontal",
+        "lit": "OrientationHorizontal",
+        "rn": "OrientationHorizontal",
+        "swift": null
+      },
+      "storyId": "toolbar-react--orientation-horizontal",
+      "sweep": {
+        "prop": "orientation",
+        "value": "horizontal"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Orientation Vertical",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Text style"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Bold",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Italic",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Alignment"
+              },
+              "children": [
+                {
+                  "$element": "SegmentedControl",
+                  "props": {
+                    "label": "Alignment",
+                    "size": "sm",
+                    "iconOnly": true,
+                    "options": [
+                      {
+                        "value": "left",
+                        "label": "Left",
+                        "icon": "chevron-left"
+                      },
+                      {
+                        "value": "center",
+                        "label": "Center",
+                        "icon": "dash"
+                      },
+                      {
+                        "value": "right",
+                        "label": "Right",
+                        "icon": "chevron-right"
+                      }
+                    ]
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert link"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert image"
+              },
+              "children": []
+            }
+          ]
+        },
+        "orientation": "vertical"
+      },
+      "snippets": {
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" orientation=\"vertical\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
+        "lit": "<ds-toolbar label=\"Formatting\" orientation=\"vertical\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
+        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" orientation=\"vertical\">{buildChildren('vertical' ?? 'horizontal')}</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OrientationVertical",
+        "lit": "OrientationVertical",
+        "rn": "OrientationVertical",
+        "swift": null
+      },
+      "storyId": "toolbar-react--orientation-vertical",
+      "sweep": {
+        "prop": "orientation",
+        "value": "vertical"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Overflow Wrap",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Text style"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Bold",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Italic",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Alignment"
+              },
+              "children": [
+                {
+                  "$element": "SegmentedControl",
+                  "props": {
+                    "label": "Alignment",
+                    "size": "sm",
+                    "iconOnly": true,
+                    "options": [
+                      {
+                        "value": "left",
+                        "label": "Left",
+                        "icon": "chevron-left"
+                      },
+                      {
+                        "value": "center",
+                        "label": "Center",
+                        "icon": "dash"
+                      },
+                      {
+                        "value": "right",
+                        "label": "Right",
+                        "icon": "chevron-right"
+                      }
+                    ]
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert link"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert image"
+              },
+              "children": []
+            }
+          ]
+        },
+        "overflow": "wrap"
+      },
+      "snippets": {
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"wrap\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
+        "lit": "<ds-toolbar label=\"Formatting\" overflow=\"wrap\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
+        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" overflow=\"wrap\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OverflowWrap",
+        "lit": "OverflowWrap",
+        "rn": "OverflowWrap",
+        "swift": null
+      },
+      "storyId": "toolbar-react--overflow-wrap",
+      "sweep": {
+        "prop": "overflow",
+        "value": "wrap"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Overflow Menu",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Text style"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Bold",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Italic",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Alignment"
+              },
+              "children": [
+                {
+                  "$element": "SegmentedControl",
+                  "props": {
+                    "label": "Alignment",
+                    "size": "sm",
+                    "iconOnly": true,
+                    "options": [
+                      {
+                        "value": "left",
+                        "label": "Left",
+                        "icon": "chevron-left"
+                      },
+                      {
+                        "value": "center",
+                        "label": "Center",
+                        "icon": "dash"
+                      },
+                      {
+                        "value": "right",
+                        "label": "Right",
+                        "icon": "chevron-right"
+                      }
+                    ]
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert link"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert image"
+              },
+              "children": []
+            }
+          ]
+        },
+        "overflow": "menu"
+      },
+      "snippets": {
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"menu\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
+        "lit": "<ds-toolbar label=\"Formatting\" overflow=\"menu\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
+        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" overflow=\"menu\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OverflowMenu",
+        "lit": "OverflowMenu",
+        "rn": "OverflowMenu",
+        "swift": null
+      },
+      "storyId": "toolbar-react--overflow-menu",
+      "sweep": {
+        "prop": "overflow",
+        "value": "menu"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Overflow Scroll",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Text style"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Bold",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Italic",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Alignment"
+              },
+              "children": [
+                {
+                  "$element": "SegmentedControl",
+                  "props": {
+                    "label": "Alignment",
+                    "size": "sm",
+                    "iconOnly": true,
+                    "options": [
+                      {
+                        "value": "left",
+                        "label": "Left",
+                        "icon": "chevron-left"
+                      },
+                      {
+                        "value": "center",
+                        "label": "Center",
+                        "icon": "dash"
+                      },
+                      {
+                        "value": "right",
+                        "label": "Right",
+                        "icon": "chevron-right"
+                      }
+                    ]
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert link"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert image"
+              },
+              "children": []
+            }
+          ]
+        },
+        "overflow": "scroll"
+      },
+      "snippets": {
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"scroll\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
+        "lit": "<ds-toolbar label=\"Formatting\" overflow=\"scroll\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
+        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" overflow=\"scroll\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OverflowScroll",
+        "lit": "OverflowScroll",
+        "rn": "OverflowScroll",
+        "swift": null
+      },
+      "storyId": "toolbar-react--overflow-scroll",
+      "sweep": {
+        "prop": "overflow",
+        "value": "scroll"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Sm",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Text style"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Bold",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Italic",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Alignment"
+              },
+              "children": [
+                {
+                  "$element": "SegmentedControl",
+                  "props": {
+                    "label": "Alignment",
+                    "size": "sm",
+                    "iconOnly": true,
+                    "options": [
+                      {
+                        "value": "left",
+                        "label": "Left",
+                        "icon": "chevron-left"
+                      },
+                      {
+                        "value": "center",
+                        "label": "Center",
+                        "icon": "dash"
+                      },
+                      {
+                        "value": "right",
+                        "label": "Right",
+                        "icon": "chevron-right"
+                      }
+                    ]
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert link"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert image"
+              },
+              "children": []
+            }
+          ]
+        },
+        "size": "sm"
+      },
+      "snippets": {
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" size=\"sm\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
+        "lit": "<ds-toolbar label=\"Formatting\" size=\"sm\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
+        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" size=\"sm\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeSm",
+        "lit": "SizeSm",
+        "rn": "SizeSm",
+        "swift": null
+      },
+      "storyId": "toolbar-react--size-sm",
+      "sweep": {
+        "prop": "size",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Md",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Text style"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Bold",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Italic",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Alignment"
+              },
+              "children": [
+                {
+                  "$element": "SegmentedControl",
+                  "props": {
+                    "label": "Alignment",
+                    "size": "sm",
+                    "iconOnly": true,
+                    "options": [
+                      {
+                        "value": "left",
+                        "label": "Left",
+                        "icon": "chevron-left"
+                      },
+                      {
+                        "value": "center",
+                        "label": "Center",
+                        "icon": "dash"
+                      },
+                      {
+                        "value": "right",
+                        "label": "Right",
+                        "icon": "chevron-right"
+                      }
+                    ]
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert link"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert image"
+              },
+              "children": []
+            }
+          ]
+        },
+        "size": "md"
+      },
+      "snippets": {
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" size=\"md\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
+        "lit": "<ds-toolbar label=\"Formatting\" size=\"md\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
+        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" size=\"md\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeMd",
+        "lit": "SizeMd",
+        "rn": "SizeMd",
+        "swift": null
+      },
+      "storyId": "toolbar-react--size-md",
+      "sweep": {
+        "prop": "size",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Density Compact",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Text style"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Bold",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Italic",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Alignment"
+              },
+              "children": [
+                {
+                  "$element": "SegmentedControl",
+                  "props": {
+                    "label": "Alignment",
+                    "size": "sm",
+                    "iconOnly": true,
+                    "options": [
+                      {
+                        "value": "left",
+                        "label": "Left",
+                        "icon": "chevron-left"
+                      },
+                      {
+                        "value": "center",
+                        "label": "Center",
+                        "icon": "dash"
+                      },
+                      {
+                        "value": "right",
+                        "label": "Right",
+                        "icon": "chevron-right"
+                      }
+                    ]
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert link"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert image"
+              },
+              "children": []
+            }
+          ]
+        },
+        "density": "compact"
+      },
+      "snippets": {
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" density=\"compact\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
+        "lit": "<ds-toolbar label=\"Formatting\" density=\"compact\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
+        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" density=\"compact\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DensityCompact",
+        "lit": "DensityCompact",
+        "rn": "DensityCompact",
+        "swift": null
+      },
+      "storyId": "toolbar-react--density-compact",
+      "sweep": {
+        "prop": "density",
+        "value": "compact"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Density Comfortable",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Text style"
+              },
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Bold",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "iconOnly": true,
+                    "label": "Italic",
+                    "leadingIcon": {
+                      "$element": "Icon",
+                      "props": {
+                        "name": "check",
+                        "inline": true
+                      },
+                      "children": []
+                    }
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "ToolbarGroup",
+              "props": {
+                "label": "Alignment"
+              },
+              "children": [
+                {
+                  "$element": "SegmentedControl",
+                  "props": {
+                    "label": "Alignment",
+                    "size": "sm",
+                    "iconOnly": true,
+                    "options": [
+                      {
+                        "value": "left",
+                        "label": "Left",
+                        "icon": "chevron-left"
+                      },
+                      {
+                        "value": "center",
+                        "label": "Center",
+                        "icon": "dash"
+                      },
+                      {
+                        "value": "right",
+                        "label": "Right",
+                        "icon": "chevron-right"
+                      }
+                    ]
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert link"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Insert image"
+              },
+              "children": []
+            }
+          ]
+        },
+        "density": "comfortable"
+      },
+      "snippets": {
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" density=\"comfortable\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
+        "lit": "<ds-toolbar label=\"Formatting\" density=\"comfortable\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
+        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" density=\"comfortable\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DensityComfortable",
+        "lit": "DensityComfortable",
+        "rn": "DensityComfortable",
+        "swift": null
+      },
+      "storyId": "toolbar-react--density-comfortable",
+      "sweep": {
+        "prop": "density",
+        "value": "comfortable"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Bold"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Italic"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Underline"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Strikethrough"
+              },
+              "children": []
+            }
+          ]
+        },
+        "overflow": "wrap"
+      },
+      "snippets": {
+        "react": "import { Toolbar, Button } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"wrap\">\n  <>\n    <Button variant=\"ghost\" label=\"Bold\" />\n    <Button variant=\"ghost\" label=\"Italic\" />\n    <Button variant=\"ghost\" label=\"Underline\" />\n    <Button variant=\"ghost\" label=\"Strikethrough\" />\n  </>\n</Toolbar>",
+        "lit": "<ds-toolbar label=\"Formatting\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
+        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "toolbar-react--keyboard",
+      "sweep": {
+        "prop": "overflow",
+        "value": "wrap"
+      },
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "name": "Carousel",
+  "role": "region",
+  "identifier": "Carousel",
+  "rules": [
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Moves through the controls (play/pause, previous, next, picker) and then into the current slide's focusable content; hidden slides are inert.",
+      "from": "any",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "ArrowRight"
+      ],
+      "action": "Next slide.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on picker or in a tabs picker"
+    },
+    {
+      "keys": [
+        "ArrowLeft"
+      ],
+      "action": "Previous slide.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on picker"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "First slide.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on picker"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Last slide.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on picker"
+    },
+    {
+      "keys": [
+        "Enter",
+        " "
+      ],
+      "action": "Activates the focused control: previous, next, a picker item, or play/pause.",
+      "from": "inside",
+      "expect": "manual"
+    }
+  ]
+}

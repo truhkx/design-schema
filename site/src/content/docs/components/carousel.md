@@ -86,7 +86,7 @@ component:
     announce: 'Slide {n} of {total}'
   a11y:
     role: region
-    requires: [accessible-name, keyboard-operable, focus-visible, contrast-aa, target-24px, reduced-motion, live-region, gesture-alternative, no-hover-only, selected-state]
+    requires: [accessible-name, keyboard-operable, arrow-navigation, focus-visible, contrast-aa, target-24px, reduced-motion, live-region, gesture-alternative, no-hover-only, selected-state]
     contrast:
       - { foreground: color.foreground, background: color.overlay.surface, level: AA }
       - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }

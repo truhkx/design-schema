@@ -1,0 +1,659 @@
+{
+  "layout": "sweep",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text>Use the email you signed up with.</Text>",
+        "lit": "<ds-text>Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text>Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "text-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Xs",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "xs",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"xs\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text size=\"xs\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xs\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeXs",
+        "lit": "SizeXs",
+        "rn": "SizeXs",
+        "swift": null
+      },
+      "storyId": "text-react--size-xs",
+      "sweep": {
+        "prop": "size",
+        "value": "xs"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Sm",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "sm",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"sm\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text size=\"sm\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"sm\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeSm",
+        "lit": "SizeSm",
+        "rn": "SizeSm",
+        "swift": null
+      },
+      "storyId": "text-react--size-sm",
+      "sweep": {
+        "prop": "size",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Md",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"md\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text size=\"md\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"md\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeMd",
+        "lit": "SizeMd",
+        "rn": "SizeMd",
+        "swift": null
+      },
+      "storyId": "text-react--size-md",
+      "sweep": {
+        "prop": "size",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Lg",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "lg",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"lg\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text size=\"lg\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"lg\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeLg",
+        "lit": "SizeLg",
+        "rn": "SizeLg",
+        "swift": null
+      },
+      "storyId": "text-react--size-lg",
+      "sweep": {
+        "prop": "size",
+        "value": "lg"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Size Xl",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "xl",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"xl\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text size=\"xl\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xl\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeXl",
+        "lit": "SizeXl",
+        "rn": "SizeXl",
+        "swift": null
+      },
+      "storyId": "text-react--size-xl",
+      "sweep": {
+        "prop": "size",
+        "value": "xl"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Weight Regular",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"regular\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text weight=\"regular\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"regular\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WeightRegular",
+        "lit": "WeightRegular",
+        "rn": "WeightRegular",
+        "swift": null
+      },
+      "storyId": "text-react--weight-regular",
+      "sweep": {
+        "prop": "weight",
+        "value": "regular"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Weight Medium",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "medium",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"medium\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text weight=\"medium\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"medium\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WeightMedium",
+        "lit": "WeightMedium",
+        "rn": "WeightMedium",
+        "swift": null
+      },
+      "storyId": "text-react--weight-medium",
+      "sweep": {
+        "prop": "weight",
+        "value": "medium"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Weight Semibold",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "semibold",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"semibold\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text weight=\"semibold\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"semibold\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WeightSemibold",
+        "lit": "WeightSemibold",
+        "rn": "WeightSemibold",
+        "swift": null
+      },
+      "storyId": "text-react--weight-semibold",
+      "sweep": {
+        "prop": "weight",
+        "value": "semibold"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Weight Bold",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "bold",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"bold\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text weight=\"bold\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"bold\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WeightBold",
+        "lit": "WeightBold",
+        "rn": "WeightBold",
+        "swift": null
+      },
+      "storyId": "text-react--weight-bold",
+      "sweep": {
+        "prop": "weight",
+        "value": "bold"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Tone Default",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"default\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text tone=\"default\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"default\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneDefault",
+        "lit": "ToneDefault",
+        "rn": "ToneDefault",
+        "swift": null
+      },
+      "storyId": "text-react--tone-default",
+      "sweep": {
+        "prop": "tone",
+        "value": "default"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Tone Strong",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "strong",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"strong\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text tone=\"strong\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"strong\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneStrong",
+        "lit": "ToneStrong",
+        "rn": "ToneStrong",
+        "swift": null
+      },
+      "storyId": "text-react--tone-strong",
+      "sweep": {
+        "prop": "tone",
+        "value": "strong"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Tone Muted",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "muted",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"muted\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text tone=\"muted\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"muted\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneMuted",
+        "lit": "ToneMuted",
+        "rn": "ToneMuted",
+        "swift": null
+      },
+      "storyId": "text-react--tone-muted",
+      "sweep": {
+        "prop": "tone",
+        "value": "muted"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Tone Danger",
+      "args": {
+        "children": "Error: enter an email address like name@example.com.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "danger",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"danger\">Error: enter an email address like name@example.com.</Text>",
+        "lit": "<ds-text tone=\"danger\">Error: enter an email address like name@example.com</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"danger\">Error: enter an email address like name@example.com</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneDanger",
+        "lit": "ToneDanger",
+        "rn": "ToneDanger",
+        "swift": null
+      },
+      "storyId": "text-react--tone-danger",
+      "sweep": {
+        "prop": "tone",
+        "value": "danger"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Tone On Action",
+      "args": {
+        "children": "Text on an action background",
+        "size": "md",
+        "weight": "regular",
+        "tone": "onAction",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"onAction\">Text on an action background</Text>",
+        "lit": "<div style=\"background: var(--color-action-primary-background); padding: var(--space-md)\">\n  <ds-text tone=\"onAction\">Text on an action background</ds-text>\n</div>",
+        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Text, useTheme } from '@design-schema/rn';\n\nfunction OnActionSurface(props: React.ComponentProps<typeof Text>): React.JSX.Element {\n  const { tokens } = useTheme();\n  return (\n    <View\n      style={{\n        backgroundColor: tokens.colorActionPrimaryBackground,\n        paddingHorizontal: tokens.spaceMd,\n        paddingVertical: tokens.spaceSm,\n        borderRadius: tokens.radiusMd,\n      }}\n    >\n      <Text {...props} />\n    </View>\n  );\n}\n\n<OnActionSurface tone=\"onAction\">Save changes</OnActionSurface>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ToneOnAction",
+        "lit": "ToneOnAction",
+        "rn": "ToneOnAction",
+        "swift": null
+      },
+      "storyId": "text-react--tone-on-action",
+      "sweep": {
+        "prop": "tone",
+        "value": "onAction"
+      },
+      "decorated": true,
+      "primary": true
+    },
+    {
+      "title": "Align Start",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"start\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text align=\"start\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"start\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AlignStart",
+        "lit": "AlignStart",
+        "rn": "AlignStart",
+        "swift": null
+      },
+      "storyId": "text-react--align-start",
+      "sweep": {
+        "prop": "align",
+        "value": "start"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Align Center",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "default",
+        "align": "center",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"center\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text align=\"center\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"center\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AlignCenter",
+        "lit": "AlignCenter",
+        "rn": "AlignCenter",
+        "swift": null
+      },
+      "storyId": "text-react--align-center",
+      "sweep": {
+        "prop": "align",
+        "value": "center"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Align End",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "default",
+        "align": "end",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"end\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text align=\"end\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"end\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AlignEnd",
+        "lit": "AlignEnd",
+        "rn": "AlignEnd",
+        "swift": null
+      },
+      "storyId": "text-react--align-end",
+      "sweep": {
+        "prop": "align",
+        "value": "end"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Element P",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text element=\"p\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text element=\"p\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementP",
+        "lit": "ElementP",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "text-react--element-p",
+      "sweep": {
+        "prop": "element",
+        "value": "p"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Element Span",
+      "args": {
+        "children": "Use the email you signed up with.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "span"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text element=\"span\">Use the email you signed up with.</Text>",
+        "lit": "<ds-text element=\"span\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ElementSpan",
+        "lit": "ElementSpan",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "text-react--element-span",
+      "sweep": {
+        "prop": "element",
+        "value": "span"
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Truncate",
+      "args": {
+        "children": "This sentence is intentionally long so that it overflows the container and is clipped to one line with an ellipsis; the full text is still available in the title attribute.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": true,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text truncate>This sentence is intentionally long so that it overflows the container and is clipped to one line with an ellipsis; the full text is still available in the title attribute.</Text>",
+        "lit": "<div style=\"max-inline-size: 16rem\">\n  <ds-text truncate>Changes are saved automatically. You can undo any change for 30 days.</ds-text>\n</div>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Truncate",
+        "lit": "Truncate",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "text-react--truncate",
+      "sweep": {
+        "prop": "truncate",
+        "value": true
+      },
+      "decorated": true,
+      "primary": true
+    }
+  ]
+}

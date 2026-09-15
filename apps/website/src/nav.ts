@@ -26,7 +26,7 @@ export type Nav = { top: TopItem[]; docs: NavGroup[] };
  *
  * Hand-written rather than generated, unlike everything else in this module: `generated/nav.json`
  * describes the 51 components grouped by phase, and tools/site_nav.ts's `top` list is the *site*
- * nav (Homepage / Docs / GitHub / About). Neither has a section list, so the section routes live
+ * nav (Docs / GitHub / About; the logo is the home link). Neither has a section list, so the section routes live
  * here — one place both the sidebar and the mobile Select read them from.
  *
  * Naming demo joined them with job 523. It is a page about the components rather than one of them,

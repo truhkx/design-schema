@@ -5,7 +5,6 @@ component:
   name: ProgressBar
   category: feedback
   status: review
-  apg: progressbar
   anatomy: [container, label, valueText, track, fill]
   composition:
     label: Text

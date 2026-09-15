@@ -84,8 +84,9 @@ describe('list_components', () => {
     for (const c of s.listComponents({ platform: 'rn' })) expect(c.platforms).toContain('rn');
   });
 
-  test('an unused platform yields nothing', () => {
-    expect(s.listComponents({ platform: 'compose' })).toEqual([]);
+  test('a platform no doc declares yields nothing', () => {
+    // The protocol's platform enum rejects it before the tool runs; called directly, the tool just matches nothing.
+    expect(s.listComponents({ platform: 'flutter' as s.Platform })).toEqual([]);
   });
 
   test('status filter', () => {
@@ -124,7 +125,7 @@ describe('get_component', () => {
   });
 
   test('an unmapped platform is reported as unsupported', () => {
-    expect(s.getComponent({ name: 'Button', platform: 'compose' }).schema.platforms.compose.supported).toBe(false);
+    expect(s.getComponent({ name: 'Button', platform: 'flutter' as s.Platform }).schema.platforms.flutter.supported).toBe(false);
   });
 
   test('platform notes are narrowed to that platform', () => {
@@ -189,12 +190,6 @@ describe('lookup_code', () => {
 
   test('bindings keep the original token path', () => {
     expect(s.lookupCode({ component: 'Button', platform: 'rn', include: ['tokens'] }).tokenBindings.background.token).toBe('color.action.{variant}.background');
-  });
-
-  test('a platform with no generated package returns no files', () => {
-    const out = s.lookupCode({ component: 'Button', platform: 'swiftui' });
-    expect(out.files).toEqual({});
-    expect(out.platformLabel).toBe('SwiftUI');
   });
 
   test('an unknown component raises', () => {
@@ -341,7 +336,7 @@ describe('get_generation_prompt', () => {
   });
 
   test('a platform without a prompt raises', () => {
-    expect(() => s.getGenerationPrompt({ component: 'Button', platform: 'compose' })).toThrow(/No generation prompt/);
+    expect(() => s.getGenerationPrompt({ component: 'Button', platform: 'flutter' as s.Platform })).toThrow(/No generation prompt/);
   });
 });
 

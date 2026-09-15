@@ -1,9 +1,7 @@
 # Runs the prompts in jobs\*.md through Claude Code headlessly, in order, stopping at the first failure.
 #   powershell -ExecutionPolicy Bypass -File .\run-jobs.ps1
-#   powershell -ExecutionPolicy Bypass -File .\run-jobs.ps1 -After tier2     # wait for tier2.ps1 to finish first
 #   powershell -ExecutionPolicy Bypass -File .\run-jobs.ps1 -Model opus -MaxTurns 250
 param(
-  [string]$After = "",
   [string]$Model = "sonnet",
   [int]$MaxTurns = 250
 )
@@ -12,18 +10,6 @@ New-Item -ItemType Directory -Force -Path logs\jobs, jobs\done, jobs\failed | Ou
 $log = "logs\jobs\run.log"
 function Log($line) { Write-Host $line; Add-Content -Path $log -Value $line -Encoding utf8 }
 Set-Content -Path $log -Value "== run-jobs $(Get-Date -Format s) model=$Model ==" -Encoding utf8
-
-if ($After -eq "tier2") {
-  Log "Waiting for logs\tier2.log to contain '== done ==' ..."
-  while (-not (Test-Path logs\tier2.log) -or -not (Select-String -Path logs\tier2.log -Pattern "== done ==" -Quiet)) {
-    if ((Test-Path logs\tier2.log) -and (Select-String -Path logs\tier2.log -Pattern "failed \(exit" -Quiet)) {
-      Log "tier2.ps1 stopped on a failed batch; running the job queue anyway since jobs do not touch packages/."
-      break
-    }
-    Start-Sleep -Seconds 60
-  }
-  Log "tier2 finished."
-}
 
 $jobs = Get-ChildItem jobs\*.md | Where-Object { $_.Name -ne "README.md" } | Sort-Object Name
 if ($jobs.Count -eq 0) { Log "No jobs queued."; exit 0 }

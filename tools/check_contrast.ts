@@ -14,6 +14,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { expand } from '../schema/lib.ts';
 import { has, ljust, product, pyFixed, pyGet, truthy } from './lib/py.ts';
 import { pyFloatRepr } from './lib/pyyaml.ts';
 import { REPO_ROOT } from './lib/root.ts';
@@ -41,26 +42,9 @@ export function threshold(level: string, large: boolean): number {
 
 export { contrast, luminance };
 
-/** color.action.{variant}.background → one path per enum value of `variant`. */
-export function expand(tokenRef: string, props: Dict): string[] {
-  const slots = [...tokenRef.matchAll(/\{([a-zA-Z]+)\}/g)].map((m) => m[1] as string);
-  if (slots.length === 0) return [tokenRef];
-  const choices: string[][] = [];
-  for (const s of slots) {
-    const p = pyGet(props, s, null) as Dict | null;
-    if (!truthy(p) || pyGet(p as Dict, 'type', null) !== 'enum') throw new Error(`${tokenRef}: '{${s}}' must name an enum prop`);
-    choices.push((p as Dict).values as string[]);
-  }
-  const out: string[] = [];
-  for (const combo of product(choices)) {
-    let ref = tokenRef;
-    slots.forEach((s, i) => {
-      ref = ref.replaceAll(`{${s}}`, combo[i] as string);
-    });
-    out.push(ref.endsWith('.default') ? ref.slice(0, -'.default'.length) : ref); // public names drop a trailing .default
-  }
-  return out;
-}
+// color.action.{variant}.background → one path per enum value of `variant`; lives in schema/lib.ts so the
+// schema package can publish without tools/.
+export { expand };
 
 function print(line: string): void {
   process.stdout.write(line + '\n');

@@ -10,7 +10,7 @@
  *
  *   1. the Basic Usage install/import snippet on a component page — a literal `<Code>`, since it is
  *      static Astro markup (see pages/docs/components/[slug].astro);
- *   2. each example's `sourceText` — `highlightSource()` below, which calls the same Shiki `<Code>`
+ *   2. each example's per-platform snippets — `highlightSnippets()` below, which calls the same Shiki `<Code>`
  *      calls, from the page's frontmatter, because those snippets live inside a React island (the
  *      examples `Tabs`) and Astro can only pass markup into an island through a *statically named*
  *      slot, while the number of snippets on a page is the number of stories the component has.
@@ -34,8 +34,30 @@
  */
 import { createCssVariablesTheme, createHighlighter, type Highlighter } from 'shiki';
 
-/** The one language the example snippets are: every one of them is a CSF story export. */
-const LANG = 'tsx';
+import { PLATFORM_ORDER, type Platform, type Snippets } from './examples';
+
+/**
+ * The languages the example snippets are written in: React and React Native are TSX, a Lit snippet is
+ * the HTML it renders or (when a binding cannot be plain HTML) a TypeScript module, SwiftUI is Swift.
+ */
+const LANGS = ['tsx', 'ts', 'html', 'swift'] as const;
+export type CodeLang = (typeof LANGS)[number];
+
+/** One highlighted snippet, and the language it was read as — the panel words a Lit HTML block differently. */
+export interface CodeBlock {
+  html: string;
+  lang: CodeLang;
+}
+
+/** Every platform's highlighted snippet for one example, `null` where there is none. */
+export type PlatformCode = Record<Platform, CodeBlock | null>;
+
+/** Which grammar a platform's snippet needs. A Lit snippet that starts with markup is markup. */
+export function snippetLang(platform: Platform, code: string): CodeLang {
+  if (platform === 'swift') return 'swift';
+  if (platform === 'lit') return code.trimStart().startsWith('<') ? 'html' : 'ts';
+  return 'tsx';
+}
 
 /**
  * The prefix for the custom properties Shiki writes into its output.
@@ -62,12 +84,12 @@ let cached: Promise<Highlighter> | undefined;
 /**
  * One highlighter for the whole build.
  *
- * `createHighlighter` loads a WASM oniguruma engine and the grammar; doing that per snippet would be
- * 696 loads for the 696 stories. The promise is cached rather than the resolved value so concurrent
- * page renders share the one load.
+ * `createHighlighter` loads a WASM oniguruma engine and the grammars; doing that per snippet would be
+ * thousands of loads for 696 stories on four platforms. The promise is cached rather than the resolved
+ * value so concurrent page renders share the one load.
  */
 function highlighter(): Promise<Highlighter> {
-  cached ??= createHighlighter({ langs: [LANG], themes: [CODE_THEME] });
+  cached ??= createHighlighter({ langs: [...LANGS], themes: [CODE_THEME] });
   return cached;
 }
 
@@ -75,10 +97,23 @@ function highlighter(): Promise<Highlighter> {
  * One snippet as `<pre class="shiki …" tabindex="0">…</pre>`, ready to be set as HTML.
  *
  * Shiki escapes the code it is given, so the result is safe to inject: the input here is a source
- * slice from `packages/react/src`, which is repo content either way. The `tabindex` is Shiki's own —
- * it is what makes a snippet wider than its column reachable by keyboard (axe's
+ * rendered from the `packages/*` story modules, which is repo content either way. The `tabindex` is
+ * Shiki's own — it is what makes a snippet wider than its column reachable by keyboard (axe's
  * `scrollable-region-focusable`), and ./components/code.css is careful not to add a second one.
  */
-export async function highlightSource(code: string): Promise<string> {
-  return (await highlighter()).codeToHtml(code, { lang: LANG, theme: CODE_THEME });
+export async function highlightSource(code: string, lang: CodeLang = 'tsx'): Promise<string> {
+  return (await highlighter()).codeToHtml(code, { lang, theme: CODE_THEME });
+}
+
+/** One example's snippets, each highlighted in its own platform's language. */
+export async function highlightSnippets(snippets: Snippets): Promise<PlatformCode> {
+  const entries = await Promise.all(
+    PLATFORM_ORDER.map(async (platform): Promise<[Platform, CodeBlock | null]> => {
+      const code = snippets[platform];
+      if (code === null) return [platform, null];
+      const lang = snippetLang(platform, code);
+      return [platform, { html: await highlightSource(code, lang), lang }];
+    }),
+  );
+  return Object.fromEntries(entries) as PlatformCode;
 }

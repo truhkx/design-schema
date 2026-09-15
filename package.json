@@ -17,6 +17,8 @@
     "docs:examples": "node --import tsx tools/docs_examples.ts",
     "docs:examples:check": "node --import tsx tools/docs_examples.ts --check",
     "schema": "node --import tsx tools/schema.ts",
+    "schema:publish": "node --import tsx tools/publish_schema.ts",
+    "schema:publish:check": "node --import tsx tools/publish_schema.ts --check",
     "check": "node --import tsx tools/theme.ts && node tokens/build.mjs && node --import tsx tools/schema.ts --check && node --import tsx tools/parse.ts && node --import tsx tools/docs_examples.ts && node --import tsx tools/site_nav.ts && node --import tsx tools/check_contrast.ts && node --import tsx tools/spec_sheet.ts && node --import tsx tools/naming_demo.ts --check",
     "test:tools": "vitest run",
     "typecheck:tools": "tsc -p tools",

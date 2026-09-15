@@ -1,0 +1,17 @@
+/*
+ * Site-wide link decoration (Tony's review, 2026-09-15): no underline until a link is hovered or
+ * has keyboard focus, then the underline.
+ *
+ * A website rule, not a Link component change — the generated Link's underline is a cross-platform
+ * contract and stays as it is in every other consumer. `a:any-link` (0,1,1) outranks Link.css's
+ * `.ds-link` (0,1,0) whichever sheet loads first, so this holds without `!important`; Link's
+ * underline thickness and offset still apply when the underline comes back.
+ */
+a:any-link {
+  text-decoration: none;
+}
+
+a:any-link:hover,
+a:any-link:focus-visible {
+  text-decoration: underline;
+}

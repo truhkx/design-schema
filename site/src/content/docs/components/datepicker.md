@@ -5,7 +5,7 @@ component:
   name: DatePicker
   category: input
   status: review
-  apg: dialog-modal
+  apg: grid
   anatomy: [label, description, field, input, calendarButton, popover, header, prevMonthButton, nextMonthButton, monthSelect, yearSelect, grid, weekdayHeader, weekNumber, day, footer, todayButton, clearButton, errorMessage]
   composition:
     label: Text
@@ -29,11 +29,11 @@ component:
       required: true
       description: 'Field name for the Form. The value is an ISO calendar date string (`2026-09-10`) or, for a range, `{ start, end }` of them. Never a Date object: a calendar date has no time zone.'
     value:
-      type: string
+      type: union
       shape: 'string | { start: string; end: string }'
       description: Controlled value (ISO date, or a range).
     defaultValue:
-      type: string
+      type: union
       shape: 'string | { start: string; end: string }'
       description: Initial value.
     open:

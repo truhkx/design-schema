@@ -1,0 +1,74 @@
+{
+  "name": "ActionSheet",
+  "role": "menu",
+  "identifier": "ActionSheet",
+  "rules": [
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Closes without choosing.",
+      "from": "inside",
+      "expect": "closes"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "Moves focus to the next action.",
+      "from": "first",
+      "expect": "focus-next"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "From the last action wraps to the first.",
+      "from": "last",
+      "expect": "focus-wraps-to-first"
+    },
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "From the first action wraps to the last.",
+      "from": "first",
+      "expect": "focus-wraps-to-last"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "First action.",
+      "from": "last",
+      "expect": "focus-first"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Last action.",
+      "from": "first",
+      "expect": "focus-last"
+    },
+    {
+      "keys": [
+        "Enter",
+        " "
+      ],
+      "action": "Chooses the focused action and closes.",
+      "from": "first",
+      "expect": "closes",
+      "when": "focus on an action"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Closes and moves focus on (a menu is not a tab stop container).",
+      "from": "first",
+      "expect": "manual",
+      "when": "wide-screen menu presentation"
+    }
+  ]
+}

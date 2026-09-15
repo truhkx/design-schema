@@ -57,6 +57,11 @@ component:
     onChange:
       description: Fired when the selection changes, with the new option value.
       platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
+  keyboard:
+    - { keys: [Tab], action: 'Moves into the group, to the selected radio (the first when none is selected); from inside, leaves the group — one tab stop.', from: any, expect: manual }
+    - { keys: [ArrowDown, ArrowRight], action: 'Moves to and selects the next enabled radio, wrapping.', from: first, expect: focus-next }
+    - { keys: [ArrowUp, ArrowLeft], action: 'Moves to and selects the previous enabled radio, wrapping.', from: last, expect: focus-prev }
+    - { keys: [' '], action: 'Selects the focused radio when the arrows did not already select it.', from: inside, expect: manual }
   styles:
     controlBackground: { token: color.control.background }
     controlBorder: { token: color.control.border }

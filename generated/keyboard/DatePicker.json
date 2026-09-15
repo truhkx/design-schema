@@ -1,0 +1,116 @@
+{
+  "name": "DatePicker",
+  "role": "none",
+  "identifier": "DatePicker",
+  "rules": [
+    {
+      "keys": [
+        "ArrowDown",
+        "Alt+ArrowDown"
+      ],
+      "action": "From the input, opens the calendar with focus on the selected day (or today).",
+      "from": "first",
+      "expect": "manual",
+      "when": "focus in input"
+    },
+    {
+      "keys": [
+        "Enter",
+        " "
+      ],
+      "action": "On the calendar button, opens; on a day, selects it (and closes for a single date; for a range, selects the start then the end).",
+      "from": "inside",
+      "expect": "manual"
+    },
+    {
+      "keys": [
+        "Escape"
+      ],
+      "action": "Closes the calendar without changing the value and returns focus to the calendar button.",
+      "from": "inside",
+      "expect": "focus-trigger",
+      "when": "open"
+    },
+    {
+      "keys": [
+        "ArrowRight"
+      ],
+      "action": "Next day.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on a day"
+    },
+    {
+      "keys": [
+        "ArrowLeft"
+      ],
+      "action": "Previous day.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on a day"
+    },
+    {
+      "keys": [
+        "ArrowDown"
+      ],
+      "action": "Same weekday, next week.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on a day"
+    },
+    {
+      "keys": [
+        "ArrowUp"
+      ],
+      "action": "Same weekday, previous week.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on a day"
+    },
+    {
+      "keys": [
+        "Home"
+      ],
+      "action": "First day of the week.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on a day"
+    },
+    {
+      "keys": [
+        "End"
+      ],
+      "action": "Last day of the week.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on a day"
+    },
+    {
+      "keys": [
+        "PageUp"
+      ],
+      "action": "Same day, previous month (Shift: previous year).",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on a day"
+    },
+    {
+      "keys": [
+        "PageDown"
+      ],
+      "action": "Same day, next month (Shift: next year).",
+      "from": "inside",
+      "expect": "manual",
+      "when": "focus on a day"
+    },
+    {
+      "keys": [
+        "Tab"
+      ],
+      "action": "Cycles within the calendar: month/year controls, the grid (one tab stop, roving over days), Today, Clear.",
+      "from": "inside",
+      "expect": "manual",
+      "when": "open"
+    }
+  ]
+}

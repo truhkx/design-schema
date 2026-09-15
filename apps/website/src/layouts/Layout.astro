@@ -12,6 +12,8 @@
 // The component styles for @design-schema/react. The package sets `sideEffects: false` and exports
 // its CSS separately, so a consumer imports it once, here, for the whole site.
 import '@design-schema/react/index.css';
+// The site's one global link rule: no underline until hover or focus.
+import '../styles/links.css';
 import { Landmark } from '@design-schema/react';
 
 import Footer from '../components/Footer.astro';

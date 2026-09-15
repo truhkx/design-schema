@@ -27,8 +27,9 @@ describe('the gate table', () => {
     }
   });
 
-  test('swiftui runs the doc gates only — its build half is the macOS workflow', () => {
-    expect(names('swiftui')).toEqual(['parse', 'contrast']);
+  test('swiftui runs the doc gates and the literal gate — its build half is the macOS workflow', () => {
+    expect(names('swiftui')).toEqual(['parse', 'contrast', 'literals']);
+    expect((checks.gatesFor('swiftui').find((g) => g.name === 'literals') as Gate).argv.slice(-2)).toEqual(['--platform', 'swiftui']);
     // No pnpm gate may be pointed at a Swift package: there is no @design-schema/swiftui to filter.
     expect(checks.gatesFor('swiftui', new Set(), new Set(['keyboard', 'axe', 'behavior']))).toEqual(checks.gatesFor('swiftui'));
   });

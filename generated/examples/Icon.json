@@ -1,0 +1,924 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "name": "check",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"check\" />",
+        "lit": "<ds-icon name=\"check\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"check\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "icon-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Name Check",
+      "args": {
+        "name": "check",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"check\" />",
+        "lit": "<ds-icon name=\"check\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"check\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameCheck",
+        "lit": "NameCheck",
+        "rn": "NameCheck",
+        "swift": null
+      },
+      "storyId": "icon-react--name-check",
+      "sweep": {
+        "prop": "name",
+        "value": "check"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Dash",
+      "args": {
+        "name": "dash",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"dash\" />",
+        "lit": "<ds-icon name=\"dash\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"dash\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameDash",
+        "lit": "NameDash",
+        "rn": "NameDash",
+        "swift": null
+      },
+      "storyId": "icon-react--name-dash",
+      "sweep": {
+        "prop": "name",
+        "value": "dash"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Chevron Right",
+      "args": {
+        "name": "chevron-right",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"chevron-right\" />",
+        "lit": "<ds-icon name=\"chevron-right\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"chevron-right\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameChevronRight",
+        "lit": "NameChevronRight",
+        "rn": "NameChevronRight",
+        "swift": null
+      },
+      "storyId": "icon-react--name-chevron-right",
+      "sweep": {
+        "prop": "name",
+        "value": "chevron-right"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Chevron Down",
+      "args": {
+        "name": "chevron-down",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"chevron-down\" />",
+        "lit": "<ds-icon name=\"chevron-down\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"chevron-down\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameChevronDown",
+        "lit": "NameChevronDown",
+        "rn": "NameChevronDown",
+        "swift": null
+      },
+      "storyId": "icon-react--name-chevron-down",
+      "sweep": {
+        "prop": "name",
+        "value": "chevron-down"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Chevron Up",
+      "args": {
+        "name": "chevron-up",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"chevron-up\" />",
+        "lit": "<ds-icon name=\"chevron-up\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"chevron-up\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameChevronUp",
+        "lit": "NameChevronUp",
+        "rn": "NameChevronUp",
+        "swift": null
+      },
+      "storyId": "icon-react--name-chevron-up",
+      "sweep": {
+        "prop": "name",
+        "value": "chevron-up"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Chevron Left",
+      "args": {
+        "name": "chevron-left",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"chevron-left\" />",
+        "lit": "<ds-icon name=\"chevron-left\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"chevron-left\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameChevronLeft",
+        "lit": "NameChevronLeft",
+        "rn": "NameChevronLeft",
+        "swift": null
+      },
+      "storyId": "icon-react--name-chevron-left",
+      "sweep": {
+        "prop": "name",
+        "value": "chevron-left"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Close",
+      "args": {
+        "name": "close",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"close\" />",
+        "lit": "<ds-icon name=\"close\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"close\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameClose",
+        "lit": "NameClose",
+        "rn": "NameClose",
+        "swift": null
+      },
+      "storyId": "icon-react--name-close",
+      "sweep": {
+        "prop": "name",
+        "value": "close"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Plus",
+      "args": {
+        "name": "plus",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"plus\" />",
+        "lit": "<ds-icon name=\"plus\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"plus\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NamePlus",
+        "lit": "NamePlus",
+        "rn": "NamePlus",
+        "swift": null
+      },
+      "storyId": "icon-react--name-plus",
+      "sweep": {
+        "prop": "name",
+        "value": "plus"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Minus",
+      "args": {
+        "name": "minus",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"minus\" />",
+        "lit": "<ds-icon name=\"minus\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"minus\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameMinus",
+        "lit": "NameMinus",
+        "rn": "NameMinus",
+        "swift": null
+      },
+      "storyId": "icon-react--name-minus",
+      "sweep": {
+        "prop": "name",
+        "value": "minus"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Info",
+      "args": {
+        "name": "info",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"info\" />",
+        "lit": "<ds-icon name=\"info\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"info\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameInfo",
+        "lit": "NameInfo",
+        "rn": "NameInfo",
+        "swift": null
+      },
+      "storyId": "icon-react--name-info",
+      "sweep": {
+        "prop": "name",
+        "value": "info"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Success",
+      "args": {
+        "name": "success",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"success\" />",
+        "lit": "<ds-icon name=\"success\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"success\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameSuccess",
+        "lit": "NameSuccess",
+        "rn": "NameSuccess",
+        "swift": null
+      },
+      "storyId": "icon-react--name-success",
+      "sweep": {
+        "prop": "name",
+        "value": "success"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Warning",
+      "args": {
+        "name": "warning",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"warning\" />",
+        "lit": "<ds-icon name=\"warning\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"warning\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameWarning",
+        "lit": "NameWarning",
+        "rn": "NameWarning",
+        "swift": null
+      },
+      "storyId": "icon-react--name-warning",
+      "sweep": {
+        "prop": "name",
+        "value": "warning"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Danger",
+      "args": {
+        "name": "danger",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"danger\" />",
+        "lit": "<ds-icon name=\"danger\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"danger\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameDanger",
+        "lit": "NameDanger",
+        "rn": "NameDanger",
+        "swift": null
+      },
+      "storyId": "icon-react--name-danger",
+      "sweep": {
+        "prop": "name",
+        "value": "danger"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name External",
+      "args": {
+        "name": "external",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"external\" />",
+        "lit": "<ds-icon name=\"external\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"external\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameExternal",
+        "lit": "NameExternal",
+        "rn": "NameExternal",
+        "swift": null
+      },
+      "storyId": "icon-react--name-external",
+      "sweep": {
+        "prop": "name",
+        "value": "external"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Ellipsis",
+      "args": {
+        "name": "ellipsis",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"ellipsis\" />",
+        "lit": "<ds-icon name=\"ellipsis\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"ellipsis\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameEllipsis",
+        "lit": "NameEllipsis",
+        "rn": "NameEllipsis",
+        "swift": null
+      },
+      "storyId": "icon-react--name-ellipsis",
+      "sweep": {
+        "prop": "name",
+        "value": "ellipsis"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Search",
+      "args": {
+        "name": "search",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"search\" />",
+        "lit": "<ds-icon name=\"search\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"search\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameSearch",
+        "lit": "NameSearch",
+        "rn": "NameSearch",
+        "swift": null
+      },
+      "storyId": "icon-react--name-search",
+      "sweep": {
+        "prop": "name",
+        "value": "search"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Arrow Right",
+      "args": {
+        "name": "arrow-right",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"arrow-right\" />",
+        "lit": "<ds-icon name=\"arrow-right\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"arrow-right\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameArrowRight",
+        "lit": "NameArrowRight",
+        "rn": "NameArrowRight",
+        "swift": null
+      },
+      "storyId": "icon-react--name-arrow-right",
+      "sweep": {
+        "prop": "name",
+        "value": "arrow-right"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Arrow Left",
+      "args": {
+        "name": "arrow-left",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"arrow-left\" />",
+        "lit": "<ds-icon name=\"arrow-left\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"arrow-left\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameArrowLeft",
+        "lit": "NameArrowLeft",
+        "rn": "NameArrowLeft",
+        "swift": null
+      },
+      "storyId": "icon-react--name-arrow-left",
+      "sweep": {
+        "prop": "name",
+        "value": "arrow-left"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Calendar",
+      "args": {
+        "name": "calendar",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"calendar\" />",
+        "lit": "<ds-icon name=\"calendar\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"calendar\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameCalendar",
+        "lit": "NameCalendar",
+        "rn": "NameCalendar",
+        "swift": null
+      },
+      "storyId": "icon-react--name-calendar",
+      "sweep": {
+        "prop": "name",
+        "value": "calendar"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Menu",
+      "args": {
+        "name": "menu",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"menu\" />",
+        "lit": "<ds-icon name=\"menu\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"menu\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameMenu",
+        "lit": "NameMenu",
+        "rn": "NameMenu",
+        "swift": null
+      },
+      "storyId": "icon-react--name-menu",
+      "sweep": {
+        "prop": "name",
+        "value": "menu"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name List",
+      "args": {
+        "name": "list",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"list\" />",
+        "lit": "<ds-icon name=\"list\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"list\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameList",
+        "lit": "NameList",
+        "rn": "NameList",
+        "swift": null
+      },
+      "storyId": "icon-react--name-list",
+      "sweep": {
+        "prop": "name",
+        "value": "list"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Grid",
+      "args": {
+        "name": "grid",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"grid\" />",
+        "lit": "<ds-icon name=\"grid\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"grid\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameGrid",
+        "lit": "NameGrid",
+        "rn": "NameGrid",
+        "swift": null
+      },
+      "storyId": "icon-react--name-grid",
+      "sweep": {
+        "prop": "name",
+        "value": "grid"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Play",
+      "args": {
+        "name": "play",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"play\" />",
+        "lit": "<ds-icon name=\"play\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"play\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NamePlay",
+        "lit": "NamePlay",
+        "rn": "NamePlay",
+        "swift": null
+      },
+      "storyId": "icon-react--name-play",
+      "sweep": {
+        "prop": "name",
+        "value": "play"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Pause",
+      "args": {
+        "name": "pause",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"pause\" />",
+        "lit": "<ds-icon name=\"pause\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"pause\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NamePause",
+        "lit": "NamePause",
+        "rn": "NamePause",
+        "swift": null
+      },
+      "storyId": "icon-react--name-pause",
+      "sweep": {
+        "prop": "name",
+        "value": "pause"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name Folder",
+      "args": {
+        "name": "folder",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"folder\" />",
+        "lit": "<ds-icon name=\"folder\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"folder\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameFolder",
+        "lit": "NameFolder",
+        "rn": "NameFolder",
+        "swift": null
+      },
+      "storyId": "icon-react--name-folder",
+      "sweep": {
+        "prop": "name",
+        "value": "folder"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Name File",
+      "args": {
+        "name": "file",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"file\" />",
+        "lit": "<ds-icon name=\"file\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"file\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "NameFile",
+        "lit": "NameFile",
+        "rn": "NameFile",
+        "swift": null
+      },
+      "storyId": "icon-react--name-file",
+      "sweep": {
+        "prop": "name",
+        "value": "file"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Xs",
+      "args": {
+        "name": "check",
+        "size": "xs",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"check\" size=\"xs\" />",
+        "lit": "<ds-icon name=\"check\" size=\"xs\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"check\" size=\"xs\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeXs",
+        "lit": "SizeXs",
+        "rn": "SizeXs",
+        "swift": null
+      },
+      "storyId": "icon-react--size-xs",
+      "sweep": {
+        "prop": "size",
+        "value": "xs"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Sm",
+      "args": {
+        "name": "check",
+        "size": "sm",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"check\" size=\"sm\" />",
+        "lit": "<ds-icon name=\"check\" size=\"sm\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"check\" size=\"sm\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeSm",
+        "lit": "SizeSm",
+        "rn": "SizeSm",
+        "swift": null
+      },
+      "storyId": "icon-react--size-sm",
+      "sweep": {
+        "prop": "size",
+        "value": "sm"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Md",
+      "args": {
+        "name": "check",
+        "size": "md",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"check\" size=\"md\" />",
+        "lit": "<ds-icon name=\"check\" size=\"md\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"check\" size=\"md\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeMd",
+        "lit": "SizeMd",
+        "rn": "SizeMd",
+        "swift": null
+      },
+      "storyId": "icon-react--size-md",
+      "sweep": {
+        "prop": "size",
+        "value": "md"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Lg",
+      "args": {
+        "name": "check",
+        "size": "lg",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"check\" size=\"lg\" />",
+        "lit": "<ds-icon name=\"check\" size=\"lg\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"check\" size=\"lg\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeLg",
+        "lit": "SizeLg",
+        "rn": "SizeLg",
+        "swift": null
+      },
+      "storyId": "icon-react--size-lg",
+      "sweep": {
+        "prop": "size",
+        "value": "lg"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Size Xl",
+      "args": {
+        "name": "check",
+        "size": "xl",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"check\" size=\"xl\" />",
+        "lit": "<ds-icon name=\"check\" size=\"xl\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"check\" size=\"xl\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SizeXl",
+        "lit": "SizeXl",
+        "rn": "SizeXl",
+        "swift": null
+      },
+      "storyId": "icon-react--size-xl",
+      "sweep": {
+        "prop": "size",
+        "value": "xl"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Inline",
+      "args": {
+        "name": "external",
+        "size": "md",
+        "inline": true
+      },
+      "snippets": {
+        "react": "import { Icon, Text } from '@design-schema/react';\n\n<Text element=\"p\">\n  Opens in a new tab <Icon name=\"external\" inline />\n</Text>",
+        "lit": "<p style=\"font-size: var(--font-size-lg); color: var(--color-foreground)\">\n  Opens in a new tab\n  <ds-icon name=\"external\" inline></ds-icon>\n</p>",
+        "rn": "import { Icon, Text } from '@design-schema/rn';\n\n<Text size=\"lg\">\n  Read the release notes <Icon name=\"external\" inline />\n</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Inline",
+        "lit": "Inline",
+        "rn": "Inline",
+        "swift": null
+      },
+      "storyId": "icon-react--inline",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Labelled",
+      "args": {
+        "name": "warning",
+        "size": "md",
+        "inline": false,
+        "label": "Warning: over quota"
+      },
+      "snippets": {
+        "react": "import { Icon } from '@design-schema/react';\n\n<Icon name=\"warning\" label=\"Warning: over quota\" />",
+        "lit": "<ds-icon name=\"warning\" label=\"Warning: over quota\"></ds-icon>",
+        "rn": "import { Icon } from '@design-schema/rn';\n\n<Icon name=\"warning\" label=\"Warning: over quota\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Labelled",
+        "lit": "Labelled",
+        "rn": "Label",
+        "swift": null
+      },
+      "storyId": "icon-react--labelled",
+      "sweep": {
+        "prop": "name",
+        "value": "warning"
+      },
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

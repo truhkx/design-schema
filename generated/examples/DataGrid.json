@@ -1,0 +1,2471 @@
+{
+  "layout": "scenarios",
+  "platforms": {
+    "react": true,
+    "lit": true,
+    "rn": true,
+    "swift": false
+  },
+  "examples": [
+    {
+      "title": "Default",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid caption=\"Price list\" columns={COLUMNS} data={DATA} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid caption=\"Price list\" columns={columns} data={data} height=\"content\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Default",
+        "lit": "Default",
+        "rn": "Default",
+        "swift": null
+      },
+      "storyId": "datagrid-react--default",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Selectable None",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "selectable": "none"
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA}\n  selectable=\"none\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      selectable=\"none\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={columns}\n  data={data}\n  selectable=\"none\"\n  height=\"content\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SelectableNone",
+        "lit": "SelectableNone",
+        "rn": "SelectableNone",
+        "swift": null
+      },
+      "storyId": "datagrid-react--selectable-none",
+      "sweep": {
+        "prop": "selectable",
+        "value": "none"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Selectable Row",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "selectable": "row"
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid caption=\"Price list\" columns={COLUMNS} data={DATA} selectable=\"row\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      selectable=\"row\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={columns}\n  data={data}\n  selectable=\"row\"\n  height=\"content\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SelectableRow",
+        "lit": "SelectableRow",
+        "rn": "SelectableRow",
+        "swift": null
+      },
+      "storyId": "datagrid-react--selectable-row",
+      "sweep": {
+        "prop": "selectable",
+        "value": "row"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Selectable Cell",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "selectable": "cell"
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA}\n  selectable=\"cell\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      selectable=\"cell\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={columns}\n  data={data}\n  selectable=\"cell\"\n  height=\"content\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SelectableCell",
+        "lit": "SelectableCell",
+        "rn": "SelectableCell",
+        "swift": null
+      },
+      "storyId": "datagrid-react--selectable-cell",
+      "sweep": {
+        "prop": "selectable",
+        "value": "cell"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Selectable Range",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "selectable": "range"
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA}\n  selectable=\"range\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      selectable=\"range\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={columns}\n  data={data}\n  selectable=\"range\"\n  height=\"content\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SelectableRange",
+        "lit": "SelectableRange",
+        "rn": "SelectableRange",
+        "swift": null
+      },
+      "storyId": "datagrid-react--selectable-range",
+      "sweep": {
+        "prop": "selectable",
+        "value": "range"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Density Compact",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "density": "compact"
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA}\n  density=\"compact\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      density=\"compact\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={columns}\n  data={data}\n  density=\"compact\"\n  height=\"content\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DensityCompact",
+        "lit": "DensityCompact",
+        "rn": "DensityCompact",
+        "swift": null
+      },
+      "storyId": "datagrid-react--density-compact",
+      "sweep": {
+        "prop": "density",
+        "value": "compact"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Density Comfortable",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "density": "comfortable"
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA}\n  density=\"comfortable\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      density=\"comfortable\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={columns}\n  data={data}\n  density=\"comfortable\"\n  height=\"content\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DensityComfortable",
+        "lit": "DensityComfortable",
+        "rn": "DensityComfortable",
+        "swift": null
+      },
+      "storyId": "datagrid-react--density-comfortable",
+      "sweep": {
+        "prop": "density",
+        "value": "comfortable"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Height Content",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "height": "content"
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid caption=\"Price list\" columns={COLUMNS} data={DATA} height=\"content\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      height=\"content\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid caption=\"Price list\" columns={columns} data={data} height=\"content\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeightContent",
+        "lit": "HeightContent",
+        "rn": "HeightContent",
+        "swift": null
+      },
+      "storyId": "datagrid-react--height-content",
+      "sweep": {
+        "prop": "height",
+        "value": "content"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Height Viewport",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "height": "viewport"
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA}\n  height=\"viewport\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      height=\"viewport\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={columns}\n  data={data}\n  height=\"viewport\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeightViewport",
+        "lit": "HeightViewport",
+        "rn": "HeightViewport",
+        "swift": null
+      },
+      "storyId": "datagrid-react--height-viewport",
+      "sweep": {
+        "prop": "height",
+        "value": "viewport"
+      },
+      "decorated": true,
+      "primary": false
+    },
+    {
+      "title": "Height Fixed",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "height": "fixed"
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid caption=\"Price list\" columns={COLUMNS} data={DATA} height=\"fixed\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      height=\"fixed\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid caption=\"Price list\" columns={columns} data={data} height=\"fixed\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeightFixed",
+        "lit": "HeightFixed",
+        "rn": "HeightFixed",
+        "swift": null
+      },
+      "storyId": "datagrid-react--height-fixed",
+      "sweep": {
+        "prop": "height",
+        "value": "fixed"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Hide Caption",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "hideCaption": true
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid caption=\"Price list\" columns={COLUMNS} data={DATA} hideCaption />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      hide-caption\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  hideCaption\n  columns={columns}\n  data={data}\n  height=\"content\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HideCaption",
+        "lit": "HideCaption",
+        "rn": "HiddenCaption",
+        "swift": null
+      },
+      "storyId": "datagrid-react--hide-caption",
+      "sweep": {
+        "prop": "hideCaption",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "No Sticky Header",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "stickyHeader": false
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA}\n  stickyHeader={false}\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "NoStickyHeader",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "datagrid-react--no-sticky-header",
+      "sweep": {
+        "prop": "stickyHeader",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Empty",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": []
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid caption=\"Price list\" columns={COLUMNS} data={[]} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${[]}\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={columns}\n  data={[]}\n  height=\"content\"\n  emptyMessage=\"No products match these filters.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Empty",
+        "lit": "Empty",
+        "rn": "Empty",
+        "swift": null
+      },
+      "storyId": "datagrid-react--empty",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Empty With Message",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [],
+        "emptyMessage": "No products match these filters."
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={[]}\n  emptyMessage=\"No products match these filters.\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${[]}\n      empty-message=\"No items match these filters.\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "EmptyWithMessage",
+        "lit": "EmptyMessage",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "datagrid-react--empty-with-message",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Loading",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "loading": true
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid caption=\"Price list\" columns={COLUMNS} data={DATA} loading />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      loading\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={columns}\n  data={data}\n  height=\"content\"\n  loading\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Loading",
+        "lit": "Loading",
+        "rn": "Loading",
+        "swift": null
+      },
+      "storyId": "datagrid-react--loading",
+      "sweep": {
+        "prop": "loading",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Default Sort",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "defaultSort": {
+          "column": "price",
+          "direction": "descending"
+        }
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA}\n  defaultSort={{ column: 'price', direction: 'descending' }}\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "DefaultSort",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "datagrid-react--default-sort",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Editable",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "editable": true,
+        "selectable": "cell"
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA}\n  editable\n  selectable=\"cell\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      selectable=\"range\"\n      editable\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={columns}\n  data={data}\n  selectable=\"cell\"\n  editable\n  height=\"content\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Editable",
+        "lit": "Editable",
+        "rn": "Editable",
+        "swift": null
+      },
+      "storyId": "datagrid-react--editable",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Pinned Columns",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true,
+            "pinned": "start"
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            },
+            "pinned": "end"
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={[\n    { ...COLUMNS[0]!, pinned: 'start' },\n    ...COLUMNS.slice(1, -1),\n    { ...COLUMNS[COLUMNS.length - 1]!, pinned: 'end' },\n  ]}\n  data={DATA}\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "PinnedColumns",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "datagrid-react--pinned-columns",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Server Paged",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          }
+        ],
+        "rowCount": 500,
+        "onRangeNeeded": {
+          "$unsupported": "() => undefined"
+        }
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA.slice(0, 2)}\n  rowCount={500}\n  onRangeNeeded={() => undefined}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridColumn, DataGridRangeNeededDetail, DataGridRow } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n  <ds-data-grid\n    caption=\"Price list\"\n    .columns=${priceListColumns}\n    .data=${priceListRows.slice(0, 3)}\n    row-count=\"200\"\n    height=\"fixed\"\n    @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n  ></ds-data-grid>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "ServerPaged",
+        "lit": "ServerPaged",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "datagrid-react--server-paged",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Hide Status Bar",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "showStatusBar": false
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA}\n  showStatusBar={false}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      empty-message=\"\"\n      no-status-bar\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "HideStatusBar",
+        "lit": "NoStatusBar",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "datagrid-react--hide-status-bar",
+      "sweep": {
+        "prop": "showStatusBar",
+        "value": false
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "caption": "Price list",
+        "columns": [
+          {
+            "key": "name",
+            "header": "Name",
+            "isRowHeader": true,
+            "width": 200,
+            "resizable": true
+          },
+          {
+            "key": "category",
+            "header": "Category",
+            "width": 160,
+            "editable": true,
+            "editor": "select",
+            "options": [
+              {
+                "value": "Lighting",
+                "label": "Lighting"
+              },
+              {
+                "value": "Furniture",
+                "label": "Furniture"
+              },
+              {
+                "value": "Decor",
+                "label": "Decor"
+              }
+            ]
+          },
+          {
+            "key": "qty",
+            "header": "Qty",
+            "align": "end",
+            "width": 100,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "validate": {
+              "$unsupported": "(value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.')"
+            }
+          },
+          {
+            "key": "price",
+            "header": "Price (USD)",
+            "abbr": "Price",
+            "align": "end",
+            "width": 140,
+            "sortable": true,
+            "editable": true,
+            "editor": "number",
+            "render": {
+              "$unsupported": "(row) => `$${(row as Product).price.toFixed(2)}`"
+            }
+          }
+        ],
+        "data": [
+          {
+            "id": "sku-1001",
+            "name": "Aster desk lamp",
+            "category": "Lighting",
+            "qty": 42,
+            "price": 39,
+            "active": true
+          },
+          {
+            "id": "sku-1002",
+            "name": "Bramble side table",
+            "category": "Furniture",
+            "qty": 8,
+            "price": 129,
+            "active": true
+          },
+          {
+            "id": "sku-1003",
+            "name": "Cedar wall clock",
+            "category": "Decor",
+            "qty": 15,
+            "price": 54.5,
+            "active": false
+          },
+          {
+            "id": "sku-1004",
+            "name": "Driftwood shelf",
+            "category": "Furniture",
+            "qty": 23,
+            "price": 89,
+            "active": true
+          },
+          {
+            "id": "sku-1005",
+            "name": "Ember candle set",
+            "category": "Decor",
+            "qty": 60,
+            "price": 24,
+            "active": true
+          }
+        ],
+        "selectable": "row",
+        "editable": true
+      },
+      "snippets": {
+        "react": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/react';\n\ninterface Product extends DataGridRow {\n  name: string;\n  category: string;\n  qty: number;\n  price: number;\n  active: boolean;\n}\n\nconst DATA: Product[] = [\n  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },\n  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },\n  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },\n  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },\n  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },\n];\n\nconst CATEGORY_OPTIONS = [\n  { value: 'Lighting', label: 'Lighting' },\n  { value: 'Furniture', label: 'Furniture' },\n  { value: 'Decor', label: 'Decor' },\n];\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },\n  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },\n  {\n    key: 'qty',\n    header: 'Qty',\n    align: 'end',\n    width: 100,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),\n  },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    abbr: 'Price',\n    align: 'end',\n    width: 140,\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    render: (row) => `$${(row as Product).price.toFixed(2)}`,\n  },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={COLUMNS}\n  data={DATA}\n  selectable=\"row\"\n  editable\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridCellChangeDetail, DataGridColumn, DataGridColumnResizeDetail, DataGridEditStartDetail, DataGridRangeNeededDetail, DataGridRow, DataGridSelectionChangeDetail, DataGridSortChangeDetail } from '@design-schema/lit';\n\nconst priceListColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  {\n    key: 'price',\n    header: 'Price (USD)',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 120,\n    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),\n  },\n  {\n    key: 'quantity',\n    header: 'Qty',\n    abbr: 'Quantity',\n    align: 'end',\n    sortable: true,\n    editable: true,\n    editor: 'number',\n    width: 100,\n  },\n  {\n    key: 'category',\n    header: 'Category',\n    editable: true,\n    editor: 'select',\n    width: 160,\n    options: [\n      { value: 'hardware', label: 'Hardware' },\n      { value: 'software', label: 'Software' },\n      { value: 'services', label: 'Services' },\n    ],\n  },\n  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },\n];\n\nconst priceListRows: DataGridRow[] = [\n  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },\n  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },\n  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },\n  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },\n  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },\n  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },\n];\n\nhtml`\n    <ds-data-grid\n      caption=\"Price list\"\n      .columns=${priceListColumns}\n      .data=${priceListRows}\n      selectable=\"range\"\n      editable\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}\n      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}\n      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}\n      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}\n    ></ds-data-grid>\n`;",
+        "rn": "import { DataGrid, type DataGridColumn, type DataGridRow } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },\n  { key: 'sku', header: 'SKU', width: 120 },\n  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },\n  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [\n    { value: 'active', label: 'Active' },\n    { value: 'draft', label: 'Draft' },\n    { value: 'archived', label: 'Archived' },\n  ] },\n  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },\n];\n\nconst data: DataGridRow[] = [\n  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },\n  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },\n  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },\n  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },\n];\n\n<DataGrid\n  caption=\"Price list\"\n  columns={columns}\n  data={data}\n  selectable=\"row\"\n  editable\n  height=\"content\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Keyboard",
+        "lit": "Keyboard",
+        "rn": "Keyboard",
+        "swift": null
+      },
+      "storyId": "datagrid-react--keyboard",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    }
+  ]
+}

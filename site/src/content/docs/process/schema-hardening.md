@@ -115,13 +115,14 @@ The platform list and the platform-to-package map exist in at least six files, a
 
 ## Phase 2: new fields, optional
 
-Sixteen jobs, each adding a field to the schema, a parser check and gate support, without editing a doc. Ordered by how many components the generators' gap logs say hit each hole:
+Twenty jobs, each adding a field to the schema, a parser check and gate support, without editing a doc. 609 comes first and adds no field: it gives the parser the warning channel every later job reports through, since a stricter rule has to land as a warning before phase 3 can flip it. 610 to 625 are ordered by how many components the generators' gap logs say hit each hole. 626 to 628 were added on 2026-09-15 for adopters who already have a design system and need generated components to stay compatible with their existing API; the reviews behind this plan did not cover that. They follow 625 because the naming codemod applies them after generation, so no template reads them.
 
 | Job | Field | What it replaces |
 |---|---|---|
+| 609 | `componentWarnings` in schema/component.ts; `warn` and `takeWarnings` in tools/parse.ts; `DS_WARNINGS_AS_ERRORS` | no way to report a rule as a warning, so each job would invent one |
 | 610 | `eventDef.payload`, `reasons`, `fires`, `cancelable`, `timing`; an event registry | reason enums in prose on 17 components; three RN spellings of `onChange` |
 | 611 | `propDef.controls` | value/defaultValue pairing by name; the unimplemented Combobox `open` |
-| 612 | composition `props` and `forwards`; anatomy part `kind` | overrides forwarded to child bindings that do not exist |
+| 612 | composition `props` and `forwards`; anatomy part `kind`, including slots | overrides forwarded to child bindings that do not exist; slots that exist only as `type: content` props and Lit prose |
 | 613 | `styleBinding.part`, `state`, `platforms`, per-value `token`, `computed` | invented hover colors; `paddingBlockSm`-style parallel keys; literal multiples |
 | 614 | `keyboardRule.given`, `target`, `repeat`, `platforms`, `native`; array `expect` | 106 manual rules; `closes` asserting the root |
 | 615 | `form` and `overlay` blocks | three form contracts; three flip strategies |
@@ -132,9 +133,13 @@ Sixteen jobs, each adding a field to the schema, a parser check and gate support
 | 620 | `schema/tokens.ts` token manifest | existence checks on 34 of 390 bindings |
 | 621 | typed theme `overrides`; `tuning` block | typeless tokens from misspelled override paths |
 | 622 | extension `a11y.contrast`, `defaults`, `omit`, `platforms`, `anatomy` | canonical-doc edits the update path exists to avoid |
-| 623 | naming `events` and `anatomy` maps; restricted `typePrefix` | renames that ride on `props` by accident |
-| 624 | `deprecated`, `since`, `examples`, `constants`; MCP graph and support matrix | literal timings; an unserved dependency graph |
+| 623 | naming `events` (including per-platform emitted names) and `anatomy` maps; restricted `typePrefix` | renames that ride on `props` by accident; an emitted `onClick` no naming key can reach |
+| 624 | `deprecated`, `since` (component, prop, event and value), `examples`, `constants` | literal timings; deprecation only at component level |
 | 625 | templates read the new fields | the one template edit |
+| 626 | naming `values` | enum values an existing API uses that no naming key can rename |
+| 627 | naming `aliases`, emitted as a tool-generated compatibility layer | old names that disappear the moment a rename applies |
+| 628 | naming `tokens` | canonical, unprefixed token names an existing system's CSS variables and JS names cannot keep |
+| 629 | MCP component graph and support matrix, split out of 624 to keep that job small | an unserved dependency graph |
 
 ## Phase 3: migrate the docs
 

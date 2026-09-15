@@ -31,4 +31,6 @@ playwright-report/
 _to_delete/
 _xfer/
 Claude outputs/
-.claude/
+# Claude Code's local settings stay private; the skills ship with the repo for adopters.
+.claude/*
+!.claude/skills/

@@ -9,3 +9,8 @@ broken repo state does not compound. Jobs must not write under `packages/*/src` 
     powershell -ExecutionPolicy Bypass -File .\run-jobs.ps1              # run the queue
     powershell -ExecutionPolicy Bypass -File .\run-jobs.ps1 -After tier2  # wait for tier2.ps1 to finish first (polls logs\tier2.log for "== done ==")
     powershell -ExecutionPolicy Bypass -File .\run-jobs.ps1 -Model opus   # a heavier model for the queue (default sonnet)
+
+The 600 series is the schema-hardening plan (`site/src/content/docs/process/schema-hardening.md`). Its jobs
+end with `node logs/600-baseline.mjs --out <job>` and compare against `logs/600-baseline.json`, both local to
+the machine that captured the baseline. Queue one phase at a time: 600–607 and 610–625 with `-Model opus`,
+630–644 on the default model.

@@ -6,6 +6,10 @@ import { Divider } from '../../packages/react/src/Divider';
 import type { DividerProps } from '../../packages/react/src/Divider';
 import meta from '../../packages/react/src/Divider.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<DividerProps> = {}) {
   const events = {};
   const props = { ...meta.args, ...given };
@@ -24,6 +28,20 @@ function setup(given: Partial<DividerProps> = {}) {
 }
 
 describe('Divider', () => {
+  test('decorative-divider-is-hidden-from-assistive-technology', async () => {
+    const s = setup({});
+    expect(s.line()).toHaveAttribute("aria-hidden", "true");
+  });
+  test('semantic-divider-is-a-separator', async () => {
+    const s = setup({"semantic": true});
+    expect(screen.getByRole('separator')).toBeInTheDocument();
+    expect(s.line()).toHaveAttribute("aria-orientation", "horizontal");
+  });
+  test('label-is-read-and-makes-the-divider-semantic', async () => {
+    const s = setup({"label": "or"});
+    expect(screen.getByText(new RegExp("or"))).toBeInTheDocument();
+    expect(screen.getByRole('separator')).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

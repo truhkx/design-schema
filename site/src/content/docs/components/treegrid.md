@@ -39,6 +39,9 @@ component:
       type: array
       shape: 'string[]'
       description: Controlled ids of expanded rows.
+      controls:
+        event: onExpandChange
+        default: defaultExpanded
     defaultExpanded:
       type: array
       shape: 'string[]'
@@ -47,6 +50,9 @@ component:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
       description: Sort applies within each level; siblings are ordered, hierarchy is kept.
+      controls:
+        event: onSortChange
+        default: defaultSort
     defaultSort:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
@@ -60,6 +66,9 @@ component:
       type: array
       shape: 'string[]'
       description: As DataGrid.
+      controls:
+        event: onSelectionChange
+        default: defaultSelected
     defaultSelected:
       type: array
       shape: 'string[]'
@@ -101,24 +110,55 @@ component:
     onExpandChange:
       description: 'Fired with the new array of expanded ids (the bare array, as Tree; not wrapped in an object).'
       platforms: { web: onExpandChange, lit: expand-change, rn: onExpandChange, swiftui: onExpandChange }
+      payload:
+        - { name: ids, type: array, shape: 'string[]', description: 'Every expanded id, as a bare array.' }
+      fires: [user]
     onExpand:
       description: 'Fired with its id (bare string) each time a row whose `children` is still `"lazy"` is expanded, so a failed load can retry; once the caller replaces `children` it never fires again for that row.'
       platforms: { web: onExpand, lit: expand, rn: onExpand, swiftui: onExpand }
+      payload:
+        - { name: id, type: string, description: The expanded row. }
+      fires: [user]
     onSortChange:
       description: As DataGrid.
       platforms: { web: onSortChange, lit: sort-change, rn: onSortChange, swiftui: onSortChange }
+      payload:
+        - { name: column, type: string, description: The key of the column now sorted on. }
+        - { name: direction, type: enum, values: [ascending, descending] }
+      fires: [user]
     onSelectionChange:
       description: As DataGrid (row ids or one cell).
       platforms: { web: onSelectionChange, lit: selection-change, rn: onSelectionChange, swiftui: onSelectionChange }
+      payload:
+        - { name: selection, type: union, shape: 'string[] | { rowId: string; column: string }', description: 'Row ids, or one cell, matching selectable.' }
+      fires: [user]
     onCellChange:
       description: As DataGrid.
       platforms: { web: onCellChange, lit: cell-change, rn: onCellChange, swiftui: onCellChange }
+      payload:
+        - { name: rowId, type: string, description: The row that was edited. }
+        - { name: column, type: string, description: The key of the edited column. }
+        - { name: value, type: union, shape: 'string | number | boolean', description: 'The committed value, as the column editor produces it.' }
+        - { name: previous, type: union, shape: 'string | number | boolean', description: The value the cell held before the edit. }
+      fires: [user]
+      timing: { phase: request }
     onEditStart:
       description: As DataGrid.
       platforms: { web: onEditStart, lit: edit-start, rn: onEditStart, swiftui: onEditStart }
+      payload:
+        - { name: rowId, type: string, description: The row about to be edited. }
+        - { name: column, type: string, description: The key of the column about to be edited. }
+      cancelable: true
+      fires: [user]
+      timing: { phase: before-change }
     onColumnResize:
       description: As DataGrid.
       platforms: { web: onColumnResize, lit: column-resize, rn: onColumnResize, swiftui: onColumnResize }
+      payload:
+        - { name: column, type: string, description: The key of the resized column. }
+        - { name: width, type: number, description: Its new width. }
+      fires: [user]
+      timing: { phase: commit }
   keyboard:
     - { keys: [Tab], action: 'Enters and leaves the grid — one tab stop, as DataGrid.', from: any, expect: manual }
     - { keys: [ArrowDown, ArrowUp], action: 'Next / previous visible row, same column. Collapsed descendants are skipped because they are not rendered.', from: inside, expect: manual }
@@ -129,8 +169,8 @@ component:
     - { keys: ['*'], action: 'Expands every row at the focused row''s level under the same parent, the focused row included.', from: inside, expect: manual }
     - { keys: [F2, Escape, ' ', Control+a, Shift+ArrowLeft, Shift+ArrowRight], action: 'As DataGrid (Shift+Space extends the row selection; with selectChildren each selected parent cascades).', from: inside, expect: manual }
   styles:
-    indent: { token: space.5, description: 'Per level, applied as padding-inline-start on the row header. Level 1 has none.' }
-    expandButtonSize: { token: size.target.min, description: 'Inline width reserved for the expand control in the row header (the guide lines align to its centre); minTarget is the locked row-height floor.' }
+    indent: { token: space.5, part: indent, description: 'Per level, applied as padding-inline-start on the row header. Level 1 has none.' }
+    expandButtonSize: { token: size.target.min, part: expandButton, description: 'Inline width reserved for the expand control in the row header (the guide lines align to its centre); minTarget is the locked row-height floor.' }
     expandGap: { token: layout.gap.tight, description: 'Between the expand button and the row header text.' }
     guideLine: { token: color.border, description: 'One vertical line per ancestor level, drawn the full height of every descendant row and aligned with that ancestor''s expand button (indent guides; no elbows, no termination at the last child). Always drawn, at both densities.' }
     guideLineWidth: { token: border.width.thin }
@@ -141,24 +181,75 @@ component:
     focusRingWidth: { token: border.width.focus }
     minTarget: { token: size.target.min }
   copy:
-    expand: 'Expand {rowName}'
-    collapse: 'Collapse {rowName}'
-    level: 'Level {level}'
-    childCount: '{count} items'
+    expand:
+      text: 'Expand {rowName}'
+      params:
+        rowName: { type: string, description: The row's name from its row-header cell. }
+    collapse:
+      text: 'Collapse {rowName}'
+      params:
+        rowName: { type: string, description: The row's name from its row-header cell. }
+    level:
+      text: 'Level {level}'
+      params:
+        level: { type: number, description: The row's depth in the tree. }
+    childCount:
+      plural:
+        by: count
+        one: '{count} item'
+        other: '{count} items'
+      params:
+        count: { type: number, description: How many children the row has. }
     loading: Loading
     expandAll: Expand all
     collapseAll: Collapse all
-    sortAscending: 'Sort by {column}, ascending'
-    sortDescending: 'Sort by {column}, descending'
-    sortedAnnouncement: 'Sorted by {column}, {direction}'
+    sortAscending:
+      text: 'Sort by {column}, ascending'
+      params:
+        column: { type: string, description: The column header text. }
+    sortDescending:
+      text: 'Sort by {column}, descending'
+      params:
+        column: { type: string, description: The column header text. }
+    sortedAnnouncement:
+      text: 'Sorted by {column}, {direction}'
+      params:
+        column: { type: string, description: The column header text. }
+        direction: { type: string, description: 'The new direction: ascending or descending.' }
     selectAll: Select all rows
-    selectRow: 'Select {rowName}'
-    selectedRows: '{count} of {total} rows selected'
-    editing: 'Editing {column}. Enter to save, Escape to cancel.'
-    invalid: '{message}'
-    rowCount: '{count} rows'
-    position: 'Row {row}, {column}'
-    resize: 'Resize {column}'
+    selectRow:
+      text: 'Select {rowName}'
+      params:
+        rowName: { type: string, description: The row's name from its row-header cell. }
+    selectedRows:
+      text: '{count} of {total} rows selected'
+      params:
+        count: { type: number, description: How many rows are selected. }
+        total: { type: number, description: How many rows the treegrid has. }
+    editing:
+      text: 'Editing {column}. Enter to save, Escape to cancel.'
+      params:
+        column: { type: string, description: The column header text. }
+    invalid:
+      text: '{message}'
+      params:
+        message: { type: string, description: The message the column's validate returned. }
+    rowCount:
+      plural:
+        by: count
+        one: '{count} row'
+        other: '{count} rows'
+      params:
+        count: { type: number, description: How many rows the treegrid has. }
+    position:
+      text: 'Row {row}, {column}'
+      params:
+        row: { type: number, description: The active cell's row number. }
+        column: { type: string, description: The column header text. }
+    resize:
+      text: 'Resize {column}'
+      params:
+        column: { type: string, description: The column header text. }
     empty: Nothing to show.
     scrollHint: Scroll sideways to see more columns
   a11y:
@@ -174,7 +265,7 @@ component:
       notes: 'DataGrid''s structure with role="treegrid" on the container and, on every row, aria-level, aria-setsize and aria-posinset (among its siblings), plus aria-expanded on rows that have children (absent on leaves — a leaf must not say "collapsed"). The flattened visible-row list is what gets virtualized and indexed with aria-rowindex, so collapsing removes rows from the list. The expand control is a Button (ghost, sm, iconOnly, chevron-right Icon rotated when expanded) inside the row header cell with tabindex=-1; it is a pointer convenience — ArrowLeft/Right are the keyboard path, and the button has aria-hidden since the row already exposes aria-expanded. Indent as padding on the row header. Lazy children: on first expand set aria-busy on the row and render one placeholder child row with copy.loading until data arrives.'
     lit:
       tag: ds-tree-grid
-      reflect: [selectable, select-children, editable, density, height, loading, hide-caption, no-status-bar, no-sticky-header]
+      reflect: [selectable, select-children, editable, density, height, loading, hide-caption, { prop: showStatusBar, attribute: no-status-bar }, { prop: stickyHeader, attribute: no-sticky-header }]
       notes: 'Its own element following ds-data-grid''s structure, keyboard handling and CSS (a shared base class is a welcome package refactor, not a requirement; the copy strings above are TreeGrid''s own, so nothing is imported from DataGrid). `expanded` and `selected` as properties; composed `expand-change`, `expand` with bare detail values.'
     rn:
       element: FlatList
@@ -184,6 +275,141 @@ component:
       element: ScrollView
       props: [ScrollView=both-axes, LazyVStack, .accessibilityValue=expanded, .accessibilityAction, Button, .onMoveCommand, '@FocusState']
       notes: 'DataGrid''s structure over the flattened visible rows; each row header cell carries `.accessibilityValue(''level {n}, {count} items, expanded/collapsed'')` from copy and custom actions `expand`/`collapse`, with the visible expand `Button` at minimum target size; the root offers `expandAll`/`collapseAll` custom actions. ArrowLeft/Right/`*` per the keyboard table on iPad; guide lines drawn as one `Rectangle` per ancestor level per row; indent by level from the token. Everything else as DataGrid.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name ones from the schema. Cell movement
+    # runs an aria-activedescendant no clause can state, so what is asserted here is what the grid reports:
+    # its events and the expanded and selected states.
+    - name: the-expand-button-expands-a-row
+      description: Rows with children show a chevron in the row header; onExpandChange reports the new set of expanded ids.
+      given:
+        defaultExpanded: []
+        columns:
+          - { key: account, header: Account, isRowHeader: true }
+          - { key: balance, header: Balance, align: end }
+        data:
+          - { id: assets, account: Assets, balance: 100, children: [{ id: cash, account: Cash, balance: 40 }] }
+      when: { click: expandButton }
+      then:
+        - { event: onExpandChange }
+    - name: expanding-a-lazy-row-asks-for-its-children
+      description: 'children: "lazy" marks a row whose children are loaded on first expand through onExpand, so a failed load can retry.'
+      given:
+        defaultExpanded: []
+        columns:
+          - { key: account, header: Account, isRowHeader: true }
+        data:
+          - { id: assets, account: Assets, children: lazy }
+      when: { click: expandButton }
+      then:
+        - { event: onExpand }
+        - { event: onExpandChange }
+    - name: a-collapsed-parent-row-reports-it
+      given:
+        defaultExpanded: []
+        columns:
+          - { key: account, header: Account, isRowHeader: true }
+        data:
+          - { id: assets, account: Assets, children: [{ id: cash, account: Cash }] }
+      then:
+        - { attribute: aria-expanded, is: 'false', 'on': row }
+      platforms: [web]
+    - name: an-expanded-parent-row-reports-it
+      given:
+        defaultExpanded: [assets]
+        columns:
+          - { key: account, header: Account, isRowHeader: true }
+        data:
+          - { id: assets, account: Assets, children: [{ id: cash, account: Cash }] }
+      then:
+        - { attribute: aria-expanded, is: 'true', 'on': row }
+      platforms: [web]
+    - name: activating-a-sortable-header-reports-the-sort
+      description: Sorting orders siblings within each parent and keeps the tree; the caller does the sorting.
+      given:
+        columns:
+          - { key: account, header: Account, isRowHeader: true }
+          - { key: balance, header: Balance, align: end, sortable: true }
+        data:
+          - { id: assets, account: Assets, balance: 100 }
+          - { id: equity, account: Equity, balance: 50 }
+      when: { click: sortButton }
+      then:
+        - { event: onSortChange }
+    - name: selecting-a-row-reports-the-selection
+      given:
+        selectable: row
+        columns:
+          - { key: account, header: Account, isRowHeader: true }
+        data:
+          - { id: assets, account: Assets }
+          - { id: equity, account: Equity }
+      when: { click: selectCell }
+      then:
+        - { event: onSelectionChange }
+    - name: a-selected-row-is-marked-selected
+      given:
+        selectable: row
+        selected: [assets]
+        columns:
+          - { key: account, header: Account, isRowHeader: true }
+        data:
+          - { id: assets, account: Assets }
+          - { id: equity, account: Equity }
+      then:
+        - { attribute: aria-selected, is: 'true', 'on': row }
+      platforms: [web]
+    - name: the-empty-message-shows-when-there-are-no-rows
+      given:
+        columns:
+          - { key: account, header: Account, isRowHeader: true }
+        data: []
+      then:
+        - { copy: empty }
+  examples:
+    - name: chart-of-accounts
+      description: Nested accounts with their balances, the top level expanded.
+      given:
+        caption: Chart of accounts
+        defaultExpanded: [assets]
+        columns:
+          - { key: account, header: Account, isRowHeader: true, width: 240 }
+          - { key: balance, header: Balance, align: end }
+        data:
+          - { id: assets, account: Assets, balance: 1400, children: [{ id: cash, account: Cash, balance: 400 }, { id: stock, account: Stock, balance: 1000 }] }
+          - { id: equity, account: Equity, balance: 1400 }
+    - name: lazy-folders
+      description: A deep tree whose children are fetched the first time a row is expanded.
+      given:
+        caption: Files
+        columns:
+          - { key: name, header: Name, isRowHeader: true }
+          - { key: size, header: Size, align: end }
+        data:
+          - { id: docs, name: Documents, size: 0, children: lazy }
+          - { id: media, name: Media, size: 0, children: lazy }
+    - name: cascading-selection
+      description: Selection that means "this row and everything in it", with indeterminate parents.
+      given:
+        caption: Bill of materials
+        selectable: row
+        selectChildren: true
+        defaultExpanded: ['*']
+        columns:
+          - { key: part, header: Part, isRowHeader: true }
+          - { key: quantity, header: Quantity, align: end }
+        data:
+          - { id: frame, part: Frame, quantity: 1, children: [{ id: bolt, part: Bolt, quantity: 8 }] }
+    - name: editable-quantities
+      description: A nested grid that is worked in, where the quantity column takes a number editor.
+      given:
+        caption: Bill of materials
+        editable: true
+        defaultExpanded: ['*']
+        columns:
+          - { key: part, header: Part, isRowHeader: true }
+          - { key: quantity, header: Quantity, align: end, editable: true, editor: number }
+        data:
+          - { id: frame, part: Frame, quantity: 1, children: [{ id: bolt, part: Bolt, quantity: 8 }] }
 ---
 
 A tree grid is a data grid where rows have rows inside them. The hierarchy lives in the row-header column — indent, a chevron, a level announced to screen readers — and everything else is DataGrid: same columns, same cell navigation, same editors. Collapsing a parent removes its descendants from the visible list, which is also the virtualized list, so a hundred thousand leaf rows cost nothing until they are opened.

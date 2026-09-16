@@ -63,11 +63,23 @@ component:
   - body
   - dismissButton
   composition:
-    icon: Icon
+    icon:
+      component: Icon
+      forwards:
+        icon: color
+        iconSize: size
     dismissButton: Button
+  parts:
+    body:
+      kind: slot
+      slot:
+        default: true
+        prop: children
+        required: true
   props:
     tone:
       type: enum
+      enumRef: tone
       values:
       - info
       - success
@@ -112,6 +124,10 @@ component:
         lit: dismiss
         rn: onDismiss
         swiftui: onDismiss
+      fires:
+      - user
+      timing:
+        phase: request
   styles:
     background:
       token: color.status.{tone}.background
@@ -122,6 +138,7 @@ component:
       locked: true
     bodyColor:
       token: color.foreground
+      part: body
       description: Body text keeps the page foreground so long messages read as text,
         not as colored emphasis.
       locked: true
@@ -130,6 +147,7 @@ component:
       locked: false
     icon:
       token: color.status.{tone}.icon
+      part: icon
       description: 'Leading icon: info circle, check circle, warning triangle, or
         error octagon by tone, rendered with the system Icon (`info`, `success`, `warning`,
         `danger`) and colored by passing this token as `overrides.color` to the Icon
@@ -155,15 +173,18 @@ component:
       locked: false
     iconSize:
       token: font.size.lg
+      part: icon
       description: Forwarded to the Icon as `overrides.size`; Icon's `size` enum is
         not used here.
       locked: false
     headingSize:
       token: font.size.md
+      part: heading
       description: The heading; body text uses `fontSize`.
       locked: false
     headingWeight:
       token: font.weight.semibold
+      part: heading
       locked: false
     fontFamily:
       token: font.family.body
@@ -200,7 +221,7 @@ component:
     - foreground: color.status.{tone}.icon
       background: color.status.{tone}.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.link
       background: color.status.{tone}.background
       level: AA
@@ -262,7 +283,107 @@ component:
         with the tone word from copy as the value; `banner`/`region` are `.contain`ed.
         Tone colors from the status tokens; never color alone — the tone word is in
         the accessibility label.'
+  behavior:
+  - name: dismiss-fires-on-dismiss
+    description: Activating the dismiss button fires onDismiss; the consumer removes
+      the alert.
+    given:
+      dismissible: true
+    when:
+      click: dismissButton
+    then:
+    - event: onDismiss
+  - name: live-alert-renders-the-alert-role
+    description: live=alert interrupts, and role=alert already implies aria-live=assertive.
+    given:
+      live: alert
+    then:
+    - role: alert
+  - name: live-status-renders-the-status-role
+    description: The default; role=status implies aria-live=polite, so the message
+      is announced politely.
+    given:
+      live: status
+    then:
+    - role: status
+      platforms:
+      - web
+      - lit
+  - name: live-off-renders-no-role
+    description: An alert already present when the view loads is read in sequence,
+      with no live region at all.
+    given:
+      live: 'off'
+    then:
+    - attribute: role
+      is: null
+      platforms:
+      - web
+  - name: the-heading-is-rendered
+    description: The heading is a short bold first line saying what happened.
+    given:
+      heading: Payment failed
+    then:
+    - text: Payment failed
+  examples:
+  - name: blocking-error
+    description: An error that blocks the user, announced immediately above the form
+      it belongs to.
+    given:
+      tone: danger
+      live: alert
+      heading: Payment failed
+      children: Your card was declined. Try another card or contact your bank.
+  - name: saved
+    description: A polite success confirmation after a submit.
+    given:
+      tone: success
+      heading: Changes saved
+      children: Your notification preferences apply from the next digest.
+  - name: dismissible-notice
+    description: A message the user can safely put away.
+    given:
+      tone: info
+      dismissible: true
+      children: Some features are unavailable while you are offline.
+  - name: present-at-load
+    description: A warning already on the page when it loads, so it is read in sequence
+      rather than announced.
+    given:
+      tone: warning
+      live: 'off'
+      heading: Trial ends in three days
+      children: Add a payment method to keep your workspace.
 ```
+
+## Events
+
+- `onDismiss`: emit `onDismiss`
+  - fires on: user
+  - timing: request
+
+## Parts and slots
+
+- `container`: element
+- `icon`: component `Icon`; forwards `icon` → `overrides.color`, `iconSize` → `overrides.size`
+- `heading`: element
+- `body`: slot, `@ViewBuilder` parameter `children`, required
+- `dismissButton`: component `Button`
+
+## Style bindings
+
+- `bodyColor`: token `color.foreground`; part `body`; locked
+- `icon`: token `color.status.{tone}.icon`; part `icon`; locked
+- `iconSize`: token `font.size.lg`; part `icon`
+- `headingSize`: token `font.size.md`; part `heading`
+- `headingWeight`: token `font.weight.semibold`; part `heading`
+
+## Constants and examples
+
+- example `blocking-error`, story `BlockingError`: given `tone: "danger"`, `live: "alert"`, `heading: "Payment failed"`, `children: "Your card was declined. Try another card or contact your bank."`; An error that blocks the user, announced immediately above the form it belongs to.
+- example `saved`, story `Saved`: given `tone: "success"`, `heading: "Changes saved"`, `children: "Your notification preferences apply from the next digest."`; A polite success confirmation after a submit.
+- example `dismissible-notice`, story `DismissibleNotice`: given `tone: "info"`, `dismissible: true`, `children: "Some features are unavailable while you are offline."`; A message the user can safely put away.
+- example `present-at-load`, story `PresentAtLoad`: given `tone: "warning"`, `live: "off"`, `heading: "Trial ends in three days"`, `children: "Add a payment method to keep your workspace."`; A warning already on the page when it loads, so it is read in sequence rather than announced.
 
 ## Overrides (per-instance styling contract)
 
@@ -333,11 +454,32 @@ Render a `View` with `accessibilityRole="alert"` when `live` is `alert`, `access
 
 Form, Toast (planned), Note (planned), Dialog (planned).
 
-## Behavior scenarios (8)
+## Behavior scenarios (11)
 
 One test per scenario, in this order.
 
 ```yaml
+- name: dismiss-fires-on-dismiss
+  description: Activating the dismiss button fires onDismiss; the consumer removes
+    the alert.
+  given:
+    dismissible: true
+  when:
+    click: dismissButton
+  then:
+  - event: onDismiss
+- name: live-alert-renders-the-alert-role
+  description: live=alert interrupts, and role=alert already implies aria-live=assertive.
+  given:
+    live: alert
+  then:
+  - role: alert
+- name: the-heading-is-rendered
+  description: The heading is a short bold first line saying what happened.
+  given:
+    heading: Payment failed
+  then:
+  - text: Payment failed
 - name: renders
   then:
   - renders: true

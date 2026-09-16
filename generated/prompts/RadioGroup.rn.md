@@ -90,6 +90,9 @@ component:
     value:
       type: string
       description: Controlled selected value. Omit for an uncontrolled group.
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: string
       description: Initial selection for an uncontrolled group. Omit to start with
@@ -133,6 +136,12 @@ component:
         lit: change
         rn: onChange
         swiftui: onChange
+      payload:
+      - name: value
+        type: string
+        description: The value of the selected option.
+      fires:
+      - user
   keyboard:
   - keys:
     - Tab
@@ -199,12 +208,15 @@ component:
       locked: false
     legendColor:
       token: color.foreground
+      part: legend
       locked: true
     legendSize:
       token: font.size.md
+      part: legend
       locked: false
     legendWeight:
       token: font.weight.medium
+      part: legend
       locked: false
     labelColor:
       token: color.foreground
@@ -220,6 +232,7 @@ component:
       locked: false
     descriptionText:
       token: color.foreground.muted
+      part: description
       locked: true
     errorText:
       token: color.foreground.danger
@@ -250,6 +263,15 @@ component:
     required: '{label} is required.'
     invalid: '{label} is not valid.'
     requiredIndicator: ' (required)'
+    position:
+      text: '{index} of {total}'
+      params:
+        index:
+          type: number
+          description: The option's position in the group.
+        total:
+          type: number
+          description: How many options the group has.
   a11y:
     role: radiogroup
     requires:
@@ -265,15 +287,15 @@ component:
     - foreground: color.control.selectedBackground
       background: color.control.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.control.border
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.foreground
       background: color.background
       level: AA
@@ -283,6 +305,18 @@ component:
     - foreground: color.foreground.danger
       background: color.background
       level: AA
+  form:
+    role: field
+    value: value
+    valueType: string
+    name: name
+    validation:
+    - required
+    - invalid
+    messages:
+      required: required
+      invalid: invalid
+    discovery: context
   platforms:
     web:
       element: fieldset
@@ -342,11 +376,171 @@ component:
         Arrow keys on iPad move the selection through `@FocusState` per the keyboard
         table (`.onMoveCommand`); the group is one focus section. `orientation` picks
         `VStack`/`HStack`. Registers with the Form environment as one field.'
+  behavior:
+  - name: click-on-an-option-reports-its-value
+    description: Clicking an option selects it and fires onChange with that option's
+      value.
+    when:
+      click: radio
+    then:
+    - event: onChange
+      with: standard
+  - name: click-on-an-option-label-selects-it
+    description: The whole option row is the hit area; each radio has its own label
+      element.
+    when:
+      click: radioLabel
+    then:
+    - event: onChange
+      with: standard
+  - name: disabled-option-cannot-be-selected
+    description: A disabled option uses the native disabled attribute, so it is skipped
+      and cannot be chosen.
+    given:
+      options:
+      - value: standard
+        label: Standard
+        disabled: true
+      - value: express
+        label: Express
+    when:
+      click: radio
+    then:
+    - event: onChange
+      fired: false
+  - name: disabled-group-is-inert
+    description: A fully disabled group stays visible and focusable but selects nothing.
+    given:
+      disabled: true
+    when:
+      click: radio
+    then:
+    - event: onChange
+      fired: false
+    - state: disabled
+      is: true
+      platforms:
+      - web
+  - name: required-is-shown-in-the-legend
+    description: required appends copy.requiredIndicator to the legend, not only a
+      color.
+    given:
+      required: true
+    then:
+    - copy: requiredIndicator
+  - name: invalid-renders-the-invalid-copy
+    description: Validation precedence is error, then required, then invalid; with
+      only invalid set the group renders copy.invalid and is marked invalid.
+    given:
+      invalid: true
+    then:
+    - copy: invalid
+    - state: invalid
+      is: true
+      platforms:
+      - web
+      - lit
+  examples:
+  - name: shipping-method
+    description: Three options with a description each, the usual vertical form.
+    given:
+      label: Shipping method
+      name: shipping
+      options:
+      - value: standard
+        label: Standard
+        description: Free, 3 to 5 business days
+      - value: express
+        label: Express
+        description: Next business day
+      - value: pickup
+        label: Pick up in store
+        description: Ready in 2 hours
+  - name: horizontal-pair
+    description: Two short labels laid out horizontally.
+    given:
+      label: Send a receipt
+      name: receipt
+      orientation: horizontal
+      options:
+      - value: 'yes'
+        label: 'Yes'
+      - value: 'no'
+        label: 'No'
+  - name: required-with-a-group-error
+    description: A required group the Form has marked invalid, with one error under
+      the whole group.
+    given:
+      label: Plan
+      name: plan
+      required: true
+      error: Choose a plan to continue.
+      options:
+      - value: free
+        label: Free
+      - value: pro
+        label: Pro
+  - name: with-a-disabled-option
+    description: An option that is not available, skipped by arrow movement.
+    given:
+      label: Delivery window
+      name: window
+      defaultValue: morning
+      options:
+      - value: morning
+        label: Morning
+      - value: evening
+        label: Evening
+        disabled: true
 ```
+
+## Events
+
+- `onChange`: emit `onChange`
+  - payload, positional, in this order: `value: string`
+  - fires on: user
 
 ## Controlled state
 
-- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; paired by name, so no event is declared
+- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `onChange`)
+
+## Style bindings
+
+- `legendColor`: token `color.foreground`; part `legend`; locked
+- `legendSize`: token `font.size.md`; part `legend`
+- `legendWeight`: token `font.weight.medium`; part `legend`
+- `descriptionText`: token `color.foreground.muted`; part `description`; locked
+
+## Form and overlay
+
+```yaml
+form:
+  role: field
+  value: value
+  valueType: string
+  name: name
+  validation:
+  - required
+  - invalid
+  messages:
+    required: required
+    invalid: invalid
+  discovery: context
+```
+
+## Copy
+
+- `required`: "{label} is required."
+- `invalid`: "{label} is not valid."
+- `requiredIndicator`: " (required)"
+- `position`: "{index} of {total}"; params `index` (number), `total` (number)
+
+## Constants and examples
+
+- example `shipping-method`, story `ShippingMethod`: given `label: "Shipping method"`, `name: "shipping"`, `options: [{"value":"standard","label":"Standard","description":"Free, 3 to 5 business days"},{"value":"express","label":"Express","description":"Next business day"},{"value":"pickup","label":"Pick up in store","description":"Ready in 2 hours"}]`; Three options with a description each, the usual vertical form.
+- example `horizontal-pair`, story `HorizontalPair`: given `label: "Send a receipt"`, `name: "receipt"`, `orientation: "horizontal"`, `options: [{"value":"yes","label":"Yes"},{"value":"no","label":"No"}]`; Two short labels laid out horizontally.
+- example `required-with-a-group-error`, story `RequiredWithAGroupError`: given `label: "Plan"`, `name: "plan"`, `required: true`, `error: "Choose a plan to continue."`, `options: [{"value":"free","label":"Free"},{"value":"pro","label":"Pro"}]`; A required group the Form has marked invalid, with one error under the whole group.
+- example `with-a-disabled-option`, story `WithADisabledOption`: given `label: "Delivery window"`, `name: "window"`, `defaultValue: "morning"`, `options: [{"value":"morning","label":"Morning"},{"value":"evening","label":"Evening","disabled":true}]`; An option that is not available, skipped by arrow movement.
 
 ## Overrides (per-instance styling contract)
 
@@ -359,11 +553,64 @@ The `platforms.rn.props` list names the native props the schema cares about; `ov
 Overridable: `controlBorderWidth`, `controlBorderInvalid`, `controlSize`, `controlRadius`, `optionGap`, `listGap`, `partGap`, `legendSize`, `legendWeight`, `labelSize`, `labelWeight`, `helperSize`, `fontFamily`, `lineHeight`, `disabledOpacity`, `transition`
 Locked (accessibility-bearing, never overridable): `controlBackground`, `controlBorder`, `controlSelectedBackground`, `indicator`, `legendColor`, `labelColor`, `descriptionText`, `errorText`, `focusRing`, `focusRingWidth`, `minTarget`
 
-## Behavior scenarios (4)
+## Behavior scenarios (10)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: click-on-an-option-reports-its-value
+  description: Clicking an option selects it and fires onChange with that option's
+    value.
+  when:
+    click: radio
+  then:
+  - event: onChange
+    with: standard
+- name: click-on-an-option-label-selects-it
+  description: The whole option row is the hit area; each radio has its own label
+    element.
+  when:
+    click: radioLabel
+  then:
+  - event: onChange
+    with: standard
+- name: disabled-option-cannot-be-selected
+  description: A disabled option uses the native disabled attribute, so it is skipped
+    and cannot be chosen.
+  given:
+    options:
+    - value: standard
+      label: Standard
+      disabled: true
+    - value: express
+      label: Express
+  when:
+    click: radio
+  then:
+  - event: onChange
+    fired: false
+- name: disabled-group-is-inert
+  description: A fully disabled group stays visible and focusable but selects nothing.
+  given:
+    disabled: true
+  when:
+    click: radio
+  then:
+  - event: onChange
+    fired: false
+- name: required-is-shown-in-the-legend
+  description: required appends copy.requiredIndicator to the legend, not only a color.
+  given:
+    required: true
+  then:
+  - copy: requiredIndicator
+- name: invalid-renders-the-invalid-copy
+  description: Validation precedence is error, then required, then invalid; with only
+    invalid set the group renders copy.invalid and is marked invalid.
+  given:
+    invalid: true
+  then:
+  - copy: invalid
 - name: renders
   then:
   - renders: true

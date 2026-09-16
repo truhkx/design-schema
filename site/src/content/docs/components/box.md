@@ -78,6 +78,32 @@ component:
       element: VStack
       props: [.padding, .background, .overlay=border, .clipShape, .frame=maxWidth, .accessibilityElement=contain]
       notes: 'A layout container: `padding` from the inset token on all edges, `.background(RoundedRectangle)` in the surface color (nothing for `none`), a stroked overlay for `border`, `.clipShape` for radius. Children are laid out by the caller''s stack; Box itself is a single-child wrapper (`VStack(spacing: 0)`) and never spaces siblings. No accessibility semantics unless the doc says the role is a landmark (then see Landmark).'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum ones from the schema.
+    - name: nav-element-carries-navigation-semantics
+      description: 'When element is section, article, aside or nav, the native element carries that semantics on web; Box adds no role of its own otherwise.'
+      given: { element: nav }
+      then:
+        - { role: navigation, platforms: [web] }
+    - name: article-element-carries-article-semantics
+      description: The same rule for the other sectioning values - the element is the semantics, and Box adds nothing else.
+      given: { element: article }
+      then:
+        - { role: article, platforms: [web] }
+  examples:
+    - name: highlighted-panel
+      description: A panel lifted off the page with a tinted surface, rounded corners and the usual inset.
+      given: { children: 'A panel of settings', inset: md, surface: subtle, radius: md }
+    - name: bordered-row
+      description: A dense row bounded by a thin border rather than a fill.
+      given: { children: 'A row of data', inset: sm, border: true }
+    - name: hero-band
+      description: A full-width band with more vertical than horizontal padding, on the strongest surface.
+      given: { children: 'A hero band', insetBlock: xl, insetInline: lg, surface: strong }
+    - name: navigation-region
+      description: A padded region whose element makes it a navigation landmark on web.
+      given: { children: 'The sidebar links', element: nav, inset: md }
+      platforms: [web, lit]
 ---
 
 Box is the thing you reach for when a group of content needs a surface: padding around it, a background under it, a border, rounded corners. It has no opinions about what is inside and no spacing between its children — that is Stack's job — so the two compose without overlap: a Box for the inset, a Stack for the gaps.

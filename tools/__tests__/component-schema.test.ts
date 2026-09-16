@@ -4,10 +4,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
-import { A11Y_REQUIREMENTS, ARIA_ROLES, bindingTokens, componentDef, componentFrontmatter, componentWarnings, copyPlaceholders, copyText, expectList, formDef, KEYBOARD_EXPECTS, LANDMARK_ROLES, lockRule, MODAL_REQUIRES, narrowForPlatform, NON_QUERYABLE_ROLES, overlayDef, reflectEntry, resolveRole, roleIn, WIDGET_ROLES } from '../../schema/component.ts';
+import { A11Y_REQUIREMENTS, ARIA_ROLES, bindingTokens, componentDef, componentFrontmatter, componentWarnings, constantDef, copyPlaceholders, copyText, expectList, formDef, KEYBOARD_EXPECTS, LANDMARK_ROLES, lockRule, MODAL_REQUIRES, narrowForPlatform, NON_QUERYABLE_ROLES, overlayDef, reflectEntry, resolveRole, roleIn, WIDGET_ROLES } from '../../schema/component.ts';
 import type { ComponentDef } from '../../schema/component.ts';
 import { extensionDef } from '../../schema/extension.ts';
-import { NO_TOKEN_VALUES } from '../../schema/tokens.ts';
+import { isToken, NO_TOKEN_VALUES } from '../../schema/tokens.ts';
 import { VOCAB } from '../../schema/vocab.ts';
 import { pyRepr } from '../lib/py.ts';
 import { REPO_ROOT } from '../lib/root.ts';
@@ -28,11 +28,12 @@ const rejects = (c: Dict, path: PropertyKey[], message: string): void => {
   expect(issues(c)).toContainEqual({ path, message });
 };
 
-/** The fixture plus a Lit platform (so scenarios may narrow to web and lit) and the given scenarios. */
+/** The fixture plus a Lit platform (so scenarios may narrow to web and lit) and the given scenarios. The reflect list
+ *  resolves the `{variant}` and `{size}` slots the fixture's bindings interpolate, which the Lit element selects by. */
 function withBehavior(...scenarios: Dict[]): Dict {
   const c = component();
   c.behavior = scenarios;
-  c.platforms.lit = { tag: 'ds-widget' };
+  c.platforms.lit = { tag: 'ds-widget', reflect: ['variant', 'size'] };
   c.events.onPress.platforms.lit = 'press';
   return c;
 }
@@ -250,24 +251,131 @@ describe('the overlay block', () => {
   });
 });
 
-describe('componentWarnings for the form and overlay blocks', () => {
-  const OVERLAY_WARNING = { path: 'category', message: "is 'overlay' but there is no overlay block, so layer, anchor, collision and dismissal live only in prose" };
-  const FORM_WARNING = { path: 'props', message: "has 'name' and 'error' but there is no form block, so how the field joins a Form lives only in prose" };
+describe('the form and overlay blocks are required, not warned about', () => {
+  /** Both halves stopped being warnings when the phase 3 migration gave every field and every layer its block: each is
+   *  a `componentDef.check` error now, with the same message at the same path. */
+  const OVERLAY_MESSAGE = "is 'overlay' but there is no overlay block, so layer, anchor, collision and dismissal live only in prose";
+  const FORM_MESSAGE = "has 'name' and 'error' but there is no form block, so how the field joins a Form lives only in prose";
 
-  test('an overlay with no overlay block warns, and one with the block does not', () => {
-    expect(componentWarnings(componentDef.parse(popoverShaped()))).not.toContainEqual(OVERLAY_WARNING);
+  test('a category overlay with no overlay block is rejected, and one with the block parses', () => {
+    accepts(popoverShaped());
     const c = popoverShaped();
     delete c.overlay;
-    expect(componentWarnings(componentDef.parse(c))).toContainEqual(OVERLAY_WARNING);
+    rejects(c, ['category'], OVERLAY_MESSAGE);
+    c.category = 'container';
+    accepts(c);
   });
 
-  test('a component with name and error props and no form block warns, and one with the block does not', () => {
-    expect(componentWarnings(componentDef.parse(inputShaped()))).not.toContainEqual(FORM_WARNING);
+  test('a component with name and error props and no form block is rejected, and one with the block is not', () => {
+    accepts(inputShaped());
     const c = inputShaped();
     delete c.form;
-    expect(componentWarnings(componentDef.parse(c))).toContainEqual(FORM_WARNING);
+    rejects(c, ['props'], FORM_MESSAGE);
     delete c.props.error;
-    expect(componentWarnings(componentDef.parse(c))).not.toContainEqual(FORM_WARNING);
+    accepts(c);
+  });
+
+  test('neither rejection is a warning any more', () => {
+    const c = inputShaped();
+    delete c.props.error;
+    delete c.form;
+    expect(componentWarnings(componentDef.parse(c)).map((w) => w.message)).not.toContain(FORM_MESSAGE);
+    expect(componentWarnings(componentDef.parse(component())).map((w) => w.message)).not.toContain(OVERLAY_MESSAGE);
+  });
+});
+
+/** The phase 3 migration: the twelve fields and the one container that declare how they join a Form. `discovery` is
+ *  `context` everywhere, the contract Form.tsx, the RN and the SwiftUI FormContext implement (prompts/conventions/
+ *  claimed `data-ds-field` on web and Lit, and generated/gaps/Input.web.md found no component carrying it). */
+const MIGRATED_FORMS: Record<string, Dict> = {
+  Checkbox: { role: 'field', value: 'checked', valueType: 'boolean', name: 'name', validation: ['required', 'invalid'], messages: { required: 'required', invalid: 'invalid' }, discovery: 'context' },
+  Combobox: { role: 'field', value: 'value', valueType: 'string[]', name: 'name', validation: ['required', 'invalid'], messages: { required: 'required', invalid: 'invalid' }, discovery: 'context' },
+  DatePicker: { role: 'field', value: 'value', valueType: 'date-range', name: 'name', validation: ['required', 'invalid', 'range'], messages: { required: 'required', invalid: 'invalid' }, discovery: 'context' },
+  Form: { role: 'container', discovery: 'context' },
+  Input: { role: 'field', value: 'value', valueType: 'string', name: 'name', validation: ['required', 'invalid'], messages: { required: 'required', invalid: 'invalid' }, discovery: 'context' },
+  Listbox: { role: 'field', value: 'value', valueType: 'string[]', name: 'name', validation: ['required', 'invalid'], messages: { required: 'required', invalid: 'invalid' }, discovery: 'context' },
+  NumberInput: { role: 'field', value: 'value', valueType: 'number', name: 'name', validation: ['required', 'invalid', 'range'], messages: { required: 'required', invalid: 'invalid', range: 'outOfRange' }, discovery: 'context' },
+  RadioGroup: { role: 'field', value: 'value', valueType: 'string', name: 'name', validation: ['required', 'invalid'], messages: { required: 'required', invalid: 'invalid' }, discovery: 'context' },
+  Search: { role: 'field', value: 'value', valueType: 'string', name: 'name', discovery: 'context' },
+  SegmentedControl: { role: 'field', value: 'value', valueType: 'string', discovery: 'context' },
+  Select: { role: 'field', value: 'value', valueType: 'string[]', name: 'name', validation: ['required', 'invalid'], messages: { required: 'required', invalid: 'invalid' }, discovery: 'context' },
+  Slider: { role: 'field', value: 'value', valueType: 'number-range', name: 'name', validation: ['required', 'invalid'], messages: { required: 'required', invalid: 'invalid' }, discovery: 'context' },
+  Switch: { role: 'field', value: 'checked', valueType: 'boolean', name: 'name', discovery: 'context' },
+};
+
+describe('the form block in generated/components.json', () => {
+  const generated = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as ComponentDef);
+
+  test('no component raises the form issue', () => {
+    const raised = generated.flatMap((c) => {
+      const r = componentDef.safeParse(c);
+      return (r.success ? [] : r.error.issues).filter((i) => i.message.includes('no form block')).map((i) => `${c.name}.${i.path.join('.')}`);
+    });
+    expect(raised).toEqual([]);
+  });
+
+  test('the twelve fields and the one container declare the block, and nothing else does', () => {
+    const declared = Object.fromEntries(generated.filter((c) => c.form !== undefined).map((c) => [c.name, c.form as Dict]));
+    expect(declared).toEqual(MIGRATED_FORMS);
+    // Fieldset groups fields and has an `error` prop, but no `name` and no value of its own, so it is not a field.
+    expect(generated.find((c) => c.name === 'Fieldset')?.form).toBeUndefined();
+  });
+
+  test('every value the block names is a prop or a copy key of its own doc', () => {
+    for (const c of generated.filter((entry) => entry.form !== undefined)) {
+      const form = c.form as NonNullable<ComponentDef['form']>;
+      for (const key of [form.value, form.name]) if (key !== undefined) expect(Object.keys(c.props), c.name).toContain(key);
+      for (const copyKey of Object.values(form.messages ?? {})) expect(Object.keys(c.copy ?? {}), c.name).toContain(copyKey);
+      if ((form.validation ?? []).includes('required')) expect(Object.keys(c.props), c.name).toContain('required');
+    }
+  });
+});
+
+/** The phase 3 migration: the eight `category: overlay` docs and the blocks their own anatomy, props, events and
+ *  a11y.requires gave them. ActionSheet, BottomSheet and SidePanel are edge panels and Dialog and AlertDialog centered
+ *  modals, so none of them anchors; SidePanel and Popover take `modal: false` because their `modal` prop defaults to
+ *  false. Tooltip declares no events, so it has no closeEvent. */
+const MIGRATED_OVERLAYS: Record<string, Dict> = {
+  ActionSheet: { layer: 'sheet', open: 'open', closeEvent: 'onClose', dismiss: ['escape', 'scrim', 'close-button', 'swipe'], modal: true },
+  AlertDialog: { layer: 'modal', open: 'open', closeEvent: 'onCancel', dismiss: ['escape', 'close-button'], modal: true },
+  BottomSheet: { layer: 'sheet', open: 'open', closeEvent: 'onClose', dismiss: ['escape', 'scrim', 'close-button', 'swipe'], modal: true },
+  Dialog: { layer: 'modal', open: 'open', closeEvent: 'onClose', dismiss: ['escape', 'scrim', 'close-button'], modal: true },
+  Menu: { layer: 'popover', anchor: 'trigger', placement: 'placement', collision: 'flip', open: 'open', closeEvent: 'onOpenChange', dismiss: ['escape', 'outside-press', 'focus-out'], modal: false },
+  Popover: { layer: 'popover', anchor: 'trigger', placement: 'placement', collision: 'flip-shift', open: 'open', closeEvent: 'onOpenChange', dismiss: ['escape', 'outside-press', 'close-button', 'focus-out'], modal: false },
+  SidePanel: { layer: 'sheet', open: 'open', closeEvent: 'onOpenChange', dismiss: ['escape', 'scrim', 'close-button', 'swipe'], modal: false },
+  Tooltip: { layer: 'tooltip', anchor: 'trigger', placement: 'placement', collision: 'flip', open: 'open', dismiss: ['escape'], modal: false },
+};
+
+describe('the overlay block in generated/components.json', () => {
+  const generated = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as ComponentDef);
+
+  test('no component raises the overlay issue', () => {
+    const raised = generated.flatMap((c) => {
+      const r = componentDef.safeParse(c);
+      return (r.success ? [] : r.error.issues).filter((i) => i.message.includes('no overlay block')).map((i) => `${c.name}.${i.path.join('.')}`);
+    });
+    expect(raised).toEqual([]);
+  });
+
+  test('the eight layered docs declare the block, and nothing else does', () => {
+    const declared = Object.fromEntries(generated.filter((c) => c.overlay !== undefined).map((c) => [c.name, c.overlay as Dict]));
+    expect(declared).toEqual(MIGRATED_OVERLAYS);
+    expect(generated.filter((c) => c.category === 'overlay').map((c) => c.name).sort()).toEqual(Object.keys(MIGRATED_OVERLAYS).sort());
+    // Select, Combobox and DatePicker have popups, but they are category input: their blocks are a later job.
+    for (const name of ['Select', 'Combobox', 'DatePicker']) expect(generated.find((c) => c.name === name)?.overlay, name).toBeUndefined();
+  });
+
+  test('every doc parses with the block it was given, naming its own anatomy, props and events', () => {
+    for (const c of generated.filter((entry) => entry.overlay !== undefined)) {
+      accepts(c as unknown as Dict);
+      const overlay = c.overlay as NonNullable<ComponentDef['overlay']>;
+      if (overlay.anchor !== undefined) expect(c.anatomy, c.name).toContain(overlay.anchor);
+      if (overlay.placement !== undefined) expect(c.props[overlay.placement]?.type, c.name).toBe('enum');
+      if (overlay.open !== undefined) expect(c.props[overlay.open]?.type, c.name).toBe('boolean');
+      if (overlay.closeEvent !== undefined) expect(Object.keys(c.events ?? {}), c.name).toContain(overlay.closeEvent);
+      if ((overlay.dismiss ?? []).includes('escape')) expect(c.a11y.requires, c.name).toContain('escape-dismiss');
+      if (overlay.modal === true) for (const req of MODAL_REQUIRES) expect(c.a11y.requires, c.name).toContain(req);
+    }
   });
 });
 
@@ -328,50 +436,37 @@ describe('typed copy', () => {
     // plural.by is a use: the count picks the form even when no form prints it.
     accepts(withCopy({ items: { plural: { by: 'count', one: 'One item', other: 'Several items' }, params: COUNT_PARAM } }));
   });
-});
 
-describe('componentWarnings for copy', () => {
-  const copyWarnings = (c: Dict): { path: string; message: string }[] =>
-    componentWarnings(componentDef.parse(c)).filter((w) => w.path.startsWith('copy.') || w.message.endsWith('which is not a copy key'));
-
-  test("a string entry's placeholder that names no prop warns; a prop placeholder and the object form do not", () => {
-    const c = withCopy({ required: '{label} is required.', sortedBy: 'Sorted by {column}, then {column}', typed: SORTED_BY });
-    expect(copyWarnings(c)).toEqual([
-      { path: 'copy.sortedBy', message: "'{column}' names no prop, so nothing declares what it holds; use the object form and declare it in params" },
-    ]);
+  test("a string entry's placeholder that names no prop is rejected; a prop placeholder and the object form are not", () => {
+    rejects(withCopy({ sortedBy: 'Sorted by {column}, then {column}' }), ['copy', 'sortedBy'], "'{column}' names no prop, so nothing declares what it holds; use the object form and declare it in params");
+    accepts(withCopy({ required: '{label} is required.', typed: SORTED_BY }));
   });
 
-  test('a copy.<key> reference that names no copy key warns, on the field that makes it', () => {
+  test('a copy.<key> reference that names no copy key is rejected, on the field that makes it', () => {
     const c = withCopy({ required: '{label} is required.' });
-    c.platforms.web.notes = 'Render copy.required under the field and announce copy.loading while it saves.';
+    c.platforms.web.notes = 'Render copy.required under the field and announce copy.missingKey while it saves.';
     c.props.label.description = 'Visible text; copy.required reads it.';
-    expect(copyWarnings(c)).toEqual([{ path: 'platforms.web.notes', message: 'names copy.loading, which is not a copy key' }]);
+    expect(issues(c)).toEqual([{ path: ['platforms', 'web', 'notes'], message: 'names copy.missingKey, which is not a copy key' }]);
   });
 });
 
 describe('copy in generated/components.json', () => {
   const generated = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as ComponentDef);
+  /** Every issue componentDef raises about one component, as `Component: message`. */
+  const corpusIssues = (match: RegExp): string[] =>
+    generated.flatMap((c) => {
+      const r = componentDef.safeParse(c);
+      return r.success ? [] : r.error.issues.filter((i) => match.test(i.message)).map((i) => `${c.name}: ${i.message}`);
+    });
 
-  test('componentWarnings reports exactly the 16 copy.<key> references that name no key', () => {
-    const found = generated.flatMap((c) =>
-      componentWarnings(c).flatMap((w) => {
-        const m = /^names copy\.([a-zA-Z0-9]+), which is not a copy key$/.exec(w.message);
-        return m === null ? [] : [`${c.name}.${m[1] as string}`];
-      }),
-    );
-    expect(found).toEqual([
-      'Breadcrumb.navLabel', 'Breadcrumb.current', 'Button.loading', 'Checkbox.checked', 'Checkbox.unchecked', 'Checkbox.mixed',
-      'Combobox.activeOption', 'Disclosure.expanded', 'Disclosure.collapsed', 'Form.invalidSummary', 'Link.external', 'Listbox.invalid',
-      'RadioGroup.position', 'SidePanel.expanded', 'Table.cellLabel', 'Tabs.position',
-    ]);
+  test('no doc references a copy key that does not exist', () => {
+    expect(corpusIssues(/which is not a copy key$/)).toEqual([]);
   });
 
-  test('every string placeholder that names no prop warns: 65, across 42 component/placeholder pairs in 15 components', () => {
-    const found = generated.flatMap((c) => componentWarnings(c).filter((w) => w.path.startsWith('copy.')).map((w) => ({ component: c.name, ...w })));
-    expect(found).toHaveLength(65);
-    expect(new Set(found.map((w) => `${w.component}.${/'\{(\w+)\}'/.exec(w.message)?.[1]}`)).size).toBe(42);
-    expect(new Set(found.map((w) => w.component)).size).toBe(15);
-    expect(found).toContainEqual({ component: 'DataGrid', path: 'copy.sortedAnnouncement', message: "'{direction}' names no prop, so nothing declares what it holds; use the object form and declare it in params" });
+  test('no string entry uses a placeholder that names no prop: every one of them is the object form now', () => {
+    expect(corpusIssues(/names no prop, so nothing declares what it holds/)).toEqual([]);
+    const typed = generated.flatMap((c) => Object.entries(c.copy ?? {}).filter(([, entry]) => typeof entry !== 'string').map(([key]) => `${c.name}.${key}`));
+    expect(typed.length).toBeGreaterThan(0);
   });
 });
 
@@ -529,30 +624,46 @@ describe('shared vocabularies and integer props', () => {
   });
 });
 
-describe('componentWarnings for vocabulary subsets', () => {
-  const vocabWarnings = (size: Dict): { path: string; message: string }[] => {
+describe('an enum whose values are a subset of a vocabulary names it', () => {
+  const withSize = (size: Dict): Dict => {
     const c = component();
     c.props.size = { description: 'Padding scale.', ...size };
     c.styles.paddingInline.token = 'space.md'; // space.{size} would need a token for every value
-    return componentWarnings(componentDef.parse(c)).filter((w) => w.path.startsWith('props.'));
+    return c;
   };
 
-  test('values [sm, md] with no enumRef warn', () => {
-    expect(vocabWarnings({ type: 'enum', values: ['sm', 'md'] })).toEqual([{ path: 'props.size.values', message: 'values are a subset of VOCAB.size; set enumRef: size' }]);
+  test('values [sm, md] with no enumRef', () => {
+    rejects(withSize({ type: 'enum', values: ['sm', 'md'], default: 'md' }), ['props', 'size', 'values'], 'values are a subset of VOCAB.size; set enumRef: size');
   });
 
-  test('the same prop with enumRef: size does not warn', () => {
-    expect(vocabWarnings({ type: 'enum', enumRef: 'size', values: ['sm', 'md'] })).toEqual([]);
+  test('the same prop with enumRef: size passes', () => {
+    accepts(withSize({ type: 'enum', enumRef: 'size', values: ['sm', 'md'], default: 'md' }));
   });
 
-  test('values [sm, huge] belong to no vocabulary and do not warn', () => {
-    expect(vocabWarnings({ type: 'enum', values: ['sm', 'huge'] })).toEqual([]);
+  test('values [sm, huge] belong to no vocabulary and pass', () => {
+    accepts(withSize({ type: 'enum', values: ['sm', 'huge'], default: 'sm' }));
   });
 
-  test('generated/components.json has 19 enum props whose values are a subset of a vocabulary', () => {
-    const generated = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as ComponentDef);
-    const warned = generated.flatMap((c) => componentWarnings(c).filter((w) => w.message.startsWith('values are a subset of VOCAB.')));
-    expect(warned).toHaveLength(19);
+  const generated = (): ComponentDef[] => (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as ComponentDef);
+
+  test('no entry of generated/components.json raises it', () => {
+    expect(generated().flatMap((c) => issues(c as unknown as Dict).filter((i) => i.message.includes('values are a subset of VOCAB.')))).toEqual([]);
+  });
+
+  test('every migrated enum prop kept its values, and the whole-number props are integers', () => {
+    const props = new Map<string, ComponentDef['props'][string]>(generated().flatMap((c) => Object.entries(c.props).map(([n, p]) => [`${c.name}.${n}`, p] as const)));
+    expect(props.get('Button.size')).toMatchObject({ enumRef: 'size', values: ['sm', 'md', 'lg'] });
+    expect(props.get('Card.inset')).toMatchObject({ enumRef: 'size', values: ['sm', 'md', 'lg'] });
+    expect(props.get('Heading.size')).toMatchObject({ enumRef: 'size', values: ['4xl', '3xl', '2xl', 'xl', 'lg', 'md'] });
+    expect(props.get('AlertDialog.tone')).toMatchObject({ enumRef: 'tone', values: ['danger', 'warning', 'info'] });
+    expect(props.get('Text.tone')).toMatchObject({ enumRef: 'foregroundTone', values: [...VOCAB.foregroundTone] });
+    for (const name of ['Carousel.perView', 'Carousel.activeIndex', 'DataGrid.rowCount', 'Feed.newItemsCount', 'NumberInput.precision']) {
+      expect(props.get(name)?.type, name).toBe('integer');
+    }
+    // A measurement is not a count: these keep `number`, so a caller may pass a fraction.
+    for (const name of ['Carousel.interval', 'Meter.value', 'Slider.step', 'Splitter.defaultSize']) {
+      expect(props.get(name)?.type, name).toBe('number');
+    }
   });
 });
 
@@ -902,7 +1013,7 @@ describe('accessibility invariants', () => {
 /** The fixture with a Lit platform, an `open` prop and the given keyboard rules. */
 function withKeyboard(...rules: Dict[]): Dict {
   const c = component();
-  c.platforms.lit = { tag: 'ds-widget' };
+  c.platforms.lit = { tag: 'ds-widget', reflect: ['variant', 'size'] };
   c.events.onPress.platforms.lit = 'press';
   c.props.open = { type: 'boolean', description: 'Shows the label.' };
   c.a11y.requires.push('keyboard-operable');
@@ -962,34 +1073,32 @@ describe('contrast pair kinds', () => {
   });
 });
 
-describe('componentWarnings for large non-text pairs', () => {
-  const contrastWarnings = (pair: Dict): { path: string; message: string }[] => {
+describe('large: true on a non-text pair is an error', () => {
+  /** The fixture plus a second contrast pair, so the rule's index is always 1. */
+  const withSecondPair = (pair: Dict): Dict => {
     const c = component();
     c.a11y.contrast.push({ background: 'color.background', ...pair });
-    return componentWarnings(componentDef.parse(c)).filter((w) => w.path.startsWith('a11y.contrast.'));
+    return c;
   };
 
-  test('large: true on color.border.strong warns', () => {
-    expect(contrastWarnings({ foreground: 'color.border.strong', large: true })).toEqual([
-      { path: 'a11y.contrast.1.large', message: 'large: true on a non-text pair (color.border.strong); WCAG 1.4.11 pairs set nonText: true' },
-    ]);
+  test('large: true on color.border.strong is rejected', () => {
+    rejects(withSecondPair({ foreground: 'color.border.strong', large: true }), ['a11y', 'contrast', 1, 'large'], 'large: true on a non-text pair (color.border.strong); WCAG 1.4.11 pairs set nonText: true');
   });
 
-  test('the same pair with nonText: true and no large does not warn', () => {
-    expect(contrastWarnings({ foreground: 'color.border.strong', nonText: true })).toEqual([]);
+  test('the same pair with nonText: true and no large is accepted', () => {
+    accepts(withSecondPair({ foreground: 'color.border.strong', nonText: true }));
   });
 
-  test('a large: true text pair does not warn', () => {
-    expect(contrastWarnings({ foreground: 'color.foreground', large: true })).toEqual([]);
+  test('a large: true text pair is accepted: large stays legal for real large text', () => {
+    accepts(withSecondPair({ foreground: 'color.foreground', large: true }));
   });
 
-  test('generated/components.json has 45 large non-text pairs; the BottomSheet handle matches no non-text family', () => {
+  test('generated/components.json raises the issue nowhere; BottomSheet keeps the only large pair', () => {
     const generated = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as ComponentDef);
-    const warned = generated.flatMap((c) => componentWarnings(c).filter((w) => w.message.startsWith('large: true on a non-text pair')));
-    expect(warned).toHaveLength(45);
+    const raised = generated.flatMap((c) => issues(c as unknown as Dict).filter((i) => i.message.startsWith('large: true on a non-text pair')));
+    expect(raised).toEqual([]);
     const large = generated.flatMap((c) => (c.a11y.contrast ?? []).filter((pair) => pair.large).map((pair) => `${c.name} ${pair.foreground}`));
-    expect(large).toHaveLength(46);
-    expect(large).toContain('BottomSheet color.foreground.muted');
+    expect(large).toEqual(['BottomSheet color.foreground.muted']);
   });
 });
 
@@ -1062,19 +1171,38 @@ describe('keyboard rule fields for the gate', () => {
   });
 
   test('repeat above 1 needs focus-next or focus-prev', () => {
-    accepts(withKeyboard({ ...CLOSE, repeat: 1 }));
-    rejects(withKeyboard({ ...CLOSE, repeat: 2 }), ['keyboard', 0, 'repeat'], "keyboard rule 0 repeat 2 needs focus-next or focus-prev in expect, got ['closes']");
+    accepts(withKeyboard({ ...CLOSE, repeat: 1, target: 'label' }));
+    rejects(withKeyboard({ ...CLOSE, repeat: 2, target: 'label' }), ['keyboard', 0, 'repeat'], "keyboard rule 0 repeat 2 needs focus-next or focus-prev in expect, got ['closes']");
   });
 
-  test('componentWarnings flags a closes rule with no target on a combobox, and not one with a target', () => {
+  // Job 614 landed this as a `componentWarnings` rule so `pnpm check` stayed green on the Combobox and Select rules
+  // that tripped it; the phase 3 migration gave those four rules a target, so it is an error here, with job 614's
+  // message and issue path word for word.
+  test('a closes rule with no target on a combobox is rejected, and one with a target is not', () => {
     const c = withKeyboard({ ...CLOSE, keys: ['Tab'] }, { ...CLOSE, keys: ['Enter'], expect: ['focus-trigger', 'closes'], target: 'label' }, TAB);
     c.a11y.role = 'combobox';
-    const parsed = componentDef.parse(c);
-    expect(componentWarnings(parsed).filter((w) => w.path.startsWith('keyboard.'))).toEqual([
-      { path: 'keyboard.0.expect', message: "'closes' has no target, so the keyboard gate asserts on the combobox root, which stays visible; name the part that closes in target" },
-    ]);
+    rejects(c, ['keyboard', 0, 'expect'], "'closes' has no target, so the keyboard gate asserts on the combobox root, which stays visible; name the part that closes in target");
+    expect(issues(c).filter((i) => i.path[0] === 'keyboard')).toHaveLength(1);
+  });
+
+  test('an opens rule with no target on a combobox is rejected, naming opens', () => {
+    const c = withKeyboard({ ...CLOSE, expect: 'opens' });
+    c.a11y.role = 'combobox';
+    rejects(c, ['keyboard', 0, 'expect'], "'opens' has no target, so the keyboard gate asserts on the combobox root, which stays visible; name the part that opens in target");
+  });
+
+  test('the same rule on a dialog-role component is accepted: the root is what closes', () => {
+    const c = withKeyboard({ ...CLOSE, keys: ['Tab'] }, TAB);
     c.a11y.role = 'dialog';
-    expect(componentWarnings(componentDef.parse(c)).filter((w) => w.path.startsWith('keyboard.'))).toEqual([]);
+    expect(roleIn(WIDGET_ROLES, 'dialog')).toBe(false);
+    accepts(c);
+  });
+
+  test('componentWarnings no longer reports a keyboard rule, on any component in generated/components.json', () => {
+    const corpus = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as ComponentDef);
+    expect(corpus).not.toHaveLength(0);
+    const raised = corpus.flatMap((c) => componentWarnings(c).filter((w) => w.path.startsWith('keyboard.')).map((w) => `${c.name}: ${w.path}: ${w.message}`));
+    expect(raised).toEqual([]);
   });
 });
 
@@ -1093,10 +1221,6 @@ function narrowing(): Dict {
   return c;
 }
 
-/** The warnings the reflect and slot rules report. */
-const reflectWarningsOf = (c: Dict): { path: string; message: string }[] =>
-  componentWarnings(componentDef.parse(c)).filter((w) => w.path.startsWith('platforms.') || w.path.startsWith('styles.'));
-
 describe('per-platform narrowing and typed reflect', () => {
   test('requiresOn, valuesOn, a narrowed copy entry, a narrowed binding and an object reflect entry are accepted', () => {
     const c = narrowing();
@@ -1107,7 +1231,6 @@ describe('per-platform narrowing and typed reflect', () => {
     expect(parsed.copy?.dismiss).toEqual({ text: 'Dismiss', platforms: ['web', 'lit'] });
     expect(parsed.styles.minTarget?.platforms).toEqual(['rn']);
     expect(parsed.platforms.lit?.reflect).toEqual(['variant', 'size', { prop: 'dismissible', attribute: 'no-dismiss' }]);
-    expect(reflectWarningsOf(c)).toEqual([]);
     expect(A11Y_REQUIREMENTS).toContain('target-44px');
   });
 
@@ -1216,68 +1339,82 @@ describe('per-platform narrowing and typed reflect', () => {
   });
 });
 
-describe('componentWarnings for reflect lists', () => {
-  test('a string entry for a boolean that defaults to true warns un-negated', () => {
+describe('componentDef.check for reflect lists', () => {
+  test('a string entry for a boolean that defaults to true is rejected un-negated', () => {
     const c = narrowing();
     c.platforms.lit.reflect[2] = 'dismissible';
-    expect(reflectWarningsOf(c)).toEqual([
-      { path: 'platforms.lit.reflect.2', message: "reflects 'dismissible' un-negated, but 'dismissible' defaults to true (prompts/conventions/lit.md: reflect the negated attribute)" },
+    expect(issues(c)).toEqual([
+      { path: ['platforms', 'lit', 'reflect', 2], message: "reflects 'dismissible' un-negated, but 'dismissible' defaults to true (prompts/conventions/lit.md: reflect the negated attribute)" },
     ]);
   });
 
-  test('a string entry that resolves to no prop warns', () => {
+  test('a string entry that resolves to no prop is rejected', () => {
     const c = narrowing();
     c.platforms.lit.reflect[2] = 'no-dismiss';
-    expect(reflectWarningsOf(c)).toEqual([
-      { path: 'platforms.lit.reflect.2', message: "reflects 'no-dismiss', which resolves to no prop; write { prop, attribute } to name the prop it reflects" },
+    expect(issues(c)).toEqual([
+      { path: ['platforms', 'lit', 'reflect', 2], message: "reflects 'no-dismiss', which resolves to no prop; write { prop, attribute } to name the prop it reflects" },
     ]);
   });
 
-  test("a token slot the Lit reflect list does not resolve warns, unless the binding is narrowed away from Lit or Lit is unsupported", () => {
+  test('a token slot the Lit reflect list does not resolve is rejected, unless the binding is narrowed away from Lit or Lit is unsupported', () => {
     const c = narrowing();
     c.platforms.lit.reflect = ['variant', { prop: 'dismissible', attribute: 'no-dismiss' }];
-    const SIZE = { path: 'styles.paddingInline.token', message: "interpolates '{size}', but platforms.lit.reflect does not resolve 'size', so the Lit element has no attribute to select the token by" };
-    expect(reflectWarningsOf(c)).toEqual([SIZE]);
+    const SIZE = { path: ['styles', 'paddingInline', 'token'], message: "interpolates '{size}', but platforms.lit.reflect does not resolve 'size', so the Lit element has no attribute to select the token by" };
+    expect(issues(c)).toEqual([SIZE]);
     c.styles.paddingInline.platforms = ['web', 'rn'];
-    expect(reflectWarningsOf(c)).toEqual([]);
+    expect(issues(c)).toEqual([]);
     const unsupported = narrowing();
     unsupported.platforms.lit = { supported: false };
-    expect(reflectWarningsOf(unsupported)).toEqual([]);
+    expect(issues(unsupported)).toEqual([]);
   });
 });
 
 describe('narrowing and reflect in generated/components.json', () => {
   const generated = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as ComponentDef);
-  const warned = (pattern: RegExp): string[] =>
-    generated.flatMap((c) =>
-      componentWarnings(c).flatMap((w) => {
-        const m = pattern.exec(w.message);
+  /** Every `componentDef.check` issue the corpus raises whose message matches, as `Component.<capture>`. */
+  const rejected = (pattern: RegExp): string[] =>
+    generated.flatMap((c) => {
+      const r = componentDef.safeParse(c);
+      return (r.success ? [] : r.error.issues).flatMap((i) => {
+        const m = pattern.exec(i.message);
         return m === null ? [] : [`${c.name}.${m[1] as string}`];
-      }),
-    );
+      });
+    });
 
-  test('narrowForPlatform changes nothing today, on any component or declared platform, so no prompt changes', () => {
+  /** What this job narrowed, and the only places narrowForPlatform may differ from the doc: dialog.md drops
+   *  `scroll-lock` on rn ("Scroll lock has no native meaning and is not implemented"), and datagrid.md drops
+   *  `copy.copied` on rn ("Ctrl+C has no native equivalent … copy.copied is unused there"). */
+  const NARROWED: Record<string, string> = { DataGrid: 'rn', Dialog: 'rn' };
+
+  test('narrowForPlatform differs from the doc only on Dialog and DataGrid on rn, and nowhere else', () => {
+    const differs: string[] = [];
     for (const c of generated) {
-      for (const platform of Object.keys(c.platforms)) expect(narrowForPlatform(c, platform)).toEqual(c);
+      for (const platform of Object.keys(c.platforms)) {
+        const narrowed = narrowForPlatform(c, platform);
+        if (JSON.stringify(narrowed) === JSON.stringify(c)) expect(narrowed).toEqual(c);
+        else differs.push(`${c.name}.${platform}`);
+      }
     }
+    expect(differs).toEqual(Object.entries(NARROWED).map(([name, plat]) => `${name}.${plat}`));
+    const dialog = generated.find((c) => c.name === 'Dialog') as ComponentDef;
+    expect(dialog.a11y.requires).toContain('scroll-lock');
+    expect(narrowForPlatform(dialog, 'rn').a11y.requires).not.toContain('scroll-lock');
+    for (const platform of ['web', 'lit', 'swiftui']) expect(narrowForPlatform(dialog, platform).a11y.requires).toContain('scroll-lock');
+    const grid = generated.find((c) => c.name === 'DataGrid') as ComponentDef;
+    expect(Object.keys(narrowForPlatform(grid, 'rn').copy ?? {})).not.toContain('copied');
+    for (const platform of ['web', 'lit', 'swiftui']) expect(Object.keys(narrowForPlatform(grid, platform).copy ?? {})).toContain('copied');
   });
 
-  test('the un-negated reflect warning names exactly 11 props: the nine the plan found, plus BottomSheet dragToDismiss and Table stickyHeader', () => {
-    expect(warned(/^reflects '[a-z-]+' un-negated, but '(\w+)' defaults to true/)).toEqual([
-      'Accordion.divided', 'BottomSheet.dragToDismiss', 'Breadcrumb.collapse', 'Carousel.snap', 'FocusScope.trapped', 'FocusScope.active',
-      'Search.landmark', 'SidePanel.dismissible', 'SidePanel.swipeable', 'Table.stickyHeader', 'Tooltip.describes',
-    ]);
+  test('no component reflects a default-true boolean un-negated', () => {
+    expect(rejected(/^reflects '[a-z-]+' un-negated, but '(\w+)' defaults to true/)).toEqual([]);
   });
 
-  test('ten string reflect entries resolve to no prop', () => {
-    expect(warned(/^reflects '([a-z-]+)', which resolves to no prop/)).toEqual([
-      'BottomSheet.no-dismiss', 'DataGrid.no-status-bar', 'DataGrid.no-sticky-header', 'DatePicker.invalid', 'Dialog.no-dismiss',
-      'NumberInput.show-steppers', 'Popover.no-dismiss', 'Tree.hide-guides', 'TreeGrid.no-status-bar', 'TreeGrid.no-sticky-header',
-    ]);
+  test('no string reflect entry resolves to no prop', () => {
+    expect(rejected(/^reflects '([a-z-]+)', which resolves to no prop/)).toEqual([]);
   });
 
-  test('three token slots have no reflected attribute on Lit', () => {
-    expect(warned(/^interpolates '\{(\w+)\}', but platforms\.lit\.reflect/)).toEqual(['Input.size', 'NumberInput.size', 'Select.size']);
+  test('no token slot is without a reflected attribute on Lit', () => {
+    expect(rejected(/^interpolates '\{(\w+)\}', but platforms\.lit\.reflect/)).toEqual([]);
   });
 
   test('narrowing a binding to any one platform leaves its lockRule result unchanged', () => {
@@ -1517,5 +1654,43 @@ describe('constants', () => {
     expect(issues(withConstants({ 'open-delay': OPEN_DELAY })).map((i) => i.path)).toEqual([['constants', 'open-delay']]);
     expect(issues(withConstants({ openDelay: { ...OPEN_DELAY, multiply: 0 } })).map((i) => i.path)).toEqual([['constants', 'openDelay', 'multiply']]);
     expect(issues(withConstants({ openDelay: { ...OPEN_DELAY, unit: 's' } })).map((i) => i.path)).toEqual([['constants', 'openDelay', 'unit']]);
+  });
+
+  // The phase 3 migration (job 640) moved the literal timings and thresholds out of prose into these blocks.
+  describe('in generated/components.json', () => {
+    const generated = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as ComponentDef);
+    const declared = generated.filter((c) => c.constants !== undefined);
+    const entries = declared.flatMap((c) => Object.entries(c.constants ?? {}).map(([n, k]) => [`${c.name}.${n}`, k] as const));
+
+    test('every entry parses, collides with no styles key, and a token constant names a real token', () => {
+      expect(generated.flatMap((c) => issues(c as unknown as Dict).filter((i) => i.path[0] === 'constants'))).toEqual([]);
+      for (const [name, k] of entries) {
+        expect(constantDef.safeParse(k).success, name).toBe(true);
+        const [component, constant] = name.split('.') as [string, string];
+        expect(Object.keys(generated.find((c) => c.name === component)?.styles ?? {}), name).not.toContain(constant);
+        if (k.token !== undefined) expect(isToken(k.token), `${name} ${k.token}`).toBe(true);
+      }
+    });
+
+    test('the docs that carry a number their logic reads, and the numbers themselves', () => {
+      expect(declared.map((c) => c.name)).toEqual(['ActionSheet', 'BottomSheet', 'Carousel', 'Combobox', 'Toast', 'Tooltip', 'Tree']);
+      expect(entries).toHaveLength(10);
+      expect(Object.fromEntries(entries.map(([name, k]) => [name, k.token === undefined ? k.value : `${k.token} × ${k.multiply ?? 1}`]))).toEqual({
+        // The same 25% / 1.5 px/ms drag rule, stated in both docs' own prose.
+        'ActionSheet.dismissDistance': 0.25,
+        'ActionSheet.dismissVelocity': 1.5,
+        'BottomSheet.dismissDistance': 0.25,
+        'BottomSheet.dismissVelocity': 1.5,
+        'Carousel.minInterval': 5000,
+        'Combobox.statusDebounce': 'motion.duration.base × 2',
+        'Toast.shortDuration': 'motion.duration.loop × 6',
+        'Toast.longDuration': 'motion.duration.loop × 12',
+        'Tooltip.hoverDelay': 'motion.duration.base × 3',
+        'Tree.typeaheadReset': 500,
+      });
+      // Menu's typeahead reset is a style binding on a real token, so Menu declares no constant.
+      expect(generated.find((c) => c.name === 'Menu')?.constants).toBeUndefined();
+      expect(generated.find((c) => c.name === 'Menu')?.styles.typeaheadReset?.token).toBe('motion.duration.loop');
+    });
   });
 });

@@ -33,6 +33,9 @@ component:
       type: union
       description: Controlled selected value(s). With `multiple`, an array. With `allowCustom`, a value not in `options` is a custom entry.
       shape: 'string | string[]'
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: union
       description: Initial value(s).
@@ -40,6 +43,9 @@ component:
     open:
       type: boolean
       description: 'Controlled popup state, for programmatic use and for stories and tests. Omit for the typing-driven default.'
+      controls:
+        event: onOpenChange
+        state: open
     inputValue:
       type: string
       description: 'Controlled text of the input (what the user has typed). Usually uncontrolled; controlled by consumers driving `async` filtering.'
@@ -89,60 +95,75 @@ component:
     onChange:
       description: Fired when the selected value(s) change (array with `multiple`; custom entries included when `allowCustom`).
       platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
+      payload:
+        - { name: value, type: union, shape: 'string | string[]', description: 'The selected value, or every selected value with multiple.' }
+      fires: [user]
     onInputChange:
       description: Fired on every keystroke with the input text. The hook for `async` filtering.
       platforms: { web: onInputChange, lit: input-change, rn: onInputChange, swiftui: onInputChange }
+      payload:
+        - { name: value, type: string, description: The text now in the input. }
+      fires: [user]
     onOpenChange:
       description: Fired when the list opens or closes.
       platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
+      payload:
+        - { name: open, type: boolean, description: The new state of the list. }
+      fires: [user]
   keyboard:
     - { keys: [ArrowDown], action: Opens the list (if closed) and moves the active option down; focus stays in the input., from: first, expect: manual }
     - { keys: [ArrowUp], action: Opens the list and moves the active option up., from: first, expect: manual }
     - { keys: [Enter], action: 'Commits the active option (single: closes; multiple: toggles and stays open); with allowCustom and no active option, commits the typed text.', when: list open, from: first, expect: manual }
-    - { keys: [Escape], action: 'Closes the list if open; if closed and clearable, clears the input text.', when: list open, from: first, expect: closes }
-    - { keys: [Tab], action: Closes the list and moves focus on. Under single-select a highlighted option is NOT committed by Tab (typing intent is ambiguous)., when: list open, from: first, expect: closes }
+    - { keys: [Escape], action: 'Closes the list if open; if closed and clearable, clears the input text.', when: list open, from: first, expect: closes, target: popup }
+    - { keys: [Tab], action: Closes the list and moves focus on. Under single-select a highlighted option is NOT committed by Tab (typing intent is ambiguous)., when: list open, from: first, expect: closes, target: popup }
     - { keys: [Backspace], action: 'In an empty input with chips, removes the last chip.', when: multiple, from: first, expect: manual }
-    - { keys: [Home, End], action: 'Move the text caret (input semantics), never the list.', from: first, expect: manual }
+    - { keys: [Home, End], action: 'Move the text caret (input semantics), never the list.', from: first, expect: manual, native: true }
     - { keys: [','], action: 'With allowCustom, commits the typed text as a custom value (as Enter does) and clears the input.', when: allowCustom, from: first, expect: manual }
     - { keys: [Alt+ArrowDown], action: Opens the list without moving the active option., from: first, expect: manual }
   styles:
-    fieldBackground: { token: color.background }
-    fieldBorder: { token: color.border.strong }
-    fieldBorderFocus: { token: color.border.focus }
-    fieldBorderInvalid: { token: color.border.danger }
-    fieldBorderWidth: { token: border.width.thin }
-    fieldRadius: { token: radius.md }
-    fieldPaddingInline: { token: space.md }
-    fieldPaddingBlock: { token: space.sm }
-    fieldGap: { token: layout.gap.tight, description: 'Between chips, input text and the buttons.' }
-    inputColor: { token: color.foreground }
+    fieldBackground: { token: color.background, part: field }
+    fieldBorder: { token: color.border.strong, part: field }
+    fieldBorderFocus: { token: color.border.focus, part: field }
+    fieldBorderInvalid: { token: color.border.danger, part: field }
+    fieldBorderWidth: { token: border.width.thin, part: field }
+    fieldRadius: { token: radius.md, part: field }
+    fieldPaddingInline: { token: space.md, part: field }
+    fieldPaddingBlock: { token: space.sm, part: field }
+    fieldGap: { token: layout.gap.tight, part: field, description: 'Between chips, input text and the buttons.' }
+    inputColor: { token: color.foreground, part: input }
     placeholderColor: { token: color.foreground.muted }
-    chipBackground: { token: color.background.strong }
-    chipColor: { token: color.foreground }
-    chipRadius: { token: radius.full }
-    chipPaddingInline: { token: space.2 }
-    chipPaddingBlock: { token: space.0 }
-    chipGap: { token: layout.gap.tight, description: Between chip label and its remove button. }
+    chipBackground: { token: color.background.strong, part: chip }
+    chipColor: { token: color.foreground, part: chip }
+    chipRadius: { token: radius.full, part: chip }
+    chipPaddingInline: { token: space.2, part: chip }
+    chipPaddingBlock: { token: space.0, part: chip }
+    chipGap: { token: layout.gap.tight, part: chip, description: Between chip label and its remove button. }
     iconColor: { token: color.foreground.muted, description: Toggle chevron and clear icon. }
     partGap: { token: space.1 }
-    labelWeight: { token: font.weight.medium }
+    labelWeight: { token: font.weight.medium, part: label }
     helperSize: { token: font.size.sm }
-    descriptionText: { token: color.foreground.muted }
+    descriptionText: { token: color.foreground.muted, part: description }
     errorText: { token: color.foreground.danger }
-    popupSurface: { token: color.overlay.surface }
-    popupBorder: { token: color.border }
-    popupShadow: { token: shadow.overlay }
-    popupRadius: { token: radius.md }
-    popupOffset: { token: space.1 }
+    popupSurface: { token: color.overlay.surface, part: popup }
+    popupBorder: { token: color.border, part: popup }
+    popupShadow: { token: shadow.overlay, part: popup }
+    popupRadius: { token: radius.md, part: popup }
+    popupOffset: { token: space.1, part: popup }
     layer: { token: layer.dropdown }
     fontFamily: { token: font.family.body }
     fontSize: { token: font.size.md }
-    chipSize: { token: font.size.sm }
+    chipSize: { token: font.size.sm, part: chip }
     lineHeight: { token: font.lineHeight.normal }
     minTarget: { token: size.target.comfortable }
     focusRingWidth: { token: border.width.focus }
     disabledOpacity: { token: opacity.disabled }
     enter: { token: motion.duration.fast }
+  constants:
+    statusDebounce:
+      description: 'How long result-count, loading and empty announcements wait before the status live region updates.'
+      token: motion.duration.base
+      multiply: 2
+      unit: ms
   copy:
     empty: No matches
     loading: Loading…
@@ -150,7 +171,17 @@ component:
     clearLabel: Clear
     toggleLabel: Show options
     removeChip: 'Remove {label}'
-    resultCount: '{count} results available'
+    resultCount:
+      plural:
+        by: count
+        one: '{count} result available'
+        other: '{count} results available'
+      params:
+        count: { type: number, description: The number of results in the list. }
+    activeOption:
+      text: '{option}'
+      params:
+        option: { type: string, description: The active option's label. }
     required: '{label} is required.'
     invalid: '{label} is not valid.'
     requiredIndicator: ' (required)'
@@ -162,7 +193,15 @@ component:
       - { foreground: color.foreground.muted, background: color.background, level: AA }
       - { foreground: color.foreground, background: color.background.strong, level: AA }
       - { foreground: color.foreground.danger, background: color.background, level: AA }
-      - { foreground: color.border.strong, background: color.background, level: AA, large: true }
+      - { foreground: color.border.strong, background: color.background, level: AA, nonText: true }
+  form:
+    role: field
+    value: value
+    valueType: string[]
+    name: name
+    validation: [required, invalid]
+    messages: { required: required, invalid: invalid }
+    discovery: context
   platforms:
     web:
       element: input
@@ -180,6 +219,76 @@ component:
       element: TextField
       props: [TextField, Listbox, .popover, .accessibilityValue, .onKeyPress, .onMoveCommand, '@FocusState', .autocorrectionDisabled, AccessibilityNotification]
       notes: 'An Input-shaped `TextField` (`.autocorrectionDisabled`, `.textInputAutocapitalization(.never)`) with the `Listbox embedded` rendered inline below the field on phones (the keyboard is up; a popover would fight it) and as a `.popover` on regular width. The active option is tracked by index (not focus — focus stays in the field) and announced through `AccessibilityNotification.Announcement` with `copy.activeOption`; the count is announced when the list opens. Arrows/Home/End/Enter/Escape per the keyboard table via `.onKeyPress` on the field. `allowCustom`, `multiple` (chips as `Button`s with `close` Icons) as documented.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/focusable/error-identified ones from
+    # the schema. Scenarios that act on the list state the `open` prop themselves.
+    - name: typing-reports-the-input-text
+      description: onInputChange fires on every keystroke - the hook async filtering hangs off.
+      given: { open: false }
+      when: { type: ap }
+      then:
+        - { event: onInputChange }
+    - name: the-toggle-button-opens-the-list
+      given: { open: false }
+      when: { click: toggleButton }
+      then:
+        - { event: onOpenChange }
+    - name: a-closed-combobox-is-not-expanded
+      given: { open: false }
+      then:
+        - { state: expanded, is: false }
+    - name: an-open-list-reports-the-expanded-state
+      given: { open: true }
+      then:
+        - { state: expanded, is: true }
+    - name: enter-commits-the-active-option
+      description: 'Enter commits the active option (single: closes; multiple: toggles and stays open).'
+      given: { open: true }
+      when: { key: Enter }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: escape-closes-the-list
+      description: Escape closes the list if open; closed and clearable, it clears the input text instead.
+      given: { open: true }
+      when: { key: Escape }
+      then:
+        - { event: onOpenChange }
+      platforms: [web, lit]
+    - name: the-clear-button-clears-the-value
+      given: { open: false, defaultValue: apple, clearable: true }
+      when: { click: clearButton }
+      then:
+        - { event: onChange }
+    - name: multiple-shows-the-selection-as-chips
+      description: 'Pick many: selected options appear as chips before the input, each removable.'
+      given: { open: false, multiple: true, defaultValue: [apple] }
+      then:
+        - { text: Apple }
+    - name: removing-a-chip-reports-the-new-value
+      given: { open: false, multiple: true, defaultValue: [apple] }
+      when: { click: chipRemove }
+      then:
+        - { event: onChange }
+    - name: a-disabled-combobox-does-not-open
+      given: { open: false, disabled: true }
+      when: { click: toggleButton }
+      then:
+        - { event: onOpenChange, fired: false }
+        - { state: disabled, is: true, platforms: [web, lit] }
+  examples:
+    - name: fruit-picker
+      description: The everyday single-select combobox, filtering by substring as you type.
+      given: { label: Fruit, name: fruit, options: [{ value: apple, label: Apple }, { value: apricot, label: Apricot }, { value: banana, label: Banana }] }
+    - name: multi-select-with-chips
+      description: Picking several, each shown as a removable chip before the input.
+      given: { label: Roles, name: roles, multiple: true, defaultValue: [frontend], options: [{ value: frontend, label: Frontend }, { value: backend, label: Backend }, { value: design, label: Design }] }
+    - name: free-text-tags
+      description: Tags, where text matching no option can be committed with Enter or a comma.
+      given: { label: Tags, name: tags, multiple: true, allowCustom: true, options: [{ value: urgent, label: Urgent }, { value: billing, label: Billing }] }
+    - name: async-results
+      description: A field whose results come from the server, showing the loading row while they are fetched.
+      given: { label: Customer, name: customer, filter: async, loading: true, options: [{ value: acme, label: Acme Ltd }] }
 ---
 
 A combobox is an input that helps you finish. You type, it narrows the list, you pick — or, when the thing you want does not exist yet, you keep what you typed. It is the right field whenever a Select's list would be too long to scan, and it is the multi-select of choice when picks should be visible as chips.

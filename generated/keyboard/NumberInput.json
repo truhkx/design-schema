@@ -35,7 +35,8 @@
       ],
       "action": "Sets min / max when they are defined; otherwise the input's native caret movement.",
       "from": "first",
-      "expect": "manual"
+      "expect": "manual",
+      "native": true
     },
     {
       "keys": [

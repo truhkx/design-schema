@@ -6,6 +6,10 @@ import type { SidePanelProps } from '../../packages/rn/src/SidePanel';
 import meta from '../../packages/rn/src/SidePanel.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<SidePanelProps> = {}) {
   const events = {
     onOpenChange: jest.fn(),
@@ -23,12 +27,33 @@ function setup(given: Partial<SidePanelProps> = {}) {
     props,
     root: () => screen.queryByTestId('SidePanel') ?? screen.UNSAFE_root,
     trigger: () => s.root(),
+    scrim: () => screen.queryByTestId('SidePanel.scrim') ?? s.root(),
+    closeButton: () => screen.queryByTestId('SidePanel.closeButton') ?? s.root(),
     rerender: (next: Partial<SidePanelProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('SidePanel', () => {
+  test('close-button-fires-on-open-change', () => {
+    const s = setup({"open": true});
+    fireEvent.press(s.closeButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-close-button-works-without-the-swipe', () => {
+    const s = setup({"open": true, "swipeable": false});
+    fireEvent.press(s.closeButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('non-dismissible-scrim-tap-does-nothing', () => {
+    const s = setup({"open": true, "dismissible": false});
+    fireEvent.press(s.scrim());
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+  });
+  test('the-heading-is-rendered', () => {
+    const s = setup({"open": true, "heading": "Your cart"});
+    expect(screen.getByText(new RegExp("Your\\ cart"))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

@@ -24,6 +24,9 @@ component:
     value:
       type: number
       description: Controlled numeric value. `null`/undefined means empty.
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: number
       description: Initial value.
@@ -38,7 +41,7 @@ component:
       default: 1
       description: Increment for the buttons and arrow keys. Also the rounding granularity when `precision` is omitted.
     precision:
-      type: number
+      type: integer
       description: Decimal places to keep and display. Defaults to the decimals in `step`.
     format:
       type: enum
@@ -77,6 +80,7 @@ component:
       description: 'Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search.'
     size:
       type: enum
+      enumRef: size
       values: [sm, md]
       default: md
       description: 'sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type.'
@@ -95,11 +99,14 @@ component:
     onChange:
       description: Fired when the numeric value changes (on each valid keystroke, step, and on blur after clamping/rounding), with the number or undefined.
       platforms: { web: onChange, lit: change, rn: onChangeText, swiftui: onChange }
+      payload:
+        - { name: value, type: union, shape: 'number | undefined', description: 'The new numeric value; undefined when the field is empty.' }
+      fires: [user]
   keyboard:
     - { keys: [ArrowUp], action: Increases by `step` (clamped to max)., from: first, expect: manual }
     - { keys: [ArrowDown], action: Decreases by `step` (clamped to min)., from: first, expect: manual }
     - { keys: [PageUp, PageDown], action: Changes by ten steps., from: first, expect: manual }
-    - { keys: [Home, End], action: 'Sets min / max when they are defined; otherwise the input''s native caret movement.', from: first, expect: manual }
+    - { keys: [Home, End], action: 'Sets min / max when they are defined; otherwise the input''s native caret movement.', from: first, expect: manual, native: true }
     - { keys: [Enter], action: 'Commits (rounds and clamps) the typed value; inside a Form, submits.', from: first, expect: manual }
   styles:
     background: { token: color.background }
@@ -110,18 +117,16 @@ component:
     borderInvalid: { token: color.border.danger }
     borderWidth: { token: border.width.thin }
     radius: { token: radius.md }
-    paddingInline: { token: space.md }
-    paddingBlock: { token: space.sm }
-    paddingBlockSm: { token: space.1, description: 'Vertical padding at size sm.' }
-    paddingInlineSm: { token: space.2, description: 'Horizontal padding at size sm.' }
+    paddingInline: { token: space.md, by: size, values: { sm: space.2 } }
+    paddingBlock: { token: space.sm, by: size, values: { sm: space.1 } }
     affixColor: { token: color.foreground.muted, description: Prefix and suffix text. }
     affixGap: { token: layout.gap.tight }
     stepperGap: { token: layout.gap.none, description: 'The two stepper Buttons sit flush at the end of the field, separated from the input by a hairline.' }
     stepperDivider: { token: color.border }
     partGap: { token: space.1 }
-    labelWeight: { token: font.weight.medium }
+    labelWeight: { token: font.weight.medium, part: label }
     helperSize: { token: font.size.sm }
-    descriptionText: { token: color.foreground.muted }
+    descriptionText: { token: color.foreground.muted, part: description }
     errorText: { token: color.foreground.danger }
     fontFamily: { token: font.family.body }
     fontSize: { token: 'font.size.{size}' }
@@ -145,7 +150,15 @@ component:
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }
       - { foreground: color.foreground.danger, background: color.background, level: AA }
-      - { foreground: color.border.strong, background: color.background, level: AA, large: true }
+      - { foreground: color.border.strong, background: color.background, level: AA, nonText: true }
+  form:
+    role: field
+    value: value
+    valueType: number
+    name: name
+    validation: [required, invalid, range]
+    messages: { required: required, invalid: invalid, range: outOfRange }
+    discovery: context
   platforms:
     web:
       element: input
@@ -153,7 +166,7 @@ component:
       notes: 'An <input type="text" inputmode="decimal" role="spinbutton"> rather than type="number": the native number input cannot format, drops leading zeros, scrolls its value on wheel, and its spin buttons are unstyleable and tiny. The value is parsed from the locale format on input (accepting both the locale''s and "." decimal separators) and re-formatted on blur. aria-valuenow/text mirror the number. Steppers are the system Button (ghost, sm, iconOnly, plus/minus icons) with tabindex="-1" — the input is the single tab stop and the arrows do the same job; the buttons are pointer conveniences and repeat while held.'
     lit:
       tag: ds-number-input
-      reflect: [format, required, disabled, invalid, show-steppers]
+      reflect: [format, size, required, disabled, invalid, hideSteppers]
       notes: 'Form-associated; setFormValue with the plain number as a string. Implements DsFormField. Composed `change` with detail { value }.'
     rn:
       element: TextInput
@@ -163,6 +176,79 @@ component:
       element: TextField
       props: [TextField, .keyboardType=decimalPad, Button, .accessibilityAdjustableAction, .accessibilityValue, .onKeyPress, NumberFormatter, Locale]
       notes: 'Input''s wrapper with a `TextField` (`.keyboardType(.decimalPad)` or `.numberPad` when `precision` is 0 and `min` ≥ 0) between the decrement/increment `Button`s (`minus`/`plus` Icons, hidden with `hideSteppers`); the field is one element with `.accessibilityValue(formatted)` and `.accessibilityAdjustableAction` stepping by `step` (VoiceOver swipe up/down), which is the spinbutton equivalent. Formatting through `NumberFormatter`/`Locale.current` for `format: decimal|currency|unit`, parsing leniently as the doc describes; ArrowUp/Down/PageUp/PageDown/Home/End on iPad via `.onKeyPress`. Registers with the Form environment as a `Double`. `size: sm` per the Sm bindings.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/focusable/error-identified ones from the schema.
+    - name: the-increment-button-steps-up
+      given: { defaultValue: 5, step: 1 }
+      when: { click: incrementButton }
+      then:
+        - { event: onChange }
+    - name: the-decrement-button-steps-down
+      given: { defaultValue: 5, step: 1 }
+      when: { click: decrementButton }
+      then:
+        - { event: onChange }
+    - name: arrow-up-increases-by-one-step
+      given: { defaultValue: 5 }
+      when: { key: ArrowUp }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: arrow-down-decreases-by-one-step
+      given: { defaultValue: 5 }
+      when: { key: ArrowDown }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: page-up-changes-by-ten-steps
+      given: { defaultValue: 5 }
+      when: { key: PageUp }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: arrow-keys-work-without-the-steppers
+      description: hideSteppers hides the buttons; the arrow keys do the same job regardless.
+      given: { defaultValue: 5, hideSteppers: true }
+      when: { key: ArrowUp }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: typing-a-number-reports-it
+      when: { type: '7' }
+      then:
+        - { event: onChange }
+    - name: decrement-does-nothing-at-the-minimum
+      description: The decrement button disables at min, so there is no value below it to report.
+      given: { defaultValue: 0, min: 0, max: 10 }
+      when: { click: decrementButton }
+      then:
+        - { event: onChange, fired: false }
+    - name: a-disabled-field-does-not-step
+      given: { disabled: true, defaultValue: 5 }
+      when: { click: incrementButton }
+      then:
+        - { event: onChange, fired: false }
+    - name: the-field-reports-its-value-and-bounds
+      description: The spinbutton carries valuenow/min/max, which is how the value is announced.
+      given: { defaultValue: 4, min: 0, max: 10 }
+      then:
+        - { attribute: aria-valuenow, is: '4' }
+        - { attribute: aria-valuemin, is: '0' }
+        - { attribute: aria-valuemax, is: '10' }
+      platforms: [web]
+  examples:
+    - name: quantity
+      description: The everyday bounded counter with its step buttons.
+      given: { label: Quantity, name: quantity, min: 1, max: 99, defaultValue: 1 }
+    - name: price-in-currency
+      description: A money field formatted for the locale, stepping by cents.
+      given: { label: Price, name: price, format: currency, currency: USD, step: 0.01, defaultValue: 19.99 }
+    - name: percentage
+      description: A percentage bounded to nought and a hundred, stepping by five.
+      given: { label: Discount, name: discount, format: percent, min: 0, max: 100, step: 5, defaultValue: 10 }
+    - name: compact-cell-editor
+      description: A small field inside a grid cell, named by its column, with no steppers and a unit after the value.
+      given: { label: Weight, name: weight, size: sm, hideLabel: true, hideSteppers: true, trailingText: kg, defaultValue: 2 }
 ---
 
 A number input is for numbers people type exactly — a quantity, a price, a weight — with step buttons and arrow keys for the small adjustments, and locale formatting so 1,234.5 reads the way the user expects. It is Input with a spinbutton's semantics and a parser that understands what people actually type.

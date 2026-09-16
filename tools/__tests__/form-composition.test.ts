@@ -1,5 +1,6 @@
 /** The form block's half in tools/parse.ts `validate` (job 615): a form container composing a field-shaped component
- *  with no form block gets a warning, and one composing a declared field does not. */
+ *  with no form block is an error since the phase 3 migration gave every field its block, and one composing a
+ *  declared field parses clean. */
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 
@@ -7,7 +8,7 @@ import { readText } from '../lib/py.ts';
 import { REPO_ROOT } from '../lib/root.ts';
 import * as parse from '../parse.ts';
 import type { Dict } from '../parse.ts';
-import { component, fmText, usePaths, useTmp, write } from './fixtures.ts';
+import { component, expectDocError, fmText, usePaths, useTmp, write } from './fixtures.ts';
 
 const tmp = useTmp();
 usePaths();
@@ -48,22 +49,20 @@ describe('a form container composing fields', () => {
     expect(parse.takeWarnings()).toEqual([]);
   });
 
-  test('a child with name and error props but no form block warns', () => {
+  test('a child with name and error props but no form block is an error', () => {
     childDocs();
-    check(container('Legacyfield'));
-    expect(parse.takeWarnings().map((w) => w.message)).toEqual([
-      "composition.field: Legacyfield has 'name' and 'error' props but no form block, so Widget cannot tell how it joins as a field",
-    ]);
+    expectDocError(() => check(container('Legacyfield')), "composition.field: Legacyfield has 'name' and 'error' props but no form block, so Widget cannot tell how it joins as a field");
+    expect(parse.takeWarnings()).toEqual([]);
   });
 
-  test('a component that is not a form container does not warn', () => {
+  test('a component that is not a form container is fine', () => {
     childDocs();
     check(container('Legacyfield', null));
     check(container('Legacyfield', { role: 'field', value: 'label', valueType: 'string' }));
     expect(parse.takeWarnings()).toEqual([]);
   });
 
-  test("today's Form doc validates and gets no field warning", () => {
+  test("today's Form doc validates and raises no field error", () => {
     const file = join(REPO_ROOT, 'site', 'src', 'content', 'docs', 'components', 'form.md');
     const [fm] = parse.splitFrontmatter(readText(file), file);
     parse.validate(fm, file);

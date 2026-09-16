@@ -105,14 +105,17 @@ component:
       locked: false
     labelColor:
       token: color.foreground.muted
+      part: label
       locked: true
     labelSize:
       token: font.size.sm
+      part: label
       description: Passed to the composed Text as its `fontSize` override, along with
         `fontFamily`; Divider does not style the Text itself.
       locked: false
     labelGap:
       token: layout.gap.normal
+      part: label
       description: Gap between the label and the lines on each side.
       locked: false
     fontFamily:
@@ -173,7 +176,78 @@ component:
         and is an accessibility element with that label (VoiceOver reads it as a section
         break); the label Text takes `fontSize` through `overrides`. Not SwiftUI's
         `Divider` (fixed color).
+  behavior:
+  - name: decorative-divider-is-hidden-from-assistive-technology
+    description: Decorative dividers are hidden so lists do not announce "separator"
+      between every row.
+    then:
+    - attribute: aria-hidden
+      is: 'true'
+      platforms:
+      - web
+    - attribute: accessibilityElementsHidden
+      is: true
+      platforms:
+      - rn
+  - name: semantic-divider-is-a-separator
+    description: 'true means the divider marks a real boundary: role=separator with
+      aria-orientation.'
+    given:
+      semantic: true
+    then:
+    - role: separator
+      platforms:
+      - web
+    - attribute: aria-orientation
+      is: horizontal
+      platforms:
+      - web
+  - name: label-is-read-and-makes-the-divider-semantic
+    description: A label turns the divider from decorative into a labelled separator,
+      and the text is what gets read.
+    given:
+      label: or
+    then:
+    - text: or
+    - role: separator
+      platforms:
+      - web
+  examples:
+  - name: or-between-alternatives
+    description: A labelled divider between two ways of signing in.
+    given:
+      label: or
+      spacing: normal
+  - name: list-furniture
+    description: The default line between rows of a dense list - decorative, and silent
+      to assistive technology.
+    given:
+      orientation: horizontal
+  - name: toolbar-groups
+    description: A vertical line between groups of toolbar controls, stretching to
+      the row height.
+    given:
+      orientation: vertical
+  - name: section-boundary
+    description: An unlabelled line that still marks a real boundary a screen-reader
+      user should hear.
+    given:
+      semantic: true
+      spacing: loose
 ```
+
+## Style bindings
+
+- `labelColor`: token `color.foreground.muted`; part `label`; locked
+- `labelSize`: token `font.size.sm`; part `label`
+- `labelGap`: token `layout.gap.normal`; part `label`
+
+## Constants and examples
+
+- example `or-between-alternatives`, story `OrBetweenAlternatives`: given `label: "or"`, `spacing: "normal"`; A labelled divider between two ways of signing in.
+- example `list-furniture`, story `ListFurniture`: given `orientation: "horizontal"`; The default line between rows of a dense list - decorative, and silent to assistive technology.
+- example `toolbar-groups`, story `ToolbarGroups`: given `orientation: "vertical"`; A vertical line between groups of toolbar controls, stretching to the row height.
+- example `section-boundary`, story `SectionBoundary`: given `semantic: true`, `spacing: "loose"`; An unlabelled line that still marks a real boundary a screen-reader user should hear.
 
 ## Overrides (per-instance styling contract)
 
@@ -243,11 +317,18 @@ Decorative: `<hr aria-hidden="true" class="ds-divider">`. Semantic: `<div role="
 
 Stack, Menu, List (planned), Heading.
 
-## Behavior scenarios (7)
+## Behavior scenarios (8)
 
 One test per scenario, in this order.
 
 ```yaml
+- name: label-is-read-and-makes-the-divider-semantic
+  description: A label turns the divider from decorative into a labelled separator,
+    and the text is what gets read.
+  given:
+    label: or
+  then:
+  - text: or
 - name: renders
   then:
   - renders: true

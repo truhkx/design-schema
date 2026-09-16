@@ -6,6 +6,10 @@ import type { BreadcrumbProps } from '../../packages/rn/src/Breadcrumb';
 import meta from '../../packages/rn/src/Breadcrumb.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<BreadcrumbProps> = {}) {
   const events = {
     onNavigate: jest.fn(),
@@ -23,12 +27,23 @@ function setup(given: Partial<BreadcrumbProps> = {}) {
     props,
     root: () => screen.queryByTestId('Breadcrumb') ?? screen.UNSAFE_root,
     nav: () => screen.queryByRole('navigation') ?? s.root(),
+    link: () => screen.queryByTestId('Breadcrumb.link') ?? s.root(),
     rerender: (next: Partial<BreadcrumbProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Breadcrumb', () => {
+  test('click-on-an-ancestor-reports-navigation', () => {
+    const s = setup({});
+    fireEvent.press(s.link());
+    expect(s.events.onNavigate).toHaveBeenCalled();
+  });
+  test('an-uncollapsed-trail-shows-every-ancestor', () => {
+    const s = setup({"collapse": false, "items": [{"label": "Docs", "href": "/docs"}, {"label": "Components", "href": "/docs/components"}, {"label": "Navigation", "href": "/docs/components/navigation"}, {"label": "Breadcrumb", "href": "/docs/components/navigation/breadcrumb"}, {"label": "Keyboard"}]});
+    expect(screen.getByText(new RegExp("Components"))).toBeOnTheScreen();
+    expect(screen.getByText(new RegExp("Navigation"))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

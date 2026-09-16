@@ -10,6 +10,17 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<NumberInputProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -24,12 +35,69 @@ function setup(given: Partial<NumberInputProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="NumberInput"]') ?? screen.queryByRole('spinbutton') ?? utils.container.firstElementChild) as HTMLElement,
     label: () => (screen.queryByRole('spinbutton') ?? s.root()) as HTMLElement,
+    decrementButton: () => (document.querySelector('[data-part="decrementButton"]') ?? s.root()),
+    incrementButton: () => (document.querySelector('[data-part="incrementButton"]') ?? s.root()),
     rerender: (next: Partial<NumberInputProps>) => utils.rerender(<NumberInput {...props} {...next} />),
   };
   return s;
 }
 
 describe('NumberInput', () => {
+  test('the-increment-button-steps-up', async () => {
+    const s = setup({"defaultValue": 5, "step": 1});
+    await s.user.click(s.incrementButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('the-decrement-button-steps-down', async () => {
+    const s = setup({"defaultValue": 5, "step": 1});
+    await s.user.click(s.decrementButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-up-increases-by-one-step', async () => {
+    const s = setup({"defaultValue": 5});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{ArrowUp}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-down-decreases-by-one-step', async () => {
+    const s = setup({"defaultValue": 5});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{ArrowDown}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('page-up-changes-by-ten-steps', async () => {
+    const s = setup({"defaultValue": 5});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{PageUp}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-keys-work-without-the-steppers', async () => {
+    const s = setup({"defaultValue": 5, "hideSteppers": true});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{ArrowUp}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('typing-a-number-reports-it', async () => {
+    const s = setup({});
+    await s.user.type(s.label(), "7");
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('decrement-does-nothing-at-the-minimum', async () => {
+    const s = setup({"defaultValue": 0, "min": 0, "max": 10});
+    await s.user.click(s.decrementButton());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('a-disabled-field-does-not-step', async () => {
+    const s = setup({"disabled": true, "defaultValue": 5});
+    await s.user.click(s.incrementButton());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('the-field-reports-its-value-and-bounds', async () => {
+    const s = setup({"defaultValue": 4, "min": 0, "max": 10});
+    expect(s.label()).toHaveAttribute("aria-valuenow", "4");
+    expect(s.label()).toHaveAttribute("aria-valuemin", "0");
+    expect(s.label()).toHaveAttribute("aria-valuemax", "10");
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

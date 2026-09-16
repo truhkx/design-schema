@@ -23,12 +23,28 @@ function setup(given: Partial<TabsProps> = {}) {
     props,
     root: () => screen.queryByTestId('Tabs') ?? screen.UNSAFE_root,
     tablist: () => screen.queryByRole('tablist') ?? s.root(),
+    tab: () => screen.queryByTestId('Tabs.tab') ?? s.root(),
     rerender: (next: Partial<TabsProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Tabs', () => {
+  test('click-selects-a-tab', () => {
+    const s = setup({"defaultValue": "activity"});
+    fireEvent.press(s.tab());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('clicking-the-selected-tab-changes-nothing', () => {
+    const s = setup({"defaultValue": "overview"});
+    fireEvent.press(s.tab());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('a-disabled-tab-cannot-be-selected', () => {
+    const s = setup({"tabs": [{"id": "overview", "label": "Overview", "disabled": true}, {"id": "activity", "label": "Activity"}], "defaultValue": "activity"});
+    fireEvent.press(s.tab());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

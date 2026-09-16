@@ -6,6 +6,10 @@ import type { TableProps } from '../../packages/rn/src/Table';
 import meta from '../../packages/rn/src/Table.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<TableProps> = {}) {
   const events = {
     onSortChange: jest.fn(),
@@ -25,12 +29,38 @@ function setup(given: Partial<TableProps> = {}) {
     props,
     root: () => screen.queryByTestId('Table') ?? screen.UNSAFE_root,
     container: () => screen.queryByRole('table') ?? s.root(),
+    sortButton: () => screen.queryByTestId('Table.sortButton') ?? s.root(),
+    selectCell: () => screen.queryByTestId('Table.selectCell') ?? s.root(),
+    selectAllCell: () => screen.queryByTestId('Table.selectAllCell') ?? s.root(),
     rerender: (next: Partial<TableProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Table', () => {
+  test('activating-a-sortable-header-reports-the-sort', () => {
+    const s = setup({"columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}, {"key": "amount", "header": "Amount", "sortable": true, "align": "end"}], "data": [{"id": "a", "invoice": "INV-1", "amount": 100}, {"id": "b", "invoice": "INV-2", "amount": 200}]});
+    fireEvent.press(s.sortButton());
+    expect(s.events.onSortChange).toHaveBeenCalled();
+  });
+  test('selecting-a-row-reports-every-selected-id', () => {
+    const s = setup({"selectable": "multiple", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}, {"id": "b", "invoice": "INV-2"}]});
+    fireEvent.press(s.selectCell());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('select-all-reports-the-whole-selection', () => {
+    const s = setup({"selectable": "multiple", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}, {"id": "b", "invoice": "INV-2"}]});
+    fireEvent.press(s.selectAllCell());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('the-empty-message-shows-when-there-are-no-rows', () => {
+    const s = setup({"columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": []});
+    expect(screen.getByText(new RegExp("Nothing\\ to\\ show\\."))).toBeOnTheScreen();
+  });
+  test('a-custom-empty-message-replaces-the-default', () => {
+    const s = setup({"emptyMessage": "No invoices yet.", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": []});
+    expect(screen.getByText(new RegExp("No\\ invoices\\ yet\\."))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

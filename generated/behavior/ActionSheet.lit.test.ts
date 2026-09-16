@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/ActionSheet.js';
 import meta from '../../packages/lit/src/ActionSheet.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -51,6 +55,8 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     scrim: () => (deep(root, '[role="menu"]') ?? deep(root, '[part="scrim"]') ?? deep(root, '[data-part="scrim"]') ?? root.firstElementChild) as HTMLElement,
+    item: () => (deep(root, '[part="item"]') ?? deep(root, '[data-part="item"]')) as HTMLElement,
+    cancelButton: () => (deep(root, '[part="cancelButton"]') ?? deep(root, '[data-part="cancelButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -60,6 +66,35 @@ beforeEach(() => {
 });
 
 describe('ds-action-sheet', () => {
+  test('choosing-an-action-fires-on-action', async () => {
+    const s = await setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}, {"id": "delete", "label": "Delete photo", "tone": "danger"}]});
+    await userEvent.click(s.item());
+    expect(s.events.onAction).toHaveBeenCalled();
+  });
+  test('the-cancel-row-fires-on-close', async () => {
+    const s = await setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
+    await userEvent.click(s.cancelButton());
+    expect(s.events.onClose).toHaveBeenCalled();
+    expect(s.events.onAction).not.toHaveBeenCalled();
+  });
+  test('non-dismissible-still-reports-escape', async () => {
+    const s = await setup({"open": true, "heading": "Photo.jpg", "dismissible": false, "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onClose).toHaveBeenCalled();
+  });
+  test('the-cancel-row-is-named-from-copy', async () => {
+    const s = await setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Cancel"));
+  });
+  test('the-list-is-a-menu', async () => {
+    const s = await setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
+    expect(s.el.shadowRoot!.querySelector('[role="menu"]')).not.toBeNull();
+  });
+  test('closed-sheet-renders-nothing', async () => {
+    const s = await setup({"open": false, "actions": [{"id": "share", "label": "Share"}]});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(false);
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
@@ -67,5 +102,11 @@ describe('ds-action-sheet', () => {
   test('has-accessible-name', async () => {
     const s = await setup({"open": true});
     expect(s.scrim()).toHaveAccessibleName();
+  });
+  test('escape-fires-on-close', async () => {
+    const s = await setup({"open": true});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onClose).toHaveBeenCalled();
   });
 });

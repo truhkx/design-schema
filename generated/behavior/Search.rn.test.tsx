@@ -25,12 +25,33 @@ function setup(given: Partial<SearchProps> = {}) {
     props,
     root: () => screen.queryByTestId('Search') ?? screen.UNSAFE_root,
     landmark: () => screen.queryByRole('searchbox') ?? s.root(),
+    clearButton: () => screen.queryByTestId('Search.clearButton') ?? s.root(),
+    submitButton: () => screen.queryByTestId('Search.submitButton') ?? s.root(),
     rerender: (next: Partial<SearchProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Search', () => {
+  test('typing-fires-onchange-with-the-query', () => {
+    const s = setup({});
+    fireEvent.changeText(s.landmark(), "invoices");
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('the-submit-button-submits-the-query', () => {
+    const s = setup({"defaultValue": "invoices", "action": "/search"});
+    fireEvent.press(s.submitButton());
+    expect(s.events.onSubmit).toHaveBeenCalled();
+  });
+  test('the-clear-button-empties-the-field', () => {
+    const s = setup({"defaultValue": "invoices"});
+    fireEvent.press(s.clearButton());
+    expect(s.events.onClear).toHaveBeenCalled();
+  });
+  test('the-field-is-inside-the-search-landmark', () => {
+    const s = setup({});
+    expect(screen.getByRole('search')).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

@@ -17,7 +17,12 @@
       ],
       "action": "Next visible node.",
       "from": "first",
-      "expect": "focus-next"
+      "expect": "focus-next",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
@@ -25,7 +30,12 @@
       ],
       "action": "Previous visible node.",
       "from": "last",
-      "expect": "focus-prev"
+      "expect": "focus-prev",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
@@ -33,7 +43,12 @@
       ],
       "action": "On a closed parent: opens it. On an open parent: moves to its first enabled child (disabled nodes are skipped). On a leaf: nothing.",
       "from": "inside",
-      "expect": "manual"
+      "expect": "manual",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
@@ -41,7 +56,12 @@
       ],
       "action": "On an open parent: closes it. Otherwise: moves to the parent.",
       "from": "inside",
-      "expect": "manual"
+      "expect": "manual",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
@@ -92,7 +112,12 @@
       "action": "Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range).",
       "from": "inside",
       "expect": "manual",
-      "when": "multiple"
+      "when": "multiple",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
@@ -109,7 +134,12 @@
       ],
       "action": "Type-ahead: moves to the next visible node whose label starts with the typed characters; the buffer clears after 500 ms (literal-ok, as Listbox).",
       "from": "inside",
-      "expect": "manual"
+      "expect": "manual",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     }
   ]
 }

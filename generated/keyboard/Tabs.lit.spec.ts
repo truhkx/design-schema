@@ -85,8 +85,28 @@ test.describe('Tabs (lit) keyboard', () => {
     await page.keyboard.press('ArrowLeft');
     expect(await focusIndex(page, root)).toBe(before - 1);
   });
-  test.skip('ArrowDown: Moves to the next tab, wrapping; selects it under automatic activation. (vertical) — manual', async () => {});
-  test.skip('ArrowUp: Moves to the previous tab, wrapping. (vertical) — manual', async () => {});
+  test('ArrowDown: Moves to the next tab, wrapping; selects it under automatic activation. (vertical)', async ({ page }) => {
+    await page.goto('/iframe.html?id=tabs-lit--keyboard&viewMode=story&args=orientation:vertical');
+    await expect(page.getByRole('tablist').first()).toBeVisible();
+    const root = page.getByRole('tablist').first();
+    await focusAt(page, root, 0);
+    const before = await focusIndex(page, root);
+    const stateBefore = await ariaState(page);
+    void before; void stateBefore;
+    await page.keyboard.press('ArrowDown');
+    expect(await focusIndex(page, root)).toBe(before + 1);
+  });
+  test('ArrowUp: Moves to the previous tab, wrapping. (vertical)', async ({ page }) => {
+    await page.goto('/iframe.html?id=tabs-lit--keyboard&viewMode=story&args=orientation:vertical');
+    await expect(page.getByRole('tablist').first()).toBeVisible();
+    const root = page.getByRole('tablist').first();
+    await focusAt(page, root, await focusableCount(page, root) - 1);
+    const before = await focusIndex(page, root);
+    const stateBefore = await ariaState(page);
+    void before; void stateBefore;
+    await page.keyboard.press('ArrowUp');
+    expect(await focusIndex(page, root)).toBe(before - 1);
+  });
   test('ArrowRight: From the last tab wraps to the first. (horizontal)', async ({ page }) => {
     const root = page.getByRole('tablist').first();
     await focusAt(page, root, await focusableCount(page, root) - 1);

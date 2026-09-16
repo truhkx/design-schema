@@ -18,7 +18,8 @@
       ],
       "action": "On a sort button, sorts; on a row checkbox, toggles; on a row header button, activates the row.",
       "from": "inside",
-      "expect": "manual"
+      "expect": "manual",
+      "native": true
     },
     {
       "keys": [

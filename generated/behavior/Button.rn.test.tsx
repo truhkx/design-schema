@@ -30,6 +30,30 @@ function setup(given: Partial<ButtonProps> = {}) {
 }
 
 describe('Button', () => {
+  test('click-fires-on-press', () => {
+    const s = setup({});
+    fireEvent.press(s.container());
+    expect(s.events.onPress).toHaveBeenCalled();
+  });
+  test('disabled-does-not-fire', () => {
+    const s = setup({"disabled": true});
+    fireEvent.press(s.container());
+    expect(s.events.onPress).not.toHaveBeenCalled();
+    expect(s.container()).toBeDisabled();
+  });
+  test('loading-announces-busy-and-ignores-activation', () => {
+    const s = setup({"loading": true});
+    fireEvent.press(s.container());
+    expect(s.events.onPress).not.toHaveBeenCalled();
+  });
+  test('expanded-is-reported', () => {
+    const s = setup({"expanded": true});
+    expect(s.container()).toBeExpanded();
+  });
+  test('icon-only-keeps-its-name', () => {
+    const s = setup({"iconOnly": true, "accessibleName": "Open menu"});
+    expect(screen.getByRole('button', { name: "Open menu" })).toBeOnTheScreen();
+  });
   test('press-tracks', () => {
     const s = setup({"track": "signup", "label": "Sign up"});
     fireEvent.press(s.container());

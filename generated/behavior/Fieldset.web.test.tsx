@@ -28,6 +28,23 @@ function setup(given: Partial<FieldsetProps> = {}) {
 }
 
 describe('Fieldset', () => {
+  test('the-legend-names-the-group', async () => {
+    const s = setup({"legend": "Delivery window"});
+    expect(screen.getByText(new RegExp("Delivery\\ window"))).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: "Delivery window" })).toBeInTheDocument();
+  });
+  test('the-description-is-rendered', async () => {
+    const s = setup({"description": "We only ship within the EU."});
+    expect(screen.getByText(new RegExp("We\\ only\\ ship\\ within\\ the\\ EU\\."))).toBeInTheDocument();
+  });
+  test('a-group-error-is-announced', async () => {
+    const s = setup({"error": "End date must be after start date."});
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+  test('a-disabled-group-is-marked-disabled', async () => {
+    const s = setup({"disabled": true});
+    expect(s.group()).toHaveAttribute('aria-disabled', 'true');
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

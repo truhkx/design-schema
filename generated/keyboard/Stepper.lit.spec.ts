@@ -75,6 +75,6 @@ test.describe('Stepper (lit) keyboard', () => {
     await page.keyboard.press('Tab');
     expect(await focusIndex(page, root)).toBe(before + 1);
   });
-  test.skip('Enter: Selects the focused step. — manual', async () => {});
-  test.skip(' : Selects the focused step. — manual', async () => {});
+  test.skip('Enter: Selects the focused step. — native', async () => {});
+  test.skip(' : Selects the focused step. — native', async () => {});
 });

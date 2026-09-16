@@ -34,7 +34,7 @@ component:
       default: false
       description: More items are being fetched; a loading indicator is shown after the last article and the feed is `aria-busy`.
     newItemsCount:
-      type: number
+      type: integer
       description: 'Number of newer items available above (from polling or a socket). The feed does not insert them — that would shift what the reader is looking at — it shows a "Show {count} new" button at the top which prepends and scrolls.'
     headingLevel:
       type: enum
@@ -48,12 +48,19 @@ component:
     onLoadMore:
       description: 'Fired when the last rendered article is within one screen of view (or on End / Ctrl+End with `hasMore`).'
       platforms: { web: onLoadMore, lit: load-more, rn: onEndReached, swiftui: onLoadMore }
+      fires: [user]
+      timing: { phase: request }
     onShowNew:
       description: Fired when the new-items button is pressed; the caller prepends the items and clears `newItemsCount`.
       platforms: { web: onShowNew, lit: show-new, rn: onShowNew, swiftui: onShowNew }
+      fires: [user]
+      timing: { phase: request }
     onItemVisible:
       description: 'Fired with an item id when it has been substantially visible for a moment (mark as read).'
       platforms: { web: onItemVisible, lit: item-visible, rn: onViewableItemsChanged, swiftui: onItemVisible }
+      payload:
+        - { name: id, type: string, description: The item that became visible. }
+      fires: [user]
   keyboard:
     - { keys: [Tab], action: 'Moves through interactive content inside the current article and on to the next article''s content in reading order; articles themselves are focusable so the feed commands below work.', from: any, expect: focus-next }
     - { keys: [PageDown], action: 'Moves focus to the next article (the APG feed command).', from: inside, expect: manual }
@@ -62,37 +69,53 @@ component:
     - { keys: [Control+Home], action: 'Moves focus to the new-items button when shown, else to the last focusable element before the feed in the document.', from: inside, expect: manual }
   styles:
     itemGap: { token: layout.gap.normal }
-    articleInset: { token: layout.inset.md, description: Passed to each Card as its inset. }
+    articleInset: { token: layout.inset.md, part: article, description: Passed to each Card as its inset. }
     unreadBorder: { token: color.control.selectedBackground, description: 'Start-edge bar on unread articles, paired with the visually-hidden "unread" word.' }
     unreadBorderWidth: { token: border.width.focus }
-    timestampColor: { token: color.foreground.muted }
-    timestampSize: { token: font.size.xs }
+    timestampColor: { token: color.foreground.muted, part: timestamp }
+    timestampSize: { token: font.size.xs, part: timestamp }
     newItemsOffset: { token: space.3, description: 'Padding-block-start of the sticky new-items row (it is the first child, so padding, not a margin).' }
     loadingInset: { token: layout.inset.md, description: 'Padding around the loading indicator.' }
-    endMessageInset: { token: layout.inset.md, description: 'Padding around the end message.' }
-    endMessageColor: { token: color.foreground.muted }
-    endMessageSize: { token: font.size.sm }
+    endMessageInset: { token: layout.inset.md, part: endMessage, description: 'Padding around the end message.' }
+    endMessageColor: { token: color.foreground.muted, part: endMessage }
+    endMessageSize: { token: font.size.sm, part: endMessage }
     fontFamily: { token: font.family.body }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
   copy:
-    showNew: 'Show {count} new'
+    showNew:
+      text: 'Show {count} new'
+      params:
+        count: { type: number, description: How many newer items are available above. }
     loading: Loading more
     end: You are all caught up.
     unread: unread
-    position: '{index} of {total}'
+    position:
+      text: '{index} of {total}'
+      params:
+        index: { type: number, description: The article's position in the feed. }
+        total: { type: number, description: How many articles the feed holds. }
     empty: Nothing here yet.
     justNow: just now
-    minutesAgo: '{n} min ago'
-    hoursAgo: '{n} hr ago'
-    daysAgo: '{n} d ago'
+    minutesAgo:
+      text: '{n} min ago'
+      params:
+        n: { type: number, description: Minutes since the item's timestamp. }
+    hoursAgo:
+      text: '{n} hr ago'
+      params:
+        n: { type: number, description: Hours since the item's timestamp. }
+    daysAgo:
+      text: '{n} d ago'
+      params:
+        n: { type: number, description: Days since the item's timestamp. }
   a11y:
     role: feed
     requires: [accessible-name, heading-hierarchy, keyboard-operable, focus-visible, contrast-aa, live-region, reduced-motion]
     contrast:
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }
-      - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }
+      - { foreground: color.control.selectedBackground, background: color.background, level: AA, nonText: true }
   platforms:
     web:
       element: div
@@ -110,6 +133,50 @@ component:
       element: ScrollView
       props: [ScrollView, LazyVStack, Card, .accessibilityElement=contain, .accessibilityLabel, .accessibilityAddTraits=updatesFrequently, .onScrollTargetVisibilityChange, ProgressBar, Button, AccessibilityNotification, ScrollViewReader]
       notes: 'A `ScrollView` + `LazyVStack` of `Card focusable` articles inside a `.contain` element labelled by `label` with `.updatesFrequently`; each Card gets `.accessibilityValue(copy.position)` when the total is known and the hidden `unread` word. Load-more fires from `.onScrollTargetVisibilityChange` on the last article (threshold one screen) and once on appear when empty with `hasMore`; visibility for `onItemVisible` from the same observer with a one-second timer. New items are never inserted automatically: the sticky new-items `Button` prepends and `ScrollViewReader` scrolls to the first new article, which receives VoiceOver focus. PageUp/PageDown/Ctrl+Home/End on iPad move `@AccessibilityFocusState`/`@FocusState` between articles; VoiceOver users get the rotor. Relative time from the copy strings; the absolute date is the article''s `accessibilityHint`.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name ones from the schema.
+    - name: an-empty-feed-asks-for-its-first-page
+      description: With hasMore and no items there is no last article to observe, so the feed fires onLoadMore once on mount.
+      given: { items: [], hasMore: true, loading: false }
+      then:
+        - { event: onLoadMore }
+    - name: pressing-show-new-asks-for-the-newer-items
+      description: The feed never inserts newer items itself; the button asks, and the caller prepends.
+      given: { newItemsCount: 3, items: [{ id: a1, heading: 'Ana commented on Invoice 42', timestamp: '2026-09-15T09:00:00Z', content: 'Looks right to me.' }] }
+      when: { click: newItemsButton }
+      then:
+        - { event: onShowNew }
+    - name: the-end-message-shows-when-there-is-nothing-more
+      given: { hasMore: false, items: [{ id: a1, heading: 'Ana commented on Invoice 42', timestamp: '2026-09-15T09:00:00Z', content: 'Looks right to me.' }] }
+      then:
+        - { copy: end }
+    - name: a-custom-end-message-replaces-the-default
+      given: { hasMore: false, endMessage: 'That is everything from this week.', items: [{ id: a1, heading: 'Ana commented on Invoice 42', timestamp: '2026-09-15T09:00:00Z', content: 'Looks right to me.' }] }
+      then:
+        - { text: 'That is everything from this week.' }
+    - name: an-empty-feed-that-is-not-loading-says-so
+      given: { items: [], hasMore: false, loading: false }
+      then:
+        - { copy: empty }
+    - name: loading-marks-the-feed-busy
+      description: The feed is aria-busy while more items are being fetched.
+      given: { loading: true, hasMore: true }
+      then:
+        - { attribute: aria-busy, is: 'true' }
+      platforms: [web]
+  examples:
+    - name: activity-stream
+      description: The default stream of activity, newest first, with more to load below.
+      given: { label: Activity, hasMore: true, items: [{ id: a1, heading: 'Ana commented on Invoice 42', timestamp: '2026-09-15T09:00:00Z', content: 'Looks right to me.' }, { id: a2, heading: 'Bo approved Invoice 41', timestamp: '2026-09-14T16:20:00Z', content: 'Approved for payment.' }] }
+    - name: notifications-with-unread-items
+      description: Notifications where unread items are marked and three newer ones are waiting above.
+      given: { label: Notifications, newItemsCount: 3, items: [{ id: n1, heading: 'Your export is ready', timestamp: '2026-09-15T08:00:00Z', content: 'The March export finished.', unread: true }, { id: n2, heading: 'Invoice 42 was paid', timestamp: '2026-09-14T11:00:00Z', content: 'Payment received.' }] }
+    - name: caught-up
+      description: The end of a finite stream, with its own closing message.
+      given: { label: Activity, hasMore: false, endMessage: 'That is everything from this week.', items: [{ id: a1, heading: 'Bo approved Invoice 41', timestamp: '2026-09-14T16:20:00Z', content: 'Approved for payment.' }] }
+    - name: loading-the-next-page
+      description: A feed fetching its next page under headings that fit a page whose outline starts at level 2.
+      given: { label: Audit events, hasMore: true, loading: true, headingLevel: '2', items: [{ id: e1, heading: 'Role changed for Ana', timestamp: '2026-09-15T07:00:00Z', content: 'Editor to Admin.' }] }
 ---
 
 A feed is a list that never quite ends: it grows as you reach the bottom, and newer things arrive at the top. The APG feed pattern exists because this breaks the assumptions of screen readers (content appears while you are reading) and keyboards (Tab through a hundred cards is not navigation), so the feed gives them article-level movement and control over when new items appear.

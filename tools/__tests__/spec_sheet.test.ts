@@ -172,6 +172,23 @@ describe('styleRows', () => {
       ['`radius`', '`radius.md`', ss.cell('4px'), ss.cell('4px'), 'no', 'Corners.'],
     ]);
   });
+
+  // What job 640's fold does to the page: Input's paddingBlock/paddingBlockSm pair becomes one binding whose sm row
+  // carries the token the deleted key held, and a part with no description still says which part it styles.
+  test("a folded pair's two rows, and a part with no description", () => {
+    const comp: Dict = {
+      props: { ...PROPS, size: { type: 'enum', values: ['sm', 'md'], default: 'md', description: 'Size.' } },
+      styles: {
+        paddingBlock: { token: 'space.sm', by: 'size', values: { sm: 'space.1' }, locked: false },
+        labelWeight: { token: 'font.weight.regular', part: 'label', locked: false },
+      },
+    };
+    expect(ss.styleRows(comp, modes)).toEqual([
+      ['`paddingBlock`', '`space.sm`', ss.cell('8px'), ss.cell('8px'), 'no', ''],
+      ['`paddingBlock` (size=sm)', '`space.1`', ss.cell('4px'), ss.cell('4px'), 'no', ''],
+      ['`labelWeight`', '`font.weight.regular`', ss.cell(400), ss.cell(400), 'no', 'part `label`.'],
+    ]);
+  });
 });
 
 describe('main', () => {

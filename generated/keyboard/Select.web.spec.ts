@@ -77,7 +77,8 @@ test.describe('Select (web) keyboard', () => {
     const stateBefore = await ariaState(page);
     void before; void stateBefore;
     await page.keyboard.press('Escape');
-    await expect(root).toBeHidden();
+    await expect(page.locator('[data-part="popup"]').first()).toBeHidden();
+    await expect(trigger(page)).toBeFocused();
   });
   test.skip('Enter: Commits the active option and closes (single); with `multiple`, toggles it and stays open. (popup open) — manual', async () => {});
   test('Tab: Commits the active option (single) and closes; focus moves on. (popup open)', async ({ page }) => {
@@ -87,7 +88,7 @@ test.describe('Select (web) keyboard', () => {
     const stateBefore = await ariaState(page);
     void before; void stateBefore;
     await page.keyboard.press('Tab');
-    await expect(root).toBeHidden();
+    await expect(page.locator('[data-part="popup"]').first()).toBeHidden();
   });
   test.skip('ArrowDown: As Listbox. (popup open) — manual', async () => {});
   test.skip('ArrowUp: As Listbox. (popup open) — manual', async () => {});

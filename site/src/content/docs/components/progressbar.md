@@ -40,6 +40,7 @@ component:
       description: Visually hide the label (it remains the accessible name). For bars inside a Card whose heading already says what is happening.
     tone:
       type: enum
+      enumRef: tone
       values: [neutral, success, danger]
       default: neutral
       description: 'Neutral while running; `success` at completion, `danger` when the task failed part-way. Paired with a text status elsewhere: the color is never the only signal.'
@@ -50,15 +51,15 @@ component:
       description: 'What a screen reader hears without focusing the bar: nothing, every 25%, or only completion. Each announcement uses `copy.progress` / `copy.complete`.'
   events: {}
   styles:
-    track: { token: color.background.strong }
-    fill: { token: color.control.selectedBackground, description: 'Neutral fill. The selected-control color is guaranteed 3:1 against the page.' }
-    fillSuccess: { token: color.status.success.icon }
-    fillDanger: { token: color.status.danger.icon }
-    trackHeight: { token: space.2 }
+    track: { token: color.background.strong, part: track }
+    fill: { token: color.control.selectedBackground, part: fill, description: 'Neutral fill. The selected-control color is guaranteed 3:1 against the page.' }
+    fillSuccess: { token: color.status.success.icon, part: fill }
+    fillDanger: { token: color.status.danger.icon, part: fill }
+    trackHeight: { token: space.2, part: track }
     radius: { token: radius.full }
-    labelColor: { token: color.foreground }
-    labelSize: { token: font.size.sm }
-    labelWeight: { token: font.weight.medium }
+    labelColor: { token: color.foreground, part: label }
+    labelSize: { token: font.size.sm, part: label }
+    labelWeight: { token: font.weight.medium, part: label }
     valueColor: { token: color.foreground.muted }
     valueSize: { token: font.size.sm }
     fontFamily: { token: font.family.body }
@@ -74,9 +75,9 @@ component:
     role: progressbar
     requires: [accessible-name, contrast-aa, live-region, reduced-motion]
     contrast:
-      - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }
-      - { foreground: color.status.success.icon, background: color.background, level: AA, large: true }
-      - { foreground: color.status.danger.icon, background: color.background, level: AA, large: true }
+      - { foreground: color.control.selectedBackground, background: color.background, level: AA, nonText: true }
+      - { foreground: color.status.success.icon, background: color.background, level: AA, nonText: true }
+      - { foreground: color.status.danger.icon, background: color.background, level: AA, nonText: true }
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }
   platforms:
@@ -96,6 +97,46 @@ component:
       element: ProgressView
       props: [ProgressView, .progressViewStyle=custom, .accessibilityValue, .accessibilityLabel, AccessibilityNotification, TimelineView]
       notes: '`ProgressView(value:total:)` with a package `ProgressViewStyle` drawing the track and fill from the tokens (indeterminate when `value` is nil: a sweep driven by `TimelineView`, replaced by the static half-opacity track under reduced motion). VoiceOver gets the label and `.accessibilityValue(formatValue)` from the style''s configuration; announcements per `announce` (milestones/complete/indeterminate copy) through `AccessibilityNotification.Announcement`. `tone` recolors the fill only.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name ones from the schema.
+    - name: the-bar-reports-its-value-and-range
+      description: A determinate bar exposes aria-valuenow, aria-valuemin and aria-valuemax on its progressbar element.
+      given: { value: 42, min: 0, max: 100 }
+      then:
+        - { role: progressbar }
+        - { attribute: 'aria-valuenow', is: '42' }
+        - { attribute: 'aria-valuemin', is: '0' }
+        - { attribute: 'aria-valuemax', is: '100' }
+      platforms: [web]
+    - name: the-bar-is-never-focusable
+      description: Progress is learned from the live region, not by focusing the bar.
+      then:
+        - { focusable: false }
+      platforms: [web, lit]
+    - name: a-hidden-label-is-still-the-accessible-name
+      description: hideLabel takes the label out of view, not out of the accessibility tree.
+      given: { hideLabel: true }
+      then:
+        - { name: true }
+      platforms: [web, rn]
+    - name: the-label-names-the-task
+      description: The label says what is progressing, with a verb.
+      given: { label: 'Importing contacts' }
+      then:
+        - { text: 'Importing contacts' }
+  examples:
+    - name: upload
+      description: A determinate bar with the value text beside the label.
+      given: { label: 'Uploading photos', value: 42 }
+    - name: long-import
+      description: A long task that announces every 25%, for a user who may leave and come back.
+      given: { label: 'Importing contacts', value: 10, announce: 'milestones' }
+    - name: finished
+      description: A completed bar recolored to success, with the text that says so beside it.
+      given: { label: 'Export', value: 100, tone: 'success' }
+    - name: in-a-card
+      description: A bar whose Card heading already says what is happening, so the label is hidden and the value left off.
+      given: { label: 'Rendering preview', value: 60, hideLabel: true, showValue: false }
 ---
 
 A progress bar answers "how much longer": it moves as the work moves, and it ends. If the value is a measurement that could go up or down — storage used, signal strength — it is a Meter, not a progress bar.

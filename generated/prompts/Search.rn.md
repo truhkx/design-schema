@@ -94,6 +94,9 @@ component:
     value:
       type: string
       description: Controlled query.
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: string
       description: Initial query.
@@ -122,6 +125,7 @@ component:
         another search landmark (a filter within a results page).
     size:
       type: enum
+      enumRef: size
       values:
       - md
       - lg
@@ -140,6 +144,12 @@ component:
         lit: change
         rn: onChangeText
         swiftui: onChange
+      payload:
+      - name: value
+        type: string
+        description: The query as typed.
+      fires:
+      - user
     onSubmit:
       description: Fired on Enter, the submit button, or choosing a suggestion, with
         the query.
@@ -148,6 +158,12 @@ component:
         lit: submit
         rn: onSubmitEditing
         swiftui: onSubmit
+      payload:
+      - name: value
+        type: string
+        description: The submitted query.
+      fires:
+      - user
     onClear:
       description: Fired when the clear button empties the field.
       platforms:
@@ -155,6 +171,8 @@ component:
         lit: clear
         rn: onClear
         swiftui: onClear
+      fires:
+      - user
   keyboard:
   - keys:
     - Enter
@@ -196,6 +214,7 @@ component:
       locked: true
     iconColor:
       token: color.foreground.muted
+      part: icon
       locked: true
     border:
       token: color.border.strong
@@ -216,10 +235,9 @@ component:
       locked: false
     paddingBlock:
       token: space.sm
-      locked: false
-    paddingBlockLg:
-      token: space.md
-      description: Vertical padding at size lg.
+      by: size
+      values:
+        lg: space.md
       locked: false
     affixGap:
       token: layout.gap.tight
@@ -236,6 +254,7 @@ component:
       locked: false
     suggestionsOffset:
       token: space.1
+      part: suggestions
       locked: false
     popupSurface:
       token: color.overlay.surface
@@ -266,7 +285,15 @@ component:
     clear: Clear search
     submit: Search
     loading: Loading suggestions
-    suggestionsCount: '{count} suggestions available'
+    suggestionsCount:
+      plural:
+        by: count
+        one: '{count} suggestion available'
+        other: '{count} suggestions available'
+      params:
+        count:
+          type: number
+          description: The number of suggestions in the list.
     noSuggestions: No suggestions
   a11y:
     role: searchbox
@@ -291,7 +318,13 @@ component:
     - foreground: color.border.strong
       background: color.background
       level: AA
-      large: true
+      nonText: true
+  form:
+    role: field
+    value: value
+    valueType: string
+    name: name
+    discovery: context
   platforms:
     web:
       element: form
@@ -317,7 +350,8 @@ component:
       reflect:
       - size
       - show-label
-      - landmark
+      - prop: landmark
+        attribute: no-landmark
       - disabled
       - loading
       notes: The <form> lives in the shadow root; when `action` is set, submit navigates
@@ -357,11 +391,151 @@ component:
         tracked and announced as Combobox; the count announced on open. `landmark`
         registers a ''Search'' rotor entry through Landmark. `action` has no meaning
         on iOS (no form navigation) and is ignored with a debug note.'
+  behavior:
+  - name: typing-fires-onchange-with-the-query
+    description: Typing fires onChange on every keystroke; the caller fetches suggestions
+      there.
+    when:
+      type: invoices
+    then:
+    - event: onChange
+  - name: enter-submits-the-query
+    given:
+      defaultValue: invoices
+    when:
+      key: Enter
+    then:
+    - event: onSubmit
+    platforms:
+    - web
+    - lit
+  - name: an-empty-query-is-not-submitted
+    description: The field never submits an empty query.
+    when:
+      key: Enter
+    then:
+    - event: onSubmit
+      fired: false
+    platforms:
+    - web
+    - lit
+  - name: the-submit-button-submits-the-query
+    description: The submit button submits the same query Enter does; with `action`
+      it is the same native GET form submit.
+    given:
+      defaultValue: invoices
+      action: /search
+    when:
+      click: submitButton
+    then:
+    - event: onSubmit
+  - name: the-clear-button-empties-the-field
+    description: The clear button appears when there is text, empties the field and
+      fires onClear.
+    given:
+      defaultValue: invoices
+    when:
+      click: clearButton
+    then:
+    - event: onClear
+  - name: escape-clears-the-field-when-no-list-is-open
+    description: Escape closes suggestions if open; otherwise it clears the field,
+      and onClear fires for that too.
+    given:
+      defaultValue: invoices
+    when:
+      key: Escape
+    then:
+    - event: onClear
+    platforms:
+    - web
+    - lit
+  - name: the-field-is-inside-the-search-landmark
+    description: The one primary search is wrapped in the search landmark so it can
+      be jumped to.
+    then:
+    - role: search
+    platforms:
+    - web
+    - rn
+  examples:
+  - name: header-search
+    description: The site header's field - label hidden, glyph and placeholder as
+      the visible cue.
+    given:
+      label: Search this site
+      placeholder: Search products and orders
+  - name: search-page-hero
+    description: A search page's main field, larger and with its label shown.
+    given:
+      label: Search orders
+      showLabel: true
+      size: lg
+  - name: with-suggestions
+    description: Completions offered under the field, where choosing one fills the
+      query and submits.
+    given:
+      label: Search products
+      suggestions:
+      - value: invoices-march
+        label: Invoices from March
+      - value: invoices-april
+        label: Invoices from April
+  - name: filter-within-a-results-page
+    description: A second search field inside a results page, with the landmark off
+      so there is only one.
+    given:
+      label: Filter results
+      landmark: false
+      name: filter
 ```
+
+## Events
+
+- `onChange`: emit `onChangeText`
+  - payload, positional, in this order: `value: string`
+  - fires on: user
+- `onSubmit`: emit `onSubmitEditing`
+  - payload, positional, in this order: `value: string`
+  - fires on: user
+- `onClear`: emit `onClear`
+  - fires on: user
 
 ## Controlled state
 
-- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; paired by name, so no event is declared
+- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `onChangeText`)
+
+## Style bindings
+
+- `iconColor`: token `color.foreground.muted`; part `icon`; locked
+- `paddingBlock`: token `space.sm`; by `size`: lg → `space.md`, any other value → `space.sm`
+- `suggestionsOffset`: token `space.1`; part `suggestions`
+
+## Form and overlay
+
+```yaml
+form:
+  role: field
+  value: value
+  valueType: string
+  name: name
+  discovery: context
+```
+
+## Copy
+
+- `clear`: "Clear search"
+- `submit`: "Search"
+- `loading`: "Loading suggestions"
+- `suggestionsCount`: "{count} suggestions available"; params `count` (number); plural by `count`: one "{count} suggestion available", other "{count} suggestions available"
+- `noSuggestions`: "No suggestions"
+
+## Constants and examples
+
+- example `header-search`, story `HeaderSearch`: given `label: "Search this site"`, `placeholder: "Search products and orders"`; The site header's field - label hidden, glyph and placeholder as the visible cue.
+- example `search-page-hero`, story `SearchPageHero`: given `label: "Search orders"`, `showLabel: true`, `size: "lg"`; A search page's main field, larger and with its label shown.
+- example `with-suggestions`, story `WithSuggestions`: given `label: "Search products"`, `suggestions: [{"value":"invoices-march","label":"Invoices from March"},{"value":"invoices-april","label":"Invoices from April"}]`; Completions offered under the field, where choosing one fills the query and submits.
+- example `filter-within-a-results-page`, story `FilterWithinAResultsPage`: given `label: "Filter results"`, `landmark: false`, `name: "filter"`; A second search field inside a results page, with the landmark off so there is only one.
 
 ## Overrides (per-instance styling contract)
 
@@ -371,14 +545,48 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 
 The `platforms.rn.props` list names the native props the schema cares about; `overrides` and `testID` apply to every component regardless of whether that list mentions them.
 
-Overridable: `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `paddingBlockLg`, `affixGap`, `fontFamily`, `fontSize`, `lineHeight`, `suggestionsOffset`, `popupSurface`, `popupBorder`, `popupRadius`, `popupShadow`, `partGap`, `disabledOpacity`
+Overridable: `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `affixGap`, `fontFamily`, `fontSize`, `lineHeight`, `suggestionsOffset`, `popupSurface`, `popupBorder`, `popupRadius`, `popupShadow`, `partGap`, `disabledOpacity`
 Locked (accessibility-bearing, never overridable): `background`, `foreground`, `placeholder`, `iconColor`, `border`, `borderFocus`, `minTarget`, `focusRingWidth`
 
-## Behavior scenarios (4)
+## Behavior scenarios (8)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: typing-fires-onchange-with-the-query
+  description: Typing fires onChange on every keystroke; the caller fetches suggestions
+    there.
+  when:
+    type: invoices
+  then:
+  - event: onChange
+- name: the-submit-button-submits-the-query
+  description: The submit button submits the same query Enter does; with `action`
+    it is the same native GET form submit.
+  given:
+    defaultValue: invoices
+    action: /search
+  when:
+    click: submitButton
+  then:
+  - event: onSubmit
+- name: the-clear-button-empties-the-field
+  description: The clear button appears when there is text, empties the field and
+    fires onClear.
+  given:
+    defaultValue: invoices
+  when:
+    click: clearButton
+  then:
+  - event: onClear
+- name: the-field-is-inside-the-search-landmark
+  description: The one primary search is wrapped in the search landmark so it can
+    be jumped to.
+  then:
+  - role: search
+  platforms:
+  - web
+  - rn
 - name: renders
   then:
   - renders: true

@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/Tree.js';
 import meta from '../../packages/lit/src/Tree.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -55,6 +59,8 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     container: () => (deep(root, '[role="tree"]') ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
+    nodeRow: () => (deep(root, '[part="nodeRow"]') ?? deep(root, '[data-part="nodeRow"]')) as HTMLElement,
+    expandButton: () => (deep(root, '[part="expandButton"]') ?? deep(root, '[data-part="expandButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -64,6 +70,50 @@ beforeEach(() => {
 });
 
 describe('ds-tree', () => {
+  test('the-expand-button-expands-a-node', async () => {
+    const s = await setup({"defaultExpanded": [], "nodes": [{"id": "docs", "label": "Documents", "children": [{"id": "invoices", "label": "Invoices"}]}]});
+    await userEvent.click(s.expandButton());
+    expect(s.events.onExpandChange).toHaveBeenCalled();
+  });
+  test('expanding-a-lazy-node-asks-for-its-children', async () => {
+    const s = await setup({"defaultExpanded": [], "nodes": [{"id": "docs", "label": "Documents", "children": "lazy"}]});
+    await userEvent.click(s.expandButton());
+    expect(s.events.onExpand).toHaveBeenCalled();
+    expect(s.events.onExpandChange).toHaveBeenCalled();
+  });
+  test('clicking-a-node-selects-it', async () => {
+    const s = await setup({"selectable": "single", "nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    await userEvent.click(s.nodeRow());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('space-selects-the-focused-node', async () => {
+    const s = await setup({"selectable": "single", "nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    s.el.focus();
+    await userEvent.keyboard(' ');
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('enter-activates-a-node', async () => {
+    const s = await setup({"nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    s.el.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(s.events.onActivate).toHaveBeenCalled();
+  });
+  test('arrow-movement-does-not-select-by-default', async () => {
+    const s = await setup({"selectable": "single", "selectOnFocus": false, "nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(s.events.onSelectionChange).not.toHaveBeenCalled();
+  });
+  test('select-on-focus-selects-as-focus-moves', async () => {
+    const s = await setup({"selectable": "single", "selectOnFocus": true, "nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('the-empty-message-shows-when-there-are-no-nodes', async () => {
+    const s = await setup({"nodes": []});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Nothing\\ here\\."));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

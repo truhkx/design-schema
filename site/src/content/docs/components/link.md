@@ -33,21 +33,24 @@ component:
       platforms: [web, lit]
   events:
     onPress:
-      description: Fired when the link is activated. On web the default navigation still happens unless the consumer prevents it; on native the consumer must navigate (the system opens URLs with Linking when no handler is given).
-      platforms: { web: onClick, lit: 'click (native, retargeted — no CustomEvent)', rn: onPress, swiftui: action }
+      description: 'Fired when the link is activated. On web the default navigation still happens unless the consumer prevents it; on native the consumer must navigate (the system opens URLs with Linking when no handler is given). On Lit the name is the native anchor''s own `click`, retargeted out of the shadow root — Link emits no `press` CustomEvent.'
+      platforms: { web: onClick, lit: click, rn: onPress, swiftui: action }
+      cancelable: true
+      fires: [user]
   styles:
     color: { token: color.link }
-    colorHover: { token: color.link.hover, description: Pointer hover and active state. }
+    colorHover: { token: color.link.hover, state: hover, description: Pointer hover and active state. }
     colorVisited: { token: color.link.visited, description: 'Web and Lit only; native has no visited state.' }
     underlineThickness: { token: border.width.thin, description: 'Text-decoration thickness; the underline is always present at rest.' }
     underlineOffset: { token: space.1 }
-    externalIconGap: { token: space.1, description: 'Gap before the trailing icon, which is 1em of the surrounding font size (no token: it scales with the text).' }
+    externalIconGap: { token: space.1, part: externalIcon, description: 'Gap before the trailing icon, which is 1em of the surrounding font size (no token: it scales with the text).' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
     focusRingRadius: { token: radius.sm }
     transition: { token: motion.duration.fast, description: 'Color transition on hover, with motion.easing.standard.' }
   copy:
     externalSuffix: ' (opens in new tab)'
+    external: opens in new tab
   a11y:
     role: link
     requires: [accessible-name, focus-visible, keyboard-operable, contrast-aa]
@@ -72,6 +75,44 @@ component:
       element: Link
       props: [Link, Button, .accessibilityAddTraits=isLink, openURL, .underline, .accessibilityHint]
       notes: 'SwiftUI `Link(destination:)` for `href` (opens through `@Environment(\.openURL)`, so an app can intercept in-app routes); a `Button` with `.isLink` trait when only `action` is given. Underline from the `underline` token via `.underline(true, pattern: .solid, color:)`; `external` appends the `external` Icon inline and `copy.external` to the accessibility label. Inline links inside `Text` render as `Text` concatenation with `.link` attribute for the URL, so a paragraph with a link is one accessibility element with the link as a rotor item.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/focusable ones from the schema.
+    - name: click-fires-on-press
+      description: 'Activation with pointer, Enter, or assistive technology navigates to href; onPress fires first.'
+      when: { click: anchor }
+      then:
+        - { event: onPress }
+    - name: external-link-announces-that-it-leaves
+      description: 'The accessible name is the visible text plus copy.externalSuffix, so users are told the link leaves the current context before they activate it.'
+      given: { external: true, label: 'View the billing history' }
+      then:
+        - { copy: externalSuffix, platforms: [web, lit] }
+        - { name: 'View the billing history (opens in new tab)', platforms: [web] }
+    - name: external-link-opens-a-new-tab
+      description: 'external sets target="_blank" and rel="noopener noreferrer" on web and Lit.'
+      given: { external: true }
+      then:
+        - { attribute: target, is: _blank, platforms: [web, lit] }
+        - { attribute: rel, is: 'noopener noreferrer', platforms: [web, lit] }
+    - name: download-asks-the-browser-to-save
+      description: 'download asks the browser to save rather than open (web and Lit only); the attribute is present and valueless.'
+      given: { download: true }
+      then:
+        - { attribute: download, is: '', platforms: [web, lit] }
+  examples:
+    - name: inline-in-a-paragraph
+      description: The default link inside body text, underlined and taking the paragraph's typography.
+      given: { href: '/billing/history', label: 'View the billing history' }
+    - name: external-destination
+      description: A link that leaves the product, so the name says so before it is activated.
+      given: { href: 'https://status.example.com', label: 'Status page', external: true }
+    - name: inside-muted-text
+      description: A link in muted or on-action text, where the color is inherited and the underline alone marks it.
+      given: { href: '/help/billing', label: 'the billing guide', tone: inherit }
+    - name: downloadable-file
+      description: A link to a file the browser should save rather than open.
+      given: { href: '/invoices/2026-09.pdf', label: 'Download the September invoice', download: true }
+      platforms: [web, lit]
 ---
 
 Links take people somewhere. Buttons do things. That distinction is the whole reason this component exists: assistive technology lists links separately, users expect middle-click and open-in-new-tab to work on them, and the browser's history, visited state and find-in-page all depend on the element being a real link.

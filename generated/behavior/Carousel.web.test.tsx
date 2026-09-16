@@ -20,12 +20,39 @@ function setup(given: Partial<CarouselProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Carousel"]') ?? screen.queryByRole('region') ?? utils.container.firstElementChild) as HTMLElement,
     region: () => (screen.queryByRole('region') ?? s.root()) as HTMLElement,
+    prevButton: () => (document.querySelector('[data-part="prevButton"]') ?? s.root()),
+    nextButton: () => (document.querySelector('[data-part="nextButton"]') ?? s.root()),
+    pickerItem: () => (document.querySelector('[data-part="pickerItem"]') ?? s.root()),
     rerender: (next: Partial<CarouselProps>) => utils.rerender(<Carousel {...props} {...next} />),
   };
   return s;
 }
 
 describe('Carousel', () => {
+  test('next-advances-a-slide', async () => {
+    const s = setup({});
+    await s.user.click(s.nextButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('previous-at-the-first-slide-does-nothing', async () => {
+    const s = setup({});
+    await s.user.click(s.prevButton());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('loop-wraps-backwards-from-the-first-slide', async () => {
+    const s = setup({"loop": true});
+    await s.user.click(s.prevButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('the-picker-jumps-straight-to-a-slide', async () => {
+    const s = setup({"activeIndex": 1, "picker": "dots"});
+    await s.user.click(s.pickerItem());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('the-region-is-announced-as-a-carousel', async () => {
+    const s = setup({});
+    expect(s.region()).toHaveAttribute("aria-roledescription", "carousel");
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

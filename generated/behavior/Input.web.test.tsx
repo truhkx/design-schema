@@ -26,12 +26,38 @@ function setup(given: Partial<InputProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Input"]') ?? screen.queryByRole('textbox') ?? utils.container.firstElementChild) as HTMLElement,
     label: () => (screen.queryByRole('textbox') ?? s.root()) as HTMLElement,
+    field: () => (document.querySelector('[data-part="field"]') ?? s.root()),
     rerender: (next: Partial<InputProps>) => utils.rerender(<Input {...props} {...next} />),
   };
   return s;
 }
 
 describe('Input', () => {
+  test('typing-reports-the-new-value', async () => {
+    const s = setup({});
+    await s.user.type(s.label(), "a");
+    expect(s.events.onChange).toHaveBeenCalledWith("a", expect.anything());
+  });
+  test('focus-is-reported', async () => {
+    const s = setup({});
+    act(() => (s.field()).focus());
+    expect(s.events.onFocus).toHaveBeenCalled();
+  });
+  test('required-is-shown-in-the-label', async () => {
+    const s = setup({"required": true});
+    expect(screen.getByText(new RegExp("\\(required\\)"))).toBeInTheDocument();
+    expect(s.label()).toHaveAttribute("aria-required", "true");
+  });
+  test('error-is-announced-when-it-appears', async () => {
+    const s = setup({"error": "Enter an email address like name@example.com"});
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+  test('disabled-stays-focusable-and-is-announced', async () => {
+    const s = setup({"disabled": true});
+    expect(s.label()).toHaveAttribute('aria-disabled', 'true');
+    act(() => (s.label()).focus());
+    expect(s.label()).toHaveFocus();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

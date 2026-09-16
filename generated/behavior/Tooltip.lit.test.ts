@@ -56,6 +56,15 @@ beforeEach(() => {
 });
 
 describe('ds-tooltip', () => {
+  test('the-visible-tooltip-carries-the-tooltip-role', async () => {
+    const s = await setup({"open": true});
+    expect(s.el.shadowRoot!.querySelector('[role="tooltip"]')).not.toBeNull();
+  });
+  test('the-text-stays-in-the-tree-while-hidden', async () => {
+    const s = await setup({"open": false});
+    await userEvent.hover(s.trigger());
+    expect(s.el.shadowRoot!.querySelector('[role="tooltip"]')).not.toBeNull();
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

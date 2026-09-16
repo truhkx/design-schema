@@ -29,6 +29,10 @@ function setup(given: Partial<FocusScopeProps> = {}) {
 }
 
 describe('FocusScope', () => {
+  test('the-scope-adds-no-role', () => {
+    const s = setup({});
+    expect(s.scope()).not.toHaveProp("role");
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

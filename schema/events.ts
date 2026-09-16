@@ -4,7 +4,8 @@
  * The field schemas an event declares beyond its description (`payload`, `reasons`, `fires`, `timing`) live here,
  * and schema/component.ts's `eventDef` imports them. `EVENT_CONVENTIONS` is the one registry of the event names
  * components share: what each means and how each platform spells it. A component whose platform name is not a
- * registry spelling is reported by `conventionDrift`, which `componentWarnings` returns as a warning.
+ * registry spelling is reported by `conventionDrift`, which `componentDef.check` raises as an error (it was a
+ * `componentWarnings` rule until the phase 3 doc migration satisfied it).
  *
  * schema/component.ts imports this file, so this file never imports schema/component.ts.
  *
@@ -133,7 +134,8 @@ export const EVENT_CONVENTIONS: Readonly<Record<string, EventConvention>> = z.re
 
 type EventNames = { events?: Record<string, { platforms: Partial<Record<string, string>> }> };
 
-/** One finding per event whose name is in the registry but whose platform name is not an accepted spelling. */
+/** One finding per event whose name is in the registry but whose platform name is not an accepted spelling.
+ *  `componentDef.check` turns each into an issue at `path` with `message`. */
 export function conventionDrift(component: EventNames): { path: string; message: string }[] {
   const out: { path: string; message: string }[] = [];
   for (const [name, ev] of Object.entries(component.events ?? {})) {

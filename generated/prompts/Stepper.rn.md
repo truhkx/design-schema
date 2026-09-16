@@ -114,6 +114,14 @@ component:
         lit: step-select
         rn: onStepSelect
         swiftui: onStepSelect
+      payload:
+      - name: id
+        type: string
+        description: The id of the chosen step.
+      fires:
+      - user
+      timing:
+        phase: request
   keyboard:
   - keys:
     - Tab
@@ -126,88 +134,116 @@ component:
     action: Selects the focused step.
     from: first
     expect: manual
+    native: true
   styles:
     indicatorSize:
       token: space.6
+      part: indicator
       locked: false
     indicatorBackground:
       token: color.control.background
+      part: indicator
       locked: false
     indicatorBorder:
       token: color.border.strong
+      part: indicator
       locked: true
     indicatorBorderWidth:
       token: border.width.focus
+      part: indicator
       locked: true
     indicatorCompleteBackground:
       token: color.control.selectedBackground
+      part: indicator
       locked: true
     indicatorCompleteForeground:
       token: color.control.selectedForeground
+      part: indicator
       locked: true
     indicatorCurrentBorder:
       token: color.control.selectedBackground
+      part: indicator
       locked: true
     indicatorErrorBackground:
       token: color.status.danger.background
+      part: indicator
       locked: true
     indicatorErrorForeground:
       token: color.status.danger.foreground
+      part: indicator
       locked: true
     indicatorErrorBorder:
       token: color.status.danger.icon
+      part: indicator
       description: The ring; the danger icon step is the one guaranteed 3:1 against
         the page.
       locked: true
     indicatorFontSize:
       token: font.size.sm
+      part: indicator
       locked: false
     indicatorFontWeight:
       token: font.weight.semibold
+      part: indicator
       locked: false
     connector:
       token: color.border
+      part: connector
       locked: false
     connectorComplete:
       token: color.control.selectedBackground
+      part: connector
       locked: true
     connectorWidth:
       token: border.width.focus
+      part: connector
       locked: true
     labelColor:
       token: color.foreground
+      part: label
       locked: true
     labelUpcomingColor:
       token: color.foreground.muted
+      part: label
       locked: true
     labelWeight:
       token: font.weight.medium
+      part: label
       locked: false
     labelCurrentWeight:
       token: font.weight.semibold
+      part: label
       locked: false
     labelSize:
       token: font.size.sm
+      part: label
       locked: false
     descriptionColor:
       token: color.foreground.muted
+      part: description
       locked: true
     descriptionSize:
       token: font.size.xs
+      part: description
       locked: false
     indicatorColor:
       token: color.foreground
+      part: indicator
       description: Numeral or glyph on current and upcoming steps.
       locked: true
     stepHover:
       token: color.action.ghost.backgroundHover
+      part: step
+      state: hover
       description: Hover and press background of a navigable step.
       locked: false
     stepRadius:
       token: radius.sm
+      part: step
       locked: false
     stepGap:
       token: layout.gap.normal
+      part: step
       description: Between steps along the orientation axis (the connector fills it).
       locked: false
     partGap:
@@ -231,11 +267,27 @@ component:
       locked: false
   copy:
     navLabel: Progress
-    stepOf: Step {current} of {total}
+    stepOf:
+      text: Step {current} of {total}
+      params:
+        current:
+          type: number
+          description: The current step's position in the flow.
+        total:
+          type: number
+          description: How many steps the flow has.
     complete: completed
     current: current step
     error: has an error
-    stepLabel: 'Step {n}: {label}'
+    stepLabel:
+      text: 'Step {n}: {label}'
+      params:
+        n:
+          type: number
+          description: The step's position in the flow.
+        label:
+          type: string
+          description: The step's own label.
   a11y:
     role: none
     requires:
@@ -261,15 +313,15 @@ component:
     - foreground: color.status.danger.icon
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.border.strong
       background: color.background
       level: AA
-      large: true
+      nonText: true
   platforms:
     web:
       element: ol
@@ -319,7 +371,230 @@ component:
         steps are plain elements with the same label. Indicators draw the number or
         the `check`/`danger` Icon; `compact` switches through `ViewThatFits` below
         the prose width. Not SwiftUI''s `Stepper` (a numeric control).'
+  behavior:
+  - name: click-on-a-completed-step-reports-it
+    description: A navigable step fires onStepSelect with its id; the container decides
+      whether to move.
+    given:
+      navigable: completed
+      current: payment
+      steps:
+      - id: shipping
+        label: Shipping address
+      - id: payment
+        label: Payment
+      - id: review
+        label: Review order
+      - id: confirm
+        label: Confirmation
+    when:
+      click: indicator
+    then:
+    - event: onStepSelect
+      with: shipping
+  - name: the-current-step-is-not-navigable
+    description: navigable completed means every step before the current one, so the
+      current step itself reports nothing.
+    given:
+      navigable: completed
+      current: shipping
+      steps:
+      - id: shipping
+        label: Shipping address
+      - id: payment
+        label: Payment
+      - id: review
+        label: Review order
+    when:
+      click: indicator
+    then:
+    - event: onStepSelect
+      fired: false
+  - name: display-only-steps-report-nothing
+    description: With navigable none the steps are inert text.
+    given:
+      navigable: none
+      current: payment
+      steps:
+      - id: shipping
+        label: Shipping address
+      - id: payment
+        label: Payment
+      - id: review
+        label: Review order
+    when:
+      click: indicator
+    then:
+    - event: onStepSelect
+      fired: false
+  - name: step-status-is-said-in-words
+    description: The status is carried by a word from copy, not by color or glyph
+      alone.
+    given:
+      navigable: none
+      current: payment
+      steps:
+      - id: shipping
+        label: Shipping address
+      - id: payment
+        label: Payment
+      - id: review
+        label: Review order
+    then:
+    - copy: complete
+      platforms:
+      - web
+      - lit
+    - copy: current
+      platforms:
+      - web
+      - lit
+  - name: an-errored-step-says-so
+    description: A step marked error is named with copy.error, so the danger glyph
+      is not the only signal.
+    given:
+      navigable: none
+      current: review
+      steps:
+      - id: shipping
+        label: Shipping address
+        status: complete
+      - id: payment
+        label: Payment
+        status: error
+      - id: review
+        label: Review order
+    then:
+    - copy: error
+      platforms:
+      - web
+      - lit
+  - name: compact-shows-the-step-count
+    description: Below the prose width the stepper shows only the current label and
+      "Step n of m".
+    given:
+      compact: true
+      current: payment
+      steps:
+      - id: shipping
+        label: Shipping address
+      - id: payment
+        label: Payment
+      - id: review
+        label: Review order
+      - id: confirm
+        label: Confirmation
+    then:
+    - text: Step 2 of 4
+  examples:
+  - name: checkout
+    description: The usual horizontal flow, where a completed step can be revisited.
+    given:
+      current: payment
+      steps:
+      - id: shipping
+        label: Shipping address
+      - id: payment
+        label: Payment
+      - id: review
+        label: Review order
+  - name: onboarding-with-descriptions
+    description: A vertical stepper whose steps each need a line of explanation.
+    given:
+      orientation: vertical
+      current: verify
+      steps:
+      - id: account
+        label: Create account
+        description: Takes about a minute.
+      - id: verify
+        label: Verify identity
+        description: Takes about 2 minutes.
+      - id: plan
+        label: Choose a plan
+        description: Compare features and pricing.
+  - name: display-only
+    description: A flow the user cannot jump around in.
+    given:
+      navigable: none
+      current: payment
+      steps:
+      - id: shipping
+        label: Shipping address
+      - id: payment
+        label: Payment
+      - id: review
+        label: Review order
+  - name: a-step-with-an-error
+    description: Validation failed on a step the user has already left.
+    given:
+      current: review
+      steps:
+      - id: shipping
+        label: Shipping address
+        status: complete
+      - id: payment
+        label: Payment
+        status: error
+      - id: review
+        label: Review order
 ```
+
+## Events
+
+- `onStepSelect`: emit `onStepSelect`
+  - payload, positional, in this order: `id: string`
+  - fires on: user
+  - timing: request
+
+## Style bindings
+
+- `indicatorSize`: token `space.6`; part `indicator`
+- `indicatorBackground`: token `color.control.background`; part `indicator`
+- `indicatorBorder`: token `color.border.strong`; part `indicator`; locked
+- `indicatorBorderWidth`: token `border.width.focus`; part `indicator`; locked
+- `indicatorCompleteBackground`: token `color.control.selectedBackground`; part `indicator`; locked
+- `indicatorCompleteForeground`: token `color.control.selectedForeground`; part `indicator`; locked
+- `indicatorCurrentBorder`: token `color.control.selectedBackground`; part `indicator`; locked
+- `indicatorErrorBackground`: token `color.status.danger.background`; part `indicator`; locked
+- `indicatorErrorForeground`: token `color.status.danger.foreground`; part `indicator`; locked
+- `indicatorErrorBorder`: token `color.status.danger.icon`; part `indicator`; locked
+- `indicatorFontSize`: token `font.size.sm`; part `indicator`
+- `indicatorFontWeight`: token `font.weight.semibold`; part `indicator`
+- `connector`: token `color.border`; part `connector`
+- `connectorComplete`: token `color.control.selectedBackground`; part `connector`; locked
+- `connectorWidth`: token `border.width.focus`; part `connector`; locked
+- `labelColor`: token `color.foreground`; part `label`; locked
+- `labelUpcomingColor`: token `color.foreground.muted`; part `label`; locked
+- `labelWeight`: token `font.weight.medium`; part `label`
+- `labelCurrentWeight`: token `font.weight.semibold`; part `label`
+- `labelSize`: token `font.size.sm`; part `label`
+- `descriptionColor`: token `color.foreground.muted`; part `description`; locked
+- `descriptionSize`: token `font.size.xs`; part `description`
+- `indicatorColor`: token `color.foreground`; part `indicator`; locked
+- `stepHover`: token `color.action.ghost.backgroundHover`; part `step`; state `hover`
+- `stepRadius`: token `radius.sm`; part `step`
+- `stepGap`: token `layout.gap.normal`; part `step`
+
+## Keyboard
+
+- `Enter`, ` ` (Selects the focused step.): expect manual; native: the rendered element already does this
+
+## Copy
+
+- `navLabel`: "Progress"
+- `stepOf`: "Step {current} of {total}"; params `current` (number), `total` (number)
+- `complete`: "completed"
+- `current`: "current step"
+- `error`: "has an error"
+- `stepLabel`: "Step {n}: {label}"; params `n` (number), `label` (string)
+
+## Constants and examples
+
+- example `checkout`, story `Checkout`: given `current: "payment"`, `steps: [{"id":"shipping","label":"Shipping address"},{"id":"payment","label":"Payment"},{"id":"review","label":"Review order"}]`; The usual horizontal flow, where a completed step can be revisited.
+- example `onboarding-with-descriptions`, story `OnboardingWithDescriptions`: given `orientation: "vertical"`, `current: "verify"`, `steps: [{"id":"account","label":"Create account","description":"Takes about a minute."},{"id":"verify","label":"Verify identity","description":"Takes about 2 minutes."},{"id":"plan","label":"Choose a plan","description":"Compare features and pricing."}]`; A vertical stepper whose steps each need a line of explanation.
+- example `display-only`, story `DisplayOnly`: given `navigable: "none"`, `current: "payment"`, `steps: [{"id":"shipping","label":"Shipping address"},{"id":"payment","label":"Payment"},{"id":"review","label":"Review order"}]`; A flow the user cannot jump around in.
+- example `a-step-with-an-error`, story `AStepWithAnError`: given `current: "review"`, `steps: [{"id":"shipping","label":"Shipping address","status":"complete"},{"id":"payment","label":"Payment","status":"error"},{"id":"review","label":"Review order"}]`; Validation failed on a step the user has already left.
 
 ## Overrides (per-instance styling contract)
 
@@ -332,11 +607,83 @@ The `platforms.rn.props` list names the native props the schema cares about; `ov
 Overridable: `indicatorSize`, `indicatorBackground`, `indicatorFontSize`, `indicatorFontWeight`, `connector`, `labelWeight`, `labelCurrentWeight`, `labelSize`, `descriptionSize`, `stepHover`, `stepRadius`, `stepGap`, `partGap`, `fontFamily`, `transition`
 Locked (accessibility-bearing, never overridable): `indicatorBorder`, `indicatorBorderWidth`, `indicatorCompleteBackground`, `indicatorCompleteForeground`, `indicatorCurrentBorder`, `indicatorErrorBackground`, `indicatorErrorForeground`, `indicatorErrorBorder`, `connectorComplete`, `connectorWidth`, `labelColor`, `labelUpcomingColor`, `descriptionColor`, `indicatorColor`, `minTarget`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (7)
+## Behavior scenarios (11)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: click-on-a-completed-step-reports-it
+  description: A navigable step fires onStepSelect with its id; the container decides
+    whether to move.
+  given:
+    navigable: completed
+    current: payment
+    steps:
+    - id: shipping
+      label: Shipping address
+    - id: payment
+      label: Payment
+    - id: review
+      label: Review order
+    - id: confirm
+      label: Confirmation
+  when:
+    click: indicator
+  then:
+  - event: onStepSelect
+    with: shipping
+- name: the-current-step-is-not-navigable
+  description: navigable completed means every step before the current one, so the
+    current step itself reports nothing.
+  given:
+    navigable: completed
+    current: shipping
+    steps:
+    - id: shipping
+      label: Shipping address
+    - id: payment
+      label: Payment
+    - id: review
+      label: Review order
+  when:
+    click: indicator
+  then:
+  - event: onStepSelect
+    fired: false
+- name: display-only-steps-report-nothing
+  description: With navigable none the steps are inert text.
+  given:
+    navigable: none
+    current: payment
+    steps:
+    - id: shipping
+      label: Shipping address
+    - id: payment
+      label: Payment
+    - id: review
+      label: Review order
+  when:
+    click: indicator
+  then:
+  - event: onStepSelect
+    fired: false
+- name: compact-shows-the-step-count
+  description: Below the prose width the stepper shows only the current label and
+    "Step n of m".
+  given:
+    compact: true
+    current: payment
+    steps:
+    - id: shipping
+      label: Shipping address
+    - id: payment
+      label: Payment
+    - id: review
+      label: Review order
+    - id: confirm
+      label: Confirmation
+  then:
+  - text: Step 2 of 4
 - name: renders
   then:
   - renders: true

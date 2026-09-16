@@ -36,6 +36,10 @@ component:
     onEscapeAttempt:
       description: 'Fired when trapped focus would have left the scope (Tab from the last element, Shift+Tab from the first) just before it wraps, with the direction. Diagnostic; components do not need it.'
       platforms: { web: onEscapeAttempt, lit: escape-attempt, rn: onEscapeAttempt, swiftui: onEscapeAttempt }
+      payload:
+        - { name: direction, type: enum, values: [forward, backward], description: 'forward for Tab from the last element, backward for Shift+Tab from the first.' }
+      fires: [user]
+      timing: { phase: before-change }
   keyboard:
     - { keys: [Tab], action: 'From the last focusable descendant, wraps to the first.', from: last, expect: focus-wraps-to-first }
     - { keys: [Shift+Tab], action: 'From the first focusable descendant, wraps to the last.', from: first, expect: focus-wraps-to-last }
@@ -51,7 +55,7 @@ component:
       notes: 'A <div data-focus-scope> wrapper. Focusable descendants are collected in DOM order including across open shadow roots and assigned slot nodes (the same walker the keyboard gate uses); disabled and aria-hidden subtrees are excluded, as are elements with tabindex=-1 except the container itself. Keydown on Tab at the edges calls preventDefault and focuses the other edge. A focusin listener on document pulls focus back to the last focused descendant if it leaves while trapped and active. Two sentinel elements (tabindex=0, visually hidden, data-focus-sentinel so the keyboard gate ignores them) at each end catch focus arriving from the browser chrome. Nested scopes register in a module-level stack; only the top is active.'
     lit:
       tag: ds-focus-scope
-      reflect: [trapped, active]
+      reflect: [{ prop: trapped, attribute: no-trapped }, { prop: active, attribute: no-active }]
       notes: 'The host is the wrapper (display: contents is NOT used — it breaks focus delegation; the host is display: block). Same walker; slotted light-DOM children are included via assignedElements({ flatten: true }). `escape-attempt` is a composed CustomEvent.'
     rn:
       element: View
@@ -61,6 +65,45 @@ component:
       element: VStack
       props: ['@FocusState', '@AccessibilityFocusState', .focusSection, .focusScope, .onExitCommand, .accessibilityAddTraits=isModal]
       notes: 'The engine in `Support/FocusScope.swift`: `.focusSection()` bounds Tab/Shift+Tab on iPad keyboards inside the scope (`trap`), `@AccessibilityFocusState` moves VoiceOver focus to `autoFocus`''s target on appear and back to `returnFocusTo` (or the element that opened the scope) on disappear, and `.accessibilityAddTraits(.isModal)` tells VoiceOver to ignore siblings while a modal scope is up. Escape reaches the scope through `.onExitCommand`; `onEscapeAttempt` fires when the scope is asked to close and the owner decides. Wrapping is done by tracking the first/last focusable identifiers the children register through a preference.'
+  behavior:
+    # Authored scenarios; the parser adds the renders/enum ones from the schema.
+    # The wrap itself (Tab from the last descendant to the first) has no clause: it needs a
+    # two-step focus assertion the vocabulary does not have. The Keyboard story and the keyboard gate cover it.
+    - name: auto-focus-container-focuses-the-wrapper
+      description: 'autoFocus container makes the wrapper focusable with tabindex -1 and puts focus on it, for reading-first dialogs.'
+      given: { autoFocus: container }
+      then:
+        - { focused: scope }
+      platforms: [web, lit]
+    - name: auto-focus-none-moves-focus-nowhere
+      description: 'autoFocus none leaves focus where it was; the scope never takes it on its own.'
+      given: { autoFocus: none }
+      then:
+        - { focused: none }
+      platforms: [web, lit]
+    - name: the-wrapper-is-not-focusable
+      description: The scope renders no element of its own beyond a wrapper that is not focusable, unless autoFocus is container.
+      given: { autoFocus: none }
+      then:
+        - { focusable: false }
+      platforms: [web, lit]
+    - name: the-scope-adds-no-role
+      description: The scope adds no role and no name; assistive technology never perceives it.
+      then:
+        - { attribute: role, is: null }
+  examples:
+    - name: modal-takeover
+      description: A new modal surface the system does not have yet, trapped with an Escape handler of its own.
+      given: { children: 'A full-screen onboarding overlay with its own close Button', trapped: true, autoFocus: first }
+    - name: non-modal-drawer
+      description: A panel that moves focus in and restores it on close while leaving the page usable.
+      given: { children: 'A slide-in filter drawer', trapped: false, autoFocus: first }
+    - name: reading-first
+      description: A dialog whose text should be read from the top, so focus lands on the container rather than a control.
+      given: { children: 'A long terms-of-service body with Accept and Decline Buttons', autoFocus: container }
+    - name: paused-outer-scope
+      description: The outer scope of a nested pair, inactive while a Menu inside owns Tab.
+      given: { children: 'A dialog body with a Menu open inside it', active: false }
 ---
 
 FocusScope is the smallest possible answer to the hardest accessibility bug: focus that escapes a modal, or never comes back from one. It has no appearance and no opinion about what is inside it. It moves focus in, keeps Tab inside, and puts focus back — and because it exists once, every overlay that composes it gets those three behaviors right by construction rather than by re-implementation.

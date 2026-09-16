@@ -23,12 +23,35 @@ function setup(given: Partial<CarouselProps> = {}) {
     props,
     root: () => screen.queryByTestId('Carousel') ?? screen.UNSAFE_root,
     region: () => screen.queryByRole('region') ?? s.root(),
+    prevButton: () => screen.queryByTestId('Carousel.prevButton') ?? s.root(),
+    nextButton: () => screen.queryByTestId('Carousel.nextButton') ?? s.root(),
+    pickerItem: () => screen.queryByTestId('Carousel.pickerItem') ?? s.root(),
     rerender: (next: Partial<CarouselProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Carousel', () => {
+  test('next-advances-a-slide', () => {
+    const s = setup({});
+    fireEvent.press(s.nextButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('previous-at-the-first-slide-does-nothing', () => {
+    const s = setup({});
+    fireEvent.press(s.prevButton());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('loop-wraps-backwards-from-the-first-slide', () => {
+    const s = setup({"loop": true});
+    fireEvent.press(s.prevButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('the-picker-jumps-straight-to-a-slide', () => {
+    const s = setup({"activeIndex": 1, "picker": "dots"});
+    fireEvent.press(s.pickerItem());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

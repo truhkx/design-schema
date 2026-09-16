@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/Table.js';
 import meta from '../../packages/lit/src/Table.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -53,6 +57,9 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     container: () => (deep(root, '[role="table"]') ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
+    sortButton: () => (deep(root, '[part="sortButton"]') ?? deep(root, '[data-part="sortButton"]')) as HTMLElement,
+    selectCell: () => (deep(root, '[part="selectCell"]') ?? deep(root, '[data-part="selectCell"]')) as HTMLElement,
+    selectAllCell: () => (deep(root, '[part="selectAllCell"]') ?? deep(root, '[data-part="selectAllCell"]')) as HTMLElement,
   };
   return s;
 }
@@ -62,6 +69,29 @@ beforeEach(() => {
 });
 
 describe('ds-table', () => {
+  test('activating-a-sortable-header-reports-the-sort', async () => {
+    const s = await setup({"columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}, {"key": "amount", "header": "Amount", "sortable": true, "align": "end"}], "data": [{"id": "a", "invoice": "INV-1", "amount": 100}, {"id": "b", "invoice": "INV-2", "amount": 200}]});
+    await userEvent.click(s.sortButton());
+    expect(s.events.onSortChange).toHaveBeenCalled();
+  });
+  test('selecting-a-row-reports-every-selected-id', async () => {
+    const s = await setup({"selectable": "multiple", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}, {"id": "b", "invoice": "INV-2"}]});
+    await userEvent.click(s.selectCell());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('select-all-reports-the-whole-selection', async () => {
+    const s = await setup({"selectable": "multiple", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}, {"id": "b", "invoice": "INV-2"}]});
+    await userEvent.click(s.selectAllCell());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('the-empty-message-shows-when-there-are-no-rows', async () => {
+    const s = await setup({"columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": []});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Nothing\\ to\\ show\\."));
+  });
+  test('a-custom-empty-message-replaces-the-default', async () => {
+    const s = await setup({"emptyMessage": "No invoices yet.", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": []});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("No\\ invoices\\ yet\\."));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

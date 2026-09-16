@@ -19,7 +19,7 @@ const check = (c: parse.Dict, file: string): void => parse.validate({ component:
 function withBehavior(c: parse.Dict, ...scenarios: parse.Dict[]): parse.Dict {
   const out = structuredClone(c);
   out.behavior = scenarios;
-  out.platforms.lit = { tag: 'ds-widget' };
+  out.platforms.lit = { tag: 'ds-widget', reflect: ['variant', 'size'] };
   out.events.onPress.platforms.lit = 'press';
   return out;
 }
@@ -181,7 +181,7 @@ describe('deriveBehavior from the overlay block', () => {
     const c = component();
     c.props.open = { type: 'boolean', description: 'Shown.' };
     c.events.onOpenChange = { description: 'Dismissed.', platforms: { web: 'onOpenChange', rn: 'onOpenChange' } };
-    c.platforms.lit = { tag: 'ds-widget' };
+    c.platforms.lit = { tag: 'ds-widget', reflect: ['variant', 'size'] };
     c.overlay = overlay;
     return c;
   }
@@ -205,6 +205,28 @@ describe('deriveBehavior from the overlay block', () => {
     expect(escapes(overlaid({ ...OVERLAY, open: undefined }))).toBe(false);
     expect(escapes(overlaid({ ...OVERLAY, closeEvent: undefined }))).toBe(false);
     expect(escapes(component())).toBe(false);
+  });
+
+  /** The phase 3 migration: seven of the eight layered docs name a close event, so seven Escape scenarios are derived.
+   *  Tooltip declares no events at all, so it has no closeEvent and derives none. A later job that drops a doc's
+   *  overlay.open, closeEvent or `escape` dismissal would silently lose one of these. */
+  test('the eight layered docs derive these Escape scenarios', () => {
+    const generated = JSON.parse(readText(join(REPO_ROOT, 'generated', 'components.json'))) as { id: string; component: parse.Dict }[];
+    const derived = Object.fromEntries(
+      generated
+        .filter((entry) => entry.component.category === 'overlay')
+        .map((entry) => [entry.component.name as string, parse.deriveBehavior(entry.component).filter((s) => (s.name as string).startsWith('escape-fires-')).map((s) => s.name)]),
+    );
+    expect(derived).toEqual({
+      ActionSheet: ['escape-fires-on-close'],
+      AlertDialog: ['escape-fires-on-cancel'],
+      BottomSheet: ['escape-fires-on-close'],
+      Dialog: ['escape-fires-on-close'],
+      Menu: ['escape-fires-on-open-change'],
+      Popover: ['escape-fires-on-open-change'],
+      SidePanel: ['escape-fires-on-open-change'],
+      Tooltip: [],
+    });
   });
 });
 

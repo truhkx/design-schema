@@ -6,6 +6,10 @@ import type { MeterProps } from '../../packages/rn/src/Meter';
 import meta from '../../packages/rn/src/Meter.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<MeterProps> = {}) {
   const events = {};
   const props: MeterProps = { ...(meta.args as MeterProps), ...given };
@@ -27,6 +31,14 @@ function setup(given: Partial<MeterProps> = {}) {
 }
 
 describe('Meter', () => {
+  test('value-text-is-shown-and-announced', () => {
+    const s = setup({"valueText": "3.2 GB of 10 GB"});
+    expect(screen.getByText(new RegExp("3\\.2\\ GB\\ of\\ 10\\ GB"))).toBeOnTheScreen();
+  });
+  test('the-label-names-the-measurement', () => {
+    const s = setup({"label": "Password strength"});
+    expect(screen.getByText(new RegExp("Password\\ strength"))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

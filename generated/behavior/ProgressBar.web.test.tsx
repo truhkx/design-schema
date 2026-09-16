@@ -6,6 +6,10 @@ import { ProgressBar } from '../../packages/react/src/ProgressBar';
 import type { ProgressBarProps } from '../../packages/react/src/ProgressBar';
 import meta from '../../packages/react/src/ProgressBar.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<ProgressBarProps> = {}) {
   const events = {};
   const props = { ...meta.args, ...given };
@@ -24,6 +28,26 @@ function setup(given: Partial<ProgressBarProps> = {}) {
 }
 
 describe('ProgressBar', () => {
+  test('the-bar-reports-its-value-and-range', async () => {
+    const s = setup({"value": 42, "min": 0, "max": 100});
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(s.container()).toHaveAttribute("aria-valuenow", "42");
+    expect(s.container()).toHaveAttribute("aria-valuemin", "0");
+    expect(s.container()).toHaveAttribute("aria-valuemax", "100");
+  });
+  test('the-bar-is-never-focusable', async () => {
+    const s = setup({});
+    act(() => (s.container()).focus());
+    expect(s.container()).not.toHaveFocus();
+  });
+  test('a-hidden-label-is-still-the-accessible-name', async () => {
+    const s = setup({"hideLabel": true});
+    expect(screen.getByRole('progressbar', { name: s.props.label })).toBeInTheDocument();
+  });
+  test('the-label-names-the-task', async () => {
+    const s = setup({"label": "Importing contacts"});
+    expect(screen.getByText(new RegExp("Importing\\ contacts"))).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

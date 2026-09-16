@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/Meter.js';
 import meta from '../../packages/lit/src/Meter.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -56,6 +60,26 @@ beforeEach(() => {
 });
 
 describe('ds-meter', () => {
+  test('the-meter-reports-its-value-and-range', async () => {
+    const s = await setup({"value": 25, "min": 0, "max": 50});
+    expect(s.el.shadowRoot!.querySelector('[role="meter"]')).not.toBeNull();
+    expect(s.container()).toHaveAttribute("aria-valuenow", "25");
+    expect(s.container()).toHaveAttribute("aria-valuemin", "0");
+    expect(s.container()).toHaveAttribute("aria-valuemax", "50");
+  });
+  test('a-value-above-the-maximum-is-clamped', async () => {
+    const s = await setup({"value": 150, "min": 0, "max": 100});
+    expect(s.container()).toHaveAttribute("aria-valuenow", "100");
+  });
+  test('value-text-is-shown-and-announced', async () => {
+    const s = await setup({"valueText": "3.2 GB of 10 GB"});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("3\\.2\\ GB\\ of\\ 10\\ GB"));
+    expect(s.container()).toHaveAttribute("aria-valuetext", "3.2 GB of 10 GB");
+  });
+  test('the-label-names-the-measurement', async () => {
+    const s = await setup({"label": "Password strength"});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Password\\ strength"));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

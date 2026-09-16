@@ -51,6 +51,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     scrim: () => (deep(root, '[role="dialog"]') ?? deep(root, '[part="scrim"]') ?? deep(root, '[data-part="scrim"]') ?? root.firstElementChild) as HTMLElement,
+    closeButton: () => (deep(root, '[part="closeButton"]') ?? deep(root, '[data-part="closeButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -60,6 +61,34 @@ beforeEach(() => {
 });
 
 describe('ds-dialog', () => {
+  test('close-button-fires-on-close', async () => {
+    const s = await setup({"open": true});
+    await userEvent.click(s.closeButton());
+    expect(s.events.onClose).toHaveBeenCalled();
+  });
+  test('non-dismissible-still-reports-escape', async () => {
+    const s = await setup({"open": true, "dismissible": false});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onClose).toHaveBeenCalled();
+  });
+  test('non-dismissible-scrim-click-does-nothing', async () => {
+    const s = await setup({"open": true, "dismissible": false});
+    await userEvent.click(s.scrim());
+    expect(s.events.onClose).not.toHaveBeenCalled();
+  });
+  test('initial-focus-lands-on-the-close-button', async () => {
+    const s = await setup({"open": true, "initialFocus": "close"});
+    expect(activeChain()).toContain(s.closeButton());
+  });
+  test('hidden-heading-is-still-the-accessible-name', async () => {
+    const s = await setup({"open": true, "hideHeading": true});
+    expect(s.scrim()).toHaveAccessibleName(s.props.heading);
+  });
+  test('closed-dialog-renders-nothing', async () => {
+    const s = await setup({"open": false});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(false);
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
@@ -91,5 +120,11 @@ describe('ds-dialog', () => {
   test('has-accessible-name', async () => {
     const s = await setup({"open": true});
     expect(s.scrim()).toHaveAccessibleName(s.props.heading);
+  });
+  test('escape-fires-on-close', async () => {
+    const s = await setup({"open": true});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onClose).toHaveBeenCalled();
   });
 });

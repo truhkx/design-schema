@@ -53,6 +53,8 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     landmark: () => (deep(root, '[role="searchbox"]') ?? deep(root, '[part="landmark"]') ?? deep(root, '[data-part="landmark"]') ?? root.firstElementChild) as HTMLElement,
+    clearButton: () => (deep(root, '[part="clearButton"]') ?? deep(root, '[data-part="clearButton"]')) as HTMLElement,
+    submitButton: () => (deep(root, '[part="submitButton"]') ?? deep(root, '[data-part="submitButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -62,6 +64,39 @@ beforeEach(() => {
 });
 
 describe('ds-search', () => {
+  test('typing-fires-onchange-with-the-query', async () => {
+    const s = await setup({});
+    await userEvent.type(s.landmark(), "invoices");
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('enter-submits-the-query', async () => {
+    const s = await setup({"defaultValue": "invoices"});
+    s.el.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(s.events.onSubmit).toHaveBeenCalled();
+  });
+  test('an-empty-query-is-not-submitted', async () => {
+    const s = await setup({});
+    s.el.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(s.events.onSubmit).not.toHaveBeenCalled();
+  });
+  test('the-submit-button-submits-the-query', async () => {
+    const s = await setup({"defaultValue": "invoices", "action": "/search"});
+    await userEvent.click(s.submitButton());
+    expect(s.events.onSubmit).toHaveBeenCalled();
+  });
+  test('the-clear-button-empties-the-field', async () => {
+    const s = await setup({"defaultValue": "invoices"});
+    await userEvent.click(s.clearButton());
+    expect(s.events.onClear).toHaveBeenCalled();
+  });
+  test('escape-clears-the-field-when-no-list-is-open', async () => {
+    const s = await setup({"defaultValue": "invoices"});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onClear).toHaveBeenCalled();
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

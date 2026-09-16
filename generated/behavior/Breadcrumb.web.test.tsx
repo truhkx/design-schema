@@ -6,6 +6,10 @@ import { Breadcrumb } from '../../packages/react/src/Breadcrumb';
 import type { BreadcrumbProps } from '../../packages/react/src/Breadcrumb';
 import meta from '../../packages/react/src/Breadcrumb.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<BreadcrumbProps> = {}) {
   const events = {
     onNavigate: vi.fn(),
@@ -20,12 +24,33 @@ function setup(given: Partial<BreadcrumbProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Breadcrumb"]') ?? screen.queryByRole('navigation') ?? utils.container.firstElementChild) as HTMLElement,
     nav: () => (screen.queryByRole('navigation') ?? s.root()) as HTMLElement,
+    link: () => (document.querySelector('[data-part="link"]') ?? s.root()),
+    current: () => (document.querySelector('[data-part="current"]') ?? s.root()),
     rerender: (next: Partial<BreadcrumbProps>) => utils.rerender(<Breadcrumb {...props} {...next} />),
   };
   return s;
 }
 
 describe('Breadcrumb', () => {
+  test('click-on-an-ancestor-reports-navigation', async () => {
+    const s = setup({});
+    await s.user.click(s.link());
+    expect(s.events.onNavigate).toHaveBeenCalled();
+  });
+  test('the-last-item-is-the-current-page', async () => {
+    const s = setup({});
+    expect(s.current()).toHaveAttribute("aria-current", "page");
+  });
+  test('the-trail-is-a-named-navigation-landmark', async () => {
+    const s = setup({"label": "Docs breadcrumb"});
+    expect(screen.getByRole('navigation')).toBeInTheDocument();
+    expect(s.nav()).toHaveAttribute("aria-label", "Docs breadcrumb");
+  });
+  test('an-uncollapsed-trail-shows-every-ancestor', async () => {
+    const s = setup({"collapse": false, "items": [{"label": "Docs", "href": "/docs"}, {"label": "Components", "href": "/docs/components"}, {"label": "Navigation", "href": "/docs/components/navigation"}, {"label": "Breadcrumb", "href": "/docs/components/navigation/breadcrumb"}, {"label": "Keyboard"}]});
+    expect(screen.getByText(new RegExp("Components"))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp("Navigation"))).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

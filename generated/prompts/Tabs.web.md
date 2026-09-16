@@ -92,6 +92,9 @@ component:
     value:
       type: string
       description: Controlled selected tab id. Omit for uncontrolled.
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: string
       description: Initially selected tab id. Defaults to the first enabled tab.
@@ -132,6 +135,12 @@ component:
         lit: change
         rn: onChange
         swiftui: onChange
+      payload:
+      - name: value
+        type: string
+        description: The id of the selected tab.
+      fires:
+      - user
   keyboard:
   - keys:
     - Tab
@@ -156,13 +165,17 @@ component:
     action: Moves to the next tab, wrapping; selects it under automatic activation.
     when: vertical
     from: first
-    expect: manual
+    given:
+      orientation: vertical
+    expect: focus-next
   - keys:
     - ArrowUp
     action: Moves to the previous tab, wrapping.
     when: vertical
     from: last
-    expect: manual
+    given:
+      orientation: vertical
+    expect: focus-prev
   - keys:
     - ArrowRight
     action: From the last tab wraps to the first.
@@ -189,21 +202,28 @@ component:
   styles:
     tabColor:
       token: color.foreground.muted
+      part: tab
       locked: true
     tabSelectedColor:
       token: color.foreground.strong
+      part: tab
       locked: true
     tabHoverBackground:
       token: color.background.subtle
+      part: tab
+      state: hover
       locked: true
     tabPaddingBlock:
       token: space.sm
+      part: tab
       locked: false
     tabPaddingInline:
       token: space.md
+      part: tab
       locked: false
     tabGap:
       token: layout.gap.tight
+      part: tab
       description: Between icon, label and badge inside a tab.
       locked: false
     listGap:
@@ -212,6 +232,7 @@ component:
       locked: false
     indicator:
       token: color.control.selectedBackground
+      part: indicator
       description: The selected tab's underline (horizontal, flush against the list
         border at the bottom edge) or side bar (vertical, flush against the inline-end
         edge next to the panels) — the selected-control fill, which is chosen per
@@ -219,6 +240,7 @@ component:
       locked: true
     indicatorThickness:
       token: border.width.focus
+      part: indicator
       locked: true
     listBorder:
       token: color.border
@@ -229,6 +251,7 @@ component:
       locked: false
     panelGap:
       token: layout.gap.loose
+      part: panel
       description: Between the tab list and the panel.
       locked: false
     badgeColor:
@@ -270,6 +293,16 @@ component:
     disabledOpacity:
       token: opacity.disabled
       locked: false
+  copy:
+    position:
+      text: '{index} of {total}'
+      params:
+        index:
+          type: number
+          description: The tab's position in the tab list.
+        total:
+          type: number
+          description: How many tabs the tab list has.
   a11y:
     role: tablist
     requires:
@@ -295,7 +328,7 @@ component:
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
   platforms:
     web:
       element: div
@@ -361,11 +394,166 @@ component:
         by selection, each `.accessibilityElement(children: .contain)` labelled by
         its tab. `orientation: vertical` swaps the stacks. Indicator and borders from
         the tokens with the `transition` animation.'
+  behavior:
+  - name: click-selects-a-tab
+    description: Clicking a tab that is not the selected one changes the selection
+      and reports the new id.
+    given:
+      defaultValue: activity
+    when:
+      click: tab
+    then:
+    - event: onChange
+  - name: clicking-the-selected-tab-changes-nothing
+    description: onChange fires when the selected tab changes; re-pressing the current
+      tab is not a change.
+    given:
+      defaultValue: overview
+    when:
+      click: tab
+    then:
+    - event: onChange
+      fired: false
+  - name: the-selected-tab-is-marked-selected
+    description: Selection is carried by aria-selected on the tab, which is what a
+      screen reader reports.
+    given:
+      defaultValue: overview
+    then:
+    - attribute: aria-selected
+      is: 'true'
+      'on': tab
+    platforms:
+    - web
+  - name: arrow-selects-under-automatic-activation
+    description: automatic selects a tab as arrow keys move to it (keyboard rule,
+      ArrowRight).
+    given:
+      activation: automatic
+    when:
+      key: ArrowRight
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: manual-activation-does-not-select-on-arrow
+    description: manual moves focus only and selects on Enter/Space.
+    given:
+      activation: manual
+    when:
+      key: ArrowRight
+    then:
+    - event: onChange
+      fired: false
+    platforms:
+    - web
+    - lit
+  - name: a-disabled-tab-cannot-be-selected
+    description: A tab marked disabled in the tabs array is visible but selects nothing
+      when pressed.
+    given:
+      tabs:
+      - id: overview
+        label: Overview
+        disabled: true
+      - id: activity
+        label: Activity
+      defaultValue: activity
+    when:
+      click: tab
+    then:
+    - event: onChange
+      fired: false
+  examples:
+  - name: account-sections
+    description: The default horizontal tab list over one panel per section.
+    given:
+      label: Account sections
+      tabs:
+      - id: profile
+        label: Profile
+      - id: billing
+        label: Billing
+      - id: security
+        label: Security
+      children: One TabPanel per tab, matching ids
+  - name: manual-activation-for-expensive-panels
+    description: Panels that fetch on open, so arrows move focus and Enter selects.
+    given:
+      label: Report sections
+      tabs:
+      - id: summary
+        label: Summary
+      - id: details
+        label: Details
+      activation: manual
+      children: One TabPanel per tab, matching ids
+  - name: vertical-tabs-beside-their-panels
+    description: A vertical tab list for a settings page, moved through with Up and
+      Down.
+    given:
+      label: Settings sections
+      tabs:
+      - id: general
+        label: General
+      - id: members
+        label: Members
+      orientation: vertical
+      children: One TabPanel per tab, matching ids
+  - name: filled-tabs-with-a-badge
+    description: Two tabs stretched across a phone-width layout, one carrying a count,
+      with both panels kept mounted.
+    given:
+      label: Inbox sections
+      tabs:
+      - id: inbox
+        label: Inbox
+        badge: '3'
+      - id: archive
+        label: Archive
+      fit: fill
+      keepMounted: true
+      children: One TabPanel per tab, matching ids
 ```
+
+## Events
+
+- `onChange`: emit `onChange`
+  - payload, positional, in this order: `value: string`
+  - fires on: user
 
 ## Controlled state
 
-- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; paired by name, so no event is declared
+- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `onChange`)
+
+## Style bindings
+
+- `tabColor`: token `color.foreground.muted`; part `tab`; locked
+- `tabSelectedColor`: token `color.foreground.strong`; part `tab`; locked
+- `tabHoverBackground`: token `color.background.subtle`; part `tab`; state `hover`; locked
+- `tabPaddingBlock`: token `space.sm`; part `tab`
+- `tabPaddingInline`: token `space.md`; part `tab`
+- `tabGap`: token `layout.gap.tight`; part `tab`
+- `indicator`: token `color.control.selectedBackground`; part `indicator`; locked
+- `indicatorThickness`: token `border.width.focus`; part `indicator`; locked
+- `panelGap`: token `layout.gap.loose`; part `panel`
+
+## Keyboard
+
+- `ArrowDown` (Moves to the next tab, wrapping; selects it under automatic activation.): expect focus-next; given `orientation: "vertical"`; story URL `/iframe.html?id=tabs-react--keyboard&viewMode=story&args=orientation:vertical`
+- `ArrowUp` (Moves to the previous tab, wrapping.): expect focus-prev; given `orientation: "vertical"`; story URL `/iframe.html?id=tabs-react--keyboard&viewMode=story&args=orientation:vertical`
+
+## Copy
+
+- `position`: "{index} of {total}"; params `index` (number), `total` (number)
+
+## Constants and examples
+
+- example `account-sections`, story `AccountSections`: given `label: "Account sections"`, `tabs: [{"id":"profile","label":"Profile"},{"id":"billing","label":"Billing"},{"id":"security","label":"Security"}]`, `children: "One TabPanel per tab, matching ids"`; The default horizontal tab list over one panel per section.
+- example `manual-activation-for-expensive-panels`, story `ManualActivationForExpensivePanels`: given `label: "Report sections"`, `tabs: [{"id":"summary","label":"Summary"},{"id":"details","label":"Details"}]`, `activation: "manual"`, `children: "One TabPanel per tab, matching ids"`; Panels that fetch on open, so arrows move focus and Enter selects.
+- example `vertical-tabs-beside-their-panels`, story `VerticalTabsBesideTheirPanels`: given `label: "Settings sections"`, `tabs: [{"id":"general","label":"General"},{"id":"members","label":"Members"}]`, `orientation: "vertical"`, `children: "One TabPanel per tab, matching ids"`; A vertical tab list for a settings page, moved through with Up and Down.
+- example `filled-tabs-with-a-badge`, story `FilledTabsWithABadge`: given `label: "Inbox sections"`, `tabs: [{"id":"inbox","label":"Inbox","badge":"3"},{"id":"archive","label":"Archive"}]`, `fit: "fill"`, `keepMounted: true`, `children: "One TabPanel per tab, matching ids"`; Two tabs stretched across a phone-width layout, one carrying a count, with both panels kept mounted.
 
 ## Overrides (per-instance styling contract)
 
@@ -378,11 +566,80 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `tabPaddingBlock`, `tabPaddingInline`, `tabGap`, `listGap`, `listBorder`, `listBorderWidth`, `panelGap`, `badgeSize`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `radius`, `transition`, `disabledOpacity`
 Locked (accessibility-bearing, never overridable): `tabColor`, `tabSelectedColor`, `tabHoverBackground`, `indicator`, `indicatorThickness`, `badgeColor`, `minTarget`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (8)
+## Behavior scenarios (14)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: click-selects-a-tab
+  description: Clicking a tab that is not the selected one changes the selection and
+    reports the new id.
+  given:
+    defaultValue: activity
+  when:
+    click: tab
+  then:
+  - event: onChange
+- name: clicking-the-selected-tab-changes-nothing
+  description: onChange fires when the selected tab changes; re-pressing the current
+    tab is not a change.
+  given:
+    defaultValue: overview
+  when:
+    click: tab
+  then:
+  - event: onChange
+    fired: false
+- name: the-selected-tab-is-marked-selected
+  description: Selection is carried by aria-selected on the tab, which is what a screen
+    reader reports.
+  given:
+    defaultValue: overview
+  then:
+  - attribute: aria-selected
+    is: 'true'
+    'on': tab
+  platforms:
+  - web
+- name: arrow-selects-under-automatic-activation
+  description: automatic selects a tab as arrow keys move to it (keyboard rule, ArrowRight).
+  given:
+    activation: automatic
+  when:
+    key: ArrowRight
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: manual-activation-does-not-select-on-arrow
+  description: manual moves focus only and selects on Enter/Space.
+  given:
+    activation: manual
+  when:
+    key: ArrowRight
+  then:
+  - event: onChange
+    fired: false
+  platforms:
+  - web
+  - lit
+- name: a-disabled-tab-cannot-be-selected
+  description: A tab marked disabled in the tabs array is visible but selects nothing
+    when pressed.
+  given:
+    tabs:
+    - id: overview
+      label: Overview
+      disabled: true
+    - id: activity
+      label: Activity
+    defaultValue: activity
+  when:
+    click: tab
+  then:
+  - event: onChange
+    fired: false
 - name: renders
   then:
   - renders: true

@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/SidePanel.js';
 import meta from '../../packages/lit/src/SidePanel.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -49,6 +53,8 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     trigger: () => (deep(root, '[part="trigger"]') ?? deep(root, '[data-part="trigger"]') ?? root.firstElementChild) as HTMLElement,
+    scrim: () => (deep(root, '[part="scrim"]') ?? deep(root, '[data-part="scrim"]')) as HTMLElement,
+    closeButton: () => (deep(root, '[part="closeButton"]') ?? deep(root, '[data-part="closeButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -58,6 +64,31 @@ beforeEach(() => {
 });
 
 describe('ds-side-panel', () => {
+  test('close-button-fires-on-open-change', async () => {
+    const s = await setup({"open": true});
+    await userEvent.click(s.closeButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-close-button-works-without-the-swipe', async () => {
+    const s = await setup({"open": true, "swipeable": false});
+    await userEvent.click(s.closeButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('non-dismissible-still-reports-escape', async () => {
+    const s = await setup({"open": true, "dismissible": false});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('non-dismissible-scrim-tap-does-nothing', async () => {
+    const s = await setup({"open": true, "dismissible": false});
+    await userEvent.click(s.scrim());
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+  });
+  test('the-heading-is-rendered', async () => {
+    const s = await setup({"open": true, "heading": "Your cart"});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Your\\ cart"));
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
@@ -103,4 +134,10 @@ describe('ds-side-panel', () => {
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
   });
   test.skip('has-accessible-name — then.name: role \'none\' cannot be queried; name the landmark/text role in the doc', async () => {});
+  test('escape-fires-on-open-change', async () => {
+    const s = await setup({"open": true});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
 });

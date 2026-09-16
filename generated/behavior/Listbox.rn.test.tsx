@@ -28,12 +28,39 @@ function setup(given: Partial<ListboxProps> = {}) {
     props,
     root: () => screen.queryByTestId('Listbox') ?? screen.UNSAFE_root,
     list: () => screen.queryByRole('listbox') ?? s.root(),
+    option: () => screen.queryByTestId('Listbox.option') ?? s.root(),
     rerender: (next: Partial<ListboxProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Listbox', () => {
+  test('click-on-an-option-selects-it', () => {
+    const s = setup({});
+    fireEvent.press(s.option());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('a-disabled-option-cannot-be-selected', () => {
+    const s = setup({"options": [{"value": "apple", "label": "Apple", "disabled": true}, {"value": "banana", "label": "Banana"}]});
+    fireEvent.press(s.option());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('the-empty-message-shows-when-there-are-no-options', () => {
+    const s = setup({"options": []});
+    expect(screen.getByText(new RegExp("No\\ options"))).toBeOnTheScreen();
+  });
+  test('a-custom-empty-message-replaces-the-default', () => {
+    const s = setup({"options": [], "emptyMessage": "No fruit matches that."});
+    expect(screen.getByText(new RegExp("No\\ fruit\\ matches\\ that\\."))).toBeOnTheScreen();
+  });
+  test('loading-replaces-the-empty-message', () => {
+    const s = setup({"options": [], "loading": true});
+    expect(screen.getByText(new RegExp("Loading\u2026"))).toBeOnTheScreen();
+  });
+  test('invalid-renders-the-invalid-copy', () => {
+    const s = setup({"invalid": true});
+    expect(screen.getByText(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

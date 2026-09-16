@@ -64,6 +64,31 @@ component:
       element: VStack
       props: [HStack, spacing, alignment, .frame, ViewThatFits, .accessibilityElement=contain]
       notes: '`VStack`/`HStack` with `spacing` from the gap token and `alignment` from `align`; `wrap` uses a `Layout`-conforming `FlowLayout` in `Support/` (SwiftUI has no flex-wrap). `direction: responsive` (row above a width, column below) is `ViewThatFits(in: .horizontal)` with the HStack first. Dividers between items (`divider: true`) are the system `Divider` inserted by `ForEach` over the subviews via `Group` + `_VariadicView`-free approach: children are passed as an array of views through the package''s `Stack { … }` result builder, so Stack can interleave.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum ones from the schema.
+    - name: nav-element-is-a-navigation-landmark
+      description: 'Choose element when the group has meaning - nav for navigation - so the structure is exposed to assistive technology.'
+      given: { element: nav }
+      then:
+        - { role: navigation, platforms: [web, lit] }
+    - name: list-element-is-a-list
+      description: 'For ul, each child is wrapped in an li, so assistive technology announces the group as a list and counts its items.'
+      given: { element: ul }
+      then:
+        - { role: list, platforms: [web, lit] }
+  examples:
+    - name: form-fields
+      description: The usual vertical rhythm between fields in a form.
+      given: { direction: vertical, gap: normal, children: 'The form fields' }
+    - name: button-row
+      description: A row of actions at the end of a form or card, tightly spaced and pushed to the end.
+      given: { direction: horizontal, gap: tight, justify: end, children: 'A submit Button and a Cancel Button' }
+    - name: page-sections
+      description: The section rhythm between the regions of a page.
+      given: { direction: vertical, gap: section, children: 'The regions of the page' }
+    - name: wrapping-filters
+      description: A horizontal group that reflows onto new lines on narrow viewports instead of overflowing.
+      given: { direction: horizontal, gap: tight, wrap: true, children: 'A row of filters' }
 ---
 
 Stack is how things get spaced. Instead of margins on individual components, a Stack owns the gap between its children, using one of the theme's rhythm presets (`layout.gap.*`) rather than a raw number, so a theme with `layout.rhythm: loose` opens up every screen at once. Almost every screen is stacks inside stacks.

@@ -14,6 +14,7 @@ component:
       description: 'Which glyph. The set is deliberately small and grows only when a component needs a shape; `info`, `success`, `warning` and `danger` are the four status shapes (circle-i, circle-check, triangle-!, octagon-x) so tone is never carried by color alone.'
     size:
       type: enum
+      enumRef: size
       values: [xs, sm, md, lg, xl]
       default: md
       description: Rendered size, from the font-size scale so icons line up with text of the same size.
@@ -53,6 +54,30 @@ component:
       element: Path
       props: [.frame, .accessibilityHidden, .accessibilityLabel, .accessibilityAddTraits=isImage, .foregroundStyle=inherit]
       notes: 'A `Path` from the shared 16×16 path table (`Icon+Paths.swift`, generated from the same data as the web SVG) scaled to a square of the `size` token, stroked with `border.width.focus` and `.round` caps and joins (line glyphs) or filled with even-odd (the status shapes and ellipsis). Color inherits through `.foregroundStyle` from the parent; `color` overrides it. Decorative icons are `.accessibilityHidden(true)`; a labelled one has `.isImage` and the label. `inline` uses `.baselineOffset` so the glyph sits on the text baseline inside a `Text` concatenation via `Text(Image(…))` — the package renders inline icons as `Image(uiImage:)` from an `ImageRenderer` at the font size, cached per size and color. Never SF Symbols: the glyph set is the system''s own on every platform.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name ones from the schema.
+    - name: unlabelled-icon-is-hidden-from-assistive-technology
+      description: 'Decorative icons carry no information the adjacent text does not, so "Save" is announced as "Save", not "check mark Save" (WCAG 1.1.1).'
+      then:
+        - { attribute: aria-hidden, is: 'true', platforms: [web, lit] }
+        - { attribute: accessibilityElementsHidden, is: true, platforms: [rn] }
+    - name: label-makes-the-icon-meaningful
+      description: 'When set, the icon is exposed as an image with this name; the aria-hidden of the decorative case is gone.'
+      given: { name: warning, label: 'Warning: over quota' }
+      then:
+        - { role: img, platforms: [web, lit] }
+        - { attribute: aria-hidden, is: null, platforms: [web, lit] }
+        - { name: 'Warning: over quota' }
+  examples:
+    - name: status-in-a-cell
+      description: A lone status glyph that is the whole message, so it says what it means instead of what it depicts.
+      given: { name: warning, label: 'Warning: over quota' }
+    - name: decorative-beside-a-label
+      description: The usual case - a glyph next to text, with no label, so the label carries the meaning alone.
+      given: { name: check, size: sm }
+    - name: inline-in-running-text
+      description: An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link.
+      given: { name: external, inline: true }
 ---
 
 Icons are the one place Tier 1 had nothing to build from: every component drew its own check mark, chevron and status shape. Icon centralizes them. It is a primitive, not a design element in its own right: it has no tone of its own, takes its color from the text it sits in, and its size from the type scale, so a glyph beside a label always matches the label.

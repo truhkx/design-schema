@@ -24,6 +24,10 @@ function setup(given: Partial<ContainerProps> = {}) {
 }
 
 describe('Container', () => {
+  test('main-element-is-the-page-landmark', async () => {
+    const s = setup({"element": "main"});
+    expect(screen.getByRole('main')).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

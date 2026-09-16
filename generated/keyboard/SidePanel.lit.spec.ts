@@ -92,7 +92,8 @@ test.describe('SidePanel (lit) keyboard', () => {
     const stateBefore = await ariaState(page);
     void before; void stateBefore;
     await page.keyboard.press('Escape');
-    await expect(root).toBeHidden();
+    await expect(page.locator('[data-part="surface"]').first()).toBeHidden();
+    await expect(trigger(page)).toBeFocused();
   });
   test('Shift+Tab: Non-modal: from the first element in the panel, returns to the trigger and leaves the panel open. Modal: wraps to the last element. (open)', async ({ page }) => {
     const root = page.locator('[data-ds="SidePanel"]').first();

@@ -23,12 +23,24 @@ function setup(given: Partial<SegmentedControlProps> = {}) {
     props,
     root: () => screen.queryByTestId('SegmentedControl') ?? screen.UNSAFE_root,
     group: () => screen.queryByRole('radiogroup') ?? s.root(),
+    segment: () => screen.queryByTestId('SegmentedControl.segment') ?? s.root(),
     rerender: (next: Partial<SegmentedControlProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('SegmentedControl', () => {
+  test('click-selects-a-segment', () => {
+    const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
+    fireEvent.press(s.segment());
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onChange).toHaveBeenCalledWith("list");
+  });
+  test('disabled-segment-is-not-selectable', () => {
+    const s = setup({"options": [{"value": "list", "label": "List", "disabled": true}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
+    fireEvent.press(s.segment());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

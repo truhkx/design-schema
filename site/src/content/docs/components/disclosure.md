@@ -20,6 +20,10 @@ component:
     open:
       type: boolean
       description: Controlled open state. Omit for an uncontrolled disclosure.
+      controls:
+        event: onToggle
+        default: defaultOpen
+        state: open
     defaultOpen:
       type: boolean
       default: false
@@ -40,25 +44,37 @@ component:
     onToggle:
       description: 'Fired after the state changes, with the new boolean `open` and a reason: `pointer`, `keyboard`, or `controlled` (Accordion relies on it).'
       platforms: { web: onToggle, lit: toggle, rn: onToggle, swiftui: onToggle }
+      payload:
+        - { name: open, type: boolean, description: The new state. }
+        - { name: reason, type: enum, values: [pointer, keyboard, controlled] }
+      reasons:
+        pointer: the trigger was clicked or tapped
+        keyboard: Enter or Space on the trigger
+        controlled: the consumer changed the open prop
+      fires: [user, controlled]
+      timing: { phase: after-change }
   styles:
-    triggerColor: { token: color.foreground }
-    triggerBackgroundHover: { token: color.background.subtle, description: Pointer hover and pressed state of the trigger. }
-    triggerPaddingBlock: { token: space.sm }
-    triggerPaddingInline: { token: space.sm }
-    triggerGap: { token: space.2, description: Gap between icon and summary. }
-    triggerFontFamily: { token: font.family.body }
-    triggerFontSize: { token: font.size.md }
-    triggerFontWeight: { token: font.weight.medium }
-    triggerRadius: { token: radius.md }
+    triggerColor: { token: color.foreground, part: trigger }
+    triggerBackgroundHover: { token: color.background.subtle, part: trigger, state: hover, description: Pointer hover and pressed state of the trigger. }
+    triggerPaddingBlock: { token: space.sm, part: trigger }
+    triggerPaddingInline: { token: space.sm, part: trigger }
+    triggerGap: { token: space.2, part: trigger, description: Gap between icon and summary. }
+    triggerFontFamily: { token: font.family.body, part: trigger }
+    triggerFontSize: { token: font.size.md, part: trigger }
+    triggerFontWeight: { token: font.weight.medium, part: trigger }
+    triggerRadius: { token: radius.md, part: trigger }
     icon: { token: color.foreground.muted, description: 'The chevron is `Icon name="chevron-right" inline` rotated 90° when open, so it follows the trigger''s font size (including a `triggerFontSize` override). Mirrored in right-to-left writing on every platform (`[dir=rtl]` on web; `I18nManager.isRTL` → `chevron-left` on native).' }
-    panelPaddingBlock: { token: space.sm }
-    panelPaddingInline: { token: space.sm }
-    panelColor: { token: color.foreground }
+    panelPaddingBlock: { token: space.sm, part: panel }
+    panelPaddingInline: { token: space.sm, part: panel }
+    panelColor: { token: color.foreground, part: panel }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
     minTarget: { token: size.target.min }
     disabledOpacity: { token: opacity.disabled }
     transition: { token: motion.duration.base, description: 'Chevron rotation, with motion.easing.standard; instant under reduced motion. The panel itself does not animate height.' }
+  copy:
+    expanded: Expanded
+    collapsed: Collapsed
   a11y:
     role: button
     requires: [accessible-name, expanded-state, focus-visible, keyboard-operable, target-24px, contrast-aa, reduced-motion]
@@ -83,6 +99,46 @@ component:
       element: VStack
       props: [Button, .accessibilityValue=expanded, Icon, withAnimation, .accessibilityAction]
       notes: 'A `Button` trigger (the package Button, `ghost`, chevron Icon rotated when open) with `.accessibilityValue(copy.expanded / copy.collapsed)` — SwiftUI has no expanded trait, the value carries it — above the content, which is inserted/removed with the `transition` animation (none under reduced motion). Not `DisclosureGroup` (its chevron and spacing are uncontrollable). `defaultOpen`/`open` per the controlled rule.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/focusable ones from the schema.
+    - name: click-on-trigger-expands
+      when: { click: trigger }
+      then:
+        - { event: onToggle }
+        - { state: expanded, is: true }
+    - name: open-disclosure-collapses-on-click
+      given: { defaultOpen: true }
+      when: { click: trigger }
+      then:
+        - { event: onToggle }
+        - { state: expanded, is: false }
+    - name: disabled-trigger-does-not-toggle
+      description: The trigger cannot be activated; the panel keeps its current state.
+      given: { disabled: true }
+      when: { click: trigger }
+      then:
+        - { event: onToggle, fired: false }
+        - { state: expanded, is: false }
+        - { state: disabled, is: true }
+    - name: disabled-trigger-stays-focusable
+      description: Announced as disabled, not removed from the tab order.
+      given: { disabled: true }
+      then:
+        - { focusable: true }
+      platforms: [web, lit]
+  examples:
+    - name: faq-answer
+      description: A question whose trigger sits in a heading, so it appears in the document outline.
+      given: { summary: 'What happens if I cancel?', children: 'You keep access until the end of the current billing period.', headingLevel: '3' }
+    - name: advanced-options
+      description: Secondary settings most users never open.
+      given: { summary: 'Advanced options', children: 'Retry limit, timeout and proxy settings.' }
+    - name: open-with-form-fields
+      description: A disclosure that starts open and keeps its panel mounted so a Form still collects the fields inside.
+      given: { summary: 'Billing address', children: 'Street, city and postcode fields.', defaultOpen: true, keepMounted: true }
+    - name: disabled
+      description: A trigger that cannot be activated yet, still focusable and announced as disabled.
+      given: { summary: 'Shipping details', children: 'Choose a delivery address first.', disabled: true }
 ---
 
 A disclosure is a button that reveals content beneath it. It is deliberately plain: no border, no card, no animation of the panel. The pattern's job is to keep long pages scannable by hiding detail until it is wanted — FAQ answers, advanced options, "show more".

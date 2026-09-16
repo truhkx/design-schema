@@ -111,6 +111,9 @@ component:
       type: union
       description: Controlled value; for a range, a two-number array.
       shape: number | [number, number]
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: union
       description: Initial value (or pair). Defaults to `min` (or `[min, max]`).
@@ -159,6 +162,13 @@ component:
         lit: change
         rn: onValueChange
         swiftui: onChange
+      payload:
+      - name: value
+        type: union
+        shape: number | [number, number]
+        description: The new value, or the low and high values of a range.
+      fires:
+      - user
     onChangeEnd:
       description: Fired once when the interaction ends (pointer up, key released).
         Use for expensive effects.
@@ -167,6 +177,15 @@ component:
         lit: change-end
         rn: onSlidingComplete
         swiftui: onChangeEnd
+      payload:
+      - name: value
+        type: union
+        shape: number | [number, number]
+        description: The final value, or the low and high values of a range.
+      fires:
+      - user
+      timing:
+        phase: commit
   keyboard:
   - keys:
     - ArrowRight
@@ -205,33 +224,43 @@ component:
   styles:
     track:
       token: color.background.strong
+      part: track
       locked: false
     fill:
       token: color.control.selectedBackground
+      part: fill
       locked: true
     trackHeight:
       token: space.1
+      part: track
       locked: false
     trackRadius:
       token: radius.full
+      part: track
       locked: false
     thumb:
       token: color.control.background
+      part: thumb
       locked: false
     thumbBorder:
       token: color.control.selectedBackground
+      part: thumb
       locked: true
     thumbBorderWidth:
       token: border.width.focus
+      part: thumb
       locked: true
     thumbSize:
       token: space.5
+      part: thumb
       locked: false
     thumbShadow:
       token: shadow.raised
+      part: thumb
       locked: false
     thumbActiveScale:
       token: opacity.disabled
+      part: thumb
       description: Not a scale — the pressed thumb shows a halo of the fill color
         at this opacity, thumbSize larger on each side (space.2). No literal scale
         factor exists.
@@ -256,24 +285,29 @@ component:
       locked: false
     bubbleSurface:
       token: color.inverse.surface
+      part: bubble
       description: The hover/drag value bubble uses the inverse surface, like Tooltip.
       locked: true
     bubbleText:
       token: color.inverse.foreground
+      part: bubble
       locked: true
     bubbleRadius:
       token: radius.sm
+      part: bubble
       description: 'The bubble is its own part (not the valueText Text): an inverse-surface
         pill above the active thumb.'
       locked: false
     labelWeight:
       token: font.weight.medium
+      part: label
       locked: false
     partGap:
       token: space.1
       locked: false
     trackPaddingBlock:
       token: space.3
+      part: track
       description: Vertical space around the track so the thumb and its halo have
         room and the touch target reaches the comfortable size.
       locked: false
@@ -288,6 +322,7 @@ component:
       locked: false
     descriptionText:
       token: color.foreground.muted
+      part: description
       locked: true
     errorText:
       token: color.foreground.danger
@@ -313,7 +348,15 @@ component:
   copy:
     minimumLabel: '{label} minimum'
     maximumLabel: '{label} maximum'
-    rangeText: '{low} – {high}'
+    rangeText:
+      text: '{low} – {high}'
+      params:
+        low:
+          type: string
+          description: The lower thumb's value as formatValue renders it.
+        high:
+          type: string
+          description: The upper thumb's value as formatValue renders it.
     required: '{label} is required.'
     invalid: '{label} is not valid.'
   a11y:
@@ -333,7 +376,7 @@ component:
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.foreground
       background: color.background
       level: AA
@@ -343,6 +386,18 @@ component:
     - foreground: color.inverse.foreground
       background: color.inverse.surface
       level: AA
+  form:
+    role: field
+    value: value
+    valueType: number-range
+    name: name
+    validation:
+    - required
+    - invalid
+    messages:
+      required: required
+      invalid: invalid
+    discovery: context
   platforms:
     web:
       element: div
@@ -407,11 +462,229 @@ component:
         thumb is `.focusable()` and arrows/PageUp/PageDown/Home/End follow the keyboard
         table. Range mode keeps thumbs ordered and swaps focus at the crossover. Marks
         and the value bubble per the doc; ticks from the tokens.
+  behavior:
+  - name: arrow-increases-by-one-step
+    description: Arrow keys move by step, so the keyboard gets the precision the pointer
+      gets by drag.
+    given:
+      defaultValue: 50
+      step: 5
+    when:
+      key: ArrowRight
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: arrow-decreases-by-one-step
+    given:
+      defaultValue: 50
+      step: 5
+    when:
+      key: ArrowLeft
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: page-up-changes-by-ten-steps
+    given:
+      defaultValue: 50
+    when:
+      key: PageUp
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: home-sets-the-minimum
+    given:
+      defaultValue: 50
+      min: 0
+      max: 100
+    when:
+      key: Home
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: end-sets-the-maximum
+    given:
+      defaultValue: 50
+      min: 0
+      max: 100
+    when:
+      key: End
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: a-key-press-is-a-complete-interaction
+    description: onChangeEnd fires once when the interaction ends (pointer up, key
+      released), for expensive effects.
+    given:
+      defaultValue: 50
+    when:
+      key: ArrowRight
+    then:
+    - event: onChangeEnd
+    platforms:
+    - web
+    - lit
+  - name: a-disabled-slider-does-not-move
+    given:
+      disabled: true
+      defaultValue: 50
+    when:
+      key: ArrowRight
+    then:
+    - event: onChange
+      fired: false
+    platforms:
+    - web
+    - lit
+  - name: the-thumb-reports-its-value-and-bounds
+    description: The thumb carries valuenow/min/max, so a screen reader hears where
+      the value sits on the scale.
+    given:
+      defaultValue: 4
+      min: 0
+      max: 10
+    then:
+    - attribute: aria-valuenow
+      is: '4'
+    - attribute: aria-valuemin
+      is: '0'
+    - attribute: aria-valuemax
+      is: '10'
+    platforms:
+    - web
+  - name: the-thumb-is-the-slider
+    description: The thumb is the slider element, not the track - that is what takes
+      focus and carries the value.
+    then:
+    - role: slider
+    platforms:
+    - web
+    - lit
+    - swiftui
+  - name: invalid-renders-the-invalid-copy
+    description: invalid marks the slider invalid and renders copy.invalid when there
+      is no error.
+    given:
+      invalid: true
+    then:
+    - copy: invalid
+  examples:
+  - name: volume
+    description: The everyday single-value slider, its value shown beside the label.
+    given:
+      label: Volume
+      name: volume
+      defaultValue: 30
+  - name: price-range
+    description: Two thumbs choosing a minimum and a maximum that cannot cross.
+    given:
+      label: Price range
+      name: price
+      range: true
+      defaultValue:
+      - 20
+      - 80
+  - name: effort-with-marks
+    description: A short labelled scale that snaps to its marks.
+    given:
+      label: Effort
+      name: effort
+      min: 1
+      max: 5
+      marks:
+      - value: 1
+        label: Low
+      - value: 3
+        label: Medium
+      - value: 5
+        label: High
+      snapToMarks: true
+  - name: paired-with-a-number-input
+    description: A zoom control whose value is shown by a NumberInput beside it, so
+      the slider shows none.
+    given:
+      label: Zoom
+      name: zoom
+      min: 50
+      max: 200
+      step: 10
+      defaultValue: 100
+      showValue: never
 ```
+
+## Events
+
+- `onChange`: emit `change`
+  - payload, the keys of `CustomEvent.detail`: `value: number | [number, number]`
+  - fires on: user
+- `onChangeEnd`: emit `change-end`
+  - payload, the keys of `CustomEvent.detail`: `value: number | [number, number]`
+  - fires on: user
+  - timing: commit
 
 ## Controlled state
 
-- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; paired by name, so no event is declared
+- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `change`)
+
+## Style bindings
+
+- `track`: token `color.background.strong`; part `track`
+- `fill`: token `color.control.selectedBackground`; part `fill`; locked
+- `trackHeight`: token `space.1`; part `track`
+- `trackRadius`: token `radius.full`; part `track`
+- `thumb`: token `color.control.background`; part `thumb`
+- `thumbBorder`: token `color.control.selectedBackground`; part `thumb`; locked
+- `thumbBorderWidth`: token `border.width.focus`; part `thumb`; locked
+- `thumbSize`: token `space.5`; part `thumb`
+- `thumbShadow`: token `shadow.raised`; part `thumb`
+- `thumbActiveScale`: token `opacity.disabled`; part `thumb`
+- `bubbleSurface`: token `color.inverse.surface`; part `bubble`; locked
+- `bubbleText`: token `color.inverse.foreground`; part `bubble`; locked
+- `bubbleRadius`: token `radius.sm`; part `bubble`
+- `labelWeight`: token `font.weight.medium`; part `label`
+- `trackPaddingBlock`: token `space.3`; part `track`
+- `descriptionText`: token `color.foreground.muted`; part `description`; locked
+
+## Form and overlay
+
+```yaml
+form:
+  role: field
+  value: value
+  valueType: number-range
+  name: name
+  validation:
+  - required
+  - invalid
+  messages:
+    required: required
+    invalid: invalid
+  discovery: context
+```
+
+## Copy
+
+- `minimumLabel`: "{label} minimum"
+- `maximumLabel`: "{label} maximum"
+- `rangeText`: "{low} – {high}"; params `low` (string), `high` (string)
+- `required`: "{label} is required."
+- `invalid`: "{label} is not valid."
+
+## Constants and examples
+
+- example `volume`, story `Volume`: given `label: "Volume"`, `name: "volume"`, `defaultValue: 30`; The everyday single-value slider, its value shown beside the label.
+- example `price-range`, story `PriceRange`: given `label: "Price range"`, `name: "price"`, `range: true`, `defaultValue: [20,80]`; Two thumbs choosing a minimum and a maximum that cannot cross.
+- example `effort-with-marks`, story `EffortWithMarks`: given `label: "Effort"`, `name: "effort"`, `min: 1`, `max: 5`, `marks: [{"value":1,"label":"Low"},{"value":3,"label":"Medium"},{"value":5,"label":"High"}]`, `snapToMarks: true`; A short labelled scale that snaps to its marks.
+- example `paired-with-a-number-input`, story `PairedWithANumberInput`: given `label: "Zoom"`, `name: "zoom"`, `min: 50`, `max: 200`, `step: 10`, `defaultValue: 100`, `showValue: "never"`; A zoom control whose value is shown by a NumberInput beside it, so the slider shows none.
 
 ## Overrides (per-instance styling contract)
 
@@ -424,11 +697,109 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `track`, `trackHeight`, `trackRadius`, `thumb`, `thumbSize`, `thumbShadow`, `thumbActiveScale`, `mark`, `markSize`, `markLabelSize`, `valueSize`, `bubbleRadius`, `labelWeight`, `partGap`, `trackPaddingBlock`, `fontFamily`, `fontSize`, `helperSize`, `errorText`, `disabledOpacity`, `transition`
 Locked (accessibility-bearing, never overridable): `fill`, `thumbBorder`, `thumbBorderWidth`, `markLabelColor`, `valueColor`, `bubbleSurface`, `bubbleText`, `descriptionText`, `minTarget`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (7)
+## Behavior scenarios (16)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: arrow-increases-by-one-step
+  description: Arrow keys move by step, so the keyboard gets the precision the pointer
+    gets by drag.
+  given:
+    defaultValue: 50
+    step: 5
+  when:
+    key: ArrowRight
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: arrow-decreases-by-one-step
+  given:
+    defaultValue: 50
+    step: 5
+  when:
+    key: ArrowLeft
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: page-up-changes-by-ten-steps
+  given:
+    defaultValue: 50
+  when:
+    key: PageUp
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: home-sets-the-minimum
+  given:
+    defaultValue: 50
+    min: 0
+    max: 100
+  when:
+    key: Home
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: end-sets-the-maximum
+  given:
+    defaultValue: 50
+    min: 0
+    max: 100
+  when:
+    key: End
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: a-key-press-is-a-complete-interaction
+  description: onChangeEnd fires once when the interaction ends (pointer up, key released),
+    for expensive effects.
+  given:
+    defaultValue: 50
+  when:
+    key: ArrowRight
+  then:
+  - event: onChangeEnd
+  platforms:
+  - web
+  - lit
+- name: a-disabled-slider-does-not-move
+  given:
+    disabled: true
+    defaultValue: 50
+  when:
+    key: ArrowRight
+  then:
+  - event: onChange
+    fired: false
+  platforms:
+  - web
+  - lit
+- name: the-thumb-is-the-slider
+  description: The thumb is the slider element, not the track - that is what takes
+    focus and carries the value.
+  then:
+  - role: slider
+  platforms:
+  - web
+  - lit
+  - swiftui
+- name: invalid-renders-the-invalid-copy
+  description: invalid marks the slider invalid and renders copy.invalid when there
+    is no error.
+  given:
+    invalid: true
+  then:
+  - copy: invalid
 - name: renders
   then:
   - renders: true

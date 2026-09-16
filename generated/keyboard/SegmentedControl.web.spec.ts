@@ -74,6 +74,7 @@ test.describe('SegmentedControl (web) keyboard', () => {
     void before; void stateBefore;
     await page.keyboard.press('ArrowRight');
     expect(await focusIndex(page, root)).toBe(before + 1);
+    expect(await ariaState(page)).toMatch(/true/);
   });
   test('ArrowDown: Moves to and selects the next enabled segment, wrapping.', async ({ page }) => {
     const root = page.getByRole('radiogroup').first();
@@ -83,6 +84,7 @@ test.describe('SegmentedControl (web) keyboard', () => {
     void before; void stateBefore;
     await page.keyboard.press('ArrowDown');
     expect(await focusIndex(page, root)).toBe(before + 1);
+    expect(await ariaState(page)).toMatch(/true/);
   });
   test('ArrowLeft: Moves to and selects the previous enabled segment, wrapping.', async ({ page }) => {
     const root = page.getByRole('radiogroup').first();
@@ -92,6 +94,7 @@ test.describe('SegmentedControl (web) keyboard', () => {
     void before; void stateBefore;
     await page.keyboard.press('ArrowLeft');
     expect(await focusIndex(page, root)).toBe(before - 1);
+    expect(await ariaState(page)).toMatch(/true/);
   });
   test('ArrowUp: Moves to and selects the previous enabled segment, wrapping.', async ({ page }) => {
     const root = page.getByRole('radiogroup').first();
@@ -101,6 +104,7 @@ test.describe('SegmentedControl (web) keyboard', () => {
     void before; void stateBefore;
     await page.keyboard.press('ArrowUp');
     expect(await focusIndex(page, root)).toBe(before - 1);
+    expect(await ariaState(page)).toMatch(/true/);
   });
   test('ArrowRight: From the last segment wraps to the first.', async ({ page }) => {
     const root = page.getByRole('radiogroup').first();

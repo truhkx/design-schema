@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/Stepper.js';
 import meta from '../../packages/lit/src/Stepper.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -49,6 +53,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     list: () => (deep(root, '[part="list"]') ?? deep(root, '[data-part="list"]') ?? root.firstElementChild) as HTMLElement,
+    indicator: () => (deep(root, '[part="indicator"]') ?? deep(root, '[data-part="indicator"]')) as HTMLElement,
   };
   return s;
 }
@@ -58,6 +63,35 @@ beforeEach(() => {
 });
 
 describe('ds-stepper', () => {
+  test('click-on-a-completed-step-reports-it', async () => {
+    const s = await setup({"navigable": "completed", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}, {"id": "confirm", "label": "Confirmation"}]});
+    await userEvent.click(s.indicator());
+    expect(s.events.onStepSelect).toHaveBeenCalledTimes(1);
+    expect(s.events.onStepSelect.mock.calls[0]?.[0]?.detail?.id).toEqual("shipping");
+  });
+  test('the-current-step-is-not-navigable', async () => {
+    const s = await setup({"navigable": "completed", "current": "shipping", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
+    await userEvent.click(s.indicator());
+    expect(s.events.onStepSelect).not.toHaveBeenCalled();
+  });
+  test('display-only-steps-report-nothing', async () => {
+    const s = await setup({"navigable": "none", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
+    await userEvent.click(s.indicator());
+    expect(s.events.onStepSelect).not.toHaveBeenCalled();
+  });
+  test('step-status-is-said-in-words', async () => {
+    const s = await setup({"navigable": "none", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("completed"));
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("current\\ step"));
+  });
+  test('an-errored-step-says-so', async () => {
+    const s = await setup({"navigable": "none", "current": "review", "steps": [{"id": "shipping", "label": "Shipping address", "status": "complete"}, {"id": "payment", "label": "Payment", "status": "error"}, {"id": "review", "label": "Review order"}]});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("has\\ an\\ error"));
+  });
+  test('compact-shows-the-step-count', async () => {
+    const s = await setup({"compact": true, "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}, {"id": "confirm", "label": "Confirmation"}]});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Step\\ 2\\ of\\ 4"));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

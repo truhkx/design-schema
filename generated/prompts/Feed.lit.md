@@ -102,7 +102,7 @@ component:
       description: More items are being fetched; a loading indicator is shown after
         the last article and the feed is `aria-busy`.
     newItemsCount:
-      type: number
+      type: integer
       description: Number of newer items available above (from polling or a socket).
         The feed does not insert them — that would shift what the reader is looking
         at — it shows a "Show {count} new" button at the top which prepends and scrolls.
@@ -127,6 +127,10 @@ component:
         lit: load-more
         rn: onEndReached
         swiftui: onLoadMore
+      fires:
+      - user
+      timing:
+        phase: request
     onShowNew:
       description: Fired when the new-items button is pressed; the caller prepends
         the items and clears `newItemsCount`.
@@ -135,6 +139,10 @@ component:
         lit: show-new
         rn: onShowNew
         swiftui: onShowNew
+      fires:
+      - user
+      timing:
+        phase: request
     onItemVisible:
       description: Fired with an item id when it has been substantially visible for
         a moment (mark as read).
@@ -143,6 +151,12 @@ component:
         lit: item-visible
         rn: onViewableItemsChanged
         swiftui: onItemVisible
+      payload:
+      - name: id
+        type: string
+        description: The item that became visible.
+      fires:
+      - user
   keyboard:
   - keys:
     - Tab
@@ -180,6 +194,7 @@ component:
       locked: false
     articleInset:
       token: layout.inset.md
+      part: article
       description: Passed to each Card as its inset.
       locked: false
     unreadBorder:
@@ -192,9 +207,11 @@ component:
       locked: true
     timestampColor:
       token: color.foreground.muted
+      part: timestamp
       locked: true
     timestampSize:
       token: font.size.xs
+      part: timestamp
       locked: false
     newItemsOffset:
       token: space.3
@@ -207,13 +224,16 @@ component:
       locked: false
     endMessageInset:
       token: layout.inset.md
+      part: endMessage
       description: Padding around the end message.
       locked: false
     endMessageColor:
       token: color.foreground.muted
+      part: endMessage
       locked: true
     endMessageSize:
       token: font.size.sm
+      part: endMessage
       locked: false
     fontFamily:
       token: font.family.body
@@ -225,16 +245,44 @@ component:
       token: border.width.focus
       locked: true
   copy:
-    showNew: Show {count} new
+    showNew:
+      text: Show {count} new
+      params:
+        count:
+          type: number
+          description: How many newer items are available above.
     loading: Loading more
     end: You are all caught up.
     unread: unread
-    position: '{index} of {total}'
+    position:
+      text: '{index} of {total}'
+      params:
+        index:
+          type: number
+          description: The article's position in the feed.
+        total:
+          type: number
+          description: How many articles the feed holds.
     empty: Nothing here yet.
     justNow: just now
-    minutesAgo: '{n} min ago'
-    hoursAgo: '{n} hr ago'
-    daysAgo: '{n} d ago'
+    minutesAgo:
+      text: '{n} min ago'
+      params:
+        n:
+          type: number
+          description: Minutes since the item's timestamp.
+    hoursAgo:
+      text: '{n} hr ago'
+      params:
+        n:
+          type: number
+          description: Hours since the item's timestamp.
+    daysAgo:
+      text: '{n} d ago'
+      params:
+        n:
+          type: number
+          description: Days since the item's timestamp.
   a11y:
     role: feed
     requires:
@@ -255,7 +303,7 @@ component:
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
   platforms:
     web:
       element: div
@@ -341,7 +389,165 @@ component:
         VoiceOver focus. PageUp/PageDown/Ctrl+Home/End on iPad move `@AccessibilityFocusState`/`@FocusState`
         between articles; VoiceOver users get the rotor. Relative time from the copy
         strings; the absolute date is the article''s `accessibilityHint`.'
+  behavior:
+  - name: an-empty-feed-asks-for-its-first-page
+    description: With hasMore and no items there is no last article to observe, so
+      the feed fires onLoadMore once on mount.
+    given:
+      items: []
+      hasMore: true
+      loading: false
+    then:
+    - event: onLoadMore
+  - name: pressing-show-new-asks-for-the-newer-items
+    description: The feed never inserts newer items itself; the button asks, and the
+      caller prepends.
+    given:
+      newItemsCount: 3
+      items:
+      - id: a1
+        heading: Ana commented on Invoice 42
+        timestamp: '2026-09-15T09:00:00Z'
+        content: Looks right to me.
+    when:
+      click: newItemsButton
+    then:
+    - event: onShowNew
+  - name: the-end-message-shows-when-there-is-nothing-more
+    given:
+      hasMore: false
+      items:
+      - id: a1
+        heading: Ana commented on Invoice 42
+        timestamp: '2026-09-15T09:00:00Z'
+        content: Looks right to me.
+    then:
+    - copy: end
+  - name: a-custom-end-message-replaces-the-default
+    given:
+      hasMore: false
+      endMessage: That is everything from this week.
+      items:
+      - id: a1
+        heading: Ana commented on Invoice 42
+        timestamp: '2026-09-15T09:00:00Z'
+        content: Looks right to me.
+    then:
+    - text: That is everything from this week.
+  - name: an-empty-feed-that-is-not-loading-says-so
+    given:
+      items: []
+      hasMore: false
+      loading: false
+    then:
+    - copy: empty
+  - name: loading-marks-the-feed-busy
+    description: The feed is aria-busy while more items are being fetched.
+    given:
+      loading: true
+      hasMore: true
+    then:
+    - attribute: aria-busy
+      is: 'true'
+    platforms:
+    - web
+  examples:
+  - name: activity-stream
+    description: The default stream of activity, newest first, with more to load below.
+    given:
+      label: Activity
+      hasMore: true
+      items:
+      - id: a1
+        heading: Ana commented on Invoice 42
+        timestamp: '2026-09-15T09:00:00Z'
+        content: Looks right to me.
+      - id: a2
+        heading: Bo approved Invoice 41
+        timestamp: '2026-09-14T16:20:00Z'
+        content: Approved for payment.
+  - name: notifications-with-unread-items
+    description: Notifications where unread items are marked and three newer ones
+      are waiting above.
+    given:
+      label: Notifications
+      newItemsCount: 3
+      items:
+      - id: n1
+        heading: Your export is ready
+        timestamp: '2026-09-15T08:00:00Z'
+        content: The March export finished.
+        unread: true
+      - id: n2
+        heading: Invoice 42 was paid
+        timestamp: '2026-09-14T11:00:00Z'
+        content: Payment received.
+  - name: caught-up
+    description: The end of a finite stream, with its own closing message.
+    given:
+      label: Activity
+      hasMore: false
+      endMessage: That is everything from this week.
+      items:
+      - id: a1
+        heading: Bo approved Invoice 41
+        timestamp: '2026-09-14T16:20:00Z'
+        content: Approved for payment.
+  - name: loading-the-next-page
+    description: A feed fetching its next page under headings that fit a page whose
+      outline starts at level 2.
+    given:
+      label: Audit events
+      hasMore: true
+      loading: true
+      headingLevel: '2'
+      items:
+      - id: e1
+        heading: Role changed for Ana
+        timestamp: '2026-09-15T07:00:00Z'
+        content: Editor to Admin.
 ```
+
+## Events
+
+- `onLoadMore`: emit `load-more`
+  - fires on: user
+  - timing: request
+- `onShowNew`: emit `show-new`
+  - fires on: user
+  - timing: request
+- `onItemVisible`: emit `item-visible`
+  - payload, the keys of `CustomEvent.detail`: `id: string`
+  - fires on: user
+
+## Style bindings
+
+- `articleInset`: token `layout.inset.md`; part `article`
+- `timestampColor`: token `color.foreground.muted`; part `timestamp`; locked
+- `timestampSize`: token `font.size.xs`; part `timestamp`
+- `endMessageInset`: token `layout.inset.md`; part `endMessage`
+- `endMessageColor`: token `color.foreground.muted`; part `endMessage`; locked
+- `endMessageSize`: token `font.size.sm`; part `endMessage`
+
+## Copy
+
+- `showNew`: "Show {count} new"; params `count` (number)
+- `loading`: "Loading more"
+- `end`: "You are all caught up."
+- `unread`: "unread"
+- `position`: "{index} of {total}"; params `index` (number), `total` (number)
+- `empty`: "Nothing here yet."
+- `justNow`: "just now"
+- `minutesAgo`: "{n} min ago"; params `n` (number)
+- `hoursAgo`: "{n} hr ago"; params `n` (number)
+- `daysAgo`: "{n} d ago"; params `n` (number)
+
+## Constants and examples
+
+- example `activity-stream`, story `ActivityStream`: given `label: "Activity"`, `hasMore: true`, `items: [{"id":"a1","heading":"Ana commented on Invoice 42","timestamp":"2026-09-15T09:00:00Z","content":"Looks right to me."},{"id":"a2","heading":"Bo approved Invoice 41","timestamp":"2026-09-14T16:20:00Z","content":"Approved for payment."}]`; The default stream of activity, newest first, with more to load below.
+- example `notifications-with-unread-items`, story `NotificationsWithUnreadItems`: given `label: "Notifications"`, `newItemsCount: 3`, `items: [{"id":"n1","heading":"Your export is ready","timestamp":"2026-09-15T08:00:00Z","content":"The March export finished.","unread":true},{"id":"n2","heading":"Invoice 42 was paid","timestamp":"2026-09-14T11:00:00Z","content":"Payment received."}]`; Notifications where unread items are marked and three newer ones are waiting above.
+- example `caught-up`, story `CaughtUp`: given `label: "Activity"`, `hasMore: false`, `endMessage: "That is everything from this week."`, `items: [{"id":"a1","heading":"Bo approved Invoice 41","timestamp":"2026-09-14T16:20:00Z","content":"Approved for payment."}]`; The end of a finite stream, with its own closing message.
+- example `loading-the-next-page`, story `LoadingTheNextPage`: given `label: "Audit events"`, `hasMore: true`, `loading: true`, `headingLevel: "2"`, `items: [{"id":"e1","heading":"Role changed for Ana","timestamp":"2026-09-15T07:00:00Z","content":"Editor to Admin."}]`; A feed fetching its next page under headings that fit a page whose outline starts at level 2.
 
 ## Overrides (per-instance styling contract)
 
@@ -354,11 +560,62 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `itemGap`, `articleInset`, `timestampSize`, `newItemsOffset`, `loadingInset`, `endMessageInset`, `endMessageSize`, `fontFamily`
 Locked (accessibility-bearing, never overridable): `unreadBorder`, `unreadBorderWidth`, `timestampColor`, `endMessageColor`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (5)
+## Behavior scenarios (10)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: an-empty-feed-asks-for-its-first-page
+  description: With hasMore and no items there is no last article to observe, so the
+    feed fires onLoadMore once on mount.
+  given:
+    items: []
+    hasMore: true
+    loading: false
+  then:
+  - event: onLoadMore
+- name: pressing-show-new-asks-for-the-newer-items
+  description: The feed never inserts newer items itself; the button asks, and the
+    caller prepends.
+  given:
+    newItemsCount: 3
+    items:
+    - id: a1
+      heading: Ana commented on Invoice 42
+      timestamp: '2026-09-15T09:00:00Z'
+      content: Looks right to me.
+  when:
+    click: newItemsButton
+  then:
+  - event: onShowNew
+- name: the-end-message-shows-when-there-is-nothing-more
+  given:
+    hasMore: false
+    items:
+    - id: a1
+      heading: Ana commented on Invoice 42
+      timestamp: '2026-09-15T09:00:00Z'
+      content: Looks right to me.
+  then:
+  - copy: end
+- name: a-custom-end-message-replaces-the-default
+  given:
+    hasMore: false
+    endMessage: That is everything from this week.
+    items:
+    - id: a1
+      heading: Ana commented on Invoice 42
+      timestamp: '2026-09-15T09:00:00Z'
+      content: Looks right to me.
+  then:
+  - text: That is everything from this week.
+- name: an-empty-feed-that-is-not-loading-says-so
+  given:
+    items: []
+    hasMore: false
+    loading: false
+  then:
+  - copy: empty
 - name: renders
   then:
   - renders: true

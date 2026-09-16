@@ -13,12 +13,15 @@ component:
     description: Text
     closeButton: Button
     body: Box
-    footer: Stack
+    footer: { component: Stack, forwards: { footerGap: gap } }
   props:
     open:
       type: boolean
       required: true
       description: Controlled visibility. The consumer owns it; the dialog requests changes through `onClose`.
+      controls:
+        event: onClose
+        state: open
     heading:
       type: string
       required: true
@@ -41,6 +44,7 @@ component:
       description: 'Visually hide the heading while it remains the accessible name (BottomSheet forwards its own hideHeading here above the breakpoint).'
     size:
       type: enum
+      enumRef: size
       values: [sm, md, lg]
       default: md
       description: Surface width on wide viewports. Full-width below the content measure on every size.
@@ -58,26 +62,36 @@ component:
     onClose:
       description: 'Fired when the user requests to close, with a reason: `escape`, `close-button`, `scrim`, or `action`. The consumer sets `open` to false (or not).'
       platforms: { web: onClose, lit: close, rn: onClose, swiftui: onClose }
+      payload:
+        - { name: reason, type: enum, values: [escape, close-button, scrim, action] }
+      reasons:
+        escape: Escape pressed while open
+        close-button: the close button was activated
+        scrim: the scrim was clicked
+        action: a footer action asked to close
+      fires: [user]
+      timing: { phase: request }
     onOpened:
       description: Fired after the open transition ends and focus has moved in. Use to start work that needs the dialog visible.
       platforms: { web: onOpened, lit: opened, rn: onOpened, swiftui: onOpened }
+      timing: { phase: after-change }
   keyboard:
     - { keys: [Escape], action: Requests close with reason escape (even when not dismissible)., from: inside, expect: closes }
     - { keys: [Tab], action: Moves to the next focusable element inside the dialog., from: first, expect: focus-next }
     - { keys: [Tab], action: 'From the last element, wraps to the first.', from: last, expect: focus-wraps-to-first }
     - { keys: [Shift+Tab], action: 'From the first element, wraps to the last.', from: first, expect: focus-wraps-to-last }
   styles:
-    scrim: { token: color.overlay.scrim }
-    surface: { token: color.overlay.surface }
+    scrim: { token: color.overlay.scrim, part: scrim }
+    surface: { token: color.overlay.surface, part: surface }
     border: { token: color.border, description: 'Hairline; the only edge in a flat theme.' }
     borderWidth: { token: border.width.thin }
     shadow: { token: shadow.overlay }
     radius: { token: radius.lg }
     inset: { token: layout.inset.lg, description: 'Padding of header, body and footer.' }
     partGap: { token: layout.gap.loose, description: 'Gap between header, body and footer.' }
-    headerGap: { token: layout.gap.normal, description: Between title/description and the close button. }
-    footerGap: { token: layout.gap.tight, description: 'Between footer actions; forwarded to the footer Stack as `overrides.gap`. The footer row is end-aligned (Form''s action-row rule), unlike Card''s start-aligned footer.' }
-    descriptionGap: { token: layout.gap.tight, description: 'Between the heading and the description inside the header group.' }
+    headerGap: { token: layout.gap.normal, part: header, description: Between title/description and the close button. }
+    footerGap: { token: layout.gap.tight, part: footer, description: 'Between footer actions; forwarded to the footer Stack as `overrides.gap`. The footer row is end-aligned (Form''s action-row rule), unlike Card''s start-aligned footer.' }
+    descriptionGap: { token: layout.gap.tight, part: description, description: 'Between the heading and the description inside the header group.' }
     widthSm: { token: layout.maxWidth.prose, description: 'Surface width for size sm; md is 3/4 of content and lg is content — both derived from layout.maxWidth.content by the generator, not new tokens.' }
     layer: { token: layer.dialog }
     enter: { token: motion.duration.base, description: 'Scrim fade and surface fade-and-rise (translateY of space.2), motion.easing.standard; instant under reduced motion.' }
@@ -86,9 +100,17 @@ component:
     focusRingWidth: { token: border.width.focus }
   copy:
     closeLabel: Close
+  overlay:
+    layer: modal
+    open: open
+    closeEvent: onClose
+    dismiss: [escape, scrim, close-button]
+    modal: true
   a11y:
     role: dialog
     requires: [accessible-name, focus-trap, focus-restore, escape-dismiss, inert-background, scroll-lock, keyboard-operable, focus-visible, contrast-aa, reduced-motion, target-24px]
+    requiresOn:
+      scroll-lock: [web, lit, swiftui]
     contrast:
       - { foreground: color.foreground, background: color.overlay.surface, level: AA }
       - { foreground: color.foreground.muted, background: color.overlay.surface, level: AA }
@@ -101,7 +123,7 @@ component:
       notes: 'A native <dialog> opened with showModal(), which gives the top layer, Escape (cancel event → onClose reason escape, preventDefault when not dismissible), and background inertness for free. Rendered through a portal into document.body. ::backdrop is the scrim; a click on the dialog element outside its surface (event.target === dialog) is the scrim click. Focus trap: showModal() traps by inertness; Tab wrap is implemented explicitly because the browser lets Tab leave to the URL bar. Body scroll locked with overflow: hidden on <html> while open, compensating for scrollbar width via scrollbar-gutter. Focus restore to document.activeElement at open time. `container?: HTMLElement` (default document.body) is the portal target — a platform prop every portaled overlay accepts, not a schema prop.'
     lit:
       tag: ds-dialog
-      reflect: [open, size, no-dismiss, initial-focus]
+      reflect: [open, size, { prop: dismissible, attribute: no-dismiss }, initial-focus]
       notes: 'Wraps a native <dialog> in the shadow root; the top layer works from inside shadow DOM. `open` is a reflected property the consumer sets; the element calls showModal()/close() in updated(). `close` is a composed CustomEvent with detail { reason }; `opened` likewise. Slots: default (body), `footer`. Title and description are properties rendered as <ds-heading level="2"> and <ds-text>. The close button is a <ds-button variant="ghost" size="sm" icon-only> with <ds-icon name="close">. Accessible name: ids do not cross the shadow boundary, so the shadow <dialog> carries aria-label={heading} (and aria-description from the description text) rather than aria-labelledby.'
     rn:
       element: Modal
@@ -111,6 +133,55 @@ component:
       element: sheet
       props: [.sheet, .fullScreenCover, .popover, .interactiveDismissDisabled, .presentationBackground, .accessibilityAddTraits=isModal, FocusScope, .onExitCommand]
       notes: 'Presented with `.sheet` on compact width and `.popover` (regular width, iPad) when `size` is not `full`; `size: full` is `.fullScreenCover`. The dialog surface, heading (`Heading`, the `.accessibilityLabel` of the container), body and actions are the package''s own views inside the presentation with `.presentationBackground(color.overlay.surface)` and `.presentationDragIndicator(.hidden)`. `dismissOnScrim: false` → `.interactiveDismissDisabled()`. FocusScope handles initial and return focus; Escape via `.onExitCommand`; VoiceOver''s two-finger scrub triggers the same close through `.accessibilityAction(.escape)`. `onOpened` fires from `.onAppear` of the content.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/escape ones from the schema.
+    - name: close-button-fires-on-close
+      description: The close button requests close; the dialog never closes itself, the consumer flips `open`.
+      given: { open: true }
+      when: { click: closeButton }
+      then:
+        - { event: onClose }
+    - name: non-dismissible-still-reports-escape
+      description: Escape requests close with reason escape even when not dismissible (keyboard rule 1), because trapping a keyboard user with no way out is never acceptable.
+      given: { open: true, dismissible: false }
+      when: { key: Escape }
+      then:
+        - { event: onClose }
+      platforms: [web, lit]
+    - name: non-dismissible-scrim-click-does-nothing
+      description: With `dismissible` false the scrim does nothing, so a stray click cannot abandon the task.
+      given: { open: true, dismissible: false }
+      when: { click: scrim }
+      then:
+        - { event: onClose, fired: false }
+    - name: initial-focus-lands-on-the-close-button
+      description: initialFocus close puts focus on the close button rather than the first body control.
+      given: { open: true, initialFocus: close }
+      then:
+        - { focused: closeButton }
+      platforms: [web, lit]
+    - name: hidden-heading-is-still-the-accessible-name
+      description: hideHeading removes the title from view, not from the accessible name.
+      given: { open: true, hideHeading: true }
+      then:
+        - { name: true }
+    - name: closed-dialog-renders-nothing
+      given: { open: false }
+      then:
+        - { renders: false }
+  examples:
+    - name: rename-project
+      description: The short single-field task a dialog is for, with the completing action named after it.
+      given: { open: true, heading: 'Rename project', children: 'A labelled text Input holding the current name', footer: 'Cancel and Rename Buttons' }
+    - name: invite-people
+      description: A small form in the narrow size, where the footer restates the task.
+      given: { open: true, heading: 'Invite people', children: 'An email Input and a role Select', footer: 'Cancel and Send invites Buttons', size: sm }
+    - name: must-be-answered
+      description: A dialog with no way out but its own actions; Escape still reports so the consumer can decide.
+      given: { open: true, heading: 'Choose a plan', description: 'You need a plan before you can invite anyone.', children: 'A RadioGroup of plans', footer: 'Continue Button', dismissible: false }
+    - name: reading-dialog
+      description: A long reading dialog that starts focus on the title so the text is read from the top.
+      given: { open: true, heading: 'Terms of service', children: 'Several paragraphs of Text', size: lg, initialFocus: title }
 ---
 
 A dialog interrupts. It takes the whole screen's attention for one task and gives it back when the task is done or abandoned. Everything about it — the scrim, the trapped focus, the inert page behind, Escape, focus returning to where it was — exists to make that interruption safe and reversible. Anything that does not need the interruption should not be a dialog.

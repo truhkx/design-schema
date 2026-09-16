@@ -28,12 +28,43 @@ function setup(given: Partial<SelectProps> = {}) {
     props,
     root: () => screen.queryByTestId('Select') ?? screen.UNSAFE_root,
     label: () => screen.queryByRole('combobox') ?? s.root(),
+    trigger: () => screen.queryByTestId('Select.trigger') ?? s.root(),
     rerender: (next: Partial<SelectProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Select', () => {
+  test('the-trigger-opens-the-popup', () => {
+    const s = setup({"open": false});
+    fireEvent.press(s.trigger());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-closed-select-is-not-expanded', () => {
+    const s = setup({"open": false});
+    expect(s.label()).not.toBeExpanded();
+  });
+  test('an-open-select-reports-the-expanded-state', () => {
+    const s = setup({"open": true});
+    expect(s.label()).toBeExpanded();
+  });
+  test('the-placeholder-shows-when-nothing-is-selected', () => {
+    const s = setup({"open": false});
+    expect(screen.getByText(new RegExp("Select\u2026"))).toBeOnTheScreen();
+  });
+  test('a-custom-placeholder-replaces-the-default', () => {
+    const s = setup({"open": false, "placeholder": "Choose a country"});
+    expect(screen.getByText(new RegExp("Choose\\ a\\ country"))).toBeOnTheScreen();
+  });
+  test('a-disabled-select-does-not-open', () => {
+    const s = setup({"open": false, "disabled": true});
+    fireEvent.press(s.trigger());
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+  });
+  test('required-is-shown-in-the-label', () => {
+    const s = setup({"required": true, "open": true});
+    expect(screen.getByText(new RegExp("\\(required\\)"))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

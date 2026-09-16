@@ -90,6 +90,7 @@ component:
       a11y: Rendered as aria-valuetext / accessibilityValue.text.
     tone:
       type: enum
+      enumRef: tone
       values:
       - info
       - success
@@ -108,26 +109,32 @@ component:
   styles:
     track:
       token: color.background.strong
+      part: track
       locked: true
     fill:
       token: color.status.{tone}.icon
+      part: fill
       description: The icon step of each status hue is the one guaranteed 3:1 against
         the page background, which makes it the right non-text fill.
       locked: true
     trackHeight:
       token: space.2
+      part: track
       locked: false
     radius:
       token: radius.full
       locked: false
     labelColor:
       token: color.foreground
+      part: label
       locked: true
     labelSize:
       token: font.size.sm
+      part: label
       locked: false
     labelWeight:
       token: font.weight.medium
+      part: label
       locked: false
     valueColor:
       token: color.foreground.muted
@@ -147,6 +154,7 @@ component:
       locked: false
     labelGap:
       token: space.2
+      part: label
       description: Horizontal gap between the label and the value text in the label
         row.
       locked: false
@@ -165,11 +173,11 @@ component:
     - foreground: color.status.{tone}.icon
       background: color.background.strong
       level: AA
-      large: true
+      nonText: true
     - foreground: color.status.{tone}.icon
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.foreground
       background: color.background
       level: AA
@@ -226,7 +234,105 @@ component:
         One accessibility element (`.combine`) named by the label with `.accessibilityValue(formatValue(value))`;
         iOS has no meter role, so the value text carries min/max words from copy.
         No animation: a meter reflects a measurement.'
+  behavior:
+  - name: the-meter-reports-its-value-and-range
+    description: The meter exposes the current, minimum and maximum values on its
+      role=meter element.
+    given:
+      value: 25
+      min: 0
+      max: 50
+    then:
+    - role: meter
+    - attribute: aria-valuenow
+      is: '25'
+    - attribute: aria-valuemin
+      is: '0'
+    - attribute: aria-valuemax
+      is: '50'
+    platforms:
+    - web
+    - lit
+  - name: a-value-above-the-maximum-is-clamped
+    description: The bar and the accessible value are both clamped to min..max.
+    given:
+      value: 150
+      min: 0
+      max: 100
+    then:
+    - attribute: aria-valuenow
+      is: '100'
+    platforms:
+    - web
+    - lit
+  - name: value-text-is-shown-and-announced
+    description: valueText is shown at the end of the label row and announced instead
+      of the raw number.
+    given:
+      valueText: 3.2 GB of 10 GB
+    then:
+    - text: 3.2 GB of 10 GB
+    - attribute: aria-valuetext
+      is: 3.2 GB of 10 GB
+      platforms:
+      - web
+      - lit
+  - name: the-label-names-the-measurement
+    description: The visible label is the accessible name and is always rendered.
+    given:
+      label: Password strength
+    then:
+    - text: Password strength
+  examples:
+  - name: storage-quota
+    description: A quota whose value text is what a person would say aloud, not a
+      percentage.
+    given:
+      label: Storage used
+      value: 32
+      valueText: 3.2 GB of 10 GB
+  - name: nearly-full
+    description: The consumer raises the tone from a threshold it owns and says why
+      in the value text.
+    given:
+      label: Storage used
+      value: 95
+      tone: danger
+      valueText: 9.5 GB of 10 GB
+  - name: password-strength
+    description: A word rather than a number, on a short scale of its own.
+    given:
+      label: Password strength
+      value: 3
+      min: 0
+      max: 4
+      valueText: Strong
+      tone: success
+  - name: bar-only
+    description: A meter in a dense row, where the value text would repeat the copy
+      beside it.
+    given:
+      label: Battery
+      value: 64
+      hideValue: true
 ```
+
+## Style bindings
+
+- `track`: token `color.background.strong`; part `track`; locked
+- `fill`: token `color.status.{tone}.icon`; part `fill`; locked
+- `trackHeight`: token `space.2`; part `track`
+- `labelColor`: token `color.foreground`; part `label`; locked
+- `labelSize`: token `font.size.sm`; part `label`
+- `labelWeight`: token `font.weight.medium`; part `label`
+- `labelGap`: token `space.2`; part `label`
+
+## Constants and examples
+
+- example `storage-quota`, story `StorageQuota`: given `label: "Storage used"`, `value: 32`, `valueText: "3.2 GB of 10 GB"`; A quota whose value text is what a person would say aloud, not a percentage.
+- example `nearly-full`, story `NearlyFull`: given `label: "Storage used"`, `value: 95`, `tone: "danger"`, `valueText: "9.5 GB of 10 GB"`; The consumer raises the tone from a threshold it owns and says why in the value text.
+- example `password-strength`, story `PasswordStrength`: given `label: "Password strength"`, `value: 3`, `min: 0`, `max: 4`, `valueText: "Strong"`, `tone: "success"`; A word rather than a number, on a short scale of its own.
+- example `bar-only`, story `BarOnly`: given `label: "Battery"`, `value: 64`, `hideValue: true`; A meter in a dense row, where the value text would repeat the copy beside it.
 
 ## Overrides (per-instance styling contract)
 
@@ -295,11 +401,24 @@ Render an `accessible` `View` with `role="meter"`, `accessibilityLabel={label}` 
 
 ProgressBar (planned), Alert, Text.
 
-## Behavior scenarios (6)
+## Behavior scenarios (8)
 
 One test per scenario, in this order.
 
 ```yaml
+- name: value-text-is-shown-and-announced
+  description: valueText is shown at the end of the label row and announced instead
+    of the raw number.
+  given:
+    valueText: 3.2 GB of 10 GB
+  then:
+  - text: 3.2 GB of 10 GB
+- name: the-label-names-the-measurement
+  description: The visible label is the accessible name and is always rendered.
+  given:
+    label: Password strength
+  then:
+  - text: Password strength
 - name: renders
   then:
   - renders: true

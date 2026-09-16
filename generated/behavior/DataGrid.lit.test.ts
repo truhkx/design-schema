@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/DataGrid.js';
 import meta from '../../packages/lit/src/DataGrid.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -59,6 +63,8 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     container: () => (deep(root, '[role="grid"]') ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
+    sortButton: () => (deep(root, '[part="sortButton"]') ?? deep(root, '[data-part="sortButton"]')) as HTMLElement,
+    selectCell: () => (deep(root, '[part="selectCell"]') ?? deep(root, '[data-part="selectCell"]')) as HTMLElement,
   };
   return s;
 }
@@ -68,6 +74,30 @@ beforeEach(() => {
 });
 
 describe('ds-data-grid', () => {
+  test('activating-a-sortable-header-reports-the-sort', async () => {
+    const s = await setup({"columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}, {"key": "price", "header": "Price", "align": "end", "sortable": true}], "data": [{"id": "a", "sku": "A-1", "price": 10}, {"id": "b", "sku": "B-2", "price": 20}]});
+    await userEvent.click(s.sortButton());
+    expect(s.events.onSortChange).toHaveBeenCalled();
+  });
+  test('enter-on-a-sortable-header-sorts', async () => {
+    const s = await setup({"columns": [{"key": "sku", "header": "SKU", "isRowHeader": true, "sortable": true}, {"key": "price", "header": "Price", "align": "end"}], "data": [{"id": "a", "sku": "A-1", "price": 10}, {"id": "b", "sku": "B-2", "price": 20}]});
+    s.el.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(s.events.onSortChange).toHaveBeenCalled();
+  });
+  test('selecting-a-row-reports-the-selection', async () => {
+    const s = await setup({"selectable": "row", "columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": [{"id": "a", "sku": "A-1"}, {"id": "b", "sku": "B-2"}]});
+    await userEvent.click(s.selectCell());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('the-empty-message-shows-when-there-are-no-rows', async () => {
+    const s = await setup({"columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": []});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Nothing\\ to\\ show\\."));
+  });
+  test('a-custom-empty-message-replaces-the-default', async () => {
+    const s = await setup({"emptyMessage": "No prices loaded.", "columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": []});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("No\\ prices\\ loaded\\."));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

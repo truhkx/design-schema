@@ -77,6 +77,7 @@ test.describe('DatePicker (web) keyboard', () => {
     const stateBefore = await ariaState(page);
     void before; void stateBefore;
     await page.keyboard.press('Escape');
+    await expect(page.locator('[data-part="popover"]').first()).toBeHidden();
     await expect(trigger(page)).toBeFocused();
   });
   test.skip('ArrowRight: Next day. (focus on a day) — manual', async () => {});

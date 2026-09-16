@@ -24,6 +24,10 @@ function setup(given: Partial<TextProps> = {}) {
 }
 
 describe('Text', () => {
+  test('truncated-text-keeps-the-full-string-reachable', async () => {
+    const s = setup({"truncate": true, "children": "A sentence long enough to be clipped by its column."});
+    expect(s.text()).toHaveAttribute("title", "A sentence long enough to be clipped by its column.");
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

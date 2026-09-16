@@ -95,6 +95,9 @@ component:
       description: 'Controlled open ids: always an array (zero or one entry when `exclusive`);
         `onChange` reports the same shape.'
       shape: string | string[]
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: union
       description: Initially open ids.
@@ -115,6 +118,13 @@ component:
         lit: change
         rn: onChange
         swiftui: onChange
+      payload:
+      - name: openIds
+        type: array
+        shape: string[]
+        description: The ids of every open section.
+      fires:
+      - user
     onOpenChange:
       description: 'Fired per section as it opens or closes, with `{ id, open, reason
         }` (`reason`: `trigger`, `keyboard`, `exclusive` when another section closed
@@ -126,6 +136,28 @@ component:
         lit: open-change
         rn: onOpenChange
         swiftui: onOpenChange
+      payload:
+      - name: id
+        type: string
+        description: The section whose state changed.
+      - name: open
+        type: boolean
+        description: Its new state.
+      - name: reason
+        type: enum
+        values:
+        - trigger
+        - keyboard
+        - exclusive
+        - controlled
+      reasons:
+        trigger: the section trigger was activated by pointer
+        keyboard: the section was toggled from the keyboard
+        exclusive: another section opened and closed this one
+        controlled: the consumer changed the value prop
+      fires:
+      - user
+      - controlled
   keyboard:
   - keys:
     - Enter
@@ -173,10 +205,12 @@ component:
       locked: false
     itemGap:
       token: layout.gap.none
+      part: item
       description: Items touch; the divider separates them.
       locked: false
     triggerPaddingBlock:
       token: space.md
+      part: trigger
       description: Roomier than a lone Disclosure, since accordion triggers are section
         headings.
       locked: false
@@ -185,9 +219,11 @@ component:
       locked: false
     triggerFontSize:
       token: font.size.md
+      part: trigger
       locked: false
     triggerFontWeight:
       token: font.weight.medium
+      part: trigger
       locked: false
     minTarget:
       token: size.target.min
@@ -227,7 +263,8 @@ component:
       tag: ds-accordion
       reflect:
       - exclusive
-      - divided
+      - prop: divided
+        attribute: no-divided
       - heading-level
       notes: Light-DOM <ds-disclosure> children are the items (slot), so their content
         stays in the document; ds-accordion sets heading-level and keep-mounted on
@@ -254,11 +291,107 @@ component:
         panel; `multiple`/`collapsible` per the doc; ArrowUp/Down/Home/End move between
         triggers on iPad via `@FocusState`. Panels animate with `transition` unless
         reduced motion. Composes Disclosure's engine, not `DisclosureGroup`.
+  behavior:
+  - name: click-on-a-trigger-reports-the-open-set
+    description: onChange carries the open ids; onOpenChange reports the one section
+      whose state changed.
+    when:
+      click: trigger
+    then:
+    - event: onChange
+    - event: onOpenChange
+    - attribute: aria-expanded
+      is: 'true'
+      'on': trigger
+      platforms:
+      - web
+      - lit
+  - name: exclusive-still-reports-both-events
+    description: With exclusive, opening one section closes the others; the set-level
+      onChange and the per-section onOpenChange both still fire.
+    given:
+      exclusive: true
+    when:
+      click: trigger
+    then:
+    - event: onChange
+    - event: onOpenChange
+  examples:
+  - name: faq
+    description: A list of questions, several of which can be open at once.
+    given:
+      items:
+      - id: cancel
+        summary: What happens if I cancel?
+        content: You keep access until the end of the billing period.
+      - id: refunds
+        summary: Do you offer refunds?
+        content: Within 14 days of a charge, in full.
+  - name: one-open-at-a-time
+    description: A comparison list where opening a section closes the rest.
+    given:
+      exclusive: true
+      items:
+      - id: free
+        summary: Free
+        content: One project and community support.
+      - id: pro
+        summary: Pro
+        content: Unlimited projects and email support.
+  - name: form-sections
+    description: Form sections whose panels stay mounted so the Form still collects
+      the fields inside.
+    given:
+      keepMounted: true
+      headingLevel: '2'
+      items:
+      - id: contact
+        summary: Contact details
+        content: Name and email fields.
+      - id: billing
+        summary: Billing address
+        content: Street and city fields.
+  - name: undivided
+    description: Sections without the hairline, for an accordion that already sits
+      inside a Card.
+    given:
+      divided: false
+      items:
+      - id: shipping
+        summary: Shipping
+        content: Orders ship within two business days.
+      - id: returns
+        summary: Returns
+        content: Items can be returned within 30 days.
 ```
+
+## Events
+
+- `onChange`: emit `onChange`
+  - payload, positional, in this order: `openIds: string[]`
+  - fires on: user
+- `onOpenChange`: emit `onOpenChange`
+  - payload, positional, in this order: `id: string`, `open: boolean`, `reason: 'trigger' | 'keyboard' | 'exclusive' | 'controlled'`
+  - reasons: `trigger` (the section trigger was activated by pointer); `keyboard` (the section was toggled from the keyboard); `exclusive` (another section opened and closed this one); `controlled` (the consumer changed the value prop)
+  - fires on: user, controlled
 
 ## Controlled state
 
-- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; paired by name, so no event is declared
+- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `onChange`)
+
+## Style bindings
+
+- `itemGap`: token `layout.gap.none`; part `item`
+- `triggerPaddingBlock`: token `space.md`; part `trigger`
+- `triggerFontSize`: token `font.size.md`; part `trigger`
+- `triggerFontWeight`: token `font.weight.medium`; part `trigger`
+
+## Constants and examples
+
+- example `faq`, story `Faq`: given `items: [{"id":"cancel","summary":"What happens if I cancel?","content":"You keep access until the end of the billing period."},{"id":"refunds","summary":"Do you offer refunds?","content":"Within 14 days of a charge, in full."}]`; A list of questions, several of which can be open at once.
+- example `one-open-at-a-time`, story `OneOpenAtATime`: given `exclusive: true`, `items: [{"id":"free","summary":"Free","content":"One project and community support."},{"id":"pro","summary":"Pro","content":"Unlimited projects and email support."}]`; A comparison list where opening a section closes the rest.
+- example `form-sections`, story `FormSections`: given `keepMounted: true`, `headingLevel: "2"`, `items: [{"id":"contact","summary":"Contact details","content":"Name and email fields."},{"id":"billing","summary":"Billing address","content":"Street and city fields."}]`; Form sections whose panels stay mounted so the Form still collects the fields inside.
+- example `undivided`, story `Undivided`: given `divided: false`, `items: [{"id":"shipping","summary":"Shipping","content":"Orders ship within two business days."},{"id":"returns","summary":"Returns","content":"Items can be returned within 30 days."}]`; Sections without the hairline, for an accordion that already sits inside a Card.
 
 ## Overrides (per-instance styling contract)
 
@@ -271,11 +404,29 @@ The `platforms.rn.props` list names the native props the schema cares about; `ov
 Overridable: `divider`, `dividerWidth`, `itemGap`, `triggerPaddingBlock`, `fontFamily`, `triggerFontSize`, `triggerFontWeight`
 Locked (accessibility-bearing, never overridable): `minTarget`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (6)
+## Behavior scenarios (8)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: click-on-a-trigger-reports-the-open-set
+  description: onChange carries the open ids; onOpenChange reports the one section
+    whose state changed.
+  when:
+    click: trigger
+  then:
+  - event: onChange
+  - event: onOpenChange
+- name: exclusive-still-reports-both-events
+  description: With exclusive, opening one section closes the others; the set-level
+    onChange and the per-section onOpenChange both still fire.
+  given:
+    exclusive: true
+  when:
+    click: trigger
+  then:
+  - event: onChange
+  - event: onOpenChange
 - name: renders
   then:
   - renders: true

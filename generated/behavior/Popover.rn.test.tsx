@@ -23,12 +23,22 @@ function setup(given: Partial<PopoverProps> = {}) {
     props,
     root: () => screen.queryByTestId('Popover') ?? screen.UNSAFE_root,
     trigger: () => screen.queryByRole('dialog') ?? s.root(),
+    closeButton: () => screen.queryByTestId('Popover.closeButton') ?? s.root(),
     rerender: (next: Partial<PopoverProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Popover', () => {
+  test('close-button-fires-on-open-change', () => {
+    const s = setup({"open": true});
+    fireEvent.press(s.closeButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-panel-is-named-by-its-heading', () => {
+    const s = setup({"open": true, "heading": "Filters"});
+    expect(screen.getByRole('dialog', { name: "Filters" })).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

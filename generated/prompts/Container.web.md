@@ -157,7 +157,42 @@ component:
         Gutters shrink to the compact token below the prose width (a `GeometryReader`
         on the container''s own width, never `UIScreen`). Safe-area insets are respected
         by default (`ignoresSafeArea` is never applied by a component).'
+  behavior:
+  - name: main-element-is-the-page-landmark
+    description: 'Container adds no semantics unless element: main is chosen, in which
+      case it is the page''s main landmark and there must be exactly one.'
+    given:
+      element: main
+    then:
+    - role: main
+      platforms:
+      - web
+  examples:
+  - name: application-screen
+    description: The default page column for application screens, centered at the
+      content measure.
+    given:
+      children: A Stack of page regions
+      width: content
+  - name: reading-measure
+    description: An article capped at the prose measure, about 65 characters a line.
+    given:
+      children: An article
+      width: prose
+  - name: nested-section
+    description: A narrower measure inside an already padded parent, so the gutters
+      are not applied twice.
+    given:
+      children: A narrower section
+      width: prose
+      gutter: none
 ```
+
+## Constants and examples
+
+- example `application-screen`, story `ApplicationScreen`: given `children: "A Stack of page regions"`, `width: "content"`; The default page column for application screens, centered at the content measure.
+- example `reading-measure`, story `ReadingMeasure`: given `children: "An article"`, `width: "prose"`; An article capped at the prose measure, about 65 characters a line.
+- example `nested-section`, story `NestedSection`: given `children: "A narrower section"`, `width: "prose"`, `gutter: "none"`; A narrower measure inside an already padded parent, so the gutters are not applied twice.
 
 ## Overrides (per-instance styling contract)
 
@@ -170,11 +205,18 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `maxWidth`, `paddingInline`
 Locked (accessibility-bearing, never overridable): none
 
-## Behavior scenarios (14)
+## Behavior scenarios (15)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: main-element-is-the-page-landmark
+  description: 'Container adds no semantics unless element: main is chosen, in which
+    case it is the page''s main landmark and there must be exactly one.'
+  given:
+    element: main
+  then:
+  - role: main
 - name: renders
   then:
   - renders: true

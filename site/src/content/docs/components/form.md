@@ -6,6 +6,9 @@ component:
   category: container
   status: review
   anatomy: [container, fields, errorSummary, actions]
+  parts:
+    fields: { kind: slot, slot: { default: true, prop: children, required: true } }
+    actions: { kind: slot, slot: { prop: actions, required: true } }
   props:
     children:
       type: content
@@ -45,22 +48,38 @@ component:
     onSubmit:
       description: 'Fired when the form is submitted and every field is valid. Receives the collected values keyed by field name: `Record<string, string | boolean>` — Input and RadioGroup contribute strings, Switch a boolean, Checkbox its `value` when checked; an unchecked Checkbox, an unselected RadioGroup and a disabled field contribute no key at all.'
       platforms: { web: onSubmit, lit: submit, rn: onSubmit, swiftui: onSubmit }
+      payload:
+        - { name: values, type: object, shape: 'Record<string, string | boolean>', description: The collected values keyed by field name. }
+      fires: [user]
     onInvalid:
       description: Fired when submission is blocked by validation. Receives the errors keyed by field name.
       platforms: { web: onInvalid, lit: invalid, rn: onInvalid, swiftui: onInvalid }
+      payload:
+        - { name: errors, type: object, shape: 'Record<string, string>', description: The validation errors keyed by field name. }
+      fires: [user]
   styles:
     gap: { token: layout.gap.loose, description: 'Vertical gap between fields and between fields and actions — the rhythm preset, so a theme''s `layout.rhythm` reaches every form.' }
-    errorSummaryBorder: { token: color.border.danger }
-    errorSummaryText: { token: color.foreground.danger }
-    errorSummaryBackground: { token: color.background.subtle }
+    errorSummaryBorder: { token: color.border.danger, part: errorSummary }
+    errorSummaryText: { token: color.foreground.danger, part: errorSummary }
+    errorSummaryBackground: { token: color.background.subtle, part: errorSummary }
   copy:
-    summaryHeading: '{count} problems with this form'
+    summaryHeading:
+      plural:
+        by: count
+        one: '1 problem with this form'
+        other: '{count} problems with this form'
+      params:
+        count: { type: number, description: How many fields failed validation. }
     summaryHeadingOne: '1 problem with this form'
+    invalidSummary: This form has errors.
   a11y:
     role: form
     requires: [focus-visible, contrast-aa]
     contrast:
       - { foreground: color.foreground.danger, background: color.background.subtle, level: AA }
+  form:
+    role: container
+    discovery: context
   platforms:
     web:
       element: form
@@ -78,6 +97,27 @@ component:
       element: VStack
       props: [.onSubmit, .submitLabel, '@FocusState', FormContext=environment, AccessibilityNotification]
       notes: 'A `VStack` providing `FormContext` through the environment (`\.dsForm`); fields register on appear and unregister on disappear. Submit is the submit `Button` or the keyboard''s return on the last field (`.onSubmit`); validation runs registered validators in order, the first failing field receives `@AccessibilityFocusState` focus and `copy.invalidSummary` is announced. `onInvalid` receives the failures; `onSubmit` the value map (`String | Bool | Double | [String] | ClosedRange<Double>`). Not SwiftUI''s `Form` (a grouped-list style that fights the tokens).'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum ones from the schema.
+    - name: label-names-the-form-landmark
+      description: 'The form is a named landmark when label is given, which is what a page with more than one form needs (WCAG 1.3.1, 2.4.1).'
+      given: { label: 'Sign in' }
+      then:
+        - { role: form, platforms: [web] }
+        - { name: 'Sign in', platforms: [web] }
+  examples:
+    - name: sign-in
+      description: The smallest real form - two fields and one submit action, validated on submit.
+      given: { name: sign-in, label: 'Sign in', children: 'An email Input and a password Input', actions: 'A submit Button labelled Sign in' }
+    - name: long-form-validated-on-blur
+      description: A longer form where feedback per field as focus leaves it beats one report at the end.
+      given: { name: profile, label: 'Profile details', validate: blur, children: 'The profile fields in a Stack', actions: 'A submit Button labelled Save profile' }
+    - name: submitting
+      description: A form while its request is in flight - every field and action disabled, so it cannot be submitted twice.
+      given: { name: sign-in, label: 'Sign in', disabled: true, children: 'An email Input and a password Input', actions: 'A submit Button labelled Sign in' }
+    - name: without-a-summary
+      description: A short form that reports errors at the fields alone, moving focus to the first invalid one.
+      given: { name: rename, label: 'Rename file', errorSummary: false, children: 'A name Input', actions: 'A submit Button labelled Rename' }
 ---
 
 Form is the container that makes fields behave as a group. It knows which fields exist, collects their values, runs validation at the configured moment, shows errors in a consistent way, and only calls `onSubmit` when everything is valid.

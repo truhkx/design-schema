@@ -57,6 +57,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     label: () => (deep(root, '[role="textbox"]') ?? deep(root, '[part="label"]') ?? deep(root, '[data-part="label"]') ?? root.firstElementChild) as HTMLElement,
+    field: () => (deep(root, '[part="field"]') ?? deep(root, '[data-part="field"]')) as HTMLElement,
   };
   return s;
 }
@@ -66,6 +67,31 @@ beforeEach(() => {
 });
 
 describe('ds-input', () => {
+  test('typing-reports-the-new-value', async () => {
+    const s = await setup({});
+    await userEvent.type(s.label(), "a");
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual("a");
+  });
+  test('focus-is-reported', async () => {
+    const s = await setup({});
+    (s.field()).focus();
+    expect(s.events.onFocus).toHaveBeenCalled();
+  });
+  test('required-is-shown-in-the-label', async () => {
+    const s = await setup({"required": true});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("\\(required\\)"));
+  });
+  test('error-is-announced-when-it-appears', async () => {
+    const s = await setup({"error": "Enter an email address like name@example.com"});
+    expect(s.el.shadowRoot!.querySelector('[role="alert"]')).not.toBeNull();
+  });
+  test('disabled-stays-focusable-and-is-announced', async () => {
+    const s = await setup({"disabled": true});
+    expect(s.label()).toHaveAttribute('aria-disabled', 'true');
+    s.el.focus();
+    expect(activeChain()).toContain(s.el);
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

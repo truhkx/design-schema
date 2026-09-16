@@ -24,12 +24,44 @@ function setup(given: Partial<RadioGroupProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="RadioGroup"]') ?? screen.queryByRole('radiogroup') ?? utils.container.firstElementChild) as HTMLElement,
     group: () => (screen.queryByRole('radiogroup') ?? s.root()) as HTMLElement,
+    radio: () => (document.querySelector('[data-part="radio"]') ?? s.root()),
+    radioLabel: () => (document.querySelector('[data-part="radioLabel"]') ?? s.root()),
     rerender: (next: Partial<RadioGroupProps>) => utils.rerender(<RadioGroup {...props} {...next} />),
   };
   return s;
 }
 
 describe('RadioGroup', () => {
+  test('click-on-an-option-reports-its-value', async () => {
+    const s = setup({});
+    await s.user.click(s.radio());
+    expect(s.events.onChange).toHaveBeenCalledWith("standard", expect.anything());
+  });
+  test('click-on-an-option-label-selects-it', async () => {
+    const s = setup({});
+    await s.user.click(s.radioLabel());
+    expect(s.events.onChange).toHaveBeenCalledWith("standard", expect.anything());
+  });
+  test('disabled-option-cannot-be-selected', async () => {
+    const s = setup({"options": [{"value": "standard", "label": "Standard", "disabled": true}, {"value": "express", "label": "Express"}]});
+    await s.user.click(s.radio());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('disabled-group-is-inert', async () => {
+    const s = setup({"disabled": true});
+    await s.user.click(s.radio());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+    expect(s.group()).toHaveAttribute('aria-disabled', 'true');
+  });
+  test('required-is-shown-in-the-legend', async () => {
+    const s = setup({"required": true});
+    expect(screen.getByText(new RegExp("\\(required\\)"))).toBeInTheDocument();
+  });
+  test('invalid-renders-the-invalid-copy', async () => {
+    const s = setup({"invalid": true});
+    expect(screen.getByText(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."))).toBeInTheDocument();
+    expect(s.group()).toHaveAttribute('aria-invalid', 'true');
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

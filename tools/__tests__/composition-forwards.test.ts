@@ -218,7 +218,7 @@ describe('requirements met through an object entry', () => {
   });
 });
 
-describe('the prose-forward warning', () => {
+describe('the prose-forward rule', () => {
   beforeEach(childDocs);
 
   /** Widget composing the Select-like child as `monthSelect`, with one more binding described by `description`. */
@@ -228,37 +228,37 @@ describe('the prose-forward warning', () => {
     return c;
   }
 
-  const file = (): string => parse.docPath(join(tmp(), 'widget.md'));
-
-  test('a forward into a binding the child does not have warns', () => {
-    check(prose('monthTitleWeight', 'Forwarded to the Selects as `overrides.fontWeight`.'));
-    expect(parse.takeWarnings()).toEqual([{ file: file(), message: "styles.monthTitleWeight: forwarded to Select as overrides.fontWeight, but Select has no 'fontWeight' binding" }]);
+  test('a forward into a binding the child does not have is an error', () => {
+    expectDocError(() => check(prose('monthTitleWeight', 'Forwarded to the Selects as `overrides.fontWeight`.')), "widget.md: styles.monthTitleWeight: forwarded to Select as overrides.fontWeight, but Select has no 'fontWeight' binding");
   });
 
-  test('a forward into a binding the child locks warns', () => {
-    check(prose('calendarSurface', "Realized by the composed Select's popup; forwarded as its `overrides.popupSurface`.", { component: 'Select' }));
-    expect(parse.takeWarnings()).toEqual([{ file: file(), message: 'styles.calendarSurface: forwarded to Select as overrides.popupSurface, but Select.popupSurface is locked, so no override reaches it' }]);
+  test('a forward into a binding the child locks is an error', () => {
+    expectDocError(
+      () => check(prose('calendarSurface', "Realized by the composed Select's popup; forwarded as its `overrides.popupSurface`.", { component: 'Select' })),
+      'widget.md: styles.calendarSurface: forwarded to Select as overrides.popupSurface, but Select.popupSurface is locked, so no override reaches it',
+    );
   });
 
-  test('no warning for a free child binding, the binding itself, an unnamed child or a planned child', () => {
+  test('a free child binding, the binding itself, an unnamed child and a planned child still parse', () => {
     check(prose('monthTitleSize', 'Forwarded to the Selects as `overrides.fontSize`.'));
     check(prose('fontWeight', 'An `overrides.fontWeight` on the Select is this binding.'));
     check(prose('monthTitleWeight', 'Forwarded as `overrides.fontWeight`.'));
     check(prose('monthTitleWeight', 'Forwarded to the Gadget as `overrides.fontWeight`.', 'Gadget (planned)'));
     expect(parse.takeWarnings()).toEqual([]);
   });
+});
 
-  test('over the real docs it finds DatePicker.monthTitleWeight and DatePicker.calendarSurface', () => {
-    const docs = parse.paths.DOCS = join(REPO_ROOT, 'site', 'src', 'content', 'docs', 'components');
-    for (const name of readdirSync(docs).filter((n) => n.endsWith('.md'))) {
-      const f = join(docs, name);
+describe('the prose-forward rule over the real docs', () => {
+  test('the corpus is clean: every doc parses and none warns of this shape', () => {
+    const docs = (parse.paths.DOCS = join(REPO_ROOT, 'site', 'src', 'content', 'docs', 'components'));
+    const names = readdirSync(docs).filter((n) => n.endsWith('.md'));
+    expect(names.length).toBeGreaterThan(50);
+    for (const fileName of names) {
+      const f = join(docs, fileName);
       const [fm] = parse.splitFrontmatter(readText(f), f);
       parse.validate(fm, f);
     }
-    expect(parse.takeWarnings()).toEqual([
-      { file: 'site/src/content/docs/components/datepicker.md', message: 'styles.calendarSurface: forwarded to Popover as overrides.surface, but Popover.surface is locked, so no override reaches it' },
-      { file: 'site/src/content/docs/components/datepicker.md', message: "styles.monthTitleWeight: forwarded to Select as overrides.fontWeight, but Select has no 'fontWeight' binding" },
-    ]);
+    expect(parse.takeWarnings().filter((w) => /forwarded to .* as overrides\./.test(w.message))).toEqual([]);
   });
 });
 
@@ -270,15 +270,38 @@ describe('compositionTarget', () => {
     expect(compositionTarget({ component: 'Toast (planned)' })).toEqual({ component: 'Toast', planned: true });
   });
 
-  test('every composition value in generated/components.json comes back unchanged', () => {
+  test('both forms round-trip through generated/components.json, and every forward is free in the child', () => {
     const entries = JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[];
+    const byName = new Map(entries.map((e) => [e.component.name as string, e.component as Dict]));
     const composed = entries.filter((e) => e.component.composition !== undefined);
+    // The corpus after the job 639 migration: the docs that compose, and the entries that say more than a name.
     expect(composed).toHaveLength(33);
+    let objects = 0;
+    let forwards = 0;
+    let passed = 0;
     for (const e of composed) {
       for (const value of Object.values(e.component.composition as Dict)) {
-        expect(typeof value).toBe('string');
-        expect(compositionTarget(value as string)).toEqual({ component: value, planned: false });
+        const spelled = typeof value === 'string' ? value : (value.component as string);
+        expect(typeof spelled).toBe('string');
+        // Both forms round-trip to the same target, spelled as written minus a `(planned)` suffix.
+        expect(compositionTarget(value as string | { component: string })).toEqual({ component: spelled.split('(planned)').join('').trim(), planned: spelled.includes('(planned)') });
+        if (typeof value === 'string') continue;
+        objects += 1;
+        const child = byName.get(spelled);
+        expect(child, spelled).toBeDefined();
+        for (const key of Object.keys((value.props ?? {}) as Dict)) {
+          passed += 1;
+          expect(Object.keys(((child as Dict).props ?? {}) as Dict), `${spelled}.${key}`).toContain(key);
+        }
+        for (const [binding, target] of Object.entries((value.forwards ?? {}) as Record<string, string>)) {
+          forwards += 1;
+          expect(Object.keys((e.component.styles ?? {}) as Dict), `${String(e.component.name)}.${binding}`).toContain(binding);
+          const childBinding = ((child as Dict).styles as Dict)[target] as Dict | undefined;
+          expect(childBinding, `${spelled}.${target}`).toBeDefined();
+          expect((childBinding as Dict).locked, `${spelled}.${target} is locked`).toBe(false);
+        }
       }
     }
+    expect({ objects, forwards, passed }).toEqual({ objects: 15, forwards: 11, passed: 7 });
   });
 });

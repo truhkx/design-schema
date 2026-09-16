@@ -24,12 +24,28 @@ function setup(given: Partial<MenuProps> = {}) {
     props,
     root: () => screen.queryByTestId('Menu') ?? screen.UNSAFE_root,
     trigger: () => screen.queryByRole('menu') ?? s.root(),
+    item: () => screen.queryByTestId('Menu.item') ?? s.root(),
     rerender: (next: Partial<MenuProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Menu', () => {
+  test('choosing-an-item-reports-the-action-and-the-close', () => {
+    const s = setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename"}, {"id": "duplicate", "label": "Duplicate"}]});
+    fireEvent.press(s.item());
+    expect(s.events.onAction).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-disabled-item-does-nothing', () => {
+    const s = setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename", "disabled": true}, {"id": "duplicate", "label": "Duplicate"}]});
+    fireEvent.press(s.item());
+    expect(s.events.onAction).not.toHaveBeenCalled();
+  });
+  test('the-popup-is-a-menu', () => {
+    const s = setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename"}]});
+    expect(screen.getByRole('menu')).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

@@ -146,7 +146,12 @@
       "action": "Copies the selection as tab-separated text (with headers when whole columns are selected); bound by key code KeyC.",
       "from": "inside",
       "expect": "manual",
-      "when": "selectable is range"
+      "when": "selectable is range",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [

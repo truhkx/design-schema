@@ -58,6 +58,30 @@ beforeEach(() => {
 });
 
 describe('ds-disclosure', () => {
+  test('click-on-trigger-expands', async () => {
+    const s = await setup({"open": true});
+    await userEvent.click(s.trigger());
+    expect(s.events.onToggle).toHaveBeenCalled();
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'true');
+  });
+  test('open-disclosure-collapses-on-click', async () => {
+    const s = await setup({"defaultOpen": true, "open": true});
+    await userEvent.click(s.trigger());
+    expect(s.events.onToggle).toHaveBeenCalled();
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'false');
+  });
+  test('disabled-trigger-does-not-toggle', async () => {
+    const s = await setup({"disabled": true, "open": true});
+    await userEvent.click(s.trigger(), { force: true });
+    expect(s.events.onToggle).not.toHaveBeenCalled();
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'false');
+    expect(s.trigger()).toHaveAttribute('aria-disabled', 'true');
+  });
+  test('disabled-trigger-stays-focusable', async () => {
+    const s = await setup({"disabled": true, "open": true});
+    s.el.focus();
+    expect(activeChain()).toContain(s.el);
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

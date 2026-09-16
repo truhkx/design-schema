@@ -99,6 +99,9 @@ component:
       description: 'Controlled selection: a value, or with `multiple` the exported
         `ListboxValue` (`string | string[]`). Omit for uncontrolled.'
       shape: string | string[]
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: union
       description: Initial selection (or array).
@@ -126,7 +129,7 @@ component:
       default: false
       description: The list lives inside a popup (Select, Combobox) that owns the
         border, surface and radius; the list draws none of its own.
-    defaultActiveValue:
+    initialActiveValue:
       type: string
       description: The option that is active when the list first receives focus (Select
         opens with the selected option active). Defaults to the first selected, else
@@ -166,6 +169,13 @@ component:
         lit: change
         rn: onChange
         swiftui: onChange
+      payload:
+      - name: value
+        type: union
+        shape: string | string[]
+        description: The selected value, or every selected value with multiple.
+      fires:
+      - user
     onActiveChange:
       description: Fired as the focused (active) option changes, with its value —
         Combobox uses this to keep aria-activedescendant in sync; consumers rarely
@@ -175,6 +185,11 @@ component:
         lit: active-change
         rn: onActiveChange
         swiftui: onActiveChange
+      payload:
+      - name: value
+        type: union
+        shape: string | null
+        description: The value of the active option; null when no option is active.
   keyboard:
   - keys:
     - ArrowDown
@@ -248,39 +263,51 @@ component:
       locked: false
     listPadding:
       token: space.1
+      part: list
       locked: false
     optionPaddingBlock:
       token: space.sm
+      part: option
       locked: false
     optionPaddingInline:
       token: space.md
+      part: option
       locked: false
     optionGap:
       token: layout.gap.normal
+      part: option
       description: Between check, icon, label and description.
       locked: false
     optionRadius:
       token: radius.sm
+      part: option
       locked: false
     optionColor:
       token: color.foreground
+      part: option
       locked: true
     optionDescriptionColor:
       token: color.foreground.muted
+      part: optionDescription
       locked: true
     optionDescriptionSize:
       token: font.size.sm
+      part: optionDescription
       locked: false
     optionActiveBackground:
       token: color.background.subtle
+      part: option
+      state: active
       description: The focused/active option (keyboard or hover). Selection is shown
         by the check and weight, so active and selected are never confused.
       locked: true
     optionSelectedWeight:
       token: font.weight.medium
+      part: option
       locked: false
     optionSelectedCheck:
       token: color.control.selectedBackground
+      part: optionCheck
       description: The check icon on selected options (rendered only with `multiple`;
         single-select shows selection by the row fill), in the selected-control fill
         (3:1 on both surfaces by derivation); always rendered (invisible slot when
@@ -288,15 +315,19 @@ component:
       locked: true
     groupLabelColor:
       token: color.foreground.muted
+      part: groupLabel
       locked: true
     groupLabelSize:
       token: font.size.xs
+      part: groupLabel
       locked: false
     groupLabelWeight:
       token: font.weight.semibold
+      part: groupLabel
       locked: false
     groupLabelPaddingBlock:
       token: space.1
+      part: groupLabel
       locked: false
     emptyColor:
       token: color.foreground.muted
@@ -325,7 +356,13 @@ component:
   copy:
     empty: No options
     required: '{label} is required.'
-    selectedCount: '{count} selected'
+    invalid: '{label} is not valid.'
+    selectedCount:
+      text: '{count} selected'
+      params:
+        count:
+          type: number
+          description: How many options are selected.
     loading: Loading…
   a11y:
     role: listbox
@@ -354,11 +391,23 @@ component:
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.control.selectedBackground
       background: color.background.subtle
       level: AA
-      large: true
+      nonText: true
+  form:
+    role: field
+    value: value
+    valueType: string[]
+    name: name
+    validation:
+    - required
+    - invalid
+    messages:
+      required: required
+      invalid: invalid
+    discovery: context
   platforms:
     web:
       element: div
@@ -431,11 +480,231 @@ component:
         the measured row height. `multiple` rows show the check Icon and the count
         is announced. `embedded` drops the surface bindings for Select/Combobox/Search
         hosts.'
+  behavior:
+  - name: click-on-an-option-selects-it
+    when:
+      click: option
+    then:
+    - event: onChange
+  - name: arrow-selects-as-it-moves-when-selection-follows-focus
+    description: Single-select with selectionFollowsFocus - arrow keys select as they
+      move (the common picker feel).
+    given:
+      selectionFollowsFocus: true
+    when:
+      key: ArrowDown
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: arrows-only-move-when-selection-does-not-follow-focus
+    description: With selectionFollowsFocus false the arrows move the active option
+      and select nothing; onActiveChange still reports the move.
+    given:
+      selectionFollowsFocus: false
+    when:
+      key: ArrowDown
+    then:
+    - event: onChange
+      fired: false
+    - event: onActiveChange
+    platforms:
+    - web
+    - lit
+  - name: space-selects-the-active-option
+    given:
+      selectionFollowsFocus: false
+    when:
+      key: Space
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: a-disabled-option-cannot-be-selected
+    given:
+      options:
+      - value: apple
+        label: Apple
+        disabled: true
+      - value: banana
+        label: Banana
+    when:
+      click: option
+    then:
+    - event: onChange
+      fired: false
+  - name: multiple-marks-the-list-multiselectable
+    description: With multiple the value is an array, each option shows a check, and
+      selection toggles rather than moves.
+    given:
+      multiple: true
+    then:
+    - attribute: aria-multiselectable
+      is: 'true'
+    platforms:
+    - web
+  - name: a-selected-option-is-marked-selected
+    given:
+      defaultValue: apple
+    then:
+    - attribute: aria-selected
+      is: 'true'
+      'on': option
+    platforms:
+    - web
+  - name: the-empty-message-shows-when-there-are-no-options
+    given:
+      options: []
+    then:
+    - copy: empty
+  - name: a-custom-empty-message-replaces-the-default
+    given:
+      options: []
+      emptyMessage: No fruit matches that.
+    then:
+    - text: No fruit matches that.
+  - name: loading-replaces-the-empty-message
+    description: While options are being fetched the list shows copy.loading in place
+      of the empty message and is aria-busy.
+    given:
+      options: []
+      loading: true
+    then:
+    - copy: loading
+    - attribute: aria-busy
+      is: 'true'
+      platforms:
+      - web
+  - name: invalid-renders-the-invalid-copy
+    given:
+      invalid: true
+    then:
+    - copy: invalid
+    - state: invalid
+      is: true
+      platforms:
+      - web
+      - lit
+  examples:
+  - name: single-picker
+    description: The standalone visible picker, where arrows select as they move.
+    given:
+      label: Fruit
+      options:
+      - value: apple
+        label: Apple
+      - value: banana
+        label: Banana
+      - value: cherry
+        label: Cherry
+  - name: multi-select-with-checks
+    description: Any number of selections, each selected row carrying a check.
+    given:
+      label: Roles
+      multiple: true
+      defaultValue:
+      - frontend
+      options:
+      - value: frontend
+        label: Frontend
+      - value: backend
+        label: Backend
+      - value: design
+        label: Design
+  - name: grouped-options
+    description: Options under group headings, for a list long enough to need sections.
+    given:
+      label: Role
+      options:
+      - group: Engineering
+        options:
+        - value: frontend
+          label: Frontend
+        - value: backend
+          label: Backend
+      - group: Design
+        options:
+        - value: product
+          label: Product design
+  - name: embedded-in-a-popup
+    description: The same engine inside a Select or Combobox popup, which owns the
+      surface, capped at five rows.
+    given:
+      label: Country
+      embedded: true
+      maxVisible: '5'
+      options:
+      - value: ca
+        label: Canada
+      - value: fr
+        label: France
+      - value: jp
+        label: Japan
 ```
+
+## Events
+
+- `onChange`: emit `change`
+  - payload, the keys of `CustomEvent.detail`: `value: string | string[]`
+  - fires on: user
+- `onActiveChange`: emit `active-change`
+  - payload, the keys of `CustomEvent.detail`: `value: string | null`
 
 ## Controlled state
 
-- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; paired by name, so no event is declared
+- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `change`)
+
+## Style bindings
+
+- `listPadding`: token `space.1`; part `list`
+- `optionPaddingBlock`: token `space.sm`; part `option`
+- `optionPaddingInline`: token `space.md`; part `option`
+- `optionGap`: token `layout.gap.normal`; part `option`
+- `optionRadius`: token `radius.sm`; part `option`
+- `optionColor`: token `color.foreground`; part `option`; locked
+- `optionDescriptionColor`: token `color.foreground.muted`; part `optionDescription`; locked
+- `optionDescriptionSize`: token `font.size.sm`; part `optionDescription`
+- `optionActiveBackground`: token `color.background.subtle`; part `option`; state `active`; locked
+- `optionSelectedWeight`: token `font.weight.medium`; part `option`
+- `optionSelectedCheck`: token `color.control.selectedBackground`; part `optionCheck`; locked
+- `groupLabelColor`: token `color.foreground.muted`; part `groupLabel`; locked
+- `groupLabelSize`: token `font.size.xs`; part `groupLabel`
+- `groupLabelWeight`: token `font.weight.semibold`; part `groupLabel`
+- `groupLabelPaddingBlock`: token `space.1`; part `groupLabel`
+
+## Form and overlay
+
+```yaml
+form:
+  role: field
+  value: value
+  valueType: string[]
+  name: name
+  validation:
+  - required
+  - invalid
+  messages:
+    required: required
+    invalid: invalid
+  discovery: context
+```
+
+## Copy
+
+- `empty`: "No options"
+- `required`: "{label} is required."
+- `invalid`: "{label} is not valid."
+- `selectedCount`: "{count} selected"; params `count` (number)
+- `loading`: "Loading…"
+
+## Constants and examples
+
+- example `single-picker`, story `SinglePicker`: given `label: "Fruit"`, `options: [{"value":"apple","label":"Apple"},{"value":"banana","label":"Banana"},{"value":"cherry","label":"Cherry"}]`; The standalone visible picker, where arrows select as they move.
+- example `multi-select-with-checks`, story `MultiSelectWithChecks`: given `label: "Roles"`, `multiple: true`, `defaultValue: ["frontend"]`, `options: [{"value":"frontend","label":"Frontend"},{"value":"backend","label":"Backend"},{"value":"design","label":"Design"}]`; Any number of selections, each selected row carrying a check.
+- example `grouped-options`, story `GroupedOptions`: given `label: "Role"`, `options: [{"group":"Engineering","options":[{"value":"frontend","label":"Frontend"},{"value":"backend","label":"Backend"}]},{"group":"Design","options":[{"value":"product","label":"Product design"}]}]`; Options under group headings, for a list long enough to need sections.
+- example `embedded-in-a-popup`, story `EmbeddedInAPopup`: given `label: "Country"`, `embedded: true`, `maxVisible: "5"`, `options: [{"value":"ca","label":"Canada"},{"value":"fr","label":"France"},{"value":"jp","label":"Japan"}]`; The same engine inside a Select or Combobox popup, which owns the surface, capped at five rows.
 
 ## Overrides (per-instance styling contract)
 
@@ -448,11 +717,91 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `border`, `borderWidth`, `radius`, `listPadding`, `optionPaddingBlock`, `optionPaddingInline`, `optionGap`, `optionRadius`, `optionDescriptionSize`, `optionSelectedWeight`, `groupLabelSize`, `groupLabelWeight`, `groupLabelPaddingBlock`, `fontFamily`, `fontSize`, `lineHeight`, `disabledOpacity`
 Locked (accessibility-bearing, never overridable): `surface`, `optionColor`, `optionDescriptionColor`, `optionActiveBackground`, `optionSelectedCheck`, `groupLabelColor`, `emptyColor`, `minTarget`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (7)
+## Behavior scenarios (16)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: click-on-an-option-selects-it
+  when:
+    click: option
+  then:
+  - event: onChange
+- name: arrow-selects-as-it-moves-when-selection-follows-focus
+  description: Single-select with selectionFollowsFocus - arrow keys select as they
+    move (the common picker feel).
+  given:
+    selectionFollowsFocus: true
+  when:
+    key: ArrowDown
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: arrows-only-move-when-selection-does-not-follow-focus
+  description: With selectionFollowsFocus false the arrows move the active option
+    and select nothing; onActiveChange still reports the move.
+  given:
+    selectionFollowsFocus: false
+  when:
+    key: ArrowDown
+  then:
+  - event: onChange
+    fired: false
+  - event: onActiveChange
+  platforms:
+  - web
+  - lit
+- name: space-selects-the-active-option
+  given:
+    selectionFollowsFocus: false
+  when:
+    key: Space
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: a-disabled-option-cannot-be-selected
+  given:
+    options:
+    - value: apple
+      label: Apple
+      disabled: true
+    - value: banana
+      label: Banana
+  when:
+    click: option
+  then:
+  - event: onChange
+    fired: false
+- name: the-empty-message-shows-when-there-are-no-options
+  given:
+    options: []
+  then:
+  - copy: empty
+- name: a-custom-empty-message-replaces-the-default
+  given:
+    options: []
+    emptyMessage: No fruit matches that.
+  then:
+  - text: No fruit matches that.
+- name: loading-replaces-the-empty-message
+  description: While options are being fetched the list shows copy.loading in place
+    of the empty message and is aria-busy.
+  given:
+    options: []
+    loading: true
+  then:
+  - copy: loading
+- name: invalid-renders-the-invalid-copy
+  given:
+    invalid: true
+  then:
+  - copy: invalid
+  - state: invalid
+    is: true
 - name: renders
   then:
   - renders: true

@@ -49,6 +49,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     tablist: () => (deep(root, '[role="tablist"]') ?? deep(root, '[part="tablist"]') ?? deep(root, '[data-part="tablist"]') ?? root.firstElementChild) as HTMLElement,
+    tab: () => (deep(root, '[part="tab"]') ?? deep(root, '[data-part="tab"]')) as HTMLElement,
   };
   return s;
 }
@@ -58,6 +59,33 @@ beforeEach(() => {
 });
 
 describe('ds-tabs', () => {
+  test('click-selects-a-tab', async () => {
+    const s = await setup({"defaultValue": "activity"});
+    await userEvent.click(s.tab());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('clicking-the-selected-tab-changes-nothing', async () => {
+    const s = await setup({"defaultValue": "overview"});
+    await userEvent.click(s.tab());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('arrow-selects-under-automatic-activation', async () => {
+    const s = await setup({"activation": "automatic"});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('manual-activation-does-not-select-on-arrow', async () => {
+    const s = await setup({"activation": "manual"});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('a-disabled-tab-cannot-be-selected', async () => {
+    const s = await setup({"tabs": [{"id": "overview", "label": "Overview", "disabled": true}, {"id": "activity", "label": "Activity"}], "defaultValue": "activity"});
+    await userEvent.click(s.tab());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

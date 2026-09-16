@@ -6,6 +6,10 @@ import { Meter } from '../../packages/react/src/Meter';
 import type { MeterProps } from '../../packages/react/src/Meter';
 import meta from '../../packages/react/src/Meter.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<MeterProps> = {}) {
   const events = {};
   const props = { ...meta.args, ...given };
@@ -24,6 +28,26 @@ function setup(given: Partial<MeterProps> = {}) {
 }
 
 describe('Meter', () => {
+  test('the-meter-reports-its-value-and-range', async () => {
+    const s = setup({"value": 25, "min": 0, "max": 50});
+    expect(screen.getByRole('meter')).toBeInTheDocument();
+    expect(s.container()).toHaveAttribute("aria-valuenow", "25");
+    expect(s.container()).toHaveAttribute("aria-valuemin", "0");
+    expect(s.container()).toHaveAttribute("aria-valuemax", "50");
+  });
+  test('a-value-above-the-maximum-is-clamped', async () => {
+    const s = setup({"value": 150, "min": 0, "max": 100});
+    expect(s.container()).toHaveAttribute("aria-valuenow", "100");
+  });
+  test('value-text-is-shown-and-announced', async () => {
+    const s = setup({"valueText": "3.2 GB of 10 GB"});
+    expect(screen.getByText(new RegExp("3\\.2\\ GB\\ of\\ 10\\ GB"))).toBeInTheDocument();
+    expect(s.container()).toHaveAttribute("aria-valuetext", "3.2 GB of 10 GB");
+  });
+  test('the-label-names-the-measurement', async () => {
+    const s = setup({"label": "Password strength"});
+    expect(screen.getByText(new RegExp("Password\\ strength"))).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

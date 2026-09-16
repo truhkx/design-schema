@@ -314,7 +314,7 @@ describe('main', () => {
   test('no prompt is written for a platform without a template', () => {
     const { docs, out } = sandbox();
     const c = component();
-    c.platforms.lit = { tag: 'ds-widget' };
+    c.platforms.lit = { tag: 'ds-widget', reflect: ['variant', 'size'] };
     c.events.onPress.platforms.lit = 'press';
     write(join(docs, 'widget.md'), '---\n' + fmText(c) + '---\n' + BODY);
     expect(parse.main()).toBe(0);

@@ -9,6 +9,8 @@ component:
   anatomy: [trigger, popup, text]
   composition:
     text: Text
+  parts:
+    trigger: { kind: slot, slot: { default: true, prop: children, required: true } }
   props:
     content:
       type: string
@@ -37,15 +39,15 @@ component:
       default: default
       description: 'Hover delay before showing: `default` uses `motion.duration.base` × 3 (roughly 600ms, so casual mouse movement does not flash tooltips); `none` for toolbars where a sibling tooltip is already open (a shared "warm" state so moving along a toolbar shows tooltips instantly: after a tooltip hides, siblings show with no delay for one motion.duration.loop; the pointer may cross to the tooltip within one motion.duration.fast before it hides).'
   keyboard:
-    - { keys: [Escape], action: Hides the tooltip without moving focus., when: tooltip visible, from: trigger, expect: closes }
+    - { keys: [Escape], action: Hides the tooltip without moving focus., when: tooltip visible, from: trigger, expect: [closes, focus-unchanged] }
   styles:
     surface: { token: color.inverse.surface, description: 'Inverted: the tooltip is dark on light mode and light on dark mode, so it reads as a label, not a panel.' }
-    text: { token: color.inverse.foreground }
+    text: { token: color.inverse.foreground, part: text }
     radius: { token: radius.sm }
     paddingBlock: { token: space.1 }
     paddingInline: { token: space.2 }
     offset: { token: space.1, description: Gap between trigger and tooltip. }
-    maxWidth: { token: space.20, description: 'Multiplied by 3 (240px at comfortable density) — the generator computes it; longer text wraps.' }
+    maxWidth: { token: space.20, computed: { times: 3 }, description: 'Longer text wraps.' }
     fontFamily: { token: font.family.body }
     fontSize: { token: font.size.sm }
     lineHeight: { token: font.lineHeight.normal }
@@ -53,6 +55,20 @@ component:
     layer: { token: layer.toast, description: 'Tooltips sit above everything, including dialogs, because they describe controls inside them.' }
     enter: { token: motion.duration.fast, description: Fade in; instant under reduced motion. }
     exit: { token: motion.duration.fast }
+  constants:
+    hoverDelay:
+      description: 'Delay before a hovered trigger shows its tooltip, when `delay` is `default`.'
+      token: motion.duration.base
+      multiply: 3
+      unit: ms
+  overlay:
+    layer: tooltip
+    anchor: trigger
+    placement: placement
+    collision: flip
+    open: open
+    dismiss: [escape]
+    modal: false
   a11y:
     role: tooltip
     requires: [escape-dismiss, keyboard-operable, contrast-aa, reduced-motion, no-hover-only]
@@ -65,7 +81,7 @@ component:
       notes: 'The child is cloned with aria-describedby (or aria-labelledby) pointing at the tooltip id and with mouseenter/mouseleave/focus/blur handlers merged. The tooltip <div role="tooltip"> is rendered through a portal, position: fixed from the trigger rect, flipped on overflow, on layer.toast. It stays open while the pointer is over the tooltip itself (1.4.13 hoverable) and hides on Escape (dismissable) or when the trigger loses hover and focus. Never shown on touch (no hover); the description is still in the accessibility tree. The description is always in the accessibility tree: `content` is rendered in a visually-hidden element that aria-describedby points at, and the visible popup is a second copy — so the Popover API''s display:none while closed does not remove the description.'
     lit:
       tag: ds-tooltip
-      reflect: [placement, describes]
+      reflect: [placement, { prop: describes, attribute: no-describes }]
       notes: 'Wraps the slotted trigger; because aria-describedby cannot cross the shadow boundary, the tooltip element is rendered in the light DOM as a sibling of the trigger (appended to the host, not the shadow root) so the ID reference resolves. Positioning via the Popover API (popover="manual") with a fixed fallback. As on web, aria-describedby targets a visually-hidden copy of the content that is always present; the popover is the visible copy.'
     rn:
       element: View
@@ -75,6 +91,34 @@ component:
       element: Group
       props: [.accessibilityHint, .onLongPressGesture, .popover, .onHover, .accessibilityHidden]
       notes: 'There is no tooltip on iOS. The `content` is forwarded to the trigger as `.accessibilityHint` (VoiceOver reads it after the label), and the bubble itself shows on long-press (touch) and pointer hover (iPad) as a `.popover` with `.presentationCompactAdaptation(.popover)` so it never becomes a sheet, positioned by `placement`, dismissed on release/leave or Escape. The bubble is `.accessibilityHidden(true)` — the hint already carries the text. Delays from the timing tokens; none under reduced motion.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum ones from the schema.
+    # All narrowed to web and Lit: React Native has no pointer to hover the trigger with.
+    - name: the-visible-tooltip-carries-the-tooltip-role
+      description: When shown, the bubble is a role=tooltip element linked to the trigger (APG tooltip).
+      given: { open: true }
+      then:
+        - { role: tooltip }
+      platforms: [web, lit]
+    - name: the-text-stays-in-the-tree-while-hidden
+      description: The description is always in the accessibility tree, so a screen-reader user gets the text without hovering; the visible popup is a second copy.
+      given: { open: false }
+      then:
+        - { role: tooltip }
+      platforms: [web, lit]
+  examples:
+    - name: icon-only-button-name
+      description: The tooltip is the control's name, not a second announcement, so it is linked as the label.
+      given: { content: 'Bold', children: 'An icon-only Button with the bold Icon', describes: false }
+    - name: column-header-hint
+      description: A clarification on a labelled control in dense UI.
+      given: { content: 'Includes archived items', children: 'A table column header Button' }
+    - name: warm-toolbar
+      description: A toolbar where a sibling tooltip is already open, so the next one shows instantly.
+      given: { content: 'Italic', children: 'An icon-only Button inside a Toolbar', delay: none }
+    - name: below-the-trigger
+      description: A trigger at the top of the page, where the bubble reads better underneath.
+      given: { content: 'Copy link', children: 'An icon-only Button in the page header', placement: bottom }
 ---
 
 A tooltip is the smallest overlay: a label that appears when you point at or focus a control and disappears when you leave. It exists to name icon-only buttons and to add a hint to a control whose label cannot carry everything. It must never be the only home of information a user needs, because a touchscreen user will never see it.

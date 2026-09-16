@@ -27,12 +27,39 @@ function setup(given: Partial<NumberInputProps> = {}) {
     props,
     root: () => screen.queryByTestId('NumberInput') ?? screen.UNSAFE_root,
     label: () => screen.queryByRole('spinbutton') ?? s.root(),
+    decrementButton: () => screen.queryByTestId('NumberInput.decrementButton') ?? s.root(),
+    incrementButton: () => screen.queryByTestId('NumberInput.incrementButton') ?? s.root(),
     rerender: (next: Partial<NumberInputProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('NumberInput', () => {
+  test('the-increment-button-steps-up', () => {
+    const s = setup({"defaultValue": 5, "step": 1});
+    fireEvent.press(s.incrementButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('the-decrement-button-steps-down', () => {
+    const s = setup({"defaultValue": 5, "step": 1});
+    fireEvent.press(s.decrementButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('typing-a-number-reports-it', () => {
+    const s = setup({});
+    fireEvent.changeText(s.label(), "7");
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('decrement-does-nothing-at-the-minimum', () => {
+    const s = setup({"defaultValue": 0, "min": 0, "max": 10});
+    fireEvent.press(s.decrementButton());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('a-disabled-field-does-not-step', () => {
+    const s = setup({"disabled": true, "defaultValue": 5});
+    fireEvent.press(s.incrementButton());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

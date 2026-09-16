@@ -10,7 +10,12 @@
       "action": "Moves focus into the toast region (the first toast's action or dismiss button) from anywhere; F6 again returns to where focus was.",
       "from": "any",
       "expect": "focus-first",
-      "when": "a toast is visible"
+      "when": "a toast is visible",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
@@ -19,7 +24,12 @@
       "action": "Dismisses the focused toast and returns focus.",
       "from": "first",
       "expect": "closes",
-      "when": "focus inside a toast"
+      "when": "focus inside a toast",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [

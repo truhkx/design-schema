@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/AlertDialog.js';
 import meta from '../../packages/lit/src/AlertDialog.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -51,6 +55,8 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     scrim: () => (deep(root, '[role="alertdialog"]') ?? deep(root, '[part="scrim"]') ?? deep(root, '[data-part="scrim"]') ?? root.firstElementChild) as HTMLElement,
+    cancelButton: () => (deep(root, '[part="cancelButton"]') ?? deep(root, '[data-part="cancelButton"]')) as HTMLElement,
+    confirmButton: () => (deep(root, '[part="confirmButton"]') ?? deep(root, '[data-part="confirmButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -60,6 +66,46 @@ beforeEach(() => {
 });
 
 describe('ds-alert-dialog', () => {
+  test('confirm-button-fires-on-confirm', async () => {
+    const s = await setup({"open": true});
+    await userEvent.click(s.confirmButton());
+    expect(s.events.onConfirm).toHaveBeenCalled();
+  });
+  test('cancel-button-fires-on-cancel', async () => {
+    const s = await setup({"open": true});
+    await userEvent.click(s.cancelButton());
+    expect(s.events.onCancel).toHaveBeenCalled();
+  });
+  test('focus-starts-on-the-cancel-button', async () => {
+    const s = await setup({"open": true});
+    expect(activeChain()).toContain(s.cancelButton());
+  });
+  test('a-scrim-click-does-nothing', async () => {
+    const s = await setup({"open": true});
+    await userEvent.click(s.scrim());
+    expect(s.events.onCancel).not.toHaveBeenCalled();
+    expect(s.events.onConfirm).not.toHaveBeenCalled();
+  });
+  test('confirm-disabled-does-not-confirm', async () => {
+    const s = await setup({"open": true, "confirmDisabled": true});
+    await userEvent.click(s.confirmButton());
+    expect(s.events.onConfirm).not.toHaveBeenCalled();
+  });
+  test('cancel-works-while-confirm-is-disabled', async () => {
+    const s = await setup({"open": true, "confirmDisabled": true});
+    await userEvent.click(s.cancelButton());
+    expect(s.events.onCancel).toHaveBeenCalled();
+  });
+  test('escape-cancels-while-confirm-is-disabled', async () => {
+    const s = await setup({"open": true, "confirmDisabled": true});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onCancel).toHaveBeenCalled();
+  });
+  test('the-cancel-button-is-named-from-copy', async () => {
+    const s = await setup({"open": true});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Cancel"));
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
@@ -79,5 +125,11 @@ describe('ds-alert-dialog', () => {
   test('has-accessible-name', async () => {
     const s = await setup({"open": true});
     expect(s.scrim()).toHaveAccessibleName(s.props.heading);
+  });
+  test('escape-fires-on-cancel', async () => {
+    const s = await setup({"open": true});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onCancel).toHaveBeenCalled();
   });
 });

@@ -6,6 +6,10 @@ import type { AlertDialogProps } from '../../packages/rn/src/AlertDialog';
 import meta from '../../packages/rn/src/AlertDialog.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<AlertDialogProps> = {}) {
   const events = {
     onConfirm: jest.fn(),
@@ -24,12 +28,44 @@ function setup(given: Partial<AlertDialogProps> = {}) {
     props,
     root: () => screen.queryByTestId('AlertDialog') ?? screen.UNSAFE_root,
     scrim: () => screen.queryByRole('alertdialog') ?? s.root(),
+    cancelButton: () => screen.queryByTestId('AlertDialog.cancelButton') ?? s.root(),
+    confirmButton: () => screen.queryByTestId('AlertDialog.confirmButton') ?? s.root(),
     rerender: (next: Partial<AlertDialogProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('AlertDialog', () => {
+  test('confirm-button-fires-on-confirm', () => {
+    const s = setup({"open": true});
+    fireEvent.press(s.confirmButton());
+    expect(s.events.onConfirm).toHaveBeenCalled();
+  });
+  test('cancel-button-fires-on-cancel', () => {
+    const s = setup({"open": true});
+    fireEvent.press(s.cancelButton());
+    expect(s.events.onCancel).toHaveBeenCalled();
+  });
+  test('a-scrim-click-does-nothing', () => {
+    const s = setup({"open": true});
+    fireEvent.press(s.scrim());
+    expect(s.events.onCancel).not.toHaveBeenCalled();
+    expect(s.events.onConfirm).not.toHaveBeenCalled();
+  });
+  test('confirm-disabled-does-not-confirm', () => {
+    const s = setup({"open": true, "confirmDisabled": true});
+    fireEvent.press(s.confirmButton());
+    expect(s.events.onConfirm).not.toHaveBeenCalled();
+  });
+  test('cancel-works-while-confirm-is-disabled', () => {
+    const s = setup({"open": true, "confirmDisabled": true});
+    fireEvent.press(s.cancelButton());
+    expect(s.events.onCancel).toHaveBeenCalled();
+  });
+  test('the-cancel-button-is-named-from-copy', () => {
+    const s = setup({"open": true});
+    expect(screen.getByText(new RegExp("Cancel"))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

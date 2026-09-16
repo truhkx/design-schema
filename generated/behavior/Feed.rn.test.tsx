@@ -6,6 +6,10 @@ import type { FeedProps } from '../../packages/rn/src/Feed';
 import meta from '../../packages/rn/src/Feed.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<FeedProps> = {}) {
   const events = {
     onLoadMore: jest.fn(),
@@ -25,12 +29,34 @@ function setup(given: Partial<FeedProps> = {}) {
     props,
     root: () => screen.queryByTestId('Feed') ?? screen.UNSAFE_root,
     container: () => screen.queryByRole('feed') ?? s.root(),
+    newItemsButton: () => screen.queryByTestId('Feed.newItemsButton') ?? s.root(),
     rerender: (next: Partial<FeedProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Feed', () => {
+  test('an-empty-feed-asks-for-its-first-page', () => {
+    const s = setup({"items": [], "hasMore": true, "loading": false});
+    expect(s.events.onLoadMore).toHaveBeenCalled();
+  });
+  test('pressing-show-new-asks-for-the-newer-items', () => {
+    const s = setup({"newItemsCount": 3, "items": [{"id": "a1", "heading": "Ana commented on Invoice 42", "timestamp": "2026-09-15T09:00:00Z", "content": "Looks right to me."}]});
+    fireEvent.press(s.newItemsButton());
+    expect(s.events.onShowNew).toHaveBeenCalled();
+  });
+  test('the-end-message-shows-when-there-is-nothing-more', () => {
+    const s = setup({"hasMore": false, "items": [{"id": "a1", "heading": "Ana commented on Invoice 42", "timestamp": "2026-09-15T09:00:00Z", "content": "Looks right to me."}]});
+    expect(screen.getByText(new RegExp("You\\ are\\ all\\ caught\\ up\\."))).toBeOnTheScreen();
+  });
+  test('a-custom-end-message-replaces-the-default', () => {
+    const s = setup({"hasMore": false, "endMessage": "That is everything from this week.", "items": [{"id": "a1", "heading": "Ana commented on Invoice 42", "timestamp": "2026-09-15T09:00:00Z", "content": "Looks right to me."}]});
+    expect(screen.getByText(new RegExp("That\\ is\\ everything\\ from\\ this\\ week\\."))).toBeOnTheScreen();
+  });
+  test('an-empty-feed-that-is-not-loading-says-so', () => {
+    const s = setup({"items": [], "hasMore": false, "loading": false});
+    expect(screen.getByText(new RegExp("Nothing\\ here\\ yet\\."))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

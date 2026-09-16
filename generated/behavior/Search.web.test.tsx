@@ -6,6 +6,17 @@ import { Search } from '../../packages/react/src/Search';
 import type { SearchProps } from '../../packages/react/src/Search';
 import meta from '../../packages/react/src/Search.stories';
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<SearchProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -22,12 +33,51 @@ function setup(given: Partial<SearchProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Search"]') ?? screen.queryByRole('searchbox') ?? utils.container.firstElementChild) as HTMLElement,
     landmark: () => (screen.queryByRole('searchbox') ?? s.root()) as HTMLElement,
+    clearButton: () => (document.querySelector('[data-part="clearButton"]') ?? s.root()),
+    submitButton: () => (document.querySelector('[data-part="submitButton"]') ?? s.root()),
     rerender: (next: Partial<SearchProps>) => utils.rerender(<Search {...props} {...next} />),
   };
   return s;
 }
 
 describe('Search', () => {
+  test('typing-fires-onchange-with-the-query', async () => {
+    const s = setup({});
+    await s.user.type(s.landmark(), "invoices");
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('enter-submits-the-query', async () => {
+    const s = setup({"defaultValue": "invoices"});
+    act(() => focusInto(s.landmark()));
+    await s.user.keyboard('{Enter}');
+    expect(s.events.onSubmit).toHaveBeenCalled();
+  });
+  test('an-empty-query-is-not-submitted', async () => {
+    const s = setup({});
+    act(() => focusInto(s.landmark()));
+    await s.user.keyboard('{Enter}');
+    expect(s.events.onSubmit).not.toHaveBeenCalled();
+  });
+  test('the-submit-button-submits-the-query', async () => {
+    const s = setup({"defaultValue": "invoices", "action": "/search"});
+    await s.user.click(s.submitButton());
+    expect(s.events.onSubmit).toHaveBeenCalled();
+  });
+  test('the-clear-button-empties-the-field', async () => {
+    const s = setup({"defaultValue": "invoices"});
+    await s.user.click(s.clearButton());
+    expect(s.events.onClear).toHaveBeenCalled();
+  });
+  test('escape-clears-the-field-when-no-list-is-open', async () => {
+    const s = setup({"defaultValue": "invoices"});
+    act(() => focusInto(s.landmark()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onClear).toHaveBeenCalled();
+  });
+  test('the-field-is-inside-the-search-landmark', async () => {
+    const s = setup({});
+    expect(screen.getByRole('search')).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

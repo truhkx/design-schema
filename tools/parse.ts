@@ -264,10 +264,10 @@ export function validate(fm: Dict, file: string): void {
   if (use !== undefined && (use === c.name || !existsSync(composedFile(use)))) {
     throw new DocError(`${name(file)}: deprecated.use names '${use}', which is not another component with a doc`);
   }
-  warnDeprecatedComposition(composition, file);
   validateCompositionEntries(c, composition, file);
-  warnProseForwards(c, composition, file);
-  warnUndeclaredFields(c, composition, file);
+  checkUndeclaredFields(c, composition, file);
+  warnDeprecatedComposition(composition, file);
+  checkProseForwards(c, composition, file);
   // The halves of the target and keyboard-operable rules that read other docs. The schema accepted the doc because it
   // composes something; one composed component must then declare the requirement itself.
   const requires: string[] = c.a11y.requires;
@@ -387,9 +387,11 @@ function validateCompositionEntries(c: Dict, composition: Record<string, Composi
 const PROSE_OVERRIDE = /overrides\.([A-Za-z][A-Za-z0-9]*)/g;
 
 /** A style binding whose description forwards it to a composed child's `overrides.<key>` (a key other than its own
- *  name) and names that child: warn when the child has no such binding or locks it. Prose is not a contract, so this
- *  is a warning until the doc states the forward as `forwards`, which `validateCompositionEntries` checks. */
-function warnProseForwards(c: Dict, composition: Record<string, CompositionEntry>, file: string): void {
+ *  name) and names that child: reject when the child has no such binding or locks it. Prose that claims a forward the
+ *  child cannot receive is wrong wherever it is written; a forward the child can receive belongs in `forwards`, which
+ *  `validateCompositionEntries` checks. A warning in job 612, an error since the phase 3 migration (job 639). This
+ *  reads the child doc, so it stays in the parser layer rather than a Zod `.check`. */
+function checkProseForwards(c: Dict, composition: Record<string, CompositionEntry>, file: string): void {
   const children = [...new Set(Object.values(composition).map(compositionTarget).filter((t) => !t.planned).map((t) => t.component))];
   for (const [bName, binding] of Object.entries((pyGet(c, 'styles', {}) ?? {}) as Dict)) {
     const text = typeof binding.description === 'string' ? binding.description : '';
@@ -400,8 +402,8 @@ function warnProseForwards(c: Dict, composition: Record<string, CompositionEntry
       if (child === null) continue;
       const childStyles = (child.styles ?? {}) as Dict;
       for (const key of keys) {
-        if (!has(childStyles, key)) warn(docPath(file), `styles.${bName}: forwarded to ${childName} as overrides.${key}, but ${childName} has no '${key}' binding`);
-        else if (childLocked(child, key, childStyles[key] as Dict)) warn(docPath(file), `styles.${bName}: forwarded to ${childName} as overrides.${key}, but ${childName}.${key} is locked, so no override reaches it`);
+        if (!has(childStyles, key)) throw new DocError(`${name(file)}: styles.${bName}: forwarded to ${childName} as overrides.${key}, but ${childName} has no '${key}' binding`);
+        if (childLocked(child, key, childStyles[key] as Dict)) throw new DocError(`${name(file)}: styles.${bName}: forwarded to ${childName} as overrides.${key}, but ${childName}.${key} is locked, so no override reaches it`);
       }
     }
   }
@@ -409,8 +411,8 @@ function warnProseForwards(c: Dict, composition: Record<string, CompositionEntry
 
 /** The half of the form block that reads other docs: a form container composing a component with `name` and `error`
  *  props but no form block cannot say how that child joins it. A child declaring `form.role: field` is fine. A warning
- *  until phase 3 gives every field its form block. */
-function warnUndeclaredFields(c: Dict, composition: Record<string, CompositionEntry>, file: string): void {
+ *  until the phase 3 migration gave every field its form block; an error since. */
+function checkUndeclaredFields(c: Dict, composition: Record<string, CompositionEntry>, file: string): void {
   if (c.form?.role !== 'container') return;
   for (const [part, entry] of Object.entries(composition)) {
     const target = compositionTarget(entry);
@@ -418,7 +420,7 @@ function warnUndeclaredFields(c: Dict, composition: Record<string, CompositionEn
     if (child === null || child.form !== undefined) continue;
     const childProps = (child.props ?? {}) as Dict;
     if (has(childProps, 'name') && has(childProps, 'error')) {
-      warn(docPath(file), `composition.${part}: ${target.component} has 'name' and 'error' props but no form block, so ${String(c.name)} cannot tell how it joins as a field`);
+      throw new DocError(`${name(file)}: composition.${part}: ${target.component} has 'name' and 'error' props but no form block, so ${String(c.name)} cannot tell how it joins as a field`);
     }
   }
 }

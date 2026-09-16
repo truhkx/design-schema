@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/Divider.js';
 import meta from '../../packages/lit/src/Divider.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -56,6 +60,10 @@ beforeEach(() => {
 });
 
 describe('ds-divider', () => {
+  test('label-is-read-and-makes-the-divider-semantic', async () => {
+    const s = await setup({"label": "or"});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("or"));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

@@ -79,6 +79,9 @@ component:
       type: boolean
       required: true
       description: Controlled visibility, as in Dialog.
+      controls:
+        event: onClose
+        state: open
     heading:
       type: string
       required: true
@@ -135,6 +138,25 @@ component:
         lit: close
         rn: onClose
         swiftui: onClose
+      payload:
+      - name: reason
+        type: enum
+        values:
+        - escape
+        - close-button
+        - scrim
+        - drag
+        - action
+      reasons:
+        escape: Escape pressed while open
+        close-button: the close button was activated
+        scrim: the scrim was clicked
+        drag: the sheet was dragged past the dismiss threshold
+        action: a footer action asked to close
+      fires:
+      - user
+      timing:
+        phase: request
     onDragDismiss:
       description: The user dragged the sheet past the dismiss threshold. Fired before
         `onClose` with reason drag; provided so analytics can distinguish gestures.
@@ -144,6 +166,12 @@ component:
         lit: drag-dismiss
         rn: onDragDismiss
         swiftui: onDragDismiss
+      fires:
+      - user
+      timing:
+        phase: request
+        before:
+        - onClose
   keyboard:
   - keys:
     - Escape
@@ -163,9 +191,11 @@ component:
   styles:
     scrim:
       token: color.overlay.scrim
+      part: scrim
       locked: false
     surface:
       token: color.overlay.surface
+      part: surface
       locked: true
     shadow:
       token: shadow.overlay
@@ -176,14 +206,17 @@ component:
       locked: false
     handle:
       token: color.foreground.muted
+      part: handle
       description: A 4×36-unit pill (space.1 tall, space.10 wide) centered in the
         header, decorative.
       locked: true
     handleHeight:
       token: space.1
+      part: handle
       locked: false
     handleWidth:
       token: space.10
+      part: handle
       locked: false
     inset:
       token: layout.inset.lg
@@ -193,6 +226,7 @@ component:
       locked: false
     footerGap:
       token: layout.gap.tight
+      part: footer
       locked: false
     maxWidth:
       token: layout.maxWidth.prose
@@ -219,8 +253,29 @@ component:
     focusRingWidth:
       token: border.width.focus
       locked: true
+  constants:
+    dismissDistance:
+      description: Fraction of the sheet height a downward drag must pass for release
+        to dismiss it rather than spring back.
+      value: 0.25
+      unit: ratio
+    dismissVelocity:
+      description: Drag speed at release that dismisses the sheet whatever the distance
+        travelled.
+      value: 1.5
+      unit: px/ms
   copy:
     closeLabel: Close
+  overlay:
+    layer: sheet
+    open: open
+    closeEvent: onClose
+    dismiss:
+    - escape
+    - scrim
+    - close-button
+    - swipe
+    modal: true
   a11y:
     role: dialog
     requires:
@@ -263,8 +318,10 @@ component:
       reflect:
       - open
       - height
-      - no-dismiss
-      - drag-to-dismiss
+      - prop: dismissible
+        attribute: no-dismiss
+      - prop: dragToDismiss
+        attribute: no-drag-to-dismiss
       notes: Shadow <dialog> with showModal(); a matchMedia listener on the maxWidth
         token switches between sheet and dialog presentation. `close` and `drag-dismiss`
         are composed CustomEvents.
@@ -300,7 +357,144 @@ component:
         from the radius token. Drag-to-dismiss is the system''s and fires `onDragDismiss`;
         the close `Button` is always rendered (gesture-alternative). `dismissOnScrim:
         false` → `.interactiveDismissDisabled()`. Heading names the sheet.'
+  behavior:
+  - name: close-button-fires-on-close
+    description: The always-visible close button requests close, as in Dialog.
+    given:
+      open: true
+    when:
+      click: closeButton
+    then:
+    - event: onClose
+  - name: the-close-button-works-without-the-drag-gesture
+    description: The drag is purely additive — every sheet can be closed with one
+      pointer activation (WCAG 2.5.1, gesture-alternative).
+    given:
+      open: true
+      dragToDismiss: false
+    when:
+      click: closeButton
+    then:
+    - event: onClose
+  - name: non-dismissible-still-reports-escape
+    description: With `dismissible` false only the footer actions close the sheet,
+      and Escape still reports.
+    given:
+      open: true
+      dismissible: false
+    when:
+      key: Escape
+    then:
+    - event: onClose
+    platforms:
+    - web
+    - lit
+  - name: non-dismissible-scrim-tap-does-nothing
+    given:
+      open: true
+      dismissible: false
+    when:
+      click: scrim
+    then:
+    - event: onClose
+      fired: false
+  - name: hidden-heading-is-still-the-accessible-name
+    description: A share sheet may hide its title; the name is required regardless.
+    given:
+      open: true
+      hideHeading: true
+    then:
+    - name: true
+  - name: closed-sheet-renders-nothing
+    given:
+      open: false
+    then:
+    - renders: false
+  examples:
+  - name: filters
+    description: The phone presentation of a filter panel, with the action row pinned
+      at the bottom.
+    given:
+      open: true
+      heading: Filters
+      children: A Form of filter controls
+      footer: Clear and Apply Buttons
+  - name: half-height-results
+    description: A browsable list where seeing the page behind matters, so the sheet
+      stops at half height.
+    given:
+      open: true
+      heading: Nearby places
+      children: A scrolling list of results
+      height: half
+  - name: share-sheet
+    description: A self-explanatory body whose title exists only for assistive technology.
+    given:
+      open: true
+      heading: Share to
+      children: A row of share targets
+      hideHeading: true
+  - name: full-screen-task
+    description: A task that needs the whole screen but should still feel dismissable,
+      with the gesture off.
+    given:
+      open: true
+      heading: New expense
+      children: A Form of a few fields
+      footer: Cancel and Save Buttons
+      height: full
+      dragToDismiss: false
 ```
+
+## Events
+
+- `onClose`: emit `onClose`
+  - payload, positional, in this order: `reason: 'escape' | 'close-button' | 'scrim' | 'drag' | 'action'`
+  - reasons: `escape` (Escape pressed while open); `close-button` (the close button was activated); `scrim` (the scrim was clicked); `drag` (the sheet was dragged past the dismiss threshold); `action` (a footer action asked to close)
+  - fires on: user
+  - timing: request
+- `onDragDismiss`: emit `onDragDismiss`
+  - fires on: user
+  - timing: request, fired before `onClose`
+
+## Controlled state
+
+- `open` is controlled when given, uncontrolled from its initial state when omitted; changes reported by `onClose` (emit `onClose`); drives state `open`
+
+## Style bindings
+
+- `scrim`: token `color.overlay.scrim`; part `scrim`
+- `surface`: token `color.overlay.surface`; part `surface`; locked
+- `handle`: token `color.foreground.muted`; part `handle`; locked
+- `handleHeight`: token `space.1`; part `handle`
+- `handleWidth`: token `space.10`; part `handle`
+- `footerGap`: token `layout.gap.tight`; part `footer`
+
+## Form and overlay
+
+```yaml
+overlay:
+  layer: sheet
+  open: open
+  closeEvent: onClose
+  dismiss:
+  - escape
+  - scrim
+  - close-button
+  - swipe
+  modal: true
+```
+
+`overlay.closeEvent` emits `onClose`.
+
+## Constants and examples
+
+- constant `dismissDistance`: 0.25 ratio
+- constant `dismissVelocity`: 1.5 px/ms
+- example `filters`, story `Filters`: given `open: true`, `heading: "Filters"`, `children: "A Form of filter controls"`, `footer: "Clear and Apply Buttons"`; The phone presentation of a filter panel, with the action row pinned at the bottom.
+- example `half-height-results`, story `HalfHeightResults`: given `open: true`, `heading: "Nearby places"`, `children: "A scrolling list of results"`, `height: "half"`; A browsable list where seeing the page behind matters, so the sheet stops at half height.
+- example `share-sheet`, story `ShareSheet`: given `open: true`, `heading: "Share to"`, `children: "A row of share targets"`, `hideHeading: true`; A self-explanatory body whose title exists only for assistive technology.
+- example `full-screen-task`, story `FullScreenTask`: given `open: true`, `heading: "New expense"`, `children: "A Form of a few fields"`, `footer: "Cancel and Save Buttons"`, `height: "full"`, `dragToDismiss: false`; A task that needs the whole screen but should still feel dismissable, with the gesture off.
 
 ## Overrides (per-instance styling contract)
 
@@ -313,11 +507,50 @@ The `platforms.rn.props` list names the native props the schema cares about; `ov
 Overridable: `scrim`, `shadow`, `radius`, `handleHeight`, `handleWidth`, `inset`, `partGap`, `footerGap`, `maxWidth`, `layer`, `enter`, `exit`
 Locked (accessibility-bearing, never overridable): `surface`, `handle`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (5)
+## Behavior scenarios (10)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: close-button-fires-on-close
+  description: The always-visible close button requests close, as in Dialog.
+  given:
+    open: true
+  when:
+    click: closeButton
+  then:
+  - event: onClose
+- name: the-close-button-works-without-the-drag-gesture
+  description: The drag is purely additive — every sheet can be closed with one pointer
+    activation (WCAG 2.5.1, gesture-alternative).
+  given:
+    open: true
+    dragToDismiss: false
+  when:
+    click: closeButton
+  then:
+  - event: onClose
+- name: non-dismissible-scrim-tap-does-nothing
+  given:
+    open: true
+    dismissible: false
+  when:
+    click: scrim
+  then:
+  - event: onClose
+    fired: false
+- name: hidden-heading-is-still-the-accessible-name
+  description: A share sheet may hide its title; the name is required regardless.
+  given:
+    open: true
+    hideHeading: true
+  then:
+  - name: true
+- name: closed-sheet-renders-nothing
+  given:
+    open: false
+  then:
+  - renders: false
 - name: renders
   then:
   - renders: true

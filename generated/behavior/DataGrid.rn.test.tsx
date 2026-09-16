@@ -6,6 +6,10 @@ import type { DataGridProps } from '../../packages/rn/src/DataGrid';
 import meta from '../../packages/rn/src/DataGrid.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<DataGridProps> = {}) {
   const events = {
     onSortChange: jest.fn(),
@@ -28,12 +32,32 @@ function setup(given: Partial<DataGridProps> = {}) {
     props,
     root: () => screen.queryByTestId('DataGrid') ?? screen.UNSAFE_root,
     container: () => screen.queryByRole('grid') ?? s.root(),
+    sortButton: () => screen.queryByTestId('DataGrid.sortButton') ?? s.root(),
+    selectCell: () => screen.queryByTestId('DataGrid.selectCell') ?? s.root(),
     rerender: (next: Partial<DataGridProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('DataGrid', () => {
+  test('activating-a-sortable-header-reports-the-sort', () => {
+    const s = setup({"columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}, {"key": "price", "header": "Price", "align": "end", "sortable": true}], "data": [{"id": "a", "sku": "A-1", "price": 10}, {"id": "b", "sku": "B-2", "price": 20}]});
+    fireEvent.press(s.sortButton());
+    expect(s.events.onSortChange).toHaveBeenCalled();
+  });
+  test('selecting-a-row-reports-the-selection', () => {
+    const s = setup({"selectable": "row", "columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": [{"id": "a", "sku": "A-1"}, {"id": "b", "sku": "B-2"}]});
+    fireEvent.press(s.selectCell());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('the-empty-message-shows-when-there-are-no-rows', () => {
+    const s = setup({"columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": []});
+    expect(screen.getByText(new RegExp("Nothing\\ to\\ show\\."))).toBeOnTheScreen();
+  });
+  test('a-custom-empty-message-replaces-the-default', () => {
+    const s = setup({"emptyMessage": "No prices loaded.", "columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": []});
+    expect(screen.getByText(new RegExp("No\\ prices\\ loaded\\."))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

@@ -11,7 +11,7 @@ component:
     label: Text
     description: Text
     chevron: Icon
-    listbox: Listbox
+    listbox: { component: Listbox, props: { options: { from: options } } }
   props:
     label:
       type: string
@@ -31,6 +31,9 @@ component:
       type: union
       description: Controlled value (array with `multiple`).
       shape: 'string | string[]'
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: union
       description: Initial value (array with `multiple`).
@@ -44,12 +47,16 @@ component:
       description: Visually hide the label (it remains the accessible name), for compact pickers such as DatePicker's month and year.
     size:
       type: enum
+      enumRef: size
       values: [sm, md]
       default: md
       description: 'sm for pickers inside toolbars and calendar headers.'
     open:
       type: boolean
       description: 'Controlled popup state, for programmatic opening and for stories and tests (the Keyboard story renders it open). Omit for the trigger-driven default.'
+      controls:
+        event: onOpenChange
+        state: open
     multiple:
       type: boolean
       default: false
@@ -83,39 +90,44 @@ component:
     onChange:
       description: Fired when the value changes (array with `multiple`).
       platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
+      payload:
+        - { name: value, type: union, shape: 'string | string[]', description: 'The selected value, or every selected value with multiple.' }
+      fires: [user]
     onOpenChange:
       description: Fired when the popup opens or closes.
       platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
+      payload:
+        - { name: open, type: boolean, description: The new state of the popup. }
+      fires: [user]
   keyboard:
     - { keys: [Enter, ' ', ArrowDown, ArrowUp], action: Opens the popup with the selected (or first) option active., when: focus on trigger, from: trigger, expect: manual }
-    - { keys: [Escape], action: Closes the popup without changing the value and returns focus to the trigger., when: popup open, from: inside, expect: closes }
+    - { keys: [Escape], action: Closes the popup without changing the value and returns focus to the trigger., when: popup open, from: inside, expect: [closes, focus-trigger], target: popup }
     - { keys: [Enter], action: 'Commits the active option and closes (single); with `multiple`, toggles it and stays open.', when: popup open, from: first, expect: manual }
-    - { keys: [Tab], action: Commits the active option (single) and closes; focus moves on., when: popup open, from: inside, expect: closes }
+    - { keys: [Tab], action: Commits the active option (single) and closes; focus moves on., when: popup open, from: inside, expect: closes, target: popup }
     - { keys: [ArrowDown, ArrowUp, Home, End, a-z], action: As Listbox., when: popup open, from: first, expect: manual }
   styles:
-    triggerBackground: { token: color.background }
-    triggerBorder: { token: color.border.strong }
-    triggerBorderFocus: { token: color.border.focus }
-    triggerBorderInvalid: { token: color.border.danger }
-    triggerBorderWidth: { token: border.width.thin }
-    triggerRadius: { token: radius.md }
-    triggerPaddingInline: { token: space.md }
-    triggerPaddingBlock: { token: space.sm }
-    triggerPaddingBlockSm: { token: space.1, description: 'Vertical padding of the trigger at size sm.' }
-    triggerGap: { token: layout.gap.normal, description: Between value and chevron. }
-    valueColor: { token: color.foreground }
+    triggerBackground: { token: color.background, part: trigger }
+    triggerBorder: { token: color.border.strong, part: trigger }
+    triggerBorderFocus: { token: color.border.focus, part: trigger }
+    triggerBorderInvalid: { token: color.border.danger, part: trigger }
+    triggerBorderWidth: { token: border.width.thin, part: trigger }
+    triggerRadius: { token: radius.md, part: trigger }
+    triggerPaddingInline: { token: space.md, part: trigger }
+    triggerPaddingBlock: { token: space.sm, part: trigger, by: size, values: { sm: space.1 } }
+    triggerGap: { token: layout.gap.normal, part: trigger, description: Between value and chevron. }
+    valueColor: { token: color.foreground, part: value }
     placeholderColor: { token: color.foreground.muted }
-    chevron: { token: color.foreground.muted }
+    chevron: { token: color.foreground.muted, part: chevron }
     partGap: { token: space.1, description: 'Between label, description, trigger and error.' }
-    labelWeight: { token: font.weight.medium }
+    labelWeight: { token: font.weight.medium, part: label }
     helperSize: { token: font.size.sm }
-    descriptionText: { token: color.foreground.muted }
+    descriptionText: { token: color.foreground.muted, part: description }
     errorText: { token: color.foreground.danger }
-    popupSurface: { token: color.overlay.surface }
-    popupBorder: { token: color.border }
-    popupShadow: { token: shadow.overlay }
-    popupRadius: { token: radius.md }
-    popupOffset: { token: space.1 }
+    popupSurface: { token: color.overlay.surface, part: popup }
+    popupBorder: { token: color.border, part: popup }
+    popupShadow: { token: shadow.overlay, part: popup }
+    popupRadius: { token: radius.md, part: popup }
+    popupOffset: { token: space.1, part: popup }
     layer: { token: layer.dropdown }
     fontFamily: { token: font.family.body }
     fontSize: { token: 'font.size.{size}' }
@@ -127,7 +139,10 @@ component:
     enter: { token: motion.duration.fast, description: Popup fade; instant under reduced motion. }
   copy:
     placeholder: Select…
-    selectedCount: '{count} selected'
+    selectedCount:
+      text: '{count} selected'
+      params:
+        count: { type: number, description: How many options are selected. }
     done: Done
     required: '{label} is required.'
     invalid: '{label} is not valid.'
@@ -139,7 +154,15 @@ component:
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }
       - { foreground: color.foreground.danger, background: color.background, level: AA }
-      - { foreground: color.border.strong, background: color.background, level: AA, large: true }
+      - { foreground: color.border.strong, background: color.background, level: AA, nonText: true }
+  form:
+    role: field
+    value: value
+    valueType: string[]
+    name: name
+    validation: [required, invalid]
+    messages: { required: required, invalid: invalid }
+    discovery: context
   platforms:
     web:
       element: button
@@ -147,7 +170,7 @@ component:
       notes: 'The APG select-only combobox: the trigger is a <button role="combobox" aria-haspopup="listbox" aria-expanded aria-controls> showing the value; the popup is a portal with the Listbox, positioned below (flipping above) the trigger at least as wide as it, on layer.dropdown. Keys on the trigger are forwarded to the Listbox''s handler while open. A hidden <input name> carries the value(s) for native form submission. `native: always` renders <select> (and <select multiple>) with the same label/description/error wiring and no popup.'
     lit:
       tag: ds-select
-      reflect: [multiple, required, disabled, invalid, native]
+      reflect: [multiple, size, required, disabled, invalid, native]
       notes: 'Form-associated with setFormValue (FormData for multiple). Composes <ds-listbox> inside its shadow root so aria-activedescendant works; the popup uses the Popover API when available. Composed `change` and `open-change`. Implements the DsFormField interface. aria-activedescendant cannot reference an option inside the composed <ds-listbox>''s shadow root, so the trigger exposes the active option''s text through aria-describedby on a live element instead, and aria-controls points at the popup wrapper. ds-form collects ds-select, ds-listbox and ds-combobox like other fields; DsFormField.currentValue is `string | boolean | string[] | null`.'
     rn:
       element: Pressable
@@ -157,6 +180,76 @@ component:
       element: Button
       props: [Button, .popover, .sheet, Listbox, .accessibilityValue, .accessibilityAddTraits=isButton, .presentationCompactAdaptation, FocusScope]
       notes: 'A trigger `Button` (label above, `hideLabel` per Input) showing the value text and the `chevron-down` Icon, with `.accessibilityValue(selected labels or copy.placeholder)`; the popup is `Listbox embedded` in a `.popover` on regular width and a `.sheet` with `.presentationDetents([.medium, .large])` on phones — the doc''s `native: always` maps to the sheet on every width. Selection closes the popup for single, stays open for `multiple`; the trigger keeps focus and the new value is announced. Registers with the Form environment; `size: sm` per the Sm bindings.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/focusable/error-identified ones from
+    # the schema. Scenarios that act on the popup state the `open` prop themselves.
+    - name: the-trigger-opens-the-popup
+      given: { open: false }
+      when: { click: trigger }
+      then:
+        - { event: onOpenChange }
+    - name: a-closed-select-is-not-expanded
+      given: { open: false }
+      then:
+        - { state: expanded, is: false }
+    - name: an-open-select-reports-the-expanded-state
+      description: The trigger is the combobox, so aria-expanded on it is what announces the popup.
+      given: { open: true }
+      then:
+        - { state: expanded, is: true }
+    - name: enter-commits-the-active-option-and-closes
+      description: 'Enter commits the active option and closes (single); the popup opens with the selected or first option active.'
+      given: { open: true }
+      when: { key: Enter }
+      then:
+        - { event: onChange }
+        - { event: onOpenChange }
+      platforms: [web, lit]
+    - name: escape-closes-without-changing-the-value
+      description: Escape closes the popup without changing the value and returns focus to the trigger.
+      given: { open: true }
+      when: { key: Escape }
+      then:
+        - { event: onOpenChange }
+        - { event: onChange, fired: false }
+      platforms: [web, lit]
+    - name: the-placeholder-shows-when-nothing-is-selected
+      given: { open: false }
+      then:
+        - { copy: placeholder }
+    - name: a-custom-placeholder-replaces-the-default
+      given: { open: false, placeholder: Choose a country }
+      then:
+        - { text: Choose a country }
+    - name: a-disabled-select-does-not-open
+      description: Disabled selects stay visible and focusable but cannot be opened and are not submitted.
+      given: { open: false, disabled: true }
+      when: { click: trigger }
+      then:
+        - { event: onOpenChange, fired: false }
+        - { state: disabled, is: true, platforms: [web, lit] }
+    - name: required-is-shown-in-the-label
+      description: required is shown in the label, not only by color.
+      given: { required: true }
+      then:
+        - { copy: requiredIndicator }
+    - name: invalid-is-reported-on-the-trigger
+      given: { invalid: true }
+      then:
+        - { state: invalid, is: true, platforms: [web, lit] }
+  examples:
+    - name: country-picker
+      description: The everyday single-select field with a placeholder until something is chosen.
+      given: { label: Country, name: country, placeholder: Choose a country, options: [{ value: ca, label: Canada }, { value: fr, label: France }, { value: jp, label: Japan }] }
+    - name: multi-select-roles
+      description: Picking any number, where the trigger counts what is selected and the popup stays open.
+      given: { label: Roles, name: roles, multiple: true, options: [{ value: frontend, label: Frontend }, { value: backend, label: Backend }, { value: design, label: Design }] }
+    - name: forced-native-picker
+      description: A form that must work without JavaScript, so the platform's own select is rendered on web too.
+      given: { label: Country, name: country, native: always, options: [{ value: ca, label: Canada }, { value: us, label: United States }] }
+    - name: compact-picker-in-a-header
+      description: A small picker whose label is hidden, as in a calendar header.
+      given: { label: Month, name: month, hideLabel: true, size: sm, options: [{ value: '1', label: January }, { value: '2', label: February }] }
 ---
 
 A select is the field for "one of these" (or "any of these") when the list is longer than a RadioGroup should show and typing is not the natural way in. It looks like an Input, opens a Listbox, and returns to being a field. On phones it becomes a sheet, because that is what a thumb expects.

@@ -27,12 +27,42 @@ function setup(given: Partial<RadioGroupProps> = {}) {
     props,
     root: () => screen.queryByTestId('RadioGroup') ?? screen.UNSAFE_root,
     group: () => screen.queryByRole('radiogroup') ?? s.root(),
+    radio: () => screen.queryByTestId('RadioGroup.radio') ?? s.root(),
+    radioLabel: () => screen.queryByTestId('RadioGroup.radioLabel') ?? s.root(),
     rerender: (next: Partial<RadioGroupProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('RadioGroup', () => {
+  test('click-on-an-option-reports-its-value', () => {
+    const s = setup({});
+    fireEvent.press(s.radio());
+    expect(s.events.onChange).toHaveBeenCalledWith("standard");
+  });
+  test('click-on-an-option-label-selects-it', () => {
+    const s = setup({});
+    fireEvent.press(s.radioLabel());
+    expect(s.events.onChange).toHaveBeenCalledWith("standard");
+  });
+  test('disabled-option-cannot-be-selected', () => {
+    const s = setup({"options": [{"value": "standard", "label": "Standard", "disabled": true}, {"value": "express", "label": "Express"}]});
+    fireEvent.press(s.radio());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('disabled-group-is-inert', () => {
+    const s = setup({"disabled": true});
+    fireEvent.press(s.radio());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('required-is-shown-in-the-legend', () => {
+    const s = setup({"required": true});
+    expect(screen.getByText(new RegExp("\\(required\\)"))).toBeOnTheScreen();
+  });
+  test('invalid-renders-the-invalid-copy', () => {
+    const s = setup({"invalid": true});
+    expect(screen.getByText(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

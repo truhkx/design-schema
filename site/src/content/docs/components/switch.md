@@ -19,6 +19,10 @@ component:
     checked:
       type: boolean
       description: Controlled state. Omit for an uncontrolled control.
+      controls:
+        event: onChange
+        default: defaultChecked
+        state: checked
     defaultChecked:
       type: boolean
       default: false
@@ -40,22 +44,26 @@ component:
     onChange:
       description: Fired when the state changes, with the new boolean. The change is already in effect; there is nothing to submit.
       platforms: { web: onChange, lit: change, rn: onValueChange, swiftui: onChange }
+      payload:
+        - { name: checked, type: boolean, description: The new state. }
+      fires: [user]
+      timing: { phase: after-change }
   styles:
-    trackOff: { token: color.control.trackOff }
-    trackOn: { token: color.control.selectedBackground }
-    thumb: { token: color.control.selectedForeground, description: 'Thumb color in both states.' }
-    trackWidth: { token: space.10 }
-    trackHeight: { token: space.6 }
-    thumbSize: { token: space.5, description: 'Thumb diameter; it travels trackWidth − thumbSize − 2 × thumbInset.' }
-    thumbInset: { token: space.1, description: 'Gap between the thumb and the track edge; split evenly on the short axis.' }
+    trackOff: { token: color.control.trackOff, part: track }
+    trackOn: { token: color.control.selectedBackground, part: track }
+    thumb: { token: color.control.selectedForeground, part: thumb, description: 'Thumb color in both states.' }
+    trackWidth: { token: space.10, part: track }
+    trackHeight: { token: space.6, part: track }
+    thumbSize: { token: space.5, part: thumb, description: 'Thumb diameter; it travels trackWidth − thumbSize − 2 × thumbInset.' }
+    thumbInset: { token: space.1, part: thumb, description: 'Gap between the thumb and the track edge; split evenly on the short axis.' }
     radius: { token: radius.full }
     gap: { token: space.3, description: Gap between track and label. }
     partGap: { token: space.1, description: Vertical gap between label and description. }
-    labelColor: { token: color.foreground }
-    labelSize: { token: font.size.md }
-    labelWeight: { token: font.weight.regular }
+    labelColor: { token: color.foreground, part: label }
+    labelSize: { token: font.size.md, part: label }
+    labelWeight: { token: font.weight.regular, part: label }
     helperSize: { token: font.size.sm }
-    descriptionText: { token: color.foreground.muted }
+    descriptionText: { token: color.foreground.muted, part: description }
     fontFamily: { token: font.family.body }
     lineHeight: { token: font.lineHeight.normal }
     focusRing: { token: color.border.focus }
@@ -67,12 +75,18 @@ component:
     role: switch
     requires: [accessible-name, label-association, focus-visible, keyboard-operable, target-24px, contrast-aa, reduced-motion]
     contrast:
-      - { foreground: color.control.selectedForeground, background: color.control.selectedBackground, level: AA, large: true }
-      - { foreground: color.control.selectedForeground, background: color.control.trackOff, level: AA, large: true }
-      - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }
-      - { foreground: color.control.trackOff, background: color.background, level: AA, large: true }
+      - { foreground: color.control.selectedForeground, background: color.control.selectedBackground, level: AA, nonText: true, state: checked }
+      - { foreground: color.control.selectedForeground, background: color.control.trackOff, level: AA, nonText: true }
+      - { foreground: color.control.selectedBackground, background: color.background, level: AA, nonText: true }
+      - { foreground: color.control.trackOff, background: color.background, level: AA, nonText: true }
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }
+  form:
+    role: field
+    value: checked
+    valueType: boolean
+    name: name
+    discovery: context
   platforms:
     web:
       element: input
@@ -158,6 +172,26 @@ component:
       given: { description: 'Sends a daily summary at 9:00.' }
       then:
         - { text: 'Sends a daily summary at 9:00.' }
+    - name: label-at-the-end-still-toggles-the-row
+      description: labelPosition changes the order of the row, not its target; the whole row toggles either way.
+      given: { labelPosition: 'end' }
+      when: { click: label }
+      then:
+        - { event: onChange, with: true }
+        - { state: checked, is: true }
+  examples:
+    - name: settings-row
+      description: The settings-list convention, with the label at the start and the switch at the row end.
+      given: { label: 'Email notifications', labelPosition: 'start' }
+    - name: with-description
+      description: A switch whose effect is stated in one sentence under the label.
+      given: { label: 'Daily summary', description: 'Sends a daily summary at 9:00.' }
+    - name: checkbox-aligned
+      description: The Checkbox-aligned form, with the switch before its label.
+      given: { label: 'Show archived', labelPosition: 'end' }
+    - name: disabled
+      description: A setting that cannot be changed here, still visible, readable and focusable.
+      given: { label: 'Two-factor authentication', disabled: true }
 ---
 
 A switch is a light switch: flip it and the thing happens. That immediacy is what separates it from a Checkbox, which records a choice to be submitted later. Every switch answers the question "is this on?" and the label names what "this" is.

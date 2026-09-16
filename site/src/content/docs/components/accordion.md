@@ -28,6 +28,9 @@ component:
       type: union
       description: 'Controlled open ids: always an array (zero or one entry when `exclusive`); `onChange` reports the same shape.'
       shape: 'string | string[]'
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: union
       description: Initially open ids.
@@ -44,9 +47,22 @@ component:
     onChange:
       description: Fired when the set of open sections changes, with the open ids.
       platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
+      payload:
+        - { name: openIds, type: array, shape: 'string[]', description: The ids of every open section. }
+      fires: [user]
     onOpenChange:
       description: 'Fired per section as it opens or closes, with `{ id, open, reason }` (`reason`: `trigger`, `keyboard`, `exclusive` when another section closed it, `controlled`). The per-item trigger for analytics, lazy loading of a panel''s content, or scrolling the opened section into view; `onChange` remains the set-level event for state.'
       platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
+      payload:
+        - { name: id, type: string, description: The section whose state changed. }
+        - { name: open, type: boolean, description: Its new state. }
+        - { name: reason, type: enum, values: [trigger, keyboard, exclusive, controlled] }
+      reasons:
+        trigger: the section trigger was activated by pointer
+        keyboard: the section was toggled from the keyboard
+        exclusive: another section opened and closed this one
+        controlled: the consumer changed the value prop
+      fires: [user, controlled]
   keyboard:
     - { keys: [Enter, ' '], action: Toggles the focused section., from: first, expect: toggles }
     - { keys: [ArrowDown], action: Moves focus to the next trigger; wraps., from: first, expect: focus-next }
@@ -58,11 +74,11 @@ component:
   styles:
     divider: { token: color.border }
     dividerWidth: { token: border.width.thin }
-    itemGap: { token: layout.gap.none, description: Items touch; the divider separates them. }
-    triggerPaddingBlock: { token: space.md, description: 'Roomier than a lone Disclosure, since accordion triggers are section headings.' }
+    itemGap: { token: layout.gap.none, part: item, description: Items touch; the divider separates them. }
+    triggerPaddingBlock: { token: space.md, part: trigger, description: 'Roomier than a lone Disclosure, since accordion triggers are section headings.' }
     fontFamily: { token: font.family.body }
-    triggerFontSize: { token: font.size.md }
-    triggerFontWeight: { token: font.weight.medium }
+    triggerFontSize: { token: font.size.md, part: trigger }
+    triggerFontWeight: { token: font.weight.medium, part: trigger }
     minTarget: { token: size.target.min, description: 'The composed Disclosure''s own minimum; the accordion''s triggerPaddingBlock override raises the row to the comfortable size.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
@@ -78,7 +94,7 @@ component:
       notes: 'A <div> of Disclosures rendered with headingLevel and shared padding overrides; Accordion adds the arrow-key handler on the container (keydown from a trigger moves focus among triggers) and the exclusive logic. Every trigger stays a tab stop — no roving tabindex — per the APG accordion pattern.'
     lit:
       tag: ds-accordion
-      reflect: [exclusive, divided, heading-level]
+      reflect: [exclusive, { prop: divided, attribute: no-divided }, heading-level]
       notes: 'Light-DOM <ds-disclosure> children are the items (slot), so their content stays in the document; ds-accordion sets heading-level and keep-mounted on them, listens for their `toggle` to enforce exclusive, and handles arrow keys via keydown bubbling from the slotted triggers. `items` as a property is also accepted and renders <ds-disclosure> elements itself.'
     rn:
       element: View
@@ -88,6 +104,51 @@ component:
       element: VStack
       props: [Disclosure, Heading, Button, .accessibilityValue=expanded, .focusSection, .onMoveCommand, '@FocusState']
       notes: 'A `VStack` of items, each a `Heading` at `headingLevel` wrapping the package trigger `Button` (`.accessibilityValue` expanded/collapsed) and its panel; `multiple`/`collapsible` per the doc; ArrowUp/Down/Home/End move between triggers on iPad via `@FocusState`. Panels animate with `transition` unless reduced motion. Composes Disclosure''s engine, not `DisclosureGroup`.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum ones from the schema.
+    - name: click-on-a-trigger-reports-the-open-set
+      description: onChange carries the open ids; onOpenChange reports the one section whose state changed.
+      when: { click: trigger }
+      then:
+        - { event: onChange }
+        - { event: onOpenChange }
+        - { attribute: 'aria-expanded', is: 'true', 'on': trigger, platforms: [web, lit] }
+    - name: exclusive-still-reports-both-events
+      description: With exclusive, opening one section closes the others; the set-level onChange and the per-section onOpenChange both still fire.
+      given: { exclusive: true }
+      when: { click: trigger }
+      then:
+        - { event: onChange }
+        - { event: onOpenChange }
+  examples:
+    - name: faq
+      description: A list of questions, several of which can be open at once.
+      given:
+        items:
+          - { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' }
+          - { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' }
+    - name: one-open-at-a-time
+      description: A comparison list where opening a section closes the rest.
+      given:
+        exclusive: true
+        items:
+          - { id: 'free', summary: 'Free', content: 'One project and community support.' }
+          - { id: 'pro', summary: 'Pro', content: 'Unlimited projects and email support.' }
+    - name: form-sections
+      description: Form sections whose panels stay mounted so the Form still collects the fields inside.
+      given:
+        keepMounted: true
+        headingLevel: '2'
+        items:
+          - { id: 'contact', summary: 'Contact details', content: 'Name and email fields.' }
+          - { id: 'billing', summary: 'Billing address', content: 'Street and city fields.' }
+    - name: undivided
+      description: Sections without the hairline, for an accordion that already sits inside a Card.
+      given:
+        divided: false
+        items:
+          - { id: 'shipping', summary: 'Shipping', content: 'Orders ship within two business days.' }
+          - { id: 'returns', summary: 'Returns', content: 'Items can be returned within 30 days.' }
 ---
 
 An accordion is a list of Disclosures that know about each other: consistent headings, arrow keys to move between them, and optionally the rule that opening one closes the rest. It is the right shape for FAQs, settings groups and long forms broken into sections.

@@ -71,6 +71,6 @@ test.describe('Carousel (web) keyboard', () => {
   test.skip('ArrowLeft: Previous slide. (focus on picker) — manual', async () => {});
   test.skip('Home: First slide. (focus on picker) — manual', async () => {});
   test.skip('End: Last slide. (focus on picker) — manual', async () => {});
-  test.skip('Enter: Activates the focused control: previous, next, a picker item, or play/pause. — manual', async () => {});
-  test.skip(' : Activates the focused control: previous, next, a picker item, or play/pause. — manual', async () => {});
+  test.skip('Enter: Activates the focused control: previous, next, a picker item, or play/pause. — native', async () => {});
+  test.skip(' : Activates the focused control: previous, next, a picker item, or play/pause. — native', async () => {});
 });

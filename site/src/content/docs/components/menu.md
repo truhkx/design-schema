@@ -43,6 +43,9 @@ component:
     open:
       type: boolean
       description: 'Controlled open state (the parent flips it from onOpenChange). Omit for an uncontrolled menu.'
+      controls:
+        event: onOpenChange
+        state: open
     anchor:
       type: object
       shape: 'RefObject<HTMLElement | View>'
@@ -51,9 +54,23 @@ component:
     onAction:
       description: An item was chosen; receives its `id`. The menu closes itself first.
       platforms: { web: onAction, lit: action, rn: onAction, swiftui: onAction }
+      payload:
+        - { name: id, type: string, description: The id of the chosen item. }
+      fires: [user]
     onOpenChange:
       description: 'Fired when the menu opens or closes, with `{ open, reason }` — reason: `trigger`, `escape`, `outside`, `action` (an item was chosen; fired before onAction), `controlled`.'
       platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
+      payload:
+        - { name: open, type: boolean, description: The new state of the menu. }
+        - { name: reason, type: enum, values: [trigger, escape, outside, action, controlled] }
+      reasons:
+        trigger: the trigger was activated
+        escape: Escape pressed while open
+        outside: a pointer press landed outside the menu
+        action: an item was chosen
+        controlled: the consumer changed the open prop
+      fires: [user, controlled]
+      timing: { phase: after-change, before: [onAction] }
   keyboard:
     - { keys: [Enter, ' ', ArrowDown], action: Opens the menu and focuses the first item., when: focus on trigger, from: trigger, expect: manual }
     - { keys: [ArrowUp], action: Opens the menu and focuses the last item., when: focus on trigger, from: trigger, expect: manual }
@@ -63,7 +80,7 @@ component:
     - { keys: [Home], action: First enabled item., when: menu open, from: inside, expect: focus-first }
     - { keys: [End], action: Last enabled item., when: menu open, from: inside, expect: focus-last }
     - { keys: [Enter, ' '], action: Activates the focused item and closes., when: menu open, from: first, expect: closes }
-    - { keys: [Escape], action: Closes and returns focus to the trigger., when: menu open, from: inside, expect: focus-trigger }
+    - { keys: [Escape], action: Closes and returns focus to the trigger., when: menu open, from: inside, expect: [closes, focus-trigger] }
     - { keys: [Tab, Shift+Tab], action: Closes and moves focus to the next/previous tabbable element after the trigger., when: menu open, from: inside, expect: closes }
     - { keys: [a-z], action: Typeahead — moves to the next item whose label starts with the typed characters., when: menu open, from: first, expect: manual }
   styles:
@@ -72,25 +89,25 @@ component:
     borderWidth: { token: border.width.thin }
     shadow: { token: shadow.overlay }
     radius: { token: radius.md }
-    popupPadding: { token: space.1, description: Inset around the list so item hover backgrounds do not touch the border. }
-    popupOffset: { token: space.1, description: Gap between trigger and popup. }
+    popupPadding: { token: space.1, part: popup, description: Inset around the list so item hover backgrounds do not touch the border. }
+    popupOffset: { token: space.1, part: popup, description: Gap between trigger and popup. }
     typeaheadReset: { token: motion.duration.loop, description: 'How long typed characters accumulate before the typeahead buffer clears.' }
     maxHeight: { token: layout.maxWidth.prose, description: 'The popup never exceeds the viewport minus the gutter; beyond that the list scrolls (the token is the cap used on wide screens).' }
-    minWidth: { token: space.20, description: 'Popup is at least this wide (space.20 × 2.5, i.e. 200px at comfortable density — the generator multiplies; no new token) and at least the trigger width.' }
-    itemPaddingBlock: { token: space.sm }
-    itemPaddingInline: { token: space.md }
-    itemGap: { token: layout.gap.normal }
-    itemRadius: { token: radius.sm }
-    itemHover: { token: color.background.subtle, description: Pointer hover and keyboard focus share this highlight. }
-    itemColor: { token: color.foreground }
-    itemDangerColor: { token: color.foreground.danger }
-    groupLabelColor: { token: color.foreground.muted }
-    groupLabelSize: { token: font.size.xs }
-    groupLabelWeight: { token: font.weight.semibold }
+    minWidth: { token: space.20, computed: { times: 2.5 }, description: 'Popup is at least this wide (200px at comfortable density) and at least the trigger width.' }
+    itemPaddingBlock: { token: space.sm, part: item }
+    itemPaddingInline: { token: space.md, part: item }
+    itemGap: { token: layout.gap.normal, part: item }
+    itemRadius: { token: radius.sm, part: item }
+    itemHover: { token: color.background.subtle, part: item, state: hover, description: Pointer hover and keyboard focus share this highlight. }
+    itemColor: { token: color.foreground, part: item }
+    itemDangerColor: { token: color.foreground.danger, part: item }
+    groupLabelColor: { token: color.foreground.muted, part: groupLabel }
+    groupLabelSize: { token: font.size.xs, part: groupLabel }
+    groupLabelWeight: { token: font.weight.semibold, part: groupLabel }
     shortcutColor: { token: color.foreground.muted }
     shortcutSize: { token: font.size.sm }
-    separator: { token: color.border }
-    separatorMargin: { token: space.1 }
+    separator: { token: color.border, part: separator }
+    separatorMargin: { token: space.1, part: separator }
     fontFamily: { token: font.family.body }
     fontSize: { token: font.size.md }
     lineHeight: { token: font.lineHeight.normal }
@@ -99,6 +116,15 @@ component:
     enter: { token: motion.duration.fast, description: Fade and a space.1 rise; instant under reduced motion. }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
+  overlay:
+    layer: popover
+    anchor: trigger
+    placement: placement
+    collision: flip
+    open: open
+    closeEvent: onOpenChange
+    dismiss: [escape, outside-press, focus-out]
+    modal: false
   a11y:
     role: menu
     requires: [accessible-name, expanded-state, arrow-navigation, roving-tabindex, escape-dismiss, focus-restore, keyboard-operable, focus-visible, contrast-aa, reduced-motion, target-24px, no-hover-only]
@@ -125,6 +151,91 @@ component:
       element: Menu
       props: [Menu, .menuStyle, .menuOrder, Button, Divider, .accessibilityLabel, .contextMenu]
       notes: 'SwiftUI `Menu(label:)` — the system menu is the native pattern, keyboard-navigable on iPad, VoiceOver-native, and it takes the theme through `.tint` and `.menuStyle` for the trigger only (the popup''s surface is the system''s; the doc''s popup bindings are no-ops on iOS, noted in the gallery). Items are `Button`s (destructive via `role: .destructive`), groups `Section`s with a header, separators `Divider`; disabled items `.disabled(true)` (the system menu skips them, matching the doc). `onOpenChange` fires from the label''s press and the menu''s dismissal via `.onChange` of a presentation binding on the wrapper. `trigger: contextMenu` uses `.contextMenu`.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/escape ones from the schema.
+    - name: choosing-an-item-reports-the-action-and-the-close
+      description: Activating an item closes the menu and fires onAction; onOpenChange precedes it with reason action.
+      given:
+        open: true
+        label: 'More actions'
+        items:
+          - { id: 'rename', label: 'Rename' }
+          - { id: 'duplicate', label: 'Duplicate' }
+      when: { click: item }
+      then:
+        - { event: onAction }
+        - { event: onOpenChange }
+    - name: a-disabled-item-does-nothing
+      description: Disabled items are visible and announced disabled, and do nothing on click.
+      given:
+        open: true
+        label: 'More actions'
+        items:
+          - { id: 'rename', label: 'Rename', disabled: true }
+          - { id: 'duplicate', label: 'Duplicate' }
+      when: { click: item }
+      then:
+        - { event: onAction, fired: false }
+    - name: escape-closes-without-choosing
+      description: Escape closes and returns focus to the trigger without activating anything (keyboard rule 9).
+      given:
+        open: true
+        label: 'More actions'
+        items:
+          - { id: 'rename', label: 'Rename' }
+          - { id: 'duplicate', label: 'Duplicate' }
+      when: { key: Escape }
+      then:
+        - { event: onAction, fired: false }
+      platforms: [web, lit]
+    - name: the-popup-is-a-menu
+      description: The popup is a menu of menuitems named by the trigger (APG menu button), not a list of buttons.
+      given:
+        open: true
+        label: 'More actions'
+        items:
+          - { id: 'rename', label: 'Rename' }
+      then:
+        - { role: menu }
+  examples:
+    - name: row-overflow
+      description: The icon-only overflow button on a row, with the destructive action last after a separator.
+      given:
+        label: 'More actions'
+        iconOnly: true
+        triggerIcon: ellipsis
+        items:
+          - { id: 'rename', label: 'Rename' }
+          - { id: 'duplicate', label: 'Duplicate' }
+          - { separator: true }
+          - { id: 'delete', label: 'Delete file', tone: 'danger' }
+    - name: sort-by
+      description: A labelled dropdown of view options, anchored under a secondary trigger.
+      given:
+        label: 'Sort by'
+        triggerVariant: secondary
+        triggerIcon: chevron-down
+        items:
+          - { id: 'name', label: 'Name' }
+          - { id: 'modified', label: 'Last modified' }
+          - { id: 'size', label: 'Size' }
+    - name: grouped-account-menu
+      description: More than about six items, so they are grouped with labels; aligned to the end of the trigger.
+      given:
+        label: 'Account'
+        placement: bottom-end
+        items:
+          - { group: 'Account', items: [{ id: 'profile', label: 'Profile' }, { id: 'billing', label: 'Billing' }] }
+          - { group: 'Workspace', items: [{ id: 'members', label: 'Members' }, { id: 'settings', label: 'Settings' }] }
+          - { separator: true }
+          - { id: 'sign-out', label: 'Sign out' }
+    - name: with-shortcuts
+      description: Display-only shortcut hints beside the items the app binds elsewhere.
+      given:
+        label: 'Edit'
+        items:
+          - { id: 'undo', label: 'Undo', shortcut: 'Ctrl+Z' }
+          - { id: 'redo', label: 'Redo', shortcut: 'Ctrl+Shift+Z' }
 ---
 
 A menu hides a handful of actions behind one button so a toolbar or a row stays quiet. It is the desktop counterpart of ActionSheet — anchored to what was clicked, gone with a click elsewhere, fully driveable from the keyboard, with typeahead for long lists.

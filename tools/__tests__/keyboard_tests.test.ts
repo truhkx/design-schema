@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import * as kt from '../keyboard_tests.ts';
 import type { Dict } from '../keyboard_tests.ts';
+import { REPO_ROOT } from '../lib/root.ts';
 import { useStd, useTmp, write } from './fixtures.ts';
 
 const DIALOG: Dict = {
@@ -407,5 +408,60 @@ describe('main', () => {
     kt.main();
     expect(specs()).toEqual([]);
     expect(readdirSync(out)).toEqual(['Dialog.json']);
+  });
+});
+
+/** The phase 3 doc migration is the first user of `given`, `target`, an `expect` array and `native`. One case per
+ *  field over the real doc that now carries it, so the spec text a migrated rule generates is pinned. */
+describe('the migrated docs', () => {
+  const corpus = JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as { component: Dict }[];
+  const doc = (name: string): Dict => {
+    const found = corpus.find((entry) => entry.component.name === name);
+    if (found === undefined) throw new Error(`no ${name} in generated/components.json`);
+    return found.component;
+  };
+  /** One `test(...)` block of a generated spec, by the start of its title. */
+  const testFor = (spec: string, title: string): string => {
+    const at = spec.indexOf(`test('${title}`);
+    expect(at, title).toBeGreaterThan(-1);
+    return spec.slice(at, spec.indexOf('\n  });', at));
+  };
+
+  test('the vertical arrow rules of tabs.md render the story with given as Storybook args', () => {
+    const block = testFor(kt.specFor(doc('Tabs'), 'web'), 'ArrowDown: Moves to the next tab, wrapping; selects it under automatic activation. (vertical)');
+    expect(block).toContain("await page.goto('/iframe.html?id=tabs-react--keyboard&viewMode=story&args=orientation:vertical');");
+    expect(block).toContain(kt.expectBlock('focus-next'));
+  });
+
+  test("the Escape rule of select.md asserts both outcomes, in the doc's order, on the popup part", () => {
+    const block = testFor(kt.specFor(doc('Select'), 'web'), 'Escape: Closes the popup without changing the value and returns focus to the trigger. (popup open)');
+    expect(block).toContain(`await expect(${kt.partLocator('popup')}).toBeHidden();`);
+    expect(block).toContain(kt.expectBlock('focus-trigger'));
+    expect(block.indexOf('toBeHidden')).toBeLessThan(block.indexOf('toBeFocused'));
+    // The root it no longer asserts on: Select resolves to `combobox`, the trigger, which stays visible.
+    expect(block).not.toContain(`await expect(${kt.rootLocator(doc('Select'))}).toBeHidden();`);
+  });
+
+  test('the Escape and Tab rules of combobox.md both close the same part', () => {
+    const s = kt.specFor(doc('Combobox'), 'lit');
+    for (const title of ['Escape: Closes the list if open', 'Tab: Closes the list and moves focus on']) {
+      expect(testFor(s, title)).toContain(`await expect(${kt.partLocator('popup')}).toBeHidden();`);
+    }
+  });
+
+  test('the Enter rule of toolbar.md is skipped as native, not as manual', () => {
+    const s = kt.specFor(doc('Toolbar'), 'web');
+    expect(s).toContain("test.skip('Enter: Activates the focused control (its own behavior). — native', async () => {});");
+    expect(s).not.toContain('Activates the focused control (its own behavior). — manual');
+  });
+
+  test('specData writes a rule with given or target as manual for the XCUITest, and keeps an expect list in expectAll', () => {
+    const escape = kt.specData(doc('Select')).rules.find((r) => r.keys[0] === 'Escape');
+    expect(escape).toMatchObject({ expect: 'manual', expectAll: ['closes', 'focus-trigger'], target: 'popup' });
+    const vertical = kt.specData(doc('Tabs')).rules.filter((r) => r.when === 'vertical');
+    expect(vertical.map((r) => r.expect)).toEqual(['manual', 'manual']);
+    expect(vertical.map((r) => r.given)).toEqual([{ orientation: 'vertical' }, { orientation: 'vertical' }]);
+    // splitter.md scopes F6 away from the native platforms, so the swiftui gate never sees it.
+    expect(kt.specData(doc('Splitter')).rules.map((r) => r.keys[0])).not.toContain('F6');
   });
 });

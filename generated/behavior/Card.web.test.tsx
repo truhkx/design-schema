@@ -6,6 +6,10 @@ import { Card } from '../../packages/react/src/Card';
 import type { CardProps } from '../../packages/react/src/Card';
 import meta from '../../packages/react/src/Card.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<CardProps> = {}) {
   const events = {};
   const props = { ...meta.args, ...given };
@@ -24,6 +28,26 @@ function setup(given: Partial<CardProps> = {}) {
 }
 
 describe('Card', () => {
+  test('heading-is-rendered-as-a-heading', async () => {
+    const s = setup({"heading": "Team plan"});
+    expect(screen.getByText(new RegExp("Team\\ plan"))).toBeInTheDocument();
+    expect(screen.getByRole('heading')).toBeInTheDocument();
+  });
+  test('a-card-with-a-heading-is-an-article', async () => {
+    const s = setup({"heading": "Team plan"});
+    expect(screen.getByRole('article')).toBeInTheDocument();
+  });
+  test('interactive-adds-no-focus-stop', async () => {
+    const s = setup({"interactive": true});
+    act(() => (s.surface()).focus());
+    expect(s.surface()).not.toHaveFocus();
+  });
+  test('focusable-takes-scripted-focus-only', async () => {
+    const s = setup({"focusable": true});
+    expect(s.surface()).toHaveAttribute("tabindex", "-1");
+    act(() => (s.surface()).focus());
+    expect(s.surface()).toHaveFocus();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

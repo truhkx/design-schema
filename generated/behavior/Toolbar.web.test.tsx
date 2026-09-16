@@ -24,6 +24,19 @@ function setup(given: Partial<ToolbarProps> = {}) {
 }
 
 describe('Toolbar', () => {
+  test('horizontal-is-the-reported-orientation', async () => {
+    const s = setup({});
+    expect(s.container()).toHaveAttribute("aria-orientation", "horizontal");
+  });
+  test('vertical-toolbar-reports-its-orientation', async () => {
+    const s = setup({"orientation": "vertical"});
+    expect(s.container()).toHaveAttribute("aria-orientation", "vertical");
+  });
+  test('the-toolbar-is-one-tab-stop', async () => {
+    const s = setup({});
+    act(() => (s.container()).focus());
+    expect(s.container()).not.toHaveFocus();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

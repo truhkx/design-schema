@@ -101,6 +101,7 @@ component:
         inside a Card whose heading already says what is happening.
     tone:
       type: enum
+      enumRef: tone
       values:
       - neutral
       - success
@@ -122,32 +123,40 @@ component:
   styles:
     track:
       token: color.background.strong
+      part: track
       locked: false
     fill:
       token: color.control.selectedBackground
+      part: fill
       description: Neutral fill. The selected-control color is guaranteed 3:1 against
         the page.
       locked: true
     fillSuccess:
       token: color.status.success.icon
+      part: fill
       locked: true
     fillDanger:
       token: color.status.danger.icon
+      part: fill
       locked: true
     trackHeight:
       token: space.2
+      part: track
       locked: false
     radius:
       token: radius.full
       locked: false
     labelColor:
       token: color.foreground
+      part: label
       locked: true
     labelSize:
       token: font.size.sm
+      part: label
       locked: false
     labelWeight:
       token: font.weight.medium
+      part: label
       locked: false
     valueColor:
       token: color.foreground.muted
@@ -191,15 +200,15 @@ component:
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.status.success.icon
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.status.danger.icon
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.foreground
       background: color.background
       level: AA
@@ -257,7 +266,94 @@ component:
         from the style''s configuration; announcements per `announce` (milestones/complete/indeterminate
         copy) through `AccessibilityNotification.Announcement`. `tone` recolors the
         fill only.'
+  behavior:
+  - name: the-bar-reports-its-value-and-range
+    description: A determinate bar exposes aria-valuenow, aria-valuemin and aria-valuemax
+      on its progressbar element.
+    given:
+      value: 42
+      min: 0
+      max: 100
+    then:
+    - role: progressbar
+    - attribute: aria-valuenow
+      is: '42'
+    - attribute: aria-valuemin
+      is: '0'
+    - attribute: aria-valuemax
+      is: '100'
+    platforms:
+    - web
+  - name: the-bar-is-never-focusable
+    description: Progress is learned from the live region, not by focusing the bar.
+    then:
+    - focusable: false
+    platforms:
+    - web
+    - lit
+  - name: a-hidden-label-is-still-the-accessible-name
+    description: hideLabel takes the label out of view, not out of the accessibility
+      tree.
+    given:
+      hideLabel: true
+    then:
+    - name: true
+    platforms:
+    - web
+    - rn
+  - name: the-label-names-the-task
+    description: The label says what is progressing, with a verb.
+    given:
+      label: Importing contacts
+    then:
+    - text: Importing contacts
+  examples:
+  - name: upload
+    description: A determinate bar with the value text beside the label.
+    given:
+      label: Uploading photos
+      value: 42
+  - name: long-import
+    description: A long task that announces every 25%, for a user who may leave and
+      come back.
+    given:
+      label: Importing contacts
+      value: 10
+      announce: milestones
+  - name: finished
+    description: A completed bar recolored to success, with the text that says so
+      beside it.
+    given:
+      label: Export
+      value: 100
+      tone: success
+  - name: in-a-card
+    description: A bar whose Card heading already says what is happening, so the label
+      is hidden and the value left off.
+    given:
+      label: Rendering preview
+      value: 60
+      hideLabel: true
+      showValue: false
 ```
+
+## Style bindings
+
+- `track`: token `color.background.strong`; part `track`
+- `fill`: token `color.control.selectedBackground`; part `fill`; locked
+- `fillSuccess`: token `color.status.success.icon`; part `fill`; locked
+- `fillDanger`: token `color.status.danger.icon`; part `fill`; locked
+- `trackHeight`: token `space.2`; part `track`
+- `labelColor`: token `color.foreground`; part `label`; locked
+- `labelSize`: token `font.size.sm`; part `label`
+- `labelWeight`: token `font.weight.medium`; part `label`
+
+## Constants and examples
+
+- example `upload`, story `Upload`: given `label: "Uploading photos"`, `value: 42`; A determinate bar with the value text beside the label.
+- example `long-import`, story `LongImport`: given `label: "Importing contacts"`, `value: 10`, `announce: "milestones"`; A long task that announces every 25%, for a user who may leave and come back.
+- example `finished`, story `Finished`: given `label: "Export"`, `value: 100`, `tone: "success"`; A completed bar recolored to success, with the text that says so beside it.
+- example `in-a-card`, story `InACard`: given `label: "Rendering preview"`, `value: 60`, `hideLabel: true`, `showValue: false`; A bar whose Card heading already says what is happening, so the label is hidden and the value left off.
 
 ## Overrides (per-instance styling contract)
 
@@ -270,11 +366,27 @@ The `platforms.rn.props` list names the native props the schema cares about; `ov
 Overridable: `track`, `trackHeight`, `radius`, `labelSize`, `labelWeight`, `valueSize`, `fontFamily`, `lineHeight`, `partGap`, `transition`, `indeterminateLoop`
 Locked (accessibility-bearing, never overridable): `fill`, `fillSuccess`, `fillDanger`, `labelColor`, `valueColor`
 
-## Behavior scenarios (8)
+## Behavior scenarios (10)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: a-hidden-label-is-still-the-accessible-name
+  description: hideLabel takes the label out of view, not out of the accessibility
+    tree.
+  given:
+    hideLabel: true
+  then:
+  - name: true
+  platforms:
+  - web
+  - rn
+- name: the-label-names-the-task
+  description: The label says what is progressing, with a verb.
+  given:
+    label: Importing contacts
+  then:
+  - text: Importing contacts
 - name: renders
   then:
   - renders: true

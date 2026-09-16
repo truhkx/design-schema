@@ -53,14 +53,6 @@
       "from": "first",
       "expect": "manual",
       "when": "collapsible"
-    },
-    {
-      "keys": [
-        "F6"
-      ],
-      "action": "Cycles focus primary pane → separator → secondary pane → primary pane (wrapping), landing on the region's first focusable descendant or, when it has none, on the pane wrapper itself (tabindex -1). The APG convenience for cycling panes; not available on native.",
-      "from": "any",
-      "expect": "manual"
     }
   ]
 }

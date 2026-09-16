@@ -55,6 +55,10 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     label: () => (deep(root, '[part="label"]') ?? deep(root, '[data-part="label"]') ?? root.firstElementChild) as HTMLElement,
+    calendarButton: () => (deep(root, '[part="calendarButton"]') ?? deep(root, '[data-part="calendarButton"]')) as HTMLElement,
+    day: () => (deep(root, '[part="day"]') ?? deep(root, '[data-part="day"]')) as HTMLElement,
+    todayButton: () => (deep(root, '[part="todayButton"]') ?? deep(root, '[data-part="todayButton"]')) as HTMLElement,
+    clearButton: () => (deep(root, '[part="clearButton"]') ?? deep(root, '[data-part="clearButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -64,6 +68,42 @@ beforeEach(() => {
 });
 
 describe('ds-date-picker', () => {
+  test('the-calendar-button-opens-the-calendar', async () => {
+    const s = await setup({"open": false});
+    await userEvent.click(s.calendarButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-disabled-field-does-not-open-the-calendar', async () => {
+    const s = await setup({"open": false, "disabled": true});
+    await userEvent.click(s.calendarButton(), { force: true });
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+  });
+  test('choosing-a-day-reports-the-iso-date-and-closes', async () => {
+    const s = await setup({"open": true});
+    await userEvent.click(s.day());
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-today-button-selects-today', async () => {
+    const s = await setup({"open": true});
+    await userEvent.click(s.todayButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('the-clear-button-clears-the-value', async () => {
+    const s = await setup({"open": true, "defaultValue": "2026-09-10"});
+    await userEvent.click(s.clearButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-down-in-the-input-opens-the-calendar', async () => {
+    const s = await setup({"open": false});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-calendar-is-a-month-grid', async () => {
+    const s = await setup({"open": true});
+    expect(s.el.shadowRoot!.querySelector('[role="grid"]')).not.toBeNull();
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

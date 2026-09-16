@@ -100,19 +100,25 @@ component:
         lit: navigate
         rn: onNavigate
         swiftui: onNavigate
+      cancelable: true
+      fires:
+      - user
   styles:
     currentColor:
       token: color.foreground
+      part: current
       description: The current page, rendered as text with aria-current, in the regular
         weight.
       locked: true
     itemColor:
       token: color.foreground.muted
+      part: item
       description: An ancestor item without `href`, rendered as plain text (a level
         that has no page of its own).
       locked: true
     separatorColor:
       token: color.foreground.muted
+      part: separator
       description: A slash or chevron between items, aria-hidden.
       locked: true
     gap:
@@ -142,6 +148,8 @@ component:
   copy:
     separator: /
     expandLabel: Show all pages
+    navLabel: Breadcrumb
+    current: current page
   a11y:
     role: navigation
     requires:
@@ -173,7 +181,8 @@ component:
     lit:
       tag: ds-breadcrumb
       reflect:
-      - collapse
+      - prop: collapse
+        attribute: no-collapse
       notes: '`items` is a property (.items=${[...]}). The nav and list are rendered
         in the shadow root; the landmark is still exposed from inside a shadow root.
         `navigate` is a composed CustomEvent with detail { item, index, originalEvent
@@ -206,7 +215,117 @@ component:
         Icon (hidden) between; the current item is a `Text` with `.isSelected` plus
         `copy.current` in its label. `collapse` folds the middle items behind an ellipsis
         Button that expands them in place.'
+  behavior:
+  - name: click-on-an-ancestor-reports-navigation
+    description: Each ancestor is a Link that fires onNavigate, so a client-side router
+      can intercept it.
+    when:
+      click: link
+    then:
+    - event: onNavigate
+  - name: the-last-item-is-the-current-page
+    description: The last item is plain text carrying aria-current="page", never a
+      link.
+    then:
+    - attribute: aria-current
+      is: page
+      'on': current
+      platforms:
+      - web
+      - lit
+  - name: the-trail-is-a-named-navigation-landmark
+    description: A navigation landmark with a name that distinguishes it from other
+      navigations.
+    given:
+      label: Docs breadcrumb
+    then:
+    - role: navigation
+    - attribute: aria-label
+      is: Docs breadcrumb
+    platforms:
+    - web
+  - name: an-uncollapsed-trail-shows-every-ancestor
+    description: With collapse off a long trail stays in full rather than folding
+      its middle behind an ellipsis.
+    given:
+      collapse: false
+      items:
+      - label: Docs
+        href: /docs
+      - label: Components
+        href: /docs/components
+      - label: Navigation
+        href: /docs/components/navigation
+      - label: Breadcrumb
+        href: /docs/components/navigation/breadcrumb
+      - label: Keyboard
+    then:
+    - text: Components
+    - text: Navigation
+  examples:
+  - name: settings-trail
+    description: A short trail whose last item is the current page, rendered as text.
+    given:
+      items:
+      - label: Settings
+        href: /settings
+      - label: Notifications
+        href: /settings/notifications
+      - label: Email digest
+  - name: deep-trail-collapsed
+    description: A trail of more than four items, folded to the first, an ellipsis
+      and the last two.
+    given:
+      collapse: true
+      items:
+      - label: Docs
+        href: /docs
+      - label: Components
+        href: /docs/components
+      - label: Navigation
+        href: /docs/components/navigation
+      - label: Breadcrumb
+        href: /docs/components/navigation/breadcrumb
+      - label: Keyboard
+  - name: always-in-full
+    description: A trail short enough that the ellipsis would only cost the reader
+      a click.
+    given:
+      collapse: false
+      items:
+      - label: Catalogue
+        href: /catalogue
+      - label: Outdoor
+        href: /catalogue/outdoor
+      - label: Tents
+  - name: second-breadcrumb-on-a-page
+    description: A second trail, named so the two navigation landmarks are distinguishable.
+    given:
+      label: Catalogue breadcrumb
+      items:
+      - label: Catalogue
+        href: /catalogue
+      - label: Tents
 ```
+
+## Events
+
+- `onNavigate`: emit `onNavigate`
+  - cancelable: yes
+  - fires on: user
+
+## Style bindings
+
+- `currentColor`: token `color.foreground`; part `current`; locked
+- `itemColor`: token `color.foreground.muted`; part `item`; locked
+- `separatorColor`: token `color.foreground.muted`; part `separator`; locked
+
+## Constants and examples
+
+- example `settings-trail`, story `SettingsTrail`: given `items: [{"label":"Settings","href":"/settings"},{"label":"Notifications","href":"/settings/notifications"},{"label":"Email digest"}]`; A short trail whose last item is the current page, rendered as text.
+- example `deep-trail-collapsed`, story `DeepTrailCollapsed`: given `collapse: true`, `items: [{"label":"Docs","href":"/docs"},{"label":"Components","href":"/docs/components"},{"label":"Navigation","href":"/docs/components/navigation"},{"label":"Breadcrumb","href":"/docs/components/navigation/breadcrumb"},{"label":"Keyboard"}]`; A trail of more than four items, folded to the first, an ellipsis and the last two.
+- example `always-in-full`, story `AlwaysInFull`: given `collapse: false`, `items: [{"label":"Catalogue","href":"/catalogue"},{"label":"Outdoor","href":"/catalogue/outdoor"},{"label":"Tents"}]`; A trail short enough that the ellipsis would only cost the reader a click.
+- example `second-breadcrumb-on-a-page`, story `SecondBreadcrumbOnAPage`: given `label: "Catalogue breadcrumb"`, `items: [{"label":"Catalogue","href":"/catalogue"},{"label":"Tents"}]`; A second trail, named so the two navigation landmarks are distinguishable.
 
 ## Overrides (per-instance styling contract)
 
@@ -219,11 +338,36 @@ The `platforms.rn.props` list names the native props the schema cares about; `ov
 Overridable: `gap`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`
 Locked (accessibility-bearing, never overridable): `currentColor`, `itemColor`, `separatorColor`, `minTarget`
 
-## Behavior scenarios (2)
+## Behavior scenarios (4)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: click-on-an-ancestor-reports-navigation
+  description: Each ancestor is a Link that fires onNavigate, so a client-side router
+    can intercept it.
+  when:
+    click: link
+  then:
+  - event: onNavigate
+- name: an-uncollapsed-trail-shows-every-ancestor
+  description: With collapse off a long trail stays in full rather than folding its
+    middle behind an ellipsis.
+  given:
+    collapse: false
+    items:
+    - label: Docs
+      href: /docs
+    - label: Components
+      href: /docs/components
+    - label: Navigation
+      href: /docs/components/navigation
+    - label: Breadcrumb
+      href: /docs/components/navigation/breadcrumb
+    - label: Keyboard
+  then:
+  - text: Components
+  - text: Navigation
 - name: renders
   then:
   - renders: true

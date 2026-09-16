@@ -69,6 +69,12 @@ component:
     heading: Heading
     closeButton: Button
     body: Box
+  parts:
+    trigger:
+      kind: slot
+      slot:
+        prop: trigger
+        required: true
   props:
     trigger:
       type: content
@@ -98,6 +104,9 @@ component:
       type: boolean
       description: Controlled open state. Omit for uncontrolled (the trigger toggles
         it).
+      controls:
+        event: onOpenChange
+        state: open
     placement:
       type: enum
       values:
@@ -139,6 +148,28 @@ component:
         lit: open-change
         rn: onOpenChange
         swiftui: onOpenChange
+      payload:
+      - name: open
+        type: boolean
+        description: The new state of the popover.
+      - name: reason
+        type: enum
+        values:
+        - trigger
+        - escape
+        - outside
+        - close-button
+        - tab-out
+      reasons:
+        trigger: the trigger was activated
+        escape: Escape pressed while open
+        outside: a pointer press landed outside the popover
+        close-button: the close button was activated
+        tab-out: Tab moved focus past the end of the popover
+      fires:
+      - user
+      timing:
+        phase: after-change
   keyboard:
   - keys:
     - Enter
@@ -152,21 +183,27 @@ component:
     action: Closes and returns focus to the trigger.
     when: open
     from: inside
-    expect: focus-trigger
+    expect:
+    - closes
+    - focus-trigger
   - keys:
     - Tab
     action: 'Non-modal: after the last element in the panel, closes and moves focus
       to the element after the trigger. Modal: wraps within the panel.'
     when: open
     from: last
-    expect: manual
+    given:
+      modal: false
+    expect: closes
   - keys:
     - Shift+Tab
     action: 'Non-modal: from the first element in the panel, returns focus to the
       trigger and closes.'
     when: open
     from: first
-    expect: focus-trigger
+    expect:
+    - focus-trigger
+    - closes
   styles:
     surface:
       token: color.overlay.surface
@@ -196,6 +233,7 @@ component:
       locked: false
     arrowSize:
       token: space.2
+      part: arrow
       locked: false
     maxWidth:
       token: layout.maxWidth.prose
@@ -219,6 +257,19 @@ component:
       locked: true
   copy:
     closeLabel: Close
+  overlay:
+    layer: popover
+    anchor: trigger
+    placement: placement
+    collision: flip-shift
+    open: open
+    closeEvent: onOpenChange
+    dismiss:
+    - escape
+    - outside-press
+    - close-button
+    - focus-out
+    modal: false
   a11y:
     role: dialog
     requires:
@@ -269,7 +320,8 @@ component:
       - placement
       - modal
       - show-arrow
-      - no-dismiss
+      - prop: dismissible
+        attribute: no-dismiss
       - heading-level
       notes: 'Slots: `trigger` and default. The panel renders in the shadow root with
         the Popover API (top layer, no z-index issues) or a fixed fallback. aria-controls
@@ -301,7 +353,126 @@ component:
         the trigger and close on outside tap (system behavior). The panel is the package
         surface with `color.overlay.surface` through `.presentationBackground`. Heading
         names the panel.'
+  behavior:
+  - name: close-button-fires-on-open-change
+    description: The close button reports the close; the consumer owns `open` when
+      it is controlled.
+    given:
+      open: true
+    when:
+      click: closeButton
+    then:
+    - event: onOpenChange
+  - name: escape-closes-a-modal-popover
+    description: A modal popover is a small Dialog — Escape and the close button are
+      the only ways out, and Escape always works (keyboard rule 2).
+    given:
+      open: true
+      modal: true
+    when:
+      key: Escape
+    then:
+    - event: onOpenChange
+    platforms:
+    - web
+    - lit
+  - name: the-panel-is-named-by-its-heading
+    description: With a heading the panel is a dialog named by it rather than by the
+      trigger.
+    given:
+      open: true
+      heading: Filters
+    then:
+    - name: Filters
+  examples:
+  - name: filter-panel
+    description: A compact panel of controls behind a Filters button, aligned to the
+      start of the trigger.
+    given:
+      trigger: A Filters Button
+      children: A Form of filter controls
+      heading: Filters
+      placement: bottom-start
+  - name: date-picker-panel
+    description: A picker anchored under a date field, the case the panel exists for.
+    given:
+      trigger: A date field Button showing the current date
+      children: A DatePicker calendar
+  - name: required-step
+    description: A short form that must be submitted or cancelled, so the panel traps
+      focus like a Dialog.
+    given:
+      trigger: An Add member Button
+      children: An email Input and a Save Button
+      heading: Add member
+      modal: true
+  - name: contextual-help
+    description: A help note with a link, pointed at its trigger.
+    given:
+      trigger: An icon-only help Button
+      children: One sentence of help ending in a Link to the guide
+      showArrow: true
+      placement: end
 ```
+
+## Events
+
+- `onOpenChange`: emit `onOpenChange`
+  - payload, positional, in this order: `open: boolean`, `reason: 'trigger' | 'escape' | 'outside' | 'close-button' | 'tab-out'`
+  - reasons: `trigger` (the trigger was activated); `escape` (Escape pressed while open); `outside` (a pointer press landed outside the popover); `close-button` (the close button was activated); `tab-out` (Tab moved focus past the end of the popover)
+  - fires on: user
+  - timing: after-change
+
+## Controlled state
+
+- `open` is controlled when given, uncontrolled from its initial state when omitted; changes reported by `onOpenChange` (emit `onOpenChange`); drives state `open`
+
+## Parts and slots
+
+- `trigger`: slot, `@ViewBuilder` parameter `trigger`, required
+- `panel`: element
+- `focusScope`: component `FocusScope`
+- `heading`: component `Heading`
+- `body`: component `Box`
+- `closeButton`: component `Button`
+- `arrow`: element
+
+## Style bindings
+
+- `arrowSize`: token `space.2`; part `arrow`
+
+## Keyboard
+
+- `Escape` (Closes and returns focus to the trigger.): expect closes, then focus-trigger
+- `Tab` (Non-modal: after the last element in the panel, closes and moves focus to the element after the trigger. Modal: wraps within the panel.): expect closes; given `modal: false`
+- `Shift+Tab` (Non-modal: from the first element in the panel, returns focus to the trigger and closes.): expect focus-trigger, then closes
+
+## Form and overlay
+
+```yaml
+overlay:
+  layer: popover
+  anchor: trigger
+  placement: placement
+  collision: flip-shift
+  open: open
+  closeEvent: onOpenChange
+  dismiss:
+  - escape
+  - outside-press
+  - close-button
+  - focus-out
+  modal: false
+```
+
+`overlay.closeEvent` emits `onOpenChange`.
+
+## Constants and examples
+
+- example `filter-panel`, story `FilterPanel`: given `trigger: "A Filters Button"`, `children: "A Form of filter controls"`, `heading: "Filters"`, `placement: "bottom-start"`; A compact panel of controls behind a Filters button, aligned to the start of the trigger.
+- example `date-picker-panel`, story `DatePickerPanel`: given `trigger: "A date field Button showing the current date"`, `children: "A DatePicker calendar"`; A picker anchored under a date field, the case the panel exists for.
+- example `required-step`, story `RequiredStep`: given `trigger: "An Add member Button"`, `children: "An email Input and a Save Button"`, `heading: "Add member"`, `modal: true`; A short form that must be submitted or cancelled, so the panel traps focus like a Dialog.
+- example `contextual-help`, story `ContextualHelp`: given `trigger: "An icon-only help Button"`, `children: "One sentence of help ending in a Link to the guide"`, `showArrow: true`, `placement: "end"`; A help note with a link, pointed at its trigger.
 
 ## Overrides (per-instance styling contract)
 
@@ -371,11 +542,28 @@ Phones: render `BottomSheet` with `height="content"`, `title={heading ?? trigger
 
 Tooltip, Dialog, Menu, BottomSheet, FocusScope.
 
-## Behavior scenarios (13)
+## Behavior scenarios (16)
 
 One test per scenario, in this order.
 
 ```yaml
+- name: close-button-fires-on-open-change
+  description: The close button reports the close; the consumer owns `open` when it
+    is controlled.
+  given:
+    open: true
+  when:
+    click: closeButton
+  then:
+  - event: onOpenChange
+- name: the-panel-is-named-by-its-heading
+  description: With a heading the panel is a dialog named by it rather than by the
+    trigger.
+  given:
+    open: true
+    heading: Filters
+  then:
+  - name: Filters
 - name: renders
   then:
   - renders: true
@@ -449,5 +637,17 @@ One test per scenario, in this order.
 - name: has-accessible-name
   then:
   - name: true
+  derived: true
+- name: escape-fires-on-open-change
+  given:
+    open: true
+  when:
+    key: Escape
+  then:
+  - event: onOpenChange
+  platforms:
+  - lit
+  - swiftui
+  - web
   derived: true
 ```

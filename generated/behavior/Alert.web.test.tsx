@@ -6,6 +6,10 @@ import { Alert } from '../../packages/react/src/Alert';
 import type { AlertProps } from '../../packages/react/src/Alert';
 import meta from '../../packages/react/src/Alert.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<AlertProps> = {}) {
   const events = {
     onDismiss: vi.fn(),
@@ -20,12 +24,34 @@ function setup(given: Partial<AlertProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Alert"]') ?? screen.queryByRole('status') ?? utils.container.firstElementChild) as HTMLElement,
     container: () => (screen.queryByRole('status') ?? s.root()) as HTMLElement,
+    dismissButton: () => (document.querySelector('[data-part="dismissButton"]') ?? s.root()),
     rerender: (next: Partial<AlertProps>) => utils.rerender(<Alert {...props} {...next} />),
   };
   return s;
 }
 
 describe('Alert', () => {
+  test('dismiss-fires-on-dismiss', async () => {
+    const s = setup({"dismissible": true});
+    await s.user.click(s.dismissButton());
+    expect(s.events.onDismiss).toHaveBeenCalled();
+  });
+  test('live-alert-renders-the-alert-role', async () => {
+    const s = setup({"live": "alert"});
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+  test('live-status-renders-the-status-role', async () => {
+    const s = setup({"live": "status"});
+    expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+  test('live-off-renders-no-role', async () => {
+    const s = setup({"live": "off"});
+    expect(s.container()).not.toHaveAttribute("role");
+  });
+  test('the-heading-is-rendered', async () => {
+    const s = setup({"heading": "Payment failed"});
+    expect(screen.getByText(new RegExp("Payment\\ failed"))).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

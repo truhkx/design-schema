@@ -64,6 +64,56 @@ beforeEach(() => {
 });
 
 describe('ds-slider', () => {
+  test('arrow-increases-by-one-step', async () => {
+    const s = await setup({"defaultValue": 50, "step": 5});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-decreases-by-one-step', async () => {
+    const s = await setup({"defaultValue": 50, "step": 5});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('page-up-changes-by-ten-steps', async () => {
+    const s = await setup({"defaultValue": 50});
+    s.el.focus();
+    await userEvent.keyboard('{PageUp}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('home-sets-the-minimum', async () => {
+    const s = await setup({"defaultValue": 50, "min": 0, "max": 100});
+    s.el.focus();
+    await userEvent.keyboard('{Home}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('end-sets-the-maximum', async () => {
+    const s = await setup({"defaultValue": 50, "min": 0, "max": 100});
+    s.el.focus();
+    await userEvent.keyboard('{End}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('a-key-press-is-a-complete-interaction', async () => {
+    const s = await setup({"defaultValue": 50});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(s.events.onChangeEnd).toHaveBeenCalled();
+  });
+  test('a-disabled-slider-does-not-move', async () => {
+    const s = await setup({"disabled": true, "defaultValue": 50});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('the-thumb-is-the-slider', async () => {
+    const s = await setup({});
+    expect(s.el.shadowRoot!.querySelector('[role="slider"]')).not.toBeNull();
+  });
+  test('invalid-renders-the-invalid-copy', async () => {
+    const s = await setup({"invalid": true});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

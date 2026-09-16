@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/Toast.js';
 import meta from '../../packages/lit/src/Toast.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -51,6 +55,8 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     region: () => (deep(root, '[role="status"]') ?? deep(root, '[part="region"]') ?? deep(root, '[data-part="region"]') ?? root.firstElementChild) as HTMLElement,
+    actionButton: () => (deep(root, '[part="actionButton"]') ?? deep(root, '[data-part="actionButton"]')) as HTMLElement,
+    dismissButton: () => (deep(root, '[part="dismissButton"]') ?? deep(root, '[data-part="dismissButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -60,6 +66,30 @@ beforeEach(() => {
 });
 
 describe('ds-toast', () => {
+  test('the-dismiss-button-fires-on-dismiss', async () => {
+    const s = await setup({"dismissible": true});
+    await userEvent.click(s.dismissButton());
+    expect(s.events.onDismiss).toHaveBeenCalled();
+  });
+  test('the-action-button-fires-on-action', async () => {
+    const s = await setup({"actionLabel": "Undo"});
+    await userEvent.click(s.actionButton());
+    expect(s.events.onAction).toHaveBeenCalled();
+  });
+  test('escape-dismisses-the-focused-toast', async () => {
+    const s = await setup({});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onDismiss).toHaveBeenCalled();
+  });
+  test('danger-toasts-are-announced-assertively', async () => {
+    const s = await setup({"tone": "danger"});
+    expect(s.el.shadowRoot!.querySelector('[role="alert"]')).not.toBeNull();
+  });
+  test('the-message-is-rendered', async () => {
+    const s = await setup({"message": "3 files moved to Archive"});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("3\\ files\\ moved\\ to\\ Archive"));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

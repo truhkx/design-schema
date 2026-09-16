@@ -76,7 +76,7 @@ test.describe('Combobox (lit) keyboard', () => {
     const stateBefore = await ariaState(page);
     void before; void stateBefore;
     await page.keyboard.press('Escape');
-    await expect(root).toBeHidden();
+    await expect(page.locator('[data-part="popup"]').first()).toBeHidden();
   });
   test('Tab: Closes the list and moves focus on. Under single-select a highlighted option is NOT committed by Tab (typing intent is ambiguous). (list open)', async ({ page }) => {
     const root = page.getByRole('combobox').first();
@@ -85,11 +85,11 @@ test.describe('Combobox (lit) keyboard', () => {
     const stateBefore = await ariaState(page);
     void before; void stateBefore;
     await page.keyboard.press('Tab');
-    await expect(root).toBeHidden();
+    await expect(page.locator('[data-part="popup"]').first()).toBeHidden();
   });
   test.skip('Backspace: In an empty input with chips, removes the last chip. (multiple) — manual', async () => {});
-  test.skip('Home: Move the text caret (input semantics), never the list. — manual', async () => {});
-  test.skip('End: Move the text caret (input semantics), never the list. — manual', async () => {});
+  test.skip('Home: Move the text caret (input semantics), never the list. — native', async () => {});
+  test.skip('End: Move the text caret (input semantics), never the list. — native', async () => {});
   test.skip(',: With allowCustom, commits the typed text as a custom value (as Enter does) and clears the input. (allowCustom) — manual', async () => {});
   test.skip('Alt+ArrowDown: Opens the list without moving the active option. — manual', async () => {});
 });

@@ -49,6 +49,9 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     region: () => (deep(root, '[role="region"]') ?? deep(root, '[part="region"]') ?? deep(root, '[data-part="region"]') ?? root.firstElementChild) as HTMLElement,
+    prevButton: () => (deep(root, '[part="prevButton"]') ?? deep(root, '[data-part="prevButton"]')) as HTMLElement,
+    nextButton: () => (deep(root, '[part="nextButton"]') ?? deep(root, '[data-part="nextButton"]')) as HTMLElement,
+    pickerItem: () => (deep(root, '[part="pickerItem"]') ?? deep(root, '[data-part="pickerItem"]')) as HTMLElement,
   };
   return s;
 }
@@ -58,6 +61,26 @@ beforeEach(() => {
 });
 
 describe('ds-carousel', () => {
+  test('next-advances-a-slide', async () => {
+    const s = await setup({});
+    await userEvent.click(s.nextButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('previous-at-the-first-slide-does-nothing', async () => {
+    const s = await setup({});
+    await userEvent.click(s.prevButton());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('loop-wraps-backwards-from-the-first-slide', async () => {
+    const s = await setup({"loop": true});
+    await userEvent.click(s.prevButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('the-picker-jumps-straight-to-a-slide', async () => {
+    const s = await setup({"activeIndex": 1, "picker": "dots"});
+    await userEvent.click(s.pickerItem());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

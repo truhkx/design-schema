@@ -49,6 +49,9 @@ component:
       type: union
       description: Controlled value; for a range, a two-number array.
       shape: 'number | [number, number]'
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: union
       description: Initial value (or pair). Defaults to `min` (or `[min, max]`).
@@ -84,9 +87,16 @@ component:
     onChange:
       description: Fired on every value change while dragging or with keys (number or pair).
       platforms: { web: onChange, lit: change, rn: onValueChange, swiftui: onChange }
+      payload:
+        - { name: value, type: union, shape: 'number | [number, number]', description: 'The new value, or the low and high values of a range.' }
+      fires: [user]
     onChangeEnd:
       description: Fired once when the interaction ends (pointer up, key released). Use for expensive effects.
       platforms: { web: onChangeEnd, lit: change-end, rn: onSlidingComplete, swiftui: onChangeEnd }
+      payload:
+        - { name: value, type: union, shape: 'number | [number, number]', description: 'The final value, or the low and high values of a range.' }
+      fires: [user]
+      timing: { phase: commit }
   keyboard:
     - { keys: [ArrowRight, ArrowUp], action: Increases by `step`., from: first, expect: manual }
     - { keys: [ArrowLeft, ArrowDown], action: Decreases by `step`., from: first, expect: manual }
@@ -95,32 +105,32 @@ component:
     - { keys: [End], action: Sets the maximum., from: first, expect: manual }
     - { keys: [Tab], action: Moves between the two thumbs of a range slider; each thumb is a tab stop., when: range, from: first, expect: focus-next }
   styles:
-    track: { token: color.background.strong }
-    fill: { token: color.control.selectedBackground }
-    trackHeight: { token: space.1 }
-    trackRadius: { token: radius.full }
-    thumb: { token: color.control.background }
-    thumbBorder: { token: color.control.selectedBackground }
-    thumbBorderWidth: { token: border.width.focus }
-    thumbSize: { token: space.5 }
-    thumbShadow: { token: shadow.raised }
-    thumbActiveScale: { token: opacity.disabled, description: 'Not a scale — the pressed thumb shows a halo of the fill color at this opacity, thumbSize larger on each side (space.2). No literal scale factor exists.' }
+    track: { token: color.background.strong, part: track }
+    fill: { token: color.control.selectedBackground, part: fill }
+    trackHeight: { token: space.1, part: track }
+    trackRadius: { token: radius.full, part: track }
+    thumb: { token: color.control.background, part: thumb }
+    thumbBorder: { token: color.control.selectedBackground, part: thumb }
+    thumbBorderWidth: { token: border.width.focus, part: thumb }
+    thumbSize: { token: space.5, part: thumb }
+    thumbShadow: { token: shadow.raised, part: thumb }
+    thumbActiveScale: { token: opacity.disabled, part: thumb, description: 'Not a scale — the pressed thumb shows a halo of the fill color at this opacity, thumbSize larger on each side (space.2). No literal scale factor exists.' }
     mark: { token: color.border.strong }
     markSize: { token: space.1 }
     markLabelColor: { token: color.foreground.muted }
     markLabelSize: { token: font.size.xs }
     valueColor: { token: color.foreground }
     valueSize: { token: font.size.sm }
-    bubbleSurface: { token: color.inverse.surface, description: 'The hover/drag value bubble uses the inverse surface, like Tooltip.' }
-    bubbleText: { token: color.inverse.foreground }
-    bubbleRadius: { token: radius.sm, description: 'The bubble is its own part (not the valueText Text): an inverse-surface pill above the active thumb.' }
-    labelWeight: { token: font.weight.medium }
+    bubbleSurface: { token: color.inverse.surface, part: bubble, description: 'The hover/drag value bubble uses the inverse surface, like Tooltip.' }
+    bubbleText: { token: color.inverse.foreground, part: bubble }
+    bubbleRadius: { token: radius.sm, part: bubble, description: 'The bubble is its own part (not the valueText Text): an inverse-surface pill above the active thumb.' }
+    labelWeight: { token: font.weight.medium, part: label }
     partGap: { token: space.1 }
-    trackPaddingBlock: { token: space.3, description: 'Vertical space around the track so the thumb and its halo have room and the touch target reaches the comfortable size.' }
+    trackPaddingBlock: { token: space.3, part: track, description: 'Vertical space around the track so the thumb and its halo have room and the touch target reaches the comfortable size.' }
     fontFamily: { token: font.family.body }
     fontSize: { token: font.size.md }
     helperSize: { token: font.size.sm }
-    descriptionText: { token: color.foreground.muted }
+    descriptionText: { token: color.foreground.muted, part: description }
     errorText: { token: color.foreground.danger }
     minTarget: { token: size.target.comfortable, description: 'The thumb''s hit area.' }
     focusRing: { token: color.border.focus }
@@ -130,17 +140,29 @@ component:
   copy:
     minimumLabel: '{label} minimum'
     maximumLabel: '{label} maximum'
-    rangeText: '{low} – {high}'
+    rangeText:
+      text: '{low} – {high}'
+      params:
+        low: { type: string, description: The lower thumb's value as formatValue renders it. }
+        high: { type: string, description: The upper thumb's value as formatValue renders it. }
     required: '{label} is required.'
     invalid: '{label} is not valid.'
   a11y:
     role: slider
     requires: [accessible-name, label-association, keyboard-operable, arrow-navigation, focus-visible, contrast-aa, target-44px, gesture-alternative, error-identification, reduced-motion]
     contrast:
-      - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }
+      - { foreground: color.control.selectedBackground, background: color.background, level: AA, nonText: true }
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }
       - { foreground: color.inverse.foreground, background: color.inverse.surface, level: AA }
+  form:
+    role: field
+    value: value
+    valueType: number-range
+    name: name
+    validation: [required, invalid]
+    messages: { required: required, invalid: invalid }
+    discovery: context
   platforms:
     web:
       element: div
@@ -158,6 +180,85 @@ component:
       element: ZStack
       props: [GeometryReader, DragGesture, .accessibilityAdjustableAction, .accessibilityValue, .accessibilityElement, .focusable, .onMoveCommand, .onKeyPress, '@FocusState', Capsule]
       notes: 'Drawn from the tokens (track `Capsule`, fill, thumb `Circle`s) with a `DragGesture` per thumb in a `GeometryReader` — not SwiftUI''s `Slider` (single value, untinted thumb). Each thumb is an accessibility element (`.accessibilityLabel(thumbLabel)`, `.accessibilityValue(formatValue)`, `.accessibilityAdjustableAction` stepping by `step`, Shift-step = `largeStep` via the increment/decrement with `.accessibilityAdjustableAction`''s direction only — the large step is a separate custom action); on iPad each thumb is `.focusable()` and arrows/PageUp/PageDown/Home/End follow the keyboard table. Range mode keeps thumbs ordered and swaps focus at the crossover. Marks and the value bubble per the doc; ticks from the tokens.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/focusable/error-identified ones from
+    # the schema. A range slider renders two role=slider thumbs, which the single-element locator cannot
+    # address, so range is covered by the examples and the keyboard gate.
+    - name: arrow-increases-by-one-step
+      description: Arrow keys move by step, so the keyboard gets the precision the pointer gets by drag.
+      given: { defaultValue: 50, step: 5 }
+      when: { key: ArrowRight }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: arrow-decreases-by-one-step
+      given: { defaultValue: 50, step: 5 }
+      when: { key: ArrowLeft }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: page-up-changes-by-ten-steps
+      given: { defaultValue: 50 }
+      when: { key: PageUp }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: home-sets-the-minimum
+      given: { defaultValue: 50, min: 0, max: 100 }
+      when: { key: Home }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: end-sets-the-maximum
+      given: { defaultValue: 50, min: 0, max: 100 }
+      when: { key: End }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: a-key-press-is-a-complete-interaction
+      description: onChangeEnd fires once when the interaction ends (pointer up, key released), for expensive effects.
+      given: { defaultValue: 50 }
+      when: { key: ArrowRight }
+      then:
+        - { event: onChangeEnd }
+      platforms: [web, lit]
+    - name: a-disabled-slider-does-not-move
+      given: { disabled: true, defaultValue: 50 }
+      when: { key: ArrowRight }
+      then:
+        - { event: onChange, fired: false }
+      platforms: [web, lit]
+    - name: the-thumb-reports-its-value-and-bounds
+      description: The thumb carries valuenow/min/max, so a screen reader hears where the value sits on the scale.
+      given: { defaultValue: 4, min: 0, max: 10 }
+      then:
+        - { attribute: aria-valuenow, is: '4' }
+        - { attribute: aria-valuemin, is: '0' }
+        - { attribute: aria-valuemax, is: '10' }
+      platforms: [web]
+    - name: the-thumb-is-the-slider
+      description: The thumb is the slider element, not the track - that is what takes focus and carries the value.
+      then:
+        - { role: slider }
+      platforms: [web, lit, swiftui]
+    - name: invalid-renders-the-invalid-copy
+      description: invalid marks the slider invalid and renders copy.invalid when there is no error.
+      given: { invalid: true }
+      then:
+        - { copy: invalid }
+  examples:
+    - name: volume
+      description: The everyday single-value slider, its value shown beside the label.
+      given: { label: Volume, name: volume, defaultValue: 30 }
+    - name: price-range
+      description: Two thumbs choosing a minimum and a maximum that cannot cross.
+      given: { label: Price range, name: price, range: true, defaultValue: [20, 80] }
+    - name: effort-with-marks
+      description: A short labelled scale that snaps to its marks.
+      given: { label: Effort, name: effort, min: 1, max: 5, marks: [{ value: 1, label: Low }, { value: 3, label: Medium }, { value: 5, label: High }], snapToMarks: true }
+    - name: paired-with-a-number-input
+      description: A zoom control whose value is shown by a NumberInput beside it, so the slider shows none.
+      given: { label: Zoom, name: zoom, min: 50, max: 200, step: 10, defaultValue: 100, showValue: never }
 ---
 
 A slider is for values you feel rather than type: volume, brightness, a price range, a zoom level. Its thumb sits on the value, the fill shows how much, and arrow keys move it by exact steps so keyboard and screen-reader users get the same precision the pointer gets by drag.

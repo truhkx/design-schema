@@ -54,7 +54,8 @@
       ],
       "action": "Activates the focused control: previous, next, a picker item, or play/pause.",
       "from": "inside",
-      "expect": "manual"
+      "expect": "manual",
+      "native": true
     }
   ]
 }

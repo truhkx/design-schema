@@ -140,6 +140,7 @@ test.describe('Menu (web) keyboard', () => {
     const stateBefore = await ariaState(page);
     void before; void stateBefore;
     await page.keyboard.press('Escape');
+    await expect(root).toBeHidden();
     await expect(trigger(page)).toBeFocused();
   });
   test('Tab: Closes and moves focus to the next/previous tabbable element after the trigger. (menu open)', async ({ page }) => {

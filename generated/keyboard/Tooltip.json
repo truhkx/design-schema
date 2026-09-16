@@ -10,7 +10,11 @@
       "action": "Hides the tooltip without moving focus.",
       "from": "trigger",
       "expect": "closes",
-      "when": "tooltip visible"
+      "when": "tooltip visible",
+      "expectAll": [
+        "closes",
+        "focus-unchanged"
+      ]
     }
   ]
 }

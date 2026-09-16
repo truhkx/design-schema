@@ -53,6 +53,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     container: () => (deep(root, '[role="separator"]') ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
+    collapseButton: () => (deep(root, '[part="collapseButton"]') ?? deep(root, '[data-part="collapseButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -62,6 +63,61 @@ beforeEach(() => {
 });
 
 describe('ds-splitter', () => {
+  test('arrow-grows-the-primary-pane', async () => {
+    const s = await setup({"defaultSize": 50});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(s.events.onSizeChange).toHaveBeenCalled();
+    expect(s.events.onSizeChangeEnd).toHaveBeenCalled();
+  });
+  test('arrow-shrinks-the-primary-pane', async () => {
+    const s = await setup({"defaultSize": 50});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(s.events.onSizeChange).toHaveBeenCalled();
+    expect(s.events.onSizeChangeEnd).toHaveBeenCalled();
+  });
+  test('home-sets-the-primary-pane-to-its-minimum', async () => {
+    const s = await setup({"defaultSize": 50, "minSize": 20});
+    s.el.focus();
+    await userEvent.keyboard('{Home}');
+    expect(s.events.onSizeChange).toHaveBeenCalled();
+    expect(s.events.onSizeChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onSizeChange.mock.calls[0]?.[0]?.detail?.size).toEqual(20);
+  });
+  test('end-sets-the-primary-pane-to-its-maximum', async () => {
+    const s = await setup({"defaultSize": 50, "maxSize": 80});
+    s.el.focus();
+    await userEvent.keyboard('{End}');
+    expect(s.events.onSizeChange).toHaveBeenCalled();
+    expect(s.events.onSizeChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onSizeChange.mock.calls[0]?.[0]?.detail?.size).toEqual(80);
+  });
+  test('enter-collapses-a-collapsible-pane', async () => {
+    const s = await setup({"collapsible": true, "defaultSize": 40});
+    s.el.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(s.events.onCollapseChange).toHaveBeenCalled();
+    expect(s.events.onCollapseChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onCollapseChange.mock.calls[0]?.[0]?.detail?.collapsed).toEqual(true);
+  });
+  test('enter-does-nothing-when-the-pane-cannot-collapse', async () => {
+    const s = await setup({});
+    s.el.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(s.events.onCollapseChange).not.toHaveBeenCalled();
+  });
+  test('the-collapse-button-collapses-the-pane', async () => {
+    const s = await setup({"collapsible": true, "defaultSize": 40});
+    await userEvent.click(s.collapseButton());
+    expect(s.events.onCollapseChange).toHaveBeenCalled();
+  });
+  test('a-collapsed-pane-ignores-the-arrow-keys', async () => {
+    const s = await setup({"collapsible": true, "defaultCollapsed": true});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(s.events.onSizeChange).not.toHaveBeenCalled();
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

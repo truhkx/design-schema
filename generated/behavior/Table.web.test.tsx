@@ -6,6 +6,10 @@ import { Table } from '../../packages/react/src/Table';
 import type { TableProps } from '../../packages/react/src/Table';
 import meta from '../../packages/react/src/Table.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<TableProps> = {}) {
   const events = {
     onSortChange: vi.fn(),
@@ -22,12 +26,42 @@ function setup(given: Partial<TableProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Table"]') ?? screen.queryByRole('table') ?? utils.container.firstElementChild) as HTMLElement,
     container: () => (screen.queryByRole('table') ?? s.root()) as HTMLElement,
+    sortButton: () => (document.querySelector('[data-part="sortButton"]') ?? s.root()),
+    selectCell: () => (document.querySelector('[data-part="selectCell"]') ?? s.root()),
+    selectAllCell: () => (document.querySelector('[data-part="selectAllCell"]') ?? s.root()),
     rerender: (next: Partial<TableProps>) => utils.rerender(<Table {...props} {...next} />),
   };
   return s;
 }
 
 describe('Table', () => {
+  test('activating-a-sortable-header-reports-the-sort', async () => {
+    const s = setup({"columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}, {"key": "amount", "header": "Amount", "sortable": true, "align": "end"}], "data": [{"id": "a", "invoice": "INV-1", "amount": 100}, {"id": "b", "invoice": "INV-2", "amount": 200}]});
+    await s.user.click(s.sortButton());
+    expect(s.events.onSortChange).toHaveBeenCalled();
+  });
+  test('selecting-a-row-reports-every-selected-id', async () => {
+    const s = setup({"selectable": "multiple", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}, {"id": "b", "invoice": "INV-2"}]});
+    await s.user.click(s.selectCell());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('select-all-reports-the-whole-selection', async () => {
+    const s = setup({"selectable": "multiple", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}, {"id": "b", "invoice": "INV-2"}]});
+    await s.user.click(s.selectAllCell());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('the-empty-message-shows-when-there-are-no-rows', async () => {
+    const s = setup({"columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": []});
+    expect(screen.getByText(new RegExp("Nothing\\ to\\ show\\."))).toBeInTheDocument();
+  });
+  test('a-custom-empty-message-replaces-the-default', async () => {
+    const s = setup({"emptyMessage": "No invoices yet.", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": []});
+    expect(screen.getByText(new RegExp("No\\ invoices\\ yet\\."))).toBeInTheDocument();
+  });
+  test('loading-marks-the-table-busy', async () => {
+    const s = setup({"loading": true, "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}]});
+    expect(s.container()).toHaveAttribute("aria-busy", "true");
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

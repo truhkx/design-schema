@@ -1,9 +1,13 @@
 /** Style binding fields (job 613): `part`, `state`, `platforms`, `by`/`values` and `computed` on `styleBinding`, their
  *  checks in componentDef, locking over every token a binding can resolve to (`bindingTokens`), and `computeBinding`. */
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 
 import { BEHAVIOR_STATES, bindingTokens, componentDef, computeBinding, lockRule, STYLE_STATES } from '../../schema/component.ts';
+import type { StyleOperand } from '../../schema/component.ts';
+import { isToken } from '../../schema/tokens.ts';
+import { REPO_ROOT } from '../lib/root.ts';
 import * as parse from '../parse.ts';
 import type { Dict } from '../parse.ts';
 import { component, expectDocError, usePaths, useTmp } from './fixtures.ts';
@@ -47,6 +51,15 @@ describe('the fields parse', () => {
 
   test("Input's paddingBlock and paddingBlockSm as one binding by size", () => {
     accepts(styled({ paddingBlock: { token: 'space.sm', by: 'size', values: { sm: 'space.1' } } }));
+  });
+
+  test('the parallel pair it replaces still parses while both keys must lock (Input.minTarget / minTargetSm)', () => {
+    // Job 640 folded the overridable pairs; the four minTargetSm keys stay, because merging them would take a
+    // name off the locked list. Both keys lock on their own token, so nothing is overridable either way.
+    const c = styled({ minTarget: { token: 'size.target.comfortable' }, minTargetSm: { token: 'size.target.min', description: 'The field height floor at size sm.' } });
+    accepts(c);
+    check(c);
+    expect([c.styles.minTarget.locked, c.styles.minTargetSm.locked]).toEqual([true, true]);
   });
 
   test('Button.backgroundHover as a token on a part in the hover state', () => {
@@ -231,6 +244,103 @@ describe('computeBinding', () => {
 
   test('without computed it is the token value', () => {
     expect(computeBinding({ token: 'space.10' }, resolveToken, () => Number.NaN)).toBe(40);
+  });
+});
+
+/** The phase 3 migration (job 640): every doc now carries these fields, so the corpus is the fixture. */
+describe('generated/components.json after the migration', () => {
+  const generated = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as Dict);
+  const bindings = generated.flatMap((c) => Object.entries(c.styles ?? {}).map(([b, s]) => [c, `${c.name}.${b}`, s as Dict] as const));
+  const light = JSON.parse(readFileSync(join(REPO_ROOT, 'packages', 'tokens', 'dist', 'calm-precise', 'json', 'tokens.light.json'), 'utf8')) as Record<string, string>;
+  const px = (token: string): number => Number.parseFloat(light[token] as string);
+  type Binding = { token: string; values?: Record<string, string>; computed?: { times?: number; plus?: StyleOperand[]; minus?: StyleOperand[] } };
+
+  test('no doc raises a styles issue, and every by names an enum or boolean prop of its own doc', () => {
+    expect(generated.flatMap((c) => issues(c).filter((i) => i.path[0] === 'styles'))).toEqual([]);
+    for (const [c, name, spec] of bindings) {
+      if (spec.by === undefined) continue;
+      const prop = (c.props as Dict)[spec.by as string] as Dict | undefined;
+      expect(['enum', 'boolean'], name).toContain(prop?.type);
+      expect(Object.keys(spec.values as Dict), name).not.toHaveLength(0);
+    }
+  });
+
+  test('every values token is a built token, and every computed operand resolves with no cycle', () => {
+    for (const [, name, spec] of bindings) {
+      for (const [value, token] of Object.entries((spec.values ?? {}) as Dict)) expect(isToken(token as string), `${name} values.${value}`).toBe(true);
+      for (const op of [...((spec.computed as Dict)?.plus ?? []), ...((spec.computed as Dict)?.minus ?? [])] as Dict[]) {
+        if ('token' in op) expect(isToken(op.token as string), name).toBe(true);
+      }
+    }
+    // Every computed binding evaluates to a finite number; a cycle would recurse forever, which the schema rejects.
+    for (const [c, name, spec] of bindings) {
+      if (spec.computed === undefined) continue;
+      const resolve = (b: string): number => computeBinding((c.styles as Dict)[b] as Binding, px, resolve);
+      expect(Number.isFinite(computeBinding(spec as Binding, px, resolve)), name).toBe(true);
+    }
+  });
+
+  test('computeBinding returns the number each doc states in prose', () => {
+    const value = (name: string): number => {
+      const [cName, bName] = name.split('.') as [string, string];
+      const c = generated.find((entry) => entry.name === cName) as Dict;
+      const resolve = (b: string): number => computeBinding((c.styles as Dict)[b] as Binding, px, resolve);
+      return computeBinding((c.styles as Dict)[bName] as Binding, px, resolve);
+    };
+    expect(value('Menu.minWidth')).toBe(200); // "space.20 × 2.5, i.e. 200px at comfortable density"
+    expect(value('SidePanel.widthNarrow')).toBe(240); // width: "narrow is space.20 × 3"
+    expect(value('Tooltip.maxWidth')).toBe(240); // "Multiplied by 3 (240px at comfortable density)"
+  });
+
+  test('the fields the migration added, counted', () => {
+    const count = (field: string): number => bindings.filter(([, , s]) => s[field] !== undefined).length;
+    expect({ part: count('part'), state: count('state'), by: count('by'), values: count('values'), computed: count('computed') })
+      .toEqual({ part: 361, state: 16, by: 8, values: 8, computed: 3 });
+    expect(bindings.filter(([, , s]) => s.state !== undefined).map(([, name]) => name)).toEqual([
+      'ActionSheet.itemHover', 'Button.backgroundHover', 'Card.hoverBackground', 'Checkbox.pressedOverlay', 'DataGrid.rowHover',
+      'DatePicker.dayHover', 'Disclosure.triggerBackgroundHover', 'Link.colorHover', 'Listbox.optionActiveBackground', 'Menu.itemHover',
+      'Splitter.separatorHover', 'Splitter.separatorActive', 'Stepper.stepHover', 'Table.rowHover', 'Tabs.tabHoverBackground', 'Tree.rowHover',
+    ]);
+    expect(bindings.filter(([, , s]) => s.by !== undefined).map(([, name]) => name)).toEqual([
+      'DatePicker.paddingInline', 'DatePicker.paddingBlock', 'Input.paddingInline', 'Input.paddingBlock',
+      'NumberInput.paddingInline', 'NumberInput.paddingBlock', 'Search.paddingBlock', 'Select.triggerPaddingBlock',
+    ]);
+    // Every part names an anatomy part of its own doc (componentDef checks it; this pins that they were authored).
+    for (const [c, name, spec] of bindings) {
+      if (spec.part !== undefined) expect(c.anatomy as string[], name).toContain(spec.part);
+    }
+  });
+
+  /** Job 640 ¶6's predicate: a styles key K whose suffix is a value of an enum or boolean prop P and whose remaining
+   *  prefix R is another styles key of the same doc — the parallel-key shape `by`/`values` replaces. The schema error
+   *  was not landed (see the job report: the predicate catches four keys the migration was not scoped to fold), so
+   *  this test is what holds the line: any new parallel key fails here. */
+  test('the parallel keys left in the corpus are the ones this migration did not fold', () => {
+    const parallel: string[] = generated.flatMap((c): string[] => {
+      const keys = Object.keys(c.styles as Dict);
+      const values = Object.values(c.props as Dict).flatMap((p): string[][] => {
+        const def = p as Dict;
+        return def.type === 'enum' ? [(def.values ?? []) as string[]] : def.type === 'boolean' ? [['true', 'false']] : [];
+      });
+      return keys.flatMap((k) => values.flat().flatMap((v) => {
+        const prefix = k.slice(0, k.length - v.length);
+        return k.length > v.length && k.slice(prefix.length).toLowerCase() === v.toLowerCase() && keys.includes(prefix) ? [`${c.name as string}.${k}`] : [];
+      }));
+    });
+    const locked = (name: string): boolean => {
+      const [cName, bName] = name.split('.') as [string, string];
+      const c = generated.find((entry) => entry.name === cName) as Dict;
+      return Boolean(((c.styles as Dict)[bName] as Dict).locked);
+    };
+    // Kept because folding them would take a name off the locked list (job 640 ¶2 and ¶7).
+    expect(parallel.filter(locked)).toEqual([
+      'DataGrid.rowHeightComfortable', 'DatePicker.minTargetSm', 'Input.minTargetSm', 'NumberInput.minTargetSm',
+      'ProgressBar.fillSuccess', 'ProgressBar.fillDanger', 'Select.minTargetSm',
+    ]);
+    // Reported, not folded: SidePanel.widthNarrow carries the ×3 `computed` a per-value token cannot hold.
+    expect(parallel.filter((name) => !locked(name))).toEqual([
+      'SidePanel.widthNarrow', 'SidePanel.widthWide', 'Table.cellPaddingInlineCompact', 'Toolbar.itemGapCompact',
+    ]);
   });
 });
 

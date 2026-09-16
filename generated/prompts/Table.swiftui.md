@@ -127,6 +127,9 @@ component:
       shape: '{ column: string; direction: "ascending" | "descending" }'
       description: Controlled sort state. The table shows it; the caller sorts the
         data (so server-side sorting works the same way).
+      controls:
+        event: onSortChange
+        default: defaultSort
     defaultSort:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
@@ -146,6 +149,9 @@ component:
       type: array
       shape: string[]
       description: Controlled selected row ids.
+      controls:
+        event: onSelectionChange
+        default: defaultSelected
     defaultSelected:
       type: array
       shape: string[]
@@ -210,6 +216,17 @@ component:
         lit: sort-change
         rn: onSortChange
         swiftui: onSortChange
+      payload:
+      - name: column
+        type: string
+        description: The key of the column now sorted on.
+      - name: direction
+        type: enum
+        values:
+        - ascending
+        - descending
+      fires:
+      - user
     onSelectionChange:
       description: Fired with the new array of selected ids.
       platforms:
@@ -217,6 +234,13 @@ component:
         lit: selection-change
         rn: onSelectionChange
         swiftui: onSelectionChange
+      payload:
+      - name: selected
+        type: array
+        shape: string[]
+        description: The ids of every selected row.
+      fires:
+      - user
     onRowPress:
       description: Fired when a row is activated, with its id. Only when the row has
         no other interactive content; the row header cell becomes a Button and the
@@ -226,6 +250,12 @@ component:
         lit: row-press
         rn: onRowPress
         swiftui: onRowPress
+      payload:
+      - name: id
+        type: string
+        description: The id of the activated row.
+      fires:
+      - user
   keyboard:
   - keys:
     - Tab
@@ -241,6 +271,7 @@ component:
       activates the row.
     from: inside
     expect: manual
+    native: true
   - keys:
     - ArrowRight
     - ArrowLeft
@@ -255,85 +286,109 @@ component:
       locked: true
     headerSurface:
       token: color.background.subtle
+      part: header
       locked: true
     headerColor:
       token: color.foreground
+      part: header
       locked: true
     headerWeight:
       token: font.weight.semibold
+      part: header
       locked: false
     headerSize:
       token: font.size.sm
+      part: header
       locked: false
     headerBorder:
       token: color.border.strong
+      part: header
       locked: false
     headerBorderWidth:
       token: border.width.thin
+      part: header
       locked: false
     headerShadow:
       token: shadow.raised
+      part: header
       description: Shown under the sticky header only once the body has scrolled beneath
         it.
       locked: false
     rowBorder:
       token: color.border
+      part: row
       locked: false
     rowBorderWidth:
       token: border.width.thin
+      part: row
       locked: false
     rowStripe:
       token: color.background.subtle
+      part: row
       locked: true
     rowHover:
       token: color.action.ghost.backgroundHover
+      part: row
+      state: hover
       description: Interactive rows only (onRowPress or a Link in the row header).
         Hover never appears on plain rows.
       locked: false
     rowSelected:
       token: color.background.subtle
+      part: row
       description: Same tint as a stripe; the start-edge bar and the checkbox are
         what say selected.
       locked: true
     rowSelectedBorder:
       token: color.control.selectedBackground
+      part: row
       description: A start-edge bar on selected rows, so selection is not color-fill
         alone.
       locked: true
     rowSelectedBorderWidth:
       token: border.width.focus
+      part: row
       locked: true
     cellColor:
       token: color.foreground
+      part: cell
       locked: true
     cellMutedColor:
       token: color.foreground.muted
+      part: cell
       description: Secondary values (a date beside a title) rendered with Text tone
         muted.
       locked: true
     cellPaddingInline:
       token: layout.inset.md
+      part: cell
       locked: false
     cellPaddingInlineCompact:
       token: layout.inset.sm
+      part: cell
       description: Used instead of cellPaddingInline when density is compact.
       locked: false
     cellPaddingBlock:
       token: space.sm
+      part: cell
       locked: false
     cellGap:
       token: layout.gap.tight
+      part: cell
       description: Between a sort button's label and its arrow, and between actions
         in the actions cell.
       locked: false
     captionSize:
       token: font.size.md
+      part: caption
       locked: false
     captionWeight:
       token: font.weight.semibold
+      part: caption
       locked: false
     captionGap:
       token: space.2
+      part: caption
       description: Between caption and header.
       locked: false
     stackedRowInset:
@@ -345,12 +400,15 @@ component:
       locked: false
     stackedLabelColor:
       token: color.foreground.muted
+      part: stackedLabel
       locked: true
     stackedLabelSize:
       token: font.size.xs
+      part: stackedLabel
       locked: false
     stackedLabelWeight:
       token: font.weight.medium
+      part: stackedLabel
       locked: false
     stackedRowRadius:
       token: radius.md
@@ -393,17 +451,65 @@ component:
       locked: false
   copy:
     sortToolbarLabel: Sort {caption}
-    sortAscending: Sort by {column}, ascending
-    sortDescending: Sort by {column}, descending
-    sortedAnnouncement: Sorted by {column}, {direction}
+    sortAscending:
+      text: Sort by {column}, ascending
+      params:
+        column:
+          type: string
+          description: The column header text.
+    sortDescending:
+      text: Sort by {column}, descending
+      params:
+        column:
+          type: string
+          description: The column header text.
+    sortedAnnouncement:
+      text: Sorted by {column}, {direction}
+      params:
+        column:
+          type: string
+          description: The column header text.
+        direction:
+          type: string
+          description: 'The new direction: ascending or descending.'
     selectAll: Select all rows
-    selectRow: Select {rowName}
-    selectedCount: '{count} of {total} selected'
+    selectRow:
+      text: Select {rowName}
+      params:
+        rowName:
+          type: string
+          description: The row's name from its row-header cell.
+    selectedCount:
+      text: '{count} of {total} selected'
+      params:
+        count:
+          type: number
+          description: How many rows are selected.
+        total:
+          type: number
+          description: How many rows the table has.
+    cellLabel:
+      text: '{column}: {value}'
+      params:
+        column:
+          type: string
+          description: The column header text.
+        value:
+          type: string
+          description: The cell's text.
     actions: Actions
     empty: Nothing to show.
     loading: Loading
     scrollHint: Scroll sideways to see more columns
-    rowCount: '{count} rows'
+    rowCount:
+      plural:
+        by: count
+        one: '{count} row'
+        other: '{count} rows'
+      params:
+        count:
+          type: number
+          description: How many rows the table has.
   a11y:
     role: table
     requires:
@@ -435,7 +541,7 @@ component:
     - foreground: color.control.selectedBackground
       background: color.background.subtle
       level: AA
-      large: true
+      nonText: true
   platforms:
     web:
       element: table
@@ -478,7 +584,8 @@ component:
       reflect:
       - selectable
       - responsive
-      - sticky-header
+      - prop: stickyHeader
+        attribute: no-sticky-header
       - max-height
       - density
       - striped
@@ -526,12 +633,257 @@ component:
         values in stacked mode (`copy.cellLabel`). Sort `Button`s, selection `Checkbox`es,
         `onRowPress` on the row `Button` — as documented. `maxHeight` scrolls vertically
         inside a `ScrollView` with a visible header `Grid` outside it.'
+  behavior:
+  - name: activating-a-sortable-header-reports-the-sort
+    description: The table shows the sort; the caller sorts the data, so the event
+      is the contract.
+    given:
+      columns:
+      - key: invoice
+        header: Invoice
+        isRowHeader: true
+      - key: amount
+        header: Amount
+        sortable: true
+        align: end
+      data:
+      - id: a
+        invoice: INV-1
+        amount: 100
+      - id: b
+        invoice: INV-2
+        amount: 200
+    when:
+      click: sortButton
+    then:
+    - event: onSortChange
+  - name: selecting-a-row-reports-every-selected-id
+    given:
+      selectable: multiple
+      columns:
+      - key: invoice
+        header: Invoice
+        isRowHeader: true
+      data:
+      - id: a
+        invoice: INV-1
+      - id: b
+        invoice: INV-2
+    when:
+      click: selectCell
+    then:
+    - event: onSelectionChange
+  - name: select-all-reports-the-whole-selection
+    description: multiple adds a select-all in the header; selection is row identity,
+      not a visual state.
+    given:
+      selectable: multiple
+      columns:
+      - key: invoice
+        header: Invoice
+        isRowHeader: true
+      data:
+      - id: a
+        invoice: INV-1
+      - id: b
+        invoice: INV-2
+    when:
+      click: selectAllCell
+    then:
+    - event: onSelectionChange
+  - name: the-empty-message-shows-when-there-are-no-rows
+    given:
+      columns:
+      - key: invoice
+        header: Invoice
+        isRowHeader: true
+      data: []
+    then:
+    - copy: empty
+  - name: a-custom-empty-message-replaces-the-default
+    given:
+      emptyMessage: No invoices yet.
+      columns:
+      - key: invoice
+        header: Invoice
+        isRowHeader: true
+      data: []
+    then:
+    - text: No invoices yet.
+  - name: loading-marks-the-table-busy
+    description: While data is being fetched the table is aria-busy and existing rows
+      stay visible.
+    given:
+      loading: true
+      columns:
+      - key: invoice
+        header: Invoice
+        isRowHeader: true
+      data:
+      - id: a
+        invoice: INV-1
+    then:
+    - attribute: aria-busy
+      is: 'true'
+    platforms:
+    - web
+  examples:
+  - name: open-invoices
+    description: The everyday content table, its caption naming what it lists.
+    given:
+      caption: Open invoices
+      columns:
+      - key: invoice
+        header: Invoice
+        isRowHeader: true
+      - key: due
+        header: Due
+      - key: amount
+        header: Amount
+        align: end
+        sortable: true
+      data:
+      - id: a
+        invoice: INV-1
+        due: 12 Sep
+        amount: 100
+      - id: b
+        invoice: INV-2
+        due: 19 Sep
+        amount: 200
+  - name: selectable-rows
+    description: A table whose rows can be picked in bulk, with a select-all in the
+      header.
+    given:
+      caption: Members
+      selectable: multiple
+      defaultSelected:
+      - a
+      columns:
+      - key: person
+        header: Person
+        isRowHeader: true
+      - key: role
+        header: Role
+      data:
+      - id: a
+        person: Ana Souza
+        role: Admin
+      - id: b
+        person: Bo Lin
+        role: Editor
+  - name: dense-data-table-that-scrolls
+    description: A wide data table that keeps its columns on narrow screens and scrolls
+      sideways instead of stacking.
+    given:
+      caption: Daily traffic
+      responsive: scroll
+      density: compact
+      maxHeight: viewport
+      columns:
+      - key: day
+        header: Day
+        isRowHeader: true
+      - key: visits
+        header: Visits
+        align: end
+      - key: signups
+        header: Signups
+        align: end
+      data:
+      - id: a
+        day: Monday
+        visits: 1200
+        signups: 30
+      - id: b
+        day: Tuesday
+        visits: 1450
+        signups: 41
+  - name: nothing-to-show
+    description: An empty table that says so in its own words rather than showing
+      an empty body.
+    given:
+      caption: Open invoices
+      emptyMessage: No invoices yet.
+      columns:
+      - key: invoice
+        header: Invoice
+        isRowHeader: true
+      data: []
 ```
+
+## Events
+
+- `onSortChange`: emit `onSortChange`
+  - payload, positional, in this order: `column: string`, `direction: 'ascending' | 'descending'`
+  - fires on: user
+- `onSelectionChange`: emit `onSelectionChange`
+  - payload, positional, in this order: `selected: string[]`
+  - fires on: user
+- `onRowPress`: emit `onRowPress`
+  - payload, positional, in this order: `id: string`
+  - fires on: user
 
 ## Controlled state
 
-- `sort` is controlled when given, uncontrolled from `defaultSort` when omitted; paired by name, so no event is declared
-- `selected` is controlled when given, uncontrolled from `defaultSelected` when omitted; paired by name, so no event is declared
+- `sort` is controlled when given, uncontrolled from `defaultSort` when omitted; changes reported by `onSortChange` (emit `onSortChange`)
+- `selected` is controlled when given, uncontrolled from `defaultSelected` when omitted; changes reported by `onSelectionChange` (emit `onSelectionChange`)
+
+## Style bindings
+
+- `headerSurface`: token `color.background.subtle`; part `header`; locked
+- `headerColor`: token `color.foreground`; part `header`; locked
+- `headerWeight`: token `font.weight.semibold`; part `header`
+- `headerSize`: token `font.size.sm`; part `header`
+- `headerBorder`: token `color.border.strong`; part `header`
+- `headerBorderWidth`: token `border.width.thin`; part `header`
+- `headerShadow`: token `shadow.raised`; part `header`
+- `rowBorder`: token `color.border`; part `row`
+- `rowBorderWidth`: token `border.width.thin`; part `row`
+- `rowStripe`: token `color.background.subtle`; part `row`; locked
+- `rowHover`: token `color.action.ghost.backgroundHover`; part `row`; state `hover`
+- `rowSelected`: token `color.background.subtle`; part `row`; locked
+- `rowSelectedBorder`: token `color.control.selectedBackground`; part `row`; locked
+- `rowSelectedBorderWidth`: token `border.width.focus`; part `row`; locked
+- `cellColor`: token `color.foreground`; part `cell`; locked
+- `cellMutedColor`: token `color.foreground.muted`; part `cell`; locked
+- `cellPaddingInline`: token `layout.inset.md`; part `cell`
+- `cellPaddingInlineCompact`: token `layout.inset.sm`; part `cell`
+- `cellPaddingBlock`: token `space.sm`; part `cell`
+- `cellGap`: token `layout.gap.tight`; part `cell`
+- `captionSize`: token `font.size.md`; part `caption`
+- `captionWeight`: token `font.weight.semibold`; part `caption`
+- `captionGap`: token `space.2`; part `caption`
+- `stackedLabelColor`: token `color.foreground.muted`; part `stackedLabel`; locked
+- `stackedLabelSize`: token `font.size.xs`; part `stackedLabel`
+- `stackedLabelWeight`: token `font.weight.medium`; part `stackedLabel`
+
+## Keyboard
+
+- `Enter`, ` ` (On a sort button, sorts; on a row checkbox, toggles; on a row header button, activates the row.): expect manual; native: the rendered element already does this
+
+## Copy
+
+- `sortToolbarLabel`: "Sort {caption}"
+- `sortAscending`: "Sort by {column}, ascending"; params `column` (string)
+- `sortDescending`: "Sort by {column}, descending"; params `column` (string)
+- `sortedAnnouncement`: "Sorted by {column}, {direction}"; params `column` (string), `direction` (string)
+- `selectAll`: "Select all rows"
+- `selectRow`: "Select {rowName}"; params `rowName` (string)
+- `selectedCount`: "{count} of {total} selected"; params `count` (number), `total` (number)
+- `cellLabel`: "{column}: {value}"; params `column` (string), `value` (string)
+- `actions`: "Actions"
+- `empty`: "Nothing to show."
+- `loading`: "Loading"
+- `scrollHint`: "Scroll sideways to see more columns"
+- `rowCount`: "{count} rows"; params `count` (number); plural by `count`: one "{count} row", other "{count} rows"
+
+## Constants and examples
+
+- example `open-invoices`, story `OpenInvoices`: given `caption: "Open invoices"`, `columns: [{"key":"invoice","header":"Invoice","isRowHeader":true},{"key":"due","header":"Due"},{"key":"amount","header":"Amount","align":"end","sortable":true}]`, `data: [{"id":"a","invoice":"INV-1","due":"12 Sep","amount":100},{"id":"b","invoice":"INV-2","due":"19 Sep","amount":200}]`; The everyday content table, its caption naming what it lists.
+- example `selectable-rows`, story `SelectableRows`: given `caption: "Members"`, `selectable: "multiple"`, `defaultSelected: ["a"]`, `columns: [{"key":"person","header":"Person","isRowHeader":true},{"key":"role","header":"Role"}]`, `data: [{"id":"a","person":"Ana Souza","role":"Admin"},{"id":"b","person":"Bo Lin","role":"Editor"}]`; A table whose rows can be picked in bulk, with a select-all in the header.
+- example `dense-data-table-that-scrolls`, story `DenseDataTableThatScrolls`: given `caption: "Daily traffic"`, `responsive: "scroll"`, `density: "compact"`, `maxHeight: "viewport"`, `columns: [{"key":"day","header":"Day","isRowHeader":true},{"key":"visits","header":"Visits","align":"end"},{"key":"signups","header":"Signups","align":"end"}]`, `data: [{"id":"a","day":"Monday","visits":1200,"signups":30},{"id":"b","day":"Tuesday","visits":1450,"signups":41}]`; A wide data table that keeps its columns on narrow screens and scrolls sideways instead of stacking.
+- example `nothing-to-show`, story `NothingToShow`: given `caption: "Open invoices"`, `emptyMessage: "No invoices yet."`, `columns: [{"key":"invoice","header":"Invoice","isRowHeader":true}]`, `data: []`; An empty table that says so in its own words rather than showing an empty body.
 
 ## Overrides (per-instance styling contract)
 
@@ -609,11 +961,87 @@ Phones: `FlatList` (`accessibilityRole="list"`, `accessibilityLabel={caption}`) 
 
 DataGrid, Card, Checkbox, Toolbar, Meter, Text, Link.
 
-## Behavior scenarios (14)
+## Behavior scenarios (19)
 
 One test per scenario, in this order.
 
 ```yaml
+- name: activating-a-sortable-header-reports-the-sort
+  description: The table shows the sort; the caller sorts the data, so the event is
+    the contract.
+  given:
+    columns:
+    - key: invoice
+      header: Invoice
+      isRowHeader: true
+    - key: amount
+      header: Amount
+      sortable: true
+      align: end
+    data:
+    - id: a
+      invoice: INV-1
+      amount: 100
+    - id: b
+      invoice: INV-2
+      amount: 200
+  when:
+    click: sortButton
+  then:
+  - event: onSortChange
+- name: selecting-a-row-reports-every-selected-id
+  given:
+    selectable: multiple
+    columns:
+    - key: invoice
+      header: Invoice
+      isRowHeader: true
+    data:
+    - id: a
+      invoice: INV-1
+    - id: b
+      invoice: INV-2
+  when:
+    click: selectCell
+  then:
+  - event: onSelectionChange
+- name: select-all-reports-the-whole-selection
+  description: multiple adds a select-all in the header; selection is row identity,
+    not a visual state.
+  given:
+    selectable: multiple
+    columns:
+    - key: invoice
+      header: Invoice
+      isRowHeader: true
+    data:
+    - id: a
+      invoice: INV-1
+    - id: b
+      invoice: INV-2
+  when:
+    click: selectAllCell
+  then:
+  - event: onSelectionChange
+- name: the-empty-message-shows-when-there-are-no-rows
+  given:
+    columns:
+    - key: invoice
+      header: Invoice
+      isRowHeader: true
+    data: []
+  then:
+  - copy: empty
+- name: a-custom-empty-message-replaces-the-default
+  given:
+    emptyMessage: No invoices yet.
+    columns:
+    - key: invoice
+      header: Invoice
+      isRowHeader: true
+    data: []
+  then:
+  - text: No invoices yet.
 - name: renders
   then:
   - renders: true

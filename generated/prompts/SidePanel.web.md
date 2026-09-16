@@ -76,6 +76,11 @@ component:
     closeButton: Button
     body: Box
     footer: Stack
+  parts:
+    trigger:
+      kind: slot
+      slot:
+        prop: trigger
   props:
     trigger:
       type: content
@@ -87,6 +92,9 @@ component:
       type: boolean
       description: Controlled visibility. Omit for uncontrolled (the trigger toggles
         it).
+      controls:
+        event: onOpenChange
+        state: open
     heading:
       type: string
       required: true
@@ -186,6 +194,32 @@ component:
         lit: open-change
         rn: onOpenChange
         swiftui: onOpenChange
+      payload:
+      - name: open
+        type: boolean
+        description: The new state of the panel.
+      - name: reason
+        type: enum
+        values:
+        - trigger
+        - escape
+        - close-button
+        - scrim
+        - swipe
+        - action
+        - navigation
+      reasons:
+        trigger: the trigger was activated
+        escape: Escape pressed while open
+        close-button: the close button was activated
+        scrim: the scrim was clicked
+        swipe: the panel was swiped away
+        action: a footer action asked to close
+        navigation: a Link inside the panel was followed
+      fires:
+      - user
+      timing:
+        phase: after-change
   keyboard:
   - keys:
     - Enter
@@ -209,7 +243,10 @@ component:
       sidebar ignores it).
     when: open
     from: inside
-    expect: closes
+    expect:
+    - closes
+    - focus-trigger
+    target: surface
   - keys:
     - Shift+Tab
     action: 'Non-modal: from the first element in the panel, returns to the trigger
@@ -220,9 +257,11 @@ component:
   styles:
     scrim:
       token: color.overlay.scrim
+      part: scrim
       locked: false
     surface:
       token: color.overlay.surface
+      part: surface
       locked: true
     shadow:
       token: shadow.overlay
@@ -243,8 +282,8 @@ component:
       locked: false
     widthNarrow:
       token: space.20
-      description: Multiplied by 3 — the doc states the arithmetic so no literal appears
-        in code.
+      computed:
+        times: 3
       locked: false
     widthWide:
       token: layout.maxWidth.content
@@ -259,6 +298,7 @@ component:
       locked: false
     headerGap:
       token: layout.gap.normal
+      part: header
       description: Between title and close button.
       locked: false
     partGap:
@@ -267,6 +307,7 @@ component:
       locked: false
     footerGap:
       token: layout.gap.tight
+      part: footer
       locked: false
     layer:
       token: layer.sheet
@@ -289,6 +330,17 @@ component:
       locked: true
   copy:
     closeLabel: Close
+    expanded: Expanded
+  overlay:
+    layer: sheet
+    open: open
+    closeEvent: onOpenChange
+    dismiss:
+    - escape
+    - scrim
+    - close-button
+    - swipe
+    modal: false
   a11y:
     role: none
     requires:
@@ -356,8 +408,10 @@ component:
       - side
       - width
       - persistent
-      - dismissible
-      - swipeable
+      - prop: dismissible
+        attribute: no-dismiss
+      - prop: swipeable
+        attribute: no-swipeable
       notes: 'Slots `trigger`, default and `footer`. Shadow <dialog> for overlay mode;
         in persistent mode the host itself lays out as the sidebar (display: block
         in the parent grid) and the slotted content renders in an <aside> in the shadow
@@ -404,7 +458,155 @@ component:
         FocusScope trap and `.isModal`; non-modal panels push content aside (`inline`)
         or overlay it without a scrim. Edge-swipe to close is an addition to the visible
         close `Button`.
+  behavior:
+  - name: close-button-fires-on-open-change
+    description: The close button requests close; the consumer flips `open` when it
+      is controlled.
+    given:
+      open: true
+    when:
+      click: closeButton
+    then:
+    - event: onOpenChange
+  - name: the-close-button-works-without-the-swipe
+    description: The swipe is purely additive — the trigger and close button always
+      exist (WCAG 2.5.1, gesture-alternative).
+    given:
+      open: true
+      swipeable: false
+    when:
+      click: closeButton
+    then:
+    - event: onOpenChange
+  - name: non-dismissible-still-reports-escape
+    description: With `dismissible` false the close button is not rendered and taps
+      outside do nothing; Escape still reports with reason escape, as in Dialog.
+    given:
+      open: true
+      dismissible: false
+    when:
+      key: Escape
+    then:
+    - event: onOpenChange
+    platforms:
+    - web
+    - lit
+  - name: non-dismissible-scrim-tap-does-nothing
+    given:
+      open: true
+      dismissible: false
+    when:
+      click: scrim
+    then:
+    - event: onOpenChange
+      fired: false
+  - name: the-heading-is-rendered
+    description: The title names what the panel holds and is shown unless hideHeading.
+    given:
+      open: true
+      heading: Your cart
+    then:
+    - text: Your cart
+  examples:
+  - name: navigation-drawer
+    description: The phone hamburger menu that becomes the permanent sidebar on desktop,
+      with a self-explanatory list.
+    given:
+      trigger: An icon-only Button with the menu Icon, labelled Menu
+      heading: Menu
+      children: A List of navigation Links with the current page marked
+      hideHeading: true
+      role: navigation
+      persistent: content
+  - name: filters
+    description: A wide filter panel beside a results page, ending in an action row.
+    given:
+      trigger: A Filters Button
+      heading: Filters
+      children: A Form of filter controls
+      footer: Clear and Apply Buttons
+      width: wide
+  - name: cart
+    description: A checkout panel from the end edge that must be finished or dismissed,
+      so it is modal.
+    given:
+      open: true
+      heading: Your cart
+      children: A Stack of line-item Cards
+      footer: A Checkout Button
+      side: end
+      modal: true
+  - name: detail-panel
+    description: A narrow detail panel that should feel like part of the page, so
+      it has no scrim.
+    given:
+      open: true
+      heading: Order details
+      children: A Stack of labelled values for the selected order
+      side: end
+      width: narrow
+      scrim: false
 ```
+
+## Events
+
+- `onOpenChange`: emit `onOpenChange`
+  - payload, positional, in this order: `open: boolean`, `reason: 'trigger' | 'escape' | 'close-button' | 'scrim' | 'swipe' | 'action' | 'navigation'`
+  - reasons: `trigger` (the trigger was activated); `escape` (Escape pressed while open); `close-button` (the close button was activated); `scrim` (the scrim was clicked); `swipe` (the panel was swiped away); `action` (a footer action asked to close); `navigation` (a Link inside the panel was followed)
+  - fires on: user
+  - timing: after-change
+
+## Controlled state
+
+- `open` is controlled when given, uncontrolled from its initial state when omitted; changes reported by `onOpenChange` (emit `onOpenChange`); drives state `open`
+
+## Parts and slots
+
+- `trigger`: slot, prop `trigger`
+- `scrim`: element
+- `surface`: element
+- `focusScope`: component `FocusScope`
+- `header`: element
+- `heading`: component `Heading`
+- `body`: component `Box`
+- `footer`: component `Stack`
+- `closeButton`: component `Button`
+
+## Style bindings
+
+- `scrim`: token `color.overlay.scrim`; part `scrim`
+- `surface`: token `color.overlay.surface`; part `surface`; locked
+- `widthNarrow`: token `space.20`; computed `calc(var(--space-20) * 3)`
+- `headerGap`: token `layout.gap.normal`; part `header`
+- `footerGap`: token `layout.gap.tight`; part `footer`
+
+## Keyboard
+
+- `Escape` (Closes and returns focus to the trigger (from inside the panel; a persistent sidebar ignores it).): expect closes, then focus-trigger; target part `surface`
+
+## Form and overlay
+
+```yaml
+overlay:
+  layer: sheet
+  open: open
+  closeEvent: onOpenChange
+  dismiss:
+  - escape
+  - scrim
+  - close-button
+  - swipe
+  modal: false
+```
+
+`overlay.closeEvent` emits `onOpenChange`.
+
+## Constants and examples
+
+- example `navigation-drawer`, story `NavigationDrawer`: given `trigger: "An icon-only Button with the menu Icon, labelled Menu"`, `heading: "Menu"`, `children: "A List of navigation Links with the current page marked"`, `hideHeading: true`, `role: "navigation"`, `persistent: "content"`; The phone hamburger menu that becomes the permanent sidebar on desktop, with a self-explanatory list.
+- example `filters`, story `Filters`: given `trigger: "A Filters Button"`, `heading: "Filters"`, `children: "A Form of filter controls"`, `footer: "Clear and Apply Buttons"`, `width: "wide"`; A wide filter panel beside a results page, ending in an action row.
+- example `cart`, story `Cart`: given `open: true`, `heading: "Your cart"`, `children: "A Stack of line-item Cards"`, `footer: "A Checkout Button"`, `side: "end"`, `modal: true`; A checkout panel from the end edge that must be finished or dismissed, so it is modal.
+- example `detail-panel`, story `DetailPanel`: given `open: true`, `heading: "Order details"`, `children: "A Stack of labelled values for the selected order"`, `side: "end"`, `width: "narrow"`, `scrim: false`; A narrow detail panel that should feel like part of the page, so it has no scrim.
 
 ## Overrides (per-instance styling contract)
 
@@ -417,11 +619,59 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `scrim`, `shadow`, `border`, `borderWidth`, `width`, `widthNarrow`, `widthWide`, `edgeGutter`, `inset`, `headerGap`, `partGap`, `footerGap`, `layer`, `enter`, `exit`
 Locked (accessibility-bearing, never overridable): `surface`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (12)
+## Behavior scenarios (18)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: close-button-fires-on-open-change
+  description: The close button requests close; the consumer flips `open` when it
+    is controlled.
+  given:
+    open: true
+  when:
+    click: closeButton
+  then:
+  - event: onOpenChange
+- name: the-close-button-works-without-the-swipe
+  description: The swipe is purely additive — the trigger and close button always
+    exist (WCAG 2.5.1, gesture-alternative).
+  given:
+    open: true
+    swipeable: false
+  when:
+    click: closeButton
+  then:
+  - event: onOpenChange
+- name: non-dismissible-still-reports-escape
+  description: With `dismissible` false the close button is not rendered and taps
+    outside do nothing; Escape still reports with reason escape, as in Dialog.
+  given:
+    open: true
+    dismissible: false
+  when:
+    key: Escape
+  then:
+  - event: onOpenChange
+  platforms:
+  - web
+  - lit
+- name: non-dismissible-scrim-tap-does-nothing
+  given:
+    open: true
+    dismissible: false
+  when:
+    click: scrim
+  then:
+  - event: onOpenChange
+    fired: false
+- name: the-heading-is-rendered
+  description: The title names what the panel holds and is shown unless hideHeading.
+  given:
+    open: true
+    heading: Your cart
+  then:
+  - text: Your cart
 - name: renders
   then:
   - renders: true
@@ -489,6 +739,18 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
 - name: has-accessible-name
   then:
   - name: true
+  derived: true
+- name: escape-fires-on-open-change
+  given:
+    open: true
+  when:
+    key: Escape
+  then:
+  - event: onOpenChange
+  platforms:
+  - lit
+  - swiftui
+  - web
   derived: true
 ```
 

@@ -28,6 +28,10 @@ component:
     checked:
       type: boolean
       description: Controlled checked state. Omit for an uncontrolled control.
+      controls:
+        event: onChange
+        default: defaultChecked
+        state: checked
     defaultChecked:
       type: boolean
       default: false
@@ -61,24 +65,27 @@ component:
     onChange:
       description: Fired when the checked state changes, with the new boolean.
       platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
+      payload:
+        - { name: checked, type: boolean, description: The new checked state. }
+      fires: [user]
   styles:
-    controlBackground: { token: color.control.background }
-    controlBorder: { token: color.control.border }
-    controlBorderWidth: { token: border.width.thin }
-    controlSelectedBackground: { token: color.control.selectedBackground, description: 'Checked and indeterminate fill; the border takes the same color.' }
-    indicator: { token: color.control.selectedForeground, description: 'The check mark (`Icon name="check"`) and the mixed dash (`Icon name="dash"`) in this color, at `size: xs`, centered in the control. On web/Lit the Icon is inside the control element; the indicator has no separate DOM node to hook, so tests target the control.' }
-    indicatorStroke: { token: border.width.focus, description: 'Stroke thickness of the check mark and dash.' }
-    pressedOverlay: { token: opacity.disabled, description: 'While pressed, the box shows controlSelectedBackground at this opacity.' }
-    controlBorderInvalid: { token: color.border.danger }
-    controlSize: { token: space.5 }
-    controlRadius: { token: radius.sm }
+    controlBackground: { token: color.control.background, part: control }
+    controlBorder: { token: color.control.border, part: control }
+    controlBorderWidth: { token: border.width.thin, part: control }
+    controlSelectedBackground: { token: color.control.selectedBackground, part: control, description: 'Checked and indeterminate fill; the border takes the same color.' }
+    indicator: { token: color.control.selectedForeground, part: indicator, description: 'The check mark (`Icon name="check"`) and the mixed dash (`Icon name="dash"`) in this color, at `size: xs`, centered in the control. On web/Lit the Icon is inside the control element; the indicator has no separate DOM node to hook, so tests target the control.' }
+    indicatorStroke: { token: border.width.focus, part: indicator, description: 'Stroke thickness of the check mark and dash.' }
+    pressedOverlay: { token: opacity.disabled, state: pressed, description: 'While pressed, the box shows controlSelectedBackground at this opacity.' }
+    controlBorderInvalid: { token: color.border.danger, part: control }
+    controlSize: { token: space.5, part: control }
+    controlRadius: { token: radius.sm, part: control }
     gap: { token: space.2, description: Horizontal gap between control and label. }
     partGap: { token: space.1, description: 'Vertical gap between label, description, and error.' }
-    labelColor: { token: color.foreground }
-    labelSize: { token: font.size.md }
-    labelWeight: { token: font.weight.regular }
+    labelColor: { token: color.foreground, part: label }
+    labelSize: { token: font.size.md, part: label }
+    labelWeight: { token: font.weight.regular, part: label }
     helperSize: { token: font.size.sm }
-    descriptionText: { token: color.foreground.muted }
+    descriptionText: { token: color.foreground.muted, part: description }
     errorText: { token: color.foreground.danger }
     fontFamily: { token: font.family.body }
     lineHeight: { token: font.lineHeight.normal }
@@ -91,16 +98,27 @@ component:
     required: '{label} is required.'
     invalid: '{label} is not valid.'
     requiredIndicator: ' (required)'
+    checked: Checked
+    unchecked: Unchecked
+    mixed: Mixed
   a11y:
     role: checkbox
     requires: [label-association, error-identification, focus-visible, keyboard-operable, target-24px, contrast-aa]
     contrast:
       - { foreground: color.control.selectedForeground, background: color.control.selectedBackground, level: AA }
-      - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }
-      - { foreground: color.control.border, background: color.background, level: AA, large: true }
+      - { foreground: color.control.selectedBackground, background: color.background, level: AA, nonText: true }
+      - { foreground: color.control.border, background: color.background, level: AA, nonText: true }
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }
       - { foreground: color.foreground.danger, background: color.background, level: AA }
+  form:
+    role: field
+    value: checked
+    valueType: boolean
+    name: name
+    validation: [required, invalid]
+    messages: { required: required, invalid: invalid }
+    discovery: context
   platforms:
     web:
       element: input
@@ -191,6 +209,24 @@ component:
         - { event: onChange, with: true }
         - { state: checked, is: false }
       platforms: [web, rn]
+    - name: hidden-label-is-still-the-accessible-name
+      description: hideLabel removes the label from view, not from the accessible name.
+      given: { hideLabel: true }
+      then:
+        - { name: true }
+  examples:
+    - name: consent
+      description: A required consent checkbox whose label is the agreement itself.
+      given: { label: 'I accept the terms of service', name: 'terms', required: true }
+    - name: select-all-parent
+      description: A "select all" parent showing the mixed indicator while only some children are checked.
+      given: { label: 'Select all', name: 'selectAll', indeterminate: true }
+    - name: with-description
+      description: An option whose scope needs one line of explanation under the label.
+      given: { label: 'Send me product updates', name: 'updates', description: 'One email a month about new features.' }
+    - name: selection-column
+      description: A row selection checkbox in a Table, where the row name is the hidden label.
+      given: { label: 'Select row', name: 'select', hideLabel: true }
 ---
 
 A checkbox is a single yes/no choice that the user makes and then submits, as opposed to a Switch, which takes effect the moment it is flipped. Groups of checkboxes are a multi-select; a single checkbox is consent, an agreement, or an option.

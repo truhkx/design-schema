@@ -29,12 +29,31 @@ function setup(given: Partial<InputProps> = {}) {
     props,
     root: () => screen.queryByTestId('Input') ?? screen.UNSAFE_root,
     label: () => screen.queryByRole('textbox') ?? s.root(),
+    field: () => screen.queryByTestId('Input.field') ?? s.root(),
     rerender: (next: Partial<InputProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Input', () => {
+  test('typing-reports-the-new-value', () => {
+    const s = setup({});
+    fireEvent.changeText(s.label(), "a");
+    expect(s.events.onChange).toHaveBeenCalledWith("a");
+  });
+  test('focus-is-reported', () => {
+    const s = setup({});
+    fireEvent(s.field(), 'focus');
+    expect(s.events.onFocus).toHaveBeenCalled();
+  });
+  test('required-is-shown-in-the-label', () => {
+    const s = setup({"required": true});
+    expect(screen.getByText(new RegExp("\\(required\\)"))).toBeOnTheScreen();
+  });
+  test('disabled-stays-focusable-and-is-announced', () => {
+    const s = setup({"disabled": true});
+    expect(s.label()).toBeDisabled();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

@@ -24,12 +24,25 @@ function setup(given: Partial<AccordionProps> = {}) {
     props,
     root: () => screen.queryByTestId('Accordion') ?? screen.UNSAFE_root,
     list: () => s.root(),
+    trigger: () => screen.queryByTestId('Accordion.trigger') ?? s.root(),
     rerender: (next: Partial<AccordionProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Accordion', () => {
+  test('click-on-a-trigger-reports-the-open-set', () => {
+    const s = setup({});
+    fireEvent.press(s.trigger());
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('exclusive-still-reports-both-events', () => {
+    const s = setup({"exclusive": true});
+    fireEvent.press(s.trigger());
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

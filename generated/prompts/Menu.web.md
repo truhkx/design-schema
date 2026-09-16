@@ -125,6 +125,9 @@ component:
       type: boolean
       description: Controlled open state (the parent flips it from onOpenChange).
         Omit for an uncontrolled menu.
+      controls:
+        event: onOpenChange
+        state: open
     anchor:
       type: object
       shape: RefObject<HTMLElement | View>
@@ -139,6 +142,12 @@ component:
         lit: action
         rn: onAction
         swiftui: onAction
+      payload:
+      - name: id
+        type: string
+        description: The id of the chosen item.
+      fires:
+      - user
     onOpenChange:
       description: 'Fired when the menu opens or closes, with `{ open, reason }` —
         reason: `trigger`, `escape`, `outside`, `action` (an item was chosen; fired
@@ -148,6 +157,31 @@ component:
         lit: open-change
         rn: onOpenChange
         swiftui: onOpenChange
+      payload:
+      - name: open
+        type: boolean
+        description: The new state of the menu.
+      - name: reason
+        type: enum
+        values:
+        - trigger
+        - escape
+        - outside
+        - action
+        - controlled
+      reasons:
+        trigger: the trigger was activated
+        escape: Escape pressed while open
+        outside: a pointer press landed outside the menu
+        action: an item was chosen
+        controlled: the consumer changed the open prop
+      fires:
+      - user
+      - controlled
+      timing:
+        phase: after-change
+        before:
+        - onAction
   keyboard:
   - keys:
     - Enter
@@ -205,7 +239,9 @@ component:
     action: Closes and returns focus to the trigger.
     when: menu open
     from: inside
-    expect: focus-trigger
+    expect:
+    - closes
+    - focus-trigger
   - keys:
     - Tab
     - Shift+Tab
@@ -238,11 +274,13 @@ component:
       locked: false
     popupPadding:
       token: space.1
+      part: popup
       description: Inset around the list so item hover backgrounds do not touch the
         border.
       locked: false
     popupOffset:
       token: space.1
+      part: popup
       description: Gap between trigger and popup.
       locked: false
     typeaheadReset:
@@ -257,40 +295,52 @@ component:
       locked: false
     minWidth:
       token: space.20
-      description: Popup is at least this wide (space.20 × 2.5, i.e. 200px at comfortable
-        density — the generator multiplies; no new token) and at least the trigger
-        width.
+      computed:
+        times: 2.5
+      description: Popup is at least this wide (200px at comfortable density) and
+        at least the trigger width.
       locked: false
     itemPaddingBlock:
       token: space.sm
+      part: item
       locked: false
     itemPaddingInline:
       token: space.md
+      part: item
       locked: false
     itemGap:
       token: layout.gap.normal
+      part: item
       locked: false
     itemRadius:
       token: radius.sm
+      part: item
       locked: false
     itemHover:
       token: color.background.subtle
+      part: item
+      state: hover
       description: Pointer hover and keyboard focus share this highlight.
       locked: true
     itemColor:
       token: color.foreground
+      part: item
       locked: true
     itemDangerColor:
       token: color.foreground.danger
+      part: item
       locked: true
     groupLabelColor:
       token: color.foreground.muted
+      part: groupLabel
       locked: true
     groupLabelSize:
       token: font.size.xs
+      part: groupLabel
       locked: false
     groupLabelWeight:
       token: font.weight.semibold
+      part: groupLabel
       locked: false
     shortcutColor:
       token: color.foreground.muted
@@ -300,9 +350,11 @@ component:
       locked: false
     separator:
       token: color.border
+      part: separator
       locked: false
     separatorMargin:
       token: space.1
+      part: separator
       locked: false
     fontFamily:
       token: font.family.body
@@ -329,6 +381,18 @@ component:
     focusRingWidth:
       token: border.width.focus
       locked: true
+  overlay:
+    layer: popover
+    anchor: trigger
+    placement: placement
+    collision: flip
+    open: open
+    closeEvent: onOpenChange
+    dismiss:
+    - escape
+    - outside-press
+    - focus-out
+    modal: false
   a11y:
     role: menu
     requires:
@@ -431,7 +495,197 @@ component:
         doc). `onOpenChange` fires from the label''s press and the menu''s dismissal
         via `.onChange` of a presentation binding on the wrapper. `trigger: contextMenu`
         uses `.contextMenu`.'
+  behavior:
+  - name: choosing-an-item-reports-the-action-and-the-close
+    description: Activating an item closes the menu and fires onAction; onOpenChange
+      precedes it with reason action.
+    given:
+      open: true
+      label: More actions
+      items:
+      - id: rename
+        label: Rename
+      - id: duplicate
+        label: Duplicate
+    when:
+      click: item
+    then:
+    - event: onAction
+    - event: onOpenChange
+  - name: a-disabled-item-does-nothing
+    description: Disabled items are visible and announced disabled, and do nothing
+      on click.
+    given:
+      open: true
+      label: More actions
+      items:
+      - id: rename
+        label: Rename
+        disabled: true
+      - id: duplicate
+        label: Duplicate
+    when:
+      click: item
+    then:
+    - event: onAction
+      fired: false
+  - name: escape-closes-without-choosing
+    description: Escape closes and returns focus to the trigger without activating
+      anything (keyboard rule 9).
+    given:
+      open: true
+      label: More actions
+      items:
+      - id: rename
+        label: Rename
+      - id: duplicate
+        label: Duplicate
+    when:
+      key: Escape
+    then:
+    - event: onAction
+      fired: false
+    platforms:
+    - web
+    - lit
+  - name: the-popup-is-a-menu
+    description: The popup is a menu of menuitems named by the trigger (APG menu button),
+      not a list of buttons.
+    given:
+      open: true
+      label: More actions
+      items:
+      - id: rename
+        label: Rename
+    then:
+    - role: menu
+  examples:
+  - name: row-overflow
+    description: The icon-only overflow button on a row, with the destructive action
+      last after a separator.
+    given:
+      label: More actions
+      iconOnly: true
+      triggerIcon: ellipsis
+      items:
+      - id: rename
+        label: Rename
+      - id: duplicate
+        label: Duplicate
+      - separator: true
+      - id: delete
+        label: Delete file
+        tone: danger
+  - name: sort-by
+    description: A labelled dropdown of view options, anchored under a secondary trigger.
+    given:
+      label: Sort by
+      triggerVariant: secondary
+      triggerIcon: chevron-down
+      items:
+      - id: name
+        label: Name
+      - id: modified
+        label: Last modified
+      - id: size
+        label: Size
+  - name: grouped-account-menu
+    description: More than about six items, so they are grouped with labels; aligned
+      to the end of the trigger.
+    given:
+      label: Account
+      placement: bottom-end
+      items:
+      - group: Account
+        items:
+        - id: profile
+          label: Profile
+        - id: billing
+          label: Billing
+      - group: Workspace
+        items:
+        - id: members
+          label: Members
+        - id: settings
+          label: Settings
+      - separator: true
+      - id: sign-out
+        label: Sign out
+  - name: with-shortcuts
+    description: Display-only shortcut hints beside the items the app binds elsewhere.
+    given:
+      label: Edit
+      items:
+      - id: undo
+        label: Undo
+        shortcut: Ctrl+Z
+      - id: redo
+        label: Redo
+        shortcut: Ctrl+Shift+Z
 ```
+
+## Events
+
+- `onAction`: emit `onAction`
+  - payload, positional, in this order: `id: string`
+  - fires on: user
+- `onOpenChange`: emit `onOpenChange`
+  - payload, positional, in this order: `open: boolean`, `reason: 'trigger' | 'escape' | 'outside' | 'action' | 'controlled'`
+  - reasons: `trigger` (the trigger was activated); `escape` (Escape pressed while open); `outside` (a pointer press landed outside the menu); `action` (an item was chosen); `controlled` (the consumer changed the open prop)
+  - fires on: user, controlled
+  - timing: after-change, fired before `onAction`
+
+## Controlled state
+
+- `open` is controlled when given, uncontrolled from its initial state when omitted; changes reported by `onOpenChange` (emit `onOpenChange`); drives state `open`
+
+## Style bindings
+
+- `popupPadding`: token `space.1`; part `popup`
+- `popupOffset`: token `space.1`; part `popup`
+- `minWidth`: token `space.20`; computed `calc(var(--space-20) * 2.5)`
+- `itemPaddingBlock`: token `space.sm`; part `item`
+- `itemPaddingInline`: token `space.md`; part `item`
+- `itemGap`: token `layout.gap.normal`; part `item`
+- `itemRadius`: token `radius.sm`; part `item`
+- `itemHover`: token `color.background.subtle`; part `item`; state `hover`; locked
+- `itemColor`: token `color.foreground`; part `item`; locked
+- `itemDangerColor`: token `color.foreground.danger`; part `item`; locked
+- `groupLabelColor`: token `color.foreground.muted`; part `groupLabel`; locked
+- `groupLabelSize`: token `font.size.xs`; part `groupLabel`
+- `groupLabelWeight`: token `font.weight.semibold`; part `groupLabel`
+- `separator`: token `color.border`; part `separator`
+- `separatorMargin`: token `space.1`; part `separator`
+
+## Keyboard
+
+- `Escape` (Closes and returns focus to the trigger.): expect closes, then focus-trigger
+
+## Form and overlay
+
+```yaml
+overlay:
+  layer: popover
+  anchor: trigger
+  placement: placement
+  collision: flip
+  open: open
+  closeEvent: onOpenChange
+  dismiss:
+  - escape
+  - outside-press
+  - focus-out
+  modal: false
+```
+
+`overlay.closeEvent` emits `onOpenChange`.
+
+## Constants and examples
+
+- example `row-overflow`, story `RowOverflow`: given `label: "More actions"`, `iconOnly: true`, `triggerIcon: "ellipsis"`, `items: [{"id":"rename","label":"Rename"},{"id":"duplicate","label":"Duplicate"},{"separator":true},{"id":"delete","label":"Delete file","tone":"danger"}]`; The icon-only overflow button on a row, with the destructive action last after a separator.
+- example `sort-by`, story `SortBy`: given `label: "Sort by"`, `triggerVariant: "secondary"`, `triggerIcon: "chevron-down"`, `items: [{"id":"name","label":"Name"},{"id":"modified","label":"Last modified"},{"id":"size","label":"Size"}]`; A labelled dropdown of view options, anchored under a secondary trigger.
+- example `grouped-account-menu`, story `GroupedAccountMenu`: given `label: "Account"`, `placement: "bottom-end"`, `items: [{"group":"Account","items":[{"id":"profile","label":"Profile"},{"id":"billing","label":"Billing"}]},{"group":"Workspace","items":[{"id":"members","label":"Members"},{"id":"settings","label":"Settings"}]},{"separator":true},{"id":"sign-out","label":"Sign out"}]`; More than about six items, so they are grouped with labels; aligned to the end of the trigger.
+- example `with-shortcuts`, story `WithShortcuts`: given `label: "Edit"`, `items: [{"id":"undo","label":"Undo","shortcut":"Ctrl+Z"},{"id":"redo","label":"Redo","shortcut":"Ctrl+Shift+Z"}]`; Display-only shortcut hints beside the items the app binds elsewhere.
 
 ## Overrides (per-instance styling contract)
 
@@ -444,11 +698,74 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `border`, `borderWidth`, `shadow`, `radius`, `popupPadding`, `popupOffset`, `typeaheadReset`, `maxHeight`, `minWidth`, `itemPaddingBlock`, `itemPaddingInline`, `itemGap`, `itemRadius`, `groupLabelSize`, `groupLabelWeight`, `shortcutSize`, `separator`, `separatorMargin`, `fontFamily`, `fontSize`, `lineHeight`, `layer`, `enter`
 Locked (accessibility-bearing, never overridable): `surface`, `itemHover`, `itemColor`, `itemDangerColor`, `groupLabelColor`, `shortcutColor`, `minTarget`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (12)
+## Behavior scenarios (17)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: choosing-an-item-reports-the-action-and-the-close
+  description: Activating an item closes the menu and fires onAction; onOpenChange
+    precedes it with reason action.
+  given:
+    open: true
+    label: More actions
+    items:
+    - id: rename
+      label: Rename
+    - id: duplicate
+      label: Duplicate
+  when:
+    click: item
+  then:
+  - event: onAction
+  - event: onOpenChange
+- name: a-disabled-item-does-nothing
+  description: Disabled items are visible and announced disabled, and do nothing on
+    click.
+  given:
+    open: true
+    label: More actions
+    items:
+    - id: rename
+      label: Rename
+      disabled: true
+    - id: duplicate
+      label: Duplicate
+  when:
+    click: item
+  then:
+  - event: onAction
+    fired: false
+- name: escape-closes-without-choosing
+  description: Escape closes and returns focus to the trigger without activating anything
+    (keyboard rule 9).
+  given:
+    open: true
+    label: More actions
+    items:
+    - id: rename
+      label: Rename
+    - id: duplicate
+      label: Duplicate
+  when:
+    key: Escape
+  then:
+  - event: onAction
+    fired: false
+  platforms:
+  - web
+  - lit
+- name: the-popup-is-a-menu
+  description: The popup is a menu of menuitems named by the trigger (APG menu button),
+    not a list of buttons.
+  given:
+    open: true
+    label: More actions
+    items:
+    - id: rename
+      label: Rename
+  then:
+  - role: menu
 - name: renders
   then:
   - renders: true
@@ -516,6 +833,18 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
 - name: has-accessible-name
   then:
   - name: true
+  derived: true
+- name: escape-fires-on-open-change
+  given:
+    open: true
+  when:
+    key: Escape
+  then:
+  - event: onOpenChange
+  platforms:
+  - lit
+  - swiftui
+  - web
   derived: true
 ```
 

@@ -15,6 +15,7 @@ component:
       a11y: Screen-reader users navigate by heading level; levels must not skip (h1 → h3).
     size:
       type: enum
+      enumRef: size
       values: [4xl, 3xl, 2xl, xl, lg, md]
       description: 'Visual size, independent of level. Defaults per level: 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md.'
     children:
@@ -55,6 +56,28 @@ component:
       element: Text
       props: [.accessibilityAddTraits=isHeader, .accessibilityHeading, .font, .fontWeight]
       notes: 'A `Text` with `.accessibilityAddTraits(.isHeader)` and `.accessibilityHeading(.h1…h6)` from `level` — VoiceOver''s rotor lists headings by level, so the outline is real on iOS. Size from the `size` binding through `@ScaledMetric`; `level` never changes the look. `element` is ignored.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum ones from the schema.
+    - name: level-puts-the-heading-in-the-outline
+      description: 'On web the semantic element is always a real <h1>-<h6> chosen from level, so the heading is in the accessibility tree screen-reader users navigate by.'
+      given: { level: '3' }
+      then:
+        - { role: heading, platforms: [web] }
+    - name: size-does-not-change-the-outline
+      description: Decoupling level from size is the whole point of this component - a heading at the smallest size is still a heading.
+      given: { level: '2', size: md }
+      then:
+        - { role: heading, platforms: [web] }
+  examples:
+    - name: page-title
+      description: The one level-1 heading on a page, at its default size.
+      given: { level: '1', children: 'Account settings' }
+    - name: section-heading
+      description: A major section of the page, one level below the title.
+      given: { level: '2', children: 'Billing' }
+    - name: subsection-sized-up
+      description: A level-4 heading given a larger size so it still reads as a section start in a wide layout.
+      given: { level: '4', size: xl, children: 'Payment methods' }
 ---
 
 Headings label sections of content. Their most important job is invisible: they build the outline that screen-reader users jump through to understand and navigate a page.

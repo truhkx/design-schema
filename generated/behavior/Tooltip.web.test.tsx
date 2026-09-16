@@ -24,6 +24,15 @@ function setup(given: Partial<TooltipProps> = {}) {
 }
 
 describe('Tooltip', () => {
+  test('the-visible-tooltip-carries-the-tooltip-role', async () => {
+    const s = setup({"open": true});
+    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+  });
+  test('the-text-stays-in-the-tree-while-hidden', async () => {
+    const s = setup({"open": false});
+    await s.user.hover(s.trigger());
+    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();

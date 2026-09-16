@@ -118,7 +118,7 @@ component:
       description: The rows. `id` must be stable. Large arrays are fine; only visible
         rows are rendered.
     rowCount:
-      type: number
+      type: integer
       description: Total rows when `data` is a window of a larger set (server paging).
         Sets aria-rowcount; `onRangeNeeded` asks for more. `data` is always a contiguous
         prefix of the full set starting at row 0 and only grows by appending; keyboard
@@ -127,6 +127,9 @@ component:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
       description: Controlled sort state; as Table.
+      controls:
+        event: onSortChange
+        default: defaultSort
     defaultSort:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
@@ -201,6 +204,17 @@ component:
         lit: sort-change
         rn: onSortChange
         swiftui: onSortChange
+      payload:
+      - name: column
+        type: string
+        description: The key of the column now sorted on.
+      - name: direction
+        type: enum
+        values:
+        - ascending
+        - descending
+      fires:
+      - user
     onSelectionChange:
       description: 'Fired with the selection: row ids, one cell `{ rowId, column }`,
         or a range `{ from, to }`.'
@@ -209,6 +223,14 @@ component:
         lit: selection-change
         rn: onSelectionChange
         swiftui: onSelectionChange
+      payload:
+      - name: selection
+        type: union
+        shape: 'string[] | { rowId: string; column: string } | { from: { rowId: string;
+          column: string }; to: { rowId: string; column: string } }'
+        description: Row ids, one cell, or a range, matching selectable.
+      fires:
+      - user
     onCellChange:
       description: Fired when an edit commits, with `{ rowId, column, value, previous
         }`. The caller updates `data`; the grid shows the old value until it does
@@ -218,6 +240,25 @@ component:
         lit: cell-change
         rn: onCellChange
         swiftui: onCellChange
+      payload:
+      - name: rowId
+        type: string
+        description: The row that was edited.
+      - name: column
+        type: string
+        description: The key of the edited column.
+      - name: value
+        type: union
+        shape: string | number | boolean
+        description: The committed value, as the column editor produces it.
+      - name: previous
+        type: union
+        shape: string | number | boolean
+        description: The value the cell held before the edit.
+      fires:
+      - user
+      timing:
+        phase: request
     onEditStart:
       description: Fired when an editor opens; return false (web) or call preventDefault
         (lit) to refuse editing that cell.
@@ -226,6 +267,18 @@ component:
         lit: edit-start
         rn: onEditStart
         swiftui: onEditStart
+      payload:
+      - name: rowId
+        type: string
+        description: The row about to be edited.
+      - name: column
+        type: string
+        description: The key of the column about to be edited.
+      cancelable: true
+      fires:
+      - user
+      timing:
+        phase: before-change
     onRangeNeeded:
       description: Fired when the visible window (or Ctrl+End / PageDown) comes within
         one page of the end of `data` and `rowCount` says there is more, with `{ start,
@@ -235,6 +288,15 @@ component:
         lit: range-needed
         rn: onEndReached
         swiftui: onRangeNeeded
+      payload:
+      - name: start
+        type: number
+        description: The first row index to load.
+      - name: end
+        type: number
+        description: The last row index to load.
+      fires:
+      - user
     onColumnResize:
       description: Fired with `{ column, width }` when the user finishes dragging
         a resizable column edge.
@@ -243,6 +305,17 @@ component:
         lit: column-resize
         rn: onColumnResize
         swiftui: onColumnResize
+      payload:
+      - name: column
+        type: string
+        description: The key of the resized column.
+      - name: width
+        type: number
+        description: Its new width.
+      fires:
+      - user
+      timing:
+        phase: commit
   keyboard:
   - keys:
     - Tab
@@ -355,6 +428,10 @@ component:
     when: selectable is range
     from: inside
     expect: manual
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - Delete
     - Backspace
@@ -368,36 +445,46 @@ component:
       locked: true
     headerSurface:
       token: color.background.subtle
+      part: header
       locked: true
     headerColor:
       token: color.foreground
+      part: header
       locked: true
     headerWeight:
       token: font.weight.semibold
+      part: header
       locked: false
     headerSize:
       token: font.size.sm
+      part: header
       locked: false
     headerBorder:
       token: color.border.strong
+      part: header
       locked: false
     headerBorderWidth:
       token: border.width.thin
+      part: header
       locked: false
     headerShadow:
       token: shadow.raised
+      part: header
       description: Under the sticky header once the body has scrolled.
       locked: false
     gridLine:
       token: color.border
+      part: grid
       description: Cell borders on both axes — a grid shows its cells, unlike Table
         which shows rows.
       locked: false
     gridLineWidth:
       token: border.width.thin
+      part: grid
       locked: false
     rowHeight:
       token: size.target.min
+      part: row
       description: Compact rows are the minimum target height (rows are the unit people
         click); comfortable rows use rowHeightComfortable. Virtualization measures
         one rendered row (ResizeObserver) rather than reading the token, so density
@@ -405,53 +492,69 @@ component:
       locked: true
     rowHeightComfortable:
       token: size.target.comfortable
+      part: row
       locked: true
     rowHover:
       token: color.action.ghost.backgroundHover
+      part: row
+      state: hover
       description: Row under the pointer; the grid is interactive by nature so hover
         is allowed, and the focused cell ring is the non-hover signal.
       locked: false
     rowSelected:
       token: color.background.subtle
+      part: row
       locked: true
     rowSelectedBorder:
       token: color.control.selectedBackground
+      part: row
       description: Start-edge bar on selected rows.
       locked: true
     rowSelectedBorderWidth:
       token: border.width.focus
+      part: row
       locked: true
     cellColor:
       token: color.foreground
+      part: cell
       locked: true
     cellMutedColor:
       token: color.foreground.muted
+      part: cell
       locked: true
     cellPaddingInline:
       token: space.2
+      part: cell
       locked: false
     cellFocusRing:
       token: color.border.focus
+      part: cell
       description: Drawn inside the cell (inset) so it is never clipped by neighbors
         or the scroll region.
       locked: true
     cellFocusRingWidth:
       token: border.width.focus
+      part: cell
       locked: true
     cellEditingBackground:
       token: color.control.background
+      part: cell
       locked: true
     cellEditingBorder:
       token: color.border.focus
+      part: cell
       locked: true
     cellInvalidBorder:
       token: color.border.danger
+      part: cell
       locked: true
     cellInvalidBackground:
       token: color.status.danger.background
+      part: cell
       locked: true
     cellInvalidForeground:
       token: color.status.danger.foreground
+      part: cell
       locked: true
     rangeBackground:
       token: color.background.strong
@@ -481,24 +584,31 @@ component:
       locked: false
     statusBarSurface:
       token: color.background.subtle
+      part: statusBar
       locked: true
     statusBarColor:
       token: color.foreground.muted
+      part: statusBar
       locked: true
     statusBarSize:
       token: font.size.xs
+      part: statusBar
       locked: false
     statusBarPadding:
       token: space.2
+      part: statusBar
       locked: false
     captionSize:
       token: font.size.md
+      part: caption
       locked: false
     captionWeight:
       token: font.weight.semibold
+      part: caption
       locked: false
     captionGap:
       token: space.2
+      part: caption
       locked: false
     fixedHeight:
       token: space.20
@@ -531,19 +641,101 @@ component:
       description: Hover and editor open; navigation and scrolling are instant.
       locked: false
   copy:
-    sortAscending: Sort by {column}, ascending
-    sortDescending: Sort by {column}, descending
-    sortedAnnouncement: Sorted by {column}, {direction}
+    sortAscending:
+      text: Sort by {column}, ascending
+      params:
+        column:
+          type: string
+          description: The column header text.
+    sortDescending:
+      text: Sort by {column}, descending
+      params:
+        column:
+          type: string
+          description: The column header text.
+    sortedAnnouncement:
+      text: Sorted by {column}, {direction}
+      params:
+        column:
+          type: string
+          description: The column header text.
+        direction:
+          type: string
+          description: 'The new direction: ascending or descending.'
     selectAll: Select all rows
-    selectRow: Select {rowName}
-    selectedRows: '{count} of {total} rows selected'
-    selectedRange: '{rows} rows by {columns} columns selected'
-    copied: Copied {cells} cells
-    editing: Editing {column}. Enter to save, Escape to cancel.
-    invalid: '{message}'
-    rowCount: '{count} rows'
-    position: Row {row}, {column}
-    resize: Resize {column}
+    selectRow:
+      text: Select {rowName}
+      params:
+        rowName:
+          type: string
+          description: The row's name from its row-header cell.
+    selectedRows:
+      text: '{count} of {total} rows selected'
+      params:
+        count:
+          type: number
+          description: How many rows are selected.
+        total:
+          type: number
+          description: How many rows the grid has.
+    selectedRange:
+      text: '{rows} rows by {columns} columns selected'
+      params:
+        rows:
+          type: number
+          description: How many rows the selected range covers.
+        columns:
+          type: number
+          description: How many columns the selected range covers.
+    copied:
+      plural:
+        by: cells
+        one: Copied {cells} cell
+        other: Copied {cells} cells
+      params:
+        cells:
+          type: number
+          description: How many cells were written to the clipboard.
+      platforms:
+      - web
+      - lit
+      - swiftui
+    editing:
+      text: Editing {column}. Enter to save, Escape to cancel.
+      params:
+        column:
+          type: string
+          description: The column header text.
+    invalid:
+      text: '{message}'
+      params:
+        message:
+          type: string
+          description: The message the column's validate returned.
+    rowCount:
+      plural:
+        by: count
+        one: '{count} row'
+        other: '{count} rows'
+      params:
+        count:
+          type: number
+          description: How many rows the grid has.
+    position:
+      text: Row {row}, {column}
+      params:
+        row:
+          type: number
+          description: The active cell's row number.
+        column:
+          type: string
+          description: The column header text.
+    resize:
+      text: Resize {column}
+      params:
+        column:
+          type: string
+          description: The column header text.
     loading: Loading
     empty: Nothing to show.
     scrollHint: Scroll sideways to see more columns
@@ -586,19 +778,19 @@ component:
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.control.selectedBackground
       background: color.background.subtle
       level: AA
-      large: true
+      nonText: true
     - foreground: color.border.focus
       background: color.control.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.border.danger
       background: color.background
       level: AA
-      large: true
+      nonText: true
   platforms:
     web:
       element: div
@@ -653,8 +845,10 @@ component:
       - height
       - loading
       - hide-caption
-      - no-status-bar
-      - no-sticky-header
+      - prop: showStatusBar
+        attribute: no-status-bar
+      - prop: stickyHeader
+        attribute: no-sticky-header
       notes: '`columns` and `data` as properties; `showStatusBar` and `stickyHeader`
         default true, so their attributes are the negated `no-status-bar` / `no-sticky-header`.
         the grid renders in the shadow root with `repeat` keyed by row id over the
@@ -718,11 +912,317 @@ component:
         to `row` on phones with a debug warning; Ctrl+C writes TSV to `UIPasteboard.general`.
         Column resize: a `DragGesture` on the header edge plus an adjustable action
         on the header cell by `resizeStep`.'
+  behavior:
+  - name: activating-a-sortable-header-reports-the-sort
+    given:
+      columns:
+      - key: sku
+        header: SKU
+        isRowHeader: true
+      - key: price
+        header: Price
+        align: end
+        sortable: true
+      data:
+      - id: a
+        sku: A-1
+        price: 10
+      - id: b
+        sku: B-2
+        price: 20
+    when:
+      click: sortButton
+    then:
+    - event: onSortChange
+  - name: enter-on-a-sortable-header-sorts
+    description: The grid enters on the first header cell; on a header cell Enter
+      sorts (if sortable).
+    given:
+      columns:
+      - key: sku
+        header: SKU
+        isRowHeader: true
+        sortable: true
+      - key: price
+        header: Price
+        align: end
+      data:
+      - id: a
+        sku: A-1
+        price: 10
+      - id: b
+        sku: B-2
+        price: 20
+    when:
+      key: Enter
+    then:
+    - event: onSortChange
+    platforms:
+    - web
+    - lit
+  - name: selecting-a-row-reports-the-selection
+    description: 'Selection is separate from focus in row mode: focus is where the
+      keyboard is, selection is what an action applies to.'
+    given:
+      selectable: row
+      columns:
+      - key: sku
+        header: SKU
+        isRowHeader: true
+      data:
+      - id: a
+        sku: A-1
+      - id: b
+        sku: B-2
+    when:
+      click: selectCell
+    then:
+    - event: onSelectionChange
+  - name: a-selected-row-is-marked-selected
+    given:
+      selectable: row
+      selected:
+      - a
+      columns:
+      - key: sku
+        header: SKU
+        isRowHeader: true
+      data:
+      - id: a
+        sku: A-1
+      - id: b
+        sku: B-2
+    then:
+    - attribute: aria-selected
+      is: 'true'
+      'on': row
+    platforms:
+    - web
+  - name: the-empty-message-shows-when-there-are-no-rows
+    given:
+      columns:
+      - key: sku
+        header: SKU
+        isRowHeader: true
+      data: []
+    then:
+    - copy: empty
+  - name: a-custom-empty-message-replaces-the-default
+    given:
+      emptyMessage: No prices loaded.
+      columns:
+      - key: sku
+        header: SKU
+        isRowHeader: true
+      data: []
+    then:
+    - text: No prices loaded.
+  - name: loading-marks-the-grid-busy
+    description: loading sets aria-busy and shows copy.loading in the status bar;
+      existing rows stay.
+    given:
+      loading: true
+      columns:
+      - key: sku
+        header: SKU
+        isRowHeader: true
+      data:
+      - id: a
+        sku: A-1
+    then:
+    - attribute: aria-busy
+      is: 'true'
+    platforms:
+    - web
+  examples:
+  - name: price-list
+    description: The read-only grid people scroll and scan, sorted by a column they
+      choose.
+    given:
+      caption: Price list
+      columns:
+      - key: sku
+        header: SKU
+        isRowHeader: true
+        width: 160
+      - key: name
+        header: Name
+      - key: price
+        header: Price
+        align: end
+        sortable: true
+      data:
+      - id: a
+        sku: A-1
+        name: Widget
+        price: 10
+      - id: b
+        sku: B-2
+        name: Sprocket
+        price: 20
+  - name: editable-cells
+    description: A grid meant to be worked in, where Enter or F2 opens the editor
+      on an editable column.
+    given:
+      caption: Stock levels
+      editable: true
+      columns:
+      - key: sku
+        header: SKU
+        isRowHeader: true
+      - key: onHand
+        header: On hand
+        align: end
+        editable: true
+        editor: number
+      data:
+      - id: a
+        sku: A-1
+        onHand: 12
+      - id: b
+        sku: B-2
+        onHand: 4
+  - name: row-selection-for-bulk-actions
+    description: A checkbox column and Shift/Ctrl row selection, for acting on many
+      rows at once.
+    given:
+      caption: Orders
+      selectable: row
+      density: comfortable
+      columns:
+      - key: order
+        header: Order
+        isRowHeader: true
+      - key: customer
+        header: Customer
+      data:
+      - id: a
+        order: '1001'
+        customer: Ana Souza
+      - id: b
+        order: '1002'
+        customer: Bo Lin
+  - name: range-selection-in-a-fixed-height-grid
+    description: Spreadsheet-style rectangles that can be copied as tab-separated
+      text, in a grid the caller sizes.
+    given:
+      caption: Daily figures
+      selectable: range
+      height: fixed
+      columns:
+      - key: day
+        header: Day
+        isRowHeader: true
+      - key: visits
+        header: Visits
+        align: end
+      - key: signups
+        header: Signups
+        align: end
+      data:
+      - id: a
+        day: Monday
+        visits: 1200
+        signups: 30
+      - id: b
+        day: Tuesday
+        visits: 1450
+        signups: 41
 ```
+
+## Events
+
+- `onSortChange`: emit `sort-change`
+  - payload, the keys of `CustomEvent.detail`: `column: string`, `direction: 'ascending' | 'descending'`
+  - fires on: user
+- `onSelectionChange`: emit `selection-change`
+  - payload, the keys of `CustomEvent.detail`: `selection: string[] | { rowId: string; column: string } | { from: { rowId: string; column: string }; to: { rowId: string; column: string } }`
+  - fires on: user
+- `onCellChange`: emit `cell-change`
+  - payload, the keys of `CustomEvent.detail`: `rowId: string`, `column: string`, `value: string | number | boolean`, `previous: string | number | boolean`
+  - fires on: user
+  - timing: request
+- `onEditStart`: emit `edit-start`
+  - payload, the keys of `CustomEvent.detail`: `rowId: string`, `column: string`
+  - cancelable: yes
+  - fires on: user
+  - timing: before-change
+- `onRangeNeeded`: emit `range-needed`
+  - payload, the keys of `CustomEvent.detail`: `start: number`, `end: number`
+  - fires on: user
+- `onColumnResize`: emit `column-resize`
+  - payload, the keys of `CustomEvent.detail`: `column: string`, `width: number`
+  - fires on: user
+  - timing: commit
 
 ## Controlled state
 
-- `sort` is controlled when given, uncontrolled from `defaultSort` when omitted; paired by name, so no event is declared
+- `sort` is controlled when given, uncontrolled from `defaultSort` when omitted; changes reported by `onSortChange` (emit `sort-change`)
+
+## Style bindings
+
+- `headerSurface`: token `color.background.subtle`; part `header`; locked
+- `headerColor`: token `color.foreground`; part `header`; locked
+- `headerWeight`: token `font.weight.semibold`; part `header`
+- `headerSize`: token `font.size.sm`; part `header`
+- `headerBorder`: token `color.border.strong`; part `header`
+- `headerBorderWidth`: token `border.width.thin`; part `header`
+- `headerShadow`: token `shadow.raised`; part `header`
+- `gridLine`: token `color.border`; part `grid`
+- `gridLineWidth`: token `border.width.thin`; part `grid`
+- `rowHeight`: token `size.target.min`; part `row`; locked
+- `rowHeightComfortable`: token `size.target.comfortable`; part `row`; locked
+- `rowHover`: token `color.action.ghost.backgroundHover`; part `row`; state `hover`
+- `rowSelected`: token `color.background.subtle`; part `row`; locked
+- `rowSelectedBorder`: token `color.control.selectedBackground`; part `row`; locked
+- `rowSelectedBorderWidth`: token `border.width.focus`; part `row`; locked
+- `cellColor`: token `color.foreground`; part `cell`; locked
+- `cellMutedColor`: token `color.foreground.muted`; part `cell`; locked
+- `cellPaddingInline`: token `space.2`; part `cell`
+- `cellFocusRing`: token `color.border.focus`; part `cell`; locked
+- `cellFocusRingWidth`: token `border.width.focus`; part `cell`; locked
+- `cellEditingBackground`: token `color.control.background`; part `cell`; locked
+- `cellEditingBorder`: token `color.border.focus`; part `cell`; locked
+- `cellInvalidBorder`: token `color.border.danger`; part `cell`; locked
+- `cellInvalidBackground`: token `color.status.danger.background`; part `cell`; locked
+- `cellInvalidForeground`: token `color.status.danger.foreground`; part `cell`; locked
+- `statusBarSurface`: token `color.background.subtle`; part `statusBar`; locked
+- `statusBarColor`: token `color.foreground.muted`; part `statusBar`; locked
+- `statusBarSize`: token `font.size.xs`; part `statusBar`
+- `statusBarPadding`: token `space.2`; part `statusBar`
+- `captionSize`: token `font.size.md`; part `caption`
+- `captionWeight`: token `font.weight.semibold`; part `caption`
+- `captionGap`: token `space.2`; part `caption`
+
+## Keyboard
+
+- `Control+c` (Copies the selection as tab-separated text (with headers when whole columns are selected); bound by key code KeyC.): expect manual
+
+## Copy
+
+- `sortAscending`: "Sort by {column}, ascending"; params `column` (string)
+- `sortDescending`: "Sort by {column}, descending"; params `column` (string)
+- `sortedAnnouncement`: "Sorted by {column}, {direction}"; params `column` (string), `direction` (string)
+- `selectAll`: "Select all rows"
+- `selectRow`: "Select {rowName}"; params `rowName` (string)
+- `selectedRows`: "{count} of {total} rows selected"; params `count` (number), `total` (number)
+- `selectedRange`: "{rows} rows by {columns} columns selected"; params `rows` (number), `columns` (number)
+- `copied`: "Copied {cells} cells"; params `cells` (number); plural by `cells`: one "Copied {cells} cell", other "Copied {cells} cells"
+- `editing`: "Editing {column}. Enter to save, Escape to cancel."; params `column` (string)
+- `invalid`: "{message}"; params `message` (string)
+- `rowCount`: "{count} rows"; params `count` (number); plural by `count`: one "{count} row", other "{count} rows"
+- `position`: "Row {row}, {column}"; params `row` (number), `column` (string)
+- `resize`: "Resize {column}"; params `column` (string)
+- `loading`: "Loading"
+- `empty`: "Nothing to show."
+- `scrollHint`: "Scroll sideways to see more columns"
+
+## Constants and examples
+
+- example `price-list`, story `PriceList`: given `caption: "Price list"`, `columns: [{"key":"sku","header":"SKU","isRowHeader":true,"width":160},{"key":"name","header":"Name"},{"key":"price","header":"Price","align":"end","sortable":true}]`, `data: [{"id":"a","sku":"A-1","name":"Widget","price":10},{"id":"b","sku":"B-2","name":"Sprocket","price":20}]`; The read-only grid people scroll and scan, sorted by a column they choose.
+- example `editable-cells`, story `EditableCells`: given `caption: "Stock levels"`, `editable: true`, `columns: [{"key":"sku","header":"SKU","isRowHeader":true},{"key":"onHand","header":"On hand","align":"end","editable":true,"editor":"number"}]`, `data: [{"id":"a","sku":"A-1","onHand":12},{"id":"b","sku":"B-2","onHand":4}]`; A grid meant to be worked in, where Enter or F2 opens the editor on an editable column.
+- example `row-selection-for-bulk-actions`, story `RowSelectionForBulkActions`: given `caption: "Orders"`, `selectable: "row"`, `density: "comfortable"`, `columns: [{"key":"order","header":"Order","isRowHeader":true},{"key":"customer","header":"Customer"}]`, `data: [{"id":"a","order":"1001","customer":"Ana Souza"},{"id":"b","order":"1002","customer":"Bo Lin"}]`; A checkbox column and Shift/Ctrl row selection, for acting on many rows at once.
+- example `range-selection-in-a-fixed-height-grid`, story `RangeSelectionInAFixedHeightGrid`: given `caption: "Daily figures"`, `selectable: "range"`, `height: "fixed"`, `columns: [{"key":"day","header":"Day","isRowHeader":true},{"key":"visits","header":"Visits","align":"end"},{"key":"signups","header":"Signups","align":"end"}]`, `data: [{"id":"a","day":"Monday","visits":1200,"signups":30},{"id":"b","day":"Tuesday","visits":1450,"signups":41}]`; Spreadsheet-style rectangles that can be copied as tab-separated text, in a grid the caller sizes.
 
 ## Overrides (per-instance styling contract)
 
@@ -735,11 +1235,95 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `headerWeight`, `headerSize`, `headerBorder`, `headerBorderWidth`, `headerShadow`, `gridLine`, `gridLineWidth`, `rowHover`, `cellPaddingInline`, `pinnedShadow`, `resizeHandle`, `resizeHandleWidth`, `resizeStep`, `statusBarSize`, `statusBarPadding`, `captionSize`, `captionWeight`, `captionGap`, `fixedHeight`, `fontFamily`, `fontSize`, `lineHeight`, `numericFont`, `transition`
 Locked (accessibility-bearing, never overridable): `surface`, `headerSurface`, `headerColor`, `rowHeight`, `rowHeightComfortable`, `rowSelected`, `rowSelectedBorder`, `rowSelectedBorderWidth`, `cellColor`, `cellMutedColor`, `cellFocusRing`, `cellFocusRingWidth`, `cellEditingBackground`, `cellEditingBorder`, `cellInvalidBorder`, `cellInvalidBackground`, `cellInvalidForeground`, `rangeBackground`, `rangeBorder`, `rangeBorderWidth`, `statusBarSurface`, `statusBarColor`, `minTarget`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (11)
+## Behavior scenarios (16)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: activating-a-sortable-header-reports-the-sort
+  given:
+    columns:
+    - key: sku
+      header: SKU
+      isRowHeader: true
+    - key: price
+      header: Price
+      align: end
+      sortable: true
+    data:
+    - id: a
+      sku: A-1
+      price: 10
+    - id: b
+      sku: B-2
+      price: 20
+  when:
+    click: sortButton
+  then:
+  - event: onSortChange
+- name: enter-on-a-sortable-header-sorts
+  description: The grid enters on the first header cell; on a header cell Enter sorts
+    (if sortable).
+  given:
+    columns:
+    - key: sku
+      header: SKU
+      isRowHeader: true
+      sortable: true
+    - key: price
+      header: Price
+      align: end
+    data:
+    - id: a
+      sku: A-1
+      price: 10
+    - id: b
+      sku: B-2
+      price: 20
+  when:
+    key: Enter
+  then:
+  - event: onSortChange
+  platforms:
+  - web
+  - lit
+- name: selecting-a-row-reports-the-selection
+  description: 'Selection is separate from focus in row mode: focus is where the keyboard
+    is, selection is what an action applies to.'
+  given:
+    selectable: row
+    columns:
+    - key: sku
+      header: SKU
+      isRowHeader: true
+    data:
+    - id: a
+      sku: A-1
+    - id: b
+      sku: B-2
+  when:
+    click: selectCell
+  then:
+  - event: onSelectionChange
+- name: the-empty-message-shows-when-there-are-no-rows
+  given:
+    columns:
+    - key: sku
+      header: SKU
+      isRowHeader: true
+    data: []
+  then:
+  - copy: empty
+- name: a-custom-empty-message-replaces-the-default
+  given:
+    emptyMessage: No prices loaded.
+    columns:
+    - key: sku
+      header: SKU
+      isRowHeader: true
+    data: []
+  then:
+  - text: No prices loaded.
 - name: renders
   then:
   - renders: true
@@ -815,8 +1399,10 @@ reflect:
 - height
 - loading
 - hide-caption
-- no-status-bar
-- no-sticky-header
+- prop: showStatusBar
+  attribute: no-status-bar
+- prop: stickyHeader
+  attribute: no-sticky-header
 notes: '`columns` and `data` as properties; `showStatusBar` and `stickyHeader` default
   true, so their attributes are the negated `no-status-bar` / `no-sticky-header`.
   the grid renders in the shadow root with `repeat` keyed by row id over the visible

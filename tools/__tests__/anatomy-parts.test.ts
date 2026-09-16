@@ -1,9 +1,12 @@
 /** anatomy `parts` (job 612): the part checks componentDef runs, `partKind`, `slotName`, and a Card-like doc with slot
  *  parts and an object composition entry parsed against the real Heading doc. */
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 import { componentDef, partKind, PLATFORMS, slotName } from '../../schema/component.ts';
+import { readText } from '../lib/py.ts';
+import { REPO_ROOT } from '../lib/root.ts';
 import * as parse from '../parse.ts';
 import type { Dict } from '../parse.ts';
 import { component, usePaths, useTmp } from './fixtures.ts';
@@ -213,5 +216,65 @@ describe('the checks', () => {
     test('then.attribute.on', () => {
       rejects(scenario(null, [{ attribute: 'data-x', is: true, on: 'footer' }]), ['behavior', 0, 'then', 0, 'on'], `scenario 'x' then.attribute.on: ${SLOT}`);
     });
+  });
+});
+
+describe('the real corpus (job 639)', () => {
+  const entries = JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[];
+  const declared = entries.map((e) => e.component as Dict).filter((c) => c.parts !== undefined);
+
+  test('the counts the migration produced', () => {
+    const slots = declared.flatMap((c) => Object.entries(c.parts as Dict).filter(([, p]) => (p as Dict).kind === 'slot'));
+    const defaults = slots.filter(([, p]) => ((p as Dict).slot as Dict | undefined)?.default === true);
+    expect({ docs: declared.length, slots: slots.length, defaults: defaults.length }).toEqual({ docs: 7, slots: 11, defaults: 4 });
+  });
+
+  test('every declared part is in its doc anatomy', () => {
+    for (const c of declared) {
+      for (const part of Object.keys(c.parts as Dict)) {
+        expect(c.anatomy as string[], `${String(c.name)}.${part}`).toContain(part);
+      }
+    }
+  });
+
+  test('every slot resolves on each platform the doc declares, without a collision', () => {
+    for (const c of declared) {
+      const slots = Object.entries(c.parts as Dict).filter(([, p]) => (p as Dict).kind === 'slot').map(([part]) => part);
+      const platforms = PLATFORMS.filter((p) => (c.platforms as Dict)[p] !== undefined && (c.platforms as Dict)[p]?.supported !== false);
+      expect(platforms.length, String(c.name)).toBeGreaterThan(0);
+      for (const platform of platforms) {
+        const seen = new Map<string, string>();
+        for (const part of slots) {
+          const resolved = slotName(c, part, platform);
+          expect(typeof resolved, `${String(c.name)}.${part} on ${platform}`).toBe('string');
+          expect(seen.has(resolved), `${String(c.name)}.${part} collides with ${String(seen.get(resolved))} on ${platform}`).toBe(false);
+          seen.set(resolved, part);
+        }
+      }
+      // partKind agrees with the declaration, and a slot part is never also a composition part.
+      for (const part of slots) {
+        expect(partKind(c, part)).toBe('slot');
+        expect(Object.keys((c.composition ?? {}) as Dict), `${String(c.name)}.${part}`).not.toContain(part);
+      }
+    }
+  });
+
+  test('at most one default slot per component, and a default slot has no Lit name', () => {
+    for (const c of declared) {
+      const defaults = Object.entries(c.parts as Dict).filter(([, p]) => ((p as Dict).slot as Dict | undefined)?.default === true);
+      expect(defaults.length, String(c.name)).toBeLessThanOrEqual(1);
+      for (const [part] of defaults) {
+        expect(slotName(c, part, 'lit'), `${String(c.name)}.${part}`).toBe('');
+      }
+    }
+  });
+
+  test('every doc with parts still validates', () => {
+    const docs = (parse.paths.DOCS = join(REPO_ROOT, 'site', 'src', 'content', 'docs', 'components'));
+    for (const c of declared) {
+      const f = join(docs, `${String(c.name).toLowerCase()}.md`);
+      const [fm] = parse.splitFrontmatter(readText(f), f);
+      parse.validate(fm, f);
+    }
   });
 });

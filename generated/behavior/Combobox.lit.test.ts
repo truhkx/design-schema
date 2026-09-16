@@ -57,6 +57,9 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     label: () => (deep(root, '[role="combobox"]') ?? deep(root, '[part="label"]') ?? deep(root, '[data-part="label"]') ?? root.firstElementChild) as HTMLElement,
+    chipRemove: () => (deep(root, '[part="chipRemove"]') ?? deep(root, '[data-part="chipRemove"]')) as HTMLElement,
+    clearButton: () => (deep(root, '[part="clearButton"]') ?? deep(root, '[data-part="clearButton"]')) as HTMLElement,
+    toggleButton: () => (deep(root, '[part="toggleButton"]') ?? deep(root, '[data-part="toggleButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -66,6 +69,56 @@ beforeEach(() => {
 });
 
 describe('ds-combobox', () => {
+  test('typing-reports-the-input-text', async () => {
+    const s = await setup({"open": false});
+    await userEvent.type(s.label(), "ap");
+    expect(s.events.onInputChange).toHaveBeenCalled();
+  });
+  test('the-toggle-button-opens-the-list', async () => {
+    const s = await setup({"open": false});
+    await userEvent.click(s.toggleButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-closed-combobox-is-not-expanded', async () => {
+    const s = await setup({"open": false});
+    expect(s.label()).toHaveAttribute('aria-expanded', 'false');
+  });
+  test('an-open-list-reports-the-expanded-state', async () => {
+    const s = await setup({"open": true});
+    expect(s.label()).toHaveAttribute('aria-expanded', 'true');
+  });
+  test('enter-commits-the-active-option', async () => {
+    const s = await setup({"open": true});
+    s.el.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('escape-closes-the-list', async () => {
+    const s = await setup({"open": true});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-clear-button-clears-the-value', async () => {
+    const s = await setup({"open": false, "defaultValue": "apple", "clearable": true});
+    await userEvent.click(s.clearButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('multiple-shows-the-selection-as-chips', async () => {
+    const s = await setup({"open": false, "multiple": true, "defaultValue": ["apple"]});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Apple"));
+  });
+  test('removing-a-chip-reports-the-new-value', async () => {
+    const s = await setup({"open": false, "multiple": true, "defaultValue": ["apple"]});
+    await userEvent.click(s.chipRemove());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('a-disabled-combobox-does-not-open', async () => {
+    const s = await setup({"open": false, "disabled": true});
+    await userEvent.click(s.toggleButton(), { force: true });
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+    expect(s.label()).toHaveAttribute('aria-disabled', 'true');
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

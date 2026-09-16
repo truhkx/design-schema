@@ -53,6 +53,8 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     label: () => (deep(root, '[role="spinbutton"]') ?? deep(root, '[part="label"]') ?? deep(root, '[data-part="label"]') ?? root.firstElementChild) as HTMLElement,
+    decrementButton: () => (deep(root, '[part="decrementButton"]') ?? deep(root, '[data-part="decrementButton"]')) as HTMLElement,
+    incrementButton: () => (deep(root, '[part="incrementButton"]') ?? deep(root, '[data-part="incrementButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -62,6 +64,55 @@ beforeEach(() => {
 });
 
 describe('ds-number-input', () => {
+  test('the-increment-button-steps-up', async () => {
+    const s = await setup({"defaultValue": 5, "step": 1});
+    await userEvent.click(s.incrementButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('the-decrement-button-steps-down', async () => {
+    const s = await setup({"defaultValue": 5, "step": 1});
+    await userEvent.click(s.decrementButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-up-increases-by-one-step', async () => {
+    const s = await setup({"defaultValue": 5});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowUp}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-down-decreases-by-one-step', async () => {
+    const s = await setup({"defaultValue": 5});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('page-up-changes-by-ten-steps', async () => {
+    const s = await setup({"defaultValue": 5});
+    s.el.focus();
+    await userEvent.keyboard('{PageUp}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-keys-work-without-the-steppers', async () => {
+    const s = await setup({"defaultValue": 5, "hideSteppers": true});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowUp}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('typing-a-number-reports-it', async () => {
+    const s = await setup({});
+    await userEvent.type(s.label(), "7");
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('decrement-does-nothing-at-the-minimum', async () => {
+    const s = await setup({"defaultValue": 0, "min": 0, "max": 10});
+    await userEvent.click(s.decrementButton());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('a-disabled-field-does-not-step', async () => {
+    const s = await setup({"disabled": true, "defaultValue": 5});
+    await userEvent.click(s.incrementButton(), { force: true });
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

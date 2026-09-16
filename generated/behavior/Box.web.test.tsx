@@ -24,6 +24,14 @@ function setup(given: Partial<BoxProps> = {}) {
 }
 
 describe('Box', () => {
+  test('nav-element-carries-navigation-semantics', async () => {
+    const s = setup({"element": "nav"});
+    expect(screen.getByRole('navigation')).toBeInTheDocument();
+  });
+  test('article-element-carries-article-semantics', async () => {
+    const s = setup({"element": "article"});
+    expect(screen.getByRole('article')).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

@@ -33,6 +33,7 @@ component:
       description: 'What happens when controls do not fit: wrap onto more rows, collapse trailing controls into a "More" Menu (each control must provide `overflowLabel`), or scroll horizontally with the edges faded.'
     size:
       type: enum
+      enumRef: size
       values: [sm, md]
       default: md
       description: 'Default for child controls that have a `size` prop and do not set their own (applied by cloning direct children; a child''s own `size` wins).'
@@ -48,7 +49,7 @@ component:
     - { keys: [ArrowLeft], action: 'Previous control (ArrowUp when vertical).', from: last, expect: focus-prev }
     - { keys: [Home], action: First control., from: last, expect: focus-first }
     - { keys: [End], action: Last control., from: first, expect: focus-last }
-    - { keys: [Enter, ' '], action: 'Activates the focused control (its own behavior).', from: first, expect: manual }
+    - { keys: [Enter, ' '], action: 'Activates the focused control (its own behavior).', from: first, expect: manual, native: true }
   styles:
     background: { token: color.background.subtle }
     border: { token: color.border }
@@ -58,8 +59,8 @@ component:
     paddingBlock: { token: space.1 }
     itemGap: { token: layout.gap.normal, description: 'Between adjacent controls, inside a group and between ungrouped top-level controls alike.' }
     itemGapCompact: { token: layout.gap.tight, description: 'Used instead of itemGap when density is compact.' }
-    groupGap: { token: layout.gap.normal, description: 'Either side of a separator, replacing itemGap there (not added to it).' }
-    separatorLength: { token: space.5, description: 'The Divider between groups is shorter than the toolbar height.' }
+    groupGap: { token: layout.gap.normal, part: group, description: 'Either side of a separator, replacing itemGap there (not added to it).' }
+    separatorLength: { token: space.5, part: separator, description: 'The Divider between groups is shorter than the toolbar height.' }
     fadeWidth: { token: space.6, description: 'Edge fade for `overflow: scroll`, a gradient from the toolbar background to transparent.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
@@ -89,6 +90,38 @@ component:
       element: HStack
       props: [.accessibilityElement=contain, .accessibilityLabel, .focusSection, .onMoveCommand, '@FocusState', ViewThatFits, Menu, Divider, ScrollView]
       notes: 'An `HStack` (or `VStack`) in a `.contain` element labelled by `label`, one focus section with the roving `@FocusState` moved by arrows/Home/End on iPad. Overflow: `ViewThatFits` tries the full row, then progressively collapses trailing `Button`s (only Buttons, using each one''s `overflowLabel`) into a system `Menu` behind the `ellipsis` Button, as on web; `overflow: scroll` wraps the row in a horizontal `ScrollView` with faded edges drawn by a gradient mask. Groups are `ToolbarGroup` containers with `label` as their contained element''s label, separated by `Divider`s. `size` is cloned onto children through the environment. Not SwiftUI''s `.toolbar` (navigation-bar placement).'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name ones from the schema. The toolbar
+    # declares no events, so what it promises is its role, its orientation and its single tab stop.
+    - name: horizontal-is-the-reported-orientation
+      description: The toolbar reports the axis its arrow keys move along.
+      then:
+        - { attribute: aria-orientation, is: horizontal }
+      platforms: [web]
+    - name: vertical-toolbar-reports-its-orientation
+      description: A vertical toolbar sits beside a canvas and swaps its arrow axis, which aria-orientation announces.
+      given: { orientation: vertical }
+      then:
+        - { attribute: aria-orientation, is: vertical }
+      platforms: [web]
+    - name: the-toolbar-is-one-tab-stop
+      description: A roving tabindex over the focusable descendants makes each control the focus target; the container itself never takes focus.
+      then:
+        - { focusable: false }
+      platforms: [web]
+  examples:
+    - name: formatting-toolbar
+      description: The default row of ghost formatting buttons, named by what it controls.
+      given: { label: Formatting, children: 'Bold, Italic and Underline buttons' }
+    - name: vertical-tool-palette
+      description: A tool palette beside a canvas, where arrows move up and down.
+      given: { label: Drawing tools, children: 'Select, Draw and Erase buttons', orientation: vertical }
+    - name: compact-actions-with-overflow
+      description: A dense table-action row at toolbar height that folds trailing buttons into a More menu.
+      given: { label: Table actions, children: 'Filter, Sort, Export and Delete buttons', overflow: menu, density: compact, size: sm }
+    - name: scrolling-filter-row
+      description: A filter row that scrolls horizontally with faded edges instead of collapsing.
+      given: { label: Filters, children: 'A SegmentedControl and two Selects', overflow: scroll }
 ---
 
 A toolbar keeps a set of related controls together so the keyboard treats them as one stop: Tab reaches the toolbar, arrows move within it, Tab leaves it. That is what makes an editor with thirty buttons usable without thirty Tab presses.

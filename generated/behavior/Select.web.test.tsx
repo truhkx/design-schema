@@ -10,6 +10,17 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<SelectProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -25,12 +36,62 @@ function setup(given: Partial<SelectProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Select"]') ?? screen.queryByRole('combobox') ?? utils.container.firstElementChild) as HTMLElement,
     label: () => (screen.queryByRole('combobox') ?? s.root()) as HTMLElement,
+    trigger: () => (document.querySelector('[data-part="trigger"]') ?? s.root()),
     rerender: (next: Partial<SelectProps>) => utils.rerender(<Select {...props} {...next} />),
   };
   return s;
 }
 
 describe('Select', () => {
+  test('the-trigger-opens-the-popup', async () => {
+    const s = setup({"open": false});
+    await s.user.click(s.trigger());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-closed-select-is-not-expanded', async () => {
+    const s = setup({"open": false});
+    expect(s.label()).toHaveAttribute('aria-expanded', 'false');
+  });
+  test('an-open-select-reports-the-expanded-state', async () => {
+    const s = setup({"open": true});
+    expect(s.label()).toHaveAttribute('aria-expanded', 'true');
+  });
+  test('enter-commits-the-active-option-and-closes', async () => {
+    const s = setup({"open": true});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{Enter}');
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('escape-closes-without-changing-the-value', async () => {
+    const s = setup({"open": true});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('the-placeholder-shows-when-nothing-is-selected', async () => {
+    const s = setup({"open": false});
+    expect(screen.getByText(new RegExp("Select\u2026"))).toBeInTheDocument();
+  });
+  test('a-custom-placeholder-replaces-the-default', async () => {
+    const s = setup({"open": false, "placeholder": "Choose a country"});
+    expect(screen.getByText(new RegExp("Choose\\ a\\ country"))).toBeInTheDocument();
+  });
+  test('a-disabled-select-does-not-open', async () => {
+    const s = setup({"open": false, "disabled": true});
+    await s.user.click(s.trigger());
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+    expect(s.label()).toHaveAttribute('aria-disabled', 'true');
+  });
+  test('required-is-shown-in-the-label', async () => {
+    const s = setup({"required": true, "open": true});
+    expect(screen.getByText(new RegExp("\\(required\\)"))).toBeInTheDocument();
+  });
+  test('invalid-is-reported-on-the-trigger', async () => {
+    const s = setup({"invalid": true, "open": true});
+    expect(s.label()).toHaveAttribute('aria-invalid', 'true');
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();

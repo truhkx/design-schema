@@ -66,7 +66,10 @@ component:
   composition:
     legend: Text
     description: Text
-    fields: Stack
+    fields:
+      component: Stack
+      forwards:
+        fieldsGap: gap
   props:
     legend:
       type: string
@@ -107,15 +110,19 @@ component:
   styles:
     legendColor:
       token: color.foreground
+      part: legend
       locked: true
     legendSize:
       token: font.size.md
+      part: legend
       locked: false
     legendWeight:
       token: font.weight.medium
+      part: legend
       locked: false
     descriptionText:
       token: color.foreground.muted
+      part: description
       locked: true
     helperSize:
       token: font.size.sm
@@ -129,6 +136,7 @@ component:
       locked: false
     fieldsGap:
       token: layout.gap.{gap}
+      part: fields
       description: The composed Stack's gap. An `overrides.fieldsGap` is forwarded
         to the Stack's own `overrides.gap`; Fieldset never styles the Stack itself.
       locked: false
@@ -209,7 +217,90 @@ component:
         legend) through the environment so fields prefix their accessibility label
         with the legend (''Shipping address, Street'') — the iOS way to say what `<fieldset>`
         says.'
+  behavior:
+  - name: the-legend-names-the-group
+    description: The legend is always visible and is the group's accessible name.
+    given:
+      legend: Delivery window
+    then:
+    - text: Delivery window
+    - name: Delivery window
+      platforms:
+      - web
+  - name: the-description-is-rendered
+    description: Persistent helper text under the legend, linked to the group.
+    given:
+      description: We only ship within the EU.
+    then:
+    - text: We only ship within the EU.
+  - name: a-group-error-is-announced
+    description: The group error is rendered once under the group with role=alert.
+    given:
+      error: End date must be after start date.
+    then:
+    - role: alert
+      platforms:
+      - web
+      - lit
+  - name: a-disabled-group-is-marked-disabled
+    description: aria-disabled on the fieldset; the fields inside stay visible and
+      focusable by their own rule.
+    given:
+      disabled: true
+    then:
+    - state: disabled
+      is: true
+      platforms:
+      - web
+  examples:
+  - name: shipping-address
+    description: Two related Inputs under one legend.
+    given:
+      legend: Shipping address
+      children: Street and city Inputs.
+  - name: notification-preferences
+    description: A set of Checkboxes with the rule that governs them under the legend.
+    given:
+      legend: Notification preferences
+      description: You can change these at any time.
+      children: Email, SMS and Push Checkboxes.
+      gap: tight
+  - name: date-range-with-a-group-error
+    description: Cross-field validation reported on the group rather than on one field.
+    given:
+      legend: Reporting period
+      error: End date must be after start date.
+      children: Start date and End date Inputs.
+  - name: disabled-group
+    description: Every field inside disabled while the section does not apply.
+    given:
+      legend: Billing address
+      disabled: true
+      children: Street and city Inputs.
 ```
+
+## Parts and slots
+
+- `group`: element
+- `legend`: component `Text`
+- `description`: component `Text`
+- `fields`: component `Stack`; forwards `fieldsGap` → `overrides.gap`
+- `errorMessage`: element
+
+## Style bindings
+
+- `legendColor`: token `color.foreground`; part `legend`; locked
+- `legendSize`: token `font.size.md`; part `legend`
+- `legendWeight`: token `font.weight.medium`; part `legend`
+- `descriptionText`: token `color.foreground.muted`; part `description`; locked
+- `fieldsGap`: token `layout.gap.{gap}`; part `fields`
+
+## Constants and examples
+
+- example `shipping-address`, story `ShippingAddress`: given `legend: "Shipping address"`, `children: "Street and city Inputs."`; Two related Inputs under one legend.
+- example `notification-preferences`, story `NotificationPreferences`: given `legend: "Notification preferences"`, `description: "You can change these at any time."`, `children: "Email, SMS and Push Checkboxes."`, `gap: "tight"`; A set of Checkboxes with the rule that governs them under the legend.
+- example `date-range-with-a-group-error`, story `DateRangeWithAGroupError`: given `legend: "Reporting period"`, `error: "End date must be after start date."`, `children: "Start date and End date Inputs."`; Cross-field validation reported on the group rather than on one field.
+- example `disabled-group`, story `DisabledGroup`: given `legend: "Billing address"`, `disabled: true`, `children: "Street and city Inputs."`; Every field inside disabled while the section does not apply.
 
 ## Overrides (per-instance styling contract)
 
@@ -222,11 +313,23 @@ The `platforms.rn.props` list names the native props the schema cares about; `ov
 Overridable: `legendSize`, `legendWeight`, `helperSize`, `partGap`, `fieldsGap`, `disabledOpacity`, `fontFamily`, `lineHeight`
 Locked (accessibility-bearing, never overridable): `legendColor`, `descriptionText`, `errorText`
 
-## Behavior scenarios (6)
+## Behavior scenarios (8)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: the-legend-names-the-group
+  description: The legend is always visible and is the group's accessible name.
+  given:
+    legend: Delivery window
+  then:
+  - text: Delivery window
+- name: the-description-is-rendered
+  description: Persistent helper text under the legend, linked to the group.
+  given:
+    description: We only ship within the EU.
+  then:
+  - text: We only ship within the EU.
 - name: renders
   then:
   - renders: true

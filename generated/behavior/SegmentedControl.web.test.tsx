@@ -6,6 +6,17 @@ import { SegmentedControl } from '../../packages/react/src/SegmentedControl';
 import type { SegmentedControlProps } from '../../packages/react/src/SegmentedControl';
 import meta from '../../packages/react/src/SegmentedControl.stories';
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<SegmentedControlProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -20,12 +31,35 @@ function setup(given: Partial<SegmentedControlProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="SegmentedControl"]') ?? screen.queryByRole('radiogroup') ?? utils.container.firstElementChild) as HTMLElement,
     group: () => (screen.queryByRole('radiogroup') ?? s.root()) as HTMLElement,
+    segment: () => (document.querySelector('[data-part="segment"]') ?? s.root()),
     rerender: (next: Partial<SegmentedControlProps>) => utils.rerender(<SegmentedControl {...props} {...next} />),
   };
   return s;
 }
 
 describe('SegmentedControl', () => {
+  test('click-selects-a-segment', async () => {
+    const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
+    await s.user.click(s.segment());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-moves-and-selects', async () => {
+    const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "list"});
+    act(() => focusInto(s.group()));
+    await s.user.keyboard('{ArrowRight}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-wraps-from-the-last-segment', async () => {
+    const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
+    act(() => focusInto(s.group()));
+    await s.user.keyboard('{ArrowRight}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('disabled-segment-is-not-selectable', async () => {
+    const s = setup({"options": [{"value": "list", "label": "List", "disabled": true}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
+    await s.user.click(s.segment());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

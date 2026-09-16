@@ -68,21 +68,21 @@ describe('ds-switch', () => {
     const s = await setup({});
     await userEvent.click(s.track());
     expect(s.events.onChange).toHaveBeenCalledTimes(1);
-    expect(Object.values(s.events.onChange.mock.calls[0]?.[0]?.detail ?? {})).toContain(true);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.checked).toEqual(true);
     expect(((s.track()) as HTMLInputElement).type === 'checkbox' ? ((s.track()) as HTMLInputElement).checked : (s.track()).getAttribute('aria-checked') === 'true').toBe(true);
   });
   test('click-on-label-toggles', async () => {
     const s = await setup({});
     await userEvent.click(s.label());
     expect(s.events.onChange).toHaveBeenCalledTimes(1);
-    expect(Object.values(s.events.onChange.mock.calls[0]?.[0]?.detail ?? {})).toContain(true);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.checked).toEqual(true);
     expect(((s.track()) as HTMLInputElement).type === 'checkbox' ? ((s.track()) as HTMLInputElement).checked : (s.track()).getAttribute('aria-checked') === 'true').toBe(true);
   });
   test('click-on-description-toggles', async () => {
     const s = await setup({"description": "Sends a daily summary at 9:00."});
     await userEvent.click(s.description());
     expect(s.events.onChange).toHaveBeenCalledTimes(1);
-    expect(Object.values(s.events.onChange.mock.calls[0]?.[0]?.detail ?? {})).toContain(true);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.checked).toEqual(true);
     expect(((s.track()) as HTMLInputElement).type === 'checkbox' ? ((s.track()) as HTMLInputElement).checked : (s.track()).getAttribute('aria-checked') === 'true').toBe(true);
   });
   test('space-toggles', async () => {
@@ -90,7 +90,7 @@ describe('ds-switch', () => {
     s.el.focus();
     await userEvent.keyboard(' ');
     expect(s.events.onChange).toHaveBeenCalledTimes(1);
-    expect(Object.values(s.events.onChange.mock.calls[0]?.[0]?.detail ?? {})).toContain(true);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.checked).toEqual(true);
     expect(((s.track()) as HTMLInputElement).type === 'checkbox' ? ((s.track()) as HTMLInputElement).checked : (s.track()).getAttribute('aria-checked') === 'true').toBe(true);
   });
   test('enter-is-ignored', async () => {
@@ -104,7 +104,7 @@ describe('ds-switch', () => {
     const s = await setup({"defaultChecked": true});
     await userEvent.click(s.track());
     expect(s.events.onChange).toHaveBeenCalledTimes(1);
-    expect(Object.values(s.events.onChange.mock.calls[0]?.[0]?.detail ?? {})).toContain(false);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.checked).toEqual(false);
     expect(((s.track()) as HTMLInputElement).type === 'checkbox' ? ((s.track()) as HTMLInputElement).checked : (s.track()).getAttribute('aria-checked') === 'true').toBe(false);
   });
   test('disabled-does-not-toggle', async () => {
@@ -128,6 +128,13 @@ describe('ds-switch', () => {
   test('description-is-rendered', async () => {
     const s = await setup({"description": "Sends a daily summary at 9:00."});
     expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Sends\\ a\\ daily\\ summary\\ at\\ 9:00\\."));
+  });
+  test('label-at-the-end-still-toggles-the-row', async () => {
+    const s = await setup({"labelPosition": "end"});
+    await userEvent.click(s.label());
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.checked).toEqual(true);
+    expect(((s.track()) as HTMLInputElement).type === 'checkbox' ? ((s.track()) as HTMLInputElement).checked : (s.track()).getAttribute('aria-checked') === 'true').toBe(true);
   });
   test('renders', async () => {
     const s = await setup({});

@@ -24,6 +24,16 @@ function setup(given: Partial<IconProps> = {}) {
 }
 
 describe('Icon', () => {
+  test('unlabelled-icon-is-hidden-from-assistive-technology', async () => {
+    const s = setup({});
+    expect(s.glyph()).toHaveAttribute("aria-hidden", "true");
+  });
+  test('label-makes-the-icon-meaningful', async () => {
+    const s = setup({"name": "warning", "label": "Warning: over quota"});
+    expect(screen.getByRole('img')).toBeInTheDocument();
+    expect(s.glyph()).not.toHaveAttribute("aria-hidden");
+    expect(screen.getByRole('img', { name: "Warning: over quota" })).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

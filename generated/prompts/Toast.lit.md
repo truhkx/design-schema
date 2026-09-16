@@ -66,8 +66,16 @@ component:
   composition:
     icon: Icon
     message: Text
-    actionButton: Button
-    dismissButton: Button
+    actionButton:
+      component: Button
+      props:
+        variant: ghost
+        inverse: true
+    dismissButton:
+      component: Button
+      props:
+        variant: ghost
+        inverse: true
   props:
     message:
       type: string
@@ -75,6 +83,7 @@ component:
       description: One sentence saying what happened ("Message sent", "3 files deleted").
     tone:
       type: enum
+      enumRef: tone
       values:
       - neutral
       - success
@@ -117,6 +126,12 @@ component:
         lit: action
         rn: onAction
         swiftui: onAction
+      fires:
+      - user
+      timing:
+        phase: before-change
+        before:
+        - onDismiss
     onDismiss:
       description: 'The toast left the screen: reason `timeout`, `dismiss-button`,
         `escape`, `action`, or `replaced` (a replaced or evicted toast leaves immediately,
@@ -126,6 +141,26 @@ component:
         lit: dismiss
         rn: onDismiss
         swiftui: onDismiss
+      payload:
+      - name: reason
+        type: enum
+        values:
+        - timeout
+        - dismiss-button
+        - escape
+        - action
+        - replaced
+      reasons:
+        timeout: the display duration elapsed
+        dismiss-button: the dismiss button was activated
+        escape: Escape pressed while the toast held focus
+        action: the action button was activated
+        replaced: the toast was replaced or evicted and left immediately
+      fires:
+      - user
+      - programmatic
+      timing:
+        phase: after-change
   keyboard:
   - keys:
     - F6
@@ -134,12 +169,20 @@ component:
     when: a toast is visible
     from: any
     expect: focus-first
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - Escape
     action: Dismisses the focused toast and returns focus.
     when: focus inside a toast
     from: first
     expect: closes
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - Tab
     action: Moves between the action and dismiss buttons, then out of the region.
@@ -157,6 +200,7 @@ component:
       locked: true
     icon:
       token: color.inverse.status.{tone}
+      part: icon
       description: '`neutral` renders no icon; the other tones use the status step
         chosen to read on the inverse surface.'
       locked: true
@@ -200,6 +244,7 @@ component:
       locked: false
     regionInset:
       token: layout.gutter
+      part: region
       description: Distance of the region from the viewport edge (bottom-start on
         wide screens, bottom center on phones, above the safe area).
       locked: false
@@ -228,6 +273,19 @@ component:
     exit:
       token: motion.duration.fast
       locked: false
+  constants:
+    shortDuration:
+      description: 'How long a toast with `duration: short` stays before it dismisses
+        itself.'
+      token: motion.duration.loop
+      multiply: 6
+      unit: ms
+    longDuration:
+      description: 'How long a toast with `duration: long` stays before it dismisses
+        itself.'
+      token: motion.duration.loop
+      multiply: 12
+      unit: ms
   copy:
     dismissLabel: Dismiss
     regionLabel: Notifications
@@ -253,11 +311,11 @@ component:
     - foreground: color.inverse.focus
       background: color.inverse.surface
       level: AA
-      large: true
+      nonText: true
     - foreground: color.inverse.status.{tone}
       background: color.inverse.surface
       level: AA
-      large: true
+      nonText: true
   platforms:
     web:
       element: div
@@ -316,7 +374,113 @@ component:
         `Button` and dismiss `Button` are inside the element as custom actions (`.accessibilityAction(named:)`)
         as well as visible controls. Enter/exit use the motion tokens; none under
         reduced motion.'
+  behavior:
+  - name: the-dismiss-button-fires-on-dismiss
+    given:
+      dismissible: true
+    when:
+      click: dismissButton
+    then:
+    - event: onDismiss
+  - name: the-action-button-fires-on-action
+    description: The single action reports and the toast dismisses; onAction is fired
+      before onDismiss.
+    given:
+      actionLabel: Undo
+    when:
+      click: actionButton
+    then:
+    - event: onAction
+  - name: escape-dismisses-the-focused-toast
+    description: Keyboard users reach a toast with F6 and leave with Escape, so an
+      Undo is never pointer-only (keyboard rule 2).
+    when:
+      key: Escape
+    then:
+    - event: onDismiss
+    platforms:
+    - web
+    - lit
+  - name: danger-toasts-are-announced-assertively
+    description: A danger toast uses role alert rather than status, so it interrupts
+      (WCAG 4.1.3).
+    given:
+      tone: danger
+    then:
+    - role: alert
+  - name: the-message-is-rendered
+    description: The message is the whole of a toast's content — one short sentence
+      saying what happened.
+    given:
+      message: 3 files moved to Archive
+    then:
+    - text: 3 files moved to Archive
+  examples:
+  - name: undo-a-delete
+    description: The reason most reversible actions need no AlertDialog; an action
+      makes the toast persistent.
+    given:
+      message: 3 files moved to Archive
+      actionLabel: Undo
+      duration: persistent
+  - name: saved
+    description: The plain confirmation of something the user did not have to watch.
+    given:
+      message: Changes saved
+      tone: success
+  - name: background-result
+    description: A result that arrived on its own, with one way to look at it.
+    given:
+      message: Export ready
+      actionLabel: View
+      duration: long
+  - name: failed-upload
+    description: A danger toast, persistent so nobody misses the one they needed.
+    given:
+      message: Upload failed
+      tone: danger
+      actionLabel: Retry
+      duration: persistent
 ```
+
+## Events
+
+- `onAction`: emit `action`
+  - fires on: user
+  - timing: before-change, fired before `dismiss`
+- `onDismiss`: emit `dismiss`
+  - payload, the keys of `CustomEvent.detail`: `reason: 'timeout' | 'dismiss-button' | 'escape' | 'action' | 'replaced'`
+  - reasons: `timeout` (the display duration elapsed); `dismiss-button` (the dismiss button was activated); `escape` (Escape pressed while the toast held focus); `action` (the action button was activated); `replaced` (the toast was replaced or evicted and left immediately)
+  - fires on: user, programmatic
+  - timing: after-change
+
+## Parts and slots
+
+- `region`: element
+- `toast`: element
+- `icon`: component `Icon`
+- `message`: component `Text`
+- `actionButton`: component `Button`; props `variant` = "ghost", `inverse` = true
+- `dismissButton`: component `Button`; props `variant` = "ghost", `inverse` = true
+
+## Style bindings
+
+- `icon`: token `color.inverse.status.{tone}`; part `icon`; locked
+- `regionInset`: token `layout.gutter`; part `region`
+
+## Keyboard
+
+- `F6` (Moves focus into the toast region (the first toast's action or dismiss button) from anywhere; F6 again returns to where focus was.): expect focus-first
+- `Escape` (Dismisses the focused toast and returns focus.): expect closes
+
+## Constants and examples
+
+- constant `shortDuration`: `calc(var(--motion-duration-loop) * 6)` (`motion.duration.loop` × 6) ms
+- constant `longDuration`: `calc(var(--motion-duration-loop) * 12)` (`motion.duration.loop` × 12) ms
+- example `undo-a-delete`, story `UndoADelete`: given `message: "3 files moved to Archive"`, `actionLabel: "Undo"`, `duration: "persistent"`; The reason most reversible actions need no AlertDialog; an action makes the toast persistent.
+- example `saved`, story `Saved`: given `message: "Changes saved"`, `tone: "success"`; The plain confirmation of something the user did not have to watch.
+- example `background-result`, story `BackgroundResult`: given `message: "Export ready"`, `actionLabel: "View"`, `duration: "long"`; A result that arrived on its own, with one way to look at it.
+- example `failed-upload`, story `FailedUpload`: given `message: "Upload failed"`, `tone: "danger"`, `actionLabel: "Retry"`, `duration: "persistent"`; A danger toast, persistent so nobody misses the one they needed.
 
 ## Overrides (per-instance styling contract)
 
@@ -329,11 +493,51 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `radius`, `shadow`, `paddingBlock`, `paddingInline`, `gap`, `stackGap`, `regionInset`, `maxWidth`, `fontFamily`, `fontSize`, `lineHeight`, `layer`, `enter`, `exit`
 Locked (accessibility-bearing, never overridable): `surface`, `text`, `icon`, `actionColor`, `dismissColor`, `focusRingInverse`, `minTarget`
 
-## Behavior scenarios (9)
+## Behavior scenarios (14)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: the-dismiss-button-fires-on-dismiss
+  given:
+    dismissible: true
+  when:
+    click: dismissButton
+  then:
+  - event: onDismiss
+- name: the-action-button-fires-on-action
+  description: The single action reports and the toast dismisses; onAction is fired
+    before onDismiss.
+  given:
+    actionLabel: Undo
+  when:
+    click: actionButton
+  then:
+  - event: onAction
+- name: escape-dismisses-the-focused-toast
+  description: Keyboard users reach a toast with F6 and leave with Escape, so an Undo
+    is never pointer-only (keyboard rule 2).
+  when:
+    key: Escape
+  then:
+  - event: onDismiss
+  platforms:
+  - web
+  - lit
+- name: danger-toasts-are-announced-assertively
+  description: A danger toast uses role alert rather than status, so it interrupts
+    (WCAG 4.1.3).
+  given:
+    tone: danger
+  then:
+  - role: alert
+- name: the-message-is-rendered
+  description: The message is the whole of a toast's content — one short sentence
+    saying what happened.
+  given:
+    message: 3 files moved to Archive
+  then:
+  - text: 3 files moved to Archive
 - name: renders
   then:
   - renders: true

@@ -75,8 +75,8 @@ test.describe('Table (lit) keyboard', () => {
     await page.keyboard.press('Tab');
     expect(await focusIndex(page, root)).toBe(before + 1);
   });
-  test.skip('Enter: On a sort button, sorts; on a row checkbox, toggles; on a row header button, activates the row. — manual', async () => {});
-  test.skip(' : On a sort button, sorts; on a row checkbox, toggles; on a row header button, activates the row. — manual', async () => {});
+  test.skip('Enter: On a sort button, sorts; on a row checkbox, toggles; on a row header button, activates the row. — native', async () => {});
+  test.skip(' : On a sort button, sorts; on a row checkbox, toggles; on a row header button, activates the row. — native', async () => {});
   test.skip('ArrowRight: In `responsive: scroll` below the breakpoint, the scroll region is focusable and arrows scroll it horizontally. (scroll region focused) — manual', async () => {});
   test.skip('ArrowLeft: In `responsive: scroll` below the breakpoint, the scroll region is focusable and arrows scroll it horizontally. (scroll region focused) — manual', async () => {});
 });

@@ -34,8 +34,9 @@
       ],
       "action": "Closes the list if open; if closed and clearable, clears the input text.",
       "from": "first",
-      "expect": "closes",
-      "when": "list open"
+      "expect": "manual",
+      "when": "list open",
+      "target": "popup"
     },
     {
       "keys": [
@@ -43,8 +44,9 @@
       ],
       "action": "Closes the list and moves focus on. Under single-select a highlighted option is NOT committed by Tab (typing intent is ambiguous).",
       "from": "first",
-      "expect": "closes",
-      "when": "list open"
+      "expect": "manual",
+      "when": "list open",
+      "target": "popup"
     },
     {
       "keys": [
@@ -62,7 +64,8 @@
       ],
       "action": "Move the text caret (input semantics), never the list.",
       "from": "first",
-      "expect": "manual"
+      "expect": "manual",
+      "native": true
     },
     {
       "keys": [

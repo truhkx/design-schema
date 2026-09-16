@@ -33,6 +33,9 @@ component:
       type: union
       description: 'Controlled selection: a value, or with `multiple` the exported `ListboxValue` (`string | string[]`). Omit for uncontrolled.'
       shape: 'string | string[]'
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: union
       description: Initial selection (or array).
@@ -56,7 +59,7 @@ component:
       type: boolean
       default: false
       description: 'The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; the list draws none of its own.'
-    defaultActiveValue:
+    initialActiveValue:
       type: string
       description: The option that is active when the list first receives focus (Select opens with the selected option active). Defaults to the first selected, else the first enabled option.
     loading:
@@ -82,9 +85,14 @@ component:
     onChange:
       description: Fired when the selection changes, with the new value (array when `multiple`).
       platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
+      payload:
+        - { name: value, type: union, shape: 'string | string[]', description: 'The selected value, or every selected value with multiple.' }
+      fires: [user]
     onActiveChange:
       description: 'Fired as the focused (active) option changes, with its value — Combobox uses this to keep aria-activedescendant in sync; consumers rarely need it.'
       platforms: { web: onActiveChange, lit: active-change, rn: onActiveChange, swiftui: onActiveChange }
+      payload:
+        - { name: value, type: union, shape: 'string | null', description: 'The value of the active option; null when no option is active.' }
   keyboard:
     - { keys: [ArrowDown], action: Moves to the next enabled option (and selects it when selection follows focus)., from: first, expect: focus-next }
     - { keys: [ArrowUp], action: Moves to the previous enabled option., from: last, expect: focus-prev }
@@ -101,21 +109,21 @@ component:
     border: { token: color.border.strong, description: 'Only when not `embedded`; inside a popup the popup owns the border.' }
     borderWidth: { token: border.width.thin }
     radius: { token: radius.md }
-    listPadding: { token: space.1 }
-    optionPaddingBlock: { token: space.sm }
-    optionPaddingInline: { token: space.md }
-    optionGap: { token: layout.gap.normal, description: 'Between check, icon, label and description.' }
-    optionRadius: { token: radius.sm }
-    optionColor: { token: color.foreground }
-    optionDescriptionColor: { token: color.foreground.muted }
-    optionDescriptionSize: { token: font.size.sm }
-    optionActiveBackground: { token: color.background.subtle, description: 'The focused/active option (keyboard or hover). Selection is shown by the check and weight, so active and selected are never confused.' }
-    optionSelectedWeight: { token: font.weight.medium }
-    optionSelectedCheck: { token: color.control.selectedBackground, description: 'The check icon on selected options (rendered only with `multiple`; single-select shows selection by the row fill), in the selected-control fill (3:1 on both surfaces by derivation); always rendered (invisible slot when unselected) so labels align.' }
-    groupLabelColor: { token: color.foreground.muted }
-    groupLabelSize: { token: font.size.xs }
-    groupLabelWeight: { token: font.weight.semibold }
-    groupLabelPaddingBlock: { token: space.1 }
+    listPadding: { token: space.1, part: list }
+    optionPaddingBlock: { token: space.sm, part: option }
+    optionPaddingInline: { token: space.md, part: option }
+    optionGap: { token: layout.gap.normal, part: option, description: 'Between check, icon, label and description.' }
+    optionRadius: { token: radius.sm, part: option }
+    optionColor: { token: color.foreground, part: option }
+    optionDescriptionColor: { token: color.foreground.muted, part: optionDescription }
+    optionDescriptionSize: { token: font.size.sm, part: optionDescription }
+    optionActiveBackground: { token: color.background.subtle, part: option, state: active, description: 'The focused/active option (keyboard or hover). Selection is shown by the check and weight, so active and selected are never confused.' }
+    optionSelectedWeight: { token: font.weight.medium, part: option }
+    optionSelectedCheck: { token: color.control.selectedBackground, part: optionCheck, description: 'The check icon on selected options (rendered only with `multiple`; single-select shows selection by the row fill), in the selected-control fill (3:1 on both surfaces by derivation); always rendered (invisible slot when unselected) so labels align.' }
+    groupLabelColor: { token: color.foreground.muted, part: groupLabel }
+    groupLabelSize: { token: font.size.xs, part: groupLabel }
+    groupLabelWeight: { token: font.weight.semibold, part: groupLabel }
+    groupLabelPaddingBlock: { token: space.1, part: groupLabel }
     emptyColor: { token: color.foreground.muted }
     fontFamily: { token: font.family.body }
     fontSize: { token: font.size.md }
@@ -127,7 +135,11 @@ component:
   copy:
     empty: No options
     required: '{label} is required.'
-    selectedCount: '{count} selected'  # not rendered by Listbox itself: exposed as accessibilityValue on native and available to the surrounding UI
+    invalid: '{label} is not valid.'
+    selectedCount:  # not rendered by Listbox itself: exposed as accessibilityValue on native and available to the surrounding UI
+      text: '{count} selected'
+      params:
+        count: { type: number, description: How many options are selected. }
     loading: Loading…
   a11y:
     role: listbox
@@ -137,8 +149,16 @@ component:
       - { foreground: color.foreground, background: color.background.subtle, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background.subtle, level: AA }
-      - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }
-      - { foreground: color.control.selectedBackground, background: color.background.subtle, level: AA, large: true }
+      - { foreground: color.control.selectedBackground, background: color.background, level: AA, nonText: true }
+      - { foreground: color.control.selectedBackground, background: color.background.subtle, level: AA, nonText: true }
+  form:
+    role: field
+    value: value
+    valueType: string[]
+    name: name
+    validation: [required, invalid]
+    messages: { required: required, invalid: invalid }
+    discovery: context
   platforms:
     web:
       element: div
@@ -156,6 +176,81 @@ component:
       element: ScrollView
       props: [ScrollView, LazyVStack, Button, .accessibilityAddTraits=isSelected, .focusable, .onMoveCommand, .onKeyPress, '@FocusState', ScrollViewReader, .accessibilityElement=contain]
       notes: 'A `ScrollView` + `LazyVStack` of option rows (`Button`s with `.isSelected`, group headers as `Text` with `.isHeader`) inside a `.contain` element labelled by `label`/`labelledBy`; not `List`. The list is one focus section: arrows move the active `@FocusState` index, type-ahead via `.onKeyPress(characters:)`, Home/End via `.onKeyPress(.home/.end)`, Space/Enter select per mode; `ScrollViewReader` keeps the active option in view and `maxVisible` sets the frame height from the measured row height. `multiple` rows show the check Icon and the count is announced. `embedded` drops the surface bindings for Select/Combobox/Search hosts.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/error-identified ones from the schema.
+    - name: click-on-an-option-selects-it
+      when: { click: option }
+      then:
+        - { event: onChange }
+    - name: arrow-selects-as-it-moves-when-selection-follows-focus
+      description: Single-select with selectionFollowsFocus - arrow keys select as they move (the common picker feel).
+      given: { selectionFollowsFocus: true }
+      when: { key: ArrowDown }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: arrows-only-move-when-selection-does-not-follow-focus
+      description: With selectionFollowsFocus false the arrows move the active option and select nothing; onActiveChange still reports the move.
+      given: { selectionFollowsFocus: false }
+      when: { key: ArrowDown }
+      then:
+        - { event: onChange, fired: false }
+        - { event: onActiveChange }
+      platforms: [web, lit]
+    - name: space-selects-the-active-option
+      given: { selectionFollowsFocus: false }
+      when: { key: Space }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: a-disabled-option-cannot-be-selected
+      given: { options: [{ value: apple, label: Apple, disabled: true }, { value: banana, label: Banana }] }
+      when: { click: option }
+      then:
+        - { event: onChange, fired: false }
+    - name: multiple-marks-the-list-multiselectable
+      description: With multiple the value is an array, each option shows a check, and selection toggles rather than moves.
+      given: { multiple: true }
+      then:
+        - { attribute: aria-multiselectable, is: 'true' }
+      platforms: [web]
+    - name: a-selected-option-is-marked-selected
+      given: { defaultValue: apple }
+      then:
+        - { attribute: aria-selected, is: 'true', 'on': option }
+      platforms: [web]
+    - name: the-empty-message-shows-when-there-are-no-options
+      given: { options: [] }
+      then:
+        - { copy: empty }
+    - name: a-custom-empty-message-replaces-the-default
+      given: { options: [], emptyMessage: 'No fruit matches that.' }
+      then:
+        - { text: 'No fruit matches that.' }
+    - name: loading-replaces-the-empty-message
+      description: While options are being fetched the list shows copy.loading in place of the empty message and is aria-busy.
+      given: { options: [], loading: true }
+      then:
+        - { copy: loading }
+        - { attribute: aria-busy, is: 'true', platforms: [web] }
+    - name: invalid-renders-the-invalid-copy
+      given: { invalid: true }
+      then:
+        - { copy: invalid }
+        - { state: invalid, is: true, platforms: [web, lit] }
+  examples:
+    - name: single-picker
+      description: The standalone visible picker, where arrows select as they move.
+      given: { label: Fruit, options: [{ value: apple, label: Apple }, { value: banana, label: Banana }, { value: cherry, label: Cherry }] }
+    - name: multi-select-with-checks
+      description: Any number of selections, each selected row carrying a check.
+      given: { label: Roles, multiple: true, defaultValue: [frontend], options: [{ value: frontend, label: Frontend }, { value: backend, label: Backend }, { value: design, label: Design }] }
+    - name: grouped-options
+      description: Options under group headings, for a list long enough to need sections.
+      given: { label: Role, options: [{ group: Engineering, options: [{ value: frontend, label: Frontend }, { value: backend, label: Backend }] }, { group: Design, options: [{ value: product, label: Product design }] }] }
+    - name: embedded-in-a-popup
+      description: The same engine inside a Select or Combobox popup, which owns the surface, capped at five rows.
+      given: { label: Country, embedded: true, maxVisible: '5', options: [{ value: ca, label: Canada }, { value: fr, label: France }, { value: jp, label: Japan }] }
 ---
 
 A listbox is a list you choose from. It is the part of a dropdown that actually does the work — the arrows, the typeahead, the selection — extracted so that a visible picker, a Select's popup and a Combobox's suggestions all behave identically, including for multi-select. If Select is the trigger and Combobox is the input, Listbox is the engine.

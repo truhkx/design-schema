@@ -21,12 +21,26 @@ function setup(given: Partial<AccordionProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Accordion"]') ?? utils.container.firstElementChild) as HTMLElement,
     list: () => s.root(),
+    trigger: () => (document.querySelector('[data-part="trigger"]') ?? s.root()),
     rerender: (next: Partial<AccordionProps>) => utils.rerender(<Accordion {...props} {...next} />),
   };
   return s;
 }
 
 describe('Accordion', () => {
+  test('click-on-a-trigger-reports-the-open-set', async () => {
+    const s = setup({});
+    await s.user.click(s.trigger());
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+    expect(s.trigger()).toHaveAttribute("aria-expanded", "true");
+  });
+  test('exclusive-still-reports-both-events', async () => {
+    const s = setup({"exclusive": true});
+    await s.user.click(s.trigger());
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

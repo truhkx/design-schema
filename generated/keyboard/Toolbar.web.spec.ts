@@ -103,6 +103,6 @@ test.describe('Toolbar (web) keyboard', () => {
     await page.keyboard.press('End');
     expect(await focusIndex(page, root)).toBe(await focusableCount(page, root) - 1);
   });
-  test.skip('Enter: Activates the focused control (its own behavior). — manual', async () => {});
-  test.skip(' : Activates the focused control (its own behavior). — manual', async () => {});
+  test.skip('Enter: Activates the focused control (its own behavior). — native', async () => {});
+  test.skip(' : Activates the focused control (its own behavior). — native', async () => {});
 });

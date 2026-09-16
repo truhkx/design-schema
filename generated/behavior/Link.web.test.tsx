@@ -6,6 +6,10 @@ import { Link } from '../../packages/react/src/Link';
 import type { LinkProps } from '../../packages/react/src/Link';
 import meta from '../../packages/react/src/Link.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<LinkProps> = {}) {
   const events = {
     onPress: vi.fn(),
@@ -26,6 +30,25 @@ function setup(given: Partial<LinkProps> = {}) {
 }
 
 describe('Link', () => {
+  test('click-fires-on-press', async () => {
+    const s = setup({});
+    await s.user.click(s.anchor());
+    expect(s.events.onPress).toHaveBeenCalled();
+  });
+  test('external-link-announces-that-it-leaves', async () => {
+    const s = setup({"external": true, "label": "View the billing history"});
+    expect(screen.getByText(new RegExp("\\(opens\\ in\\ new\\ tab\\)"))).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: "View the billing history (opens in new tab)" })).toBeInTheDocument();
+  });
+  test('external-link-opens-a-new-tab', async () => {
+    const s = setup({"external": true});
+    expect(s.anchor()).toHaveAttribute("target", "_blank");
+    expect(s.anchor()).toHaveAttribute("rel", "noopener noreferrer");
+  });
+  test('download-asks-the-browser-to-save', async () => {
+    const s = setup({"download": true});
+    expect(s.anchor()).toHaveAttribute("download", "");
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

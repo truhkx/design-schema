@@ -7,6 +7,9 @@ component:
   status: review
   apg: button
   anatomy: [container, label, leadingIcon, trailingIcon]
+  parts:
+    leadingIcon: { kind: slot, slot: { prop: leadingIcon } }
+    trailingIcon: { kind: slot, slot: { prop: trailingIcon } }
   props:
     label:
       type: string
@@ -20,6 +23,7 @@ component:
       description: Visual emphasis. One primary button per view.
     size:
       type: enum
+      enumRef: size
       values: [sm, md, lg]
       default: md
       description: Controls horizontal padding and font size. Touch targets never drop below the minimum regardless of size.
@@ -64,9 +68,10 @@ component:
     onPress:
       description: Fired when the button is activated by pointer, keyboard (Enter/Space), or assistive technology.
       platforms: { web: onClick, lit: press, rn: onPress, swiftui: action }
+      fires: [user]
   styles:
     background: { token: 'color.action.{variant}.background' }
-    backgroundHover: { token: 'color.action.{variant}.backgroundHover', description: Pointer hover and pressed state. }
+    backgroundHover: { token: 'color.action.{variant}.backgroundHover', state: hover, description: Pointer hover and pressed state. }
     foreground: { token: 'color.action.{variant}.foreground' }
     iconGap: { token: space.2, description: 'Gap between an icon and the label.' }
     paddingInline: { token: 'space.{size}' }
@@ -84,13 +89,15 @@ component:
     transition: { token: motion.duration.fast, description: 'Background/foreground transitions on hover and press, with motion.easing.standard.' }
     loadingSpin: { token: motion.duration.loop, description: 'One rotation of the loading indicator; disabled under prefers-reduced-motion.' }
     spinnerStroke: { token: border.width.focus, description: 'Ring thickness of the loading spinner: a 1em circle with one quarter transparent, drawn in currentColor.' }
+  copy:
+    loading: Loading
   a11y:
     role: button
     requires: [accessible-name, focus-visible, keyboard-operable, target-24px, contrast-aa]
     contrast:
       - { foreground: 'color.action.{variant}.foreground', background: 'color.action.{variant}.background', level: AA }
       - { foreground: color.inverse.link, background: color.inverse.surface, level: AA }
-      - { foreground: color.inverse.focus, background: color.inverse.surface, level: AA, large: true }
+      - { foreground: color.inverse.focus, background: color.inverse.surface, level: AA, nonText: true }
   platforms:
     web:
       element: button
@@ -108,6 +115,65 @@ component:
       element: Button
       props: [action, .buttonStyle=custom, .accessibilityLabel, .accessibilityHint, .accessibilityAddTraits=isButton, .frame=minWidth-minHeight, .contentShape, .focusable, .focused, .onLongPressGesture]
       notes: 'A SwiftUI `Button(action:)` with a package `ButtonStyle` (`DSButtonStyle`) that draws variant/size from tokens and reads `isPressed` for the pressed state; hover from `.onHover` on iPad pointer. `iconOnly` sets `.accessibilityLabel(label)` and hides the text; `accessibleName` overrides the label (and must start with the visible one); `loading` sets `.accessibilityValue(copy.loading)`, disables presses without `.disabled`, and swaps the leading icon for a `ProgressView` tinted from the foreground token. `disabled` is `.accessibilityRespondsToUserInteraction(false)` + `.opacity` + guard, keeping the button focusable per the doc. Long press forwards to Tooltip through `onLongPress`; `accessibilityHint` is forwarded verbatim. `overflowLabel` is read by Toolbar only.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/focusable ones from the schema.
+    - name: click-fires-on-press
+      when: { click: container }
+      then:
+        - { event: onPress }
+    - name: enter-activates
+      description: 'Activation fires onPress exactly once per pointer click, Enter key, Space key, or assistive-technology activation.'
+      when: { key: Enter }
+      then:
+        - { event: onPress }
+      platforms: [web, lit]
+    - name: space-activates
+      when: { key: Space }
+      then:
+        - { event: onPress }
+      platforms: [web, lit]
+    - name: disabled-does-not-fire
+      given: { disabled: true }
+      when: { click: container }
+      then:
+        - { event: onPress, fired: false }
+        - { state: disabled, is: true }
+    - name: disabled-stays-focusable
+      description: aria-disabled, not the native attribute, so the button stays in the tab order and can be discovered.
+      given: { disabled: true }
+      then:
+        - { focusable: true }
+      platforms: [web, lit]
+    - name: loading-announces-busy-and-ignores-activation
+      description: 'While loading is true the button announces itself as busy and ignores further activation, but keeps its size so the layout does not shift.'
+      given: { loading: true }
+      when: { click: container }
+      then:
+        - { event: onPress, fired: false }
+        - { attribute: aria-busy, is: 'true', platforms: [web, lit] }
+    - name: expanded-is-reported
+      given: { expanded: true }
+      then:
+        - { state: expanded, is: true }
+    - name: icon-only-keeps-its-name
+      description: iconOnly hides the visible label, and label becomes the accessible name.
+      given: { iconOnly: true, accessibleName: 'Open menu' }
+      then:
+        - { name: 'Open menu' }
+  examples:
+    - name: primary-save
+      description: The single most important action in a view, labelled with the outcome.
+      given: { label: 'Save changes', variant: primary }
+    - name: destructive-confirm
+      description: A destructive, hard-to-undo action, which is the only use of the danger variant.
+      given: { label: 'Delete file', variant: danger }
+    - name: icon-only-in-a-toolbar
+      description: A low-emphasis icon-only control in dense UI, whose label says what it does rather than what the icon depicts.
+      given: { label: Close, iconOnly: true, variant: ghost, size: sm }
+    - name: pending-submit
+      description: The submit button of a form while the request is in flight - busy, and ignoring repeat activation.
+      given: { label: 'Create account', type: submit, loading: true }
+      platforms: [web, lit, rn]
 ---
 
 Buttons let people take actions and make choices with a single tap or click. They communicate what will happen through their label, and their emphasis through their variant.

@@ -6,6 +6,17 @@ import { Popover } from '../../packages/react/src/Popover';
 import type { PopoverProps } from '../../packages/react/src/Popover';
 import meta from '../../packages/react/src/Popover.stories';
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<PopoverProps> = {}) {
   const events = {
     onOpenChange: vi.fn(),
@@ -20,12 +31,28 @@ function setup(given: Partial<PopoverProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Popover"]') ?? screen.queryByRole('dialog') ?? utils.container.firstElementChild) as HTMLElement,
     trigger: () => (screen.queryByRole('dialog') ?? s.root()) as HTMLElement,
+    closeButton: () => (document.querySelector('[data-part="closeButton"]') ?? s.root()),
     rerender: (next: Partial<PopoverProps>) => utils.rerender(<Popover {...props} {...next} />),
   };
   return s;
 }
 
 describe('Popover', () => {
+  test('close-button-fires-on-open-change', async () => {
+    const s = setup({"open": true});
+    await s.user.click(s.closeButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('escape-closes-a-modal-popover', async () => {
+    const s = setup({"open": true, "modal": true});
+    act(() => focusInto(s.trigger()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-panel-is-named-by-its-heading', async () => {
+    const s = setup({"open": true, "heading": "Filters"});
+    expect(screen.getByRole('dialog', { name: "Filters" })).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();
@@ -77,5 +104,11 @@ describe('Popover', () => {
   test('has-accessible-name', async () => {
     const s = setup({"open": true});
     expect(screen.getByRole('dialog')).toHaveAccessibleName();
+  });
+  test('escape-fires-on-open-change', async () => {
+    const s = setup({"open": true});
+    act(() => focusInto(s.trigger()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
   });
 });

@@ -6,6 +6,21 @@ import { Tree } from '../../packages/react/src/Tree';
 import type { TreeProps } from '../../packages/react/src/Tree';
 import meta from '../../packages/react/src/Tree.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<TreeProps> = {}) {
   const events = {
     onSelectionChange: vi.fn(),
@@ -23,12 +38,71 @@ function setup(given: Partial<TreeProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Tree"]') ?? screen.queryByRole('tree') ?? utils.container.firstElementChild) as HTMLElement,
     container: () => (screen.queryByRole('tree') ?? s.root()) as HTMLElement,
+    node: () => (document.querySelector('[data-part="node"]') ?? s.root()),
+    nodeRow: () => (document.querySelector('[data-part="nodeRow"]') ?? s.root()),
+    expandButton: () => (document.querySelector('[data-part="expandButton"]') ?? s.root()),
     rerender: (next: Partial<TreeProps>) => utils.rerender(<Tree {...props} {...next} />),
   };
   return s;
 }
 
 describe('Tree', () => {
+  test('the-expand-button-expands-a-node', async () => {
+    const s = setup({"defaultExpanded": [], "nodes": [{"id": "docs", "label": "Documents", "children": [{"id": "invoices", "label": "Invoices"}]}]});
+    await s.user.click(s.expandButton());
+    expect(s.events.onExpandChange).toHaveBeenCalled();
+  });
+  test('expanding-a-lazy-node-asks-for-its-children', async () => {
+    const s = setup({"defaultExpanded": [], "nodes": [{"id": "docs", "label": "Documents", "children": "lazy"}]});
+    await s.user.click(s.expandButton());
+    expect(s.events.onExpand).toHaveBeenCalled();
+    expect(s.events.onExpandChange).toHaveBeenCalled();
+  });
+  test('clicking-a-node-selects-it', async () => {
+    const s = setup({"selectable": "single", "nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    await s.user.click(s.nodeRow());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('space-selects-the-focused-node', async () => {
+    const s = setup({"selectable": "single", "nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    act(() => focusInto(s.container()));
+    await s.user.keyboard('[Space]');
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('enter-activates-a-node', async () => {
+    const s = setup({"nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    act(() => focusInto(s.container()));
+    await s.user.keyboard('{Enter}');
+    expect(s.events.onActivate).toHaveBeenCalled();
+  });
+  test('arrow-movement-does-not-select-by-default', async () => {
+    const s = setup({"selectable": "single", "selectOnFocus": false, "nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    act(() => focusInto(s.container()));
+    await s.user.keyboard('{ArrowDown}');
+    expect(s.events.onSelectionChange).not.toHaveBeenCalled();
+  });
+  test('select-on-focus-selects-as-focus-moves', async () => {
+    const s = setup({"selectable": "single", "selectOnFocus": true, "nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    act(() => focusInto(s.container()));
+    await s.user.keyboard('{ArrowDown}');
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('a-collapsed-parent-reports-it', async () => {
+    const s = setup({"defaultExpanded": [], "nodes": [{"id": "docs", "label": "Documents", "children": [{"id": "invoices", "label": "Invoices"}]}]});
+    expect(s.node()).toHaveAttribute("aria-expanded", "false");
+  });
+  test('an-expanded-parent-reports-it', async () => {
+    const s = setup({"defaultExpanded": ["docs"], "nodes": [{"id": "docs", "label": "Documents", "children": [{"id": "invoices", "label": "Invoices"}]}]});
+    expect(s.node()).toHaveAttribute("aria-expanded", "true");
+  });
+  test('a-selected-node-is-marked-selected', async () => {
+    const s = setup({"selectable": "single", "selected": ["docs"], "nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    expect(s.node()).toHaveAttribute("aria-selected", "true");
+  });
+  test('the-empty-message-shows-when-there-are-no-nodes', async () => {
+    const s = setup({"nodes": []});
+    expect(screen.getByText(new RegExp("Nothing\\ here\\."))).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

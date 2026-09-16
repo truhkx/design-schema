@@ -99,6 +99,17 @@ function activeChain(): Element[] {
   return chain;
 }
 `;
+export const FOCUS_INTO_HELPER = `const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. \`when.key\` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+`;
 export const DEEP_QUERY_HELPER = `function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -223,7 +234,10 @@ export function partLocatorBody(c: Dict, part: string, platform: string): string
   if (platform === 'web') {
     if (isPrimary) return role ? `(screen.queryByRole('${role}') ?? s.root()) as HTMLElement` : 's.root()';
     if (isTextProp) return `screen.getByText(props.${part})`;
-    return `(utils.container.querySelector('[data-part="${part}"]') ?? s.root())`;
+    // Searched from `document`, not the render container: every modal overlay portals its surface into
+    // document.body, so a container-scoped lookup misses the part and silently falls back to the root —
+    // which makes a click on the close button read as a scrim click. `screen` queries document too.
+    return `(document.querySelector('[data-part="${part}"]') ?? s.root())`;
   }
   if (platform === 'rn') {
     if (isPrimary) return role ? `screen.queryByRole('${role}') ?? s.root()` : 's.root()';
@@ -296,7 +310,7 @@ export function whenLines(c: Dict, sc: Dict, platform: string): string[] {
 
   if (kind === 'key') {
     const control = partLocator(c, primaryPart(c), platform);
-    if (platform === 'web') return [`act(() => (${control}).focus());`, `await s.user.keyboard('${keyStroke(value as string, platform)}');`];
+    if (platform === 'web') return [`act(() => focusInto(${control}));`, `await s.user.keyboard('${keyStroke(value as string, platform)}');`];
     if (platform === 'lit') return ['s.el.focus();', `await userEvent.keyboard('${keyStroke(value as string, platform)}');`];
     throw new Unmappable('when.key: React Native has no keyboard');
   }
@@ -938,6 +952,11 @@ function needsRegexHelper(scenarios: Dict[]): boolean {
   return scenarios.some((sc) => (sc.then as Dict[]).some((item) => has(item, 'text') || has(item, 'copy')));
 }
 
+/** A key press needs `focusInto`, which is emitted only where it is used. */
+function needsFocusHelper(scenarios: Dict[]): boolean {
+  return scenarios.some((sc) => has((truthy(pyGet(sc, 'when', null)) ? sc.when : {}) as Dict, 'key'));
+}
+
 export function webFile(c: Dict, scenarios: Dict[]): string {
   const name = c.name as string;
   const src = REL_SRC.web as string;
@@ -954,6 +973,7 @@ export function webFile(c: Dict, scenarios: Dict[]): string {
     '',
   ];
   if (needsRegexHelper(scenarios)) lines.push(ESCAPE_REGEXP_HELPER);
+  if (needsFocusHelper(scenarios)) lines.push(FOCUS_INTO_HELPER);
   lines.push(`function setup(given: Partial<${name}Props> = {}) {`);
   if (truthy(events)) {
     lines.push('  const events = {');

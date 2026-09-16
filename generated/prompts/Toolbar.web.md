@@ -102,6 +102,7 @@ component:
         or scroll horizontally with the edges faded.'
     size:
       type: enum
+      enumRef: size
       values:
       - sm
       - md
@@ -150,6 +151,7 @@ component:
     action: Activates the focused control (its own behavior).
     from: first
     expect: manual
+    native: true
   styles:
     background:
       token: color.background.subtle
@@ -180,11 +182,13 @@ component:
       locked: false
     groupGap:
       token: layout.gap.normal
+      part: group
       description: Either side of a separator, replacing itemGap there (not added
         to it).
       locked: false
     separatorLength:
       token: space.5
+      part: separator
       description: The Divider between groups is shorter than the toolbar height.
       locked: false
     fadeWidth:
@@ -277,7 +281,76 @@ component:
         mask. Groups are `ToolbarGroup` containers with `label` as their contained
         element''s label, separated by `Divider`s. `size` is cloned onto children
         through the environment. Not SwiftUI''s `.toolbar` (navigation-bar placement).'
+  behavior:
+  - name: horizontal-is-the-reported-orientation
+    description: The toolbar reports the axis its arrow keys move along.
+    then:
+    - attribute: aria-orientation
+      is: horizontal
+    platforms:
+    - web
+  - name: vertical-toolbar-reports-its-orientation
+    description: A vertical toolbar sits beside a canvas and swaps its arrow axis,
+      which aria-orientation announces.
+    given:
+      orientation: vertical
+    then:
+    - attribute: aria-orientation
+      is: vertical
+    platforms:
+    - web
+  - name: the-toolbar-is-one-tab-stop
+    description: A roving tabindex over the focusable descendants makes each control
+      the focus target; the container itself never takes focus.
+    then:
+    - focusable: false
+    platforms:
+    - web
+  examples:
+  - name: formatting-toolbar
+    description: The default row of ghost formatting buttons, named by what it controls.
+    given:
+      label: Formatting
+      children: Bold, Italic and Underline buttons
+  - name: vertical-tool-palette
+    description: A tool palette beside a canvas, where arrows move up and down.
+    given:
+      label: Drawing tools
+      children: Select, Draw and Erase buttons
+      orientation: vertical
+  - name: compact-actions-with-overflow
+    description: A dense table-action row at toolbar height that folds trailing buttons
+      into a More menu.
+    given:
+      label: Table actions
+      children: Filter, Sort, Export and Delete buttons
+      overflow: menu
+      density: compact
+      size: sm
+  - name: scrolling-filter-row
+    description: A filter row that scrolls horizontally with faded edges instead of
+      collapsing.
+    given:
+      label: Filters
+      children: A SegmentedControl and two Selects
+      overflow: scroll
 ```
+
+## Style bindings
+
+- `groupGap`: token `layout.gap.normal`; part `group`
+- `separatorLength`: token `space.5`; part `separator`
+
+## Keyboard
+
+- `Enter`, ` ` (Activates the focused control (its own behavior).): expect manual; native: the rendered element already does this
+
+## Constants and examples
+
+- example `formatting-toolbar`, story `FormattingToolbar`: given `label: "Formatting"`, `children: "Bold, Italic and Underline buttons"`; The default row of ghost formatting buttons, named by what it controls.
+- example `vertical-tool-palette`, story `VerticalToolPalette`: given `label: "Drawing tools"`, `children: "Select, Draw and Erase buttons"`, `orientation: "vertical"`; A tool palette beside a canvas, where arrows move up and down.
+- example `compact-actions-with-overflow`, story `CompactActionsWithOverflow`: given `label: "Table actions"`, `children: "Filter, Sort, Export and Delete buttons"`, `overflow: "menu"`, `density: "compact"`, `size: "sm"`; A dense table-action row at toolbar height that folds trailing buttons into a More menu.
+- example `scrolling-filter-row`, story `ScrollingFilterRow`: given `label: "Filters"`, `children: "A SegmentedControl and two Selects"`, `overflow: "scroll"`; A filter row that scrolls horizontally with faded edges instead of collapsing.
 
 ## Overrides (per-instance styling contract)
 
@@ -290,11 +363,35 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `border`, `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `itemGap`, `itemGapCompact`, `groupGap`, `separatorLength`, `fadeWidth`
 Locked (accessibility-bearing, never overridable): `background`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (11)
+## Behavior scenarios (14)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: horizontal-is-the-reported-orientation
+  description: The toolbar reports the axis its arrow keys move along.
+  then:
+  - attribute: aria-orientation
+    is: horizontal
+  platforms:
+  - web
+- name: vertical-toolbar-reports-its-orientation
+  description: A vertical toolbar sits beside a canvas and swaps its arrow axis, which
+    aria-orientation announces.
+  given:
+    orientation: vertical
+  then:
+  - attribute: aria-orientation
+    is: vertical
+  platforms:
+  - web
+- name: the-toolbar-is-one-tab-stop
+  description: A roving tabindex over the focusable descendants makes each control
+    the focus target; the container itself never takes focus.
+  then:
+  - focusable: false
+  platforms:
+  - web
 - name: renders
   then:
   - renders: true

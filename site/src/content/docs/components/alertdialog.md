@@ -9,10 +9,10 @@ component:
   anatomy: [scrim, surface, focusScope, icon, heading, description, footer, cancelButton, confirmButton]
   composition:
     focusScope: FocusScope
-    icon: Icon
+    icon: { component: Icon, forwards: { iconSize: size } }
     heading: Heading
     description: Text
-    footer: Stack
+    footer: { component: Stack, forwards: { footerGap: gap } }
     cancelButton: Button
     confirmButton: Button
   props:
@@ -32,6 +32,7 @@ component:
       a11y: aria-describedby; announced together with the title when the dialog opens.
     tone:
       type: enum
+      enumRef: tone
       values: [danger, warning, info]
       default: danger
       description: The nature of the decision. Sets the status icon and the confirm button's variant (danger → danger Button; warning and info → primary).
@@ -50,17 +51,26 @@ component:
     onConfirm:
       description: The user chose the confirming action. The consumer performs it and closes.
       platforms: { web: onConfirm, lit: confirm, rn: onConfirm, swiftui: onConfirm }
+      fires: [user]
+      timing: { phase: request }
     onCancel:
       description: 'The user declined, by the cancel button or Escape. Fired with reason `cancel` or `escape`. A scrim click does nothing.'
       platforms: { web: onCancel, lit: cancel, rn: onCancel, swiftui: onCancel }
+      payload:
+        - { name: reason, type: enum, values: [cancel, escape] }
+      reasons:
+        cancel: the cancel button was activated
+        escape: Escape pressed while open
+      fires: [user]
+      timing: { phase: request }
   keyboard:
     - { keys: [Escape], action: Cancels (onCancel with reason escape)., from: inside, expect: closes }
     - { keys: [Tab], action: From Confirm (the last button) wraps to Cancel (the first)., from: last, expect: focus-wraps-to-first }
     - { keys: [Shift+Tab], action: From Cancel wraps to Confirm., from: first, expect: focus-wraps-to-last }
     - { keys: [Enter], action: Activates the focused button. Initial focus is on Cancel so Enter never confirms by momentum., when: focus on a button, from: first, expect: closes }
   styles:
-    scrim: { token: color.overlay.scrim }
-    surface: { token: color.overlay.surface }
+    scrim: { token: color.overlay.scrim, part: scrim }
+    surface: { token: color.overlay.surface, part: surface }
     border: { token: color.border }
     borderWidth: { token: border.width.thin }
     shadow: { token: shadow.overlay }
@@ -68,10 +78,10 @@ component:
     inset: { token: layout.inset.lg }
     partGap: { token: layout.gap.loose, description: Between the text block and the footer. }
     textGap: { token: layout.gap.tight, description: Between title and description. }
-    iconGap: { token: layout.gap.normal, description: Between the icon and the text block. }
-    footerGap: { token: layout.gap.tight, description: 'Forwarded to the footer Stack as `overrides.gap`.' }
-    iconSize: { token: font.size.lg, description: 'Forwarded to the tone Icon as `overrides.size`.' }
-    icon: { token: 'color.status.{tone}.icon' }
+    iconGap: { token: layout.gap.normal, part: icon, description: Between the icon and the text block. }
+    footerGap: { token: layout.gap.tight, part: footer, description: 'Forwarded to the footer Stack as `overrides.gap`.' }
+    iconSize: { token: font.size.lg, part: icon, description: 'Forwarded to the tone Icon as `overrides.size`.' }
+    icon: { token: 'color.status.{tone}.icon', part: icon }
     width: { token: layout.maxWidth.prose, description: 'Always the small size; an alert dialog with more content is a Dialog.' }
     layer: { token: layer.dialog }
     enter: { token: motion.duration.base }
@@ -80,13 +90,19 @@ component:
     focusRingWidth: { token: border.width.focus }
   copy:
     cancelLabel: Cancel
+  overlay:
+    layer: modal
+    open: open
+    closeEvent: onCancel
+    dismiss: [escape, close-button]
+    modal: true
   a11y:
     role: alertdialog
     requires: [accessible-name, focus-trap, focus-restore, escape-dismiss, inert-background, scroll-lock, keyboard-operable, focus-visible, contrast-aa, reduced-motion, target-24px]
     contrast:
       - { foreground: color.foreground, background: color.overlay.surface, level: AA }
       - { foreground: color.foreground.muted, background: color.overlay.surface, level: AA }
-      - { foreground: 'color.status.{tone}.icon', background: color.overlay.surface, level: AA, large: true }
+      - { foreground: 'color.status.{tone}.icon', background: color.overlay.surface, level: AA, nonText: true }
   platforms:
     web:
       element: dialog
@@ -104,6 +120,69 @@ component:
       element: sheet
       props: [.sheet, .popover, .interactiveDismissDisabled, .accessibilityAddTraits=isModal, AccessibilityNotification, Button]
       notes: 'Dialog''s presentation with `.interactiveDismissDisabled()` always (an alert dialog never dismisses on scrim), the heading and body announced on open, initial focus on the cancel `Button` (or confirm when `destructive` is false, per the doc), Escape = cancel. Not `.alert()`: the system alert cannot take the theme or a body view. `confirmLabel`/`cancelLabel` from copy.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/escape ones from the schema.
+    - name: confirm-button-fires-on-confirm
+      description: The confirming action reports; the consumer performs it and closes.
+      given: { open: true }
+      when: { click: confirmButton }
+      then:
+        - { event: onConfirm }
+    - name: cancel-button-fires-on-cancel
+      given: { open: true }
+      when: { click: cancelButton }
+      then:
+        - { event: onCancel }
+    - name: focus-starts-on-the-cancel-button
+      description: The least-destructive action is focused first, so Enter pressed reflexively cancels rather than destroys (WCAG 3.3.4).
+      given: { open: true }
+      then:
+        - { focused: cancelButton }
+      platforms: [web, lit]
+    - name: a-scrim-click-does-nothing
+      description: An alert dialog never dismisses on a scrim click, so a stray tap cannot answer a decision.
+      given: { open: true }
+      when: { click: scrim }
+      then:
+        - { event: onCancel, fired: false }
+        - { event: onConfirm, fired: false }
+    - name: confirm-disabled-does-not-confirm
+      description: confirmDisabled blocks the confirming action while a precondition is unmet.
+      given: { open: true, confirmDisabled: true }
+      when: { click: confirmButton }
+      then:
+        - { event: onConfirm, fired: false }
+    - name: cancel-works-while-confirm-is-disabled
+      description: '"Cancel always works": the safe way out is never blocked by confirmDisabled.'
+      given: { open: true, confirmDisabled: true }
+      when: { click: cancelButton }
+      then:
+        - { event: onCancel }
+    - name: escape-cancels-while-confirm-is-disabled
+      description: Escape is the keyboard's way out and is not blocked by confirmDisabled either (keyboard rule 1).
+      given: { open: true, confirmDisabled: true }
+      when: { key: Escape }
+      then:
+        - { event: onCancel }
+      platforms: [web, lit]
+    - name: the-cancel-button-is-named-from-copy
+      description: With no cancelLabel the declining action falls back to copy.cancelLabel.
+      given: { open: true }
+      then:
+        - { copy: cancelLabel }
+  examples:
+    - name: delete-files
+      description: The destructive confirm this component exists for, counting what will go.
+      given: { open: true, tone: danger, heading: 'Delete 3 files?', description: 'They will be removed from all shared folders. This cannot be undone.', confirmLabel: 'Delete files' }
+    - name: leave-without-saving
+      description: A consequential but recoverable decision, where the declining action is the one to name.
+      given: { open: true, tone: warning, heading: 'Leave without saving?', description: 'Your changes to this draft will be lost.', confirmLabel: 'Leave', cancelLabel: 'Keep editing' }
+    - name: typed-confirmation
+      description: A decision gated on a precondition, with Confirm inert until it is met.
+      given: { open: true, tone: danger, heading: 'Cancel your subscription?', description: 'Your workspace stays read-only after the current billing period ends.', confirmLabel: 'Cancel subscription', confirmDisabled: true }
+    - name: publish-to-the-team
+      description: A choice with no downside that still needs an answer.
+      given: { open: true, tone: info, heading: 'Publish to the team?', description: 'Everyone in the workspace will be able to see this page.', confirmLabel: 'Publish' }
 ---
 
 An alert dialog is a Dialog with one job: get a considered yes or no. It looks like a Dialog and behaves like one in every way that keeps people safe, and differs in every way that keeps them from answering by accident — no close button, no scrim dismissal, focus starting on Cancel, the confirming action named after what it does.

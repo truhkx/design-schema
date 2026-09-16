@@ -55,6 +55,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     list: () => (deep(root, '[role="listbox"]') ?? deep(root, '[part="list"]') ?? deep(root, '[data-part="list"]') ?? root.firstElementChild) as HTMLElement,
+    option: () => (deep(root, '[part="option"]') ?? deep(root, '[data-part="option"]')) as HTMLElement,
   };
   return s;
 }
@@ -64,6 +65,52 @@ beforeEach(() => {
 });
 
 describe('ds-listbox', () => {
+  test('click-on-an-option-selects-it', async () => {
+    const s = await setup({});
+    await userEvent.click(s.option());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-selects-as-it-moves-when-selection-follows-focus', async () => {
+    const s = await setup({"selectionFollowsFocus": true});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrows-only-move-when-selection-does-not-follow-focus', async () => {
+    const s = await setup({"selectionFollowsFocus": false});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(s.events.onChange).not.toHaveBeenCalled();
+    expect(s.events.onActiveChange).toHaveBeenCalled();
+  });
+  test('space-selects-the-active-option', async () => {
+    const s = await setup({"selectionFollowsFocus": false});
+    s.el.focus();
+    await userEvent.keyboard(' ');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('a-disabled-option-cannot-be-selected', async () => {
+    const s = await setup({"options": [{"value": "apple", "label": "Apple", "disabled": true}, {"value": "banana", "label": "Banana"}]});
+    await userEvent.click(s.option());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('the-empty-message-shows-when-there-are-no-options', async () => {
+    const s = await setup({"options": []});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("No\\ options"));
+  });
+  test('a-custom-empty-message-replaces-the-default', async () => {
+    const s = await setup({"options": [], "emptyMessage": "No fruit matches that."});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("No\\ fruit\\ matches\\ that\\."));
+  });
+  test('loading-replaces-the-empty-message', async () => {
+    const s = await setup({"options": [], "loading": true});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Loading\u2026"));
+  });
+  test('invalid-renders-the-invalid-copy', async () => {
+    const s = await setup({"invalid": true});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."));
+    expect(s.list()).toHaveAttribute('aria-invalid', 'true');
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

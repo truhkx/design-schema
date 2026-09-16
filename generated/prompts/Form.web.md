@@ -64,6 +64,18 @@ component:
   - fields
   - errorSummary
   - actions
+  parts:
+    fields:
+      kind: slot
+      slot:
+        default: true
+        prop: children
+        required: true
+    actions:
+      kind: slot
+      slot:
+        prop: actions
+        required: true
   props:
     children:
       type: content
@@ -125,6 +137,13 @@ component:
         lit: submit
         rn: onSubmit
         swiftui: onSubmit
+      payload:
+      - name: values
+        type: object
+        shape: Record<string, string | boolean>
+        description: The collected values keyed by field name.
+      fires:
+      - user
     onInvalid:
       description: Fired when submission is blocked by validation. Receives the errors
         keyed by field name.
@@ -133,6 +152,13 @@ component:
         lit: invalid
         rn: onInvalid
         swiftui: onInvalid
+      payload:
+      - name: errors
+        type: object
+        shape: Record<string, string>
+        description: The validation errors keyed by field name.
+      fires:
+      - user
   styles:
     gap:
       token: layout.gap.loose
@@ -141,16 +167,28 @@ component:
       locked: false
     errorSummaryBorder:
       token: color.border.danger
+      part: errorSummary
       locked: false
     errorSummaryText:
       token: color.foreground.danger
+      part: errorSummary
       locked: true
     errorSummaryBackground:
       token: color.background.subtle
+      part: errorSummary
       locked: true
   copy:
-    summaryHeading: '{count} problems with this form'
+    summaryHeading:
+      plural:
+        by: count
+        one: 1 problem with this form
+        other: '{count} problems with this form'
+      params:
+        count:
+          type: number
+          description: How many fields failed validation.
     summaryHeadingOne: 1 problem with this form
+    invalidSummary: This form has errors.
   a11y:
     role: form
     requires:
@@ -160,6 +198,9 @@ component:
     - foreground: color.foreground.danger
       background: color.background.subtle
       level: AA
+  form:
+    role: container
+    discovery: context
   platforms:
     web:
       element: form
@@ -208,7 +249,99 @@ component:
         focus and `copy.invalidSummary` is announced. `onInvalid` receives the failures;
         `onSubmit` the value map (`String | Bool | Double | [String] | ClosedRange<Double>`).
         Not SwiftUI's `Form` (a grouped-list style that fights the tokens).
+  behavior:
+  - name: label-names-the-form-landmark
+    description: The form is a named landmark when label is given, which is what a
+      page with more than one form needs (WCAG 1.3.1, 2.4.1).
+    given:
+      label: Sign in
+    then:
+    - role: form
+      platforms:
+      - web
+    - name: Sign in
+      platforms:
+      - web
+  examples:
+  - name: sign-in
+    description: The smallest real form - two fields and one submit action, validated
+      on submit.
+    given:
+      name: sign-in
+      label: Sign in
+      children: An email Input and a password Input
+      actions: A submit Button labelled Sign in
+  - name: long-form-validated-on-blur
+    description: A longer form where feedback per field as focus leaves it beats one
+      report at the end.
+    given:
+      name: profile
+      label: Profile details
+      validate: blur
+      children: The profile fields in a Stack
+      actions: A submit Button labelled Save profile
+  - name: submitting
+    description: A form while its request is in flight - every field and action disabled,
+      so it cannot be submitted twice.
+    given:
+      name: sign-in
+      label: Sign in
+      disabled: true
+      children: An email Input and a password Input
+      actions: A submit Button labelled Sign in
+  - name: without-a-summary
+    description: A short form that reports errors at the fields alone, moving focus
+      to the first invalid one.
+    given:
+      name: rename
+      label: Rename file
+      errorSummary: false
+      children: A name Input
+      actions: A submit Button labelled Rename
 ```
+
+## Events
+
+- `onSubmit`: emit `onSubmit`
+  - payload, positional, in this order: `values: Record<string, string | boolean>`
+  - fires on: user
+- `onInvalid`: emit `onInvalid`
+  - payload, positional, in this order: `errors: Record<string, string>`
+  - fires on: user
+
+## Parts and slots
+
+- `container`: element
+- `fields`: slot, prop `children`, required
+- `errorSummary`: element
+- `actions`: slot, prop `actions`, required
+
+## Style bindings
+
+- `errorSummaryBorder`: token `color.border.danger`; part `errorSummary`
+- `errorSummaryText`: token `color.foreground.danger`; part `errorSummary`; locked
+- `errorSummaryBackground`: token `color.background.subtle`; part `errorSummary`; locked
+
+## Form and overlay
+
+```yaml
+form:
+  role: container
+  discovery: context
+```
+
+## Copy
+
+- `summaryHeading`: "{count} problems with this form"; params `count` (number); plural by `count`: one "1 problem with this form", other "{count} problems with this form"
+- `summaryHeadingOne`: "1 problem with this form"
+- `invalidSummary`: "This form has errors."
+
+## Constants and examples
+
+- example `sign-in`, story `SignIn`: given `name: "sign-in"`, `label: "Sign in"`, `children: "An email Input and a password Input"`, `actions: "A submit Button labelled Sign in"`; The smallest real form - two fields and one submit action, validated on submit.
+- example `long-form-validated-on-blur`, story `LongFormValidatedOnBlur`: given `name: "profile"`, `label: "Profile details"`, `validate: "blur"`, `children: "The profile fields in a Stack"`, `actions: "A submit Button labelled Save profile"`; A longer form where feedback per field as focus leaves it beats one report at the end.
+- example `submitting`, story `Submitting`: given `name: "sign-in"`, `label: "Sign in"`, `disabled: true`, `children: "An email Input and a password Input"`, `actions: "A submit Button labelled Sign in"`; A form while its request is in flight - every field and action disabled, so it cannot be submitted twice.
+- example `without-a-summary`, story `WithoutASummary`: given `name: "rename"`, `label: "Rename file"`, `errorSummary: false`, `children: "A name Input"`, `actions: "A submit Button labelled Rename"`; A short form that reports errors at the fields alone, moving focus to the first invalid one.
 
 ## Overrides (per-instance styling contract)
 
@@ -221,11 +354,19 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `gap`, `errorSummaryBorder`
 Locked (accessibility-bearing, never overridable): `errorSummaryText`, `errorSummaryBackground`
 
-## Behavior scenarios (4)
+## Behavior scenarios (5)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: label-names-the-form-landmark
+  description: The form is a named landmark when label is given, which is what a page
+    with more than one form needs (WCAG 1.3.1, 2.4.1).
+  given:
+    label: Sign in
+  then:
+  - role: form
+  - name: Sign in
 - name: renders
   then:
   - renders: true

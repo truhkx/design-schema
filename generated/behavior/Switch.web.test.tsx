@@ -10,6 +10,17 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<SwitchProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -52,14 +63,14 @@ describe('Switch', () => {
   });
   test('space-toggles', async () => {
     const s = setup({});
-    act(() => (s.track()).focus());
+    act(() => focusInto(s.track()));
     await s.user.keyboard('[Space]');
     expect(s.events.onChange).toHaveBeenCalledWith(true, expect.anything());
     expect(s.track()).toBeChecked();
   });
   test('enter-is-ignored', async () => {
     const s = setup({});
-    act(() => (s.track()).focus());
+    act(() => focusInto(s.track()));
     await s.user.keyboard('{Enter}');
     expect(s.events.onChange).not.toHaveBeenCalled();
     expect(s.track()).not.toBeChecked();
@@ -96,6 +107,12 @@ describe('Switch', () => {
   test('description-is-rendered', async () => {
     const s = setup({"description": "Sends a daily summary at 9:00."});
     expect(screen.getByText(new RegExp("Sends\\ a\\ daily\\ summary\\ at\\ 9:00\\."))).toBeInTheDocument();
+  });
+  test('label-at-the-end-still-toggles-the-row', async () => {
+    const s = setup({"labelPosition": "end"});
+    await s.user.click(s.label());
+    expect(s.events.onChange).toHaveBeenCalledWith(true, expect.anything());
+    expect(s.track()).toBeChecked();
   });
   test('renders', async () => {
     const s = setup({});

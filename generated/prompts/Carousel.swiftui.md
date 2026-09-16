@@ -69,8 +69,14 @@ component:
   - playButton
   - liveRegion
   composition:
-    prevButton: Button
-    nextButton: Button
+    prevButton:
+      component: Button
+      props:
+        variant: secondary
+    nextButton:
+      component: Button
+      props:
+        variant: secondary
     playButton: Button
   props:
     label:
@@ -85,7 +91,7 @@ component:
       description: One `CarouselSlide` per slide. A slide is any content; a Card is
         the usual shape. Slides should be equal height.
     perView:
-      type: number
+      type: integer
       default: 1
       description: How many slides are visible at once at the widest layout; fewer
         are shown as the viewport narrows (one below the prose width).
@@ -115,7 +121,7 @@ component:
       description: 'How slides are chosen directly: small dot buttons, tabs with each
         slide''s label (for few, meaningful slides), or none (arrows only).'
     activeIndex:
-      type: number
+      type: integer
       description: Controlled current slide (zero-based). Omit for uncontrolled.
     snap:
       type: boolean
@@ -130,6 +136,27 @@ component:
         lit: change
         rn: onChange
         swiftui: onChange
+      payload:
+      - name: index
+        type: number
+        description: The index of the new current slide.
+      - name: reason
+        type: enum
+        values:
+        - next
+        - prev
+        - picker
+        - swipe
+        - autoplay
+      reasons:
+        next: the next control was activated
+        prev: the previous control was activated
+        picker: a picker dot or tab was chosen
+        swipe: the track was swiped
+        autoplay: autoplay advanced the carousel
+      fires:
+      - user
+      - programmatic
   keyboard:
   - keys:
     - Tab
@@ -167,9 +194,11 @@ component:
     action: 'Activates the focused control: previous, next, a picker item, or play/pause.'
     from: inside
     expect: manual
+    native: true
   styles:
     slideGap:
       token: layout.gap.normal
+      part: slide
       locked: false
     controlOffset:
       token: space.2
@@ -186,9 +215,11 @@ component:
       locked: false
     pickerGap:
       token: layout.gap.tight
+      part: picker
       locked: false
     pickerOffset:
       token: space.3
+      part: picker
       description: Between the viewport and the picker row.
       locked: false
     dot:
@@ -222,14 +253,41 @@ component:
     focusRingWidth:
       token: border.width.focus
       locked: true
+  constants:
+    minInterval:
+      description: The floor `interval` is raised to, so autoplay never advances faster
+        than a slide can be read.
+      value: 5000
+      unit: ms
   copy:
     previous: Previous slide
     next: Next slide
     play: Start automatic rotation
     pause: Stop automatic rotation
-    slideLabel: '{n} of {total}'
-    goTo: Go to slide {n}
-    announce: Slide {n} of {total}
+    slideLabel:
+      text: '{n} of {total}'
+      params:
+        n:
+          type: number
+          description: The slide's position.
+        total:
+          type: number
+          description: How many slides the carousel has.
+    goTo:
+      text: Go to slide {n}
+      params:
+        n:
+          type: number
+          description: The slide's position.
+    announce:
+      text: Slide {n} of {total}
+      params:
+        n:
+          type: number
+          description: The slide's position.
+        total:
+          type: number
+          description: How many slides the carousel has.
   a11y:
     role: region
     requires:
@@ -251,11 +309,11 @@ component:
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.border.strong
       background: color.background
       level: AA
-      large: true
+      nonText: true
   platforms:
     web:
       element: section
@@ -286,7 +344,8 @@ component:
       - loop
       - autoplay
       - picker
-      - snap
+      - prop: snap
+        attribute: no-snap
       - active-index
       notes: Slotted <ds-carousel-slide> children; scroll-snap viewport in the shadow
         root with the slot inside a track; IntersectionObserver on slotted slides
@@ -329,7 +388,126 @@ component:
         and the picker (dots or tabs) as documented. Autoplay is a `TimelineView`
         timer stopped on any touch, VoiceOver focus or the pause `Button`, never started
         under reduced motion; user-initiated changes are announced.'
+  behavior:
+  - name: next-advances-a-slide
+    description: Previous and Next move one page of perView slides, and onChange reports
+      the change with its reason.
+    when:
+      click: nextButton
+    then:
+    - event: onChange
+  - name: previous-at-the-first-slide-does-nothing
+    description: The arrows are disabled at the ends unless loop, so users can tell
+      where the end is.
+    when:
+      click: prevButton
+    then:
+    - event: onChange
+      fired: false
+  - name: loop-wraps-backwards-from-the-first-slide
+    description: With loop, Next from the last returns to the first, and Previous
+      from the first to the last.
+    given:
+      loop: true
+    when:
+      click: prevButton
+    then:
+    - event: onChange
+  - name: the-picker-jumps-straight-to-a-slide
+    given:
+      activeIndex: 1
+      picker: dots
+    when:
+      click: pickerItem
+    then:
+    - event: onChange
+  - name: the-region-is-announced-as-a-carousel
+    description: A region named for its content, with aria-roledescription so it is
+      announced as a carousel rather than a plain region.
+    then:
+    - attribute: aria-roledescription
+      is: carousel
+    platforms:
+    - web
+  examples:
+  - name: featured-products
+    description: The default carousel of image slides chosen with dots.
+    given:
+      label: Featured products
+      children: Four CarouselSlide children, each a product Card
+  - name: named-slides-with-tabs
+    description: A few meaningful slides whose names are worth showing, so the picker
+      is tabs.
+    given:
+      label: Plans
+      picker: tabs
+      children: 'Three CarouselSlide children: Starter, Team and Enterprise'
+  - name: ambient-hero
+    description: An ambient hero of photographs that rotates slowly and wraps, with
+      the pause control always visible.
+    given:
+      label: Customer stories
+      autoplay: true
+      interval: 8000
+      loop: true
+      children: Three CarouselSlide children, each a photograph
+  - name: three-up-gallery
+    description: Three slides at a time, paged by the arrows alone.
+    given:
+      label: Gallery
+      perView: 3
+      picker: none
+      children: Six CarouselSlide children, each an image
 ```
+
+## Events
+
+- `onChange`: emit `onChange`
+  - payload, positional, in this order: `index: number`, `reason: 'next' | 'prev' | 'picker' | 'swipe' | 'autoplay'`
+  - reasons: `next` (the next control was activated); `prev` (the previous control was activated); `picker` (a picker dot or tab was chosen); `swipe` (the track was swiped); `autoplay` (autoplay advanced the carousel)
+  - fires on: user, programmatic
+
+## Parts and slots
+
+- `region`: element
+- `viewport`: element
+- `track`: element
+- `slide`: element
+- `controlSurface`: element
+- `prevButton`: component `Button`; props `variant` = "secondary"
+- `nextButton`: component `Button`; props `variant` = "secondary"
+- `picker`: element
+- `pickerItem`: element
+- `playButton`: component `Button`
+- `liveRegion`: element
+
+## Style bindings
+
+- `slideGap`: token `layout.gap.normal`; part `slide`
+- `pickerGap`: token `layout.gap.tight`; part `picker`
+- `pickerOffset`: token `space.3`; part `picker`
+
+## Keyboard
+
+- `Enter`, ` ` (Activates the focused control: previous, next, a picker item, or play/pause.): expect manual; native: the rendered element already does this
+
+## Copy
+
+- `previous`: "Previous slide"
+- `next`: "Next slide"
+- `play`: "Start automatic rotation"
+- `pause`: "Stop automatic rotation"
+- `slideLabel`: "{n} of {total}"; params `n` (number), `total` (number)
+- `goTo`: "Go to slide {n}"; params `n` (number)
+- `announce`: "Slide {n} of {total}"; params `n` (number), `total` (number)
+
+## Constants and examples
+
+- constant `minInterval`: 5000 ms
+- example `featured-products`, story `FeaturedProducts`: given `label: "Featured products"`, `children: "Four CarouselSlide children, each a product Card"`; The default carousel of image slides chosen with dots.
+- example `named-slides-with-tabs`, story `NamedSlidesWithTabs`: given `label: "Plans"`, `picker: "tabs"`, `children: "Three CarouselSlide children: Starter, Team and Enterprise"`; A few meaningful slides whose names are worth showing, so the picker is tabs.
+- example `ambient-hero`, story `AmbientHero`: given `label: "Customer stories"`, `autoplay: true`, `interval: 8000`, `loop: true`, `children: "Three CarouselSlide children, each a photograph"`; An ambient hero of photographs that rotates slowly and wraps, with the pause control always visible.
+- example `three-up-gallery`, story `ThreeUpGallery`: given `label: "Gallery"`, `perView: 3`, `picker: "none"`, `children: "Six CarouselSlide children, each an image"`; Three slides at a time, paged by the arrows alone.
 
 ## Overrides (per-instance styling contract)
 
@@ -407,11 +585,43 @@ Render `<section role="region" aria-roledescription="carousel" aria-label data-d
 
 Tabs, Card, Stepper, Button.
 
-## Behavior scenarios (5)
+## Behavior scenarios (9)
 
 One test per scenario, in this order.
 
 ```yaml
+- name: next-advances-a-slide
+  description: Previous and Next move one page of perView slides, and onChange reports
+    the change with its reason.
+  when:
+    click: nextButton
+  then:
+  - event: onChange
+- name: previous-at-the-first-slide-does-nothing
+  description: The arrows are disabled at the ends unless loop, so users can tell
+    where the end is.
+  when:
+    click: prevButton
+  then:
+  - event: onChange
+    fired: false
+- name: loop-wraps-backwards-from-the-first-slide
+  description: With loop, Next from the last returns to the first, and Previous from
+    the first to the last.
+  given:
+    loop: true
+  when:
+    click: prevButton
+  then:
+  - event: onChange
+- name: the-picker-jumps-straight-to-a-slide
+  given:
+    activeIndex: 1
+    picker: dots
+  when:
+    click: pickerItem
+  then:
+  - event: onChange
 - name: renders
   then:
   - renders: true

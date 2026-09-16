@@ -18,6 +18,9 @@ component:
       type: boolean
       required: true
       description: Controlled visibility, as in Dialog.
+      controls:
+        event: onClose
+        state: open
     heading:
       type: string
       required: true
@@ -52,33 +55,60 @@ component:
     onClose:
       description: 'Requested close with reason: `escape`, `close-button`, `scrim`, `drag`, or `action`.'
       platforms: { web: onClose, lit: close, rn: onClose, swiftui: onClose }
+      payload:
+        - { name: reason, type: enum, values: [escape, close-button, scrim, drag, action] }
+      reasons:
+        escape: Escape pressed while open
+        close-button: the close button was activated
+        scrim: the scrim was clicked
+        drag: the sheet was dragged past the dismiss threshold
+        action: a footer action asked to close
+      fires: [user]
+      timing: { phase: request }
     onDragDismiss:
       description: The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag; provided so analytics can distinguish gestures.
       gesture: true
       platforms: { web: onDragDismiss, lit: drag-dismiss, rn: onDragDismiss, swiftui: onDragDismiss }
+      fires: [user]
+      timing: { phase: request, before: [onClose] }
   keyboard:
     - { keys: [Escape], action: Requests close with reason escape., from: inside, expect: closes }
     - { keys: [Tab], action: From the last element wraps to the first; the handle is never a stop., from: last, expect: focus-wraps-to-first }
     - { keys: [Shift+Tab], action: From the first element wraps to the last., from: first, expect: focus-wraps-to-last }
   styles:
-    scrim: { token: color.overlay.scrim }
-    surface: { token: color.overlay.surface }
+    scrim: { token: color.overlay.scrim, part: scrim }
+    surface: { token: color.overlay.surface, part: surface }
     shadow: { token: shadow.overlay }
     radius: { token: radius.lg, description: Top corners only on phones; all corners when it renders as a Dialog. }
-    handle: { token: color.foreground.muted, description: 'A 4×36-unit pill (space.1 tall, space.10 wide) centered in the header, decorative.' }
-    handleHeight: { token: space.1 }
-    handleWidth: { token: space.10 }
+    handle: { token: color.foreground.muted, part: handle, description: 'A 4×36-unit pill (space.1 tall, space.10 wide) centered in the header, decorative.' }
+    handleHeight: { token: space.1, part: handle }
+    handleWidth: { token: space.10, part: handle }
     inset: { token: layout.inset.lg }
     partGap: { token: layout.gap.loose }
-    footerGap: { token: layout.gap.tight }
+    footerGap: { token: layout.gap.tight, part: footer }
     maxWidth: { token: layout.maxWidth.prose, description: 'Read once from the theme (the breakpoint is not per-instance overridable). Above this viewport width the sheet renders as a centered Dialog of size md instead of rising from the edge.' }
     layer: { token: layer.sheet }
     enter: { token: motion.duration.base, description: 'Slide up from the bottom edge with the scrim fading; motion.easing.standard; instant under reduced motion.' }
     exit: { token: motion.duration.fast, description: 'Slide down with motion.easing.exit; a drag dismiss continues at the drag velocity.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
+  constants:
+    dismissDistance:
+      description: 'Fraction of the sheet height a downward drag must pass for release to dismiss it rather than spring back.'
+      value: 0.25
+      unit: ratio
+    dismissVelocity:
+      description: 'Drag speed at release that dismisses the sheet whatever the distance travelled.'
+      value: 1.5
+      unit: px/ms
   copy:
     closeLabel: Close
+  overlay:
+    layer: sheet
+    open: open
+    closeEvent: onClose
+    dismiss: [escape, scrim, close-button, swipe]
+    modal: true
   a11y:
     role: dialog
     requires: [accessible-name, focus-trap, focus-restore, escape-dismiss, inert-background, scroll-lock, gesture-alternative, keyboard-operable, focus-visible, contrast-aa, reduced-motion, target-44px]
@@ -93,7 +123,7 @@ component:
       notes: 'The same native <dialog> as Dialog, positioned at the bottom edge with inset-block-end: 0 and full width below the maxWidth token; above it, the generator renders Dialog directly (composition, not duplication). Drag uses Pointer Events on the handle/header with setPointerCapture; the handle is aria-hidden and not focusable. Safe-area padding via env(safe-area-inset-bottom).'
     lit:
       tag: ds-bottom-sheet
-      reflect: [open, height, no-dismiss, drag-to-dismiss]
+      reflect: [open, height, { prop: dismissible, attribute: no-dismiss }, { prop: dragToDismiss, attribute: no-drag-to-dismiss }]
       notes: 'Shadow <dialog> with showModal(); a matchMedia listener on the maxWidth token switches between sheet and dialog presentation. `close` and `drag-dismiss` are composed CustomEvents.'
     rn:
       element: Modal
@@ -103,6 +133,54 @@ component:
       element: sheet
       props: [.sheet, .presentationDetents, .presentationDragIndicator, .presentationBackgroundInteraction, .interactiveDismissDisabled, .presentationBackground, FocusScope, Button]
       notes: 'The native sheet: `.sheet` with `.presentationDetents` from `height` (`content` → `.height(measured)`, `half` → `.medium`, `full` → `.large`) and `snapPoints` → `.fraction`, `.presentationDragIndicator(.visible)` as the drag handle, `.presentationBackground(color.overlay.surface)`, `.presentationCornerRadius` from the radius token. Drag-to-dismiss is the system''s and fires `onDragDismiss`; the close `Button` is always rendered (gesture-alternative). `dismissOnScrim: false` → `.interactiveDismissDisabled()`. Heading names the sheet.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/escape ones from the schema.
+    - name: close-button-fires-on-close
+      description: The always-visible close button requests close, as in Dialog.
+      given: { open: true }
+      when: { click: closeButton }
+      then:
+        - { event: onClose }
+    - name: the-close-button-works-without-the-drag-gesture
+      description: The drag is purely additive — every sheet can be closed with one pointer activation (WCAG 2.5.1, gesture-alternative).
+      given: { open: true, dragToDismiss: false }
+      when: { click: closeButton }
+      then:
+        - { event: onClose }
+    - name: non-dismissible-still-reports-escape
+      description: With `dismissible` false only the footer actions close the sheet, and Escape still reports.
+      given: { open: true, dismissible: false }
+      when: { key: Escape }
+      then:
+        - { event: onClose }
+      platforms: [web, lit]
+    - name: non-dismissible-scrim-tap-does-nothing
+      given: { open: true, dismissible: false }
+      when: { click: scrim }
+      then:
+        - { event: onClose, fired: false }
+    - name: hidden-heading-is-still-the-accessible-name
+      description: A share sheet may hide its title; the name is required regardless.
+      given: { open: true, hideHeading: true }
+      then:
+        - { name: true }
+    - name: closed-sheet-renders-nothing
+      given: { open: false }
+      then:
+        - { renders: false }
+  examples:
+    - name: filters
+      description: The phone presentation of a filter panel, with the action row pinned at the bottom.
+      given: { open: true, heading: 'Filters', children: 'A Form of filter controls', footer: 'Clear and Apply Buttons' }
+    - name: half-height-results
+      description: A browsable list where seeing the page behind matters, so the sheet stops at half height.
+      given: { open: true, heading: 'Nearby places', children: 'A scrolling list of results', height: half }
+    - name: share-sheet
+      description: A self-explanatory body whose title exists only for assistive technology.
+      given: { open: true, heading: 'Share to', children: 'A row of share targets', hideHeading: true }
+    - name: full-screen-task
+      description: A task that needs the whole screen but should still feel dismissable, with the gesture off.
+      given: { open: true, heading: 'New expense', children: 'A Form of a few fields', footer: 'Cancel and Save Buttons', height: full, dragToDismiss: false }
 ---
 
 A bottom sheet is the phone's dialog. It rises from the edge the thumb can reach, keeps the page visible behind a scrim so the user knows where they are, and goes away with a swipe, a tap outside, or a close button. On a wide screen the same content is a Dialog; the component decides which, so screens are written once.

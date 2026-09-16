@@ -26,6 +26,23 @@ function setup(given: Partial<FocusScopeProps> = {}) {
 }
 
 describe('FocusScope', () => {
+  test('auto-focus-container-focuses-the-wrapper', async () => {
+    const s = setup({"autoFocus": "container"});
+    expect(document.activeElement).toBe(s.scope());
+  });
+  test('auto-focus-none-moves-focus-nowhere', async () => {
+    const s = setup({"autoFocus": "none"});
+    expect(document.activeElement === document.body).toBe(true);
+  });
+  test('the-wrapper-is-not-focusable', async () => {
+    const s = setup({"autoFocus": "none"});
+    act(() => (s.scope()).focus());
+    expect(s.scope()).not.toHaveFocus();
+  });
+  test('the-scope-adds-no-role', async () => {
+    const s = setup({});
+    expect(s.scope()).not.toHaveAttribute("role");
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

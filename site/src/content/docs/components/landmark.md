@@ -47,6 +47,49 @@ component:
       element: VStack
       props: [.accessibilityElement=contain, .accessibilityLabel, .accessibilityAddTraits, accessibilityRotor]
       notes: 'iOS has no landmark roles. The Landmark renders `.accessibilityElement(children: .contain)` with the `label` as its accessibility label so VoiceOver announces the region boundary when entering it, and registers an `.accessibilityRotorEntry` under a package-wide ''Landmarks'' rotor (`Support/LandmarkRotor.swift`) so users can jump between regions as they do on web. `role: main` adds `.accessibilityAddTraits(.isSummaryElement)` only when the doc asks. The element name (`nav`, `aside`) has no equivalent; `role` drives everything.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum ones from the schema. The role is an enum prop,
+    # so every scenario states it in `given`; `then.name` has no mapping while the role comes from a prop.
+    - name: the-role-prop-chooses-the-landmark
+      description: navigation renders the navigation landmark.
+      given: { role: 'navigation' }
+      then:
+        - { role: navigation }
+      platforms: [web]
+    - name: main-is-the-primary-content-landmark
+      description: Exactly one main per page; the element carries the role.
+      given: { role: 'main' }
+      then:
+        - { role: main }
+      platforms: [web]
+    - name: a-region-is-named-by-its-label
+      description: A region is a landmark only when it is named; the label is rendered as aria-label.
+      given: { role: 'region', label: 'Related articles' }
+      then:
+        - { role: region }
+        - { attribute: 'aria-label', is: 'Related articles' }
+      platforms: [web]
+    - name: an-overridden-element-still-carries-its-role
+      description: The explicit role attribute is emitted whenever `as` overrides the default element.
+      given: { role: 'banner', as: 'div' }
+      then:
+        - { attribute: role, is: 'banner' }
+        - { role: banner }
+      platforms: [web]
+  examples:
+    - name: page-main
+      description: The single main landmark every page needs.
+      given: { role: 'main', children: 'The page content.' }
+    - name: footer-navigation
+      description: A second navigation, named so it is distinguishable from the primary one.
+      given: { role: 'navigation', label: 'Footer', children: 'Footer links.' }
+    - name: related-articles-region
+      description: A labelled section that deserves a jump point of its own.
+      given: { role: 'region', label: 'Related articles', children: 'A list of related articles.' }
+    - name: banner-that-is-not-the-page-header
+      description: A banner that is not the page header, where the native header element would be wrong.
+      given: { role: 'banner', as: 'div', children: 'The product banner.' }
+      platforms: [web]
 ---
 
 Landmarks are the page's table of contents for assistive technology. A screen-reader user arriving on a page presses one key to jump to the main content, another to list the navigations, another for the search. Without landmarks they read from the top. This component exists so that every page in the system gets the same, correct set of them without anyone remembering which element implies which role.

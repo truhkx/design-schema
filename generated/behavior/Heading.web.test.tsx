@@ -24,6 +24,14 @@ function setup(given: Partial<HeadingProps> = {}) {
 }
 
 describe('Heading', () => {
+  test('level-puts-the-heading-in-the-outline', async () => {
+    const s = setup({"level": "3"});
+    expect(screen.getByRole('heading')).toBeInTheDocument();
+  });
+  test('size-does-not-change-the-outline', async () => {
+    const s = setup({"level": "2", "size": "md"});
+    expect(screen.getByRole('heading')).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

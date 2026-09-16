@@ -6,6 +6,10 @@ import type { ActionSheetProps } from '../../packages/rn/src/ActionSheet';
 import meta from '../../packages/rn/src/ActionSheet.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<ActionSheetProps> = {}) {
   const events = {
     onAction: jest.fn(),
@@ -24,12 +28,37 @@ function setup(given: Partial<ActionSheetProps> = {}) {
     props,
     root: () => screen.queryByTestId('ActionSheet') ?? screen.UNSAFE_root,
     scrim: () => screen.queryByRole('menu') ?? s.root(),
+    item: () => screen.queryByTestId('ActionSheet.item') ?? s.root(),
+    cancelButton: () => screen.queryByTestId('ActionSheet.cancelButton') ?? s.root(),
     rerender: (next: Partial<ActionSheetProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('ActionSheet', () => {
+  test('choosing-an-action-fires-on-action', () => {
+    const s = setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}, {"id": "delete", "label": "Delete photo", "tone": "danger"}]});
+    fireEvent.press(s.item());
+    expect(s.events.onAction).toHaveBeenCalled();
+  });
+  test('the-cancel-row-fires-on-close', () => {
+    const s = setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
+    fireEvent.press(s.cancelButton());
+    expect(s.events.onClose).toHaveBeenCalled();
+    expect(s.events.onAction).not.toHaveBeenCalled();
+  });
+  test('the-cancel-row-is-named-from-copy', () => {
+    const s = setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
+    expect(screen.getByText(new RegExp("Cancel"))).toBeOnTheScreen();
+  });
+  test('the-list-is-a-menu', () => {
+    const s = setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
+    expect(screen.getByRole('menu')).toBeOnTheScreen();
+  });
+  test('closed-sheet-renders-nothing', () => {
+    const s = setup({"open": false, "actions": [{"id": "share", "label": "Share"}]});
+    expect(screen.toJSON()).toBeNull();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

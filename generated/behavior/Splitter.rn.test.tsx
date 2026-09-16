@@ -25,12 +25,18 @@ function setup(given: Partial<SplitterProps> = {}) {
     props,
     root: () => screen.queryByTestId('Splitter') ?? screen.UNSAFE_root,
     container: () => screen.queryByRole('separator') ?? s.root(),
+    collapseButton: () => screen.queryByTestId('Splitter.collapseButton') ?? s.root(),
     rerender: (next: Partial<SplitterProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Splitter', () => {
+  test('the-collapse-button-collapses-the-pane', () => {
+    const s = setup({"collapsible": true, "defaultSize": 40});
+    fireEvent.press(s.collapseButton());
+    expect(s.events.onCollapseChange).toHaveBeenCalled();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

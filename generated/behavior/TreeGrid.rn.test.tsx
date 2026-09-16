@@ -6,6 +6,10 @@ import type { TreeGridProps } from '../../packages/rn/src/TreeGrid';
 import meta from '../../packages/rn/src/TreeGrid.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<TreeGridProps> = {}) {
   const events = {
     onExpandChange: jest.fn(),
@@ -29,12 +33,40 @@ function setup(given: Partial<TreeGridProps> = {}) {
     props,
     root: () => screen.queryByTestId('TreeGrid') ?? screen.UNSAFE_root,
     container: () => screen.queryByRole('treegrid') ?? s.root(),
+    sortButton: () => screen.queryByTestId('TreeGrid.sortButton') ?? s.root(),
+    expandButton: () => screen.queryByTestId('TreeGrid.expandButton') ?? s.root(),
+    selectCell: () => screen.queryByTestId('TreeGrid.selectCell') ?? s.root(),
     rerender: (next: Partial<TreeGridProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('TreeGrid', () => {
+  test('the-expand-button-expands-a-row', () => {
+    const s = setup({"defaultExpanded": [], "columns": [{"key": "account", "header": "Account", "isRowHeader": true}, {"key": "balance", "header": "Balance", "align": "end"}], "data": [{"id": "assets", "account": "Assets", "balance": 100, "children": [{"id": "cash", "account": "Cash", "balance": 40}]}]});
+    fireEvent.press(s.expandButton());
+    expect(s.events.onExpandChange).toHaveBeenCalled();
+  });
+  test('expanding-a-lazy-row-asks-for-its-children', () => {
+    const s = setup({"defaultExpanded": [], "columns": [{"key": "account", "header": "Account", "isRowHeader": true}], "data": [{"id": "assets", "account": "Assets", "children": "lazy"}]});
+    fireEvent.press(s.expandButton());
+    expect(s.events.onExpand).toHaveBeenCalled();
+    expect(s.events.onExpandChange).toHaveBeenCalled();
+  });
+  test('activating-a-sortable-header-reports-the-sort', () => {
+    const s = setup({"columns": [{"key": "account", "header": "Account", "isRowHeader": true}, {"key": "balance", "header": "Balance", "align": "end", "sortable": true}], "data": [{"id": "assets", "account": "Assets", "balance": 100}, {"id": "equity", "account": "Equity", "balance": 50}]});
+    fireEvent.press(s.sortButton());
+    expect(s.events.onSortChange).toHaveBeenCalled();
+  });
+  test('selecting-a-row-reports-the-selection', () => {
+    const s = setup({"selectable": "row", "columns": [{"key": "account", "header": "Account", "isRowHeader": true}], "data": [{"id": "assets", "account": "Assets"}, {"id": "equity", "account": "Equity"}]});
+    fireEvent.press(s.selectCell());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('the-empty-message-shows-when-there-are-no-rows', () => {
+    const s = setup({"columns": [{"key": "account", "header": "Account", "isRowHeader": true}], "data": []});
+    expect(screen.getByText(new RegExp("Nothing\\ to\\ show\\."))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

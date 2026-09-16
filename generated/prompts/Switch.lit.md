@@ -76,6 +76,10 @@ component:
     checked:
       type: boolean
       description: Controlled state. Omit for an uncontrolled control.
+      controls:
+        event: onChange
+        default: defaultChecked
+        state: checked
     defaultChecked:
       type: boolean
       default: false
@@ -105,29 +109,44 @@ component:
         lit: change
         rn: onValueChange
         swiftui: onChange
+      payload:
+      - name: checked
+        type: boolean
+        description: The new state.
+      fires:
+      - user
+      timing:
+        phase: after-change
   styles:
     trackOff:
       token: color.control.trackOff
+      part: track
       locked: true
     trackOn:
       token: color.control.selectedBackground
+      part: track
       locked: true
     thumb:
       token: color.control.selectedForeground
+      part: thumb
       description: Thumb color in both states.
       locked: true
     trackWidth:
       token: space.10
+      part: track
       locked: false
     trackHeight:
       token: space.6
+      part: track
       locked: false
     thumbSize:
       token: space.5
+      part: thumb
       description: Thumb diameter; it travels trackWidth − thumbSize − 2 × thumbInset.
       locked: false
     thumbInset:
       token: space.1
+      part: thumb
       description: Gap between the thumb and the track edge; split evenly on the short
         axis.
       locked: false
@@ -144,18 +163,22 @@ component:
       locked: false
     labelColor:
       token: color.foreground
+      part: label
       locked: true
     labelSize:
       token: font.size.md
+      part: label
       locked: false
     labelWeight:
       token: font.weight.regular
+      part: label
       locked: false
     helperSize:
       token: font.size.sm
       locked: false
     descriptionText:
       token: color.foreground.muted
+      part: description
       locked: true
     fontFamily:
       token: font.family.body
@@ -197,25 +220,32 @@ component:
     - foreground: color.control.selectedForeground
       background: color.control.selectedBackground
       level: AA
-      large: true
+      nonText: true
+      state: checked
     - foreground: color.control.selectedForeground
       background: color.control.trackOff
       level: AA
-      large: true
+      nonText: true
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.control.trackOff
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.foreground
       background: color.background
       level: AA
     - foreground: color.foreground.muted
       background: color.background
       level: AA
+  form:
+    role: field
+    value: checked
+    valueType: boolean
+    name: name
+    discovery: context
   platforms:
     web:
       element: input
@@ -387,11 +417,85 @@ component:
       description: Sends a daily summary at 9:00.
     then:
     - text: Sends a daily summary at 9:00.
+  - name: label-at-the-end-still-toggles-the-row
+    description: labelPosition changes the order of the row, not its target; the whole
+      row toggles either way.
+    given:
+      labelPosition: end
+    when:
+      click: label
+    then:
+    - event: onChange
+      with: true
+    - state: checked
+      is: true
+  examples:
+  - name: settings-row
+    description: The settings-list convention, with the label at the start and the
+      switch at the row end.
+    given:
+      label: Email notifications
+      labelPosition: start
+  - name: with-description
+    description: A switch whose effect is stated in one sentence under the label.
+    given:
+      label: Daily summary
+      description: Sends a daily summary at 9:00.
+  - name: checkbox-aligned
+    description: The Checkbox-aligned form, with the switch before its label.
+    given:
+      label: Show archived
+      labelPosition: end
+  - name: disabled
+    description: A setting that cannot be changed here, still visible, readable and
+      focusable.
+    given:
+      label: Two-factor authentication
+      disabled: true
 ```
+
+## Events
+
+- `onChange`: emit `change`
+  - payload, the keys of `CustomEvent.detail`: `checked: boolean`
+  - fires on: user
+  - timing: after-change
 
 ## Controlled state
 
-- `checked` is controlled when given, uncontrolled from `defaultChecked` when omitted; paired by name, so no event is declared
+- `checked` is controlled when given, uncontrolled from `defaultChecked` when omitted; changes reported by `onChange` (emit `change`); drives state `checked`
+
+## Style bindings
+
+- `trackOff`: token `color.control.trackOff`; part `track`; locked
+- `trackOn`: token `color.control.selectedBackground`; part `track`; locked
+- `thumb`: token `color.control.selectedForeground`; part `thumb`; locked
+- `trackWidth`: token `space.10`; part `track`
+- `trackHeight`: token `space.6`; part `track`
+- `thumbSize`: token `space.5`; part `thumb`
+- `thumbInset`: token `space.1`; part `thumb`
+- `labelColor`: token `color.foreground`; part `label`; locked
+- `labelSize`: token `font.size.md`; part `label`
+- `labelWeight`: token `font.weight.regular`; part `label`
+- `descriptionText`: token `color.foreground.muted`; part `description`; locked
+
+## Form and overlay
+
+```yaml
+form:
+  role: field
+  value: checked
+  valueType: boolean
+  name: name
+  discovery: context
+```
+
+## Constants and examples
+
+- example `settings-row`, story `SettingsRow`: given `label: "Email notifications"`, `labelPosition: "start"`; The settings-list convention, with the label at the start and the switch at the row end.
+- example `with-description`, story `WithDescription`: given `label: "Daily summary"`, `description: "Sends a daily summary at 9:00."`; A switch whose effect is stated in one sentence under the label.
+- example `checkbox-aligned`, story `CheckboxAligned`: given `label: "Show archived"`, `labelPosition: "end"`; The Checkbox-aligned form, with the switch before its label.
+- example `disabled`, story `Disabled`: given `label: "Two-factor authentication"`, `disabled: true`; A setting that cannot be changed here, still visible, readable and focusable.
 
 ## Overrides (per-instance styling contract)
 
@@ -404,7 +508,7 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `trackWidth`, `trackHeight`, `thumbSize`, `thumbInset`, `radius`, `gap`, `partGap`, `labelSize`, `labelWeight`, `helperSize`, `fontFamily`, `lineHeight`, `disabledOpacity`, `transition`
 Locked (accessibility-bearing, never overridable): `trackOff`, `trackOn`, `thumb`, `labelColor`, `descriptionText`, `focusRing`, `focusRingWidth`, `minTarget`
 
-## Behavior scenarios (15)
+## Behavior scenarios (16)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
@@ -506,6 +610,18 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     description: Sends a daily summary at 9:00.
   then:
   - text: Sends a daily summary at 9:00.
+- name: label-at-the-end-still-toggles-the-row
+  description: labelPosition changes the order of the row, not its target; the whole
+    row toggles either way.
+  given:
+    labelPosition: end
+  when:
+    click: label
+  then:
+  - event: onChange
+    with: true
+  - state: checked
+    is: true
 - name: renders
   then:
   - renders: true

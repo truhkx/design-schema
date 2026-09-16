@@ -31,9 +31,9 @@ component:
     color: { token: color.border }
     thickness: { token: border.width.thin }
     spacing: { token: 'layout.gap.{spacing}' }
-    labelColor: { token: color.foreground.muted }
-    labelSize: { token: font.size.sm, description: 'Passed to the composed Text as its `fontSize` override, along with `fontFamily`; Divider does not style the Text itself.' }
-    labelGap: { token: layout.gap.normal, description: Gap between the label and the lines on each side. }
+    labelColor: { token: color.foreground.muted, part: label }
+    labelSize: { token: font.size.sm, part: label, description: 'Passed to the composed Text as its `fontSize` override, along with `fontFamily`; Divider does not style the Text itself.' }
+    labelGap: { token: layout.gap.normal, part: label, description: Gap between the label and the lines on each side. }
     fontFamily: { token: font.family.body }
   a11y:
     role: separator
@@ -57,6 +57,38 @@ component:
       element: Rectangle
       props: [Rectangle, .frame=height-1, .accessibilityHidden, .accessibilityElement, .accessibilityLabel]
       notes: 'A `Rectangle` of the color token, `border.width.thin` thick along the cross axis (`.frame(height:)` horizontal, `.frame(width:)` vertical), `.accessibilityHidden(true)` when decorative. With `label` the divider is an `HStack` of line–`Text`–line and is an accessibility element with that label (VoiceOver reads it as a section break); the label Text takes `fontSize` through `overrides`. Not SwiftUI''s `Divider` (fixed color).'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum ones from the schema.
+    - name: decorative-divider-is-hidden-from-assistive-technology
+      description: Decorative dividers are hidden so lists do not announce "separator" between every row.
+      then:
+        - { attribute: aria-hidden, is: 'true', platforms: [web] }
+        - { attribute: accessibilityElementsHidden, is: true, platforms: [rn] }
+    - name: semantic-divider-is-a-separator
+      description: 'true means the divider marks a real boundary: role=separator with aria-orientation.'
+      given: { semantic: true }
+      then:
+        - { role: separator, platforms: [web] }
+        - { attribute: aria-orientation, is: horizontal, platforms: [web] }
+    - name: label-is-read-and-makes-the-divider-semantic
+      description: A label turns the divider from decorative into a labelled separator, and the text is what gets read.
+      given: { label: or }
+      then:
+        - { text: or }
+        - { role: separator, platforms: [web] }
+  examples:
+    - name: or-between-alternatives
+      description: A labelled divider between two ways of signing in.
+      given: { label: or, spacing: normal }
+    - name: list-furniture
+      description: The default line between rows of a dense list - decorative, and silent to assistive technology.
+      given: { orientation: horizontal }
+    - name: toolbar-groups
+      description: A vertical line between groups of toolbar controls, stretching to the row height.
+      given: { orientation: vertical }
+    - name: section-boundary
+      description: An unlabelled line that still marks a real boundary a screen-reader user should hear.
+      given: { semantic: true, spacing: loose }
 ---
 
 A divider is a line, and the question it always raises is whether the line means something. Between two rows of a list it is furniture: it helps the eye and says nothing. Between "Today" and "Earlier" it is structure a screen-reader user should hear. Divider makes that choice explicit instead of leaving it to whether someone remembered `aria-hidden`.

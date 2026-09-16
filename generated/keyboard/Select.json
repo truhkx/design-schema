@@ -21,8 +21,13 @@
       ],
       "action": "Closes the popup without changing the value and returns focus to the trigger.",
       "from": "inside",
-      "expect": "closes",
-      "when": "popup open"
+      "expect": "manual",
+      "when": "popup open",
+      "expectAll": [
+        "closes",
+        "focus-trigger"
+      ],
+      "target": "popup"
     },
     {
       "keys": [
@@ -39,8 +44,9 @@
       ],
       "action": "Commits the active option (single) and closes; focus moves on.",
       "from": "inside",
-      "expect": "closes",
-      "when": "popup open"
+      "expect": "manual",
+      "when": "popup open",
+      "target": "popup"
     },
     {
       "keys": [

@@ -66,6 +66,21 @@ component:
   - headerActions
   - body
   - footer
+  parts:
+    body:
+      kind: slot
+      slot:
+        default: true
+        prop: children
+        required: true
+    headerActions:
+      kind: slot
+      slot:
+        prop: headerActions
+    footer:
+      kind: slot
+      slot:
+        prop: footer
   props:
     children:
       type: content
@@ -96,6 +111,7 @@ component:
         action-order rule.
     inset:
       type: enum
+      enumRef: size
       values:
       - sm
       - md
@@ -141,10 +157,12 @@ component:
       locked: false
     headerGap:
       token: layout.gap.normal
+      part: header
       description: Horizontal gap between the heading and headerActions.
       locked: false
     footerGap:
       token: layout.gap.tight
+      part: footer
       description: Horizontal gap between footer actions.
       locked: false
     actionsGap:
@@ -166,6 +184,7 @@ component:
       locked: false
     hoverBackground:
       token: color.background.subtle
+      state: hover
       description: Interactive cards only, on pointer hover; subtle cards use color.background.strong.
       locked: true
     focusRing:
@@ -251,7 +270,101 @@ component:
         inside it, and hover shows `hoverBackground` on iPad pointer — one target,
         one focus stop. `focusable`: `.focusable()` with the focus ring drawn on the
         card, for Feed''s PageUp/PageDown.'
+  behavior:
+  - name: heading-is-rendered-as-a-heading
+    description: The heading is rendered as a Heading at the card's level, and it
+      is what a screen-reader user jumps to.
+    given:
+      heading: Team plan
+    then:
+    - text: Team plan
+    - role: heading
+      platforms:
+      - web
+  - name: a-card-with-a-heading-is-an-article
+    description: A card with a heading is an article labelled by that heading, so
+      screen-reader users can navigate card by card.
+    given:
+      heading: Team plan
+    then:
+    - role: article
+      platforms:
+      - web
+  - name: interactive-adds-no-focus-stop
+    description: An interactive card extends its single child link or button to the
+      whole area; the card itself is never a second tab stop.
+    given:
+      interactive: true
+    then:
+    - focusable: false
+    platforms:
+    - web
+    - lit
+  - name: focusable-takes-scripted-focus-only
+    description: A focusable card carries tabindex=-1 so a container (Feed) can move
+      focus to it by script; it is not a tab stop.
+    given:
+      focusable: true
+    then:
+    - attribute: tabindex
+      is: '-1'
+      platforms:
+      - web
+    - focusable: true
+      platforms:
+      - web
+  examples:
+  - name: plan-card
+    description: A card as a unit in a list of choices, with its own heading at the
+      list's level.
+    given:
+      heading: Team plan
+      headingLevel: '3'
+      children: What the plan includes
+  - name: dense-grid-card
+    description: A card in a dense grid, on the tinted surface and with the tighter
+      inset.
+    given:
+      children: A search result
+      inset: sm
+      surface: subtle
+  - name: whole-card-is-a-link
+    description: A card whose single child link leads somewhere, with the card as
+      the hit area and the link as the only tab stop.
+    given:
+      heading: September invoice
+      children: A Link to the invoice
+      interactive: true
+  - name: card-focused-by-a-feed
+    description: A card a Feed moves focus to with PageUp/PageDown, which draws its
+      own ring when focused that way.
+    given:
+      heading: New comment
+      children: The comment body
+      focusable: true
 ```
+
+## Parts and slots
+
+- `surface`: element
+- `header`: element
+- `heading`: element
+- `headerActions`: slot, prop `headerActions`
+- `body`: slot, prop `children`, required
+- `footer`: slot, prop `footer`
+
+## Style bindings
+
+- `headerGap`: token `layout.gap.normal`; part `header`
+- `footerGap`: token `layout.gap.tight`; part `footer`
+- `hoverBackground`: token `color.background.subtle`; state `hover`; locked
+
+## Constants and examples
+
+- example `plan-card`, story `PlanCard`: given `heading: "Team plan"`, `headingLevel: "3"`, `children: "What the plan includes"`; A card as a unit in a list of choices, with its own heading at the list's level.
+- example `dense-grid-card`, story `DenseGridCard`: given `children: "A search result"`, `inset: "sm"`, `surface: "subtle"`; A card in a dense grid, on the tinted surface and with the tighter inset.
+- example `whole-card-is-a-link`, story `WholeCardIsALink`: given `heading: "September invoice"`, `children: "A Link to the invoice"`, `interactive: true`; A card whose single child link leads somewhere, with the card as the hit area and the link as the only tab stop.
+- example `card-focused-by-a-feed`, story `CardFocusedByAFeed`: given `heading: "New comment"`, `children: "The comment body"`, `focusable: true`; A card a Feed moves focus to with PageUp/PageDown, which draws its own ring when focused that way.
 
 ## Overrides (per-instance styling contract)
 
@@ -264,11 +377,45 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `paddingBlock`, `paddingInline`, `partGap`, `headerGap`, `footerGap`, `actionsGap`, `border`, `borderWidth`, `radius`, `transition`
 Locked (accessibility-bearing, never overridable): `background`, `hoverBackground`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (11)
+## Behavior scenarios (15)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: heading-is-rendered-as-a-heading
+  description: The heading is rendered as a Heading at the card's level, and it is
+    what a screen-reader user jumps to.
+  given:
+    heading: Team plan
+  then:
+  - text: Team plan
+  - role: heading
+- name: a-card-with-a-heading-is-an-article
+  description: A card with a heading is an article labelled by that heading, so screen-reader
+    users can navigate card by card.
+  given:
+    heading: Team plan
+  then:
+  - role: article
+- name: interactive-adds-no-focus-stop
+  description: An interactive card extends its single child link or button to the
+    whole area; the card itself is never a second tab stop.
+  given:
+    interactive: true
+  then:
+  - focusable: false
+  platforms:
+  - web
+  - lit
+- name: focusable-takes-scripted-focus-only
+  description: A focusable card carries tabindex=-1 so a container (Feed) can move
+    focus to it by script; it is not a tab stop.
+  given:
+    focusable: true
+  then:
+  - attribute: tabindex
+    is: '-1'
+  - focusable: true
 - name: renders
   then:
   - renders: true

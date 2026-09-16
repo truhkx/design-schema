@@ -51,6 +51,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     list: () => (deep(root, '[part="list"]') ?? deep(root, '[data-part="list"]') ?? root.firstElementChild) as HTMLElement,
+    trigger: () => (deep(root, '[part="trigger"]') ?? deep(root, '[data-part="trigger"]')) as HTMLElement,
   };
   return s;
 }
@@ -60,6 +61,19 @@ beforeEach(() => {
 });
 
 describe('ds-accordion', () => {
+  test('click-on-a-trigger-reports-the-open-set', async () => {
+    const s = await setup({});
+    await userEvent.click(s.trigger());
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+    expect(s.trigger()).toHaveAttribute("aria-expanded", "true");
+  });
+  test('exclusive-still-reports-both-events', async () => {
+    const s = await setup({"exclusive": true});
+    await userEvent.click(s.trigger());
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

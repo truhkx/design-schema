@@ -84,8 +84,12 @@
       ],
       "action": "Closes and returns focus to the trigger.",
       "from": "inside",
-      "expect": "focus-trigger",
-      "when": "menu open"
+      "expect": "closes",
+      "when": "menu open",
+      "expectAll": [
+        "closes",
+        "focus-trigger"
+      ]
     },
     {
       "keys": [

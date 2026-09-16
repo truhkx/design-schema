@@ -51,6 +51,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     trigger: () => (deep(root, '[role="menu"]') ?? deep(root, '[part="trigger"]') ?? deep(root, '[data-part="trigger"]') ?? root.firstElementChild) as HTMLElement,
+    item: () => (deep(root, '[part="item"]') ?? deep(root, '[data-part="item"]')) as HTMLElement,
   };
   return s;
 }
@@ -60,6 +61,27 @@ beforeEach(() => {
 });
 
 describe('ds-menu', () => {
+  test('choosing-an-item-reports-the-action-and-the-close', async () => {
+    const s = await setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename"}, {"id": "duplicate", "label": "Duplicate"}]});
+    await userEvent.click(s.item());
+    expect(s.events.onAction).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-disabled-item-does-nothing', async () => {
+    const s = await setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename", "disabled": true}, {"id": "duplicate", "label": "Duplicate"}]});
+    await userEvent.click(s.item());
+    expect(s.events.onAction).not.toHaveBeenCalled();
+  });
+  test('escape-closes-without-choosing', async () => {
+    const s = await setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename"}, {"id": "duplicate", "label": "Duplicate"}]});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onAction).not.toHaveBeenCalled();
+  });
+  test('the-popup-is-a-menu', async () => {
+    const s = await setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename"}]});
+    expect(s.el.shadowRoot!.querySelector('[role="menu"]')).not.toBeNull();
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
@@ -107,5 +129,11 @@ describe('ds-menu', () => {
   test('has-accessible-name', async () => {
     const s = await setup({"open": true});
     expect(s.trigger()).toHaveAccessibleName(s.props.label);
+  });
+  test('escape-fires-on-open-change', async () => {
+    const s = await setup({"open": true});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
   });
 });

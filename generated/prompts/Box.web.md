@@ -224,7 +224,65 @@ component:
         itself is a single-child wrapper (`VStack(spacing: 0)`) and never spaces siblings.
         No accessibility semantics unless the doc says the role is a landmark (then
         see Landmark).'
+  behavior:
+  - name: nav-element-carries-navigation-semantics
+    description: When element is section, article, aside or nav, the native element
+      carries that semantics on web; Box adds no role of its own otherwise.
+    given:
+      element: nav
+    then:
+    - role: navigation
+      platforms:
+      - web
+  - name: article-element-carries-article-semantics
+    description: The same rule for the other sectioning values - the element is the
+      semantics, and Box adds nothing else.
+    given:
+      element: article
+    then:
+    - role: article
+      platforms:
+      - web
+  examples:
+  - name: highlighted-panel
+    description: A panel lifted off the page with a tinted surface, rounded corners
+      and the usual inset.
+    given:
+      children: A panel of settings
+      inset: md
+      surface: subtle
+      radius: md
+  - name: bordered-row
+    description: A dense row bounded by a thin border rather than a fill.
+    given:
+      children: A row of data
+      inset: sm
+      border: true
+  - name: hero-band
+    description: A full-width band with more vertical than horizontal padding, on
+      the strongest surface.
+    given:
+      children: A hero band
+      insetBlock: xl
+      insetInline: lg
+      surface: strong
+  - name: navigation-region
+    description: A padded region whose element makes it a navigation landmark on web.
+    given:
+      children: The sidebar links
+      element: nav
+      inset: md
+    platforms:
+    - web
+    - lit
 ```
+
+## Constants and examples
+
+- example `highlighted-panel`, story `HighlightedPanel`: given `children: "A panel of settings"`, `inset: "md"`, `surface: "subtle"`, `radius: "md"`; A panel lifted off the page with a tinted surface, rounded corners and the usual inset.
+- example `bordered-row`, story `BorderedRow`: given `children: "A row of data"`, `inset: "sm"`, `border: true`; A dense row bounded by a thin border rather than a fill.
+- example `hero-band`, story `HeroBand`: given `children: "A hero band"`, `insetBlock: "xl"`, `insetInline: "lg"`, `surface: "strong"`; A full-width band with more vertical than horizontal padding, on the strongest surface.
+- example `navigation-region`, story `NavigationRegion`: given `children: "The sidebar links"`, `element: "nav"`, `inset: "md"`; A padded region whose element makes it a navigation landmark on web.
 
 ## Overrides (per-instance styling contract)
 
@@ -237,11 +295,25 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `paddingBlock`, `paddingInline`, `border`, `borderWidth`, `radius`
 Locked (accessibility-bearing, never overridable): `background`
 
-## Behavior scenarios (33)
+## Behavior scenarios (35)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: nav-element-carries-navigation-semantics
+  description: When element is section, article, aside or nav, the native element
+    carries that semantics on web; Box adds no role of its own otherwise.
+  given:
+    element: nav
+  then:
+  - role: navigation
+- name: article-element-carries-article-semantics
+  description: The same rule for the other sectioning values - the element is the
+    semantics, and Box adds nothing else.
+  given:
+    element: article
+  then:
+  - role: article
 - name: renders
   then:
   - renders: true

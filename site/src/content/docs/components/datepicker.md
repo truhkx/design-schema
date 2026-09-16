@@ -14,8 +14,8 @@ component:
     popover: Popover
     prevMonthButton: Button
     nextMonthButton: Button
-    monthSelect: Select
-    yearSelect: Select
+    monthSelect: { component: Select, forwards: { monthTitleSize: fontSize } }
+    yearSelect: { component: Select, forwards: { monthTitleSize: fontSize } }
     todayButton: Button
     clearButton: Button
   props:
@@ -32,6 +32,9 @@ component:
       type: union
       shape: 'string | { start: string; end: string }'
       description: Controlled value (ISO date, or a range).
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: union
       shape: 'string | { start: string; end: string }'
@@ -39,6 +42,9 @@ component:
     open:
       type: boolean
       description: 'Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default.'
+      controls:
+        event: onOpenChange
+        state: open
     range:
       type: boolean
       default: false
@@ -76,6 +82,7 @@ component:
       description: 'Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search.'
     size:
       type: enum
+      enumRef: size
       values: [sm, md]
       default: md
       description: 'sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type.'
@@ -90,13 +97,19 @@ component:
     onChange:
       description: Fired when a complete valid date (or range) is typed or picked, with the ISO value; with undefined when cleared.
       platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
+      payload:
+        - { name: value, type: union, shape: 'string | { start: string; end: string } | undefined', description: 'The ISO date, or the ISO range with range; undefined when cleared.' }
+      fires: [user]
     onOpenChange:
       description: Fired when the calendar opens or closes.
       platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
+      payload:
+        - { name: open, type: boolean, description: The new state of the calendar. }
+      fires: [user]
   keyboard:
     - { keys: [ArrowDown, Alt+ArrowDown], action: 'From the input, opens the calendar with focus on the selected day (or today).', when: focus in input, from: first, expect: manual }
     - { keys: [Enter, ' '], action: 'On the calendar button, opens; on a day, selects it (and closes for a single date; for a range, selects the start then the end).', from: inside, expect: manual }
-    - { keys: [Escape], action: Closes the calendar without changing the value and returns focus to the calendar button., when: open, from: inside, expect: focus-trigger }
+    - { keys: [Escape], action: Closes the calendar without changing the value and returns focus to the calendar button., when: open, from: inside, expect: [closes, focus-trigger], target: popover }
     - { keys: [ArrowRight], action: Next day., when: focus on a day, from: inside, expect: manual }
     - { keys: [ArrowLeft], action: Previous day., when: focus on a day, from: inside, expect: manual }
     - { keys: [ArrowDown], action: 'Same weekday, next week.', when: focus on a day, from: inside, expect: manual }
@@ -115,37 +128,35 @@ component:
     borderInvalid: { token: color.border.danger }
     borderWidth: { token: border.width.thin }
     radius: { token: radius.md }
-    paddingInline: { token: space.md }
-    paddingBlock: { token: space.sm }
-    paddingBlockSm: { token: space.1, description: 'Vertical padding at size sm.' }
-    paddingInlineSm: { token: space.2, description: 'Horizontal padding at size sm.' }
+    paddingInline: { token: space.md, by: size, values: { sm: space.2 } }
+    paddingBlock: { token: space.sm, by: size, values: { sm: space.1 } }
     rangeSeparatorColor: { token: color.foreground.muted, description: 'The en dash between start and end inputs.' }
-    calendarSurface: { token: color.overlay.surface, description: 'Realized by the composed Popover''s surface; forwarded as its `overrides.surface`.' }
+    calendarSurface: { token: color.overlay.surface, description: 'Realized by the composed Popover''s surface, which is locked, so this binding records the value the calendar lands on rather than one the Popover can be given.' }
     calendarInset: { token: layout.inset.md }
     calendarGap: { token: layout.gap.normal, description: 'Between header, grid and footer.' }
-    daySize: { token: size.target.comfortable, description: 'Every day cell is a comfortable square target.' }
-    dayGap: { token: space.0, description: 'Cells touch, so a range reads as one bar; the selected day''s radius gives it shape.' }
-    dayRadius: { token: radius.md }
-    dayHover: { token: color.action.ghost.backgroundHover }
-    daySelectedBackground: { token: color.control.selectedBackground }
-    daySelectedForeground: { token: color.control.selectedForeground }
-    dayInRangeBackground: { token: color.background.strong }
-    dayTodayBorder: { token: color.control.selectedBackground }
-    dayTodayBorderWidth: { token: border.width.focus }
-    dayOutsideMonthColor: { token: color.foreground.muted }
+    daySize: { token: size.target.comfortable, part: day, description: 'Every day cell is a comfortable square target.' }
+    dayGap: { token: space.0, part: day, description: 'Cells touch, so a range reads as one bar; the selected day''s radius gives it shape.' }
+    dayRadius: { token: radius.md, part: day }
+    dayHover: { token: color.action.ghost.backgroundHover, part: day, state: hover }
+    daySelectedBackground: { token: color.control.selectedBackground, part: day }
+    daySelectedForeground: { token: color.control.selectedForeground, part: day }
+    dayInRangeBackground: { token: color.background.strong, part: day }
+    dayTodayBorder: { token: color.control.selectedBackground, part: day }
+    dayTodayBorderWidth: { token: border.width.focus, part: day }
+    dayOutsideMonthColor: { token: color.foreground.muted, part: day }
     weekdayColor: { token: color.foreground.muted }
     weekdaySize: { token: font.size.xs }
     weekdayWeight: { token: font.weight.medium }
     monthTitleSize: { token: font.size.md, description: 'Forwarded to the month and year Selects as `overrides.fontSize`.' }
-    monthTitleWeight: { token: font.weight.semibold, description: 'Forwarded to the Selects as `overrides.fontWeight`.' }
+    monthTitleWeight: { token: font.weight.semibold, description: 'The weight of the month and year Select labels. Select has no weight binding to receive it yet, so this is the value they are expected to render at.' }
     partGap: { token: space.1, description: 'Between label, description, field and error.' }
-    fieldGap: { token: space.2, description: 'Between the input(s) and the calendar button in the field row.' }
-    dayFontSize: { token: font.size.sm }
+    fieldGap: { token: space.2, part: field, description: 'Between the input(s) and the calendar button in the field row.' }
+    dayFontSize: { token: font.size.sm, part: day }
     fontFamily: { token: font.family.body }
     lineHeight: { token: font.lineHeight.normal }
-    labelWeight: { token: font.weight.medium }
+    labelWeight: { token: font.weight.medium, part: label }
     helperSize: { token: font.size.sm }
-    descriptionText: { token: color.foreground.muted }
+    descriptionText: { token: color.foreground.muted, part: description }
     errorText: { token: color.foreground.danger }
     minTarget: { token: size.target.comfortable }
     minTargetSm: { token: size.target.min, description: 'The field height floor at size sm; the calendar Button becomes size sm. The calendar popup is unchanged.' }
@@ -163,13 +174,20 @@ component:
     today: Today
     clear: Clear
     weekNumber: Week
-    gridLabel: '{label}, {month} {year}'
+    gridLabel:
+      text: '{label}, {month} {year}'
+      params:
+        month: { type: string, description: The displayed month's name in the locale. }
+        year: { type: string, description: The displayed year as the header shows it. }
     selected: selected
     todayLabel: today
     startLabel: Start date
     endLabel: End date
     required: '{label} is required.'
-    invalid: '{label} must be a valid date ({pattern}).'
+    invalid:
+      text: '{label} must be a valid date ({pattern}).'
+      params:
+        pattern: { type: string, description: The locale's date pattern shown in the placeholder. }
     tooEarly: '{label} must be on or after {min}.'
     tooLate: '{label} must be on or before {max}.'
     rangeOrder: 'End date must be after the start date.'
@@ -185,8 +203,16 @@ component:
       - { foreground: color.foreground.muted, background: color.overlay.surface, level: AA }
       - { foreground: color.foreground, background: color.background.strong, level: AA }
       - { foreground: color.control.selectedForeground, background: color.control.selectedBackground, level: AA }
-      - { foreground: color.control.selectedBackground, background: color.overlay.surface, level: AA, large: true }
-      - { foreground: color.border.strong, background: color.background, level: AA, large: true }
+      - { foreground: color.control.selectedBackground, background: color.overlay.surface, level: AA, nonText: true }
+      - { foreground: color.border.strong, background: color.background, level: AA, nonText: true }
+  form:
+    role: field
+    value: value
+    valueType: date-range
+    name: name
+    validation: [required, invalid, range]
+    messages: { required: required, invalid: invalid }
+    discovery: context
   platforms:
     web:
       element: input
@@ -194,7 +220,7 @@ component:
       notes: 'The field is Input''s wrapper with <input type="text" inputmode="numeric"> (not type="date": its picker is unstyleable, its keyboard model differs per browser, and it cannot do ranges) parsed with the locale pattern from Intl.DateTimeFormat().formatToParts; a range shows two inputs joined by an en dash. The calendar Button (ghost, iconOnly, "calendar" Icon — add to Icon''s glyph set) opens a Popover (non-modal, placement bottom-start, composes FocusScope) containing: header with prev/next Buttons and month/year Selects; a <table role="grid" aria-labelledby> with <th scope="col" abbr> weekday headers and <td role="gridcell"> days — each a <button tabindex=-1|0> in a roving tabindex, aria-selected for selected days, aria-current="date" for today, aria-disabled for min/max/isDateDisabled; a footer with Today and Clear. Days outside the month are rendered muted and selectable. Week starts from Intl.Locale.prototype.getWeekInfo() where available, else Sunday. Selecting a day writes the formatted text into the input and fires onChange with the ISO string; typing a complete valid date moves the calendar to it.'
     lit:
       tag: ds-date-picker
-      reflect: [range, required, disabled, invalid, show-week-numbers, locale]
+      reflect: [range, required, disabled, show-week-numbers, locale]
       notes: 'Form-associated: setFormValue with the ISO string (two entries for a range, name and name-end). Implements DsFormField. Calendar in a <ds-popover> in the shadow root; grid as above. Composed `change` and `open-change`.'
     rn:
       element: TextInput
@@ -204,6 +230,63 @@ component:
       element: TextField
       props: [TextField, .keyboardType=numbersAndPunctuation, Button, .sheet, .popover, Grid, .accessibilityAddTraits=isSelected, .accessibilityValue, .onMoveCommand, '@FocusState', DateFormatter, Calendar]
       notes: 'Input''s wrapper with the text field parsed against `Locale.current`''s pattern (`DateFormatter`, `Calendar.current` for weeks and week numbers) and the calendar `Button` opening the package''s own calendar `Grid` — not SwiftUI''s `DatePicker`, whose wheel/graphical styles cannot take the theme or ranges — in a `.sheet` (`.presentationDetents([.height(measured)])`) on phones and a `.popover` on regular width. Day cells are `Button`s with `.isSelected`, `.accessibilityValue(copy.today / selected / disabled)` and the full date as the label; month/year `Select`s at `size: sm`; arrows/PageUp/PageDown/Home/End on iPad per the table via `@FocusState` over the grid; range selection as documented. Dates are `YYYY-MM-DD` strings computed with `Calendar` in UTC, never `Date()` string parsing.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/error-identified ones from the schema.
+    # The root declares role none, so assertions here are events and the calendar's own roles, not root state.
+    - name: the-calendar-button-opens-the-calendar
+      given: { open: false }
+      when: { click: calendarButton }
+      then:
+        - { event: onOpenChange }
+    - name: a-disabled-field-does-not-open-the-calendar
+      given: { open: false, disabled: true }
+      when: { click: calendarButton }
+      then:
+        - { event: onOpenChange, fired: false }
+    - name: choosing-a-day-reports-the-iso-date-and-closes
+      description: On a day, Enter or a press selects it and closes for a single date.
+      given: { open: true }
+      when: { click: day }
+      then:
+        - { event: onChange }
+        - { event: onOpenChange }
+    - name: the-today-button-selects-today
+      given: { open: true }
+      when: { click: todayButton }
+      then:
+        - { event: onChange }
+    - name: the-clear-button-clears-the-value
+      description: onChange fires with undefined when the value is cleared.
+      given: { open: true, defaultValue: '2026-09-10' }
+      when: { click: clearButton }
+      then:
+        - { event: onChange }
+    - name: arrow-down-in-the-input-opens-the-calendar
+      description: From the input, ArrowDown opens the calendar with focus on the selected day (or today).
+      given: { open: false }
+      when: { key: ArrowDown }
+      then:
+        - { event: onOpenChange }
+      platforms: [web, lit]
+    - name: the-calendar-is-a-month-grid
+      description: The days are a grid of gridcells, which is what makes the two-dimensional arrow model announceable.
+      given: { open: true }
+      then:
+        - { role: grid }
+      platforms: [web, lit]
+  examples:
+    - name: date-of-birth
+      description: A single date in the past, typed or picked.
+      given: { label: Date of birth, name: dob, max: '2026-09-16' }
+    - name: stay-dates
+      description: A start and an end date picked in one calendar, with two inputs in the field.
+      given: { label: Stay, name: stay, range: true }
+    - name: appointment-with-week-numbers
+      description: A bookable date no earlier than today, with the ISO week-number column shown.
+      given: { label: Appointment, name: appointment, min: '2026-09-16', showWeekNumbers: true }
+    - name: compact-cell-editor
+      description: A small field inside a grid cell, named by its column.
+      given: { label: Due date, name: due, size: sm, hideLabel: true }
 ---
 
 A date picker gives two ways to say the same date: type it, or find it on a calendar. People who know the date type it; people who need to see the week pick it. Both produce a plain ISO date — `2026-09-10` — and never a timestamp, because a delivery date or a birthday has no time zone to get wrong.

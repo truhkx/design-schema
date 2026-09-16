@@ -27,6 +27,11 @@ function setup(given: Partial<FormProps> = {}) {
 }
 
 describe('Form', () => {
+  test('label-names-the-form-landmark', async () => {
+    const s = setup({"label": "Sign in"});
+    expect(screen.getByRole('form')).toBeInTheDocument();
+    expect(screen.getByRole('form', { name: "Sign in" })).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

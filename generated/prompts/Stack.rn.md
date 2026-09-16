@@ -172,7 +172,64 @@ component:
         over the subviews via `Group` + `_VariadicView`-free approach: children are
         passed as an array of views through the package''s `Stack { … }` result builder,
         so Stack can interleave.'
+  behavior:
+  - name: nav-element-is-a-navigation-landmark
+    description: Choose element when the group has meaning - nav for navigation -
+      so the structure is exposed to assistive technology.
+    given:
+      element: nav
+    then:
+    - role: navigation
+      platforms:
+      - web
+      - lit
+  - name: list-element-is-a-list
+    description: For ul, each child is wrapped in an li, so assistive technology announces
+      the group as a list and counts its items.
+    given:
+      element: ul
+    then:
+    - role: list
+      platforms:
+      - web
+      - lit
+  examples:
+  - name: form-fields
+    description: The usual vertical rhythm between fields in a form.
+    given:
+      direction: vertical
+      gap: normal
+      children: The form fields
+  - name: button-row
+    description: A row of actions at the end of a form or card, tightly spaced and
+      pushed to the end.
+    given:
+      direction: horizontal
+      gap: tight
+      justify: end
+      children: A submit Button and a Cancel Button
+  - name: page-sections
+    description: The section rhythm between the regions of a page.
+    given:
+      direction: vertical
+      gap: section
+      children: The regions of the page
+  - name: wrapping-filters
+    description: A horizontal group that reflows onto new lines on narrow viewports
+      instead of overflowing.
+    given:
+      direction: horizontal
+      gap: tight
+      wrap: true
+      children: A row of filters
 ```
+
+## Constants and examples
+
+- example `form-fields`, story `FormFields`: given `direction: "vertical"`, `gap: "normal"`, `children: "The form fields"`; The usual vertical rhythm between fields in a form.
+- example `button-row`, story `ButtonRow`: given `direction: "horizontal"`, `gap: "tight"`, `justify: "end"`, `children: "A submit Button and a Cancel Button"`; A row of actions at the end of a form or card, tightly spaced and pushed to the end.
+- example `page-sections`, story `PageSections`: given `direction: "vertical"`, `gap: "section"`, `children: "The regions of the page"`; The section rhythm between the regions of a page.
+- example `wrapping-filters`, story `WrappingFilters`: given `direction: "horizontal"`, `gap: "tight"`, `wrap: true`, `children: "A row of filters"`; A horizontal group that reflows onto new lines on narrow viewports instead of overflowing.
 
 ## Overrides (per-instance styling contract)
 

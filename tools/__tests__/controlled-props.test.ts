@@ -171,32 +171,49 @@ describe('controlledPairs', () => {
 const generated = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as Dict);
 
 describe('generated/components.json', () => {
-  test('25 name pairs, none declared, and no pair for Listbox.defaultActiveValue', () => {
+  // Job 637 declared every controlled prop: the 25 props that paired with a `default<X>` by name, and the 9 `open`
+  // props whose doc names the event that reports the change (AlertDialog has two candidates and Tooltip no events,
+  // so both stay undeclared and, having no `default<X>`, are no pair at all).
+  test('34 pairs, every one declared, every one naming the event that reports the change', () => {
     const pairs = generated.flatMap((c) => controlledPairs(c).map((pair) => ({ component: c.name as string, ...pair })));
-    expect(pairs).toHaveLength(25);
-    expect(pairs.filter((pair) => pair.declared)).toEqual([]);
-    expect(pairs.every((pair) => pair.default === `default${pair.prop[0]?.toUpperCase()}${pair.prop.slice(1)}` && pair.event === null)).toBe(true);
-    expect(pairs.find((pair) => pair.default === 'defaultActiveValue')).toBeUndefined();
+    expect(pairs).toHaveLength(34);
+    expect(pairs.filter((pair) => !pair.declared)).toEqual([]);
+    expect(pairs.filter((pair) => pair.event === null)).toEqual([]);
+    expect(pairs.filter((pair) => pair.default !== null)).toHaveLength(25);
   });
 
-  test('componentWarnings reports exactly one orphan default, Listbox.defaultActiveValue', () => {
-    const found = generated.flatMap((c) => componentWarnings(c as ComponentDef).filter((w) => w.path.startsWith('props.') && w.message.startsWith('seeds ')).map((w) => ({ component: c.name, ...w })));
-    expect(found).toEqual([{ component: 'Listbox', path: 'props.defaultActiveValue', message: "seeds 'activeValue', which is not a prop" }]);
+  test('every declared controls.event is an event, and every controls.default is a prop', () => {
+    const dangling: string[] = [];
+    for (const c of generated) {
+      const props = (c.props ?? {}) as Record<string, Dict>;
+      const events = (c.events ?? {}) as Dict;
+      for (const [pName, p] of Object.entries(props)) {
+        const controls = p.controls as { event: string; default?: string } | undefined;
+        if (controls === undefined) continue;
+        const where = `${String(c.name)}.props.${pName}.controls`;
+        if (!Object.hasOwn(events, controls.event)) dangling.push(`${where}.event names '${controls.event}'`);
+        if (controls.default !== undefined && !Object.hasOwn(props, controls.default)) dangling.push(`${where}.default names '${controls.default}'`);
+      }
+    }
+    expect(dangling).toEqual([]);
+  });
+
+  test('no component warns about a default that seeds nothing: componentDef rejects it now', () => {
+    const found = generated.flatMap((c) => componentWarnings(c as ComponentDef).filter((w) => w.message.startsWith('seeds ')).map((w) => ({ component: c.name, ...w })));
+    expect(found).toEqual([]);
   });
 });
 
-describe('componentWarnings', () => {
-  test('a default prop that a controls.default names is not an orphan', () => {
-    const c = withProps({ current: bool({ controls: { default: 'defaultActive', event: 'onChange' } }), defaultActive: bool() });
-    expect(componentWarnings(c as ComponentDef)).toEqual([]);
-    expect(componentWarnings(withProps({ defaultActive: bool() }) as ComponentDef)).toEqual([{ path: 'props.defaultActive', message: "seeds 'active', which is not a prop" }]);
-    const named = withProps({ active: bool({ controls: { default: 'defaultActiveValue', event: 'onChange' } }), defaultActiveValue: bool() });
-    expect(componentWarnings(named as ComponentDef)).toEqual([]);
+describe('a default that seeds nothing', () => {
+  test('componentDef rejects an orphan default, and a controls.default that names it makes it a seed', () => {
+    rejects(withProps({ defaultActive: bool() }), ['props', 'defaultActive'], "seeds 'active', which is not a prop");
+    accepts(withProps({ current: bool({ controls: { default: 'defaultActive', event: 'onChange' } }), defaultActive: bool() }));
+    accepts(withProps({ active: bool({ controls: { default: 'defaultActiveValue', event: 'onChange' } }), defaultActiveValue: bool() }));
   });
 });
 
 describe('parse.main', () => {
-  test('a doc with an orphan default parses, and the orphan is reported as a warning', () => {
+  test('a doc with an orphan default fails the parse, and warns about nothing', () => {
     const root = tmp();
     const templates = join(root, 'templates');
     write(join(templates, 'web.md'), '{{NAME}}|{{PLATFORM}}');
@@ -209,15 +226,10 @@ describe('parse.main', () => {
       ROOT: root, DOCS: join(root, 'components'), THEME_DOCS: join(root, 'themes'), OUT: join(root, 'generated'), TEMPLATES: templates,
       EXT_DOCS: join(root, 'extensions'), PATTERN_DOCS: join(root, 'patterns'),
     });
-    const warning = { file: 'components/widget.md', message: "props.defaultActiveValue: seeds 'activeValue', which is not a prop" };
-
-    expect(parse.main(), 'a warning never fails the run').toBe(0);
-    // main drains the channel into what it reports (job 609): parse-warnings.json is its takeWarnings() result.
-    expect(JSON.parse(readFileSync(join(root, 'generated', 'parse-warnings.json'), 'utf8'))).toEqual([warning]);
-    expect(std.err()).toBe(`⚠ ${warning.file}: ${warning.message}\n`);
-
-    for (const w of parse.hooks.componentWarnings(c as ComponentDef)) parse.warn('components/widget.md', `${w.path}: ${w.message}`);
-    expect(parse.takeWarnings()).toContainEqual(warning);
+    // Job 611 reported this as a warning; job 637's migration satisfied the rule, so componentDef rejects it.
+    expect(parse.main(), 'a doc the schema rejects fails the run').toBe(1);
+    expect(std.err()).toContain("props.defaultActiveValue: seeds 'activeValue', which is not a prop");
+    expect(JSON.parse(readFileSync(join(root, 'generated', 'parse-warnings.json'), 'utf8'))).toEqual([]);
   });
 });
 

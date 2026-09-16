@@ -6,6 +6,17 @@ import { BottomSheet } from '../../packages/react/src/BottomSheet';
 import type { BottomSheetProps } from '../../packages/react/src/BottomSheet';
 import meta from '../../packages/react/src/BottomSheet.stories';
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<BottomSheetProps> = {}) {
   const events = {
     onClose: vi.fn(),
@@ -21,12 +32,42 @@ function setup(given: Partial<BottomSheetProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="BottomSheet"]') ?? screen.queryByRole('dialog') ?? utils.container.firstElementChild) as HTMLElement,
     scrim: () => (screen.queryByRole('dialog') ?? s.root()) as HTMLElement,
+    closeButton: () => (document.querySelector('[data-part="closeButton"]') ?? s.root()),
     rerender: (next: Partial<BottomSheetProps>) => utils.rerender(<BottomSheet {...props} {...next} />),
   };
   return s;
 }
 
 describe('BottomSheet', () => {
+  test('close-button-fires-on-close', async () => {
+    const s = setup({"open": true});
+    await s.user.click(s.closeButton());
+    expect(s.events.onClose).toHaveBeenCalled();
+  });
+  test('the-close-button-works-without-the-drag-gesture', async () => {
+    const s = setup({"open": true, "dragToDismiss": false});
+    await s.user.click(s.closeButton());
+    expect(s.events.onClose).toHaveBeenCalled();
+  });
+  test('non-dismissible-still-reports-escape', async () => {
+    const s = setup({"open": true, "dismissible": false});
+    act(() => focusInto(s.scrim()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onClose).toHaveBeenCalled();
+  });
+  test('non-dismissible-scrim-tap-does-nothing', async () => {
+    const s = setup({"open": true, "dismissible": false});
+    await s.user.click(s.scrim());
+    expect(s.events.onClose).not.toHaveBeenCalled();
+  });
+  test('hidden-heading-is-still-the-accessible-name', async () => {
+    const s = setup({"open": true, "hideHeading": true});
+    expect(screen.getByRole('dialog')).toHaveAccessibleName();
+  });
+  test('closed-sheet-renders-nothing', async () => {
+    const s = setup({"open": false});
+    expect(s.root()).toBeNull();
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();
@@ -46,5 +87,11 @@ describe('BottomSheet', () => {
   test('has-accessible-name', async () => {
     const s = setup({"open": true});
     expect(screen.getByRole('dialog')).toHaveAccessibleName();
+  });
+  test('escape-fires-on-close', async () => {
+    const s = setup({"open": true});
+    act(() => focusInto(s.scrim()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onClose).toHaveBeenCalled();
   });
 });

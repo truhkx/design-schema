@@ -86,6 +86,10 @@ component:
     checked:
       type: boolean
       description: Controlled checked state. Omit for an uncontrolled control.
+      controls:
+        event: onChange
+        default: defaultChecked
+        state: checked
     defaultChecked:
       type: boolean
       default: false
@@ -130,22 +134,33 @@ component:
         lit: change
         rn: onChange
         swiftui: onChange
+      payload:
+      - name: checked
+        type: boolean
+        description: The new checked state.
+      fires:
+      - user
   styles:
     controlBackground:
       token: color.control.background
+      part: control
       locked: false
     controlBorder:
       token: color.control.border
+      part: control
       locked: true
     controlBorderWidth:
       token: border.width.thin
+      part: control
       locked: false
     controlSelectedBackground:
       token: color.control.selectedBackground
+      part: control
       description: Checked and indeterminate fill; the border takes the same color.
       locked: true
     indicator:
       token: color.control.selectedForeground
+      part: indicator
       description: 'The check mark (`Icon name="check"`) and the mixed dash (`Icon
         name="dash"`) in this color, at `size: xs`, centered in the control. On web/Lit
         the Icon is inside the control element; the indicator has no separate DOM
@@ -153,21 +168,26 @@ component:
       locked: true
     indicatorStroke:
       token: border.width.focus
+      part: indicator
       description: Stroke thickness of the check mark and dash.
       locked: true
     pressedOverlay:
       token: opacity.disabled
+      state: pressed
       description: While pressed, the box shows controlSelectedBackground at this
         opacity.
       locked: false
     controlBorderInvalid:
       token: color.border.danger
+      part: control
       locked: false
     controlSize:
       token: space.5
+      part: control
       locked: false
     controlRadius:
       token: radius.sm
+      part: control
       locked: false
     gap:
       token: space.2
@@ -179,18 +199,22 @@ component:
       locked: false
     labelColor:
       token: color.foreground
+      part: label
       locked: true
     labelSize:
       token: font.size.md
+      part: label
       locked: false
     labelWeight:
       token: font.weight.regular
+      part: label
       locked: false
     helperSize:
       token: font.size.sm
       locked: false
     descriptionText:
       token: color.foreground.muted
+      part: description
       locked: true
     errorText:
       token: color.foreground.danger
@@ -223,6 +247,9 @@ component:
     required: '{label} is required.'
     invalid: '{label} is not valid.'
     requiredIndicator: ' (required)'
+    checked: Checked
+    unchecked: Unchecked
+    mixed: Mixed
   a11y:
     role: checkbox
     requires:
@@ -239,11 +266,11 @@ component:
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.control.border
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.foreground
       background: color.background
       level: AA
@@ -253,6 +280,18 @@ component:
     - foreground: color.foreground.danger
       background: color.background
       level: AA
+  form:
+    role: field
+    value: checked
+    valueType: boolean
+    name: name
+    validation:
+    - required
+    - invalid
+    messages:
+      required: required
+      invalid: invalid
+    discovery: context
   platforms:
     web:
       element: input
@@ -438,11 +477,91 @@ component:
     platforms:
     - web
     - rn
+  - name: hidden-label-is-still-the-accessible-name
+    description: hideLabel removes the label from view, not from the accessible name.
+    given:
+      hideLabel: true
+    then:
+    - name: true
+  examples:
+  - name: consent
+    description: A required consent checkbox whose label is the agreement itself.
+    given:
+      label: I accept the terms of service
+      name: terms
+      required: true
+  - name: select-all-parent
+    description: A "select all" parent showing the mixed indicator while only some
+      children are checked.
+    given:
+      label: Select all
+      name: selectAll
+      indeterminate: true
+  - name: with-description
+    description: An option whose scope needs one line of explanation under the label.
+    given:
+      label: Send me product updates
+      name: updates
+      description: One email a month about new features.
+  - name: selection-column
+    description: A row selection checkbox in a Table, where the row name is the hidden
+      label.
+    given:
+      label: Select row
+      name: select
+      hideLabel: true
 ```
+
+## Events
+
+- `onChange`: emit `onChange`
+  - payload, positional, in this order: `checked: boolean`
+  - fires on: user
 
 ## Controlled state
 
-- `checked` is controlled when given, uncontrolled from `defaultChecked` when omitted; paired by name, so no event is declared
+- `checked` is controlled when given, uncontrolled from `defaultChecked` when omitted; changes reported by `onChange` (emit `onChange`); drives state `checked`
+
+## Style bindings
+
+- `controlBackground`: token `color.control.background`; part `control`
+- `controlBorder`: token `color.control.border`; part `control`; locked
+- `controlBorderWidth`: token `border.width.thin`; part `control`
+- `controlSelectedBackground`: token `color.control.selectedBackground`; part `control`; locked
+- `indicator`: token `color.control.selectedForeground`; part `indicator`; locked
+- `indicatorStroke`: token `border.width.focus`; part `indicator`; locked
+- `pressedOverlay`: token `opacity.disabled`; state `pressed`
+- `controlBorderInvalid`: token `color.border.danger`; part `control`
+- `controlSize`: token `space.5`; part `control`
+- `controlRadius`: token `radius.sm`; part `control`
+- `labelColor`: token `color.foreground`; part `label`; locked
+- `labelSize`: token `font.size.md`; part `label`
+- `labelWeight`: token `font.weight.regular`; part `label`
+- `descriptionText`: token `color.foreground.muted`; part `description`; locked
+
+## Form and overlay
+
+```yaml
+form:
+  role: field
+  value: checked
+  valueType: boolean
+  name: name
+  validation:
+  - required
+  - invalid
+  messages:
+    required: required
+    invalid: invalid
+  discovery: context
+```
+
+## Constants and examples
+
+- example `consent`, story `Consent`: given `label: "I accept the terms of service"`, `name: "terms"`, `required: true`; A required consent checkbox whose label is the agreement itself.
+- example `select-all-parent`, story `SelectAllParent`: given `label: "Select all"`, `name: "selectAll"`, `indeterminate: true`; A "select all" parent showing the mixed indicator while only some children are checked.
+- example `with-description`, story `WithDescription`: given `label: "Send me product updates"`, `name: "updates"`, `description: "One email a month about new features."`; An option whose scope needs one line of explanation under the label.
+- example `selection-column`, story `SelectionColumn`: given `label: "Select row"`, `name: "select"`, `hideLabel: true`; A row selection checkbox in a Table, where the row name is the hidden label.
 
 ## Overrides (per-instance styling contract)
 
@@ -515,7 +634,7 @@ There is no checkbox in core React Native. Render a `Pressable` with `accessibil
 
 Switch, RadioGroup, Form, Input.
 
-## Behavior scenarios (11)
+## Behavior scenarios (12)
 
 One test per scenario, in this order.
 
@@ -586,6 +705,12 @@ One test per scenario, in this order.
     error: Accept the terms to continue.
   then:
   - text: Accept the terms to continue.
+- name: hidden-label-is-still-the-accessible-name
+  description: hideLabel removes the label from view, not from the accessible name.
+  given:
+    hideLabel: true
+  then:
+  - name: true
 - name: renders
   then:
   - renders: true

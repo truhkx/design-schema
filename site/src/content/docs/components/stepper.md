@@ -40,36 +40,40 @@ component:
     onStepSelect:
       description: Fired when a navigable step is chosen, with its id. The container changes `current`; the stepper never changes it itself.
       platforms: { web: onStepSelect, lit: step-select, rn: onStepSelect, swiftui: onStepSelect }
+      payload:
+        - { name: id, type: string, description: The id of the chosen step. }
+      fires: [user]
+      timing: { phase: request }
   keyboard:
     - { keys: [Tab], action: 'Moves between navigable steps in order; non-navigable steps are not focusable.', from: first, expect: focus-next }
-    - { keys: [Enter, ' '], action: Selects the focused step., from: first, expect: manual }
+    - { keys: [Enter, ' '], action: Selects the focused step., from: first, expect: manual, native: true }
   styles:
-    indicatorSize: { token: space.6 }
-    indicatorBackground: { token: color.control.background }
-    indicatorBorder: { token: color.border.strong }
-    indicatorBorderWidth: { token: border.width.focus }
-    indicatorCompleteBackground: { token: color.control.selectedBackground }
-    indicatorCompleteForeground: { token: color.control.selectedForeground }
-    indicatorCurrentBorder: { token: color.control.selectedBackground }
-    indicatorErrorBackground: { token: color.status.danger.background }
-    indicatorErrorForeground: { token: color.status.danger.foreground }
-    indicatorErrorBorder: { token: color.status.danger.icon, description: 'The ring; the danger icon step is the one guaranteed 3:1 against the page.' }
-    indicatorFontSize: { token: font.size.sm }
-    indicatorFontWeight: { token: font.weight.semibold }
-    connector: { token: color.border }
-    connectorComplete: { token: color.control.selectedBackground }
-    connectorWidth: { token: border.width.focus }
-    labelColor: { token: color.foreground }
-    labelUpcomingColor: { token: color.foreground.muted }
-    labelWeight: { token: font.weight.medium }
-    labelCurrentWeight: { token: font.weight.semibold }
-    labelSize: { token: font.size.sm }
-    descriptionColor: { token: color.foreground.muted }
-    descriptionSize: { token: font.size.xs }
-    indicatorColor: { token: color.foreground, description: 'Numeral or glyph on current and upcoming steps.' }
-    stepHover: { token: color.action.ghost.backgroundHover, description: 'Hover and press background of a navigable step.' }
-    stepRadius: { token: radius.sm }
-    stepGap: { token: layout.gap.normal, description: 'Between steps along the orientation axis (the connector fills it).' }
+    indicatorSize: { token: space.6, part: indicator }
+    indicatorBackground: { token: color.control.background, part: indicator }
+    indicatorBorder: { token: color.border.strong, part: indicator }
+    indicatorBorderWidth: { token: border.width.focus, part: indicator }
+    indicatorCompleteBackground: { token: color.control.selectedBackground, part: indicator }
+    indicatorCompleteForeground: { token: color.control.selectedForeground, part: indicator }
+    indicatorCurrentBorder: { token: color.control.selectedBackground, part: indicator }
+    indicatorErrorBackground: { token: color.status.danger.background, part: indicator }
+    indicatorErrorForeground: { token: color.status.danger.foreground, part: indicator }
+    indicatorErrorBorder: { token: color.status.danger.icon, part: indicator, description: 'The ring; the danger icon step is the one guaranteed 3:1 against the page.' }
+    indicatorFontSize: { token: font.size.sm, part: indicator }
+    indicatorFontWeight: { token: font.weight.semibold, part: indicator }
+    connector: { token: color.border, part: connector }
+    connectorComplete: { token: color.control.selectedBackground, part: connector }
+    connectorWidth: { token: border.width.focus, part: connector }
+    labelColor: { token: color.foreground, part: label }
+    labelUpcomingColor: { token: color.foreground.muted, part: label }
+    labelWeight: { token: font.weight.medium, part: label }
+    labelCurrentWeight: { token: font.weight.semibold, part: label }
+    labelSize: { token: font.size.sm, part: label }
+    descriptionColor: { token: color.foreground.muted, part: description }
+    descriptionSize: { token: font.size.xs, part: description }
+    indicatorColor: { token: color.foreground, part: indicator, description: 'Numeral or glyph on current and upcoming steps.' }
+    stepHover: { token: color.action.ghost.backgroundHover, part: step, state: hover, description: 'Hover and press background of a navigable step.' }
+    stepRadius: { token: radius.sm, part: step }
+    stepGap: { token: layout.gap.normal, part: step, description: 'Between steps along the orientation axis (the connector fills it).' }
     partGap: { token: space.2, description: Between the indicator and its label. }
     fontFamily: { token: font.family.body }
     minTarget: { token: size.target.min }
@@ -78,11 +82,19 @@ component:
     transition: { token: motion.duration.fast }
   copy:
     navLabel: Progress
-    stepOf: 'Step {current} of {total}'
+    stepOf:
+      text: 'Step {current} of {total}'
+      params:
+        current: { type: number, description: The current step's position in the flow. }
+        total: { type: number, description: How many steps the flow has. }
     complete: completed
     current: current step
     error: has an error
-    stepLabel: 'Step {n}: {label}'
+    stepLabel:
+      text: 'Step {n}: {label}'
+      params:
+        n: { type: number, description: The step's position in the flow. }
+        label: { type: string, description: The step's own label. }
   a11y:
     role: none
     requires: [accessible-name, keyboard-operable, focus-visible, contrast-aa, target-24px, selected-state]
@@ -91,9 +103,9 @@ component:
       - { foreground: color.foreground.muted, background: color.background, level: AA }
       - { foreground: color.control.selectedForeground, background: color.control.selectedBackground, level: AA }
       - { foreground: color.status.danger.foreground, background: color.status.danger.background, level: AA }
-      - { foreground: color.status.danger.icon, background: color.background, level: AA, large: true }
-      - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }
-      - { foreground: color.border.strong, background: color.background, level: AA, large: true }
+      - { foreground: color.status.danger.icon, background: color.background, level: AA, nonText: true }
+      - { foreground: color.control.selectedBackground, background: color.background, level: AA, nonText: true }
+      - { foreground: color.border.strong, background: color.background, level: AA, nonText: true }
   platforms:
     web:
       element: ol
@@ -111,6 +123,116 @@ component:
       element: VStack
       props: [.accessibilityElement=contain, .accessibilityLabel, Button, .accessibilityAddTraits=isSelected, .accessibilityValue, Icon, ViewThatFits]
       notes: 'A `.contain` element labelled `copy.navLabel` holding the ordered steps (`HStack`/`VStack` by `orientation`): navigable steps are `Button`s whose accessibility label is `copy.stepLabel` plus the status word, the current step carries `.isSelected` and `.accessibilityValue(copy.current)`; non-navigable steps are plain elements with the same label. Indicators draw the number or the `check`/`danger` Icon; `compact` switches through `ViewThatFits` below the prose width. Not SwiftUI''s `Stepper` (a numeric control).'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name ones from the schema.
+    # The indicator is inside the step's control, so clicking it is how a step is activated.
+    - name: click-on-a-completed-step-reports-it
+      description: A navigable step fires onStepSelect with its id; the container decides whether to move.
+      given:
+        navigable: 'completed'
+        current: 'payment'
+        steps:
+          - { id: 'shipping', label: 'Shipping address' }
+          - { id: 'payment', label: 'Payment' }
+          - { id: 'review', label: 'Review order' }
+          - { id: 'confirm', label: 'Confirmation' }
+      when: { click: indicator }
+      then:
+        - { event: onStepSelect, with: 'shipping' }
+    - name: the-current-step-is-not-navigable
+      description: navigable completed means every step before the current one, so the current step itself reports nothing.
+      given:
+        navigable: 'completed'
+        current: 'shipping'
+        steps:
+          - { id: 'shipping', label: 'Shipping address' }
+          - { id: 'payment', label: 'Payment' }
+          - { id: 'review', label: 'Review order' }
+      when: { click: indicator }
+      then:
+        - { event: onStepSelect, fired: false }
+    - name: display-only-steps-report-nothing
+      description: With navigable none the steps are inert text.
+      given:
+        navigable: 'none'
+        current: 'payment'
+        steps:
+          - { id: 'shipping', label: 'Shipping address' }
+          - { id: 'payment', label: 'Payment' }
+          - { id: 'review', label: 'Review order' }
+      when: { click: indicator }
+      then:
+        - { event: onStepSelect, fired: false }
+    - name: step-status-is-said-in-words
+      description: The status is carried by a word from copy, not by color or glyph alone.
+      given:
+        navigable: 'none'
+        current: 'payment'
+        steps:
+          - { id: 'shipping', label: 'Shipping address' }
+          - { id: 'payment', label: 'Payment' }
+          - { id: 'review', label: 'Review order' }
+      then:
+        - { copy: complete, platforms: [web, lit] }
+        - { copy: current, platforms: [web, lit] }
+    - name: an-errored-step-says-so
+      description: A step marked error is named with copy.error, so the danger glyph is not the only signal.
+      given:
+        navigable: 'none'
+        current: 'review'
+        steps:
+          - { id: 'shipping', label: 'Shipping address', status: 'complete' }
+          - { id: 'payment', label: 'Payment', status: 'error' }
+          - { id: 'review', label: 'Review order' }
+      then:
+        - { copy: error, platforms: [web, lit] }
+    - name: compact-shows-the-step-count
+      description: Below the prose width the stepper shows only the current label and "Step n of m".
+      given:
+        compact: true
+        current: 'payment'
+        steps:
+          - { id: 'shipping', label: 'Shipping address' }
+          - { id: 'payment', label: 'Payment' }
+          - { id: 'review', label: 'Review order' }
+          - { id: 'confirm', label: 'Confirmation' }
+      then:
+        - { text: 'Step 2 of 4' }
+  examples:
+    - name: checkout
+      description: The usual horizontal flow, where a completed step can be revisited.
+      given:
+        current: 'payment'
+        steps:
+          - { id: 'shipping', label: 'Shipping address' }
+          - { id: 'payment', label: 'Payment' }
+          - { id: 'review', label: 'Review order' }
+    - name: onboarding-with-descriptions
+      description: A vertical stepper whose steps each need a line of explanation.
+      given:
+        orientation: 'vertical'
+        current: 'verify'
+        steps:
+          - { id: 'account', label: 'Create account', description: 'Takes about a minute.' }
+          - { id: 'verify', label: 'Verify identity', description: 'Takes about 2 minutes.' }
+          - { id: 'plan', label: 'Choose a plan', description: 'Compare features and pricing.' }
+    - name: display-only
+      description: A flow the user cannot jump around in.
+      given:
+        navigable: 'none'
+        current: 'payment'
+        steps:
+          - { id: 'shipping', label: 'Shipping address' }
+          - { id: 'payment', label: 'Payment' }
+          - { id: 'review', label: 'Review order' }
+    - name: a-step-with-an-error
+      description: Validation failed on a step the user has already left.
+      given:
+        current: 'review'
+        steps:
+          - { id: 'shipping', label: 'Shipping address', status: 'complete' }
+          - { id: 'payment', label: 'Payment', status: 'error' }
+          - { id: 'review', label: 'Review order' }
 ---
 
 A stepper is a map of a journey with a "you are here". It sets expectations (five steps, not fifteen), shows progress without a bar, and gives people a way back to a step they finished. It is navigation, not a form control; the number-stepping field is NumberInput.

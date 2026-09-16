@@ -6,6 +6,10 @@ import type { TreeProps } from '../../packages/rn/src/Tree';
 import meta from '../../packages/rn/src/Tree.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<TreeProps> = {}) {
   const events = {
     onSelectionChange: jest.fn(),
@@ -26,12 +30,34 @@ function setup(given: Partial<TreeProps> = {}) {
     props,
     root: () => screen.queryByTestId('Tree') ?? screen.UNSAFE_root,
     container: () => screen.queryByRole('tree') ?? s.root(),
+    nodeRow: () => screen.queryByTestId('Tree.nodeRow') ?? s.root(),
+    expandButton: () => screen.queryByTestId('Tree.expandButton') ?? s.root(),
     rerender: (next: Partial<TreeProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Tree', () => {
+  test('the-expand-button-expands-a-node', () => {
+    const s = setup({"defaultExpanded": [], "nodes": [{"id": "docs", "label": "Documents", "children": [{"id": "invoices", "label": "Invoices"}]}]});
+    fireEvent.press(s.expandButton());
+    expect(s.events.onExpandChange).toHaveBeenCalled();
+  });
+  test('expanding-a-lazy-node-asks-for-its-children', () => {
+    const s = setup({"defaultExpanded": [], "nodes": [{"id": "docs", "label": "Documents", "children": "lazy"}]});
+    fireEvent.press(s.expandButton());
+    expect(s.events.onExpand).toHaveBeenCalled();
+    expect(s.events.onExpandChange).toHaveBeenCalled();
+  });
+  test('clicking-a-node-selects-it', () => {
+    const s = setup({"selectable": "single", "nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
+    fireEvent.press(s.nodeRow());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('the-empty-message-shows-when-there-are-no-nodes', () => {
+    const s = setup({"nodes": []});
+    expect(screen.getByText(new RegExp("Nothing\\ here\\."))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

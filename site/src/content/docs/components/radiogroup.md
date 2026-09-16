@@ -25,6 +25,9 @@ component:
     value:
       type: string
       description: Controlled selected value. Omit for an uncontrolled group.
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: string
       description: Initial selection for an uncontrolled group. Omit to start with nothing selected.
@@ -57,6 +60,9 @@ component:
     onChange:
       description: Fired when the selection changes, with the new option value.
       platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
+      payload:
+        - { name: value, type: string, description: The value of the selected option. }
+      fires: [user]
   keyboard:
     - { keys: [Tab], action: 'Moves into the group, to the selected radio (the first when none is selected); from inside, leaves the group — one tab stop.', from: any, expect: manual }
     - { keys: [ArrowDown, ArrowRight], action: 'Moves to and selects the next enabled radio, wrapping.', from: first, expect: focus-next }
@@ -74,14 +80,14 @@ component:
     optionGap: { token: space.2, description: Horizontal gap between radio and its label. }
     listGap: { token: space.2, description: 'Gap between options (vertical or horizontal).' }
     partGap: { token: space.1, description: 'Vertical gap between legend, description, list, and error.' }
-    legendColor: { token: color.foreground }
-    legendSize: { token: font.size.md }
-    legendWeight: { token: font.weight.medium }
+    legendColor: { token: color.foreground, part: legend }
+    legendSize: { token: font.size.md, part: legend }
+    legendWeight: { token: font.weight.medium, part: legend }
     labelColor: { token: color.foreground }
     labelSize: { token: font.size.md }
     labelWeight: { token: font.weight.regular }
     helperSize: { token: font.size.sm }
-    descriptionText: { token: color.foreground.muted }
+    descriptionText: { token: color.foreground.muted, part: description }
     errorText: { token: color.foreground.danger }
     fontFamily: { token: font.family.body }
     lineHeight: { token: font.lineHeight.normal }
@@ -94,16 +100,29 @@ component:
     required: '{label} is required.'
     invalid: '{label} is not valid.'
     requiredIndicator: ' (required)'
+    position:
+      text: '{index} of {total}'
+      params:
+        index: { type: number, description: The option's position in the group. }
+        total: { type: number, description: How many options the group has. }
   a11y:
     role: radiogroup
     requires: [label-association, arrow-navigation, roving-tabindex, error-identification, focus-visible, keyboard-operable, target-24px, contrast-aa]
     contrast:
-      - { foreground: color.control.selectedBackground, background: color.control.background, level: AA, large: true }
-      - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }
-      - { foreground: color.control.border, background: color.background, level: AA, large: true }
+      - { foreground: color.control.selectedBackground, background: color.control.background, level: AA, nonText: true }
+      - { foreground: color.control.selectedBackground, background: color.background, level: AA, nonText: true }
+      - { foreground: color.control.border, background: color.background, level: AA, nonText: true }
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }
       - { foreground: color.foreground.danger, background: color.background, level: AA }
+  form:
+    role: field
+    value: value
+    valueType: string
+    name: name
+    validation: [required, invalid]
+    messages: { required: required, invalid: invalid }
+    discovery: context
   platforms:
     web:
       element: fieldset
@@ -121,6 +140,83 @@ component:
       element: VStack
       props: [.accessibilityElement=contain, .accessibilityLabel, Button, .accessibilityAddTraits=isSelected, .focusable, .onMoveCommand, '@FocusState']
       notes: 'A container `.accessibilityElement(children: .contain)` named by the legend, holding one `Button` per option that draws the radio circle from the tokens and carries `.isSelected` for the checked option (VoiceOver: ''Email, selected, button, 1 of 3'' — the count is announced from `.accessibilityValue(copy.position)`). Arrow keys on iPad move the selection through `@FocusState` per the keyboard table (`.onMoveCommand`); the group is one focus section. `orientation` picks `VStack`/`HStack`. Registers with the Form environment as one field.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/error-identified ones from the schema.
+    - name: click-on-an-option-reports-its-value
+      description: Clicking an option selects it and fires onChange with that option's value.
+      when: { click: radio }
+      then:
+        - { event: onChange, with: 'standard' }
+    - name: click-on-an-option-label-selects-it
+      description: The whole option row is the hit area; each radio has its own label element.
+      when: { click: radioLabel }
+      then:
+        - { event: onChange, with: 'standard' }
+    - name: disabled-option-cannot-be-selected
+      description: A disabled option uses the native disabled attribute, so it is skipped and cannot be chosen.
+      given:
+        options:
+          - { value: 'standard', label: 'Standard', disabled: true }
+          - { value: 'express', label: 'Express' }
+      when: { click: radio }
+      then:
+        - { event: onChange, fired: false }
+    - name: disabled-group-is-inert
+      description: A fully disabled group stays visible and focusable but selects nothing.
+      given: { disabled: true }
+      when: { click: radio }
+      then:
+        - { event: onChange, fired: false }
+        - { state: disabled, is: true, platforms: [web] }
+    - name: required-is-shown-in-the-legend
+      description: required appends copy.requiredIndicator to the legend, not only a color.
+      given: { required: true }
+      then:
+        - { copy: requiredIndicator }
+    - name: invalid-renders-the-invalid-copy
+      description: 'Validation precedence is error, then required, then invalid; with only invalid set the group renders copy.invalid and is marked invalid.'
+      given: { invalid: true }
+      then:
+        - { copy: invalid }
+        - { state: invalid, is: true, platforms: [web, lit] }
+  examples:
+    - name: shipping-method
+      description: Three options with a description each, the usual vertical form.
+      given:
+        label: 'Shipping method'
+        name: 'shipping'
+        options:
+          - { value: 'standard', label: 'Standard', description: 'Free, 3 to 5 business days' }
+          - { value: 'express', label: 'Express', description: 'Next business day' }
+          - { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' }
+    - name: horizontal-pair
+      description: Two short labels laid out horizontally.
+      given:
+        label: 'Send a receipt'
+        name: 'receipt'
+        orientation: 'horizontal'
+        options:
+          - { value: 'yes', label: 'Yes' }
+          - { value: 'no', label: 'No' }
+    - name: required-with-a-group-error
+      description: A required group the Form has marked invalid, with one error under the whole group.
+      given:
+        label: 'Plan'
+        name: 'plan'
+        required: true
+        error: 'Choose a plan to continue.'
+        options:
+          - { value: 'free', label: 'Free' }
+          - { value: 'pro', label: 'Pro' }
+    - name: with-a-disabled-option
+      description: An option that is not available, skipped by arrow movement.
+      given:
+        label: 'Delivery window'
+        name: 'window'
+        defaultValue: 'morning'
+        options:
+          - { value: 'morning', label: 'Morning' }
+          - { value: 'evening', label: 'Evening', disabled: true }
 ---
 
 A radio group asks one question and takes one answer. Its strength is that every option is visible at once, so the user can compare before choosing; its cost is vertical space, which is why it suits short sets.

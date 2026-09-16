@@ -6,6 +6,10 @@ import { Feed } from '../../packages/react/src/Feed';
 import type { FeedProps } from '../../packages/react/src/Feed';
 import meta from '../../packages/react/src/Feed.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<FeedProps> = {}) {
   const events = {
     onLoadMore: vi.fn(),
@@ -22,12 +26,38 @@ function setup(given: Partial<FeedProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Feed"]') ?? screen.queryByRole('feed') ?? utils.container.firstElementChild) as HTMLElement,
     container: () => (screen.queryByRole('feed') ?? s.root()) as HTMLElement,
+    newItemsButton: () => (document.querySelector('[data-part="newItemsButton"]') ?? s.root()),
     rerender: (next: Partial<FeedProps>) => utils.rerender(<Feed {...props} {...next} />),
   };
   return s;
 }
 
 describe('Feed', () => {
+  test('an-empty-feed-asks-for-its-first-page', async () => {
+    const s = setup({"items": [], "hasMore": true, "loading": false});
+    expect(s.events.onLoadMore).toHaveBeenCalled();
+  });
+  test('pressing-show-new-asks-for-the-newer-items', async () => {
+    const s = setup({"newItemsCount": 3, "items": [{"id": "a1", "heading": "Ana commented on Invoice 42", "timestamp": "2026-09-15T09:00:00Z", "content": "Looks right to me."}]});
+    await s.user.click(s.newItemsButton());
+    expect(s.events.onShowNew).toHaveBeenCalled();
+  });
+  test('the-end-message-shows-when-there-is-nothing-more', async () => {
+    const s = setup({"hasMore": false, "items": [{"id": "a1", "heading": "Ana commented on Invoice 42", "timestamp": "2026-09-15T09:00:00Z", "content": "Looks right to me."}]});
+    expect(screen.getByText(new RegExp("You\\ are\\ all\\ caught\\ up\\."))).toBeInTheDocument();
+  });
+  test('a-custom-end-message-replaces-the-default', async () => {
+    const s = setup({"hasMore": false, "endMessage": "That is everything from this week.", "items": [{"id": "a1", "heading": "Ana commented on Invoice 42", "timestamp": "2026-09-15T09:00:00Z", "content": "Looks right to me."}]});
+    expect(screen.getByText(new RegExp("That\\ is\\ everything\\ from\\ this\\ week\\."))).toBeInTheDocument();
+  });
+  test('an-empty-feed-that-is-not-loading-says-so', async () => {
+    const s = setup({"items": [], "hasMore": false, "loading": false});
+    expect(screen.getByText(new RegExp("Nothing\\ here\\ yet\\."))).toBeInTheDocument();
+  });
+  test('loading-marks-the-feed-busy', async () => {
+    const s = setup({"loading": true, "hasMore": true});
+    expect(s.container()).toHaveAttribute("aria-busy", "true");
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

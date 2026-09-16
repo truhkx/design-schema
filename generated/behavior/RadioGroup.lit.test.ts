@@ -53,6 +53,8 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     group: () => (deep(root, '[role="radiogroup"]') ?? deep(root, '[part="group"]') ?? deep(root, '[data-part="group"]') ?? root.firstElementChild) as HTMLElement,
+    radio: () => (deep(root, '[part="radio"]') ?? deep(root, '[data-part="radio"]')) as HTMLElement,
+    radioLabel: () => (deep(root, '[part="radioLabel"]') ?? deep(root, '[data-part="radioLabel"]')) as HTMLElement,
   };
   return s;
 }
@@ -62,6 +64,37 @@ beforeEach(() => {
 });
 
 describe('ds-radio-group', () => {
+  test('click-on-an-option-reports-its-value', async () => {
+    const s = await setup({});
+    await userEvent.click(s.radio());
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual("standard");
+  });
+  test('click-on-an-option-label-selects-it', async () => {
+    const s = await setup({});
+    await userEvent.click(s.radioLabel());
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual("standard");
+  });
+  test('disabled-option-cannot-be-selected', async () => {
+    const s = await setup({"options": [{"value": "standard", "label": "Standard", "disabled": true}, {"value": "express", "label": "Express"}]});
+    await userEvent.click(s.radio());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('disabled-group-is-inert', async () => {
+    const s = await setup({"disabled": true});
+    await userEvent.click(s.radio(), { force: true });
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('required-is-shown-in-the-legend', async () => {
+    const s = await setup({"required": true});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("\\(required\\)"));
+  });
+  test('invalid-renders-the-invalid-copy', async () => {
+    const s = await setup({"invalid": true});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."));
+    expect(s.group()).toHaveAttribute('aria-invalid', 'true');
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

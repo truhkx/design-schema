@@ -82,6 +82,9 @@ component:
     value:
       type: string
       description: Controlled selected value. Omit for uncontrolled.
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: string
       description: Initially selected value. Defaults to the first enabled option
@@ -93,6 +96,7 @@ component:
         names and Tooltips.
     size:
       type: enum
+      enumRef: size
       values:
       - sm
       - md
@@ -111,19 +115,31 @@ component:
         lit: change
         rn: onChange
         swiftui: onChange
+      payload:
+      - name: value
+        type: string
+        description: The value of the selected segment.
+      fires:
+      - user
+      timing:
+        phase: after-change
   keyboard:
   - keys:
     - ArrowRight
     - ArrowDown
     action: Moves to and selects the next enabled segment, wrapping.
     from: first
-    expect: focus-next
+    expect:
+    - focus-next
+    - selects
   - keys:
     - ArrowLeft
     - ArrowUp
     action: Moves to and selects the previous enabled segment, wrapping.
     from: last
-    expect: focus-prev
+    expect:
+    - focus-prev
+    - selects
   - keys:
     - ArrowRight
     action: From the last segment wraps to the first.
@@ -142,41 +158,53 @@ component:
   styles:
     groupBackground:
       token: color.background.strong
+      part: group
       locked: true
     groupPadding:
       token: space.1
+      part: group
       locked: false
     groupRadius:
       token: radius.md
+      part: group
       locked: false
     segmentColor:
       token: color.foreground.muted
+      part: segment
       locked: true
     segmentSelectedColor:
       token: color.foreground.strong
+      part: segment
       locked: true
     segmentSelectedBackground:
       token: color.background
+      part: segment
       description: The raised pill under the selected segment.
       locked: true
     segmentShadow:
       token: shadow.raised
+      part: segment
       locked: false
     segmentRadius:
       token: radius.sm
+      part: segment
       locked: false
     segmentPaddingInline:
       token: space.md
+      part: segment
       locked: false
     segmentPaddingBlock:
       token: space.1
+      part: segment
       locked: false
     segmentGap:
       token: layout.gap.tight
+      part: segment
       description: Between icon and label inside a segment.
       locked: false
     segmentSpacing:
       token: space.0
+      part: segment
       description: 'Between adjacent segments: none — the pill slides under abutting
         segments.'
       locked: false
@@ -237,6 +265,11 @@ component:
     - foreground: color.foreground.strong
       background: color.background
       level: AA
+  form:
+    role: field
+    value: value
+    valueType: string
+    discovery: context
   platforms:
     web:
       element: div
@@ -286,11 +319,164 @@ component:
         `transition` (no slide under reduced motion). Arrows on iPad move selection
         immediately (radio semantics), matching the keyboard table. `iconOnly` segments
         carry their label as the accessibility label.
+  behavior:
+  - name: click-selects-a-segment
+    given:
+      options:
+      - value: list
+        label: List
+      - value: grid
+        label: Grid
+      defaultValue: grid
+    when:
+      click: segment
+    then:
+    - event: onChange
+    - event: onChange
+      with: list
+      platforms:
+      - lit
+      - rn
+  - name: arrow-moves-and-selects
+    description: Arrows move focus AND selection (radio semantics), per the keyboard
+      table's `selects`.
+    given:
+      options:
+      - value: list
+        label: List
+      - value: grid
+        label: Grid
+      defaultValue: list
+    when:
+      key: ArrowRight
+    then:
+    - event: onChange
+    - event: onChange
+      with: grid
+      platforms:
+      - lit
+    platforms:
+    - web
+    - lit
+  - name: arrow-wraps-from-the-last-segment
+    description: From the last segment ArrowRight wraps to the first, and selection
+      follows.
+    given:
+      options:
+      - value: list
+        label: List
+      - value: grid
+        label: Grid
+      defaultValue: grid
+    when:
+      key: ArrowRight
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: disabled-segment-is-not-selectable
+    description: Arrow movement skips disabled segments, and a press on one selects
+      nothing.
+    given:
+      options:
+      - value: list
+        label: List
+        disabled: true
+      - value: grid
+        label: Grid
+      defaultValue: grid
+    when:
+      click: segment
+    then:
+    - event: onChange
+      fired: false
+  examples:
+  - name: view-mode
+    description: The two-option list/grid switch a content region is viewed through.
+    given:
+      label: View mode
+      options:
+      - value: list
+        label: List
+      - value: grid
+        label: Grid
+      defaultValue: list
+  - name: icon-only-toolbar
+    description: Icon-only segments at toolbar height, each label carried as the accessible
+      name and the Tooltip.
+    given:
+      label: View mode
+      options:
+      - value: list
+        label: List view
+        icon: list
+      - value: grid
+        label: Grid view
+        icon: grid
+      iconOnly: true
+      size: sm
+  - name: filled-range-switch
+    description: Three parallel time ranges stretched to the container width.
+    given:
+      label: Range
+      options:
+      - value: day
+        label: Day
+      - value: week
+        label: Week
+      - value: month
+        label: Month
+      defaultValue: week
+      fill: true
 ```
+
+## Events
+
+- `onChange`: emit `change`
+  - payload, the keys of `CustomEvent.detail`: `value: string`
+  - fires on: user
+  - timing: after-change
 
 ## Controlled state
 
-- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; paired by name, so no event is declared
+- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `change`)
+
+## Style bindings
+
+- `groupBackground`: token `color.background.strong`; part `group`; locked
+- `groupPadding`: token `space.1`; part `group`
+- `groupRadius`: token `radius.md`; part `group`
+- `segmentColor`: token `color.foreground.muted`; part `segment`; locked
+- `segmentSelectedColor`: token `color.foreground.strong`; part `segment`; locked
+- `segmentSelectedBackground`: token `color.background`; part `segment`; locked
+- `segmentShadow`: token `shadow.raised`; part `segment`
+- `segmentRadius`: token `radius.sm`; part `segment`
+- `segmentPaddingInline`: token `space.md`; part `segment`
+- `segmentPaddingBlock`: token `space.1`; part `segment`
+- `segmentGap`: token `layout.gap.tight`; part `segment`
+- `segmentSpacing`: token `space.0`; part `segment`
+
+## Keyboard
+
+- `ArrowRight`, `ArrowDown` (Moves to and selects the next enabled segment, wrapping.): expect focus-next, then selects
+- `ArrowLeft`, `ArrowUp` (Moves to and selects the previous enabled segment, wrapping.): expect focus-prev, then selects
+
+## Form and overlay
+
+```yaml
+form:
+  role: field
+  value: value
+  valueType: string
+  discovery: context
+```
+
+## Constants and examples
+
+- example `view-mode`, story `ViewMode`: given `label: "View mode"`, `options: [{"value":"list","label":"List"},{"value":"grid","label":"Grid"}]`, `defaultValue: "list"`; The two-option list/grid switch a content region is viewed through.
+- example `icon-only-toolbar`, story `IconOnlyToolbar`: given `label: "View mode"`, `options: [{"value":"list","label":"List view","icon":"list"},{"value":"grid","label":"Grid view","icon":"grid"}]`, `iconOnly: true`, `size: "sm"`; Icon-only segments at toolbar height, each label carried as the accessible name and the Tooltip.
+- example `filled-range-switch`, story `FilledRangeSwitch`: given `label: "Range"`, `options: [{"value":"day","label":"Day"},{"value":"week","label":"Week"},{"value":"month","label":"Month"}]`, `defaultValue: "week"`, `fill: true`; Three parallel time ranges stretched to the container width.
 
 ## Overrides (per-instance styling contract)
 
@@ -303,11 +489,77 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `groupPadding`, `groupRadius`, `segmentShadow`, `segmentRadius`, `segmentPaddingInline`, `segmentPaddingBlock`, `segmentGap`, `segmentSpacing`, `selectedWeight`, `paddingBlockSm`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `transition`, `disabledOpacity`
 Locked (accessibility-bearing, never overridable): `groupBackground`, `segmentColor`, `segmentSelectedColor`, `segmentSelectedBackground`, `minTarget`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (4)
+## Behavior scenarios (8)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: click-selects-a-segment
+  given:
+    options:
+    - value: list
+      label: List
+    - value: grid
+      label: Grid
+    defaultValue: grid
+  when:
+    click: segment
+  then:
+  - event: onChange
+  - event: onChange
+    with: list
+- name: arrow-moves-and-selects
+  description: Arrows move focus AND selection (radio semantics), per the keyboard
+    table's `selects`.
+  given:
+    options:
+    - value: list
+      label: List
+    - value: grid
+      label: Grid
+    defaultValue: list
+  when:
+    key: ArrowRight
+  then:
+  - event: onChange
+  - event: onChange
+    with: grid
+  platforms:
+  - web
+  - lit
+- name: arrow-wraps-from-the-last-segment
+  description: From the last segment ArrowRight wraps to the first, and selection
+    follows.
+  given:
+    options:
+    - value: list
+      label: List
+    - value: grid
+      label: Grid
+    defaultValue: grid
+  when:
+    key: ArrowRight
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: disabled-segment-is-not-selectable
+  description: Arrow movement skips disabled segments, and a press on one selects
+    nothing.
+  given:
+    options:
+    - value: list
+      label: List
+      disabled: true
+    - value: grid
+      label: Grid
+    defaultValue: grid
+  when:
+    click: segment
+  then:
+  - event: onChange
+    fired: false
 - name: renders
   then:
   - renders: true

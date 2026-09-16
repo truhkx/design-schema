@@ -36,7 +36,10 @@
       "action": "Moves to the next tab, wrapping; selects it under automatic activation.",
       "from": "first",
       "expect": "manual",
-      "when": "vertical"
+      "when": "vertical",
+      "given": {
+        "orientation": "vertical"
+      }
     },
     {
       "keys": [
@@ -45,7 +48,10 @@
       "action": "Moves to the previous tab, wrapping.",
       "from": "last",
       "expect": "manual",
-      "when": "vertical"
+      "when": "vertical",
+      "given": {
+        "orientation": "vertical"
+      }
     },
     {
       "keys": [

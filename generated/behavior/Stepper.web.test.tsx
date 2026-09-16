@@ -6,6 +6,10 @@ import { Stepper } from '../../packages/react/src/Stepper';
 import type { StepperProps } from '../../packages/react/src/Stepper';
 import meta from '../../packages/react/src/Stepper.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<StepperProps> = {}) {
   const events = {
     onStepSelect: vi.fn(),
@@ -20,12 +24,41 @@ function setup(given: Partial<StepperProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Stepper"]') ?? utils.container.firstElementChild) as HTMLElement,
     list: () => s.root(),
+    indicator: () => (document.querySelector('[data-part="indicator"]') ?? s.root()),
     rerender: (next: Partial<StepperProps>) => utils.rerender(<Stepper {...props} {...next} />),
   };
   return s;
 }
 
 describe('Stepper', () => {
+  test('click-on-a-completed-step-reports-it', async () => {
+    const s = setup({"navigable": "completed", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}, {"id": "confirm", "label": "Confirmation"}]});
+    await s.user.click(s.indicator());
+    expect(s.events.onStepSelect).toHaveBeenCalledWith("shipping", expect.anything());
+  });
+  test('the-current-step-is-not-navigable', async () => {
+    const s = setup({"navigable": "completed", "current": "shipping", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
+    await s.user.click(s.indicator());
+    expect(s.events.onStepSelect).not.toHaveBeenCalled();
+  });
+  test('display-only-steps-report-nothing', async () => {
+    const s = setup({"navigable": "none", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
+    await s.user.click(s.indicator());
+    expect(s.events.onStepSelect).not.toHaveBeenCalled();
+  });
+  test('step-status-is-said-in-words', async () => {
+    const s = setup({"navigable": "none", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
+    expect(screen.getByText(new RegExp("completed"))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp("current\\ step"))).toBeInTheDocument();
+  });
+  test('an-errored-step-says-so', async () => {
+    const s = setup({"navigable": "none", "current": "review", "steps": [{"id": "shipping", "label": "Shipping address", "status": "complete"}, {"id": "payment", "label": "Payment", "status": "error"}, {"id": "review", "label": "Review order"}]});
+    expect(screen.getByText(new RegExp("has\\ an\\ error"))).toBeInTheDocument();
+  });
+  test('compact-shows-the-step-count', async () => {
+    const s = setup({"compact": true, "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}, {"id": "confirm", "label": "Confirmation"}]});
+    expect(screen.getByText(new RegExp("Step\\ 2\\ of\\ 4"))).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

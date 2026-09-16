@@ -154,7 +154,8 @@ describe('requirements met through a composed component', () => {
 
 describe('keyboard', () => {
   const RULE = { keys: ['Home'], action: 'Moves to the first item.', expect: 'focus-first' };
-  const ESCAPE = { keys: ['Escape'], action: 'Closes.', expect: 'closes' };
+  // `target` because the fixture's role is `button`: a widget root the gate must not assert `closes` on.
+  const ESCAPE = { keys: ['Escape'], action: 'Closes.', expect: 'closes', target: 'container' };
 
   test('a keyboard block requires keyboard operable', () => {
     const c = component();

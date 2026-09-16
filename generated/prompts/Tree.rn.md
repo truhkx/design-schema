@@ -73,12 +73,21 @@ component:
   - group
   - emptyState
   composition:
-    heading: Heading
+    heading:
+      component: Heading
+      forwards:
+        headingSize: fontSize
     expandButton: Button
     icon: Icon
-    label: Text
+    label:
+      component: Text
+      forwards:
+        labelSelectedWeight: fontWeight
     link: Link
-    badge: Text
+    badge:
+      component: Text
+      forwards:
+        badgeSize: fontSize
     emptyState: Text
   props:
     label:
@@ -115,6 +124,9 @@ component:
       type: array
       shape: string[]
       description: Controlled expanded ids.
+      controls:
+        event: onExpandChange
+        default: defaultExpanded
     defaultExpanded:
       type: array
       shape: string[]
@@ -135,6 +147,9 @@ component:
       shape: string[]
       description: Controlled selected ids. Always an array, even in `single` mode
         (zero or one element).
+      controls:
+        event: onSelectionChange
+        default: defaultSelected
     defaultSelected:
       type: array
       shape: string[]
@@ -161,6 +176,13 @@ component:
         lit: selection-change
         rn: onSelectionChange
         swiftui: onSelectionChange
+      payload:
+      - name: ids
+        type: array
+        shape: string[]
+        description: Every selected id, as a bare array.
+      fires:
+      - user
     onExpandChange:
       description: Fired with the expanded ids.
       platforms:
@@ -168,6 +190,13 @@ component:
         lit: expand-change
         rn: onExpandChange
         swiftui: onExpandChange
+      payload:
+      - name: ids
+        type: array
+        shape: string[]
+        description: Every expanded id, as a bare array.
+      fires:
+      - user
     onExpand:
       description: Fired when a lazy node is expanded for the first time, with its
         id.
@@ -176,6 +205,12 @@ component:
         lit: expand
         rn: onExpand
         swiftui: onExpand
+      payload:
+      - name: id
+        type: string
+        description: The expanded node.
+      fires:
+      - user
     onActivate:
       description: Fired on Enter or double-click on a node (open the file, navigate),
         with its id. Nodes with `href` navigate instead.
@@ -184,6 +219,12 @@ component:
         lit: activate
         rn: onActivate
         swiftui: onActivate
+      payload:
+      - name: id
+        type: string
+        description: The id of the activated node.
+      fires:
+      - user
   keyboard:
   - keys:
     - Tab
@@ -196,22 +237,38 @@ component:
     action: Next visible node.
     from: first
     expect: focus-next
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - ArrowUp
     action: Previous visible node.
     from: last
     expect: focus-prev
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - ArrowRight
     action: 'On a closed parent: opens it. On an open parent: moves to its first enabled
       child (disabled nodes are skipped). On a leaf: nothing.'
     from: inside
     expect: manual
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - ArrowLeft
     action: 'On an open parent: closes it. Otherwise: moves to the parent.'
     from: inside
     expect: manual
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - Home
     action: First node.
@@ -247,6 +304,10 @@ component:
     when: multiple
     from: inside
     expect: manual
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - Control+a
     action: Selects every visible, enabled node at the current expansion state; bound
@@ -260,9 +321,14 @@ component:
       typed characters; the buffer clears after 500 ms (literal-ok, as Listbox).'
     from: inside
     expect: manual
+    platforms:
+    - web
+    - lit
+    - swiftui
   styles:
     indent:
       token: space.5
+      part: indent
       description: Per level on the node row.
       locked: false
     rowHeight:
@@ -280,6 +346,7 @@ component:
       locked: false
     rowHover:
       token: color.action.ghost.backgroundHover
+      state: hover
       locked: false
     rowSelected:
       token: color.background.strong
@@ -293,27 +360,34 @@ component:
       locked: true
     labelColor:
       token: color.foreground
+      part: label
       locked: true
     labelSelectedWeight:
       token: font.weight.medium
+      part: label
       description: Forwarded to the label Text as `overrides.fontWeight` when selected.
       locked: false
     headingSize:
       token: font.size.md
+      part: heading
       description: The visible label Heading; forwarded as `overrides.fontSize`.
       locked: false
     iconColor:
       token: color.foreground.muted
+      part: icon
       locked: true
     badgeColor:
       token: color.foreground.muted
+      part: badge
       locked: true
     badgeSize:
       token: font.size.xs
+      part: badge
       description: Forwarded to the badge Text as `overrides.fontSize`.
       locked: false
     expandButtonSize:
       token: size.target.min
+      part: expandButton
       locked: true
     guideLine:
       token: color.border
@@ -323,29 +397,36 @@ component:
       locked: false
     checkboxGap:
       token: layout.gap.tight
+      part: checkbox
       description: Between the checkbox and the label in multiple mode.
       locked: false
     checkboxSize:
       token: space.4
+      part: checkbox
       description: The drawn checkbox glyph in multiple mode (the treeitem is the
         control; no Checkbox component).
       locked: false
     checkboxBorder:
       token: color.control.border
+      part: checkbox
       locked: true
     checkboxBackground:
       token: color.control.background
+      part: checkbox
       locked: false
     checkboxSelected:
       token: color.control.selectedBackground
+      part: checkbox
       description: Fill when checked or indeterminate.
       locked: true
     checkboxMark:
       token: color.control.selectedForeground
+      part: checkbox
       description: The check or dash Icon on the fill.
       locked: true
     checkboxRadius:
       token: radius.sm
+      part: checkbox
       locked: false
     fontFamily:
       token: font.family.body
@@ -372,10 +453,21 @@ component:
       token: motion.duration.fast
       description: Chevron rotation and hover; groups appear instantly.
       locked: false
+  constants:
+    typeaheadReset:
+      description: How long typed characters accumulate before the typeahead buffer
+        clears.
+      value: 500
+      unit: ms
   copy:
     expand: Expand {label}
     collapse: Collapse {label}
-    selectedCount: '{count} selected'
+    selectedCount:
+      text: '{count} selected'
+      params:
+        count:
+          type: number
+          description: How many nodes are selected.
     loading: Loading
     empty: Nothing here.
   a11y:
@@ -407,11 +499,11 @@ component:
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.control.border
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.control.selectedForeground
       background: color.control.selectedBackground
       level: AA
@@ -453,7 +545,8 @@ component:
       - selectable
       - select-children
       - select-on-focus
-      - hide-guides
+      - prop: showGuides
+        attribute: hide-guides
       - show-label
       - heading-level
       notes: '`nodes` as a property rendered in the shadow root; roving tabindex over
@@ -500,12 +593,310 @@ component:
         actions expand/collapse; the tree is one focus section on iPad with the full
         keyboard table including type-ahead through `.onKeyPress(characters:)`. `selectedCount`
         announced in multiple mode; the optional `Heading` names the tree.
+  behavior:
+  - name: the-expand-button-expands-a-node
+    given:
+      defaultExpanded: []
+      nodes:
+      - id: docs
+        label: Documents
+        children:
+        - id: invoices
+          label: Invoices
+    when:
+      click: expandButton
+    then:
+    - event: onExpandChange
+  - name: expanding-a-lazy-node-asks-for-its-children
+    description: 'children: "lazy" loads on first expand through onExpand.'
+    given:
+      defaultExpanded: []
+      nodes:
+      - id: docs
+        label: Documents
+        children: lazy
+    when:
+      click: expandButton
+    then:
+    - event: onExpand
+    - event: onExpandChange
+  - name: clicking-a-node-selects-it
+    given:
+      selectable: single
+      nodes:
+      - id: docs
+        label: Documents
+      - id: media
+        label: Media
+    when:
+      click: nodeRow
+    then:
+    - event: onSelectionChange
+  - name: space-selects-the-focused-node
+    given:
+      selectable: single
+      nodes:
+      - id: docs
+        label: Documents
+      - id: media
+        label: Media
+    when:
+      key: Space
+    then:
+    - event: onSelectionChange
+    platforms:
+    - web
+    - lit
+  - name: enter-activates-a-node
+    description: Enter activates the node (onActivate, or follows href); with selectable
+      single it also selects it.
+    given:
+      nodes:
+      - id: docs
+        label: Documents
+      - id: media
+        label: Media
+    when:
+      key: Enter
+    then:
+    - event: onActivate
+    platforms:
+    - web
+    - lit
+  - name: arrow-movement-does-not-select-by-default
+    description: 'selectOnFocus is off by default: focus moves, Enter or Space selects.'
+    given:
+      selectable: single
+      selectOnFocus: false
+      nodes:
+      - id: docs
+        label: Documents
+      - id: media
+        label: Media
+    when:
+      key: ArrowDown
+    then:
+    - event: onSelectionChange
+      fired: false
+    platforms:
+    - web
+    - lit
+  - name: select-on-focus-selects-as-focus-moves
+    description: With single and selectOnFocus, moving focus also selects - a sidebar
+      whose tree drives a panel.
+    given:
+      selectable: single
+      selectOnFocus: true
+      nodes:
+      - id: docs
+        label: Documents
+      - id: media
+        label: Media
+    when:
+      key: ArrowDown
+    then:
+    - event: onSelectionChange
+    platforms:
+    - web
+    - lit
+  - name: a-collapsed-parent-reports-it
+    given:
+      defaultExpanded: []
+      nodes:
+      - id: docs
+        label: Documents
+        children:
+        - id: invoices
+          label: Invoices
+    then:
+    - attribute: aria-expanded
+      is: 'false'
+      'on': node
+    platforms:
+    - web
+  - name: an-expanded-parent-reports-it
+    given:
+      defaultExpanded:
+      - docs
+      nodes:
+      - id: docs
+        label: Documents
+        children:
+        - id: invoices
+          label: Invoices
+    then:
+    - attribute: aria-expanded
+      is: 'true'
+      'on': node
+    platforms:
+    - web
+  - name: a-selected-node-is-marked-selected
+    given:
+      selectable: single
+      selected:
+      - docs
+      nodes:
+      - id: docs
+        label: Documents
+      - id: media
+        label: Media
+    then:
+    - attribute: aria-selected
+      is: 'true'
+      'on': node
+    platforms:
+    - web
+  - name: the-empty-message-shows-when-there-are-no-nodes
+    given:
+      nodes: []
+    then:
+    - copy: empty
+  examples:
+  - name: folder-tree
+    description: The everyday file tree, one branch open, each node with its glyph.
+    given:
+      label: Folders
+      defaultExpanded:
+      - docs
+      nodes:
+      - id: docs
+        label: Documents
+        icon: folder
+        children:
+        - id: invoices
+          label: Invoices
+          icon: file
+        - id: contracts
+          label: Contracts
+          icon: file
+      - id: media
+        label: Media
+        icon: folder
+        children: lazy
+  - name: navigation-sidebar
+    description: A settings sidebar whose visible heading names it and whose selection
+      drives the panel beside it.
+    given:
+      label: Settings sections
+      showLabel: true
+      headingLevel: '2'
+      selectOnFocus: true
+      nodes:
+      - id: account
+        label: Account
+        href: /settings/account
+      - id: billing
+        label: Billing
+        href: /settings/billing
+  - name: category-picker-with-cascade
+    description: Multi-select categories where choosing a parent chooses everything
+      under it.
+    given:
+      label: Categories
+      selectable: multiple
+      selectChildren: true
+      defaultExpanded:
+      - '*'
+      nodes:
+      - id: clothing
+        label: Clothing
+        children:
+        - id: shirts
+          label: Shirts
+        - id: shoes
+          label: Shoes
+  - name: read-only-site-map
+    description: A tree that only expands and collapses, with counts after each branch.
+    given:
+      label: Site map
+      selectable: none
+      nodes:
+      - id: guides
+        label: Guides
+        badge: '12'
+        children:
+        - id: start
+          label: Getting started
+      - id: api
+        label: API
+        badge: '48'
+        children: lazy
 ```
+
+## Events
+
+- `onSelectionChange`: emit `onSelectionChange`
+  - payload, positional, in this order: `ids: string[]`
+  - fires on: user
+- `onExpandChange`: emit `onExpandChange`
+  - payload, positional, in this order: `ids: string[]`
+  - fires on: user
+- `onExpand`: emit `onExpand`
+  - payload, positional, in this order: `id: string`
+  - fires on: user
+- `onActivate`: emit `onActivate`
+  - payload, positional, in this order: `id: string`
+  - fires on: user
 
 ## Controlled state
 
-- `expanded` is controlled when given, uncontrolled from `defaultExpanded` when omitted; paired by name, so no event is declared
-- `selected` is controlled when given, uncontrolled from `defaultSelected` when omitted; paired by name, so no event is declared
+- `expanded` is controlled when given, uncontrolled from `defaultExpanded` when omitted; changes reported by `onExpandChange` (emit `onExpandChange`)
+- `selected` is controlled when given, uncontrolled from `defaultSelected` when omitted; changes reported by `onSelectionChange` (emit `onSelectionChange`)
+
+## Parts and slots
+
+- `container`: element
+- `heading`: component `Heading`; forwards `headingSize` → `overrides.fontSize`
+- `node`: element
+- `nodeRow`: element
+- `expandButton`: component `Button`
+- `indent`: element
+- `icon`: component `Icon`
+- `label`: component `Text`; forwards `labelSelectedWeight` → `overrides.fontWeight`
+- `link`: component `Link`
+- `badge`: component `Text`; forwards `badgeSize` → `overrides.fontSize`
+- `checkbox`: element
+- `group`: element
+- `emptyState`: component `Text`
+
+## Style bindings
+
+- `indent`: token `space.5`; part `indent`
+- `rowHover`: token `color.action.ghost.backgroundHover`; state `hover`
+- `labelColor`: token `color.foreground`; part `label`; locked
+- `labelSelectedWeight`: token `font.weight.medium`; part `label`
+- `headingSize`: token `font.size.md`; part `heading`
+- `iconColor`: token `color.foreground.muted`; part `icon`; locked
+- `badgeColor`: token `color.foreground.muted`; part `badge`; locked
+- `badgeSize`: token `font.size.xs`; part `badge`
+- `expandButtonSize`: token `size.target.min`; part `expandButton`; locked
+- `checkboxGap`: token `layout.gap.tight`; part `checkbox`
+- `checkboxSize`: token `space.4`; part `checkbox`
+- `checkboxBorder`: token `color.control.border`; part `checkbox`; locked
+- `checkboxBackground`: token `color.control.background`; part `checkbox`
+- `checkboxSelected`: token `color.control.selectedBackground`; part `checkbox`; locked
+- `checkboxMark`: token `color.control.selectedForeground`; part `checkbox`; locked
+- `checkboxRadius`: token `radius.sm`; part `checkbox`
+
+## Keyboard
+
+- 6 rule(s) in the schema do not apply on rn; implement none of them
+
+## Copy
+
+- `expand`: "Expand {label}"
+- `collapse`: "Collapse {label}"
+- `selectedCount`: "{count} selected"; params `count` (number)
+- `loading`: "Loading"
+- `empty`: "Nothing here."
+
+## Constants and examples
+
+- constant `typeaheadReset`: 500 ms
+- example `folder-tree`, story `FolderTree`: given `label: "Folders"`, `defaultExpanded: ["docs"]`, `nodes: [{"id":"docs","label":"Documents","icon":"folder","children":[{"id":"invoices","label":"Invoices","icon":"file"},{"id":"contracts","label":"Contracts","icon":"file"}]},{"id":"media","label":"Media","icon":"folder","children":"lazy"}]`; The everyday file tree, one branch open, each node with its glyph.
+- example `navigation-sidebar`, story `NavigationSidebar`: given `label: "Settings sections"`, `showLabel: true`, `headingLevel: "2"`, `selectOnFocus: true`, `nodes: [{"id":"account","label":"Account","href":"/settings/account"},{"id":"billing","label":"Billing","href":"/settings/billing"}]`; A settings sidebar whose visible heading names it and whose selection drives the panel beside it.
+- example `category-picker-with-cascade`, story `CategoryPickerWithCascade`: given `label: "Categories"`, `selectable: "multiple"`, `selectChildren: true`, `defaultExpanded: ["*"]`, `nodes: [{"id":"clothing","label":"Clothing","children":[{"id":"shirts","label":"Shirts"},{"id":"shoes","label":"Shoes"}]}]`; Multi-select categories where choosing a parent chooses everything under it.
+- example `read-only-site-map`, story `ReadOnlySiteMap`: given `label: "Site map"`, `selectable: "none"`, `nodes: [{"id":"guides","label":"Guides","badge":"12","children":[{"id":"start","label":"Getting started"}]},{"id":"api","label":"API","badge":"48","children":"lazy"}]`; A tree that only expands and collapses, with counts after each branch.
 
 ## Overrides (per-instance styling contract)
 
@@ -518,11 +909,54 @@ The `platforms.rn.props` list names the native props the schema cares about; `ov
 Overridable: `indent`, `rowPaddingInline`, `rowRadius`, `rowGap`, `rowHover`, `labelSelectedWeight`, `headingSize`, `badgeSize`, `guideLine`, `guideLineWidth`, `checkboxGap`, `checkboxSize`, `checkboxBackground`, `checkboxRadius`, `fontFamily`, `fontSize`, `lineHeight`, `disabledOpacity`, `transition`
 Locked (accessibility-bearing, never overridable): `rowHeight`, `rowSelected`, `rowSelectedBorder`, `rowSelectedBorderWidth`, `labelColor`, `iconColor`, `badgeColor`, `expandButtonSize`, `checkboxBorder`, `checkboxSelected`, `checkboxMark`, `minTarget`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (8)
+## Behavior scenarios (12)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: the-expand-button-expands-a-node
+  given:
+    defaultExpanded: []
+    nodes:
+    - id: docs
+      label: Documents
+      children:
+      - id: invoices
+        label: Invoices
+  when:
+    click: expandButton
+  then:
+  - event: onExpandChange
+- name: expanding-a-lazy-node-asks-for-its-children
+  description: 'children: "lazy" loads on first expand through onExpand.'
+  given:
+    defaultExpanded: []
+    nodes:
+    - id: docs
+      label: Documents
+      children: lazy
+  when:
+    click: expandButton
+  then:
+  - event: onExpand
+  - event: onExpandChange
+- name: clicking-a-node-selects-it
+  given:
+    selectable: single
+    nodes:
+    - id: docs
+      label: Documents
+    - id: media
+      label: Media
+  when:
+    click: nodeRow
+  then:
+  - event: onSelectionChange
+- name: the-empty-message-shows-when-there-are-no-nodes
+  given:
+    nodes: []
+  then:
+  - copy: empty
 - name: renders
   then:
   - renders: true

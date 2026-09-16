@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/Breadcrumb.js';
 import meta from '../../packages/lit/src/Breadcrumb.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -49,6 +53,8 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     nav: () => (deep(root, '[role="navigation"]') ?? deep(root, '[part="nav"]') ?? deep(root, '[data-part="nav"]') ?? root.firstElementChild) as HTMLElement,
+    link: () => (deep(root, '[part="link"]') ?? deep(root, '[data-part="link"]')) as HTMLElement,
+    current: () => (deep(root, '[part="current"]') ?? deep(root, '[data-part="current"]')) as HTMLElement,
   };
   return s;
 }
@@ -58,6 +64,20 @@ beforeEach(() => {
 });
 
 describe('ds-breadcrumb', () => {
+  test('click-on-an-ancestor-reports-navigation', async () => {
+    const s = await setup({});
+    await userEvent.click(s.link());
+    expect(s.events.onNavigate).toHaveBeenCalled();
+  });
+  test('the-last-item-is-the-current-page', async () => {
+    const s = await setup({});
+    expect(s.current()).toHaveAttribute("aria-current", "page");
+  });
+  test('an-uncollapsed-trail-shows-every-ancestor', async () => {
+    const s = await setup({"collapse": false, "items": [{"label": "Docs", "href": "/docs"}, {"label": "Components", "href": "/docs/components"}, {"label": "Navigation", "href": "/docs/components/navigation"}, {"label": "Breadcrumb", "href": "/docs/components/navigation/breadcrumb"}, {"label": "Keyboard"}]});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Components"));
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Navigation"));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

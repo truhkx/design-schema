@@ -81,6 +81,12 @@ describe('Switch', () => {
     const s = setup({"description": "Sends a daily summary at 9:00."});
     expect(screen.getByText(new RegExp("Sends\\ a\\ daily\\ summary\\ at\\ 9:00\\."))).toBeOnTheScreen();
   });
+  test('label-at-the-end-still-toggles-the-row', () => {
+    const s = setup({"labelPosition": "end"});
+    fireEvent.press(s.label());
+    expect(s.events.onChange).toHaveBeenCalledWith(true);
+    expect(s.track()).toBeChecked();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

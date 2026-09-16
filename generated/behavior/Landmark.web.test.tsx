@@ -24,6 +24,24 @@ function setup(given: Partial<LandmarkProps> = {}) {
 }
 
 describe('Landmark', () => {
+  test('the-role-prop-chooses-the-landmark', async () => {
+    const s = setup({"role": "navigation"});
+    expect(screen.getByRole('navigation')).toBeInTheDocument();
+  });
+  test('main-is-the-primary-content-landmark', async () => {
+    const s = setup({"role": "main"});
+    expect(screen.getByRole('main')).toBeInTheDocument();
+  });
+  test('a-region-is-named-by-its-label', async () => {
+    const s = setup({"role": "region", "label": "Related articles"});
+    expect(screen.getByRole('region')).toBeInTheDocument();
+    expect(s.region()).toHaveAttribute("aria-label", "Related articles");
+  });
+  test('an-overridden-element-still-carries-its-role', async () => {
+    const s = setup({"role": "banner", "as": "div"});
+    expect(s.region()).toHaveAttribute("role", "banner");
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

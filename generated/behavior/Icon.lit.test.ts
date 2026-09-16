@@ -56,6 +56,16 @@ beforeEach(() => {
 });
 
 describe('ds-icon', () => {
+  test('unlabelled-icon-is-hidden-from-assistive-technology', async () => {
+    const s = await setup({});
+    expect(s.glyph()).toHaveAttribute("aria-hidden", "true");
+  });
+  test('label-makes-the-icon-meaningful', async () => {
+    const s = await setup({"name": "warning", "label": "Warning: over quota"});
+    expect(s.el.shadowRoot!.querySelector('[role="img"]')).not.toBeNull();
+    expect(s.glyph()).not.toHaveAttribute("aria-hidden");
+    expect(s.glyph()).toHaveAccessibleName("Warning: over quota");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

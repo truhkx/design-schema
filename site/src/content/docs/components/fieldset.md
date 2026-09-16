@@ -9,7 +9,7 @@ component:
   composition:
     legend: Text
     description: Text
-    fields: Stack
+    fields: { component: Stack, forwards: { fieldsGap: gap } }
   props:
     legend:
       type: string
@@ -38,14 +38,14 @@ component:
       default: normal
       description: Gap between the fields, from the layout rhythm. Fieldset renders the Stack itself; children are the raw fields.
   styles:
-    legendColor: { token: color.foreground }
-    legendSize: { token: font.size.md }
-    legendWeight: { token: font.weight.medium }
-    descriptionText: { token: color.foreground.muted }
+    legendColor: { token: color.foreground, part: legend }
+    legendSize: { token: font.size.md, part: legend }
+    legendWeight: { token: font.weight.medium, part: legend }
+    descriptionText: { token: color.foreground.muted, part: description }
     helperSize: { token: font.size.sm }
     errorText: { token: color.foreground.danger }
     partGap: { token: layout.gap.tight, description: 'Vertical gap between legend, description, fields and error.' }
-    fieldsGap: { token: 'layout.gap.{gap}', description: 'The composed Stack''s gap. An `overrides.fieldsGap` is forwarded to the Stack''s own `overrides.gap`; Fieldset never styles the Stack itself.' }
+    fieldsGap: { token: 'layout.gap.{gap}', part: fields, description: 'The composed Stack''s gap. An `overrides.fieldsGap` is forwarded to the Stack''s own `overrides.gap`; Fieldset never styles the Stack itself.' }
     disabledOpacity: { token: opacity.disabled }
     fontFamily: { token: font.family.body }
     lineHeight: { token: font.lineHeight.normal }
@@ -75,6 +75,42 @@ component:
       element: VStack
       props: [.accessibilityElement=contain, .accessibilityLabel, Stack, FieldsetContext=environment]
       notes: 'A `.accessibilityElement(children: .contain)` labelled by the legend (`Heading` or `Text` per `legendLevel`) wrapping a `Stack` of fields with `gap` forwarded through `overrides`. Provides `FieldsetContext` (`disabled`, legend) through the environment so fields prefix their accessibility label with the legend (''Shipping address, Street'') — the iOS way to say what `<fieldset>` says.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/error-identified ones from the schema.
+    - name: the-legend-names-the-group
+      description: The legend is always visible and is the group's accessible name.
+      given: { legend: 'Delivery window' }
+      then:
+        - { text: 'Delivery window' }
+        - { name: 'Delivery window', platforms: [web] }
+    - name: the-description-is-rendered
+      description: Persistent helper text under the legend, linked to the group.
+      given: { description: 'We only ship within the EU.' }
+      then:
+        - { text: 'We only ship within the EU.' }
+    - name: a-group-error-is-announced
+      description: The group error is rendered once under the group with role=alert.
+      given: { error: 'End date must be after start date.' }
+      then:
+        - { role: alert, platforms: [web, lit] }
+    - name: a-disabled-group-is-marked-disabled
+      description: aria-disabled on the fieldset; the fields inside stay visible and focusable by their own rule.
+      given: { disabled: true }
+      then:
+        - { state: disabled, is: true, platforms: [web] }
+  examples:
+    - name: shipping-address
+      description: Two related Inputs under one legend.
+      given: { legend: 'Shipping address', children: 'Street and city Inputs.' }
+    - name: notification-preferences
+      description: A set of Checkboxes with the rule that governs them under the legend.
+      given: { legend: 'Notification preferences', description: 'You can change these at any time.', children: 'Email, SMS and Push Checkboxes.', gap: 'tight' }
+    - name: date-range-with-a-group-error
+      description: Cross-field validation reported on the group rather than on one field.
+      given: { legend: 'Reporting period', error: 'End date must be after start date.', children: 'Start date and End date Inputs.' }
+    - name: disabled-group
+      description: Every field inside disabled while the section does not apply.
+      given: { legend: 'Billing address', disabled: true, children: 'Street and city Inputs.' }
 ---
 
 A fieldset is how a form says "these belong together." A screen-reader user tabbing into "Street" hears "Shipping address, Street" and knows where they are; a sighted user sees the legend and the fields indented under it by nothing more than rhythm. It is the container RadioGroup builds on, offered for any set of fields: an address, a date range, a set of notification switches.

@@ -75,6 +75,10 @@ component:
     open:
       type: boolean
       description: Controlled open state. Omit for an uncontrolled disclosure.
+      controls:
+        event: onToggle
+        default: defaultOpen
+        state: open
     defaultOpen:
       type: boolean
       default: false
@@ -110,35 +114,64 @@ component:
         lit: toggle
         rn: onToggle
         swiftui: onToggle
+      payload:
+      - name: open
+        type: boolean
+        description: The new state.
+      - name: reason
+        type: enum
+        values:
+        - pointer
+        - keyboard
+        - controlled
+      reasons:
+        pointer: the trigger was clicked or tapped
+        keyboard: Enter or Space on the trigger
+        controlled: the consumer changed the open prop
+      fires:
+      - user
+      - controlled
+      timing:
+        phase: after-change
   styles:
     triggerColor:
       token: color.foreground
+      part: trigger
       locked: true
     triggerBackgroundHover:
       token: color.background.subtle
+      part: trigger
+      state: hover
       description: Pointer hover and pressed state of the trigger.
       locked: true
     triggerPaddingBlock:
       token: space.sm
+      part: trigger
       locked: false
     triggerPaddingInline:
       token: space.sm
+      part: trigger
       locked: false
     triggerGap:
       token: space.2
+      part: trigger
       description: Gap between icon and summary.
       locked: false
     triggerFontFamily:
       token: font.family.body
+      part: trigger
       locked: false
     triggerFontSize:
       token: font.size.md
+      part: trigger
       locked: false
     triggerFontWeight:
       token: font.weight.medium
+      part: trigger
       locked: false
     triggerRadius:
       token: radius.md
+      part: trigger
       locked: false
     icon:
       token: color.foreground.muted
@@ -149,12 +182,15 @@ component:
       locked: true
     panelPaddingBlock:
       token: space.sm
+      part: panel
       locked: false
     panelPaddingInline:
       token: space.sm
+      part: panel
       locked: false
     panelColor:
       token: color.foreground
+      part: panel
       locked: true
     focusRing:
       token: color.border.focus
@@ -173,6 +209,9 @@ component:
       description: Chevron rotation, with motion.easing.standard; instant under reduced
         motion. The panel itself does not animate height.
       locked: false
+  copy:
+    expanded: Expanded
+    collapsed: Collapsed
   a11y:
     role: button
     requires:
@@ -248,11 +287,108 @@ component:
         inserted/removed with the `transition` animation (none under reduced motion).
         Not `DisclosureGroup` (its chevron and spacing are uncontrollable). `defaultOpen`/`open`
         per the controlled rule.
+  behavior:
+  - name: click-on-trigger-expands
+    when:
+      click: trigger
+    then:
+    - event: onToggle
+    - state: expanded
+      is: true
+  - name: open-disclosure-collapses-on-click
+    given:
+      defaultOpen: true
+    when:
+      click: trigger
+    then:
+    - event: onToggle
+    - state: expanded
+      is: false
+  - name: disabled-trigger-does-not-toggle
+    description: The trigger cannot be activated; the panel keeps its current state.
+    given:
+      disabled: true
+    when:
+      click: trigger
+    then:
+    - event: onToggle
+      fired: false
+    - state: expanded
+      is: false
+    - state: disabled
+      is: true
+  - name: disabled-trigger-stays-focusable
+    description: Announced as disabled, not removed from the tab order.
+    given:
+      disabled: true
+    then:
+    - focusable: true
+    platforms:
+    - web
+    - lit
+  examples:
+  - name: faq-answer
+    description: A question whose trigger sits in a heading, so it appears in the
+      document outline.
+    given:
+      summary: What happens if I cancel?
+      children: You keep access until the end of the current billing period.
+      headingLevel: '3'
+  - name: advanced-options
+    description: Secondary settings most users never open.
+    given:
+      summary: Advanced options
+      children: Retry limit, timeout and proxy settings.
+  - name: open-with-form-fields
+    description: A disclosure that starts open and keeps its panel mounted so a Form
+      still collects the fields inside.
+    given:
+      summary: Billing address
+      children: Street, city and postcode fields.
+      defaultOpen: true
+      keepMounted: true
+  - name: disabled
+    description: A trigger that cannot be activated yet, still focusable and announced
+      as disabled.
+    given:
+      summary: Shipping details
+      children: Choose a delivery address first.
+      disabled: true
 ```
+
+## Events
+
+- `onToggle`: emit `toggle`
+  - payload, the keys of `CustomEvent.detail`: `open: boolean`, `reason: 'pointer' | 'keyboard' | 'controlled'`
+  - reasons: `pointer` (the trigger was clicked or tapped); `keyboard` (Enter or Space on the trigger); `controlled` (the consumer changed the open prop)
+  - fires on: user, controlled
+  - timing: after-change
 
 ## Controlled state
 
-- `open` is controlled when given, uncontrolled from `defaultOpen` when omitted; paired by name, so no event is declared
+- `open` is controlled when given, uncontrolled from `defaultOpen` when omitted; changes reported by `onToggle` (emit `toggle`); drives state `open`
+
+## Style bindings
+
+- `triggerColor`: token `color.foreground`; part `trigger`; locked
+- `triggerBackgroundHover`: token `color.background.subtle`; part `trigger`; state `hover`; locked
+- `triggerPaddingBlock`: token `space.sm`; part `trigger`
+- `triggerPaddingInline`: token `space.sm`; part `trigger`
+- `triggerGap`: token `space.2`; part `trigger`
+- `triggerFontFamily`: token `font.family.body`; part `trigger`
+- `triggerFontSize`: token `font.size.md`; part `trigger`
+- `triggerFontWeight`: token `font.weight.medium`; part `trigger`
+- `triggerRadius`: token `radius.md`; part `trigger`
+- `panelPaddingBlock`: token `space.sm`; part `panel`
+- `panelPaddingInline`: token `space.sm`; part `panel`
+- `panelColor`: token `color.foreground`; part `panel`; locked
+
+## Constants and examples
+
+- example `faq-answer`, story `FaqAnswer`: given `summary: "What happens if I cancel?"`, `children: "You keep access until the end of the current billing period."`, `headingLevel: "3"`; A question whose trigger sits in a heading, so it appears in the document outline.
+- example `advanced-options`, story `AdvancedOptions`: given `summary: "Advanced options"`, `children: "Retry limit, timeout and proxy settings."`; Secondary settings most users never open.
+- example `open-with-form-fields`, story `OpenWithFormFields`: given `summary: "Billing address"`, `children: "Street, city and postcode fields."`, `defaultOpen: true`, `keepMounted: true`; A disclosure that starts open and keeps its panel mounted so a Form still collects the fields inside.
+- example `disabled`, story `Disabled`: given `summary: "Shipping details"`, `children: "Choose a delivery address first."`, `disabled: true`; A trigger that cannot be activated yet, still focusable and announced as disabled.
 
 ## Overrides (per-instance styling contract)
 
@@ -265,11 +401,49 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `triggerPaddingBlock`, `triggerPaddingInline`, `triggerGap`, `triggerFontFamily`, `triggerFontSize`, `triggerFontWeight`, `triggerRadius`, `panelPaddingBlock`, `panelPaddingInline`, `disabledOpacity`, `transition`
 Locked (accessibility-bearing, never overridable): `triggerColor`, `triggerBackgroundHover`, `icon`, `panelColor`, `focusRing`, `focusRingWidth`, `minTarget`
 
-## Behavior scenarios (8)
+## Behavior scenarios (12)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: click-on-trigger-expands
+  when:
+    click: trigger
+  then:
+  - event: onToggle
+  - state: expanded
+    is: true
+- name: open-disclosure-collapses-on-click
+  given:
+    defaultOpen: true
+  when:
+    click: trigger
+  then:
+  - event: onToggle
+  - state: expanded
+    is: false
+- name: disabled-trigger-does-not-toggle
+  description: The trigger cannot be activated; the panel keeps its current state.
+  given:
+    disabled: true
+  when:
+    click: trigger
+  then:
+  - event: onToggle
+    fired: false
+  - state: expanded
+    is: false
+  - state: disabled
+    is: true
+- name: disabled-trigger-stays-focusable
+  description: Announced as disabled, not removed from the tab order.
+  given:
+    disabled: true
+  then:
+  - focusable: true
+  platforms:
+  - web
+  - lit
 - name: renders
   then:
   - renders: true

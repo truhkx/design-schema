@@ -10,7 +10,11 @@
       ],
       "action": "Moves to and selects the next enabled segment, wrapping.",
       "from": "first",
-      "expect": "focus-next"
+      "expect": "focus-next",
+      "expectAll": [
+        "focus-next",
+        "selects"
+      ]
     },
     {
       "keys": [
@@ -19,7 +23,11 @@
       ],
       "action": "Moves to and selects the previous enabled segment, wrapping.",
       "from": "last",
-      "expect": "focus-prev"
+      "expect": "focus-prev",
+      "expectAll": [
+        "focus-prev",
+        "selects"
+      ]
     },
     {
       "keys": [

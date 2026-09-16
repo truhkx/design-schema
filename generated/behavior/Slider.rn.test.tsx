@@ -34,6 +34,10 @@ function setup(given: Partial<SliderProps> = {}) {
 }
 
 describe('Slider', () => {
+  test('invalid-renders-the-invalid-copy', () => {
+    const s = setup({"invalid": true});
+    expect(screen.getByText(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

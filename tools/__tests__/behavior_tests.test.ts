@@ -816,6 +816,20 @@ describe('then.event with a declared payload', () => {
     ]);
   });
 
+  test("checkbox.md's migrated payload names the detail key its lit test asserts", () => {
+    // The real doc as of job 638: one boolean field, which the Lit component emits as detail.checked.
+    const checkbox: Dict = {
+      ...WIDGET,
+      events: { onChange: { description: 'Fired when the checked state changes, with the new boolean.', platforms: { web: 'onChange', lit: 'change', rn: 'onChange' }, payload: [{ name: 'checked', type: 'boolean' }] } },
+    };
+    expect(bt.thenEventLines(checkbox, { event: 'onChange', with: true }, 'lit')).toEqual([
+      'expect(s.events.onChange).toHaveBeenCalledTimes(1);',
+      'expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.checked).toEqual(true);',
+    ]);
+    expect(bt.thenEventLines(checkbox, { event: 'onChange', with: false }, 'lit')[1]).toBe('expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.checked).toEqual(false);');
+    expect(bt.thenEventLines(checkbox, { event: 'onChange', fired: false }, 'lit')).toEqual(['expect(s.events.onChange).not.toHaveBeenCalled();']);
+  });
+
   test('without a payload, with an object, and on the other platforms, the lines are unchanged', () => {
     expect(bt.thenEventLines(WIDGET, { event: 'onPress', with: true }, 'lit')).toEqual([
       'expect(s.events.onPress).toHaveBeenCalledTimes(1);',

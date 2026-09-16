@@ -49,6 +49,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     trigger: () => (deep(root, '[role="dialog"]') ?? deep(root, '[part="trigger"]') ?? deep(root, '[data-part="trigger"]') ?? root.firstElementChild) as HTMLElement,
+    closeButton: () => (deep(root, '[part="closeButton"]') ?? deep(root, '[data-part="closeButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -58,6 +59,21 @@ beforeEach(() => {
 });
 
 describe('ds-popover', () => {
+  test('close-button-fires-on-open-change', async () => {
+    const s = await setup({"open": true});
+    await userEvent.click(s.closeButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('escape-closes-a-modal-popover', async () => {
+    const s = await setup({"open": true, "modal": true});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-panel-is-named-by-its-heading', async () => {
+    const s = await setup({"open": true, "heading": "Filters"});
+    expect(s.trigger()).toHaveAccessibleName("Filters");
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
@@ -109,5 +125,11 @@ describe('ds-popover', () => {
   test('has-accessible-name', async () => {
     const s = await setup({"open": true});
     expect(s.trigger()).toHaveAccessibleName();
+  });
+  test('escape-fires-on-open-change', async () => {
+    const s = await setup({"open": true});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
   });
 });

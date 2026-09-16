@@ -23,6 +23,9 @@ component:
     value:
       type: string
       description: Controlled selected value. Omit for uncontrolled.
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: string
       description: Initially selected value. Defaults to the first enabled option — a segmented control always has a selection.
@@ -32,6 +35,7 @@ component:
       description: Show icons only (every option must have one); labels become accessible names and Tooltips.
     size:
       type: enum
+      enumRef: size
       values: [sm, md]
       default: md
       description: Toolbar (`sm`) or standard (`md`) height.
@@ -43,25 +47,29 @@ component:
     onChange:
       description: Fired when the selection changes, with the new value. The change takes effect immediately.
       platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
+      payload:
+        - { name: value, type: string, description: The value of the selected segment. }
+      fires: [user]
+      timing: { phase: after-change }
   keyboard:
-    - { keys: [ArrowRight, ArrowDown], action: 'Moves to and selects the next enabled segment, wrapping.', from: first, expect: focus-next }
-    - { keys: [ArrowLeft, ArrowUp], action: 'Moves to and selects the previous enabled segment, wrapping.', from: last, expect: focus-prev }
+    - { keys: [ArrowRight, ArrowDown], action: 'Moves to and selects the next enabled segment, wrapping.', from: first, expect: [focus-next, selects] }
+    - { keys: [ArrowLeft, ArrowUp], action: 'Moves to and selects the previous enabled segment, wrapping.', from: last, expect: [focus-prev, selects] }
     - { keys: [ArrowRight], action: From the last segment wraps to the first., from: last, expect: focus-wraps-to-first }
     - { keys: [Home], action: First segment., from: last, expect: focus-first }
     - { keys: [End], action: Last segment., from: first, expect: focus-last }
   styles:
-    groupBackground: { token: color.background.strong }
-    groupPadding: { token: space.1 }
-    groupRadius: { token: radius.md }
-    segmentColor: { token: color.foreground.muted }
-    segmentSelectedColor: { token: color.foreground.strong }
-    segmentSelectedBackground: { token: color.background, description: The raised pill under the selected segment. }
-    segmentShadow: { token: shadow.raised }
-    segmentRadius: { token: radius.sm }
-    segmentPaddingInline: { token: space.md }
-    segmentPaddingBlock: { token: space.1 }
-    segmentGap: { token: layout.gap.tight, description: 'Between icon and label inside a segment.' }
-    segmentSpacing: { token: space.0, description: 'Between adjacent segments: none — the pill slides under abutting segments.' }
+    groupBackground: { token: color.background.strong, part: group }
+    groupPadding: { token: space.1, part: group }
+    groupRadius: { token: radius.md, part: group }
+    segmentColor: { token: color.foreground.muted, part: segment }
+    segmentSelectedColor: { token: color.foreground.strong, part: segment }
+    segmentSelectedBackground: { token: color.background, part: segment, description: The raised pill under the selected segment. }
+    segmentShadow: { token: shadow.raised, part: segment }
+    segmentRadius: { token: radius.sm, part: segment }
+    segmentPaddingInline: { token: space.md, part: segment }
+    segmentPaddingBlock: { token: space.1, part: segment }
+    segmentGap: { token: layout.gap.tight, part: segment, description: 'Between icon and label inside a segment.' }
+    segmentSpacing: { token: space.0, part: segment, description: 'Between adjacent segments: none — the pill slides under abutting segments.' }
     selectedWeight: { token: font.weight.semibold, description: 'The selected segment''s label; unselected use fontWeight.' }
     paddingBlockSm: { token: space.1, description: 'Vertical padding at size sm; md uses paddingBlock.' }
     fontFamily: { token: font.family.body }
@@ -79,6 +87,11 @@ component:
     contrast:
       - { foreground: color.foreground.muted, background: color.background.strong, level: AA }
       - { foreground: color.foreground.strong, background: color.background, level: AA }
+  form:
+    role: field
+    value: value
+    valueType: string
+    discovery: context
   platforms:
     web:
       element: div
@@ -96,6 +109,45 @@ component:
       element: HStack
       props: [.accessibilityElement=contain, Button, .accessibilityAddTraits=isSelected, .focusable, .onMoveCommand, '@FocusState', matchedGeometryEffect]
       notes: 'Not `Picker(.segmented)` (untinted, unthemeable). An `HStack` of equal-width `Button`s in a `.contain` element named by `label`, the selected one `.isSelected` with the selected surface drawn through `matchedGeometryEffect` sliding over `transition` (no slide under reduced motion). Arrows on iPad move selection immediately (radio semantics), matching the keyboard table. `iconOnly` segments carry their label as the accessibility label.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name ones from the schema.
+    - name: click-selects-a-segment
+      given: { options: [{ value: list, label: List }, { value: grid, label: Grid }], defaultValue: grid }
+      when: { click: segment }
+      then:
+        - { event: onChange }
+        - { event: onChange, with: list, platforms: [lit, rn] }
+    - name: arrow-moves-and-selects
+      description: Arrows move focus AND selection (radio semantics), per the keyboard table's `selects`.
+      given: { options: [{ value: list, label: List }, { value: grid, label: Grid }], defaultValue: list }
+      when: { key: ArrowRight }
+      then:
+        - { event: onChange }
+        - { event: onChange, with: grid, platforms: [lit] }
+      platforms: [web, lit]
+    - name: arrow-wraps-from-the-last-segment
+      description: From the last segment ArrowRight wraps to the first, and selection follows.
+      given: { options: [{ value: list, label: List }, { value: grid, label: Grid }], defaultValue: grid }
+      when: { key: ArrowRight }
+      then:
+        - { event: onChange }
+      platforms: [web, lit]
+    - name: disabled-segment-is-not-selectable
+      description: Arrow movement skips disabled segments, and a press on one selects nothing.
+      given: { options: [{ value: list, label: List, disabled: true }, { value: grid, label: Grid }], defaultValue: grid }
+      when: { click: segment }
+      then:
+        - { event: onChange, fired: false }
+  examples:
+    - name: view-mode
+      description: The two-option list/grid switch a content region is viewed through.
+      given: { label: View mode, options: [{ value: list, label: List }, { value: grid, label: Grid }], defaultValue: list }
+    - name: icon-only-toolbar
+      description: Icon-only segments at toolbar height, each label carried as the accessible name and the Tooltip.
+      given: { label: View mode, options: [{ value: list, label: List view, icon: list }, { value: grid, label: Grid view, icon: grid }], iconOnly: true, size: sm }
+    - name: filled-range-switch
+      description: Three parallel time ranges stretched to the container width.
+      given: { label: Range, options: [{ value: day, label: Day }, { value: week, label: Week }, { value: month, label: Month }], defaultValue: week, fill: true }
 ---
 
 A segmented control switches a mode: list or grid, day or week, metric or imperial. Exactly one segment is always selected, choosing takes effect at once, and there is nothing to submit — which is what separates it from a RadioGroup in a form, whose semantics it borrows.

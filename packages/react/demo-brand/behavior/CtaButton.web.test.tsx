@@ -6,6 +6,17 @@ import { CtaButton } from '../src/CtaButton';
 import type { CtaButtonProps } from '../src/CtaButton';
 import meta from '../src/CtaButton.stories';
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<CtaButtonProps> = {}) {
   const events = {
     onPress: vi.fn(),
@@ -27,6 +38,48 @@ function setup(given: Partial<CtaButtonProps> = {}) {
 }
 
 describe('CtaButton', () => {
+  test('click-fires-on-press', async () => {
+    const s = setup({});
+    await s.user.click(s.container());
+    expect(s.events.onPress).toHaveBeenCalled();
+  });
+  test('enter-activates', async () => {
+    const s = setup({});
+    act(() => focusInto(s.container()));
+    await s.user.keyboard('{Enter}');
+    expect(s.events.onPress).toHaveBeenCalled();
+  });
+  test('space-activates', async () => {
+    const s = setup({});
+    act(() => focusInto(s.container()));
+    await s.user.keyboard('[Space]');
+    expect(s.events.onPress).toHaveBeenCalled();
+  });
+  test('disabled-does-not-fire', async () => {
+    const s = setup({"disabled": true});
+    await s.user.click(s.container());
+    expect(s.events.onPress).not.toHaveBeenCalled();
+    expect(s.container()).toHaveAttribute('aria-disabled', 'true');
+  });
+  test('disabled-stays-focusable', async () => {
+    const s = setup({"disabled": true});
+    act(() => (s.container()).focus());
+    expect(s.container()).toHaveFocus();
+  });
+  test('loading-announces-busy-and-ignores-activation', async () => {
+    const s = setup({"loading": true});
+    await s.user.click(s.container());
+    expect(s.events.onPress).not.toHaveBeenCalled();
+    expect(s.container()).toHaveAttribute("aria-busy", "true");
+  });
+  test('expanded-is-reported', async () => {
+    const s = setup({"expanded": true});
+    expect(s.container()).toHaveAttribute('aria-expanded', 'true');
+  });
+  test('icon-only-keeps-its-name', async () => {
+    const s = setup({"iconOnly": true, "accessibleName": "Open menu"});
+    expect(screen.getByRole('button', { name: "Open menu" })).toBeInTheDocument();
+  });
   test('press-tracks', async () => {
     const s = setup({"track": "signup", "label": "Sign up"});
     await s.user.click(s.container());

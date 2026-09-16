@@ -1,10 +1,13 @@
 /**
  * mcp/index.ts — the chunker that feeds the vector index (port of tests/test_mcp_index.py).
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 import { PLATFORMS } from '../../schema/platforms.ts';
 import { component } from '../../tools/__tests__/fixtures.ts';
+import { REPO_ROOT } from '../../tools/lib/root.ts';
 import * as ix from '../index.ts';
 
 const { MAX_CHARS, PARA_SPLIT } = ix;
@@ -134,6 +137,13 @@ describe('schemaSummary', () => {
     expect(ix.schemaSummary(component())).toContain('  - onPress: Activated. Platform names — web: onClick, rn: onPress.\n');
   });
 
+  test('a real doc now stands behind that line: Dialog.onClose', () => {
+    const generated = JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as { id: string; component: Record<string, unknown> }[];
+    const dialog = generated.find((entry) => entry.id === 'dialog')?.component;
+    expect(dialog, 'dialog.md is in the corpus').toBeDefined();
+    expect(ix.schemaSummary(dialog as Parameters<typeof ix.schemaSummary>[0])).toContain('Reasons: escape, close-button, scrim, action. Payload: reason.\n');
+  });
+
   test('a controlled prop line names its change event and its uncontrolled default', () => {
     const c = component();
     c.events.onChange = { description: 'Changed.', platforms: { web: 'onChange', rn: 'onChange' } };
@@ -144,6 +154,13 @@ describe('schemaSummary', () => {
     expect(text).toContain('  - checked: boolean. Checked. (controlled; changes reported by onChange; uncontrolled default defaultChecked)\n');
     expect(text).toContain('  - defaultChecked: boolean, default False. Initially checked.\n');
     expect(text).toContain('  - open: boolean. Open. (controlled; changes reported by onChange)\n');
+  });
+
+  test('a migrated component from the corpus reads the same way', () => {
+    const entries = JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as { component: Record<string, unknown> }[];
+    const checkbox = entries.find((entry) => entry.component.name === 'Checkbox')?.component;
+    const text = ix.schemaSummary(checkbox as Parameters<typeof ix.schemaSummary>[0]);
+    expect(text).toContain('  - checked: boolean. Controlled checked state. Omit for an uncontrolled control. (controlled; changes reported by onChange; uncontrolled default defaultChecked)\n');
   });
 
   test('prop platform restrictions are surfaced', () => {

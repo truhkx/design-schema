@@ -83,8 +83,14 @@ component:
     popover: Popover
     prevMonthButton: Button
     nextMonthButton: Button
-    monthSelect: Select
-    yearSelect: Select
+    monthSelect:
+      component: Select
+      forwards:
+        monthTitleSize: fontSize
+    yearSelect:
+      component: Select
+      forwards:
+        monthTitleSize: fontSize
     todayButton: Button
     clearButton: Button
   props:
@@ -103,6 +109,9 @@ component:
       type: union
       shape: 'string | { start: string; end: string }'
       description: Controlled value (ISO date, or a range).
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: union
       shape: 'string | { start: string; end: string }'
@@ -111,6 +120,9 @@ component:
       type: boolean
       description: Controlled calendar state, for programmatic use and for stories
         and tests. Omit for the button-driven default.
+      controls:
+        event: onOpenChange
+        state: open
     range:
       type: boolean
       default: false
@@ -153,6 +165,7 @@ component:
         for a field whose context already names it: a DataGrid cell editor, a Search.'
     size:
       type: enum
+      enumRef: size
       values:
       - sm
       - md
@@ -175,6 +188,13 @@ component:
         lit: change
         rn: onChange
         swiftui: onChange
+      payload:
+      - name: value
+        type: union
+        shape: 'string | { start: string; end: string } | undefined'
+        description: The ISO date, or the ISO range with range; undefined when cleared.
+      fires:
+      - user
     onOpenChange:
       description: Fired when the calendar opens or closes.
       platforms:
@@ -182,6 +202,12 @@ component:
         lit: open-change
         rn: onOpenChange
         swiftui: onOpenChange
+      payload:
+      - name: open
+        type: boolean
+        description: The new state of the calendar.
+      fires:
+      - user
   keyboard:
   - keys:
     - ArrowDown
@@ -204,7 +230,10 @@ component:
       calendar button.
     when: open
     from: inside
-    expect: focus-trigger
+    expect:
+    - closes
+    - focus-trigger
+    target: popover
   - keys:
     - ArrowRight
     action: Next day.
@@ -287,17 +316,15 @@ component:
       locked: false
     paddingInline:
       token: space.md
+      by: size
+      values:
+        sm: space.2
       locked: false
     paddingBlock:
       token: space.sm
-      locked: false
-    paddingBlockSm:
-      token: space.1
-      description: Vertical padding at size sm.
-      locked: false
-    paddingInlineSm:
-      token: space.2
-      description: Horizontal padding at size sm.
+      by: size
+      values:
+        sm: space.1
       locked: false
     rangeSeparatorColor:
       token: color.foreground.muted
@@ -305,7 +332,9 @@ component:
       locked: true
     calendarSurface:
       token: color.overlay.surface
-      description: Realized by the composed Popover's surface; forwarded as its `overrides.surface`.
+      description: Realized by the composed Popover's surface, which is locked, so
+        this binding records the value the calendar lands on rather than one the Popover
+        can be given.
       locked: true
     calendarInset:
       token: layout.inset.md
@@ -316,36 +345,47 @@ component:
       locked: false
     daySize:
       token: size.target.comfortable
+      part: day
       description: Every day cell is a comfortable square target.
       locked: true
     dayGap:
       token: space.0
+      part: day
       description: Cells touch, so a range reads as one bar; the selected day's radius
         gives it shape.
       locked: false
     dayRadius:
       token: radius.md
+      part: day
       locked: false
     dayHover:
       token: color.action.ghost.backgroundHover
+      part: day
+      state: hover
       locked: false
     daySelectedBackground:
       token: color.control.selectedBackground
+      part: day
       locked: true
     daySelectedForeground:
       token: color.control.selectedForeground
+      part: day
       locked: true
     dayInRangeBackground:
       token: color.background.strong
+      part: day
       locked: true
     dayTodayBorder:
       token: color.control.selectedBackground
+      part: day
       locked: true
     dayTodayBorderWidth:
       token: border.width.focus
+      part: day
       locked: true
     dayOutsideMonthColor:
       token: color.foreground.muted
+      part: day
       locked: true
     weekdayColor:
       token: color.foreground.muted
@@ -362,7 +402,9 @@ component:
       locked: false
     monthTitleWeight:
       token: font.weight.semibold
-      description: Forwarded to the Selects as `overrides.fontWeight`.
+      description: The weight of the month and year Select labels. Select has no weight
+        binding to receive it yet, so this is the value they are expected to render
+        at.
       locked: false
     partGap:
       token: space.1
@@ -370,10 +412,12 @@ component:
       locked: false
     fieldGap:
       token: space.2
+      part: field
       description: Between the input(s) and the calendar button in the field row.
       locked: false
     dayFontSize:
       token: font.size.sm
+      part: day
       locked: false
     fontFamily:
       token: font.family.body
@@ -383,12 +427,14 @@ component:
       locked: false
     labelWeight:
       token: font.weight.medium
+      part: label
       locked: false
     helperSize:
       token: font.size.sm
       locked: false
     descriptionText:
       token: color.foreground.muted
+      part: description
       locked: true
     errorText:
       token: color.foreground.danger
@@ -425,13 +471,26 @@ component:
     today: Today
     clear: Clear
     weekNumber: Week
-    gridLabel: '{label}, {month} {year}'
+    gridLabel:
+      text: '{label}, {month} {year}'
+      params:
+        month:
+          type: string
+          description: The displayed month's name in the locale.
+        year:
+          type: string
+          description: The displayed year as the header shows it.
     selected: selected
     todayLabel: today
     startLabel: Start date
     endLabel: End date
     required: '{label} is required.'
-    invalid: '{label} must be a valid date ({pattern}).'
+    invalid:
+      text: '{label} must be a valid date ({pattern}).'
+      params:
+        pattern:
+          type: string
+          description: The locale's date pattern shown in the placeholder.
     tooEarly: '{label} must be on or after {min}.'
     tooLate: '{label} must be on or before {max}.'
     rangeOrder: End date must be after the start date.
@@ -477,11 +536,24 @@ component:
     - foreground: color.control.selectedBackground
       background: color.overlay.surface
       level: AA
-      large: true
+      nonText: true
     - foreground: color.border.strong
       background: color.background
       level: AA
-      large: true
+      nonText: true
+  form:
+    role: field
+    value: value
+    valueType: date-range
+    name: name
+    validation:
+    - required
+    - invalid
+    - range
+    messages:
+      required: required
+      invalid: invalid
+    discovery: context
   platforms:
     web:
       element: input
@@ -518,7 +590,6 @@ component:
       - range
       - required
       - disabled
-      - invalid
       - show-week-numbers
       - locale
       notes: 'Form-associated: setFormValue with the ISO string (two entries for a
@@ -564,11 +635,207 @@ component:
         on iPad per the table via `@FocusState` over the grid; range selection as
         documented. Dates are `YYYY-MM-DD` strings computed with `Calendar` in UTC,
         never `Date()` string parsing.'
+  behavior:
+  - name: the-calendar-button-opens-the-calendar
+    given:
+      open: false
+    when:
+      click: calendarButton
+    then:
+    - event: onOpenChange
+  - name: a-disabled-field-does-not-open-the-calendar
+    given:
+      open: false
+      disabled: true
+    when:
+      click: calendarButton
+    then:
+    - event: onOpenChange
+      fired: false
+  - name: choosing-a-day-reports-the-iso-date-and-closes
+    description: On a day, Enter or a press selects it and closes for a single date.
+    given:
+      open: true
+    when:
+      click: day
+    then:
+    - event: onChange
+    - event: onOpenChange
+  - name: the-today-button-selects-today
+    given:
+      open: true
+    when:
+      click: todayButton
+    then:
+    - event: onChange
+  - name: the-clear-button-clears-the-value
+    description: onChange fires with undefined when the value is cleared.
+    given:
+      open: true
+      defaultValue: '2026-09-10'
+    when:
+      click: clearButton
+    then:
+    - event: onChange
+  - name: arrow-down-in-the-input-opens-the-calendar
+    description: From the input, ArrowDown opens the calendar with focus on the selected
+      day (or today).
+    given:
+      open: false
+    when:
+      key: ArrowDown
+    then:
+    - event: onOpenChange
+    platforms:
+    - web
+    - lit
+  - name: the-calendar-is-a-month-grid
+    description: The days are a grid of gridcells, which is what makes the two-dimensional
+      arrow model announceable.
+    given:
+      open: true
+    then:
+    - role: grid
+    platforms:
+    - web
+    - lit
+  examples:
+  - name: date-of-birth
+    description: A single date in the past, typed or picked.
+    given:
+      label: Date of birth
+      name: dob
+      max: '2026-09-16'
+  - name: stay-dates
+    description: A start and an end date picked in one calendar, with two inputs in
+      the field.
+    given:
+      label: Stay
+      name: stay
+      range: true
+  - name: appointment-with-week-numbers
+    description: A bookable date no earlier than today, with the ISO week-number column
+      shown.
+    given:
+      label: Appointment
+      name: appointment
+      min: '2026-09-16'
+      showWeekNumbers: true
+  - name: compact-cell-editor
+    description: A small field inside a grid cell, named by its column.
+    given:
+      label: Due date
+      name: due
+      size: sm
+      hideLabel: true
 ```
+
+## Events
+
+- `onChange`: emit `change`
+  - payload, the keys of `CustomEvent.detail`: `value: string | { start: string; end: string } | undefined`
+  - fires on: user
+- `onOpenChange`: emit `open-change`
+  - payload, the keys of `CustomEvent.detail`: `open: boolean`
+  - fires on: user
 
 ## Controlled state
 
-- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; paired by name, so no event is declared
+- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `change`)
+- `open` is controlled when given, uncontrolled from its initial state when omitted; changes reported by `onOpenChange` (emit `open-change`); drives state `open`
+
+## Parts and slots
+
+- `label`: component `Text`
+- `description`: component `Text`
+- `field`: element
+- `input`: element
+- `calendarButton`: component `Button`
+- `popover`: component `Popover`
+- `header`: element
+- `prevMonthButton`: component `Button`
+- `nextMonthButton`: component `Button`
+- `monthSelect`: component `Select`; forwards `monthTitleSize` → `overrides.fontSize`
+- `yearSelect`: component `Select`; forwards `monthTitleSize` → `overrides.fontSize`
+- `grid`: element
+- `weekdayHeader`: element
+- `weekNumber`: element
+- `day`: element
+- `footer`: element
+- `todayButton`: component `Button`
+- `clearButton`: component `Button`
+- `errorMessage`: element
+
+## Style bindings
+
+- `paddingInline`: token `space.md`; by `size`: sm → `space.2`, any other value → `space.md`
+- `paddingBlock`: token `space.sm`; by `size`: sm → `space.1`, any other value → `space.sm`
+- `daySize`: token `size.target.comfortable`; part `day`; locked
+- `dayGap`: token `space.0`; part `day`
+- `dayRadius`: token `radius.md`; part `day`
+- `dayHover`: token `color.action.ghost.backgroundHover`; part `day`; state `hover`
+- `daySelectedBackground`: token `color.control.selectedBackground`; part `day`; locked
+- `daySelectedForeground`: token `color.control.selectedForeground`; part `day`; locked
+- `dayInRangeBackground`: token `color.background.strong`; part `day`; locked
+- `dayTodayBorder`: token `color.control.selectedBackground`; part `day`; locked
+- `dayTodayBorderWidth`: token `border.width.focus`; part `day`; locked
+- `dayOutsideMonthColor`: token `color.foreground.muted`; part `day`; locked
+- `fieldGap`: token `space.2`; part `field`
+- `dayFontSize`: token `font.size.sm`; part `day`
+- `labelWeight`: token `font.weight.medium`; part `label`
+- `descriptionText`: token `color.foreground.muted`; part `description`; locked
+
+## Keyboard
+
+- `Escape` (Closes the calendar without changing the value and returns focus to the calendar button.): expect closes, then focus-trigger; target part `popover`
+
+## Form and overlay
+
+```yaml
+form:
+  role: field
+  value: value
+  valueType: date-range
+  name: name
+  validation:
+  - required
+  - invalid
+  - range
+  messages:
+    required: required
+    invalid: invalid
+  discovery: context
+```
+
+## Copy
+
+- `open`: "Choose date"
+- `openRange`: "Choose dates"
+- `previousMonth`: "Previous month"
+- `nextMonth`: "Next month"
+- `month`: "Month"
+- `year`: "Year"
+- `today`: "Today"
+- `clear`: "Clear"
+- `weekNumber`: "Week"
+- `gridLabel`: "{label}, {month} {year}"; params `month` (string), `year` (string)
+- `selected`: "selected"
+- `todayLabel`: "today"
+- `startLabel`: "Start date"
+- `endLabel`: "End date"
+- `required`: "{label} is required."
+- `invalid`: "{label} must be a valid date ({pattern})."; params `pattern` (string)
+- `tooEarly`: "{label} must be on or after {min}."
+- `tooLate`: "{label} must be on or before {max}."
+- `rangeOrder`: "End date must be after the start date."
+- `requiredIndicator`: " (required)"
+
+## Constants and examples
+
+- example `date-of-birth`, story `DateOfBirth`: given `label: "Date of birth"`, `name: "dob"`, `max: "2026-09-16"`; A single date in the past, typed or picked.
+- example `stay-dates`, story `StayDates`: given `label: "Stay"`, `name: "stay"`, `range: true`; A start and an end date picked in one calendar, with two inputs in the field.
+- example `appointment-with-week-numbers`, story `AppointmentWithWeekNumbers`: given `label: "Appointment"`, `name: "appointment"`, `min: "2026-09-16"`, `showWeekNumbers: true`; A bookable date no earlier than today, with the ISO week-number column shown.
+- example `compact-cell-editor`, story `CompactCellEditor`: given `label: "Due date"`, `name: "due"`, `size: "sm"`, `hideLabel: true`; A small field inside a grid cell, named by its column.
 
 ## Overrides (per-instance styling contract)
 
@@ -578,14 +845,77 @@ The element also has an `overrides` property (`attribute: false`, `Partial<Recor
 
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
-Overridable: `borderInvalid`, `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `paddingBlockSm`, `paddingInlineSm`, `calendarInset`, `calendarGap`, `dayGap`, `dayRadius`, `dayHover`, `weekdaySize`, `weekdayWeight`, `monthTitleSize`, `monthTitleWeight`, `partGap`, `fieldGap`, `dayFontSize`, `fontFamily`, `lineHeight`, `labelWeight`, `helperSize`, `disabledOpacity`, `transition`
+Overridable: `borderInvalid`, `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `calendarInset`, `calendarGap`, `dayGap`, `dayRadius`, `dayHover`, `weekdaySize`, `weekdayWeight`, `monthTitleSize`, `monthTitleWeight`, `partGap`, `fieldGap`, `dayFontSize`, `fontFamily`, `lineHeight`, `labelWeight`, `helperSize`, `disabledOpacity`, `transition`
 Locked (accessibility-bearing, never overridable): `background`, `foreground`, `placeholder`, `border`, `borderFocus`, `rangeSeparatorColor`, `calendarSurface`, `daySize`, `daySelectedBackground`, `daySelectedForeground`, `dayInRangeBackground`, `dayTodayBorder`, `dayTodayBorderWidth`, `dayOutsideMonthColor`, `weekdayColor`, `descriptionText`, `errorText`, `minTarget`, `minTargetSm`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (5)
+## Behavior scenarios (12)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: the-calendar-button-opens-the-calendar
+  given:
+    open: false
+  when:
+    click: calendarButton
+  then:
+  - event: onOpenChange
+- name: a-disabled-field-does-not-open-the-calendar
+  given:
+    open: false
+    disabled: true
+  when:
+    click: calendarButton
+  then:
+  - event: onOpenChange
+    fired: false
+- name: choosing-a-day-reports-the-iso-date-and-closes
+  description: On a day, Enter or a press selects it and closes for a single date.
+  given:
+    open: true
+  when:
+    click: day
+  then:
+  - event: onChange
+  - event: onOpenChange
+- name: the-today-button-selects-today
+  given:
+    open: true
+  when:
+    click: todayButton
+  then:
+  - event: onChange
+- name: the-clear-button-clears-the-value
+  description: onChange fires with undefined when the value is cleared.
+  given:
+    open: true
+    defaultValue: '2026-09-10'
+  when:
+    click: clearButton
+  then:
+  - event: onChange
+- name: arrow-down-in-the-input-opens-the-calendar
+  description: From the input, ArrowDown opens the calendar with focus on the selected
+    day (or today).
+  given:
+    open: false
+  when:
+    key: ArrowDown
+  then:
+  - event: onOpenChange
+  platforms:
+  - web
+  - lit
+- name: the-calendar-is-a-month-grid
+  description: The days are a grid of gridcells, which is what makes the two-dimensional
+    arrow model announceable.
+  given:
+    open: true
+  then:
+  - role: grid
+  platforms:
+  - web
+  - lit
 - name: renders
   then:
   - renders: true
@@ -624,7 +954,6 @@ reflect:
 - range
 - required
 - disabled
-- invalid
 - show-week-numbers
 - locale
 notes: 'Form-associated: setFormValue with the ISO string (two entries for a range,

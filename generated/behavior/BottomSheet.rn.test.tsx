@@ -24,12 +24,36 @@ function setup(given: Partial<BottomSheetProps> = {}) {
     props,
     root: () => screen.queryByTestId('BottomSheet') ?? screen.UNSAFE_root,
     scrim: () => screen.queryByRole('dialog') ?? s.root(),
+    closeButton: () => screen.queryByTestId('BottomSheet.closeButton') ?? s.root(),
     rerender: (next: Partial<BottomSheetProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('BottomSheet', () => {
+  test('close-button-fires-on-close', () => {
+    const s = setup({"open": true});
+    fireEvent.press(s.closeButton());
+    expect(s.events.onClose).toHaveBeenCalled();
+  });
+  test('the-close-button-works-without-the-drag-gesture', () => {
+    const s = setup({"open": true, "dragToDismiss": false});
+    fireEvent.press(s.closeButton());
+    expect(s.events.onClose).toHaveBeenCalled();
+  });
+  test('non-dismissible-scrim-tap-does-nothing', () => {
+    const s = setup({"open": true, "dismissible": false});
+    fireEvent.press(s.scrim());
+    expect(s.events.onClose).not.toHaveBeenCalled();
+  });
+  test('hidden-heading-is-still-the-accessible-name', () => {
+    const s = setup({"open": true, "hideHeading": true});
+    expect(screen.getByRole('dialog')).toBeOnTheScreen();
+  });
+  test('closed-sheet-renders-nothing', () => {
+    const s = setup({"open": false});
+    expect(screen.toJSON()).toBeNull();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

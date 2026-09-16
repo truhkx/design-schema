@@ -74,5 +74,6 @@ test.describe('Tooltip (lit) keyboard', () => {
     void before; void stateBefore;
     await page.keyboard.press('Escape');
     await expect(root).toBeHidden();
+    expect(await focusIndex(page, root)).toBe(before);
   });
 });

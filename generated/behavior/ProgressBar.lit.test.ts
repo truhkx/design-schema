@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/ProgressBar.js';
 import meta from '../../packages/lit/src/ProgressBar.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -56,6 +60,15 @@ beforeEach(() => {
 });
 
 describe('ds-progress-bar', () => {
+  test('the-bar-is-never-focusable', async () => {
+    const s = await setup({});
+    s.el.focus();
+    expect(activeChain()).not.toContain(s.el);
+  });
+  test('the-label-names-the-task', async () => {
+    const s = await setup({"label": "Importing contacts"});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Importing\\ contacts"));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

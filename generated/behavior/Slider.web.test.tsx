@@ -10,6 +10,17 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<SliderProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -31,6 +42,62 @@ function setup(given: Partial<SliderProps> = {}) {
 }
 
 describe('Slider', () => {
+  test('arrow-increases-by-one-step', async () => {
+    const s = setup({"defaultValue": 50, "step": 5});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{ArrowRight}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-decreases-by-one-step', async () => {
+    const s = setup({"defaultValue": 50, "step": 5});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{ArrowLeft}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('page-up-changes-by-ten-steps', async () => {
+    const s = setup({"defaultValue": 50});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{PageUp}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('home-sets-the-minimum', async () => {
+    const s = setup({"defaultValue": 50, "min": 0, "max": 100});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{Home}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('end-sets-the-maximum', async () => {
+    const s = setup({"defaultValue": 50, "min": 0, "max": 100});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{End}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('a-key-press-is-a-complete-interaction', async () => {
+    const s = setup({"defaultValue": 50});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{ArrowRight}');
+    expect(s.events.onChangeEnd).toHaveBeenCalled();
+  });
+  test('a-disabled-slider-does-not-move', async () => {
+    const s = setup({"disabled": true, "defaultValue": 50});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{ArrowRight}');
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('the-thumb-reports-its-value-and-bounds', async () => {
+    const s = setup({"defaultValue": 4, "min": 0, "max": 10});
+    expect(s.label()).toHaveAttribute("aria-valuenow", "4");
+    expect(s.label()).toHaveAttribute("aria-valuemin", "0");
+    expect(s.label()).toHaveAttribute("aria-valuemax", "10");
+  });
+  test('the-thumb-is-the-slider', async () => {
+    const s = setup({});
+    expect(screen.getByRole('slider')).toBeInTheDocument();
+  });
+  test('invalid-renders-the-invalid-copy', async () => {
+    const s = setup({"invalid": true});
+    expect(screen.getByText(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."))).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

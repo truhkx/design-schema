@@ -29,6 +29,25 @@ function setup(given: Partial<DisclosureProps> = {}) {
 }
 
 describe('Disclosure', () => {
+  test('click-on-trigger-expands', () => {
+    const s = setup({"open": true});
+    fireEvent.press(s.trigger());
+    expect(s.events.onToggle).toHaveBeenCalled();
+    expect(s.trigger()).toBeExpanded();
+  });
+  test('open-disclosure-collapses-on-click', () => {
+    const s = setup({"defaultOpen": true, "open": true});
+    fireEvent.press(s.trigger());
+    expect(s.events.onToggle).toHaveBeenCalled();
+    expect(s.trigger()).not.toBeExpanded();
+  });
+  test('disabled-trigger-does-not-toggle', () => {
+    const s = setup({"disabled": true, "open": true});
+    fireEvent.press(s.trigger());
+    expect(s.events.onToggle).not.toHaveBeenCalled();
+    expect(s.trigger()).not.toBeExpanded();
+    expect(s.trigger()).toBeDisabled();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

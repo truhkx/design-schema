@@ -18,7 +18,8 @@
       ],
       "action": "Selects the focused step.",
       "from": "first",
-      "expect": "manual"
+      "expect": "manual",
+      "native": true
     }
   ]
 }

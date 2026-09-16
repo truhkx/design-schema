@@ -28,10 +28,12 @@ component:
     onNavigate:
       description: 'Fired when a non-current item is activated, as `(item, index, event)`. On web the link still navigates unless the consumer calls `event.preventDefault()`; on native there is no event, the handler is the navigation, and without one the Link falls back to Linking.openURL.'
       platforms: { web: onNavigate, lit: navigate, rn: onNavigate, swiftui: onNavigate }
+      cancelable: true
+      fires: [user]
   styles:
-    currentColor: { token: color.foreground, description: 'The current page, rendered as text with aria-current, in the regular weight.' }
-    itemColor: { token: color.foreground.muted, description: 'An ancestor item without `href`, rendered as plain text (a level that has no page of its own).' }
-    separatorColor: { token: color.foreground.muted, description: 'A slash or chevron between items, aria-hidden.' }
+    currentColor: { token: color.foreground, part: current, description: 'The current page, rendered as text with aria-current, in the regular weight.' }
+    itemColor: { token: color.foreground.muted, part: item, description: 'An ancestor item without `href`, rendered as plain text (a level that has no page of its own).' }
+    separatorColor: { token: color.foreground.muted, part: separator, description: 'A slash or chevron between items, aria-hidden.' }
     gap: { token: space.2, description: Gap on both sides of the separator. }
     fontFamily: { token: font.family.body }
     fontSize: { token: font.size.sm, description: 'Set on the nav; the Links inherit it on web. On native each ancestor Link is wrapped in a Text whose `overrides.fontSize` receives this binding (and any override of it), so the size is one value everywhere.' }
@@ -41,6 +43,8 @@ component:
   copy:
     separator: /
     expandLabel: Show all pages
+    navLabel: Breadcrumb
+    current: current page
   a11y:
     role: navigation
     requires: [landmark-role, accessible-name, focus-visible, keyboard-operable, target-24px, contrast-aa]
@@ -54,7 +58,7 @@ component:
       notes: '<nav aria-label> containing an <ol> of <li>; each ancestor is a ds Link, the last item is a <span aria-current="page">. Separators are CSS-generated (li + li::before) from the custom property --ds-breadcrumb-separator, set inline on the nav from copy.separator, so the copy string lives in code and the separator is not in the accessibility tree at all. The ellipsis is the system Button (ghost, sm, iconOnly) unchanged.'
     lit:
       tag: ds-breadcrumb
-      reflect: [collapse]
+      reflect: [{ prop: collapse, attribute: no-collapse }]
       notes: '`items` is a property (.items=${[...]}). The nav and list are rendered in the shadow root; the landmark is still exposed from inside a shadow root. `navigate` is a composed CustomEvent with detail { item, index, originalEvent }; calling preventDefault() on detail.originalEvent (the retargeted native click) cancels navigation. The inner ds-button''s `press` is stopped so consumers see only `navigate`.'
     rn:
       element: View
@@ -64,6 +68,70 @@ component:
       element: HStack
       props: [.accessibilityElement=contain, .accessibilityLabel, Link, Icon, .accessibilityAddTraits=isSelected, ViewThatFits]
       notes: 'An `HStack` (wrapping `FlowLayout` when items overflow) inside `.accessibilityElement(children: .contain)` labelled `copy.navLabel`; items are `Link`s with the `chevron-right` Icon (hidden) between; the current item is a `Text` with `.isSelected` plus `copy.current` in its label. `collapse` folds the middle items behind an ellipsis Button that expands them in place.'
+  behavior:
+    # Authored scenarios; the parser adds renders/accessible-name ones from the schema.
+    - name: click-on-an-ancestor-reports-navigation
+      description: Each ancestor is a Link that fires onNavigate, so a client-side router can intercept it.
+      when: { click: link }
+      then:
+        - { event: onNavigate }
+    - name: the-last-item-is-the-current-page
+      description: The last item is plain text carrying aria-current="page", never a link.
+      then:
+        - { attribute: 'aria-current', is: 'page', 'on': current, platforms: [web, lit] }
+    - name: the-trail-is-a-named-navigation-landmark
+      description: A navigation landmark with a name that distinguishes it from other navigations.
+      given: { label: 'Docs breadcrumb' }
+      then:
+        - { role: navigation }
+        - { attribute: 'aria-label', is: 'Docs breadcrumb' }
+      platforms: [web]
+    - name: an-uncollapsed-trail-shows-every-ancestor
+      description: With collapse off a long trail stays in full rather than folding its middle behind an ellipsis.
+      given:
+        collapse: false
+        items:
+          - { label: 'Docs', href: '/docs' }
+          - { label: 'Components', href: '/docs/components' }
+          - { label: 'Navigation', href: '/docs/components/navigation' }
+          - { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' }
+          - { label: 'Keyboard' }
+      then:
+        - { text: 'Components' }
+        - { text: 'Navigation' }
+  examples:
+    - name: settings-trail
+      description: A short trail whose last item is the current page, rendered as text.
+      given:
+        items:
+          - { label: 'Settings', href: '/settings' }
+          - { label: 'Notifications', href: '/settings/notifications' }
+          - { label: 'Email digest' }
+    - name: deep-trail-collapsed
+      description: A trail of more than four items, folded to the first, an ellipsis and the last two.
+      given:
+        collapse: true
+        items:
+          - { label: 'Docs', href: '/docs' }
+          - { label: 'Components', href: '/docs/components' }
+          - { label: 'Navigation', href: '/docs/components/navigation' }
+          - { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' }
+          - { label: 'Keyboard' }
+    - name: always-in-full
+      description: A trail short enough that the ellipsis would only cost the reader a click.
+      given:
+        collapse: false
+        items:
+          - { label: 'Catalogue', href: '/catalogue' }
+          - { label: 'Outdoor', href: '/catalogue/outdoor' }
+          - { label: 'Tents' }
+    - name: second-breadcrumb-on-a-page
+      description: A second trail, named so the two navigation landmarks are distinguishable.
+      given:
+        label: 'Catalogue breadcrumb'
+        items:
+          - { label: 'Catalogue', href: '/catalogue' }
+          - { label: 'Tents' }
 ---
 
 A breadcrumb answers "where am I?" and "how do I go up a level?" in one line. It is a secondary navigation: it never replaces the primary nav or the back button, and it shows the site's hierarchy, not the user's history.

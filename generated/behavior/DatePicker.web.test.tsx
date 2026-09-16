@@ -10,6 +10,17 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<DatePickerProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -25,12 +36,52 @@ function setup(given: Partial<DatePickerProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="DatePicker"]') ?? utils.container.firstElementChild) as HTMLElement,
     label: () => s.root(),
+    calendarButton: () => (document.querySelector('[data-part="calendarButton"]') ?? s.root()),
+    day: () => (document.querySelector('[data-part="day"]') ?? s.root()),
+    todayButton: () => (document.querySelector('[data-part="todayButton"]') ?? s.root()),
+    clearButton: () => (document.querySelector('[data-part="clearButton"]') ?? s.root()),
     rerender: (next: Partial<DatePickerProps>) => utils.rerender(<DatePicker {...props} {...next} />),
   };
   return s;
 }
 
 describe('DatePicker', () => {
+  test('the-calendar-button-opens-the-calendar', async () => {
+    const s = setup({"open": false});
+    await s.user.click(s.calendarButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-disabled-field-does-not-open-the-calendar', async () => {
+    const s = setup({"open": false, "disabled": true});
+    await s.user.click(s.calendarButton());
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+  });
+  test('choosing-a-day-reports-the-iso-date-and-closes', async () => {
+    const s = setup({"open": true});
+    await s.user.click(s.day());
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-today-button-selects-today', async () => {
+    const s = setup({"open": true});
+    await s.user.click(s.todayButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('the-clear-button-clears-the-value', async () => {
+    const s = setup({"open": true, "defaultValue": "2026-09-10"});
+    await s.user.click(s.clearButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('arrow-down-in-the-input-opens-the-calendar', async () => {
+    const s = setup({"open": false});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{ArrowDown}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-calendar-is-a-month-grid', async () => {
+    const s = setup({"open": true});
+    expect(screen.getByRole('grid')).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();

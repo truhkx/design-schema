@@ -6,6 +6,21 @@ import { AlertDialog } from '../../packages/react/src/AlertDialog';
 import type { AlertDialogProps } from '../../packages/react/src/AlertDialog';
 import meta from '../../packages/react/src/AlertDialog.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<AlertDialogProps> = {}) {
   const events = {
     onConfirm: vi.fn(),
@@ -21,12 +36,54 @@ function setup(given: Partial<AlertDialogProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="AlertDialog"]') ?? screen.queryByRole('alertdialog') ?? utils.container.firstElementChild) as HTMLElement,
     scrim: () => (screen.queryByRole('alertdialog') ?? s.root()) as HTMLElement,
+    cancelButton: () => (document.querySelector('[data-part="cancelButton"]') ?? s.root()),
+    confirmButton: () => (document.querySelector('[data-part="confirmButton"]') ?? s.root()),
     rerender: (next: Partial<AlertDialogProps>) => utils.rerender(<AlertDialog {...props} {...next} />),
   };
   return s;
 }
 
 describe('AlertDialog', () => {
+  test('confirm-button-fires-on-confirm', async () => {
+    const s = setup({"open": true});
+    await s.user.click(s.confirmButton());
+    expect(s.events.onConfirm).toHaveBeenCalled();
+  });
+  test('cancel-button-fires-on-cancel', async () => {
+    const s = setup({"open": true});
+    await s.user.click(s.cancelButton());
+    expect(s.events.onCancel).toHaveBeenCalled();
+  });
+  test('focus-starts-on-the-cancel-button', async () => {
+    const s = setup({"open": true});
+    expect(document.activeElement).toBe(s.cancelButton());
+  });
+  test('a-scrim-click-does-nothing', async () => {
+    const s = setup({"open": true});
+    await s.user.click(s.scrim());
+    expect(s.events.onCancel).not.toHaveBeenCalled();
+    expect(s.events.onConfirm).not.toHaveBeenCalled();
+  });
+  test('confirm-disabled-does-not-confirm', async () => {
+    const s = setup({"open": true, "confirmDisabled": true});
+    await s.user.click(s.confirmButton());
+    expect(s.events.onConfirm).not.toHaveBeenCalled();
+  });
+  test('cancel-works-while-confirm-is-disabled', async () => {
+    const s = setup({"open": true, "confirmDisabled": true});
+    await s.user.click(s.cancelButton());
+    expect(s.events.onCancel).toHaveBeenCalled();
+  });
+  test('escape-cancels-while-confirm-is-disabled', async () => {
+    const s = setup({"open": true, "confirmDisabled": true});
+    act(() => focusInto(s.scrim()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onCancel).toHaveBeenCalled();
+  });
+  test('the-cancel-button-is-named-from-copy', async () => {
+    const s = setup({"open": true});
+    expect(screen.getByText(new RegExp("Cancel"))).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();
@@ -46,5 +103,11 @@ describe('AlertDialog', () => {
   test('has-accessible-name', async () => {
     const s = setup({"open": true});
     expect(screen.getByRole('alertdialog', { name: s.props.heading })).toBeInTheDocument();
+  });
+  test('escape-fires-on-cancel', async () => {
+    const s = setup({"open": true});
+    act(() => focusInto(s.scrim()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onCancel).toHaveBeenCalled();
   });
 });

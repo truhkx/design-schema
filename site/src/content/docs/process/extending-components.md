@@ -83,4 +83,4 @@ When a new version of the system's docs arrives, the merge is: upstream docs rep
 
 ## Planned
 
-`namespace:` on component docs for custom components; `slots` as a declared extension point on container components (named places an extension can inject content, e.g. `Card.headerActions` or `Table.emptyState`) so content extension does not need a new prop; and a `pnpm ds upgrade` that fetches upstream docs, merges, parses, and reports the stale set.
+`namespace:` on component docs for custom components; and a `pnpm ds upgrade` that fetches upstream docs, merges, parses, and reports the stale set. Slots have landed: an anatomy part declares `kind: slot` in the component doc's `parts` block, with the prop that fills it and its name on each platform, so a named place like `Card.headerActions` is part of the contract rather than an extension point waiting to be invented.

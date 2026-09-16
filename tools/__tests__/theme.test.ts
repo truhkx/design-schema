@@ -808,7 +808,7 @@ describe('main', () => {
 const SAND = '#C9B99C';
 const INK = '#1E1A16';
 // WCAG 2.2: 4.5:1 normal text, 3:1 large text at AA; 7:1 / 4.5:1 at AAA.
-const THRESHOLDS: Record<string, number> = { 'AA|false': 4.5, 'AA|true': 3.0, 'AAA|false': 7.0, 'AAA|true': 4.5 };
+const THRESHOLDS: Record<string, number> = { 'AA|false': 4.5, 'AA|true': 3.0, 'AAA|false': 7.0, 'AAA|true': 4.5, 'AA|nonText': 3.0 };
 
 const twoSeed = (t: Dict): Dict => ({ ...t, seed: { ...t.seed, color: INK, neutral: SAND } });
 
@@ -963,7 +963,9 @@ describe('every declared pair passes on sand', () => {
     for (const entry of components) {
       const c = entry.component as Dict;
       for (const pair of ((c.a11y as Dict)?.contrast as Dict[]) ?? []) {
-        const need = THRESHOLDS[`${(pair.level as string) ?? 'AA'}|${(pair.large as boolean) ?? false}`] as number;
+        // A WCAG 1.4.11 pair has one floor, 3:1 at AA, whatever `large` would have said.
+        const kind = pair.nonText === true ? 'nonText' : String((pair.large as boolean) ?? false);
+        const need = THRESHOLDS[`${(pair.level as string) ?? 'AA'}|${kind}`] as number;
         const fgs = expand(pair.foreground as string, c.props as Dict);
         const bgs = expand(pair.background as string, c.props as Dict);
         const combos = fgs.length === bgs.length && fgs.length > 1 ? fgs.map((f, i) => [f, bgs[i]]) : product([fgs, bgs]);

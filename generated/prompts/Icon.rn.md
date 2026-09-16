@@ -96,6 +96,7 @@ component:
         is never carried by color alone.
     size:
       type: enum
+      enumRef: size
       values:
       - xs
       - sm
@@ -230,7 +231,63 @@ component:
         as `Image(uiImage:)` from an `ImageRenderer` at the font size, cached per
         size and color. Never SF Symbols: the glyph set is the system''s own on every
         platform.'
+  behavior:
+  - name: unlabelled-icon-is-hidden-from-assistive-technology
+    description: Decorative icons carry no information the adjacent text does not,
+      so "Save" is announced as "Save", not "check mark Save" (WCAG 1.1.1).
+    then:
+    - attribute: aria-hidden
+      is: 'true'
+      platforms:
+      - web
+      - lit
+    - attribute: accessibilityElementsHidden
+      is: true
+      platforms:
+      - rn
+  - name: label-makes-the-icon-meaningful
+    description: When set, the icon is exposed as an image with this name; the aria-hidden
+      of the decorative case is gone.
+    given:
+      name: warning
+      label: 'Warning: over quota'
+    then:
+    - role: img
+      platforms:
+      - web
+      - lit
+    - attribute: aria-hidden
+      is: null
+      platforms:
+      - web
+      - lit
+    - name: 'Warning: over quota'
+  examples:
+  - name: status-in-a-cell
+    description: A lone status glyph that is the whole message, so it says what it
+      means instead of what it depicts.
+    given:
+      name: warning
+      label: 'Warning: over quota'
+  - name: decorative-beside-a-label
+    description: The usual case - a glyph next to text, with no label, so the label
+      carries the meaning alone.
+    given:
+      name: check
+      size: sm
+  - name: inline-in-running-text
+    description: An icon sized at 1em of the surrounding text and sitting on its baseline,
+      for use inside a Text or Link.
+    given:
+      name: external
+      inline: true
 ```
+
+## Constants and examples
+
+- example `status-in-a-cell`, story `StatusInACell`: given `name: "warning"`, `label: "Warning: over quota"`; A lone status glyph that is the whole message, so it says what it means instead of what it depicts.
+- example `decorative-beside-a-label`, story `DecorativeBesideALabel`: given `name: "check"`, `size: "sm"`; The usual case - a glyph next to text, with no label, so the label carries the meaning alone.
+- example `inline-in-running-text`, story `InlineInRunningText`: given `name: "external"`, `inline: true`; An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link.
 
 ## Overrides (per-instance styling contract)
 
@@ -243,11 +300,25 @@ The `platforms.rn.props` list names the native props the schema cares about; `ov
 Overridable: `size`, `color`
 Locked (accessibility-bearing, never overridable): `strokeWidth`
 
-## Behavior scenarios (33)
+## Behavior scenarios (35)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: unlabelled-icon-is-hidden-from-assistive-technology
+  description: Decorative icons carry no information the adjacent text does not, so
+    "Save" is announced as "Save", not "check mark Save" (WCAG 1.1.1).
+  then:
+  - attribute: accessibilityElementsHidden
+    is: true
+- name: label-makes-the-icon-meaningful
+  description: When set, the icon is exposed as an image with this name; the aria-hidden
+    of the decorative case is gone.
+  given:
+    name: warning
+    label: 'Warning: over quota'
+  then:
+  - name: 'Warning: over quota'
 - name: renders
   then:
   - renders: true

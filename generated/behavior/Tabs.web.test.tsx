@@ -6,6 +6,17 @@ import { Tabs } from '../../packages/react/src/Tabs';
 import type { TabsProps } from '../../packages/react/src/Tabs';
 import meta from '../../packages/react/src/Tabs.stories';
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<TabsProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -20,12 +31,44 @@ function setup(given: Partial<TabsProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Tabs"]') ?? screen.queryByRole('tablist') ?? utils.container.firstElementChild) as HTMLElement,
     tablist: () => (screen.queryByRole('tablist') ?? s.root()) as HTMLElement,
+    tab: () => (document.querySelector('[data-part="tab"]') ?? s.root()),
     rerender: (next: Partial<TabsProps>) => utils.rerender(<Tabs {...props} {...next} />),
   };
   return s;
 }
 
 describe('Tabs', () => {
+  test('click-selects-a-tab', async () => {
+    const s = setup({"defaultValue": "activity"});
+    await s.user.click(s.tab());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('clicking-the-selected-tab-changes-nothing', async () => {
+    const s = setup({"defaultValue": "overview"});
+    await s.user.click(s.tab());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('the-selected-tab-is-marked-selected', async () => {
+    const s = setup({"defaultValue": "overview"});
+    expect(s.tab()).toHaveAttribute("aria-selected", "true");
+  });
+  test('arrow-selects-under-automatic-activation', async () => {
+    const s = setup({"activation": "automatic"});
+    act(() => focusInto(s.tablist()));
+    await s.user.keyboard('{ArrowRight}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('manual-activation-does-not-select-on-arrow', async () => {
+    const s = setup({"activation": "manual"});
+    act(() => focusInto(s.tablist()));
+    await s.user.keyboard('{ArrowRight}');
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('a-disabled-tab-cannot-be-selected', async () => {
+    const s = setup({"tabs": [{"id": "overview", "label": "Overview", "disabled": true}, {"id": "activity", "label": "Activity"}], "defaultValue": "activity"});
+    await s.user.click(s.tab());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

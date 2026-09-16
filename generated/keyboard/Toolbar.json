@@ -50,7 +50,8 @@
       ],
       "action": "Activates the focused control (its own behavior).",
       "from": "first",
-      "expect": "manual"
+      "expect": "manual",
+      "native": true
     }
   ]
 }

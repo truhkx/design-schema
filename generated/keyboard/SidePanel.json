@@ -28,8 +28,13 @@
       ],
       "action": "Closes and returns focus to the trigger (from inside the panel; a persistent sidebar ignores it).",
       "from": "inside",
-      "expect": "closes",
-      "when": "open"
+      "expect": "manual",
+      "when": "open",
+      "expectAll": [
+        "closes",
+        "focus-trigger"
+      ],
+      "target": "surface"
     },
     {
       "keys": [

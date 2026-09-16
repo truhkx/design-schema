@@ -84,6 +84,9 @@ component:
     value:
       type: number
       description: Controlled numeric value. `null`/undefined means empty.
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: number
       description: Initial value.
@@ -100,7 +103,7 @@ component:
       description: Increment for the buttons and arrow keys. Also the rounding granularity
         when `precision` is omitted.
     precision:
-      type: number
+      type: integer
       description: Decimal places to keep and display. Defaults to the decimals in
         `step`.
     format:
@@ -150,6 +153,7 @@ component:
         for a field whose context already names it: a DataGrid cell editor, a Search.'
     size:
       type: enum
+      enumRef: size
       values:
       - sm
       - md
@@ -176,6 +180,13 @@ component:
         lit: change
         rn: onChangeText
         swiftui: onChange
+      payload:
+      - name: value
+        type: union
+        shape: number | undefined
+        description: The new numeric value; undefined when the field is empty.
+      fires:
+      - user
   keyboard:
   - keys:
     - ArrowUp
@@ -200,6 +211,7 @@ component:
       movement.
     from: first
     expect: manual
+    native: true
   - keys:
     - Enter
     action: Commits (rounds and clamps) the typed value; inside a Form, submits.
@@ -232,17 +244,15 @@ component:
       locked: false
     paddingInline:
       token: space.md
+      by: size
+      values:
+        sm: space.2
       locked: false
     paddingBlock:
       token: space.sm
-      locked: false
-    paddingBlockSm:
-      token: space.1
-      description: Vertical padding at size sm.
-      locked: false
-    paddingInlineSm:
-      token: space.2
-      description: Horizontal padding at size sm.
+      by: size
+      values:
+        sm: space.1
       locked: false
     affixColor:
       token: color.foreground.muted
@@ -264,12 +274,14 @@ component:
       locked: false
     labelWeight:
       token: font.weight.medium
+      part: label
       locked: false
     helperSize:
       token: font.size.sm
       locked: false
     descriptionText:
       token: color.foreground.muted
+      part: description
       locked: true
     errorText:
       token: color.foreground.danger
@@ -329,7 +341,21 @@ component:
     - foreground: color.border.strong
       background: color.background
       level: AA
-      large: true
+      nonText: true
+  form:
+    role: field
+    value: value
+    valueType: number
+    name: name
+    validation:
+    - required
+    - invalid
+    - range
+    messages:
+      required: required
+      invalid: invalid
+      range: outOfRange
+    discovery: context
   platforms:
     web:
       element: input
@@ -357,10 +383,11 @@ component:
       tag: ds-number-input
       reflect:
       - format
+      - size
       - required
       - disabled
       - invalid
-      - show-steppers
+      - hideSteppers
       notes: Form-associated; setFormValue with the plain number as a string. Implements
         DsFormField. Composed `change` with detail { value }.
     rn:
@@ -397,11 +424,194 @@ component:
         parsing leniently as the doc describes; ArrowUp/Down/PageUp/PageDown/Home/End
         on iPad via `.onKeyPress`. Registers with the Form environment as a `Double`.
         `size: sm` per the Sm bindings.'
+  behavior:
+  - name: the-increment-button-steps-up
+    given:
+      defaultValue: 5
+      step: 1
+    when:
+      click: incrementButton
+    then:
+    - event: onChange
+  - name: the-decrement-button-steps-down
+    given:
+      defaultValue: 5
+      step: 1
+    when:
+      click: decrementButton
+    then:
+    - event: onChange
+  - name: arrow-up-increases-by-one-step
+    given:
+      defaultValue: 5
+    when:
+      key: ArrowUp
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: arrow-down-decreases-by-one-step
+    given:
+      defaultValue: 5
+    when:
+      key: ArrowDown
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: page-up-changes-by-ten-steps
+    given:
+      defaultValue: 5
+    when:
+      key: PageUp
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: arrow-keys-work-without-the-steppers
+    description: hideSteppers hides the buttons; the arrow keys do the same job regardless.
+    given:
+      defaultValue: 5
+      hideSteppers: true
+    when:
+      key: ArrowUp
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: typing-a-number-reports-it
+    when:
+      type: '7'
+    then:
+    - event: onChange
+  - name: decrement-does-nothing-at-the-minimum
+    description: The decrement button disables at min, so there is no value below
+      it to report.
+    given:
+      defaultValue: 0
+      min: 0
+      max: 10
+    when:
+      click: decrementButton
+    then:
+    - event: onChange
+      fired: false
+  - name: a-disabled-field-does-not-step
+    given:
+      disabled: true
+      defaultValue: 5
+    when:
+      click: incrementButton
+    then:
+    - event: onChange
+      fired: false
+  - name: the-field-reports-its-value-and-bounds
+    description: The spinbutton carries valuenow/min/max, which is how the value is
+      announced.
+    given:
+      defaultValue: 4
+      min: 0
+      max: 10
+    then:
+    - attribute: aria-valuenow
+      is: '4'
+    - attribute: aria-valuemin
+      is: '0'
+    - attribute: aria-valuemax
+      is: '10'
+    platforms:
+    - web
+  examples:
+  - name: quantity
+    description: The everyday bounded counter with its step buttons.
+    given:
+      label: Quantity
+      name: quantity
+      min: 1
+      max: 99
+      defaultValue: 1
+  - name: price-in-currency
+    description: A money field formatted for the locale, stepping by cents.
+    given:
+      label: Price
+      name: price
+      format: currency
+      currency: USD
+      step: 0.01
+      defaultValue: 19.99
+  - name: percentage
+    description: A percentage bounded to nought and a hundred, stepping by five.
+    given:
+      label: Discount
+      name: discount
+      format: percent
+      min: 0
+      max: 100
+      step: 5
+      defaultValue: 10
+  - name: compact-cell-editor
+    description: A small field inside a grid cell, named by its column, with no steppers
+      and a unit after the value.
+    given:
+      label: Weight
+      name: weight
+      size: sm
+      hideLabel: true
+      hideSteppers: true
+      trailingText: kg
+      defaultValue: 2
 ```
+
+## Events
+
+- `onChange`: emit `change`
+  - payload, the keys of `CustomEvent.detail`: `value: number | undefined`
+  - fires on: user
 
 ## Controlled state
 
-- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; paired by name, so no event is declared
+- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `change`)
+
+## Style bindings
+
+- `paddingInline`: token `space.md`; by `size`: sm → `space.2`, any other value → `space.md`
+- `paddingBlock`: token `space.sm`; by `size`: sm → `space.1`, any other value → `space.sm`
+- `labelWeight`: token `font.weight.medium`; part `label`
+- `descriptionText`: token `color.foreground.muted`; part `description`; locked
+
+## Keyboard
+
+- `Home`, `End` (Sets min / max when they are defined; otherwise the input's native caret movement.): expect manual; native: the rendered element already does this
+
+## Form and overlay
+
+```yaml
+form:
+  role: field
+  value: value
+  valueType: number
+  name: name
+  validation:
+  - required
+  - invalid
+  - range
+  messages:
+    required: required
+    invalid: invalid
+    range: outOfRange
+  discovery: context
+```
+
+## Constants and examples
+
+- example `quantity`, story `Quantity`: given `label: "Quantity"`, `name: "quantity"`, `min: 1`, `max: 99`, `defaultValue: 1`; The everyday bounded counter with its step buttons.
+- example `price-in-currency`, story `PriceInCurrency`: given `label: "Price"`, `name: "price"`, `format: "currency"`, `currency: "USD"`, `step: 0.01`, `defaultValue: 19.99`; A money field formatted for the locale, stepping by cents.
+- example `percentage`, story `Percentage`: given `label: "Discount"`, `name: "discount"`, `format: "percent"`, `min: 0`, `max: 100`, `step: 5`, `defaultValue: 10`; A percentage bounded to nought and a hundred, stepping by five.
+- example `compact-cell-editor`, story `CompactCellEditor`: given `label: "Weight"`, `name: "weight"`, `size: "sm"`, `hideLabel: true`, `hideSteppers: true`, `trailingText: "kg"`, `defaultValue: 2`; A small field inside a grid cell, named by its column, with no steppers and a unit after the value.
 
 ## Overrides (per-instance styling contract)
 
@@ -411,14 +621,98 @@ The element also has an `overrides` property (`attribute: false`, `Partial<Recor
 
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
-Overridable: `borderInvalid`, `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `paddingBlockSm`, `paddingInlineSm`, `affixGap`, `stepperGap`, `stepperDivider`, `partGap`, `labelWeight`, `helperSize`, `fontFamily`, `fontSize`, `lineHeight`, `disabledOpacity`
+Overridable: `borderInvalid`, `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `affixGap`, `stepperGap`, `stepperDivider`, `partGap`, `labelWeight`, `helperSize`, `fontFamily`, `fontSize`, `lineHeight`, `disabledOpacity`
 Locked (accessibility-bearing, never overridable): `background`, `foreground`, `placeholder`, `border`, `borderFocus`, `affixColor`, `descriptionText`, `errorText`, `minTarget`, `minTargetSm`, `focusRingWidth`
 
-## Behavior scenarios (10)
+## Behavior scenarios (19)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: the-increment-button-steps-up
+  given:
+    defaultValue: 5
+    step: 1
+  when:
+    click: incrementButton
+  then:
+  - event: onChange
+- name: the-decrement-button-steps-down
+  given:
+    defaultValue: 5
+    step: 1
+  when:
+    click: decrementButton
+  then:
+  - event: onChange
+- name: arrow-up-increases-by-one-step
+  given:
+    defaultValue: 5
+  when:
+    key: ArrowUp
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: arrow-down-decreases-by-one-step
+  given:
+    defaultValue: 5
+  when:
+    key: ArrowDown
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: page-up-changes-by-ten-steps
+  given:
+    defaultValue: 5
+  when:
+    key: PageUp
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: arrow-keys-work-without-the-steppers
+  description: hideSteppers hides the buttons; the arrow keys do the same job regardless.
+  given:
+    defaultValue: 5
+    hideSteppers: true
+  when:
+    key: ArrowUp
+  then:
+  - event: onChange
+  platforms:
+  - web
+  - lit
+- name: typing-a-number-reports-it
+  when:
+    type: '7'
+  then:
+  - event: onChange
+- name: decrement-does-nothing-at-the-minimum
+  description: The decrement button disables at min, so there is no value below it
+    to report.
+  given:
+    defaultValue: 0
+    min: 0
+    max: 10
+  when:
+    click: decrementButton
+  then:
+  - event: onChange
+    fired: false
+- name: a-disabled-field-does-not-step
+  given:
+    disabled: true
+    defaultValue: 5
+  when:
+    click: incrementButton
+  then:
+  - event: onChange
+    fired: false
 - name: renders
   then:
   - renders: true
@@ -487,10 +781,11 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
 tag: ds-number-input
 reflect:
 - format
+- size
 - required
 - disabled
 - invalid
-- show-steppers
+- hideSteppers
 notes: Form-associated; setFormValue with the plain number as a string. Implements
   DsFormField. Composed `change` with detail { value }.
 ```

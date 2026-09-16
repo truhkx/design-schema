@@ -99,18 +99,24 @@ component:
     onPress:
       description: Fired when the link is activated. On web the default navigation
         still happens unless the consumer prevents it; on native the consumer must
-        navigate (the system opens URLs with Linking when no handler is given).
+        navigate (the system opens URLs with Linking when no handler is given). On
+        Lit the name is the native anchor's own `click`, retargeted out of the shadow
+        root — Link emits no `press` CustomEvent.
       platforms:
         web: onClick
-        lit: click (native, retargeted — no CustomEvent)
+        lit: click
         rn: onPress
         swiftui: action
+      cancelable: true
+      fires:
+      - user
   styles:
     color:
       token: color.link
       locked: true
     colorHover:
       token: color.link.hover
+      state: hover
       description: Pointer hover and active state.
       locked: true
     colorVisited:
@@ -126,6 +132,7 @@ component:
       locked: false
     externalIconGap:
       token: space.1
+      part: externalIcon
       description: 'Gap before the trailing icon, which is 1em of the surrounding
         font size (no token: it scales with the text).'
       locked: false
@@ -144,6 +151,7 @@ component:
       locked: false
   copy:
     externalSuffix: ' (opens in new tab)'
+    external: opens in new tab
   a11y:
     role: link
     requires:
@@ -217,7 +225,103 @@ component:
         `copy.external` to the accessibility label. Inline links inside `Text` render
         as `Text` concatenation with `.link` attribute for the URL, so a paragraph
         with a link is one accessibility element with the link as a rotor item.'
+  behavior:
+  - name: click-fires-on-press
+    description: Activation with pointer, Enter, or assistive technology navigates
+      to href; onPress fires first.
+    when:
+      click: anchor
+    then:
+    - event: onPress
+  - name: external-link-announces-that-it-leaves
+    description: The accessible name is the visible text plus copy.externalSuffix,
+      so users are told the link leaves the current context before they activate it.
+    given:
+      external: true
+      label: View the billing history
+    then:
+    - copy: externalSuffix
+      platforms:
+      - web
+      - lit
+    - name: View the billing history (opens in new tab)
+      platforms:
+      - web
+  - name: external-link-opens-a-new-tab
+    description: external sets target="_blank" and rel="noopener noreferrer" on web
+      and Lit.
+    given:
+      external: true
+    then:
+    - attribute: target
+      is: _blank
+      platforms:
+      - web
+      - lit
+    - attribute: rel
+      is: noopener noreferrer
+      platforms:
+      - web
+      - lit
+  - name: download-asks-the-browser-to-save
+    description: download asks the browser to save rather than open (web and Lit only);
+      the attribute is present and valueless.
+    given:
+      download: true
+    then:
+    - attribute: download
+      is: ''
+      platforms:
+      - web
+      - lit
+  examples:
+  - name: inline-in-a-paragraph
+    description: The default link inside body text, underlined and taking the paragraph's
+      typography.
+    given:
+      href: /billing/history
+      label: View the billing history
+  - name: external-destination
+    description: A link that leaves the product, so the name says so before it is
+      activated.
+    given:
+      href: https://status.example.com
+      label: Status page
+      external: true
+  - name: inside-muted-text
+    description: A link in muted or on-action text, where the color is inherited and
+      the underline alone marks it.
+    given:
+      href: /help/billing
+      label: the billing guide
+      tone: inherit
+  - name: downloadable-file
+    description: A link to a file the browser should save rather than open.
+    given:
+      href: /invoices/2026-09.pdf
+      label: Download the September invoice
+      download: true
+    platforms:
+    - web
+    - lit
 ```
+
+## Events
+
+- `onPress`: emit `action`
+  - cancelable: yes
+  - fires on: user
+
+## Style bindings
+
+- `colorHover`: token `color.link.hover`; state `hover`; locked
+- `externalIconGap`: token `space.1`; part `externalIcon`
+
+## Constants and examples
+
+- example `inline-in-a-paragraph`, story `InlineInAParagraph`: given `href: "/billing/history"`, `label: "View the billing history"`; The default link inside body text, underlined and taking the paragraph's typography.
+- example `external-destination`, story `ExternalDestination`: given `href: "https://status.example.com"`, `label: "Status page"`, `external: true`; A link that leaves the product, so the name says so before it is activated.
+- example `inside-muted-text`, story `InsideMutedText`: given `href: "/help/billing"`, `label: "the billing guide"`, `tone: "inherit"`; A link in muted or on-action text, where the color is inherited and the underline alone marks it.
 
 ## Overrides (per-instance styling contract)
 
@@ -291,11 +395,18 @@ Render `Text` with `accessibilityRole="link"` and `accessibilityLabel` (label pl
 
 Button, Text, Breadcrumb.
 
-## Behavior scenarios (5)
+## Behavior scenarios (6)
 
 One test per scenario, in this order.
 
 ```yaml
+- name: click-fires-on-press
+  description: Activation with pointer, Enter, or assistive technology navigates to
+    href; onPress fires first.
+  when:
+    click: anchor
+  then:
+  - event: onPress
 - name: renders
   then:
   - renders: true

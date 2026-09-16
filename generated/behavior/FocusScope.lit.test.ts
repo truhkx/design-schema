@@ -58,6 +58,23 @@ beforeEach(() => {
 });
 
 describe('ds-focus-scope', () => {
+  test('auto-focus-container-focuses-the-wrapper', async () => {
+    const s = await setup({"autoFocus": "container"});
+    expect(activeChain()).toContain(s.scope());
+  });
+  test('auto-focus-none-moves-focus-nowhere', async () => {
+    const s = await setup({"autoFocus": "none"});
+    expect(activeChain()).not.toContain(s.el);
+  });
+  test('the-wrapper-is-not-focusable', async () => {
+    const s = await setup({"autoFocus": "none"});
+    s.el.focus();
+    expect(activeChain()).not.toContain(s.el);
+  });
+  test('the-scope-adds-no-role', async () => {
+    const s = await setup({});
+    expect(s.scope()).not.toHaveAttribute("role");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

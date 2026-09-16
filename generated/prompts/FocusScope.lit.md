@@ -108,6 +108,18 @@ component:
         lit: escape-attempt
         rn: onEscapeAttempt
         swiftui: onEscapeAttempt
+      payload:
+      - name: direction
+        type: enum
+        values:
+        - forward
+        - backward
+        description: forward for Tab from the last element, backward for Shift+Tab
+          from the first.
+      fires:
+      - user
+      timing:
+        phase: before-change
   keyboard:
   - keys:
     - Tab
@@ -150,8 +162,10 @@ component:
     lit:
       tag: ds-focus-scope
       reflect:
-      - trapped
-      - active
+      - prop: trapped
+        attribute: no-trapped
+      - prop: active
+        attribute: no-active
       notes: 'The host is the wrapper (display: contents is NOT used — it breaks focus
         delegation; the host is display: block). Same walker; slotted light-DOM children
         are included via assignedElements({ flatten: true }). `escape-attempt` is
@@ -183,7 +197,85 @@ component:
         the scope through `.onExitCommand`; `onEscapeAttempt` fires when the scope
         is asked to close and the owner decides. Wrapping is done by tracking the
         first/last focusable identifiers the children register through a preference.'
+  behavior:
+  - name: auto-focus-container-focuses-the-wrapper
+    description: autoFocus container makes the wrapper focusable with tabindex -1
+      and puts focus on it, for reading-first dialogs.
+    given:
+      autoFocus: container
+    then:
+    - focused: scope
+    platforms:
+    - web
+    - lit
+  - name: auto-focus-none-moves-focus-nowhere
+    description: autoFocus none leaves focus where it was; the scope never takes it
+      on its own.
+    given:
+      autoFocus: none
+    then:
+    - focused: none
+    platforms:
+    - web
+    - lit
+  - name: the-wrapper-is-not-focusable
+    description: The scope renders no element of its own beyond a wrapper that is
+      not focusable, unless autoFocus is container.
+    given:
+      autoFocus: none
+    then:
+    - focusable: false
+    platforms:
+    - web
+    - lit
+  - name: the-scope-adds-no-role
+    description: The scope adds no role and no name; assistive technology never perceives
+      it.
+    then:
+    - attribute: role
+      is: null
+  examples:
+  - name: modal-takeover
+    description: A new modal surface the system does not have yet, trapped with an
+      Escape handler of its own.
+    given:
+      children: A full-screen onboarding overlay with its own close Button
+      trapped: true
+      autoFocus: first
+  - name: non-modal-drawer
+    description: A panel that moves focus in and restores it on close while leaving
+      the page usable.
+    given:
+      children: A slide-in filter drawer
+      trapped: false
+      autoFocus: first
+  - name: reading-first
+    description: A dialog whose text should be read from the top, so focus lands on
+      the container rather than a control.
+    given:
+      children: A long terms-of-service body with Accept and Decline Buttons
+      autoFocus: container
+  - name: paused-outer-scope
+    description: The outer scope of a nested pair, inactive while a Menu inside owns
+      Tab.
+    given:
+      children: A dialog body with a Menu open inside it
+      active: false
 ```
+
+## Events
+
+- `onEscapeAttempt`: emit `escape-attempt`
+  - payload, the keys of `CustomEvent.detail`: `direction: 'forward' | 'backward'`
+  - fires on: user
+  - timing: before-change
+
+## Constants and examples
+
+- example `modal-takeover`, story `ModalTakeover`: given `children: "A full-screen onboarding overlay with its own close Button"`, `trapped: true`, `autoFocus: "first"`; A new modal surface the system does not have yet, trapped with an Escape handler of its own.
+- example `non-modal-drawer`, story `NonModalDrawer`: given `children: "A slide-in filter drawer"`, `trapped: false`, `autoFocus: "first"`; A panel that moves focus in and restores it on close while leaving the page usable.
+- example `reading-first`, story `ReadingFirst`: given `children: "A long terms-of-service body with Accept and Decline Buttons"`, `autoFocus: "container"`; A dialog whose text should be read from the top, so focus lands on the container rather than a control.
+- example `paused-outer-scope`, story `PausedOuterScope`: given `children: "A dialog body with a Menu open inside it"`, `active: false`; The outer scope of a nested pair, inactive while a Menu inside owns Tab.
 
 ## Overrides (per-instance styling contract)
 
@@ -196,11 +288,47 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: none
 Locked (accessibility-bearing, never overridable): none
 
-## Behavior scenarios (5)
+## Behavior scenarios (9)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: auto-focus-container-focuses-the-wrapper
+  description: autoFocus container makes the wrapper focusable with tabindex -1 and
+    puts focus on it, for reading-first dialogs.
+  given:
+    autoFocus: container
+  then:
+  - focused: scope
+  platforms:
+  - web
+  - lit
+- name: auto-focus-none-moves-focus-nowhere
+  description: autoFocus none leaves focus where it was; the scope never takes it
+    on its own.
+  given:
+    autoFocus: none
+  then:
+  - focused: none
+  platforms:
+  - web
+  - lit
+- name: the-wrapper-is-not-focusable
+  description: The scope renders no element of its own beyond a wrapper that is not
+    focusable, unless autoFocus is container.
+  given:
+    autoFocus: none
+  then:
+  - focusable: false
+  platforms:
+  - web
+  - lit
+- name: the-scope-adds-no-role
+  description: The scope adds no role and no name; assistive technology never perceives
+    it.
+  then:
+  - attribute: role
+    is: null
 - name: renders
   then:
   - renders: true
@@ -236,8 +364,10 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
 ```yaml
 tag: ds-focus-scope
 reflect:
-- trapped
-- active
+- prop: trapped
+  attribute: no-trapped
+- prop: active
+  attribute: no-active
 notes: "The host is the wrapper (display: contents is NOT used \u2014 it breaks focus\
   \ delegation; the host is display: block). Same walker; slotted light-DOM children\
   \ are included via assignedElements({ flatten: true }). `escape-attempt` is a composed\

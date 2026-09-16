@@ -166,7 +166,83 @@ component:
         users can jump between regions as they do on web. `role: main` adds `.accessibilityAddTraits(.isSummaryElement)`
         only when the doc asks. The element name (`nav`, `aside`) has no equivalent;
         `role` drives everything.'
+  behavior:
+  - name: the-role-prop-chooses-the-landmark
+    description: navigation renders the navigation landmark.
+    given:
+      role: navigation
+    then:
+    - role: navigation
+    platforms:
+    - web
+  - name: main-is-the-primary-content-landmark
+    description: Exactly one main per page; the element carries the role.
+    given:
+      role: main
+    then:
+    - role: main
+    platforms:
+    - web
+  - name: a-region-is-named-by-its-label
+    description: A region is a landmark only when it is named; the label is rendered
+      as aria-label.
+    given:
+      role: region
+      label: Related articles
+    then:
+    - role: region
+    - attribute: aria-label
+      is: Related articles
+    platforms:
+    - web
+  - name: an-overridden-element-still-carries-its-role
+    description: The explicit role attribute is emitted whenever `as` overrides the
+      default element.
+    given:
+      role: banner
+      as: div
+    then:
+    - attribute: role
+      is: banner
+    - role: banner
+    platforms:
+    - web
+  examples:
+  - name: page-main
+    description: The single main landmark every page needs.
+    given:
+      role: main
+      children: The page content.
+  - name: footer-navigation
+    description: A second navigation, named so it is distinguishable from the primary
+      one.
+    given:
+      role: navigation
+      label: Footer
+      children: Footer links.
+  - name: related-articles-region
+    description: A labelled section that deserves a jump point of its own.
+    given:
+      role: region
+      label: Related articles
+      children: A list of related articles.
+  - name: banner-that-is-not-the-page-header
+    description: A banner that is not the page header, where the native header element
+      would be wrong.
+    given:
+      role: banner
+      as: div
+      children: The product banner.
+    platforms:
+    - web
 ```
+
+## Constants and examples
+
+- example `page-main`, story `PageMain`: given `role: "main"`, `children: "The page content."`; The single main landmark every page needs.
+- example `footer-navigation`, story `FooterNavigation`: given `role: "navigation"`, `label: "Footer"`, `children: "Footer links."`; A second navigation, named so it is distinguishable from the primary one.
+- example `related-articles-region`, story `RelatedArticlesRegion`: given `role: "region"`, `label: "Related articles"`, `children: "A list of related articles."`; A labelled section that deserves a jump point of its own.
+- example `banner-that-is-not-the-page-header`, story `BannerThatIsNotThePageHeader`: given `role: "banner"`, `as: "div"`, `children: "The product banner."`; A banner that is not the page header, where the native header element would be wrong.
 
 ## Overrides (per-instance styling contract)
 
@@ -179,11 +255,51 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: none
 Locked (accessibility-bearing, never overridable): none
 
-## Behavior scenarios (18)
+## Behavior scenarios (22)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: the-role-prop-chooses-the-landmark
+  description: navigation renders the navigation landmark.
+  given:
+    role: navigation
+  then:
+  - role: navigation
+  platforms:
+  - web
+- name: main-is-the-primary-content-landmark
+  description: Exactly one main per page; the element carries the role.
+  given:
+    role: main
+  then:
+  - role: main
+  platforms:
+  - web
+- name: a-region-is-named-by-its-label
+  description: A region is a landmark only when it is named; the label is rendered
+    as aria-label.
+  given:
+    role: region
+    label: Related articles
+  then:
+  - role: region
+  - attribute: aria-label
+    is: Related articles
+  platforms:
+  - web
+- name: an-overridden-element-still-carries-its-role
+  description: The explicit role attribute is emitted whenever `as` overrides the
+    default element.
+  given:
+    role: banner
+    as: div
+  then:
+  - attribute: role
+    is: banner
+  - role: banner
+  platforms:
+  - web
 - name: renders
   then:
   - renders: true

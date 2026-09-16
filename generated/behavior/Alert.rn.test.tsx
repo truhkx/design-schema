@@ -6,6 +6,10 @@ import type { AlertProps } from '../../packages/rn/src/Alert';
 import meta from '../../packages/rn/src/Alert.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<AlertProps> = {}) {
   const events = {
     onDismiss: jest.fn(),
@@ -23,12 +27,26 @@ function setup(given: Partial<AlertProps> = {}) {
     props,
     root: () => screen.queryByTestId('Alert') ?? screen.UNSAFE_root,
     container: () => screen.queryByRole('status') ?? s.root(),
+    dismissButton: () => screen.queryByTestId('Alert.dismissButton') ?? s.root(),
     rerender: (next: Partial<AlertProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Alert', () => {
+  test('dismiss-fires-on-dismiss', () => {
+    const s = setup({"dismissible": true});
+    fireEvent.press(s.dismissButton());
+    expect(s.events.onDismiss).toHaveBeenCalled();
+  });
+  test('live-alert-renders-the-alert-role', () => {
+    const s = setup({"live": "alert"});
+    expect(screen.getByRole('alert')).toBeOnTheScreen();
+  });
+  test('the-heading-is-rendered', () => {
+    const s = setup({"heading": "Payment failed"});
+    expect(screen.getByText(new RegExp("Payment\\ failed"))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

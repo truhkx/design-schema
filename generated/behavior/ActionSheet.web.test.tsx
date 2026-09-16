@@ -6,6 +6,21 @@ import { ActionSheet } from '../../packages/react/src/ActionSheet';
 import type { ActionSheetProps } from '../../packages/react/src/ActionSheet';
 import meta from '../../packages/react/src/ActionSheet.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<ActionSheetProps> = {}) {
   const events = {
     onAction: vi.fn(),
@@ -21,12 +36,43 @@ function setup(given: Partial<ActionSheetProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="ActionSheet"]') ?? screen.queryByRole('menu') ?? utils.container.firstElementChild) as HTMLElement,
     scrim: () => (screen.queryByRole('menu') ?? s.root()) as HTMLElement,
+    item: () => (document.querySelector('[data-part="item"]') ?? s.root()),
+    cancelButton: () => (document.querySelector('[data-part="cancelButton"]') ?? s.root()),
     rerender: (next: Partial<ActionSheetProps>) => utils.rerender(<ActionSheet {...props} {...next} />),
   };
   return s;
 }
 
 describe('ActionSheet', () => {
+  test('choosing-an-action-fires-on-action', async () => {
+    const s = setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}, {"id": "delete", "label": "Delete photo", "tone": "danger"}]});
+    await s.user.click(s.item());
+    expect(s.events.onAction).toHaveBeenCalled();
+  });
+  test('the-cancel-row-fires-on-close', async () => {
+    const s = setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
+    await s.user.click(s.cancelButton());
+    expect(s.events.onClose).toHaveBeenCalled();
+    expect(s.events.onAction).not.toHaveBeenCalled();
+  });
+  test('non-dismissible-still-reports-escape', async () => {
+    const s = setup({"open": true, "heading": "Photo.jpg", "dismissible": false, "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
+    act(() => focusInto(s.scrim()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onClose).toHaveBeenCalled();
+  });
+  test('the-cancel-row-is-named-from-copy', async () => {
+    const s = setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
+    expect(screen.getByText(new RegExp("Cancel"))).toBeInTheDocument();
+  });
+  test('the-list-is-a-menu', async () => {
+    const s = setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+  });
+  test('closed-sheet-renders-nothing', async () => {
+    const s = setup({"open": false, "actions": [{"id": "share", "label": "Share"}]});
+    expect(s.root()).toBeNull();
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();
@@ -34,5 +80,11 @@ describe('ActionSheet', () => {
   test('has-accessible-name', async () => {
     const s = setup({"open": true});
     expect(screen.getByRole('menu')).toHaveAccessibleName();
+  });
+  test('escape-fires-on-close', async () => {
+    const s = setup({"open": true});
+    act(() => focusInto(s.scrim()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onClose).toHaveBeenCalled();
   });
 });

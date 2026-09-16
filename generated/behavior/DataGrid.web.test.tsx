@@ -6,6 +6,21 @@ import { DataGrid } from '../../packages/react/src/DataGrid';
 import type { DataGridProps } from '../../packages/react/src/DataGrid';
 import meta from '../../packages/react/src/DataGrid.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<DataGridProps> = {}) {
   const events = {
     onSortChange: vi.fn(),
@@ -25,12 +40,47 @@ function setup(given: Partial<DataGridProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="DataGrid"]') ?? screen.queryByRole('grid') ?? utils.container.firstElementChild) as HTMLElement,
     container: () => (screen.queryByRole('grid') ?? s.root()) as HTMLElement,
+    sortButton: () => (document.querySelector('[data-part="sortButton"]') ?? s.root()),
+    row: () => (document.querySelector('[data-part="row"]') ?? s.root()),
+    selectCell: () => (document.querySelector('[data-part="selectCell"]') ?? s.root()),
     rerender: (next: Partial<DataGridProps>) => utils.rerender(<DataGrid {...props} {...next} />),
   };
   return s;
 }
 
 describe('DataGrid', () => {
+  test('activating-a-sortable-header-reports-the-sort', async () => {
+    const s = setup({"columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}, {"key": "price", "header": "Price", "align": "end", "sortable": true}], "data": [{"id": "a", "sku": "A-1", "price": 10}, {"id": "b", "sku": "B-2", "price": 20}]});
+    await s.user.click(s.sortButton());
+    expect(s.events.onSortChange).toHaveBeenCalled();
+  });
+  test('enter-on-a-sortable-header-sorts', async () => {
+    const s = setup({"columns": [{"key": "sku", "header": "SKU", "isRowHeader": true, "sortable": true}, {"key": "price", "header": "Price", "align": "end"}], "data": [{"id": "a", "sku": "A-1", "price": 10}, {"id": "b", "sku": "B-2", "price": 20}]});
+    act(() => focusInto(s.container()));
+    await s.user.keyboard('{Enter}');
+    expect(s.events.onSortChange).toHaveBeenCalled();
+  });
+  test('selecting-a-row-reports-the-selection', async () => {
+    const s = setup({"selectable": "row", "columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": [{"id": "a", "sku": "A-1"}, {"id": "b", "sku": "B-2"}]});
+    await s.user.click(s.selectCell());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('a-selected-row-is-marked-selected', async () => {
+    const s = setup({"selectable": "row", "selected": ["a"], "columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": [{"id": "a", "sku": "A-1"}, {"id": "b", "sku": "B-2"}]});
+    expect(s.row()).toHaveAttribute("aria-selected", "true");
+  });
+  test('the-empty-message-shows-when-there-are-no-rows', async () => {
+    const s = setup({"columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": []});
+    expect(screen.getByText(new RegExp("Nothing\\ to\\ show\\."))).toBeInTheDocument();
+  });
+  test('a-custom-empty-message-replaces-the-default', async () => {
+    const s = setup({"emptyMessage": "No prices loaded.", "columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": []});
+    expect(screen.getByText(new RegExp("No\\ prices\\ loaded\\."))).toBeInTheDocument();
+  });
+  test('loading-marks-the-grid-busy', async () => {
+    const s = setup({"loading": true, "columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": [{"id": "a", "sku": "A-1"}]});
+    expect(s.container()).toHaveAttribute("aria-busy", "true");
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

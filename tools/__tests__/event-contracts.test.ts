@@ -1,5 +1,6 @@
 /** schema/events.ts and eventDef's contract fields (job 610): payload, reasons, fires, cancelable and timing, the
- *  checks componentDef runs over them, the event registry, and registry drift reported as a warning. */
+ *  checks componentDef runs over them, the event registry, and registry drift — an error since the phase 3 doc
+ *  migration (job 638) gave the one drifting doc a spelling the registry accepts. */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
@@ -286,31 +287,33 @@ describe('EVENT_CONVENTIONS', () => {
 });
 
 describe('conventionDrift', () => {
-  test('flags a spelling the registry does not accept, with its path and message', () => {
+  const DRIFT_MESSAGE = "'onTap' is not a registry spelling; the registry accepts 'onPress'";
+
+  test('a spelling the registry does not accept is rejected, with its path and message', () => {
     const c = component();
     c.events.onPress.platforms.rn = 'onTap';
-    const drift = { path: 'events.onPress.platforms.rn', message: "'onTap' is not a registry spelling; the registry accepts 'onPress'" };
-    expect(conventionDrift(c)).toEqual([drift]);
-    expect(componentWarnings(c as ComponentDef)).toContainEqual(drift);
+    // The rule reads the same as it did as a warning; the phase 3 migration moved it into componentDef.check.
+    expect(conventionDrift(c)).toEqual([{ path: 'events.onPress.platforms.rn', message: DRIFT_MESSAGE }]);
+    rejects(c, ['events', 'onPress', 'platforms', 'rn'], DRIFT_MESSAGE);
+    expect(componentWarnings(componentDef.parse(component()) as ComponentDef), 'drift is no longer a warning').toEqual([]);
   });
 
-  test('accepted alternatives and names outside the registry are not flagged', () => {
+  test('accepted alternatives and names outside the registry are accepted', () => {
     const c = component();
+    // The three React Native spellings of onChange are registry facts, not drift.
     c.events.onChange = { description: 'x', platforms: { web: 'onChange', rn: 'onValueChange' } };
     c.events.onWhatever = { description: 'x', platforms: { web: 'onSomething', rn: 'onElse' } };
     expect(conventionDrift(c)).toEqual([]);
+    accepts(c);
   });
 
-  test('over generated/components.json it reports the drift phase 3 migrates', () => {
-    const found = generated.flatMap((c) => conventionDrift(c).map((w) => ({ component: c.name, ...w })));
-    expect(found).toEqual([
-      { component: 'Link', path: 'events.onPress.platforms.lit', message: "'click (native, retargeted — no CustomEvent)' is not a registry spelling; the registry accepts 'press', 'click'" },
-    ]);
+  test('over generated/components.json no component drifts', () => {
+    expect(generated.flatMap((c) => conventionDrift(c).map((w) => ({ component: c.name, ...w })))).toEqual([]);
   });
 });
 
 describe('parse.main', () => {
-  test('a doc with drift parses, and the drift is reported as a warning', () => {
+  test('a doc with drift fails the run, and no warning records it', () => {
     const root = tmp();
     const templates = join(root, 'templates');
     write(join(templates, 'web.md'), '{{NAME}}|{{PLATFORM}}');
@@ -323,19 +326,45 @@ describe('parse.main', () => {
       ROOT: root, DOCS: join(root, 'components'), THEME_DOCS: join(root, 'themes'), OUT: join(root, 'generated'), TEMPLATES: templates,
       EXT_DOCS: join(root, 'extensions'), PATTERN_DOCS: join(root, 'patterns'),
     });
-    const warning = { file: 'components/widget.md', message: "events.onPress.platforms.rn: 'onTap' is not a registry spelling; the registry accepts 'onPress'" };
+    const message = "events.onPress.platforms.rn: 'onTap' is not a registry spelling; the registry accepts 'onPress'";
 
-    expect(parse.main(), 'drift never fails the run').toBe(0);
-    expect(JSON.parse(readFileSync(join(root, 'generated', 'parse-warnings.json'), 'utf8'))).toEqual([warning]);
-    expect(std.err()).toBe(`⚠ ${warning.file}: ${warning.message}\n`);
-    // main drains the channel into what it reports (job 609), so takeWarnings sees the warning only through warn.
+    expect(parse.main(), 'drift now fails the run').not.toBe(0);
+    expect(std.err()).toContain(message);
+    expect(JSON.parse(readFileSync(join(root, 'generated', 'parse-warnings.json'), 'utf8'))).not.toContainEqual({ file: 'components/widget.md', message });
     expect(parse.takeWarnings()).toEqual([]);
   });
+});
 
-  test('the drift goes through warn, which takeWarnings returns', () => {
-    const c = component();
-    c.events.onPress.platforms.rn = 'onTap';
-    for (const w of parse.hooks.componentWarnings(c as ComponentDef)) parse.warn('components/widget.md', `${w.path}: ${w.message}`);
-    expect(parse.takeWarnings()).toEqual([{ file: 'components/widget.md', message: "events.onPress.platforms.rn: 'onTap' is not a registry spelling; the registry accepts 'onPress'" }]);
+describe('the migrated corpus', () => {
+  const events = (c: Dict): [string, string, Dict][] =>
+    Object.entries((c.events ?? {}) as Record<string, Dict>).map(([name, ev]) => [c.name as string, name, ev]);
+  const all = generated.flatMap(events);
+
+  test('every declared reasons record matches its reason payload field values', () => {
+    const declared = all.filter(([, , ev]) => ev.reasons !== undefined && ev.payload !== undefined);
+    expect(declared.length, 'the corpus declares both fields somewhere').toBeGreaterThan(0);
+    for (const [comp, name, ev] of declared) {
+      const field = (ev.payload as Dict[]).find((f) => f.name === 'reason');
+      expect(field?.values, `${comp}.${name}`).toEqual(Object.keys(ev.reasons as Dict));
+    }
+  });
+
+  test("every timing.before names a sibling event that is not the event itself", () => {
+    const ordered = all.filter(([, , ev]) => ((ev.timing as Dict | undefined)?.before as string[] | undefined)?.length);
+    expect(ordered.length, 'the corpus orders some events').toBeGreaterThan(0);
+    for (const [comp, name, ev] of ordered) {
+      const siblings = Object.keys(((generated.find((c) => c.name === comp) as Dict).events ?? {}) as Dict);
+      for (const other of (ev.timing as Dict).before as string[]) {
+        expect(siblings, `${comp}.${name}`).toContain(other);
+        expect(other, `${comp}.${name}`).not.toBe(name);
+      }
+    }
+  });
+
+  test('a controlled reason always comes with a controlled source', () => {
+    for (const [comp, name, ev] of all) {
+      if (ev.reasons === undefined || !Object.hasOwn(ev.reasons as Dict, 'controlled') || ev.fires === undefined) continue;
+      expect(ev.fires as string[], `${comp}.${name}`).toContain('controlled');
+    }
   });
 });

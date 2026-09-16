@@ -77,6 +77,7 @@ component:
         → h3).
     size:
       type: enum
+      enumRef: size
       values:
       - 4xl
       - 3xl
@@ -163,7 +164,52 @@ component:
         from `level` — VoiceOver's rotor lists headings by level, so the outline is
         real on iOS. Size from the `size` binding through `@ScaledMetric`; `level`
         never changes the look. `element` is ignored.
+  behavior:
+  - name: level-puts-the-heading-in-the-outline
+    description: On web the semantic element is always a real <h1>-<h6> chosen from
+      level, so the heading is in the accessibility tree screen-reader users navigate
+      by.
+    given:
+      level: '3'
+    then:
+    - role: heading
+      platforms:
+      - web
+  - name: size-does-not-change-the-outline
+    description: Decoupling level from size is the whole point of this component -
+      a heading at the smallest size is still a heading.
+    given:
+      level: '2'
+      size: md
+    then:
+    - role: heading
+      platforms:
+      - web
+  examples:
+  - name: page-title
+    description: The one level-1 heading on a page, at its default size.
+    given:
+      level: '1'
+      children: Account settings
+  - name: section-heading
+    description: A major section of the page, one level below the title.
+    given:
+      level: '2'
+      children: Billing
+  - name: subsection-sized-up
+    description: A level-4 heading given a larger size so it still reads as a section
+      start in a wide layout.
+    given:
+      level: '4'
+      size: xl
+      children: Payment methods
 ```
+
+## Constants and examples
+
+- example `page-title`, story `PageTitle`: given `level: "1"`, `children: "Account settings"`; The one level-1 heading on a page, at its default size.
+- example `section-heading`, story `SectionHeading`: given `level: "2"`, `children: "Billing"`; A major section of the page, one level below the title.
+- example `subsection-sized-up`, story `SubsectionSizedUp`: given `level: "4"`, `size: "xl"`, `children: "Payment methods"`; A level-4 heading given a larger size so it still reads as a section start in a wide layout.
 
 ## Overrides (per-instance styling contract)
 

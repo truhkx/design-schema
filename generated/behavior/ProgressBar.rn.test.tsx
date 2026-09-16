@@ -6,6 +6,10 @@ import type { ProgressBarProps } from '../../packages/rn/src/ProgressBar';
 import meta from '../../packages/rn/src/ProgressBar.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<ProgressBarProps> = {}) {
   const events = {};
   const props: ProgressBarProps = { ...(meta.args as ProgressBarProps), ...given };
@@ -27,6 +31,14 @@ function setup(given: Partial<ProgressBarProps> = {}) {
 }
 
 describe('ProgressBar', () => {
+  test('a-hidden-label-is-still-the-accessible-name', () => {
+    const s = setup({"hideLabel": true});
+    expect(screen.getByRole('progressbar', { name: s.props.label })).toBeOnTheScreen();
+  });
+  test('the-label-names-the-task', () => {
+    const s = setup({"label": "Importing contacts"});
+    expect(screen.getByText(new RegExp("Importing\\ contacts"))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

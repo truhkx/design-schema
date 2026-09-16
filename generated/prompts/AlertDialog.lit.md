@@ -68,10 +68,16 @@ component:
   - confirmButton
   composition:
     focusScope: FocusScope
-    icon: Icon
+    icon:
+      component: Icon
+      forwards:
+        iconSize: size
     heading: Heading
     description: Text
-    footer: Stack
+    footer:
+      component: Stack
+      forwards:
+        footerGap: gap
     cancelButton: Button
     confirmButton: Button
   props:
@@ -93,6 +99,7 @@ component:
       a11y: aria-describedby; announced together with the title when the dialog opens.
     tone:
       type: enum
+      enumRef: tone
       values:
       - danger
       - warning
@@ -122,6 +129,10 @@ component:
         lit: confirm
         rn: onConfirm
         swiftui: onConfirm
+      fires:
+      - user
+      timing:
+        phase: request
     onCancel:
       description: The user declined, by the cancel button or Escape. Fired with reason
         `cancel` or `escape`. A scrim click does nothing.
@@ -130,6 +141,19 @@ component:
         lit: cancel
         rn: onCancel
         swiftui: onCancel
+      payload:
+      - name: reason
+        type: enum
+        values:
+        - cancel
+        - escape
+      reasons:
+        cancel: the cancel button was activated
+        escape: Escape pressed while open
+      fires:
+      - user
+      timing:
+        phase: request
   keyboard:
   - keys:
     - Escape
@@ -156,9 +180,11 @@ component:
   styles:
     scrim:
       token: color.overlay.scrim
+      part: scrim
       locked: false
     surface:
       token: color.overlay.surface
+      part: surface
       locked: true
     border:
       token: color.border
@@ -185,18 +211,22 @@ component:
       locked: false
     iconGap:
       token: layout.gap.normal
+      part: icon
       description: Between the icon and the text block.
       locked: false
     footerGap:
       token: layout.gap.tight
+      part: footer
       description: Forwarded to the footer Stack as `overrides.gap`.
       locked: false
     iconSize:
       token: font.size.lg
+      part: icon
       description: Forwarded to the tone Icon as `overrides.size`.
       locked: false
     icon:
       token: color.status.{tone}.icon
+      part: icon
       locked: true
     width:
       token: layout.maxWidth.prose
@@ -219,6 +249,14 @@ component:
       locked: true
   copy:
     cancelLabel: Cancel
+  overlay:
+    layer: modal
+    open: open
+    closeEvent: onCancel
+    dismiss:
+    - escape
+    - close-button
+    modal: true
   a11y:
     role: alertdialog
     requires:
@@ -243,7 +281,7 @@ component:
     - foreground: color.status.{tone}.icon
       background: color.overlay.surface
       level: AA
-      large: true
+      nonText: true
   platforms:
     web:
       element: dialog
@@ -297,7 +335,177 @@ component:
         open, initial focus on the cancel `Button` (or confirm when `destructive`
         is false, per the doc), Escape = cancel. Not `.alert()`: the system alert
         cannot take the theme or a body view. `confirmLabel`/`cancelLabel` from copy.'
+  behavior:
+  - name: confirm-button-fires-on-confirm
+    description: The confirming action reports; the consumer performs it and closes.
+    given:
+      open: true
+    when:
+      click: confirmButton
+    then:
+    - event: onConfirm
+  - name: cancel-button-fires-on-cancel
+    given:
+      open: true
+    when:
+      click: cancelButton
+    then:
+    - event: onCancel
+  - name: focus-starts-on-the-cancel-button
+    description: The least-destructive action is focused first, so Enter pressed reflexively
+      cancels rather than destroys (WCAG 3.3.4).
+    given:
+      open: true
+    then:
+    - focused: cancelButton
+    platforms:
+    - web
+    - lit
+  - name: a-scrim-click-does-nothing
+    description: An alert dialog never dismisses on a scrim click, so a stray tap
+      cannot answer a decision.
+    given:
+      open: true
+    when:
+      click: scrim
+    then:
+    - event: onCancel
+      fired: false
+    - event: onConfirm
+      fired: false
+  - name: confirm-disabled-does-not-confirm
+    description: confirmDisabled blocks the confirming action while a precondition
+      is unmet.
+    given:
+      open: true
+      confirmDisabled: true
+    when:
+      click: confirmButton
+    then:
+    - event: onConfirm
+      fired: false
+  - name: cancel-works-while-confirm-is-disabled
+    description: '"Cancel always works": the safe way out is never blocked by confirmDisabled.'
+    given:
+      open: true
+      confirmDisabled: true
+    when:
+      click: cancelButton
+    then:
+    - event: onCancel
+  - name: escape-cancels-while-confirm-is-disabled
+    description: Escape is the keyboard's way out and is not blocked by confirmDisabled
+      either (keyboard rule 1).
+    given:
+      open: true
+      confirmDisabled: true
+    when:
+      key: Escape
+    then:
+    - event: onCancel
+    platforms:
+    - web
+    - lit
+  - name: the-cancel-button-is-named-from-copy
+    description: With no cancelLabel the declining action falls back to copy.cancelLabel.
+    given:
+      open: true
+    then:
+    - copy: cancelLabel
+  examples:
+  - name: delete-files
+    description: The destructive confirm this component exists for, counting what
+      will go.
+    given:
+      open: true
+      tone: danger
+      heading: Delete 3 files?
+      description: They will be removed from all shared folders. This cannot be undone.
+      confirmLabel: Delete files
+  - name: leave-without-saving
+    description: A consequential but recoverable decision, where the declining action
+      is the one to name.
+    given:
+      open: true
+      tone: warning
+      heading: Leave without saving?
+      description: Your changes to this draft will be lost.
+      confirmLabel: Leave
+      cancelLabel: Keep editing
+  - name: typed-confirmation
+    description: A decision gated on a precondition, with Confirm inert until it is
+      met.
+    given:
+      open: true
+      tone: danger
+      heading: Cancel your subscription?
+      description: Your workspace stays read-only after the current billing period
+        ends.
+      confirmLabel: Cancel subscription
+      confirmDisabled: true
+  - name: publish-to-the-team
+    description: A choice with no downside that still needs an answer.
+    given:
+      open: true
+      tone: info
+      heading: Publish to the team?
+      description: Everyone in the workspace will be able to see this page.
+      confirmLabel: Publish
 ```
+
+## Events
+
+- `onConfirm`: emit `confirm`
+  - fires on: user
+  - timing: request
+- `onCancel`: emit `cancel`
+  - payload, the keys of `CustomEvent.detail`: `reason: 'cancel' | 'escape'`
+  - reasons: `cancel` (the cancel button was activated); `escape` (Escape pressed while open)
+  - fires on: user
+  - timing: request
+
+## Parts and slots
+
+- `scrim`: element
+- `surface`: element
+- `focusScope`: component `FocusScope`
+- `icon`: component `Icon`; forwards `iconSize` → `overrides.size`
+- `heading`: component `Heading`
+- `description`: component `Text`
+- `footer`: component `Stack`; forwards `footerGap` → `overrides.gap`
+- `cancelButton`: component `Button`
+- `confirmButton`: component `Button`
+
+## Style bindings
+
+- `scrim`: token `color.overlay.scrim`; part `scrim`
+- `surface`: token `color.overlay.surface`; part `surface`; locked
+- `iconGap`: token `layout.gap.normal`; part `icon`
+- `footerGap`: token `layout.gap.tight`; part `footer`
+- `iconSize`: token `font.size.lg`; part `icon`
+- `icon`: token `color.status.{tone}.icon`; part `icon`; locked
+
+## Form and overlay
+
+```yaml
+overlay:
+  layer: modal
+  open: open
+  closeEvent: onCancel
+  dismiss:
+  - escape
+  - close-button
+  modal: true
+```
+
+`overlay.closeEvent` emits `cancel`.
+
+## Constants and examples
+
+- example `delete-files`, story `DeleteFiles`: given `open: true`, `tone: "danger"`, `heading: "Delete 3 files?"`, `description: "They will be removed from all shared folders. This cannot be undone."`, `confirmLabel: "Delete files"`; The destructive confirm this component exists for, counting what will go.
+- example `leave-without-saving`, story `LeaveWithoutSaving`: given `open: true`, `tone: "warning"`, `heading: "Leave without saving?"`, `description: "Your changes to this draft will be lost."`, `confirmLabel: "Leave"`, `cancelLabel: "Keep editing"`; A consequential but recoverable decision, where the declining action is the one to name.
+- example `typed-confirmation`, story `TypedConfirmation`: given `open: true`, `tone: "danger"`, `heading: "Cancel your subscription?"`, `description: "Your workspace stays read-only after the current billing period ends."`, `confirmLabel: "Cancel subscription"`, `confirmDisabled: true`; A decision gated on a precondition, with Confirm inert until it is met.
+- example `publish-to-the-team`, story `PublishToTheTeam`: given `open: true`, `tone: "info"`, `heading: "Publish to the team?"`, `description: "Everyone in the workspace will be able to see this page."`, `confirmLabel: "Publish"`; A choice with no downside that still needs an answer.
 
 ## Overrides (per-instance styling contract)
 
@@ -310,11 +518,87 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `scrim`, `border`, `borderWidth`, `shadow`, `radius`, `inset`, `partGap`, `textGap`, `iconGap`, `footerGap`, `iconSize`, `width`, `layer`, `enter`, `exit`
 Locked (accessibility-bearing, never overridable): `surface`, `icon`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (5)
+## Behavior scenarios (14)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: confirm-button-fires-on-confirm
+  description: The confirming action reports; the consumer performs it and closes.
+  given:
+    open: true
+  when:
+    click: confirmButton
+  then:
+  - event: onConfirm
+- name: cancel-button-fires-on-cancel
+  given:
+    open: true
+  when:
+    click: cancelButton
+  then:
+  - event: onCancel
+- name: focus-starts-on-the-cancel-button
+  description: The least-destructive action is focused first, so Enter pressed reflexively
+    cancels rather than destroys (WCAG 3.3.4).
+  given:
+    open: true
+  then:
+  - focused: cancelButton
+  platforms:
+  - web
+  - lit
+- name: a-scrim-click-does-nothing
+  description: An alert dialog never dismisses on a scrim click, so a stray tap cannot
+    answer a decision.
+  given:
+    open: true
+  when:
+    click: scrim
+  then:
+  - event: onCancel
+    fired: false
+  - event: onConfirm
+    fired: false
+- name: confirm-disabled-does-not-confirm
+  description: confirmDisabled blocks the confirming action while a precondition is
+    unmet.
+  given:
+    open: true
+    confirmDisabled: true
+  when:
+    click: confirmButton
+  then:
+  - event: onConfirm
+    fired: false
+- name: cancel-works-while-confirm-is-disabled
+  description: '"Cancel always works": the safe way out is never blocked by confirmDisabled.'
+  given:
+    open: true
+    confirmDisabled: true
+  when:
+    click: cancelButton
+  then:
+  - event: onCancel
+- name: escape-cancels-while-confirm-is-disabled
+  description: Escape is the keyboard's way out and is not blocked by confirmDisabled
+    either (keyboard rule 1).
+  given:
+    open: true
+    confirmDisabled: true
+  when:
+    key: Escape
+  then:
+  - event: onCancel
+  platforms:
+  - web
+  - lit
+- name: the-cancel-button-is-named-from-copy
+  description: With no cancelLabel the declining action falls back to copy.cancelLabel.
+  given:
+    open: true
+  then:
+  - copy: cancelLabel
 - name: renders
   then:
   - renders: true
@@ -340,6 +624,18 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
 - name: has-accessible-name
   then:
   - name: true
+  derived: true
+- name: escape-fires-on-cancel
+  given:
+    open: true
+  when:
+    key: Escape
+  then:
+  - event: onCancel
+  platforms:
+  - lit
+  - swiftui
+  - web
   derived: true
 ```
 

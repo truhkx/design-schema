@@ -76,13 +76,19 @@ component:
     description: Text
     closeButton: Button
     body: Box
-    footer: Stack
+    footer:
+      component: Stack
+      forwards:
+        footerGap: gap
   props:
     open:
       type: boolean
       required: true
       description: Controlled visibility. The consumer owns it; the dialog requests
         changes through `onClose`.
+      controls:
+        event: onClose
+        state: open
     heading:
       type: string
       required: true
@@ -111,6 +117,7 @@ component:
         (BottomSheet forwards its own hideHeading here above the breakpoint).
     size:
       type: enum
+      enumRef: size
       values:
       - sm
       - md
@@ -146,6 +153,23 @@ component:
         lit: close
         rn: onClose
         swiftui: onClose
+      payload:
+      - name: reason
+        type: enum
+        values:
+        - escape
+        - close-button
+        - scrim
+        - action
+      reasons:
+        escape: Escape pressed while open
+        close-button: the close button was activated
+        scrim: the scrim was clicked
+        action: a footer action asked to close
+      fires:
+      - user
+      timing:
+        phase: request
     onOpened:
       description: Fired after the open transition ends and focus has moved in. Use
         to start work that needs the dialog visible.
@@ -154,6 +178,8 @@ component:
         lit: opened
         rn: onOpened
         swiftui: onOpened
+      timing:
+        phase: after-change
   keyboard:
   - keys:
     - Escape
@@ -178,9 +204,11 @@ component:
   styles:
     scrim:
       token: color.overlay.scrim
+      part: scrim
       locked: false
     surface:
       token: color.overlay.surface
+      part: surface
       locked: true
     border:
       token: color.border
@@ -205,16 +233,19 @@ component:
       locked: false
     headerGap:
       token: layout.gap.normal
+      part: header
       description: Between title/description and the close button.
       locked: false
     footerGap:
       token: layout.gap.tight
+      part: footer
       description: Between footer actions; forwarded to the footer Stack as `overrides.gap`.
         The footer row is end-aligned (Form's action-row rule), unlike Card's start-aligned
         footer.
       locked: false
     descriptionGap:
       token: layout.gap.tight
+      part: description
       description: Between the heading and the description inside the header group.
       locked: false
     widthSm:
@@ -242,6 +273,15 @@ component:
       locked: true
   copy:
     closeLabel: Close
+  overlay:
+    layer: modal
+    open: open
+    closeEvent: onClose
+    dismiss:
+    - escape
+    - scrim
+    - close-button
+    modal: true
   a11y:
     role: dialog
     requires:
@@ -256,6 +296,11 @@ component:
     - contrast-aa
     - reduced-motion
     - target-24px
+    requiresOn:
+      scroll-lock:
+      - web
+      - lit
+      - swiftui
     contrast:
     - foreground: color.foreground
       background: color.overlay.surface
@@ -292,7 +337,8 @@ component:
       reflect:
       - open
       - size
-      - no-dismiss
+      - prop: dismissible
+        attribute: no-dismiss
       - initial-focus
       notes: 'Wraps a native <dialog> in the shadow root; the top layer works from
         inside shadow DOM. `open` is a reflected property the consumer sets; the element
@@ -344,7 +390,159 @@ component:
         initial and return focus; Escape via `.onExitCommand`; VoiceOver''s two-finger
         scrub triggers the same close through `.accessibilityAction(.escape)`. `onOpened`
         fires from `.onAppear` of the content.'
+  behavior:
+  - name: close-button-fires-on-close
+    description: The close button requests close; the dialog never closes itself,
+      the consumer flips `open`.
+    given:
+      open: true
+    when:
+      click: closeButton
+    then:
+    - event: onClose
+  - name: non-dismissible-still-reports-escape
+    description: Escape requests close with reason escape even when not dismissible
+      (keyboard rule 1), because trapping a keyboard user with no way out is never
+      acceptable.
+    given:
+      open: true
+      dismissible: false
+    when:
+      key: Escape
+    then:
+    - event: onClose
+    platforms:
+    - web
+    - lit
+  - name: non-dismissible-scrim-click-does-nothing
+    description: With `dismissible` false the scrim does nothing, so a stray click
+      cannot abandon the task.
+    given:
+      open: true
+      dismissible: false
+    when:
+      click: scrim
+    then:
+    - event: onClose
+      fired: false
+  - name: initial-focus-lands-on-the-close-button
+    description: initialFocus close puts focus on the close button rather than the
+      first body control.
+    given:
+      open: true
+      initialFocus: close
+    then:
+    - focused: closeButton
+    platforms:
+    - web
+    - lit
+  - name: hidden-heading-is-still-the-accessible-name
+    description: hideHeading removes the title from view, not from the accessible
+      name.
+    given:
+      open: true
+      hideHeading: true
+    then:
+    - name: true
+  - name: closed-dialog-renders-nothing
+    given:
+      open: false
+    then:
+    - renders: false
+  examples:
+  - name: rename-project
+    description: The short single-field task a dialog is for, with the completing
+      action named after it.
+    given:
+      open: true
+      heading: Rename project
+      children: A labelled text Input holding the current name
+      footer: Cancel and Rename Buttons
+  - name: invite-people
+    description: A small form in the narrow size, where the footer restates the task.
+    given:
+      open: true
+      heading: Invite people
+      children: An email Input and a role Select
+      footer: Cancel and Send invites Buttons
+      size: sm
+  - name: must-be-answered
+    description: A dialog with no way out but its own actions; Escape still reports
+      so the consumer can decide.
+    given:
+      open: true
+      heading: Choose a plan
+      description: You need a plan before you can invite anyone.
+      children: A RadioGroup of plans
+      footer: Continue Button
+      dismissible: false
+  - name: reading-dialog
+    description: A long reading dialog that starts focus on the title so the text
+      is read from the top.
+    given:
+      open: true
+      heading: Terms of service
+      children: Several paragraphs of Text
+      size: lg
+      initialFocus: title
 ```
+
+## Events
+
+- `onClose`: emit `onClose`
+  - payload, positional, in this order: `reason: 'escape' | 'close-button' | 'scrim' | 'action'`
+  - reasons: `escape` (Escape pressed while open); `close-button` (the close button was activated); `scrim` (the scrim was clicked); `action` (a footer action asked to close)
+  - fires on: user
+  - timing: request
+- `onOpened`: emit `onOpened`
+  - timing: after-change
+
+## Controlled state
+
+- `open` is controlled when given, uncontrolled from its initial state when omitted; changes reported by `onClose` (emit `onClose`); drives state `open`
+
+## Parts and slots
+
+- `scrim`: element
+- `surface`: element
+- `focusScope`: component `FocusScope`
+- `header`: element
+- `heading`: component `Heading`
+- `description`: component `Text`
+- `body`: component `Box`
+- `footer`: component `Stack`; forwards `footerGap` → `overrides.gap`
+- `closeButton`: component `Button`
+
+## Style bindings
+
+- `scrim`: token `color.overlay.scrim`; part `scrim`
+- `surface`: token `color.overlay.surface`; part `surface`; locked
+- `headerGap`: token `layout.gap.normal`; part `header`
+- `footerGap`: token `layout.gap.tight`; part `footer`
+- `descriptionGap`: token `layout.gap.tight`; part `description`
+
+## Form and overlay
+
+```yaml
+overlay:
+  layer: modal
+  open: open
+  closeEvent: onClose
+  dismiss:
+  - escape
+  - scrim
+  - close-button
+  modal: true
+```
+
+`overlay.closeEvent` emits `onClose`.
+
+## Constants and examples
+
+- example `rename-project`, story `RenameProject`: given `open: true`, `heading: "Rename project"`, `children: "A labelled text Input holding the current name"`, `footer: "Cancel and Rename Buttons"`; The short single-field task a dialog is for, with the completing action named after it.
+- example `invite-people`, story `InvitePeople`: given `open: true`, `heading: "Invite people"`, `children: "An email Input and a role Select"`, `footer: "Cancel and Send invites Buttons"`, `size: "sm"`; A small form in the narrow size, where the footer restates the task.
+- example `must-be-answered`, story `MustBeAnswered`: given `open: true`, `heading: "Choose a plan"`, `description: "You need a plan before you can invite anyone."`, `children: "A RadioGroup of plans"`, `footer: "Continue Button"`, `dismissible: false`; A dialog with no way out but its own actions; Escape still reports so the consumer can decide.
+- example `reading-dialog`, story `ReadingDialog`: given `open: true`, `heading: "Terms of service"`, `children: "Several paragraphs of Text"`, `size: "lg"`, `initialFocus: "title"`; A long reading dialog that starts focus on the title so the text is read from the top.
 
 ## Overrides (per-instance styling contract)
 
@@ -357,11 +555,67 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `scrim`, `border`, `borderWidth`, `shadow`, `radius`, `inset`, `partGap`, `headerGap`, `footerGap`, `descriptionGap`, `widthSm`, `layer`, `enter`, `exit`
 Locked (accessibility-bearing, never overridable): `surface`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (8)
+## Behavior scenarios (15)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: close-button-fires-on-close
+  description: The close button requests close; the dialog never closes itself, the
+    consumer flips `open`.
+  given:
+    open: true
+  when:
+    click: closeButton
+  then:
+  - event: onClose
+- name: non-dismissible-still-reports-escape
+  description: Escape requests close with reason escape even when not dismissible
+    (keyboard rule 1), because trapping a keyboard user with no way out is never acceptable.
+  given:
+    open: true
+    dismissible: false
+  when:
+    key: Escape
+  then:
+  - event: onClose
+  platforms:
+  - web
+  - lit
+- name: non-dismissible-scrim-click-does-nothing
+  description: With `dismissible` false the scrim does nothing, so a stray click cannot
+    abandon the task.
+  given:
+    open: true
+    dismissible: false
+  when:
+    click: scrim
+  then:
+  - event: onClose
+    fired: false
+- name: initial-focus-lands-on-the-close-button
+  description: initialFocus close puts focus on the close button rather than the first
+    body control.
+  given:
+    open: true
+    initialFocus: close
+  then:
+  - focused: closeButton
+  platforms:
+  - web
+  - lit
+- name: hidden-heading-is-still-the-accessible-name
+  description: hideHeading removes the title from view, not from the accessible name.
+  given:
+    open: true
+    hideHeading: true
+  then:
+  - name: true
+- name: closed-dialog-renders-nothing
+  given:
+    open: false
+  then:
+  - renders: false
 - name: renders
   then:
   - renders: true
@@ -405,6 +659,18 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
 - name: has-accessible-name
   then:
   - name: true
+  derived: true
+- name: escape-fires-on-close
+  given:
+    open: true
+  when:
+    key: Escape
+  then:
+  - event: onClose
+  platforms:
+  - lit
+  - swiftui
+  - web
   derived: true
 ```
 

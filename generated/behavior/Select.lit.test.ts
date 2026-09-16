@@ -55,6 +55,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     label: () => (deep(root, '[role="combobox"]') ?? deep(root, '[part="label"]') ?? deep(root, '[data-part="label"]') ?? root.firstElementChild) as HTMLElement,
+    trigger: () => (deep(root, '[part="trigger"]') ?? deep(root, '[data-part="trigger"]')) as HTMLElement,
   };
   return s;
 }
@@ -64,6 +65,55 @@ beforeEach(() => {
 });
 
 describe('ds-select', () => {
+  test('the-trigger-opens-the-popup', async () => {
+    const s = await setup({"open": false});
+    await userEvent.click(s.trigger());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-closed-select-is-not-expanded', async () => {
+    const s = await setup({"open": false});
+    expect(s.label()).toHaveAttribute('aria-expanded', 'false');
+  });
+  test('an-open-select-reports-the-expanded-state', async () => {
+    const s = await setup({"open": true});
+    expect(s.label()).toHaveAttribute('aria-expanded', 'true');
+  });
+  test('enter-commits-the-active-option-and-closes', async () => {
+    const s = await setup({"open": true});
+    s.el.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('escape-closes-without-changing-the-value', async () => {
+    const s = await setup({"open": true});
+    s.el.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('the-placeholder-shows-when-nothing-is-selected', async () => {
+    const s = await setup({"open": false});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Select\u2026"));
+  });
+  test('a-custom-placeholder-replaces-the-default', async () => {
+    const s = await setup({"open": false, "placeholder": "Choose a country"});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Choose\\ a\\ country"));
+  });
+  test('a-disabled-select-does-not-open', async () => {
+    const s = await setup({"open": false, "disabled": true});
+    await userEvent.click(s.trigger(), { force: true });
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+    expect(s.label()).toHaveAttribute('aria-disabled', 'true');
+  });
+  test('required-is-shown-in-the-label', async () => {
+    const s = await setup({"required": true, "open": true});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("\\(required\\)"));
+  });
+  test('invalid-is-reported-on-the-trigger', async () => {
+    const s = await setup({"invalid": true, "open": true});
+    expect(s.label()).toHaveAttribute('aria-invalid', 'true');
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

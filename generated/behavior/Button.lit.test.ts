@@ -60,6 +60,48 @@ beforeEach(() => {
 });
 
 describe('ds-button', () => {
+  test('click-fires-on-press', async () => {
+    const s = await setup({});
+    await userEvent.click(s.container());
+    expect(s.events.onPress).toHaveBeenCalled();
+  });
+  test('enter-activates', async () => {
+    const s = await setup({});
+    s.el.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(s.events.onPress).toHaveBeenCalled();
+  });
+  test('space-activates', async () => {
+    const s = await setup({});
+    s.el.focus();
+    await userEvent.keyboard(' ');
+    expect(s.events.onPress).toHaveBeenCalled();
+  });
+  test('disabled-does-not-fire', async () => {
+    const s = await setup({"disabled": true});
+    await userEvent.click(s.container(), { force: true });
+    expect(s.events.onPress).not.toHaveBeenCalled();
+    expect(s.container()).toHaveAttribute('aria-disabled', 'true');
+  });
+  test('disabled-stays-focusable', async () => {
+    const s = await setup({"disabled": true});
+    s.el.focus();
+    expect(activeChain()).toContain(s.el);
+  });
+  test('loading-announces-busy-and-ignores-activation', async () => {
+    const s = await setup({"loading": true});
+    await userEvent.click(s.container());
+    expect(s.events.onPress).not.toHaveBeenCalled();
+    expect(s.container()).toHaveAttribute("aria-busy", "true");
+  });
+  test('expanded-is-reported', async () => {
+    const s = await setup({"expanded": true});
+    expect(s.container()).toHaveAttribute('aria-expanded', 'true');
+  });
+  test('icon-only-keeps-its-name', async () => {
+    const s = await setup({"iconOnly": true, "accessibleName": "Open menu"});
+    expect(s.container()).toHaveAccessibleName("Open menu");
+  });
   test('press-tracks', async () => {
     const s = await setup({"track": "signup", "label": "Sign up"});
     await userEvent.click(s.container());

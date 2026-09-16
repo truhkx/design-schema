@@ -63,6 +63,15 @@ component:
   - label
   - leadingIcon
   - trailingIcon
+  parts:
+    leadingIcon:
+      kind: slot
+      slot:
+        prop: leadingIcon
+    trailingIcon:
+      kind: slot
+      slot:
+        prop: trailingIcon
   props:
     label:
       type: string
@@ -81,6 +90,7 @@ component:
       description: Visual emphasis. One primary button per view.
     size:
       type: enum
+      enumRef: size
       values:
       - sm
       - md
@@ -163,6 +173,8 @@ component:
         lit: press
         rn: onPress
         swiftui: action
+      fires:
+      - user
     onTrack:
       description: Fired after onPress with the `track` name and the button's label.
       platforms:
@@ -177,6 +189,7 @@ component:
       locked: true
     backgroundHover:
       token: color.action.{variant}.backgroundHover
+      state: hover
       description: Pointer hover and pressed state.
       locked: false
     foreground:
@@ -239,6 +252,8 @@ component:
       description: 'Ring thickness of the loading spinner: a 1em circle with one quarter
         transparent, drawn in currentColor.'
       locked: true
+  copy:
+    loading: Loading
   a11y:
     role: button
     requires:
@@ -257,7 +272,7 @@ component:
     - foreground: color.inverse.focus
       background: color.inverse.surface
       level: AA
-      large: true
+      nonText: true
   platforms:
     web:
       element: button
@@ -320,6 +335,78 @@ component:
         forwards to Tooltip through `onLongPress`; `accessibilityHint` is forwarded
         verbatim. `overflowLabel` is read by Toolbar only.
   behavior:
+  - name: click-fires-on-press
+    when:
+      click: container
+    then:
+    - event: onPress
+  - name: enter-activates
+    description: Activation fires onPress exactly once per pointer click, Enter key,
+      Space key, or assistive-technology activation.
+    when:
+      key: Enter
+    then:
+    - event: onPress
+    platforms:
+    - web
+    - lit
+  - name: space-activates
+    when:
+      key: Space
+    then:
+    - event: onPress
+    platforms:
+    - web
+    - lit
+  - name: disabled-does-not-fire
+    given:
+      disabled: true
+    when:
+      click: container
+    then:
+    - event: onPress
+      fired: false
+    - state: disabled
+      is: true
+  - name: disabled-stays-focusable
+    description: aria-disabled, not the native attribute, so the button stays in the
+      tab order and can be discovered.
+    given:
+      disabled: true
+    then:
+    - focusable: true
+    platforms:
+    - web
+    - lit
+  - name: loading-announces-busy-and-ignores-activation
+    description: While loading is true the button announces itself as busy and ignores
+      further activation, but keeps its size so the layout does not shift.
+    given:
+      loading: true
+    when:
+      click: container
+    then:
+    - event: onPress
+      fired: false
+    - attribute: aria-busy
+      is: 'true'
+      platforms:
+      - web
+      - lit
+  - name: expanded-is-reported
+    given:
+      expanded: true
+    then:
+    - state: expanded
+      is: true
+  - name: icon-only-keeps-its-name
+    description: iconOnly hides the visible label, and label becomes the accessible
+      name.
+    given:
+      iconOnly: true
+      accessibleName: Open menu
+    then:
+    - name: Open menu
   - name: press-tracks
     given:
       track: signup
@@ -332,7 +419,61 @@ component:
         name: signup
         label: Sign up
     source: extensions/Button.analytics.md
+  examples:
+  - name: primary-save
+    description: The single most important action in a view, labelled with the outcome.
+    given:
+      label: Save changes
+      variant: primary
+  - name: destructive-confirm
+    description: A destructive, hard-to-undo action, which is the only use of the
+      danger variant.
+    given:
+      label: Delete file
+      variant: danger
+  - name: icon-only-in-a-toolbar
+    description: A low-emphasis icon-only control in dense UI, whose label says what
+      it does rather than what the icon depicts.
+    given:
+      label: Close
+      iconOnly: true
+      variant: ghost
+      size: sm
+  - name: pending-submit
+    description: The submit button of a form while the request is in flight - busy,
+      and ignoring repeat activation.
+    given:
+      label: Create account
+      type: submit
+      loading: true
+    platforms:
+    - web
+    - lit
+    - rn
 ```
+
+## Events
+
+- `onPress`: emit `onPress`
+  - fires on: user
+
+## Parts and slots
+
+- `container`: element
+- `label`: element
+- `leadingIcon`: slot, prop `leadingIcon`
+- `trailingIcon`: slot, prop `trailingIcon`
+
+## Style bindings
+
+- `backgroundHover`: token `color.action.{variant}.backgroundHover`; state `hover`
+
+## Constants and examples
+
+- example `primary-save`, story `PrimarySave`: given `label: "Save changes"`, `variant: "primary"`; The single most important action in a view, labelled with the outcome.
+- example `destructive-confirm`, story `DestructiveConfirm`: given `label: "Delete file"`, `variant: "danger"`; A destructive, hard-to-undo action, which is the only use of the danger variant.
+- example `icon-only-in-a-toolbar`, story `IconOnlyInAToolbar`: given `label: "Close"`, `iconOnly: true`, `variant: "ghost"`, `size: "sm"`; A low-emphasis icon-only control in dense UI, whose label says what it does rather than what the icon depicts.
+- example `pending-submit`, story `PendingSubmit`: given `label: "Create account"`, `type: "submit"`, `loading: true`; The submit button of a form while the request is in flight - busy, and ignoring repeat activation.
 
 ## Overrides (per-instance styling contract)
 
@@ -345,11 +486,50 @@ The `platforms.rn.props` list names the native props the schema cares about; `ov
 Overridable: `backgroundHover`, `iconGap`, `paddingInline`, `paddingBlock`, `radius`, `fontFamily`, `fontWeight`, `fontSize`, `disabledOpacity`, `transition`, `loadingSpin`
 Locked (accessibility-bearing, never overridable): `background`, `foreground`, `focusRing`, `focusRingWidth`, `inverseForeground`, `inverseFocusRing`, `minTarget`, `spinnerStroke`
 
-## Behavior scenarios (12)
+## Behavior scenarios (17)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: click-fires-on-press
+  when:
+    click: container
+  then:
+  - event: onPress
+- name: disabled-does-not-fire
+  given:
+    disabled: true
+  when:
+    click: container
+  then:
+  - event: onPress
+    fired: false
+  - state: disabled
+    is: true
+- name: loading-announces-busy-and-ignores-activation
+  description: While loading is true the button announces itself as busy and ignores
+    further activation, but keeps its size so the layout does not shift.
+  given:
+    loading: true
+  when:
+    click: container
+  then:
+  - event: onPress
+    fired: false
+- name: expanded-is-reported
+  given:
+    expanded: true
+  then:
+  - state: expanded
+    is: true
+- name: icon-only-keeps-its-name
+  description: iconOnly hides the visible label, and label becomes the accessible
+    name.
+  given:
+    iconOnly: true
+    accessibleName: Open menu
+  then:
+  - name: Open menu
 - name: press-tracks
   given:
     track: signup

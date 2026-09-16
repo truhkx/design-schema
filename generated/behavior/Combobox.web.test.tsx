@@ -10,6 +10,17 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<ComboboxProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -26,12 +37,65 @@ function setup(given: Partial<ComboboxProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Combobox"]') ?? screen.queryByRole('combobox') ?? utils.container.firstElementChild) as HTMLElement,
     label: () => (screen.queryByRole('combobox') ?? s.root()) as HTMLElement,
+    chipRemove: () => (document.querySelector('[data-part="chipRemove"]') ?? s.root()),
+    clearButton: () => (document.querySelector('[data-part="clearButton"]') ?? s.root()),
+    toggleButton: () => (document.querySelector('[data-part="toggleButton"]') ?? s.root()),
     rerender: (next: Partial<ComboboxProps>) => utils.rerender(<Combobox {...props} {...next} />),
   };
   return s;
 }
 
 describe('Combobox', () => {
+  test('typing-reports-the-input-text', async () => {
+    const s = setup({"open": false});
+    await s.user.type(s.label(), "ap");
+    expect(s.events.onInputChange).toHaveBeenCalled();
+  });
+  test('the-toggle-button-opens-the-list', async () => {
+    const s = setup({"open": false});
+    await s.user.click(s.toggleButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-closed-combobox-is-not-expanded', async () => {
+    const s = setup({"open": false});
+    expect(s.label()).toHaveAttribute('aria-expanded', 'false');
+  });
+  test('an-open-list-reports-the-expanded-state', async () => {
+    const s = setup({"open": true});
+    expect(s.label()).toHaveAttribute('aria-expanded', 'true');
+  });
+  test('enter-commits-the-active-option', async () => {
+    const s = setup({"open": true});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{Enter}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('escape-closes-the-list', async () => {
+    const s = setup({"open": true});
+    act(() => focusInto(s.label()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-clear-button-clears-the-value', async () => {
+    const s = setup({"open": false, "defaultValue": "apple", "clearable": true});
+    await s.user.click(s.clearButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('multiple-shows-the-selection-as-chips', async () => {
+    const s = setup({"open": false, "multiple": true, "defaultValue": ["apple"]});
+    expect(screen.getByText(new RegExp("Apple"))).toBeInTheDocument();
+  });
+  test('removing-a-chip-reports-the-new-value', async () => {
+    const s = setup({"open": false, "multiple": true, "defaultValue": ["apple"]});
+    await s.user.click(s.chipRemove());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('a-disabled-combobox-does-not-open', async () => {
+    const s = setup({"open": false, "disabled": true});
+    await s.user.click(s.toggleButton());
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+    expect(s.label()).toHaveAttribute('aria-disabled', 'true');
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();

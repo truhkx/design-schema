@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/TreeGrid.js';
 import meta from '../../packages/lit/src/TreeGrid.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -61,6 +65,9 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     container: () => (deep(root, '[role="treegrid"]') ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
+    sortButton: () => (deep(root, '[part="sortButton"]') ?? deep(root, '[data-part="sortButton"]')) as HTMLElement,
+    expandButton: () => (deep(root, '[part="expandButton"]') ?? deep(root, '[data-part="expandButton"]')) as HTMLElement,
+    selectCell: () => (deep(root, '[part="selectCell"]') ?? deep(root, '[data-part="selectCell"]')) as HTMLElement,
   };
   return s;
 }
@@ -70,6 +77,31 @@ beforeEach(() => {
 });
 
 describe('ds-tree-grid', () => {
+  test('the-expand-button-expands-a-row', async () => {
+    const s = await setup({"defaultExpanded": [], "columns": [{"key": "account", "header": "Account", "isRowHeader": true}, {"key": "balance", "header": "Balance", "align": "end"}], "data": [{"id": "assets", "account": "Assets", "balance": 100, "children": [{"id": "cash", "account": "Cash", "balance": 40}]}]});
+    await userEvent.click(s.expandButton());
+    expect(s.events.onExpandChange).toHaveBeenCalled();
+  });
+  test('expanding-a-lazy-row-asks-for-its-children', async () => {
+    const s = await setup({"defaultExpanded": [], "columns": [{"key": "account", "header": "Account", "isRowHeader": true}], "data": [{"id": "assets", "account": "Assets", "children": "lazy"}]});
+    await userEvent.click(s.expandButton());
+    expect(s.events.onExpand).toHaveBeenCalled();
+    expect(s.events.onExpandChange).toHaveBeenCalled();
+  });
+  test('activating-a-sortable-header-reports-the-sort', async () => {
+    const s = await setup({"columns": [{"key": "account", "header": "Account", "isRowHeader": true}, {"key": "balance", "header": "Balance", "align": "end", "sortable": true}], "data": [{"id": "assets", "account": "Assets", "balance": 100}, {"id": "equity", "account": "Equity", "balance": 50}]});
+    await userEvent.click(s.sortButton());
+    expect(s.events.onSortChange).toHaveBeenCalled();
+  });
+  test('selecting-a-row-reports-the-selection', async () => {
+    const s = await setup({"selectable": "row", "columns": [{"key": "account", "header": "Account", "isRowHeader": true}], "data": [{"id": "assets", "account": "Assets"}, {"id": "equity", "account": "Equity"}]});
+    await userEvent.click(s.selectCell());
+    expect(s.events.onSelectionChange).toHaveBeenCalled();
+  });
+  test('the-empty-message-shows-when-there-are-no-rows', async () => {
+    const s = await setup({"columns": [{"key": "account", "header": "Account", "isRowHeader": true}], "data": []});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Nothing\\ to\\ show\\."));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

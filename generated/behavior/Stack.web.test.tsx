@@ -24,6 +24,14 @@ function setup(given: Partial<StackProps> = {}) {
 }
 
 describe('Stack', () => {
+  test('nav-element-is-a-navigation-landmark', async () => {
+    const s = setup({"element": "nav"});
+    expect(screen.getByRole('navigation')).toBeInTheDocument();
+  });
+  test('list-element-is-a-list', async () => {
+    const s = setup({"element": "ul"});
+    expect(screen.getByRole('list')).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

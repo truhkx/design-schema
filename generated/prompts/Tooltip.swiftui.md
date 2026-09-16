@@ -62,6 +62,13 @@ component:
   - text
   composition:
     text: Text
+  parts:
+    trigger:
+      kind: slot
+      slot:
+        default: true
+        prop: children
+        required: true
   props:
     content:
       type: string
@@ -118,7 +125,9 @@ component:
     action: Hides the tooltip without moving focus.
     when: tooltip visible
     from: trigger
-    expect: closes
+    expect:
+    - closes
+    - focus-unchanged
   styles:
     surface:
       token: color.inverse.surface
@@ -127,6 +136,7 @@ component:
       locked: true
     text:
       token: color.inverse.foreground
+      part: text
       locked: true
     radius:
       token: radius.sm
@@ -143,8 +153,9 @@ component:
       locked: false
     maxWidth:
       token: space.20
-      description: Multiplied by 3 (240px at comfortable density) — the generator
-        computes it; longer text wraps.
+      computed:
+        times: 3
+      description: Longer text wraps.
       locked: false
     fontFamily:
       token: font.family.body
@@ -170,6 +181,22 @@ component:
     exit:
       token: motion.duration.fast
       locked: false
+  constants:
+    hoverDelay:
+      description: Delay before a hovered trigger shows its tooltip, when `delay`
+        is `default`.
+      token: motion.duration.base
+      multiply: 3
+      unit: ms
+  overlay:
+    layer: tooltip
+    anchor: trigger
+    placement: placement
+    collision: flip
+    open: open
+    dismiss:
+    - escape
+    modal: false
   a11y:
     role: tooltip
     requires:
@@ -205,7 +232,8 @@ component:
       tag: ds-tooltip
       reflect:
       - placement
-      - describes
+      - prop: describes
+        attribute: no-describes
       notes: Wraps the slotted trigger; because aria-describedby cannot cross the
         shadow boundary, the tooltip element is rendered in the light DOM as a sibling
         of the trigger (appended to the host, not the shadow root) so the ID reference
@@ -241,7 +269,91 @@ component:
         positioned by `placement`, dismissed on release/leave or Escape. The bubble
         is `.accessibilityHidden(true)` — the hint already carries the text. Delays
         from the timing tokens; none under reduced motion.
+  behavior:
+  - name: the-visible-tooltip-carries-the-tooltip-role
+    description: When shown, the bubble is a role=tooltip element linked to the trigger
+      (APG tooltip).
+    given:
+      open: true
+    then:
+    - role: tooltip
+    platforms:
+    - web
+    - lit
+  - name: the-text-stays-in-the-tree-while-hidden
+    description: The description is always in the accessibility tree, so a screen-reader
+      user gets the text without hovering; the visible popup is a second copy.
+    given:
+      open: false
+    then:
+    - role: tooltip
+    platforms:
+    - web
+    - lit
+  examples:
+  - name: icon-only-button-name
+    description: The tooltip is the control's name, not a second announcement, so
+      it is linked as the label.
+    given:
+      content: Bold
+      children: An icon-only Button with the bold Icon
+      describes: false
+  - name: column-header-hint
+    description: A clarification on a labelled control in dense UI.
+    given:
+      content: Includes archived items
+      children: A table column header Button
+  - name: warm-toolbar
+    description: A toolbar where a sibling tooltip is already open, so the next one
+      shows instantly.
+    given:
+      content: Italic
+      children: An icon-only Button inside a Toolbar
+      delay: none
+  - name: below-the-trigger
+    description: A trigger at the top of the page, where the bubble reads better underneath.
+    given:
+      content: Copy link
+      children: An icon-only Button in the page header
+      placement: bottom
 ```
+
+## Parts and slots
+
+- `trigger`: slot, `@ViewBuilder` parameter `children`, required
+- `popup`: element
+- `text`: component `Text`
+
+## Style bindings
+
+- `text`: token `color.inverse.foreground`; part `text`; locked
+- `maxWidth`: token `space.20`; computed `theme.space20 * 3`
+
+## Keyboard
+
+- `Escape` (Hides the tooltip without moving focus.): expect closes, then focus-unchanged
+
+## Form and overlay
+
+```yaml
+overlay:
+  layer: tooltip
+  anchor: trigger
+  placement: placement
+  collision: flip
+  open: open
+  dismiss:
+  - escape
+  modal: false
+```
+
+## Constants and examples
+
+- constant `hoverDelay`: `theme.motionDurationBase * 3` (`motion.duration.base` × 3) ms
+- example `icon-only-button-name`, story `IconOnlyButtonName`: given `content: "Bold"`, `children: "An icon-only Button with the bold Icon"`, `describes: false`; The tooltip is the control's name, not a second announcement, so it is linked as the label.
+- example `column-header-hint`, story `ColumnHeaderHint`: given `content: "Includes archived items"`, `children: "A table column header Button"`; A clarification on a labelled control in dense UI.
+- example `warm-toolbar`, story `WarmToolbar`: given `content: "Italic"`, `children: "An icon-only Button inside a Toolbar"`, `delay: "none"`; A toolbar where a sibling tooltip is already open, so the next one shows instantly.
+- example `below-the-trigger`, story `BelowTheTrigger`: given `content: "Copy link"`, `children: "An icon-only Button in the page header"`, `placement: "bottom"`; A trigger at the top of the page, where the bubble reads better underneath.
 
 ## Overrides (per-instance styling contract)
 

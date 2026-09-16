@@ -19,6 +19,9 @@ component:
     value:
       type: string
       description: Controlled value. Omit for an uncontrolled field.
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: string
       description: Initial value for an uncontrolled field.
@@ -45,6 +48,7 @@ component:
       description: 'Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search.'
     size:
       type: enum
+      enumRef: size
       values: [sm, md]
       default: md
       description: 'sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type.'
@@ -68,12 +72,17 @@ component:
     onChange:
       description: Fired on every value change with the new string value.
       platforms: { web: onChange, lit: change, rn: onChangeText, swiftui: onChange }
+      payload:
+        - { name: value, type: string, description: The new value. }
+      fires: [user]
     onFocus:
       description: Fired when the field receives focus.
       platforms: { web: onFocus, lit: 'focus (native, retargeted — no CustomEvent)', rn: onFocus, swiftui: onFocus }
+      fires: [user]
     onBlur:
       description: Fired when the field loses focus. The usual moment to validate.
       platforms: { web: onBlur, lit: 'blur (native, retargeted — no CustomEvent)', rn: onBlur, swiftui: onBlur }
+      fires: [user]
   styles:
     background: { token: color.background }
     foreground: { token: color.foreground }
@@ -82,17 +91,15 @@ component:
     borderFocus: { token: color.border.focus }
     borderInvalid: { token: color.border.danger }
     errorText: { token: color.foreground.danger }
-    descriptionText: { token: color.foreground.muted }
+    descriptionText: { token: color.foreground.muted, part: description }
     borderWidth: { token: border.width.thin }
     radius: { token: radius.md }
-    paddingInline: { token: space.md }
-    paddingBlock: { token: space.sm }
-    paddingBlockSm: { token: space.1, description: 'Vertical padding at size sm.' }
-    paddingInlineSm: { token: space.2, description: 'Horizontal padding at size sm.' }
+    paddingInline: { token: space.md, by: size, values: { sm: space.2 } }
+    paddingBlock: { token: space.sm, by: size, values: { sm: space.1 } }
     partGap: { token: space.1, description: 'Vertical gap between label, description, field, and error.' }
     fontFamily: { token: font.family.body }
     fontSize: { token: 'font.size.{size}' }
-    labelWeight: { token: font.weight.medium }
+    labelWeight: { token: font.weight.medium, part: label }
     helperSize: { token: font.size.sm, description: Description and error text size. }
     lineHeight: { token: font.lineHeight.normal }
     minTarget: { token: size.target.comfortable }
@@ -110,7 +117,15 @@ component:
       - { foreground: color.foreground, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }
       - { foreground: color.foreground.danger, background: color.background, level: AA }
-      - { foreground: color.border.strong, background: color.background, level: AA, large: true }
+      - { foreground: color.border.strong, background: color.background, level: AA, nonText: true }
+  form:
+    role: field
+    value: value
+    valueType: string
+    name: name
+    validation: [required, invalid]
+    messages: { required: required, invalid: invalid }
+    discovery: context
   platforms:
     web:
       element: input
@@ -118,7 +133,7 @@ component:
       notes: The label is a real <label for=id>. Description and error are linked with aria-describedby; the error element has role="alert".
     lit:
       tag: ds-input
-      reflect: [type, required, disabled, invalid]
+      reflect: [type, size, required, disabled, invalid]
       notes: 'Uses ElementInternals (formAssociated = true) so a native <form> that directly contains ds-input sees its value and validity. Inside ds-form the association is by `name` (see Form). `value` behaves like a native input: undefined = uncontrolled; consumers control by rebinding `.value`. Exposes `currentValue`, `form`, `validity`, `checkValidity()`, `reportValidity()`.'
     rn:
       element: TextInput
@@ -128,6 +143,48 @@ component:
       element: TextField
       props: [TextField, SecureField, .textFieldStyle=plain, .keyboardType, .textContentType, .textInputAutocapitalization, .autocorrectionDisabled, .focused, .submitLabel, .accessibilityLabel, .accessibilityHint, .accessibilityValue]
       notes: 'Label `Text` above (visually hidden with `hideLabel` — still the `.accessibilityLabel`), description `Text`, the field (`TextField` or `SecureField` for `type: password`) inside a bordered `RoundedRectangle` drawn from the tokens (`.textFieldStyle(.plain)`; the border is the focus ring when focused), and the error `Text` announced through `AccessibilityNotification.Announcement` when it appears. `type` maps to `.keyboardType` (`.emailAddress`, `.numberPad`, `.phonePad`, `.URL`) and `autocomplete` to `.textContentType`. `description` and `error` are joined into `.accessibilityHint`; `invalid` adds copy.invalid to the value; `required` appends the indicator to the visible label. Registers with the Form environment. `size: sm` swaps the Sm bindings.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/focusable/error-identified ones from the schema.
+    - name: typing-reports-the-new-value
+      description: onChange fires with the string value on every keystroke.
+      when: { type: a }
+      then:
+        - { event: onChange, with: a }
+    - name: focus-is-reported
+      description: onFocus fires when the field receives focus.
+      when: { focus: field }
+      then:
+        - { event: onFocus }
+    - name: required-is-shown-in-the-label
+      description: 'required appends copy.requiredIndicator to the visible label and sets aria-required - text and attributes, not color alone.'
+      given: { required: true }
+      then:
+        - { copy: requiredIndicator }
+        - { attribute: aria-required, is: 'true', platforms: [web] }
+    - name: error-is-announced-when-it-appears
+      description: 'The error is rendered in the error slot with role=alert so it is announced when it appears (WCAG 3.3.1).'
+      given: { error: 'Enter an email address like name@example.com' }
+      then:
+        - { role: alert, platforms: [web, lit] }
+    - name: disabled-stays-focusable-and-is-announced
+      description: 'Disabled fields are visible, readable and focusable (aria-disabled, never the native disabled attribute).'
+      given: { disabled: true }
+      then:
+        - { state: disabled, is: true }
+        - { focusable: true, platforms: [web, lit] }
+  examples:
+    - name: email-with-a-description
+      description: A field whose format matters, with persistent helper text and the matching touch keyboard.
+      given: { label: 'Email address', name: email, type: email, description: 'Use the email you signed up with.' }
+    - name: required-field
+      description: A field that must have a value to submit, marked in the label rather than by color.
+      given: { label: 'Full name', name: name, required: true }
+    - name: field-with-an-error
+      description: A field failing validation, whose message says what is wrong and how to fix it.
+      given: { label: 'Email address', name: email, type: email, error: 'Enter an email address like name@example.com' }
+    - name: dense-grid-editor
+      description: A small field inside a grid cell, where the column header already names it.
+      given: { label: Quantity, name: quantity, type: number, size: sm, hideLabel: true }
 ---
 
 Input collects a single line of text. It bundles the label, helper text, field, and error message so that the association between them is always correct — the most common accessibility failure in forms is a field whose label or error is only visually nearby.

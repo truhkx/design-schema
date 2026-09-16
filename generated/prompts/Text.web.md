@@ -69,6 +69,7 @@ component:
         block elements are not.
     size:
       type: enum
+      enumRef: size
       values:
       - xs
       - sm
@@ -89,6 +90,7 @@ component:
       description: Emphasis without changing size. Prefer weight over color for hierarchy.
     tone:
       type: enum
+      enumRef: foregroundTone
       values:
       - default
       - strong
@@ -207,7 +209,53 @@ component:
         Nested Text: the package''s `Text` inside another `Text` renders as a concatenated
         `SwiftUI.Text` so inline runs share a line; a `TextNesting` environment flag
         tells a child it is inline.'
+  behavior:
+  - name: truncated-text-keeps-the-full-string-reachable
+    description: Truncation clips to one line, and on web the full text is exposed
+      via title when children is a plain string, so sighted users can also reach it.
+    given:
+      truncate: true
+      children: A sentence long enough to be clipped by its column.
+    then:
+    - attribute: title
+      is: A sentence long enough to be clipped by its column.
+    platforms:
+    - web
+  examples:
+  - name: body-copy
+    description: The default paragraph - body size, regular weight, default tone.
+    given:
+      children: Changes are saved automatically. You can undo any change for 30 days.
+  - name: caption
+    description: Secondary metadata at the smallest readable size, muted so it sits
+      behind the content it annotates.
+    given:
+      children: Last updated 2 minutes ago.
+      size: xs
+      tone: muted
+  - name: inline-error-wording
+    description: Error copy where the danger tone is paired with explicit words, so
+      color alone never carries the meaning.
+    given:
+      children: 'Error: enter an email address like name@example.com'
+      tone: danger
+      element: span
+    platforms:
+    - web
+    - lit
+  - name: truncated-cell
+    description: One line of text in a dense cell, with the full string still reachable.
+    given:
+      children: Quarterly revenue summary for the EMEA region.
+      truncate: true
 ```
+
+## Constants and examples
+
+- example `body-copy`, story `BodyCopy`: given `children: "Changes are saved automatically. You can undo any change for 30 days."`; The default paragraph - body size, regular weight, default tone.
+- example `caption`, story `Caption`: given `children: "Last updated 2 minutes ago."`, `size: "xs"`, `tone: "muted"`; Secondary metadata at the smallest readable size, muted so it sits behind the content it annotates.
+- example `inline-error-wording`, story `InlineErrorWording`: given `children: "Error: enter an email address like name@example.com"`, `tone: "danger"`, `element: "span"`; Error copy where the danger tone is paired with explicit words, so color alone never carries the meaning.
+- example `truncated-cell`, story `TruncatedCell`: given `children: "Quarterly revenue summary for the EMEA region."`, `truncate: true`; One line of text in a dense cell, with the full string still reachable.
 
 ## Overrides (per-instance styling contract)
 
@@ -220,11 +268,22 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`
 Locked (accessibility-bearing, never overridable): `color`
 
-## Behavior scenarios (20)
+## Behavior scenarios (21)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: truncated-text-keeps-the-full-string-reachable
+  description: Truncation clips to one line, and on web the full text is exposed via
+    title when children is a plain string, so sighted users can also reach it.
+  given:
+    truncate: true
+    children: A sentence long enough to be clipped by its column.
+  then:
+  - attribute: title
+    is: A sentence long enough to be clipped by its column.
+  platforms:
+  - web
 - name: renders
   then:
   - renders: true

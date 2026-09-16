@@ -97,6 +97,9 @@ component:
       type: number
       description: Controlled size of the primary pane as a percentage of the container
         (0–100).
+      controls:
+        event: onSizeChange
+        default: defaultSize
     defaultSize:
       type: number
       default: 30
@@ -124,6 +127,9 @@ component:
     collapsed:
       type: boolean
       description: Controlled collapsed state.
+      controls:
+        event: onCollapseChange
+        default: defaultCollapsed
     defaultCollapsed:
       type: boolean
       default: false
@@ -155,6 +161,12 @@ component:
         lit: size-change
         rn: onSizeChange
         swiftui: onSizeChange
+      payload:
+      - name: size
+        type: number
+        description: The primary pane size in percent.
+      fires:
+      - user
     onSizeChangeEnd:
       description: Fired with the final size once when a drag ends and after each
         key press (a key press is a complete interaction), so a caller can persist
@@ -164,6 +176,14 @@ component:
         lit: size-change-end
         rn: onSizeChangeEnd
         swiftui: onSizeChangeEnd
+      payload:
+      - name: size
+        type: number
+        description: The final primary pane size in percent.
+      fires:
+      - user
+      timing:
+        phase: commit
     onCollapseChange:
       description: Fired when the primary pane collapses or restores.
       platforms:
@@ -171,6 +191,12 @@ component:
         lit: collapse-change
         rn: onCollapseChange
         swiftui: onCollapseChange
+      payload:
+      - name: collapsed
+        type: boolean
+        description: True when the primary pane is now collapsed.
+      fires:
+      - user
   keyboard:
   - keys:
     - Tab
@@ -216,25 +242,35 @@ component:
       panes; not available on native.
     from: any
     expect: manual
+    platforms:
+    - web
+    - lit
   styles:
     separatorSize:
       token: space.1
+      part: separator
       description: 'The visible line. The grab area is wider: `handleSize` centered
         on it.'
       locked: false
     separatorColor:
       token: color.border
+      part: separator
       locked: false
     separatorHover:
       token: color.border.strong
+      part: separator
+      state: hover
       description: Pointer hover; unused on native.
       locked: true
     separatorActive:
       token: color.control.selectedBackground
+      part: separator
+      state: dragging
       description: While dragging or focused.
       locked: true
     handleSize:
       token: space.3
+      part: handle
       description: Pointer grab area, centered on the separator and overlapping both
         panes so the panes' content keeps the full width. The effective hit area is
         max(handleSize, minTarget), so the locked floor cannot be overridden away.
@@ -250,6 +286,7 @@ component:
       locked: false
     collapseButtonOffset:
       token: space.2
+      part: collapseButton
       description: Distance of the collapse Button from the separator's start edge
         along the separator (top of a vertical separator, inline-start of a horizontal
         one); the button is centered across the separator and overlaps both panes.
@@ -280,7 +317,12 @@ component:
   copy:
     collapse: Collapse {label}
     expand: Expand {label}
-    sizeText: '{percent}%'
+    sizeText:
+      text: '{percent}%'
+      params:
+        percent:
+          type: number
+          description: The primary pane's size as a percentage of the container.
   a11y:
     role: separator
     requires:
@@ -296,11 +338,11 @@ component:
     - foreground: color.border.strong
       background: color.background
       level: AA
-      large: true
+      nonText: true
     - foreground: color.control.selectedBackground
       background: color.background
       level: AA
-      large: true
+      nonText: true
   platforms:
     web:
       element: div
@@ -378,12 +420,215 @@ component:
         has no equivalent). `persistKey` uses `UserDefaults.standard` (the platform's
         own store; no dependency). The collapse `Button` sits on the separator per
         `collapseButtonOffset`.
+  behavior:
+  - name: arrow-grows-the-primary-pane
+    description: ArrowRight grows the primary pane by step on a horizontal splitter,
+      and a key press is a complete interaction, so the end event fires too.
+    given:
+      defaultSize: 50
+    when:
+      key: ArrowRight
+    then:
+    - event: onSizeChange
+    - event: onSizeChangeEnd
+    platforms:
+    - web
+    - lit
+  - name: arrow-shrinks-the-primary-pane
+    given:
+      defaultSize: 50
+    when:
+      key: ArrowLeft
+    then:
+    - event: onSizeChange
+    - event: onSizeChangeEnd
+    platforms:
+    - web
+    - lit
+  - name: home-sets-the-primary-pane-to-its-minimum
+    given:
+      defaultSize: 50
+      minSize: 20
+    when:
+      key: Home
+    then:
+    - event: onSizeChange
+    - event: onSizeChange
+      with: 20
+      platforms:
+      - lit
+    platforms:
+    - web
+    - lit
+  - name: end-sets-the-primary-pane-to-its-maximum
+    given:
+      defaultSize: 50
+      maxSize: 80
+    when:
+      key: End
+    then:
+    - event: onSizeChange
+    - event: onSizeChange
+      with: 80
+      platforms:
+      - lit
+    platforms:
+    - web
+    - lit
+  - name: enter-collapses-a-collapsible-pane
+    given:
+      collapsible: true
+      defaultSize: 40
+    when:
+      key: Enter
+    then:
+    - event: onCollapseChange
+    - event: onCollapseChange
+      with: true
+      platforms:
+      - lit
+    platforms:
+    - web
+    - lit
+  - name: enter-does-nothing-when-the-pane-cannot-collapse
+    description: Collapsing is what `collapsible` turns on; without it Enter on the
+      separator has nothing to do.
+    when:
+      key: Enter
+    then:
+    - event: onCollapseChange
+      fired: false
+    platforms:
+    - web
+    - lit
+  - name: the-collapse-button-collapses-the-pane
+    description: Drag past the minimum, Enter, or the collapse button - the three
+      ways the doc gives to collapse the primary pane.
+    given:
+      collapsible: true
+      defaultSize: 40
+    when:
+      click: collapseButton
+    then:
+    - event: onCollapseChange
+  - name: a-collapsed-pane-ignores-the-arrow-keys
+    description: While collapsed, arrows, Home, End and pointer drag do nothing; only
+      Enter or the collapse button restores.
+    given:
+      collapsible: true
+      defaultCollapsed: true
+    when:
+      key: ArrowRight
+    then:
+    - event: onSizeChange
+      fired: false
+    platforms:
+    - web
+    - lit
+  - name: the-separator-reports-its-size-and-bounds
+    description: A resizable separator carries valuenow/min/max so a keyboard user
+      hears the percentage.
+    given:
+      defaultSize: 40
+      minSize: 15
+      maxSize: 85
+    then:
+    - attribute: aria-valuenow
+      is: '40'
+    - attribute: aria-valuemin
+      is: '15'
+    - attribute: aria-valuemax
+      is: '85'
+    platforms:
+    - web
+  - name: the-separator-is-a-focusable-widget
+    description: A resizable separator is a focusable widget per ARIA; a static one
+      would not be in the tab order.
+    then:
+    - focusable: true
+    platforms:
+    - web
+  examples:
+  - name: sidebar-and-content
+    description: The default sidebar beside a content area, its width remembered per
+      user.
+    given:
+      label: Sidebar width
+      primary: A navigation tree
+      secondary: The selected document
+      defaultSize: 25
+      persistKey: app-sidebar
+  - name: collapsible-navigation
+    description: A sidebar that collapses to nothing with Enter or the collapse button,
+      and restores its last size.
+    given:
+      label: Sidebar width
+      primary: A navigation tree
+      secondary: The selected document
+      collapsible: true
+      minSize: 15
+  - name: editor-over-preview
+    description: A stacked split where the separator moves the boundary up and down.
+    given:
+      label: Editor height
+      primary: The editor
+      secondary: The preview
+      orientation: vertical
+      defaultSize: 60
+  - name: never-stacking-workbench
+    description: A split that keeps both panes side by side at every width, for a
+      desktop workbench.
+    given:
+      label: List width
+      primary: The result list
+      secondary: The detail view
+      stackBelow: never
+      step: 5
 ```
+
+## Events
+
+- `onSizeChange`: emit `onSizeChange`
+  - payload, positional, in this order: `size: number`
+  - fires on: user
+- `onSizeChangeEnd`: emit `onSizeChangeEnd`
+  - payload, positional, in this order: `size: number`
+  - fires on: user
+  - timing: commit
+- `onCollapseChange`: emit `onCollapseChange`
+  - payload, positional, in this order: `collapsed: boolean`
+  - fires on: user
 
 ## Controlled state
 
-- `size` is controlled when given, uncontrolled from `defaultSize` when omitted; paired by name, so no event is declared
-- `collapsed` is controlled when given, uncontrolled from `defaultCollapsed` when omitted; paired by name, so no event is declared
+- `size` is controlled when given, uncontrolled from `defaultSize` when omitted; changes reported by `onSizeChange` (emit `onSizeChange`)
+- `collapsed` is controlled when given, uncontrolled from `defaultCollapsed` when omitted; changes reported by `onCollapseChange` (emit `onCollapseChange`)
+
+## Style bindings
+
+- `separatorSize`: token `space.1`; part `separator`
+- `separatorColor`: token `color.border`; part `separator`
+- `separatorHover`: token `color.border.strong`; part `separator`; state `hover`; locked
+- `separatorActive`: token `color.control.selectedBackground`; part `separator`; state `dragging`; locked
+- `handleSize`: token `space.3`; part `handle`
+- `collapseButtonOffset`: token `space.2`; part `collapseButton`
+
+## Keyboard
+
+- `F6` (Cycles focus primary pane → separator → secondary pane → primary pane (wrapping), landing on the region's first focusable descendant or, when it has none, on the pane wrapper itself (tabindex -1). The APG convenience for cycling panes; not available on native.): expect manual
+
+## Copy
+
+- `collapse`: "Collapse {label}"
+- `expand`: "Expand {label}"
+- `sizeText`: "{percent}%"; params `percent` (number)
+
+## Constants and examples
+
+- example `sidebar-and-content`, story `SidebarAndContent`: given `label: "Sidebar width"`, `primary: "A navigation tree"`, `secondary: "The selected document"`, `defaultSize: 25`, `persistKey: "app-sidebar"`; The default sidebar beside a content area, its width remembered per user.
+- example `collapsible-navigation`, story `CollapsibleNavigation`: given `label: "Sidebar width"`, `primary: "A navigation tree"`, `secondary: "The selected document"`, `collapsible: true`, `minSize: 15`; A sidebar that collapses to nothing with Enter or the collapse button, and restores its last size.
+- example `editor-over-preview`, story `EditorOverPreview`: given `label: "Editor height"`, `primary: "The editor"`, `secondary: "The preview"`, `orientation: "vertical"`, `defaultSize: 60`; A stacked split where the separator moves the boundary up and down.
+- example `never-stacking-workbench`, story `NeverStackingWorkbench`: given `label: "List width"`, `primary: "The result list"`, `secondary: "The detail view"`, `stackBelow: "never"`, `step: 5`; A split that keeps both panes side by side at every width, for a desktop workbench.
 
 ## Overrides (per-instance styling contract)
 
@@ -396,11 +641,126 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `separatorSize`, `separatorColor`, `handleSize`, `gripLength`, `collapseButtonOffset`, `transition`
 Locked (accessibility-bearing, never overridable): `separatorHover`, `separatorActive`, `grip`, `paneMinTarget`, `minTarget`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (7)
+## Behavior scenarios (17)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: arrow-grows-the-primary-pane
+  description: ArrowRight grows the primary pane by step on a horizontal splitter,
+    and a key press is a complete interaction, so the end event fires too.
+  given:
+    defaultSize: 50
+  when:
+    key: ArrowRight
+  then:
+  - event: onSizeChange
+  - event: onSizeChangeEnd
+  platforms:
+  - web
+  - lit
+- name: arrow-shrinks-the-primary-pane
+  given:
+    defaultSize: 50
+  when:
+    key: ArrowLeft
+  then:
+  - event: onSizeChange
+  - event: onSizeChangeEnd
+  platforms:
+  - web
+  - lit
+- name: home-sets-the-primary-pane-to-its-minimum
+  given:
+    defaultSize: 50
+    minSize: 20
+  when:
+    key: Home
+  then:
+  - event: onSizeChange
+  platforms:
+  - web
+  - lit
+- name: end-sets-the-primary-pane-to-its-maximum
+  given:
+    defaultSize: 50
+    maxSize: 80
+  when:
+    key: End
+  then:
+  - event: onSizeChange
+  platforms:
+  - web
+  - lit
+- name: enter-collapses-a-collapsible-pane
+  given:
+    collapsible: true
+    defaultSize: 40
+  when:
+    key: Enter
+  then:
+  - event: onCollapseChange
+  platforms:
+  - web
+  - lit
+- name: enter-does-nothing-when-the-pane-cannot-collapse
+  description: Collapsing is what `collapsible` turns on; without it Enter on the
+    separator has nothing to do.
+  when:
+    key: Enter
+  then:
+  - event: onCollapseChange
+    fired: false
+  platforms:
+  - web
+  - lit
+- name: the-collapse-button-collapses-the-pane
+  description: Drag past the minimum, Enter, or the collapse button - the three ways
+    the doc gives to collapse the primary pane.
+  given:
+    collapsible: true
+    defaultSize: 40
+  when:
+    click: collapseButton
+  then:
+  - event: onCollapseChange
+- name: a-collapsed-pane-ignores-the-arrow-keys
+  description: While collapsed, arrows, Home, End and pointer drag do nothing; only
+    Enter or the collapse button restores.
+  given:
+    collapsible: true
+    defaultCollapsed: true
+  when:
+    key: ArrowRight
+  then:
+  - event: onSizeChange
+    fired: false
+  platforms:
+  - web
+  - lit
+- name: the-separator-reports-its-size-and-bounds
+  description: A resizable separator carries valuenow/min/max so a keyboard user hears
+    the percentage.
+  given:
+    defaultSize: 40
+    minSize: 15
+    maxSize: 85
+  then:
+  - attribute: aria-valuenow
+    is: '40'
+  - attribute: aria-valuemin
+    is: '15'
+  - attribute: aria-valuemax
+    is: '85'
+  platforms:
+  - web
+- name: the-separator-is-a-focusable-widget
+  description: A resizable separator is a focusable widget per ARIA; a static one
+    would not be in the tab order.
+  then:
+  - focusable: true
+  platforms:
+  - web
 - name: renders
   then:
   - renders: true

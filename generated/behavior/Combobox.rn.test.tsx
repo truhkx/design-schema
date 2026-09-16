@@ -29,12 +29,52 @@ function setup(given: Partial<ComboboxProps> = {}) {
     props,
     root: () => screen.queryByTestId('Combobox') ?? screen.UNSAFE_root,
     label: () => screen.queryByRole('combobox') ?? s.root(),
+    chipRemove: () => screen.queryByTestId('Combobox.chipRemove') ?? s.root(),
+    clearButton: () => screen.queryByTestId('Combobox.clearButton') ?? s.root(),
+    toggleButton: () => screen.queryByTestId('Combobox.toggleButton') ?? s.root(),
     rerender: (next: Partial<ComboboxProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Combobox', () => {
+  test('typing-reports-the-input-text', () => {
+    const s = setup({"open": false});
+    fireEvent.changeText(s.label(), "ap");
+    expect(s.events.onInputChange).toHaveBeenCalled();
+  });
+  test('the-toggle-button-opens-the-list', () => {
+    const s = setup({"open": false});
+    fireEvent.press(s.toggleButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-closed-combobox-is-not-expanded', () => {
+    const s = setup({"open": false});
+    expect(s.label()).not.toBeExpanded();
+  });
+  test('an-open-list-reports-the-expanded-state', () => {
+    const s = setup({"open": true});
+    expect(s.label()).toBeExpanded();
+  });
+  test('the-clear-button-clears-the-value', () => {
+    const s = setup({"open": false, "defaultValue": "apple", "clearable": true});
+    fireEvent.press(s.clearButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('multiple-shows-the-selection-as-chips', () => {
+    const s = setup({"open": false, "multiple": true, "defaultValue": ["apple"]});
+    expect(screen.getByText(new RegExp("Apple"))).toBeOnTheScreen();
+  });
+  test('removing-a-chip-reports-the-new-value', () => {
+    const s = setup({"open": false, "multiple": true, "defaultValue": ["apple"]});
+    fireEvent.press(s.chipRemove());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('a-disabled-combobox-does-not-open', () => {
+    const s = setup({"open": false, "disabled": true});
+    fireEvent.press(s.toggleButton());
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

@@ -13,6 +13,7 @@ component:
       description: The text content. Inline formatting (emphasis, links) is allowed; block elements are not.
     size:
       type: enum
+      enumRef: size
       values: [xs, sm, md, lg, xl]
       default: md
       description: Maps to the font size scale. `md` is body copy; `xs` is the smallest readable size and is reserved for captions and metadata.
@@ -23,6 +24,7 @@ component:
       description: Emphasis without changing size. Prefer weight over color for hierarchy.
     tone:
       type: enum
+      enumRef: foregroundTone
       values: [default, strong, muted, danger, onAction]
       default: default
       description: Semantic color. `onAction` is only for text placed on an action background.
@@ -74,6 +76,28 @@ component:
       element: Text
       props: [.font, .fontWeight, .lineSpacing, .foregroundStyle, .lineLimit, .truncationMode, .accessibilityAddTraits=isStaticText]
       notes: 'SwiftUI `Text` with `.font(.system(size: scaled))` where the size token passes through `@ScaledMetric(relativeTo:)` so Dynamic Type scales it, `.fontWeight` from the weight token, `.lineSpacing(fontSize × (lineHeight − 1))`, `.foregroundStyle` from the tone. `element` has no meaning (no DOM); `truncate` is `.lineLimit(1)` + `.truncationMode(.tail)` and the full text becomes the accessibility label. Nested Text: the package''s `Text` inside another `Text` renders as a concatenated `SwiftUI.Text` so inline runs share a line; a `TextNesting` environment flag tells a child it is inline.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum ones from the schema.
+    - name: truncated-text-keeps-the-full-string-reachable
+      description: 'Truncation clips to one line, and on web the full text is exposed via title when children is a plain string, so sighted users can also reach it.'
+      given: { truncate: true, children: 'A sentence long enough to be clipped by its column.' }
+      then:
+        - { attribute: title, is: 'A sentence long enough to be clipped by its column.' }
+      platforms: [web]
+  examples:
+    - name: body-copy
+      description: The default paragraph - body size, regular weight, default tone.
+      given: { children: 'Changes are saved automatically. You can undo any change for 30 days.' }
+    - name: caption
+      description: Secondary metadata at the smallest readable size, muted so it sits behind the content it annotates.
+      given: { children: 'Last updated 2 minutes ago.', size: xs, tone: muted }
+    - name: inline-error-wording
+      description: Error copy where the danger tone is paired with explicit words, so color alone never carries the meaning.
+      given: { children: 'Error: enter an email address like name@example.com', tone: danger, element: span }
+      platforms: [web, lit]
+    - name: truncated-cell
+      description: One line of text in a dense cell, with the full string still reachable.
+      given: { children: 'Quarterly revenue summary for the EMEA region.', truncate: true }
 ---
 
 Text is the default way to put words on a screen. Its job is to make sure every piece of copy uses a size from the scale and a color from the semantic set, so typography stays consistent without anyone thinking about it.

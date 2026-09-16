@@ -6,6 +6,21 @@ import { Toast } from '../../packages/react/src/Toast';
 import type { ToastProps } from '../../packages/react/src/Toast';
 import meta from '../../packages/react/src/Toast.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<ToastProps> = {}) {
   const events = {
     onAction: vi.fn(),
@@ -21,12 +36,38 @@ function setup(given: Partial<ToastProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Toast"]') ?? screen.queryByRole('status') ?? utils.container.firstElementChild) as HTMLElement,
     region: () => (screen.queryByRole('status') ?? s.root()) as HTMLElement,
+    actionButton: () => (document.querySelector('[data-part="actionButton"]') ?? s.root()),
+    dismissButton: () => (document.querySelector('[data-part="dismissButton"]') ?? s.root()),
     rerender: (next: Partial<ToastProps>) => utils.rerender(<Toast {...props} {...next} />),
   };
   return s;
 }
 
 describe('Toast', () => {
+  test('the-dismiss-button-fires-on-dismiss', async () => {
+    const s = setup({"dismissible": true});
+    await s.user.click(s.dismissButton());
+    expect(s.events.onDismiss).toHaveBeenCalled();
+  });
+  test('the-action-button-fires-on-action', async () => {
+    const s = setup({"actionLabel": "Undo"});
+    await s.user.click(s.actionButton());
+    expect(s.events.onAction).toHaveBeenCalled();
+  });
+  test('escape-dismisses-the-focused-toast', async () => {
+    const s = setup({});
+    act(() => focusInto(s.region()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onDismiss).toHaveBeenCalled();
+  });
+  test('danger-toasts-are-announced-assertively', async () => {
+    const s = setup({"tone": "danger"});
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+  test('the-message-is-rendered', async () => {
+    const s = setup({"message": "3 files moved to Archive"});
+    expect(screen.getByText(new RegExp("3\\ files\\ moved\\ to\\ Archive"))).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

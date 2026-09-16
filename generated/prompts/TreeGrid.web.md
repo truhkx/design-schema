@@ -118,6 +118,9 @@ component:
       type: array
       shape: string[]
       description: Controlled ids of expanded rows.
+      controls:
+        event: onExpandChange
+        default: defaultExpanded
     defaultExpanded:
       type: array
       shape: string[]
@@ -127,6 +130,9 @@ component:
       shape: '{ column: string; direction: "ascending" | "descending" }'
       description: Sort applies within each level; siblings are ordered, hierarchy
         is kept.
+      controls:
+        event: onSortChange
+        default: defaultSort
     defaultSort:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
@@ -144,6 +150,9 @@ component:
       type: array
       shape: string[]
       description: As DataGrid.
+      controls:
+        event: onSelectionChange
+        default: defaultSelected
     defaultSelected:
       type: array
       shape: string[]
@@ -199,6 +208,13 @@ component:
         lit: expand-change
         rn: onExpandChange
         swiftui: onExpandChange
+      payload:
+      - name: ids
+        type: array
+        shape: string[]
+        description: Every expanded id, as a bare array.
+      fires:
+      - user
     onExpand:
       description: Fired with its id (bare string) each time a row whose `children`
         is still `"lazy"` is expanded, so a failed load can retry; once the caller
@@ -208,6 +224,12 @@ component:
         lit: expand
         rn: onExpand
         swiftui: onExpand
+      payload:
+      - name: id
+        type: string
+        description: The expanded row.
+      fires:
+      - user
     onSortChange:
       description: As DataGrid.
       platforms:
@@ -215,6 +237,17 @@ component:
         lit: sort-change
         rn: onSortChange
         swiftui: onSortChange
+      payload:
+      - name: column
+        type: string
+        description: The key of the column now sorted on.
+      - name: direction
+        type: enum
+        values:
+        - ascending
+        - descending
+      fires:
+      - user
     onSelectionChange:
       description: As DataGrid (row ids or one cell).
       platforms:
@@ -222,6 +255,13 @@ component:
         lit: selection-change
         rn: onSelectionChange
         swiftui: onSelectionChange
+      payload:
+      - name: selection
+        type: union
+        shape: 'string[] | { rowId: string; column: string }'
+        description: Row ids, or one cell, matching selectable.
+      fires:
+      - user
     onCellChange:
       description: As DataGrid.
       platforms:
@@ -229,6 +269,25 @@ component:
         lit: cell-change
         rn: onCellChange
         swiftui: onCellChange
+      payload:
+      - name: rowId
+        type: string
+        description: The row that was edited.
+      - name: column
+        type: string
+        description: The key of the edited column.
+      - name: value
+        type: union
+        shape: string | number | boolean
+        description: The committed value, as the column editor produces it.
+      - name: previous
+        type: union
+        shape: string | number | boolean
+        description: The value the cell held before the edit.
+      fires:
+      - user
+      timing:
+        phase: request
     onEditStart:
       description: As DataGrid.
       platforms:
@@ -236,6 +295,18 @@ component:
         lit: edit-start
         rn: onEditStart
         swiftui: onEditStart
+      payload:
+      - name: rowId
+        type: string
+        description: The row about to be edited.
+      - name: column
+        type: string
+        description: The key of the column about to be edited.
+      cancelable: true
+      fires:
+      - user
+      timing:
+        phase: before-change
     onColumnResize:
       description: As DataGrid.
       platforms:
@@ -243,6 +314,17 @@ component:
         lit: column-resize
         rn: onColumnResize
         swiftui: onColumnResize
+      payload:
+      - name: column
+        type: string
+        description: The key of the resized column.
+      - name: width
+        type: number
+        description: Its new width.
+      fires:
+      - user
+      timing:
+        phase: commit
   keyboard:
   - keys:
     - Tab
@@ -301,11 +383,13 @@ component:
   styles:
     indent:
       token: space.5
+      part: indent
       description: Per level, applied as padding-inline-start on the row header. Level
         1 has none.
       locked: false
     expandButtonSize:
       token: size.target.min
+      part: expandButton
       description: Inline width reserved for the expand control in the row header
         (the guide lines align to its centre); minTarget is the locked row-height
         floor.
@@ -347,24 +431,109 @@ component:
       token: size.target.min
       locked: true
   copy:
-    expand: Expand {rowName}
-    collapse: Collapse {rowName}
-    level: Level {level}
-    childCount: '{count} items'
+    expand:
+      text: Expand {rowName}
+      params:
+        rowName:
+          type: string
+          description: The row's name from its row-header cell.
+    collapse:
+      text: Collapse {rowName}
+      params:
+        rowName:
+          type: string
+          description: The row's name from its row-header cell.
+    level:
+      text: Level {level}
+      params:
+        level:
+          type: number
+          description: The row's depth in the tree.
+    childCount:
+      plural:
+        by: count
+        one: '{count} item'
+        other: '{count} items'
+      params:
+        count:
+          type: number
+          description: How many children the row has.
     loading: Loading
     expandAll: Expand all
     collapseAll: Collapse all
-    sortAscending: Sort by {column}, ascending
-    sortDescending: Sort by {column}, descending
-    sortedAnnouncement: Sorted by {column}, {direction}
+    sortAscending:
+      text: Sort by {column}, ascending
+      params:
+        column:
+          type: string
+          description: The column header text.
+    sortDescending:
+      text: Sort by {column}, descending
+      params:
+        column:
+          type: string
+          description: The column header text.
+    sortedAnnouncement:
+      text: Sorted by {column}, {direction}
+      params:
+        column:
+          type: string
+          description: The column header text.
+        direction:
+          type: string
+          description: 'The new direction: ascending or descending.'
     selectAll: Select all rows
-    selectRow: Select {rowName}
-    selectedRows: '{count} of {total} rows selected'
-    editing: Editing {column}. Enter to save, Escape to cancel.
-    invalid: '{message}'
-    rowCount: '{count} rows'
-    position: Row {row}, {column}
-    resize: Resize {column}
+    selectRow:
+      text: Select {rowName}
+      params:
+        rowName:
+          type: string
+          description: The row's name from its row-header cell.
+    selectedRows:
+      text: '{count} of {total} rows selected'
+      params:
+        count:
+          type: number
+          description: How many rows are selected.
+        total:
+          type: number
+          description: How many rows the treegrid has.
+    editing:
+      text: Editing {column}. Enter to save, Escape to cancel.
+      params:
+        column:
+          type: string
+          description: The column header text.
+    invalid:
+      text: '{message}'
+      params:
+        message:
+          type: string
+          description: The message the column's validate returned.
+    rowCount:
+      plural:
+        by: count
+        one: '{count} row'
+        other: '{count} rows'
+      params:
+        count:
+          type: number
+          description: How many rows the treegrid has.
+    position:
+      text: Row {row}, {column}
+      params:
+        row:
+          type: number
+          description: The active cell's row number.
+        column:
+          type: string
+          description: The column header text.
+    resize:
+      text: Resize {column}
+      params:
+        column:
+          type: string
+          description: The column header text.
     empty: Nothing to show.
     scrollHint: Scroll sideways to see more columns
   a11y:
@@ -423,8 +592,10 @@ component:
       - height
       - loading
       - hide-caption
-      - no-status-bar
-      - no-sticky-header
+      - prop: showStatusBar
+        attribute: no-status-bar
+      - prop: stickyHeader
+        attribute: no-sticky-header
       notes: Its own element following ds-data-grid's structure, keyboard handling
         and CSS (a shared base class is a welcome package refactor, not a requirement;
         the copy strings above are TreeGrid's own, so nothing is imported from DataGrid).
@@ -459,13 +630,324 @@ component:
         custom actions. ArrowLeft/Right/`*` per the keyboard table on iPad; guide
         lines drawn as one `Rectangle` per ancestor level per row; indent by level
         from the token. Everything else as DataGrid.
+  behavior:
+  - name: the-expand-button-expands-a-row
+    description: Rows with children show a chevron in the row header; onExpandChange
+      reports the new set of expanded ids.
+    given:
+      defaultExpanded: []
+      columns:
+      - key: account
+        header: Account
+        isRowHeader: true
+      - key: balance
+        header: Balance
+        align: end
+      data:
+      - id: assets
+        account: Assets
+        balance: 100
+        children:
+        - id: cash
+          account: Cash
+          balance: 40
+    when:
+      click: expandButton
+    then:
+    - event: onExpandChange
+  - name: expanding-a-lazy-row-asks-for-its-children
+    description: 'children: "lazy" marks a row whose children are loaded on first
+      expand through onExpand, so a failed load can retry.'
+    given:
+      defaultExpanded: []
+      columns:
+      - key: account
+        header: Account
+        isRowHeader: true
+      data:
+      - id: assets
+        account: Assets
+        children: lazy
+    when:
+      click: expandButton
+    then:
+    - event: onExpand
+    - event: onExpandChange
+  - name: a-collapsed-parent-row-reports-it
+    given:
+      defaultExpanded: []
+      columns:
+      - key: account
+        header: Account
+        isRowHeader: true
+      data:
+      - id: assets
+        account: Assets
+        children:
+        - id: cash
+          account: Cash
+    then:
+    - attribute: aria-expanded
+      is: 'false'
+      'on': row
+    platforms:
+    - web
+  - name: an-expanded-parent-row-reports-it
+    given:
+      defaultExpanded:
+      - assets
+      columns:
+      - key: account
+        header: Account
+        isRowHeader: true
+      data:
+      - id: assets
+        account: Assets
+        children:
+        - id: cash
+          account: Cash
+    then:
+    - attribute: aria-expanded
+      is: 'true'
+      'on': row
+    platforms:
+    - web
+  - name: activating-a-sortable-header-reports-the-sort
+    description: Sorting orders siblings within each parent and keeps the tree; the
+      caller does the sorting.
+    given:
+      columns:
+      - key: account
+        header: Account
+        isRowHeader: true
+      - key: balance
+        header: Balance
+        align: end
+        sortable: true
+      data:
+      - id: assets
+        account: Assets
+        balance: 100
+      - id: equity
+        account: Equity
+        balance: 50
+    when:
+      click: sortButton
+    then:
+    - event: onSortChange
+  - name: selecting-a-row-reports-the-selection
+    given:
+      selectable: row
+      columns:
+      - key: account
+        header: Account
+        isRowHeader: true
+      data:
+      - id: assets
+        account: Assets
+      - id: equity
+        account: Equity
+    when:
+      click: selectCell
+    then:
+    - event: onSelectionChange
+  - name: a-selected-row-is-marked-selected
+    given:
+      selectable: row
+      selected:
+      - assets
+      columns:
+      - key: account
+        header: Account
+        isRowHeader: true
+      data:
+      - id: assets
+        account: Assets
+      - id: equity
+        account: Equity
+    then:
+    - attribute: aria-selected
+      is: 'true'
+      'on': row
+    platforms:
+    - web
+  - name: the-empty-message-shows-when-there-are-no-rows
+    given:
+      columns:
+      - key: account
+        header: Account
+        isRowHeader: true
+      data: []
+    then:
+    - copy: empty
+  examples:
+  - name: chart-of-accounts
+    description: Nested accounts with their balances, the top level expanded.
+    given:
+      caption: Chart of accounts
+      defaultExpanded:
+      - assets
+      columns:
+      - key: account
+        header: Account
+        isRowHeader: true
+        width: 240
+      - key: balance
+        header: Balance
+        align: end
+      data:
+      - id: assets
+        account: Assets
+        balance: 1400
+        children:
+        - id: cash
+          account: Cash
+          balance: 400
+        - id: stock
+          account: Stock
+          balance: 1000
+      - id: equity
+        account: Equity
+        balance: 1400
+  - name: lazy-folders
+    description: A deep tree whose children are fetched the first time a row is expanded.
+    given:
+      caption: Files
+      columns:
+      - key: name
+        header: Name
+        isRowHeader: true
+      - key: size
+        header: Size
+        align: end
+      data:
+      - id: docs
+        name: Documents
+        size: 0
+        children: lazy
+      - id: media
+        name: Media
+        size: 0
+        children: lazy
+  - name: cascading-selection
+    description: Selection that means "this row and everything in it", with indeterminate
+      parents.
+    given:
+      caption: Bill of materials
+      selectable: row
+      selectChildren: true
+      defaultExpanded:
+      - '*'
+      columns:
+      - key: part
+        header: Part
+        isRowHeader: true
+      - key: quantity
+        header: Quantity
+        align: end
+      data:
+      - id: frame
+        part: Frame
+        quantity: 1
+        children:
+        - id: bolt
+          part: Bolt
+          quantity: 8
+  - name: editable-quantities
+    description: A nested grid that is worked in, where the quantity column takes
+      a number editor.
+    given:
+      caption: Bill of materials
+      editable: true
+      defaultExpanded:
+      - '*'
+      columns:
+      - key: part
+        header: Part
+        isRowHeader: true
+      - key: quantity
+        header: Quantity
+        align: end
+        editable: true
+        editor: number
+      data:
+      - id: frame
+        part: Frame
+        quantity: 1
+        children:
+        - id: bolt
+          part: Bolt
+          quantity: 8
 ```
+
+## Events
+
+- `onExpandChange`: emit `onExpandChange`
+  - payload, positional, in this order: `ids: string[]`
+  - fires on: user
+- `onExpand`: emit `onExpand`
+  - payload, positional, in this order: `id: string`
+  - fires on: user
+- `onSortChange`: emit `onSortChange`
+  - payload, positional, in this order: `column: string`, `direction: 'ascending' | 'descending'`
+  - fires on: user
+- `onSelectionChange`: emit `onSelectionChange`
+  - payload, positional, in this order: `selection: string[] | { rowId: string; column: string }`
+  - fires on: user
+- `onCellChange`: emit `onCellChange`
+  - payload, positional, in this order: `rowId: string`, `column: string`, `value: string | number | boolean`, `previous: string | number | boolean`
+  - fires on: user
+  - timing: request
+- `onEditStart`: emit `onEditStart`
+  - payload, positional, in this order: `rowId: string`, `column: string`
+  - cancelable: yes
+  - fires on: user
+  - timing: before-change
+- `onColumnResize`: emit `onColumnResize`
+  - payload, positional, in this order: `column: string`, `width: number`
+  - fires on: user
+  - timing: commit
 
 ## Controlled state
 
-- `expanded` is controlled when given, uncontrolled from `defaultExpanded` when omitted; paired by name, so no event is declared
-- `sort` is controlled when given, uncontrolled from `defaultSort` when omitted; paired by name, so no event is declared
-- `selected` is controlled when given, uncontrolled from `defaultSelected` when omitted; paired by name, so no event is declared
+- `expanded` is controlled when given, uncontrolled from `defaultExpanded` when omitted; changes reported by `onExpandChange` (emit `onExpandChange`)
+- `sort` is controlled when given, uncontrolled from `defaultSort` when omitted; changes reported by `onSortChange` (emit `onSortChange`)
+- `selected` is controlled when given, uncontrolled from `defaultSelected` when omitted; changes reported by `onSelectionChange` (emit `onSelectionChange`)
+
+## Style bindings
+
+- `indent`: token `space.5`; part `indent`
+- `expandButtonSize`: token `size.target.min`; part `expandButton`; locked
+
+## Copy
+
+- `expand`: "Expand {rowName}"; params `rowName` (string)
+- `collapse`: "Collapse {rowName}"; params `rowName` (string)
+- `level`: "Level {level}"; params `level` (number)
+- `childCount`: "{count} items"; params `count` (number); plural by `count`: one "{count} item", other "{count} items"
+- `loading`: "Loading"
+- `expandAll`: "Expand all"
+- `collapseAll`: "Collapse all"
+- `sortAscending`: "Sort by {column}, ascending"; params `column` (string)
+- `sortDescending`: "Sort by {column}, descending"; params `column` (string)
+- `sortedAnnouncement`: "Sorted by {column}, {direction}"; params `column` (string), `direction` (string)
+- `selectAll`: "Select all rows"
+- `selectRow`: "Select {rowName}"; params `rowName` (string)
+- `selectedRows`: "{count} of {total} rows selected"; params `count` (number), `total` (number)
+- `editing`: "Editing {column}. Enter to save, Escape to cancel."; params `column` (string)
+- `invalid`: "{message}"; params `message` (string)
+- `rowCount`: "{count} rows"; params `count` (number); plural by `count`: one "{count} row", other "{count} rows"
+- `position`: "Row {row}, {column}"; params `row` (number), `column` (string)
+- `resize`: "Resize {column}"; params `column` (string)
+- `empty`: "Nothing to show."
+- `scrollHint`: "Scroll sideways to see more columns"
+
+## Constants and examples
+
+- example `chart-of-accounts`, story `ChartOfAccounts`: given `caption: "Chart of accounts"`, `defaultExpanded: ["assets"]`, `columns: [{"key":"account","header":"Account","isRowHeader":true,"width":240},{"key":"balance","header":"Balance","align":"end"}]`, `data: [{"id":"assets","account":"Assets","balance":1400,"children":[{"id":"cash","account":"Cash","balance":400},{"id":"stock","account":"Stock","balance":1000}]},{"id":"equity","account":"Equity","balance":1400}]`; Nested accounts with their balances, the top level expanded.
+- example `lazy-folders`, story `LazyFolders`: given `caption: "Files"`, `columns: [{"key":"name","header":"Name","isRowHeader":true},{"key":"size","header":"Size","align":"end"}]`, `data: [{"id":"docs","name":"Documents","size":0,"children":"lazy"},{"id":"media","name":"Media","size":0,"children":"lazy"}]`; A deep tree whose children are fetched the first time a row is expanded.
+- example `cascading-selection`, story `CascadingSelection`: given `caption: "Bill of materials"`, `selectable: "row"`, `selectChildren: true`, `defaultExpanded: ["*"]`, `columns: [{"key":"part","header":"Part","isRowHeader":true},{"key":"quantity","header":"Quantity","align":"end"}]`, `data: [{"id":"frame","part":"Frame","quantity":1,"children":[{"id":"bolt","part":"Bolt","quantity":8}]}]`; Selection that means "this row and everything in it", with indeterminate parents.
+- example `editable-quantities`, story `EditableQuantities`: given `caption: "Bill of materials"`, `editable: true`, `defaultExpanded: ["*"]`, `columns: [{"key":"part","header":"Part","isRowHeader":true},{"key":"quantity","header":"Quantity","align":"end","editable":true,"editor":"number"}]`, `data: [{"id":"frame","part":"Frame","quantity":1,"children":[{"id":"bolt","part":"Bolt","quantity":8}]}]`; A nested grid that is worked in, where the quantity column takes a number editor.
 
 ## Overrides (per-instance styling contract)
 
@@ -478,11 +960,160 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `indent`, `expandGap`, `guideLine`, `guideLineWidth`, `parentWeight`, `transition`
 Locked (accessibility-bearing, never overridable): `expandButtonSize`, `loadingColor`, `focusRing`, `focusRingWidth`, `minTarget`
 
-## Behavior scenarios (10)
+## Behavior scenarios (18)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: the-expand-button-expands-a-row
+  description: Rows with children show a chevron in the row header; onExpandChange
+    reports the new set of expanded ids.
+  given:
+    defaultExpanded: []
+    columns:
+    - key: account
+      header: Account
+      isRowHeader: true
+    - key: balance
+      header: Balance
+      align: end
+    data:
+    - id: assets
+      account: Assets
+      balance: 100
+      children:
+      - id: cash
+        account: Cash
+        balance: 40
+  when:
+    click: expandButton
+  then:
+  - event: onExpandChange
+- name: expanding-a-lazy-row-asks-for-its-children
+  description: 'children: "lazy" marks a row whose children are loaded on first expand
+    through onExpand, so a failed load can retry.'
+  given:
+    defaultExpanded: []
+    columns:
+    - key: account
+      header: Account
+      isRowHeader: true
+    data:
+    - id: assets
+      account: Assets
+      children: lazy
+  when:
+    click: expandButton
+  then:
+  - event: onExpand
+  - event: onExpandChange
+- name: a-collapsed-parent-row-reports-it
+  given:
+    defaultExpanded: []
+    columns:
+    - key: account
+      header: Account
+      isRowHeader: true
+    data:
+    - id: assets
+      account: Assets
+      children:
+      - id: cash
+        account: Cash
+  then:
+  - attribute: aria-expanded
+    is: 'false'
+    'on': row
+  platforms:
+  - web
+- name: an-expanded-parent-row-reports-it
+  given:
+    defaultExpanded:
+    - assets
+    columns:
+    - key: account
+      header: Account
+      isRowHeader: true
+    data:
+    - id: assets
+      account: Assets
+      children:
+      - id: cash
+        account: Cash
+  then:
+  - attribute: aria-expanded
+    is: 'true'
+    'on': row
+  platforms:
+  - web
+- name: activating-a-sortable-header-reports-the-sort
+  description: Sorting orders siblings within each parent and keeps the tree; the
+    caller does the sorting.
+  given:
+    columns:
+    - key: account
+      header: Account
+      isRowHeader: true
+    - key: balance
+      header: Balance
+      align: end
+      sortable: true
+    data:
+    - id: assets
+      account: Assets
+      balance: 100
+    - id: equity
+      account: Equity
+      balance: 50
+  when:
+    click: sortButton
+  then:
+  - event: onSortChange
+- name: selecting-a-row-reports-the-selection
+  given:
+    selectable: row
+    columns:
+    - key: account
+      header: Account
+      isRowHeader: true
+    data:
+    - id: assets
+      account: Assets
+    - id: equity
+      account: Equity
+  when:
+    click: selectCell
+  then:
+  - event: onSelectionChange
+- name: a-selected-row-is-marked-selected
+  given:
+    selectable: row
+    selected:
+    - assets
+    columns:
+    - key: account
+      header: Account
+      isRowHeader: true
+    data:
+    - id: assets
+      account: Assets
+    - id: equity
+      account: Equity
+  then:
+  - attribute: aria-selected
+    is: 'true'
+    'on': row
+  platforms:
+  - web
+- name: the-empty-message-shows-when-there-are-no-rows
+  given:
+    columns:
+    - key: account
+      header: Account
+      isRowHeader: true
+    data: []
+  then:
+  - copy: empty
 - name: renders
   then:
   - renders: true

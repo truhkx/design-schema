@@ -6,6 +6,21 @@ import { SidePanel } from '../../packages/react/src/SidePanel';
 import type { SidePanelProps } from '../../packages/react/src/SidePanel';
 import meta from '../../packages/react/src/SidePanel.stories';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<SidePanelProps> = {}) {
   const events = {
     onOpenChange: vi.fn(),
@@ -20,12 +35,39 @@ function setup(given: Partial<SidePanelProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="SidePanel"]') ?? utils.container.firstElementChild) as HTMLElement,
     trigger: () => s.root(),
+    scrim: () => (document.querySelector('[data-part="scrim"]') ?? s.root()),
+    closeButton: () => (document.querySelector('[data-part="closeButton"]') ?? s.root()),
     rerender: (next: Partial<SidePanelProps>) => utils.rerender(<SidePanel {...props} {...next} />),
   };
   return s;
 }
 
 describe('SidePanel', () => {
+  test('close-button-fires-on-open-change', async () => {
+    const s = setup({"open": true});
+    await s.user.click(s.closeButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-close-button-works-without-the-swipe', async () => {
+    const s = setup({"open": true, "swipeable": false});
+    await s.user.click(s.closeButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('non-dismissible-still-reports-escape', async () => {
+    const s = setup({"open": true, "dismissible": false});
+    act(() => focusInto(s.trigger()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('non-dismissible-scrim-tap-does-nothing', async () => {
+    const s = setup({"open": true, "dismissible": false});
+    await s.user.click(s.scrim());
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+  });
+  test('the-heading-is-rendered', async () => {
+    const s = setup({"open": true, "heading": "Your cart"});
+    expect(screen.getByText(new RegExp("Your\\ cart"))).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();
@@ -71,4 +113,10 @@ describe('SidePanel', () => {
     expect(s.root()).not.toBeNull();
   });
   test.skip('has-accessible-name — then.name: role \'none\' cannot be queried; name the landmark/text role in the doc', async () => {});
+  test('escape-fires-on-open-change', async () => {
+    const s = setup({"open": true});
+    act(() => focusInto(s.trigger()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
 });

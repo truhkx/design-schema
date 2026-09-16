@@ -263,6 +263,11 @@ export const styleBinding = z
   })
   .meta({ id: 'styleBinding' });
 
+/** Token families that are never text: boundaries, controls, inverse status indicators, icons and focus colors. A
+ *  `large: true` pair on one of these is large text standing in for WCAG 1.4.11's 3:1, which `componentDef.check`
+ *  rejects (it was a `componentWarnings` rule until the phase 3 doc migration satisfied it). */
+const NON_TEXT_FOREGROUND = /^color\.(border|control|inverse\.status)\.|\.(icon|focus)$/;
+
 /** States a contrast pair can hold in. No `disabled`: WCAG 1.4.3 and 1.4.11 exempt inactive components. */
 export const CONTRAST_STATES = ['default', 'hover', 'pressed', 'focus', 'selected', 'checked', 'expanded', 'open', 'invalid'] as const;
 
@@ -711,6 +716,9 @@ export const PLURAL_CATEGORIES = ['zero', 'one', 'two', 'few', 'many', 'other'] 
 /** A named placeholder in a copy template: `{count}`. */
 const COPY_PLACEHOLDER = /\{([a-zA-Z][a-zA-Z0-9]*)\}/g;
 
+/** A reference to a copy key in prose a generator reads: `copy.required`. */
+const COPY_REFERENCE = /copy\.([a-zA-Z][a-zA-Z0-9]*)/g;
+
 /** What a copy template's placeholder holds. */
 export const copyParam = z
   .strictObject({
@@ -1036,6 +1044,10 @@ export const componentDef = z
         if (notes?.supported !== false && !Object.hasOwn(ev.platforms, platform)) issue(['events', evName, 'platforms'], `events.${evName} has no mapping for platform '${platform}'`);
       }
     }
+    // A platform name the event registry does not accept (schema/events.ts). A `componentWarnings` rule until the
+    // phase 3 migration gave link.md the spelling it rejected, so the message and the issue path are job 610's word
+    // for word: `events.<name>.platforms.<platform>` carries no dots of its own.
+    for (const drift of conventionDrift(c)) issue(drift.path.split('.'), drift.message);
     // Event contracts (schema/events.ts): the payload carries the reasons, a controlled reason needs a controlled
     // source, nothing is left to veto after the change, and timing.before orders distinct events of this component
     // one way.
@@ -1074,6 +1086,14 @@ export const componentDef = z
     }
     // Controlled props: what `controls` names exists, the default prop can stand in for the controlled one, and a
     // controlled prop has no default of its own, since a default would make every instance controlled.
+    // A `default<X>` prop with no `<x>` prop that no `controls.default` names seeds nothing: a `componentWarnings`
+    // rule until the phase 3 migration satisfied it, so the message and the issue path are job 611's word for word.
+    const seeds = new Set(Object.values(c.props).map((p) => p.controls?.default));
+    for (const dName of Object.keys(c.props)) {
+      const name = seededName(dName);
+      if (name === null || Object.hasOwn(c.props, name) || seeds.has(dName)) continue;
+      issue(['props', dName], `seeds '${name}', which is not a prop`);
+    }
     const seededBy = new Map<string, string>();
     for (const [pName, p] of Object.entries(c.props)) {
       const controls = p.controls;
@@ -1134,6 +1154,9 @@ export const componentDef = z
       const at = (...rest: PropertyKey[]): PropertyKey[] => ['a11y', 'contrast', i, ...rest];
       if (pair.nonText === true && pair.large) issue(at('large'), "a nonText pair has no large-text threshold; remove 'large'");
       if (pair.nonText === true && pair.level === 'AAA') issue(at('level'), 'WCAG 1.4.11 has no AAA level; a nonText pair is checked at 3:1 — use level AA');
+      if (pair.large === true && pair.nonText === undefined && NON_TEXT_FOREGROUND.test(pair.foreground)) {
+        issue(at('large'), `large: true on a non-text pair (${pair.foreground}); WCAG 1.4.11 pairs set nonText: true`);
+      }
       // Every token the pair expands to (over `only`, as tools/check_contrast.ts reads it) is in the manifest. A slot on
       // a non-enum prop has nothing to expand over and is left to the contrast checker.
       for (const field of ['foreground', 'background', 'surface'] as const) {
@@ -1178,9 +1201,14 @@ export const componentDef = z
 
     // Copy entries in the object form: one of text and plural, a plural picked by a number param, and params that
     // match the placeholders. A placeholder may read a prop instead ({label}). A plain string has nowhere to declare
-    // a param, so componentWarnings reports its placeholders.
+    // a param, so every placeholder it uses must name a prop.
     for (const [key, entry] of Object.entries(c.copy ?? {})) {
-      if (typeof entry === 'string') continue;
+      if (typeof entry === 'string') {
+        for (const placeholder of copyPlaceholders(entry)) {
+          if (!Object.hasOwn(c.props, placeholder)) issue(['copy', key], `'{${placeholder}}' names no prop, so nothing declares what it holds; use the object form and declare it in params`);
+        }
+        continue;
+      }
       const at = (...rest: PropertyKey[]): PropertyKey[] => ['copy', key, ...rest];
       const params = entry.params ?? {};
       if ((entry.text === undefined) === (entry.plural === undefined)) issue(at(), `copy.${key} needs exactly one of 'text' and 'plural'`);
@@ -1202,9 +1230,31 @@ export const componentDef = z
       }
     }
 
-    // The form block names this component's props and copy, and its value prop can hold its value type.
+    // A `copy.<key>` reference in prose the generators read (descriptions, keyboard actions and conditions, platform
+    // notes) names a copy key, so no generator has to invent the string.
+    const copyReferences: [PropertyKey[], string | undefined][] = [
+      ...Object.entries(c.props).map(([name, p]): [PropertyKey[], string | undefined] => [['props', name, 'description'], p.description]),
+      ...Object.entries(c.events).map(([name, ev]): [PropertyKey[], string | undefined] => [['events', name, 'description'], ev.description]),
+      ...Object.entries(c.styles).map(([name, b]): [PropertyKey[], string | undefined] => [['styles', name, 'description'], b.description]),
+      ...(c.behavior ?? []).map((sc, i): [PropertyKey[], string | undefined] => [['behavior', i, 'description'], sc.description]),
+      ...(c.keyboard ?? []).flatMap((rule, i): [PropertyKey[], string | undefined][] => [[['keyboard', i, 'action'], rule.action], [['keyboard', i, 'when'], rule.when]]),
+      ...Object.entries(c.platforms).map(([plat, notes]): [PropertyKey[], string | undefined] => [['platforms', plat, 'notes'], notes?.notes]),
+    ];
+    for (const [path, text] of copyReferences) {
+      if (text === undefined) continue;
+      for (const key of new Set([...text.matchAll(COPY_REFERENCE)].map((m) => m[1] as string))) {
+        if (!Object.hasOwn(c.copy ?? {}, key)) issue(path, `names copy.${key}, which is not a copy key`);
+      }
+    }
+
+    // The form block names this component's props and copy, and its value prop can hold its value type. A
+    // field-shaped component (a `name` and an `error` prop) must declare the block: a componentWarnings rule until
+    // the phase 3 migration gave every field one.
     const propOf = (propName: string): (typeof c.props)[string] | undefined => (Object.hasOwn(c.props, propName) ? c.props[propName] : undefined);
     const form = c.form;
+    if (form === undefined && Object.hasOwn(c.props, 'name') && Object.hasOwn(c.props, 'error')) {
+      issue(['props'], "has 'name' and 'error' but there is no form block, so how the field joins a Form lives only in prose");
+    }
     if (form !== undefined) {
       const at = (...rest: PropertyKey[]): PropertyKey[] => ['form', ...rest];
       if (form.role === 'field' && form.value === undefined) issue(at(), "form.role is 'field' but form has no 'value'");
@@ -1228,8 +1278,12 @@ export const componentDef = z
     }
 
     // The overlay block names this component's anatomy, props and events, and declares the requirements its
-    // dismissal and modality imply.
+    // dismissal and modality imply. A layered component must declare the block: a componentWarnings rule until the
+    // phase 3 migration gave every `category: overlay` doc one.
     const overlay = c.overlay;
+    if (overlay === undefined && c.category === 'overlay') {
+      issue(['category'], "is 'overlay' but there is no overlay block, so layer, anchor, collision and dismissal live only in prose");
+    }
     if (overlay !== undefined) {
       const at = (...rest: PropertyKey[]): PropertyKey[] => ['overlay', ...rest];
       if (overlay.anchor !== undefined && !anatomy.includes(overlay.anchor)) issue(at('anchor'), `overlay.anchor '${overlay.anchor}' is not in anatomy ${pyRepr(c.anatomy)}`);
@@ -1257,6 +1311,15 @@ export const componentDef = z
       if (!requires.includes(req)) issue(at, `a11y.requiresOn has '${req}', which a11y.requires does not list`);
       narrowRule(plats ?? [], at, `a11y.requiresOn.${req}`);
     }
+    // An enum prop whose values all belong to one vocabulary (the first, in VOCAB order, that holds them) names it
+    // with enumRef, so Search's `md` is Button's `md`; `values` beside it stays, narrowing the vocabulary.
+    for (const [pName, p] of Object.entries(c.props)) {
+      if (p.type !== 'enum' || p.enumRef !== undefined || p.values === undefined || p.values.length === 0) continue;
+      const values = p.values;
+      const vocab = VOCAB_NAMES.find((v) => values.every((value) => (VOCAB[v] as readonly string[]).includes(value)));
+      if (vocab !== undefined) issue(['props', pName, 'values'], `values are a subset of VOCAB.${vocab}; set enumRef: ${vocab}`);
+    }
+
     for (const [pName, p] of Object.entries(c.props)) {
       if (p.valuesOn === undefined) continue;
       const at: PropertyKey[] = ['props', pName, 'valuesOn'];
@@ -1274,17 +1337,41 @@ export const componentDef = z
       if (typeof entry !== 'string' && entry.platforms !== undefined) narrowRule(entry.platforms, ['copy', key, 'platforms'], `copy.${key} platforms`);
     }
 
-    // An object reflect entry names a prop, and a boolean that defaults to true reflects to its negated attribute
-    // (prompts/conventions/lit.md). The string form stays valid; componentWarnings reports what it gets wrong.
+    // Every reflect entry names a prop, and a boolean that defaults to true reflects to its negated attribute
+    // (prompts/conventions/lit.md). A string entry resolves through `reflectEntry`; an object entry names the prop
+    // outright. The two string rules were componentWarnings rules until the phase 3 migration satisfied them.
     for (const [plat, notes] of Object.entries(c.platforms)) {
       for (const [i, entry] of (notes?.reflect ?? []).entries()) {
-        if (typeof entry === 'string') continue;
         const at: PropertyKey[] = ['platforms', plat, 'reflect', i];
+        if (typeof entry === 'string') {
+          const resolved = reflectEntry(c, entry);
+          const resolvedProp = resolved === null ? undefined : propOf(resolved.prop);
+          if (resolved === null) {
+            issue(at, `reflects '${entry}', which resolves to no prop; write { prop, attribute } to name the prop it reflects`);
+          } else if (resolvedProp?.type === 'boolean' && resolvedProp.default === true) {
+            issue(at, `reflects '${entry}' un-negated, but '${resolved.prop}' defaults to true (prompts/conventions/lit.md: reflect the negated attribute)`);
+          }
+          continue;
+        }
         const prop = propOf(entry.prop);
         if (prop === undefined) {
           issue([...at, 'prop'], `platforms.${plat}.reflect.${i}.prop names '${entry.prop}', which is not a prop`);
         } else if (prop.type === 'boolean' && prop.default === true && entry.attribute === kebabCase(entry.prop)) {
           issue([...at, 'attribute'], `platforms.${plat}.reflect.${i} reflects '${entry.prop}' as '${entry.attribute}', but '${entry.prop}' defaults to true, so its attribute is the negated form (prompts/conventions/lit.md)`);
+        }
+      }
+    }
+
+    // A binding token that interpolates `{p}` on a component with a supported Lit block whose reflect list does not
+    // resolve `p`: the element has no host attribute to select the token by. A binding narrowed away from Lit is
+    // skipped. A componentWarnings rule until the phase 3 migration gave the three docs that tripped it an attribute.
+    const litNotes = c.platforms.lit;
+    if (litNotes !== undefined && litNotes.supported !== false) {
+      const reflected = new Set((litNotes.reflect ?? []).flatMap((entry) => reflectEntry(c, entry)?.prop ?? []));
+      for (const [bName, binding] of Object.entries(c.styles)) {
+        if (binding.platforms !== undefined && !binding.platforms.includes('lit')) continue;
+        for (const slot of new Set([...binding.token.matchAll(SLOT)].map((m) => m[1] as string))) {
+          if (!reflected.has(slot)) issue(['styles', bName, 'token'], `interpolates '{${slot}}', but platforms.lit.reflect does not resolve '${slot}', so the Lit element has no attribute to select the token by`);
         }
       }
     }
@@ -1410,6 +1497,15 @@ export const componentDef = z
       if (rule.target !== undefined) {
         if (!anatomy.includes(rule.target)) issue(at('target'), `${subject} target: unknown anatomy part '${rule.target}'`);
         if (!outcomes.includes('closes') && !outcomes.includes('opens')) issue(at('target'), `${subject} target '${rule.target}' needs closes or opens in expect, got ${pyRepr(outcomes)}`);
+      } else if (roleIn(WIDGET_ROLES, role)) {
+        // A closes/opens rule with no `target` on a component whose root is a widget (a combobox input, a button
+        // trigger): the keyboard gate would assert that the widget itself disappears or appears, when the popup is
+        // what changes. A `componentWarnings` rule until the phase 3 migration gave the four rules that tripped it
+        // a target; the message and the issue path are job 614's word for word.
+        const outcome = outcomes.find((o) => o === 'closes' || o === 'opens');
+        if (outcome !== undefined) {
+          issue(at('expect'), `'${outcome}' has no target, so the keyboard gate asserts on the ${role} root, which stays visible; name the part that ${outcome === 'closes' ? 'closes' : 'opens'} in target`);
+        }
       }
       for (const [j, plat] of (rule.platforms ?? []).entries()) {
         if (!declared.has(plat)) issue(at('platforms', j), `${subject} platforms includes '${plat}', which the component does not declare`);
@@ -1442,7 +1538,7 @@ export type ComponentWarning = { path: string; message: string };
  *  job before the doc migration that satisfies it). Pure, so a test can run it over generated/components.json.
  *  Not a Zod `.check`: Zod issues are errors. tools/parse.ts forwards each through its `warn` channel. */
 export function componentWarnings(c: ComponentDef): ComponentWarning[] {
-  return [...conventionDrift(c), ...orphanDefaults(c), ...untargetedKeyboardRules(c), ...missingFormOrOverlay(c), ...undeclaredCopyPlaceholders(c), ...missingCopyKeys(c), ...reflectWarnings(c), ...unreflectedSlots(c), ...largeNonTextPairs(c), ...vocabSubsets(c), ...lifecycleWarnings(c)];
+  return lifecycleWarnings(c);
 }
 
 type Deprecatable = { deprecated?: { use?: string | undefined } | undefined };
@@ -1494,70 +1590,6 @@ function lifecycleWarnings(c: ComponentDef): ComponentWarning[] {
   return out;
 }
 
-/** An enum prop with no `enumRef` whose values all belong to one vocabulary (the first, in VOCAB order, that holds
- *  them): the doc spells out a list the vocabulary already names. */
-function vocabSubsets(c: ComponentDef): ComponentWarning[] {
-  const out: ComponentWarning[] = [];
-  for (const [name, p] of Object.entries(c.props)) {
-    const values = p.values;
-    if (p.type !== 'enum' || p.enumRef !== undefined || values === undefined || values.length === 0) continue;
-    const vocab = VOCAB_NAMES.find((v) => values.every((value) => (VOCAB[v] as readonly string[]).includes(value)));
-    if (vocab !== undefined) out.push({ path: `props.${name}.values`, message: `values are a subset of VOCAB.${vocab}; set enumRef: ${vocab}` });
-  }
-  return out;
-}
-
-/** Token families that are never text: boundaries, controls, inverse status indicators, icons and focus colors. */
-const NON_TEXT_FOREGROUND = /^color\.(border|control|inverse\.status)\.|\.(icon|focus)$/;
-
-/** A `large: true` pair whose foreground is a non-text token: large text standing in for WCAG 1.4.11's 3:1. */
-function largeNonTextPairs(c: ComponentDef): ComponentWarning[] {
-  const out: ComponentWarning[] = [];
-  for (const [i, pair] of (c.a11y.contrast ?? []).entries()) {
-    if (pair.large !== true || pair.nonText !== undefined || !NON_TEXT_FOREGROUND.test(pair.foreground)) continue;
-    out.push({ path: `a11y.contrast.${i}.large`, message: `large: true on a non-text pair (${pair.foreground}); WCAG 1.4.11 pairs set nonText: true` });
-  }
-  return out;
-}
-
-/** A string reflect entry that resolves to a boolean prop defaulting to true, which the Lit convention exposes and
- *  reflects negated; and a string entry that resolves to no prop, which leaves the generator to guess the mapping. */
-function reflectWarnings(c: ComponentDef): ComponentWarning[] {
-  const out: ComponentWarning[] = [];
-  for (const [plat, notes] of Object.entries(c.platforms)) {
-    for (const [i, entry] of (notes?.reflect ?? []).entries()) {
-      if (typeof entry !== 'string') continue;
-      const path = `platforms.${plat}.reflect.${i}`;
-      const resolved = reflectEntry(c, entry);
-      const prop = resolved === null ? undefined : c.props[resolved.prop];
-      if (resolved === null) {
-        out.push({ path, message: `reflects '${entry}', which resolves to no prop; write { prop, attribute } to name the prop it reflects` });
-      } else if (prop?.type === 'boolean' && prop.default === true) {
-        out.push({ path, message: `reflects '${entry}' un-negated, but '${resolved.prop}' defaults to true (prompts/conventions/lit.md: reflect the negated attribute)` });
-      }
-    }
-  }
-  return out;
-}
-
-/** A binding token that interpolates `{p}` on a component with a supported Lit block whose reflect list does not
- *  resolve `p`: the element has no host attribute to select the token by. A binding narrowed away from Lit is skipped. */
-function unreflectedSlots(c: ComponentDef): ComponentWarning[] {
-  const lit = c.platforms.lit;
-  if (lit === undefined || lit.supported === false) return [];
-  const reflected = new Set((lit.reflect ?? []).flatMap((entry) => reflectEntry(c, entry)?.prop ?? []));
-  const out: ComponentWarning[] = [];
-  // generated/components.json leaves out an empty styles block, which parsing would default.
-  for (const [bName, binding] of Object.entries(c.styles ?? {})) {
-    if (binding.platforms !== undefined && !binding.platforms.includes('lit')) continue;
-    const slots = new Set([...binding.token.matchAll(SLOT)].map((m) => m[1] as string));
-    for (const slot of slots) {
-      if (!reflected.has(slot)) out.push({ path: `styles.${bName}.token`, message: `interpolates '{${slot}}', but platforms.lit.reflect does not resolve '${slot}', so the Lit element has no attribute to select the token by` });
-    }
-  }
-  return out;
-}
-
 type NarrowSource = {
   props?: Record<string, { values?: readonly string[] | undefined; enumRef?: string | undefined; valuesOn?: Record<string, readonly string[]> | undefined }> | undefined;
   a11y?: { requires?: readonly string[] | undefined; requiresOn?: Partial<Record<string, readonly string[]>> | undefined } | undefined;
@@ -1588,71 +1620,6 @@ export function narrowForPlatform<C extends NarrowSource>(c: C, platform: string
   if (copy !== undefined) out.copy = Object.fromEntries(Object.entries(copy).filter(([, entry]) => typeof entry === 'string' || on(entry.platforms)));
   if (styles !== undefined) out.styles = Object.fromEntries(Object.entries(styles).filter(([, binding]) => on(binding.platforms)));
   return out as C;
-}
-
-/** A plain copy string's placeholder that names no prop: nothing declares what it holds, so each generator guesses.
- *  The object form declares it in params, and componentDef checks that. */
-function undeclaredCopyPlaceholders(c: ComponentDef): ComponentWarning[] {
-  const out: ComponentWarning[] = [];
-  for (const [key, entry] of Object.entries(c.copy ?? {})) {
-    if (typeof entry !== 'string') continue;
-    for (const placeholder of copyPlaceholders(entry)) {
-      if (!Object.hasOwn(c.props, placeholder)) out.push({ path: `copy.${key}`, message: `'{${placeholder}}' names no prop, so nothing declares what it holds; use the object form and declare it in params` });
-    }
-  }
-  return out;
-}
-
-const COPY_REFERENCE = /copy\.([a-zA-Z][a-zA-Z0-9]*)/g;
-
-/** A `copy.<key>` reference in prose the generators read (descriptions, keyboard actions and conditions, platform
- *  notes) that names no copy key, so a generator invents the string. */
-function missingCopyKeys(c: ComponentDef): ComponentWarning[] {
-  const texts: [string, string | undefined][] = [
-    ...Object.entries(c.props).map(([name, p]): [string, string | undefined] => [`props.${name}.description`, p.description]),
-    // generated/components.json leaves out an empty events or styles block, which parsing would default.
-    ...Object.entries(c.events ?? {}).map(([name, ev]): [string, string | undefined] => [`events.${name}.description`, ev.description]),
-    ...Object.entries(c.styles ?? {}).map(([name, b]): [string, string | undefined] => [`styles.${name}.description`, b.description]),
-    ...(c.behavior ?? []).map((sc, i): [string, string | undefined] => [`behavior.${i}.description`, sc.description]),
-    ...(c.keyboard ?? []).flatMap((rule, i): [string, string | undefined][] => [[`keyboard.${i}.action`, rule.action], [`keyboard.${i}.when`, rule.when]]),
-    ...Object.entries(c.platforms).map(([plat, notes]): [string, string | undefined] => [`platforms.${plat}.notes`, notes?.notes]),
-  ];
-  const out: ComponentWarning[] = [];
-  for (const [path, text] of texts) {
-    if (text === undefined) continue;
-    const keys = new Set([...text.matchAll(COPY_REFERENCE)].map((m) => m[1] as string));
-    for (const key of keys) {
-      if (!Object.hasOwn(c.copy ?? {}, key)) out.push({ path, message: `names copy.${key}, which is not a copy key` });
-    }
-  }
-  return out;
-}
-
-/** An overlay with no overlay block, and a field-shaped component (a `name` and an `error` prop) with no form block:
- *  their dismissal, positioning and form contract live only in prose. */
-function missingFormOrOverlay(c: ComponentDef): ComponentWarning[] {
-  const out: ComponentWarning[] = [];
-  if (c.category === 'overlay' && c.overlay === undefined) {
-    out.push({ path: 'category', message: "is 'overlay' but there is no overlay block, so layer, anchor, collision and dismissal live only in prose" });
-  }
-  if (Object.hasOwn(c.props, 'name') && Object.hasOwn(c.props, 'error') && c.form === undefined) {
-    out.push({ path: 'props', message: "has 'name' and 'error' but there is no form block, so how the field joins a Form lives only in prose" });
-  }
-  return out;
-}
-
-/** A closes/opens rule with no `target` on a component whose root is a widget (a combobox input, a button trigger):
- *  the keyboard gate would assert that the widget itself disappears or appears, when the popup is what changes. */
-function untargetedKeyboardRules(c: ComponentDef): ComponentWarning[] {
-  const role = resolveRole(c);
-  if (!roleIn(WIDGET_ROLES, role)) return [];
-  const out: ComponentWarning[] = [];
-  for (const [i, rule] of (c.keyboard ?? []).entries()) {
-    const outcome = expectList(rule).find((o) => o === 'closes' || o === 'opens');
-    if (outcome === undefined || rule.target !== undefined) continue;
-    out.push({ path: `keyboard.${i}.expect`, message: `'${outcome}' has no target, so the keyboard gate asserts on the ${role} root, which stays visible; name the part that ${outcome === 'closes' ? 'closes' : 'opens'} in target` });
-  }
-  return out;
 }
 
 type ControlsSource = { props?: Record<string, { controls?: { event: string; default?: string | undefined; state?: string | undefined } | undefined }> | undefined };
@@ -1688,17 +1655,4 @@ export function controlledPairs(component: ControlsSource): ControlledPair[] {
     byName.push({ prop: name, default: dName, event: null, state: null, declared: false });
   }
   return [...declared, ...byName];
-}
-
-/** A `default<X>` prop with no `<x>` prop that no `controls.default` names seeds nothing. */
-function orphanDefaults(c: ControlsSource): ComponentWarning[] {
-  const props = c.props ?? {};
-  const seeds = new Set(Object.values(props).map((p) => p.controls?.default));
-  const out: ComponentWarning[] = [];
-  for (const dName of Object.keys(props)) {
-    const name = seededName(dName);
-    if (name === null || Object.hasOwn(props, name) || seeds.has(dName)) continue;
-    out.push({ path: `props.${dName}`, message: `seeds '${name}', which is not a prop` });
-  }
-  return out;
 }

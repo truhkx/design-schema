@@ -98,6 +98,9 @@ component:
       description: Controlled selected value(s). With `multiple`, an array. With `allowCustom`,
         a value not in `options` is a custom entry.
       shape: string | string[]
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: union
       description: Initial value(s).
@@ -106,6 +109,9 @@ component:
       type: boolean
       description: Controlled popup state, for programmatic use and for stories and
         tests. Omit for the typing-driven default.
+      controls:
+        event: onOpenChange
+        state: open
     inputValue:
       type: string
       description: Controlled text of the input (what the user has typed). Usually
@@ -174,6 +180,13 @@ component:
         lit: change
         rn: onChange
         swiftui: onChange
+      payload:
+      - name: value
+        type: union
+        shape: string | string[]
+        description: The selected value, or every selected value with multiple.
+      fires:
+      - user
     onInputChange:
       description: Fired on every keystroke with the input text. The hook for `async`
         filtering.
@@ -182,6 +195,12 @@ component:
         lit: input-change
         rn: onInputChange
         swiftui: onInputChange
+      payload:
+      - name: value
+        type: string
+        description: The text now in the input.
+      fires:
+      - user
     onOpenChange:
       description: Fired when the list opens or closes.
       platforms:
@@ -189,6 +208,12 @@ component:
         lit: open-change
         rn: onOpenChange
         swiftui: onOpenChange
+      payload:
+      - name: open
+        type: boolean
+        description: The new state of the list.
+      fires:
+      - user
   keyboard:
   - keys:
     - ArrowDown
@@ -214,6 +239,7 @@ component:
     when: list open
     from: first
     expect: closes
+    target: popup
   - keys:
     - Tab
     action: Closes the list and moves focus on. Under single-select a highlighted
@@ -221,6 +247,7 @@ component:
     when: list open
     from: first
     expect: closes
+    target: popup
   - keys:
     - Backspace
     action: In an empty input with chips, removes the last chip.
@@ -233,6 +260,7 @@ component:
     action: Move the text caret (input semantics), never the list.
     from: first
     expect: manual
+    native: true
   - keys:
     - ','
     action: With allowCustom, commits the typed text as a custom value (as Enter does)
@@ -248,55 +276,71 @@ component:
   styles:
     fieldBackground:
       token: color.background
+      part: field
       locked: true
     fieldBorder:
       token: color.border.strong
+      part: field
       locked: true
     fieldBorderFocus:
       token: color.border.focus
+      part: field
       locked: true
     fieldBorderInvalid:
       token: color.border.danger
+      part: field
       locked: false
     fieldBorderWidth:
       token: border.width.thin
+      part: field
       locked: false
     fieldRadius:
       token: radius.md
+      part: field
       locked: false
     fieldPaddingInline:
       token: space.md
+      part: field
       locked: false
     fieldPaddingBlock:
       token: space.sm
+      part: field
       locked: false
     fieldGap:
       token: layout.gap.tight
+      part: field
       description: Between chips, input text and the buttons.
       locked: false
     inputColor:
       token: color.foreground
+      part: input
       locked: true
     placeholderColor:
       token: color.foreground.muted
       locked: true
     chipBackground:
       token: color.background.strong
+      part: chip
       locked: true
     chipColor:
       token: color.foreground
+      part: chip
       locked: true
     chipRadius:
       token: radius.full
+      part: chip
       locked: false
     chipPaddingInline:
       token: space.2
+      part: chip
       locked: false
     chipPaddingBlock:
       token: space.0
+      part: chip
       locked: false
     chipGap:
       token: layout.gap.tight
+      part: chip
       description: Between chip label and its remove button.
       locked: false
     iconColor:
@@ -308,30 +352,37 @@ component:
       locked: false
     labelWeight:
       token: font.weight.medium
+      part: label
       locked: false
     helperSize:
       token: font.size.sm
       locked: false
     descriptionText:
       token: color.foreground.muted
+      part: description
       locked: true
     errorText:
       token: color.foreground.danger
       locked: true
     popupSurface:
       token: color.overlay.surface
+      part: popup
       locked: false
     popupBorder:
       token: color.border
+      part: popup
       locked: false
     popupShadow:
       token: shadow.overlay
+      part: popup
       locked: false
     popupRadius:
       token: radius.md
+      part: popup
       locked: false
     popupOffset:
       token: space.1
+      part: popup
       locked: false
     layer:
       token: layer.dropdown
@@ -344,6 +395,7 @@ component:
       locked: false
     chipSize:
       token: font.size.sm
+      part: chip
       locked: false
     lineHeight:
       token: font.lineHeight.normal
@@ -360,6 +412,13 @@ component:
     enter:
       token: motion.duration.fast
       locked: false
+  constants:
+    statusDebounce:
+      description: How long result-count, loading and empty announcements wait before
+        the status live region updates.
+      token: motion.duration.base
+      multiply: 2
+      unit: ms
   copy:
     empty: No matches
     loading: Loading…
@@ -367,7 +426,21 @@ component:
     clearLabel: Clear
     toggleLabel: Show options
     removeChip: Remove {label}
-    resultCount: '{count} results available'
+    resultCount:
+      plural:
+        by: count
+        one: '{count} result available'
+        other: '{count} results available'
+      params:
+        count:
+          type: number
+          description: The number of results in the list.
+    activeOption:
+      text: '{option}'
+      params:
+        option:
+          type: string
+          description: The active option's label.
     required: '{label} is required.'
     invalid: '{label} is not valid.'
     requiredIndicator: ' (required)'
@@ -402,7 +475,19 @@ component:
     - foreground: color.border.strong
       background: color.background
       level: AA
-      large: true
+      nonText: true
+  form:
+    role: field
+    value: value
+    valueType: string[]
+    name: name
+    validation:
+    - required
+    - invalid
+    messages:
+      required: required
+      invalid: invalid
+    discovery: context
   platforms:
     web:
       element: input
@@ -471,11 +556,245 @@ component:
         the count is announced when the list opens. Arrows/Home/End/Enter/Escape per
         the keyboard table via `.onKeyPress` on the field. `allowCustom`, `multiple`
         (chips as `Button`s with `close` Icons) as documented.
+  behavior:
+  - name: typing-reports-the-input-text
+    description: onInputChange fires on every keystroke - the hook async filtering
+      hangs off.
+    given:
+      open: false
+    when:
+      type: ap
+    then:
+    - event: onInputChange
+  - name: the-toggle-button-opens-the-list
+    given:
+      open: false
+    when:
+      click: toggleButton
+    then:
+    - event: onOpenChange
+  - name: a-closed-combobox-is-not-expanded
+    given:
+      open: false
+    then:
+    - state: expanded
+      is: false
+  - name: an-open-list-reports-the-expanded-state
+    given:
+      open: true
+    then:
+    - state: expanded
+      is: true
+  - name: enter-commits-the-active-option
+    description: 'Enter commits the active option (single: closes; multiple: toggles
+      and stays open).'
+    given:
+      open: true
+    when:
+      key: Enter
+    then:
+    - event: onChange
+    platforms:
+    - web
+    - lit
+  - name: escape-closes-the-list
+    description: Escape closes the list if open; closed and clearable, it clears the
+      input text instead.
+    given:
+      open: true
+    when:
+      key: Escape
+    then:
+    - event: onOpenChange
+    platforms:
+    - web
+    - lit
+  - name: the-clear-button-clears-the-value
+    given:
+      open: false
+      defaultValue: apple
+      clearable: true
+    when:
+      click: clearButton
+    then:
+    - event: onChange
+  - name: multiple-shows-the-selection-as-chips
+    description: 'Pick many: selected options appear as chips before the input, each
+      removable.'
+    given:
+      open: false
+      multiple: true
+      defaultValue:
+      - apple
+    then:
+    - text: Apple
+  - name: removing-a-chip-reports-the-new-value
+    given:
+      open: false
+      multiple: true
+      defaultValue:
+      - apple
+    when:
+      click: chipRemove
+    then:
+    - event: onChange
+  - name: a-disabled-combobox-does-not-open
+    given:
+      open: false
+      disabled: true
+    when:
+      click: toggleButton
+    then:
+    - event: onOpenChange
+      fired: false
+    - state: disabled
+      is: true
+      platforms:
+      - web
+      - lit
+  examples:
+  - name: fruit-picker
+    description: The everyday single-select combobox, filtering by substring as you
+      type.
+    given:
+      label: Fruit
+      name: fruit
+      options:
+      - value: apple
+        label: Apple
+      - value: apricot
+        label: Apricot
+      - value: banana
+        label: Banana
+  - name: multi-select-with-chips
+    description: Picking several, each shown as a removable chip before the input.
+    given:
+      label: Roles
+      name: roles
+      multiple: true
+      defaultValue:
+      - frontend
+      options:
+      - value: frontend
+        label: Frontend
+      - value: backend
+        label: Backend
+      - value: design
+        label: Design
+  - name: free-text-tags
+    description: Tags, where text matching no option can be committed with Enter or
+      a comma.
+    given:
+      label: Tags
+      name: tags
+      multiple: true
+      allowCustom: true
+      options:
+      - value: urgent
+        label: Urgent
+      - value: billing
+        label: Billing
+  - name: async-results
+    description: A field whose results come from the server, showing the loading row
+      while they are fetched.
+    given:
+      label: Customer
+      name: customer
+      filter: async
+      loading: true
+      options:
+      - value: acme
+        label: Acme Ltd
 ```
+
+## Events
+
+- `onChange`: emit `onChange`
+  - payload, positional, in this order: `value: string | string[]`
+  - fires on: user
+- `onInputChange`: emit `onInputChange`
+  - payload, positional, in this order: `value: string`
+  - fires on: user
+- `onOpenChange`: emit `onOpenChange`
+  - payload, positional, in this order: `open: boolean`
+  - fires on: user
 
 ## Controlled state
 
-- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; paired by name, so no event is declared
+- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `onChange`)
+- `open` is controlled when given, uncontrolled from its initial state when omitted; changes reported by `onOpenChange` (emit `onOpenChange`); drives state `open`
+
+## Style bindings
+
+- `fieldBackground`: token `color.background`; part `field`; locked
+- `fieldBorder`: token `color.border.strong`; part `field`; locked
+- `fieldBorderFocus`: token `color.border.focus`; part `field`; locked
+- `fieldBorderInvalid`: token `color.border.danger`; part `field`
+- `fieldBorderWidth`: token `border.width.thin`; part `field`
+- `fieldRadius`: token `radius.md`; part `field`
+- `fieldPaddingInline`: token `space.md`; part `field`
+- `fieldPaddingBlock`: token `space.sm`; part `field`
+- `fieldGap`: token `layout.gap.tight`; part `field`
+- `inputColor`: token `color.foreground`; part `input`; locked
+- `chipBackground`: token `color.background.strong`; part `chip`; locked
+- `chipColor`: token `color.foreground`; part `chip`; locked
+- `chipRadius`: token `radius.full`; part `chip`
+- `chipPaddingInline`: token `space.2`; part `chip`
+- `chipPaddingBlock`: token `space.0`; part `chip`
+- `chipGap`: token `layout.gap.tight`; part `chip`
+- `labelWeight`: token `font.weight.medium`; part `label`
+- `descriptionText`: token `color.foreground.muted`; part `description`; locked
+- `popupSurface`: token `color.overlay.surface`; part `popup`
+- `popupBorder`: token `color.border`; part `popup`
+- `popupShadow`: token `shadow.overlay`; part `popup`
+- `popupRadius`: token `radius.md`; part `popup`
+- `popupOffset`: token `space.1`; part `popup`
+- `chipSize`: token `font.size.sm`; part `chip`
+
+## Keyboard
+
+- `Escape` (Closes the list if open; if closed and clearable, clears the input text.): expect closes; target part `popup`
+- `Tab` (Closes the list and moves focus on. Under single-select a highlighted option is NOT committed by Tab (typing intent is ambiguous).): expect closes; target part `popup`
+- `Home`, `End` (Move the text caret (input semantics), never the list.): expect manual; native: the rendered element already does this
+
+## Form and overlay
+
+```yaml
+form:
+  role: field
+  value: value
+  valueType: string[]
+  name: name
+  validation:
+  - required
+  - invalid
+  messages:
+    required: required
+    invalid: invalid
+  discovery: context
+```
+
+## Copy
+
+- `empty`: "No matches"
+- `loading`: "Loading…"
+- `addCustom`: "Add \"{value}\""
+- `clearLabel`: "Clear"
+- `toggleLabel`: "Show options"
+- `removeChip`: "Remove {label}"
+- `resultCount`: "{count} results available"; params `count` (number); plural by `count`: one "{count} result available", other "{count} results available"
+- `activeOption`: "{option}"; params `option` (string)
+- `required`: "{label} is required."
+- `invalid`: "{label} is not valid."
+- `requiredIndicator`: " (required)"
+
+## Constants and examples
+
+- constant `statusDebounce`: `theme.motionDurationBase * 2` (`motion.duration.base` × 2) ms
+- example `fruit-picker`, story `FruitPicker`: given `label: "Fruit"`, `name: "fruit"`, `options: [{"value":"apple","label":"Apple"},{"value":"apricot","label":"Apricot"},{"value":"banana","label":"Banana"}]`; The everyday single-select combobox, filtering by substring as you type.
+- example `multi-select-with-chips`, story `MultiSelectWithChips`: given `label: "Roles"`, `name: "roles"`, `multiple: true`, `defaultValue: ["frontend"]`, `options: [{"value":"frontend","label":"Frontend"},{"value":"backend","label":"Backend"},{"value":"design","label":"Design"}]`; Picking several, each shown as a removable chip before the input.
+- example `free-text-tags`, story `FreeTextTags`: given `label: "Tags"`, `name: "tags"`, `multiple: true`, `allowCustom: true`, `options: [{"value":"urgent","label":"Urgent"},{"value":"billing","label":"Billing"}]`; Tags, where text matching no option can be committed with Enter or a comma.
+- example `async-results`, story `AsyncResults`: given `label: "Customer"`, `name: "customer"`, `filter: "async"`, `loading: true`, `options: [{"value":"acme","label":"Acme Ltd"}]`; A field whose results come from the server, showing the loading row while they are fetched.
 
 ## Overrides (per-instance styling contract)
 
@@ -551,11 +870,77 @@ Phones: the field is a `Pressable` summary (chips + placeholder) that opens a `B
 
 Listbox, Select, Input, Button, BottomSheet.
 
-## Behavior scenarios (8)
+## Behavior scenarios (16)
 
 One test per scenario, in this order.
 
 ```yaml
+- name: typing-reports-the-input-text
+  description: onInputChange fires on every keystroke - the hook async filtering hangs
+    off.
+  given:
+    open: false
+  when:
+    type: ap
+  then:
+  - event: onInputChange
+- name: the-toggle-button-opens-the-list
+  given:
+    open: false
+  when:
+    click: toggleButton
+  then:
+  - event: onOpenChange
+- name: a-closed-combobox-is-not-expanded
+  given:
+    open: false
+  then:
+  - state: expanded
+    is: false
+- name: an-open-list-reports-the-expanded-state
+  given:
+    open: true
+  then:
+  - state: expanded
+    is: true
+- name: the-clear-button-clears-the-value
+  given:
+    open: false
+    defaultValue: apple
+    clearable: true
+  when:
+    click: clearButton
+  then:
+  - event: onChange
+- name: multiple-shows-the-selection-as-chips
+  description: 'Pick many: selected options appear as chips before the input, each
+    removable.'
+  given:
+    open: false
+    multiple: true
+    defaultValue:
+    - apple
+  then:
+  - text: Apple
+- name: removing-a-chip-reports-the-new-value
+  given:
+    open: false
+    multiple: true
+    defaultValue:
+    - apple
+  when:
+    click: chipRemove
+  then:
+  - event: onChange
+- name: a-disabled-combobox-does-not-open
+  given:
+    open: false
+    disabled: true
+  when:
+    click: toggleButton
+  then:
+  - event: onOpenChange
+    fired: false
 - name: renders
   then:
   - renders: true

@@ -28,12 +28,42 @@ function setup(given: Partial<DatePickerProps> = {}) {
     props,
     root: () => screen.queryByTestId('DatePicker') ?? screen.UNSAFE_root,
     label: () => s.root(),
+    calendarButton: () => screen.queryByTestId('DatePicker.calendarButton') ?? s.root(),
+    day: () => screen.queryByTestId('DatePicker.day') ?? s.root(),
+    todayButton: () => screen.queryByTestId('DatePicker.todayButton') ?? s.root(),
+    clearButton: () => screen.queryByTestId('DatePicker.clearButton') ?? s.root(),
     rerender: (next: Partial<DatePickerProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('DatePicker', () => {
+  test('the-calendar-button-opens-the-calendar', () => {
+    const s = setup({"open": false});
+    fireEvent.press(s.calendarButton());
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-disabled-field-does-not-open-the-calendar', () => {
+    const s = setup({"open": false, "disabled": true});
+    fireEvent.press(s.calendarButton());
+    expect(s.events.onOpenChange).not.toHaveBeenCalled();
+  });
+  test('choosing-a-day-reports-the-iso-date-and-closes', () => {
+    const s = setup({"open": true});
+    fireEvent.press(s.day());
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('the-today-button-selects-today', () => {
+    const s = setup({"open": true});
+    fireEvent.press(s.todayButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('the-clear-button-clears-the-value', () => {
+    const s = setup({"open": true, "defaultValue": "2026-09-10"});
+    fireEvent.press(s.clearButton());
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

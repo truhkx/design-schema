@@ -26,6 +26,30 @@ function setup(given: Partial<ExpanderProps> = {}) {
 }
 
 describe('Expander', () => {
+  test('click-on-trigger-expands', async () => {
+    const s = setup({"open": true});
+    await s.user.click(s.trigger());
+    expect(s.events.onToggle).toHaveBeenCalled();
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'true');
+  });
+  test('open-disclosure-collapses-on-click', async () => {
+    const s = setup({"defaultOpen": true, "open": true});
+    await s.user.click(s.trigger());
+    expect(s.events.onToggle).toHaveBeenCalled();
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'false');
+  });
+  test('disabled-trigger-does-not-toggle', async () => {
+    const s = setup({"disabled": true, "open": true});
+    await s.user.click(s.trigger());
+    expect(s.events.onToggle).not.toHaveBeenCalled();
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'false');
+    expect(s.trigger()).toHaveAttribute('aria-disabled', 'true');
+  });
+  test('disabled-trigger-stays-focusable', async () => {
+    const s = setup({"disabled": true, "open": true});
+    act(() => (s.trigger()).focus());
+    expect(s.trigger()).toHaveFocus();
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();

@@ -6,6 +6,10 @@ import type { StepperProps } from '../../packages/rn/src/Stepper';
 import meta from '../../packages/rn/src/Stepper.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<StepperProps> = {}) {
   const events = {
     onStepSelect: jest.fn(),
@@ -23,12 +27,32 @@ function setup(given: Partial<StepperProps> = {}) {
     props,
     root: () => screen.queryByTestId('Stepper') ?? screen.UNSAFE_root,
     list: () => s.root(),
+    indicator: () => screen.queryByTestId('Stepper.indicator') ?? s.root(),
     rerender: (next: Partial<StepperProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Stepper', () => {
+  test('click-on-a-completed-step-reports-it', () => {
+    const s = setup({"navigable": "completed", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}, {"id": "confirm", "label": "Confirmation"}]});
+    fireEvent.press(s.indicator());
+    expect(s.events.onStepSelect).toHaveBeenCalledWith("shipping");
+  });
+  test('the-current-step-is-not-navigable', () => {
+    const s = setup({"navigable": "completed", "current": "shipping", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
+    fireEvent.press(s.indicator());
+    expect(s.events.onStepSelect).not.toHaveBeenCalled();
+  });
+  test('display-only-steps-report-nothing', () => {
+    const s = setup({"navigable": "none", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
+    fireEvent.press(s.indicator());
+    expect(s.events.onStepSelect).not.toHaveBeenCalled();
+  });
+  test('compact-shows-the-step-count', () => {
+    const s = setup({"compact": true, "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}, {"id": "confirm", "label": "Confirmation"}]});
+    expect(screen.getByText(new RegExp("Step\\ 2\\ of\\ 4"))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

@@ -6,6 +6,10 @@ import type { DividerProps } from '../../packages/rn/src/Divider';
 import meta from '../../packages/rn/src/Divider.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<DividerProps> = {}) {
   const events = {};
   const props: DividerProps = { ...(meta.args as DividerProps), ...given };
@@ -27,6 +31,14 @@ function setup(given: Partial<DividerProps> = {}) {
 }
 
 describe('Divider', () => {
+  test('decorative-divider-is-hidden-from-assistive-technology', () => {
+    const s = setup({});
+    expect(s.line()).toHaveProp("accessibilityElementsHidden", true);
+  });
+  test('label-is-read-and-makes-the-divider-semantic', () => {
+    const s = setup({"label": "or"});
+    expect(screen.getByText(new RegExp("or"))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

@@ -49,6 +49,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     group: () => (deep(root, '[role="radiogroup"]') ?? deep(root, '[part="group"]') ?? deep(root, '[data-part="group"]') ?? root.firstElementChild) as HTMLElement,
+    segment: () => (deep(root, '[part="segment"]') ?? deep(root, '[data-part="segment"]')) as HTMLElement,
   };
   return s;
 }
@@ -58,6 +59,32 @@ beforeEach(() => {
 });
 
 describe('ds-segmented-control', () => {
+  test('click-selects-a-segment', async () => {
+    const s = await setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
+    await userEvent.click(s.segment());
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual("list");
+  });
+  test('arrow-moves-and-selects', async () => {
+    const s = await setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "list"});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual("grid");
+  });
+  test('arrow-wraps-from-the-last-segment', async () => {
+    const s = await setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('disabled-segment-is-not-selectable', async () => {
+    const s = await setup({"options": [{"value": "list", "label": "List", "disabled": true}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
+    await userEvent.click(s.segment());
+    expect(s.events.onChange).not.toHaveBeenCalled();
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

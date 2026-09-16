@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/Link.js';
 import meta from '../../packages/lit/src/Link.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -38,7 +42,7 @@ async function setup(given: Record<string, unknown> = {}) {
   const events = {
     onPress: vi.fn(),
   };
-  el.addEventListener('click (native, retargeted — no CustomEvent)', events.onPress as unknown as EventListener);
+  el.addEventListener('click', events.onPress as unknown as EventListener);
   document.body.append(el);
   await (el as unknown as { updateComplete: Promise<boolean> }).updateComplete;
   const root: ParentNode = el.shadowRoot ?? el;  // some elements render in light DOM
@@ -58,6 +62,24 @@ beforeEach(() => {
 });
 
 describe('ds-link', () => {
+  test('click-fires-on-press', async () => {
+    const s = await setup({});
+    await userEvent.click(s.anchor());
+    expect(s.events.onPress).toHaveBeenCalled();
+  });
+  test('external-link-announces-that-it-leaves', async () => {
+    const s = await setup({"external": true, "label": "View the billing history"});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("\\(opens\\ in\\ new\\ tab\\)"));
+  });
+  test('external-link-opens-a-new-tab', async () => {
+    const s = await setup({"external": true});
+    expect(s.anchor()).toHaveAttribute("target", "_blank");
+    expect(s.anchor()).toHaveAttribute("rel", "noopener noreferrer");
+  });
+  test('download-asks-the-browser-to-save', async () => {
+    const s = await setup({"download": true});
+    expect(s.anchor()).toHaveAttribute("download", "");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

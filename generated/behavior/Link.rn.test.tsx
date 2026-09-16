@@ -29,6 +29,11 @@ function setup(given: Partial<LinkProps> = {}) {
 }
 
 describe('Link', () => {
+  test('click-fires-on-press', () => {
+    const s = setup({});
+    fireEvent.press(s.anchor());
+    expect(s.events.onPress).toHaveBeenCalled();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

@@ -12,6 +12,8 @@ component:
     heading: Heading
     closeButton: Button
     body: Box
+  parts:
+    trigger: { kind: slot, slot: { prop: trigger, required: true } }
   props:
     trigger:
       type: content
@@ -32,6 +34,9 @@ component:
     open:
       type: boolean
       description: Controlled open state. Omit for uncontrolled (the trigger toggles it).
+      controls:
+        event: onOpenChange
+        state: open
     placement:
       type: enum
       values: [bottom-start, bottom, bottom-end, top-start, top, top-end, start, end]
@@ -53,11 +58,22 @@ component:
     onOpenChange:
       description: 'Fired when the popover opens or closes, with the new state and a reason: `trigger`, `escape`, `outside`, `close-button`, `tab-out`.'
       platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
+      payload:
+        - { name: open, type: boolean, description: The new state of the popover. }
+        - { name: reason, type: enum, values: [trigger, escape, outside, close-button, tab-out] }
+      reasons:
+        trigger: the trigger was activated
+        escape: Escape pressed while open
+        outside: a pointer press landed outside the popover
+        close-button: the close button was activated
+        tab-out: Tab moved focus past the end of the popover
+      fires: [user]
+      timing: { phase: after-change }
   keyboard:
     - { keys: [Enter, ' '], action: Toggles the popover from the trigger., when: focus on trigger, from: trigger, expect: manual }
-    - { keys: [Escape], action: Closes and returns focus to the trigger., when: open, from: inside, expect: focus-trigger }
-    - { keys: [Tab], action: 'Non-modal: after the last element in the panel, closes and moves focus to the element after the trigger. Modal: wraps within the panel.', when: open, from: last, expect: manual }
-    - { keys: [Shift+Tab], action: 'Non-modal: from the first element in the panel, returns focus to the trigger and closes.', when: open, from: first, expect: focus-trigger }
+    - { keys: [Escape], action: Closes and returns focus to the trigger., when: open, from: inside, expect: [closes, focus-trigger] }
+    - { keys: [Tab], action: 'Non-modal: after the last element in the panel, closes and moves focus to the element after the trigger. Modal: wraps within the panel.', when: open, from: last, given: { modal: false }, expect: closes }
+    - { keys: [Shift+Tab], action: 'Non-modal: from the first element in the panel, returns focus to the trigger and closes.', when: open, from: first, expect: [focus-trigger, closes] }
   styles:
     surface: { token: color.overlay.surface }
     border: { token: color.border }
@@ -67,7 +83,7 @@ component:
     inset: { token: layout.inset.md }
     partGap: { token: layout.gap.normal, description: Between heading and body. }
     offset: { token: space.2, description: Gap between trigger and panel. }
-    arrowSize: { token: space.2 }
+    arrowSize: { token: space.2, part: arrow }
     maxWidth: { token: layout.maxWidth.prose }
     layer: { token: layer.dropdown }
     enter: { token: motion.duration.fast, description: Fade and a space.1 slide from the trigger side; instant under reduced motion. }
@@ -76,6 +92,15 @@ component:
     focusRingWidth: { token: border.width.focus }
   copy:
     closeLabel: Close
+  overlay:
+    layer: popover
+    anchor: trigger
+    placement: placement
+    collision: flip-shift
+    open: open
+    closeEvent: onOpenChange
+    dismiss: [escape, outside-press, close-button, focus-out]
+    modal: false
   a11y:
     role: dialog
     requires: [accessible-name, expanded-state, escape-dismiss, focus-restore, keyboard-operable, focus-visible, contrast-aa, reduced-motion, target-24px]
@@ -90,7 +115,7 @@ component:
       notes: 'The trigger is cloned with aria-expanded and aria-controls. The panel is <div role="dialog" aria-labelledby={heading or trigger}> rendered through a portal with position: fixed from the trigger rect (flip and shift to stay within the viewport, repositioned on scroll/resize), on layer.dropdown, wrapped in FocusScope (trapped only when modal; autoFocus first). Non-modal: a document pointerdown outside panel+trigger closes; focusout to outside closes; Tab past the last element closes and lets focus continue. Modal: uses a native <dialog> with showModal() positioned at the trigger. Use the Popover API (popover="manual") where available for top-layer rendering. Non-modal popovers never lock page scroll and use only the pointerdown-outside listener for dismissal (Tab/Shift+Tab handlers own the keyboard exits; no focusout listener). The arrow, when shown, is centered on the panel edge, not on the trigger.'
     lit:
       tag: ds-popover
-      reflect: [open, placement, modal, show-arrow, no-dismiss, heading-level]
+      reflect: [open, placement, modal, show-arrow, { prop: dismissible, attribute: no-dismiss }, heading-level]
       notes: 'Slots: `trigger` and default. The panel renders in the shadow root with the Popover API (top layer, no z-index issues) or a fixed fallback. aria-controls cannot cross the shadow boundary, so aria-expanded is set on the slotted trigger and the panel is named by `heading` (aria-label) or the trigger''s text copied into aria-label. Composed `open-change`.'
     rn:
       element: Modal
@@ -100,6 +125,39 @@ component:
       element: popover
       props: [.popover, attachmentAnchor, arrowEdge, .presentationCompactAdaptation, FocusScope, .onExitCommand]
       notes: '`.popover(isPresented:attachmentAnchor:arrowEdge:)` with `.presentationCompactAdaptation(.popover)` so a phone shows a real popover, not a sheet; `placement` maps to `arrowEdge`. `modal` composes FocusScope with `trap`; non-modal popovers leave focus with the trigger and close on outside tap (system behavior). The panel is the package surface with `color.overlay.surface` through `.presentationBackground`. Heading names the panel.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/escape ones from the schema.
+    - name: close-button-fires-on-open-change
+      description: The close button reports the close; the consumer owns `open` when it is controlled.
+      given: { open: true }
+      when: { click: closeButton }
+      then:
+        - { event: onOpenChange }
+    - name: escape-closes-a-modal-popover
+      description: A modal popover is a small Dialog — Escape and the close button are the only ways out, and Escape always works (keyboard rule 2).
+      given: { open: true, modal: true }
+      when: { key: Escape }
+      then:
+        - { event: onOpenChange }
+      platforms: [web, lit]
+    - name: the-panel-is-named-by-its-heading
+      description: With a heading the panel is a dialog named by it rather than by the trigger.
+      given: { open: true, heading: 'Filters' }
+      then:
+        - { name: 'Filters' }
+  examples:
+    - name: filter-panel
+      description: A compact panel of controls behind a Filters button, aligned to the start of the trigger.
+      given: { trigger: 'A Filters Button', children: 'A Form of filter controls', heading: 'Filters', placement: bottom-start }
+    - name: date-picker-panel
+      description: A picker anchored under a date field, the case the panel exists for.
+      given: { trigger: 'A date field Button showing the current date', children: 'A DatePicker calendar' }
+    - name: required-step
+      description: A short form that must be submitted or cancelled, so the panel traps focus like a Dialog.
+      given: { trigger: 'An Add member Button', children: 'An email Input and a Save Button', heading: 'Add member', modal: true }
+    - name: contextual-help
+      description: A help note with a link, pointed at its trigger.
+      given: { trigger: 'An icon-only help Button', children: 'One sentence of help ending in a Link to the guide', showArrow: true, placement: end }
 ---
 
 A popover is a small panel that appears next to the thing you clicked and stays out of the way of everything else. It is for content that needs interaction but not the whole screen: pick a date, choose a color, adjust two settings, read a help note with a link. Unlike a Tooltip it can contain controls; unlike a Dialog it does not take over the page.

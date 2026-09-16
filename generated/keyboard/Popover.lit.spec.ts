@@ -75,9 +75,20 @@ test.describe('Popover (lit) keyboard', () => {
     const stateBefore = await ariaState(page);
     void before; void stateBefore;
     await page.keyboard.press('Escape');
+    await expect(root).toBeHidden();
     await expect(trigger(page)).toBeFocused();
   });
-  test.skip('Tab: Non-modal: after the last element in the panel, closes and moves focus to the element after the trigger. Modal: wraps within the panel. (open) — manual', async () => {});
+  test('Tab: Non-modal: after the last element in the panel, closes and moves focus to the element after the trigger. Modal: wraps within the panel. (open)', async ({ page }) => {
+    await page.goto('/iframe.html?id=popover-lit--keyboard&viewMode=story&args=modal:!false');
+    await expect(page.getByRole('dialog').first()).toBeVisible();
+    const root = page.getByRole('dialog').first();
+    await focusAt(page, root, await focusableCount(page, root) - 1);
+    const before = await focusIndex(page, root);
+    const stateBefore = await ariaState(page);
+    void before; void stateBefore;
+    await page.keyboard.press('Tab');
+    await expect(root).toBeHidden();
+  });
   test('Shift+Tab: Non-modal: from the first element in the panel, returns focus to the trigger and closes. (open)', async ({ page }) => {
     const root = page.getByRole('dialog').first();
     await focusAt(page, root, 0);
@@ -86,5 +97,6 @@ test.describe('Popover (lit) keyboard', () => {
     void before; void stateBefore;
     await page.keyboard.press('Shift+Tab');
     await expect(trigger(page)).toBeFocused();
+    await expect(root).toBeHidden();
   });
 });

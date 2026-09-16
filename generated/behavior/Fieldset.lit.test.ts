@@ -60,6 +60,18 @@ beforeEach(() => {
 });
 
 describe('ds-fieldset', () => {
+  test('the-legend-names-the-group', async () => {
+    const s = await setup({"legend": "Delivery window"});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Delivery\\ window"));
+  });
+  test('the-description-is-rendered', async () => {
+    const s = await setup({"description": "We only ship within the EU."});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("We\\ only\\ ship\\ within\\ the\\ EU\\."));
+  });
+  test('a-group-error-is-announced', async () => {
+    const s = await setup({"error": "End date must be after start date."});
+    expect(s.el.shadowRoot!.querySelector('[role="alert"]')).not.toBeNull();
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

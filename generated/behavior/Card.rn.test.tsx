@@ -6,6 +6,10 @@ import type { CardProps } from '../../packages/rn/src/Card';
 import meta from '../../packages/rn/src/Card.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<CardProps> = {}) {
   const events = {};
   const props: CardProps = { ...(meta.args as CardProps), ...given };
@@ -27,6 +31,10 @@ function setup(given: Partial<CardProps> = {}) {
 }
 
 describe('Card', () => {
+  test('heading-is-rendered-as-a-heading', () => {
+    const s = setup({"heading": "Team plan"});
+    expect(screen.getByText(new RegExp("Team\\ plan"))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

@@ -45,6 +45,9 @@ component:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
       description: Controlled sort state. The table shows it; the caller sorts the data (so server-side sorting works the same way).
+      controls:
+        event: onSortChange
+        default: defaultSort
     defaultSort:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
@@ -58,6 +61,9 @@ component:
       type: array
       shape: 'string[]'
       description: Controlled selected row ids.
+      controls:
+        event: onSelectionChange
+        default: defaultSelected
     defaultSelected:
       type: array
       shape: 'string[]'
@@ -100,46 +106,56 @@ component:
     onSortChange:
       description: Fired when a sortable header is activated, with `{ column, direction }` (cycling ascending → descending on the same column, ascending on a new one).
       platforms: { web: onSortChange, lit: sort-change, rn: onSortChange, swiftui: onSortChange }
+      payload:
+        - { name: column, type: string, description: The key of the column now sorted on. }
+        - { name: direction, type: enum, values: [ascending, descending] }
+      fires: [user]
     onSelectionChange:
       description: Fired with the new array of selected ids.
       platforms: { web: onSelectionChange, lit: selection-change, rn: onSelectionChange, swiftui: onSelectionChange }
+      payload:
+        - { name: selected, type: array, shape: 'string[]', description: The ids of every selected row. }
+      fires: [user]
     onRowPress:
       description: 'Fired when a row is activated, with its id. Only when the row has no other interactive content; the row header cell becomes a Button and the row is styled interactive. Prefer a Link in the row header for navigation.'
       platforms: { web: onRowPress, lit: row-press, rn: onRowPress, swiftui: onRowPress }
+      payload:
+        - { name: id, type: string, description: The id of the activated row. }
+      fires: [user]
   keyboard:
     - { keys: [Tab], action: 'Moves through interactive content in reading order: select-all, then per row the checkbox, links, buttons and the actions cell. Cells themselves are not focusable — this is a table, not a grid.', from: any, expect: focus-next }
-    - { keys: [Enter, ' '], action: 'On a sort button, sorts; on a row checkbox, toggles; on a row header button, activates the row.', from: inside, expect: manual }
+    - { keys: [Enter, ' '], action: 'On a sort button, sorts; on a row checkbox, toggles; on a row header button, activates the row.', from: inside, expect: manual, native: true }
     - { keys: [ArrowRight, ArrowLeft], action: 'In `responsive: scroll` below the breakpoint, the scroll region is focusable and arrows scroll it horizontally.', when: scroll region focused, from: inside, expect: manual }
   styles:
     surface: { token: color.background }
-    headerSurface: { token: color.background.subtle }
-    headerColor: { token: color.foreground }
-    headerWeight: { token: font.weight.semibold }
-    headerSize: { token: font.size.sm }
-    headerBorder: { token: color.border.strong }
-    headerBorderWidth: { token: border.width.thin }
-    headerShadow: { token: shadow.raised, description: 'Shown under the sticky header only once the body has scrolled beneath it.' }
-    rowBorder: { token: color.border }
-    rowBorderWidth: { token: border.width.thin }
-    rowStripe: { token: color.background.subtle }
-    rowHover: { token: color.action.ghost.backgroundHover, description: 'Interactive rows only (onRowPress or a Link in the row header). Hover never appears on plain rows.' }
-    rowSelected: { token: color.background.subtle, description: 'Same tint as a stripe; the start-edge bar and the checkbox are what say selected.' }
-    rowSelectedBorder: { token: color.control.selectedBackground, description: 'A start-edge bar on selected rows, so selection is not color-fill alone.' }
-    rowSelectedBorderWidth: { token: border.width.focus }
-    cellColor: { token: color.foreground }
-    cellMutedColor: { token: color.foreground.muted, description: 'Secondary values (a date beside a title) rendered with Text tone muted.' }
-    cellPaddingInline: { token: layout.inset.md }
-    cellPaddingInlineCompact: { token: layout.inset.sm, description: 'Used instead of cellPaddingInline when density is compact.' }
-    cellPaddingBlock: { token: space.sm }
-    cellGap: { token: layout.gap.tight, description: 'Between a sort button''s label and its arrow, and between actions in the actions cell.' }
-    captionSize: { token: font.size.md }
-    captionWeight: { token: font.weight.semibold }
-    captionGap: { token: space.2, description: 'Between caption and header.' }
+    headerSurface: { token: color.background.subtle, part: header }
+    headerColor: { token: color.foreground, part: header }
+    headerWeight: { token: font.weight.semibold, part: header }
+    headerSize: { token: font.size.sm, part: header }
+    headerBorder: { token: color.border.strong, part: header }
+    headerBorderWidth: { token: border.width.thin, part: header }
+    headerShadow: { token: shadow.raised, part: header, description: 'Shown under the sticky header only once the body has scrolled beneath it.' }
+    rowBorder: { token: color.border, part: row }
+    rowBorderWidth: { token: border.width.thin, part: row }
+    rowStripe: { token: color.background.subtle, part: row }
+    rowHover: { token: color.action.ghost.backgroundHover, part: row, state: hover, description: 'Interactive rows only (onRowPress or a Link in the row header). Hover never appears on plain rows.' }
+    rowSelected: { token: color.background.subtle, part: row, description: 'Same tint as a stripe; the start-edge bar and the checkbox are what say selected.' }
+    rowSelectedBorder: { token: color.control.selectedBackground, part: row, description: 'A start-edge bar on selected rows, so selection is not color-fill alone.' }
+    rowSelectedBorderWidth: { token: border.width.focus, part: row }
+    cellColor: { token: color.foreground, part: cell }
+    cellMutedColor: { token: color.foreground.muted, part: cell, description: 'Secondary values (a date beside a title) rendered with Text tone muted.' }
+    cellPaddingInline: { token: layout.inset.md, part: cell }
+    cellPaddingInlineCompact: { token: layout.inset.sm, part: cell, description: 'Used instead of cellPaddingInline when density is compact.' }
+    cellPaddingBlock: { token: space.sm, part: cell }
+    cellGap: { token: layout.gap.tight, part: cell, description: 'Between a sort button''s label and its arrow, and between actions in the actions cell.' }
+    captionSize: { token: font.size.md, part: caption }
+    captionWeight: { token: font.weight.semibold, part: caption }
+    captionGap: { token: space.2, part: caption, description: 'Between caption and header.' }
     stackedRowInset: { token: layout.inset.md }
     stackedRowGap: { token: layout.gap.tight, description: Between label/value pairs inside a stacked row. }
-    stackedLabelColor: { token: color.foreground.muted }
-    stackedLabelSize: { token: font.size.xs }
-    stackedLabelWeight: { token: font.weight.medium }
+    stackedLabelColor: { token: color.foreground.muted, part: stackedLabel }
+    stackedLabelSize: { token: font.size.xs, part: stackedLabel }
+    stackedLabelWeight: { token: font.weight.medium, part: stackedLabel }
     stackedRowRadius: { token: radius.md }
     stickyColumnShadow: { token: shadow.raised, description: '`responsive: scroll`: the sticky row-header column casts this once scrolled.' }
     scrollFade: { token: space.6, description: 'Edge fade width on the scroll region.' }
@@ -153,17 +169,45 @@ component:
     transition: { token: motion.duration.fast, description: 'Hover and sort-arrow changes; sorting itself is instant.' }
   copy:
     sortToolbarLabel: 'Sort {caption}'
-    sortAscending: 'Sort by {column}, ascending'
-    sortDescending: 'Sort by {column}, descending'
-    sortedAnnouncement: 'Sorted by {column}, {direction}'
+    sortAscending:
+      text: 'Sort by {column}, ascending'
+      params:
+        column: { type: string, description: The column header text. }
+    sortDescending:
+      text: 'Sort by {column}, descending'
+      params:
+        column: { type: string, description: The column header text. }
+    sortedAnnouncement:
+      text: 'Sorted by {column}, {direction}'
+      params:
+        column: { type: string, description: The column header text. }
+        direction: { type: string, description: 'The new direction: ascending or descending.' }
     selectAll: Select all rows
-    selectRow: 'Select {rowName}'
-    selectedCount: '{count} of {total} selected'
+    selectRow:
+      text: 'Select {rowName}'
+      params:
+        rowName: { type: string, description: The row's name from its row-header cell. }
+    selectedCount:
+      text: '{count} of {total} selected'
+      params:
+        count: { type: number, description: How many rows are selected. }
+        total: { type: number, description: How many rows the table has. }
+    cellLabel:
+      text: '{column}: {value}'
+      params:
+        column: { type: string, description: The column header text. }
+        value: { type: string, description: The cell's text. }
     actions: Actions
     empty: Nothing to show.
     loading: Loading
     scrollHint: 'Scroll sideways to see more columns'
-    rowCount: '{count} rows'
+    rowCount:
+      plural:
+        by: count
+        one: '{count} row'
+        other: '{count} rows'
+      params:
+        count: { type: number, description: How many rows the table has. }
   a11y:
     role: table
     requires: [accessible-name, keyboard-operable, arrow-navigation, focus-visible, contrast-aa, target-24px, selected-state, live-region, no-hover-only]
@@ -173,7 +217,7 @@ component:
       - { foreground: color.foreground, background: color.background.subtle, level: AA }
       - { foreground: color.foreground.muted, background: color.background.subtle, level: AA }
       - { foreground: color.link, background: color.background.subtle, level: AA }
-      - { foreground: color.control.selectedBackground, background: color.background.subtle, level: AA, large: true }
+      - { foreground: color.control.selectedBackground, background: color.background.subtle, level: AA, nonText: true }
   platforms:
     web:
       element: table
@@ -181,7 +225,7 @@ component:
       notes: 'Native <table><caption><thead><tbody> with EVERY role stated explicitly (role="table" on the table, "rowgroup" on thead/tbody, "row" on tr, "columnheader"/"rowheader"/"cell" on th/td) — browsers drop the implicit table roles as soon as CSS changes display on any of these elements, which the stacked layout and sticky positioning do. Column headers: <th scope="col" abbr>; the row-header column: <th scope="row">. Sort: a Button (ghost, sm) inside the columnheader with aria-sort on the th and a visually-hidden live region announcing copy.sortedAnnouncement. Selection: Checkbox in the first cell, aria-selected on the tr, live region for copy.selectedCount. `responsive: stack` below the prose breakpoint: a container query switches tr/td to display block/grid, thead is visually hidden (not display none, so the columnheaders remain in the tree), and each td gets a ::before from a data-label attribute holding the header text — aria-hidden as text is already associated by the roles. `responsive: scroll`: the table sits in a <div role="region" aria-labelledby={captionId} tabindex="0"> with overflow-x auto, faded edges, and the row-header column position: sticky. Sticky header: thead th position: sticky top 0 with the shadow toggled by an IntersectionObserver sentinel. rowActions cell has a visually-hidden columnheader "Actions". Rows are keyed by id; no virtualization in this component (that is DataGrid).'
     lit:
       tag: ds-table
-      reflect: [selectable, responsive, sticky-header, max-height, density, striped, loading, hide-caption]
+      reflect: [selectable, responsive, { prop: stickyHeader, attribute: no-sticky-header }, max-height, density, striped, loading, hide-caption]
       notes: '`columns` and `data` are properties; the whole <table> renders inside the shadow root from them (slotting <tr> elements across the shadow boundary breaks table semantics, so rows are never light DOM). Cell `render` functions return lit templates. Composed `sort-change`, `selection-change`, `row-press`. Container queries on :host.'
     rn:
       element: FlatList
@@ -191,6 +235,115 @@ component:
       element: Grid
       props: [Grid, GridRow, ScrollView, .accessibilityElement=contain, .accessibilityLabel, .accessibilityAddTraits=isHeader, Button, Checkbox, ViewThatFits]
       notes: 'A `Grid` of `GridRow`s inside a horizontal `ScrollView` when columns overflow (`responsive: scroll`) or a `VStack` of stacked cards (`responsive: stack`) chosen through `ViewThatFits` against the prose width; not `List` and not `Table` (macOS-only). The caption `Heading` names the `.contain` element; each row is `.accessibilityElement(children: .contain)` with the row-header cell''s text as its label so VoiceOver reads a row as one unit and then its cells; header cells are `.isHeader` and column names are prefixed to cell values in stacked mode (`copy.cellLabel`). Sort `Button`s, selection `Checkbox`es, `onRowPress` on the row `Button` — as documented. `maxHeight` scrolls vertically inside a `ScrollView` with a visible header `Grid` outside it.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name ones from the schema.
+    - name: activating-a-sortable-header-reports-the-sort
+      description: The table shows the sort; the caller sorts the data, so the event is the contract.
+      given:
+        columns:
+          - { key: invoice, header: Invoice, isRowHeader: true }
+          - { key: amount, header: Amount, sortable: true, align: end }
+        data:
+          - { id: a, invoice: INV-1, amount: 100 }
+          - { id: b, invoice: INV-2, amount: 200 }
+      when: { click: sortButton }
+      then:
+        - { event: onSortChange }
+    - name: selecting-a-row-reports-every-selected-id
+      given:
+        selectable: multiple
+        columns:
+          - { key: invoice, header: Invoice, isRowHeader: true }
+        data:
+          - { id: a, invoice: INV-1 }
+          - { id: b, invoice: INV-2 }
+      when: { click: selectCell }
+      then:
+        - { event: onSelectionChange }
+    - name: select-all-reports-the-whole-selection
+      description: multiple adds a select-all in the header; selection is row identity, not a visual state.
+      given:
+        selectable: multiple
+        columns:
+          - { key: invoice, header: Invoice, isRowHeader: true }
+        data:
+          - { id: a, invoice: INV-1 }
+          - { id: b, invoice: INV-2 }
+      when: { click: selectAllCell }
+      then:
+        - { event: onSelectionChange }
+    - name: the-empty-message-shows-when-there-are-no-rows
+      given:
+        columns:
+          - { key: invoice, header: Invoice, isRowHeader: true }
+        data: []
+      then:
+        - { copy: empty }
+    - name: a-custom-empty-message-replaces-the-default
+      given:
+        emptyMessage: No invoices yet.
+        columns:
+          - { key: invoice, header: Invoice, isRowHeader: true }
+        data: []
+      then:
+        - { text: No invoices yet. }
+    - name: loading-marks-the-table-busy
+      description: While data is being fetched the table is aria-busy and existing rows stay visible.
+      given:
+        loading: true
+        columns:
+          - { key: invoice, header: Invoice, isRowHeader: true }
+        data:
+          - { id: a, invoice: INV-1 }
+      then:
+        - { attribute: aria-busy, is: 'true' }
+      platforms: [web]
+  examples:
+    - name: open-invoices
+      description: The everyday content table, its caption naming what it lists.
+      given:
+        caption: Open invoices
+        columns:
+          - { key: invoice, header: Invoice, isRowHeader: true }
+          - { key: due, header: Due }
+          - { key: amount, header: Amount, align: end, sortable: true }
+        data:
+          - { id: a, invoice: INV-1, due: 12 Sep, amount: 100 }
+          - { id: b, invoice: INV-2, due: 19 Sep, amount: 200 }
+    - name: selectable-rows
+      description: A table whose rows can be picked in bulk, with a select-all in the header.
+      given:
+        caption: Members
+        selectable: multiple
+        defaultSelected: [a]
+        columns:
+          - { key: person, header: Person, isRowHeader: true }
+          - { key: role, header: Role }
+        data:
+          - { id: a, person: Ana Souza, role: Admin }
+          - { id: b, person: Bo Lin, role: Editor }
+    - name: dense-data-table-that-scrolls
+      description: A wide data table that keeps its columns on narrow screens and scrolls sideways instead of stacking.
+      given:
+        caption: Daily traffic
+        responsive: scroll
+        density: compact
+        maxHeight: viewport
+        columns:
+          - { key: day, header: Day, isRowHeader: true }
+          - { key: visits, header: Visits, align: end }
+          - { key: signups, header: Signups, align: end }
+        data:
+          - { id: a, day: Monday, visits: 1200, signups: 30 }
+          - { id: b, day: Tuesday, visits: 1450, signups: 41 }
+    - name: nothing-to-show
+      description: An empty table that says so in its own words rather than showing an empty body.
+      given:
+        caption: Open invoices
+        emptyMessage: No invoices yet.
+        columns:
+          - { key: invoice, header: Invoice, isRowHeader: true }
+        data: []
 ---
 
 A table is the honest way to show records that share fields: every row the same shape, every column a comparable thing. This component keeps that honesty on a phone — where most tables quietly turn into unreadable text — by choosing, per table, whether rows stack into labelled blocks or columns scroll, and by stating every role explicitly so neither layout costs a screen-reader user the structure.

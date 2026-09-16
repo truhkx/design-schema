@@ -6,6 +6,17 @@ import { Menu } from '../../packages/react/src/Menu';
 import type { MenuProps } from '../../packages/react/src/Menu';
 import meta from '../../packages/react/src/Menu.stories';
 
+const FOCUSABLE = 'input, button, select, textarea, a[href], [tabindex]';
+/** Focus the element a key press lands on. `when.key` is pressed on the primary part, but a composite that
+ *  manages a roving tabindex (a tablist, a radiogroup, a toolbar) is not focusable itself: .focus() on it is a
+ *  no-op and the key would go to document.body instead of the component. Focus what it delegates to — the
+ *  element carrying tabindex="0", else the first focusable descendant. An already-focusable part focuses itself. */
+function focusInto(el: Element | null): void {
+  if (el === null) return;
+  const target = el.matches(FOCUSABLE) ? el : (el.querySelector('[tabindex="0"]') ?? el.querySelector(FOCUSABLE) ?? el);
+  (target as HTMLElement).focus();
+}
+
 function setup(given: Partial<MenuProps> = {}) {
   const events = {
     onAction: vi.fn(),
@@ -21,12 +32,34 @@ function setup(given: Partial<MenuProps> = {}) {
     props,
     root: () => (document.querySelector('[data-ds="Menu"]') ?? screen.queryByRole('menu') ?? utils.container.firstElementChild) as HTMLElement,
     trigger: () => (screen.queryByRole('menu') ?? s.root()) as HTMLElement,
+    item: () => (document.querySelector('[data-part="item"]') ?? s.root()),
     rerender: (next: Partial<MenuProps>) => utils.rerender(<Menu {...props} {...next} />),
   };
   return s;
 }
 
 describe('Menu', () => {
+  test('choosing-an-item-reports-the-action-and-the-close', async () => {
+    const s = setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename"}, {"id": "duplicate", "label": "Duplicate"}]});
+    await s.user.click(s.item());
+    expect(s.events.onAction).toHaveBeenCalled();
+    expect(s.events.onOpenChange).toHaveBeenCalled();
+  });
+  test('a-disabled-item-does-nothing', async () => {
+    const s = setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename", "disabled": true}, {"id": "duplicate", "label": "Duplicate"}]});
+    await s.user.click(s.item());
+    expect(s.events.onAction).not.toHaveBeenCalled();
+  });
+  test('escape-closes-without-choosing', async () => {
+    const s = setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename"}, {"id": "duplicate", "label": "Duplicate"}]});
+    act(() => focusInto(s.trigger()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onAction).not.toHaveBeenCalled();
+  });
+  test('the-popup-is-a-menu', async () => {
+    const s = setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename"}]});
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();
@@ -74,5 +107,11 @@ describe('Menu', () => {
   test('has-accessible-name', async () => {
     const s = setup({"open": true});
     expect(screen.getByRole('menu', { name: s.props.label })).toBeInTheDocument();
+  });
+  test('escape-fires-on-open-change', async () => {
+    const s = setup({"open": true});
+    act(() => focusInto(s.trigger()));
+    await s.user.keyboard('{Escape}');
+    expect(s.events.onOpenChange).toHaveBeenCalled();
   });
 });

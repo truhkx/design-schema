@@ -55,6 +55,23 @@ component:
       element: VStack
       props: [.frame=maxWidth, .padding=horizontal, .frame=maxWidth-infinity, GeometryReader]
       notes: 'Centers content at `layout.maxWidth.{width}` with horizontal gutters from the inset token: `.frame(maxWidth:)` inside `.frame(maxWidth: .infinity)`. Gutters shrink to the compact token below the prose width (a `GeometryReader` on the container''s own width, never `UIScreen`). Safe-area insets are respected by default (`ignoresSafeArea` is never applied by a component).'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum ones from the schema.
+    - name: main-element-is-the-page-landmark
+      description: 'Container adds no semantics unless element: main is chosen, in which case it is the page''s main landmark and there must be exactly one.'
+      given: { element: main }
+      then:
+        - { role: main, platforms: [web] }
+  examples:
+    - name: application-screen
+      description: The default page column for application screens, centered at the content measure.
+      given: { children: 'A Stack of page regions', width: content }
+    - name: reading-measure
+      description: An article capped at the prose measure, about 65 characters a line.
+      given: { children: 'An article', width: prose }
+    - name: nested-section
+      description: A narrower measure inside an already padded parent, so the gutters are not applied twice.
+      given: { children: 'A narrower section', width: prose, gutter: none }
 ---
 
 Container is where a screen's horizontal rhythm is decided once. It puts the gutter at the viewport edge and caps how wide content can get, so a form on a phone, a dashboard on a laptop and an article on a wide monitor all sit on the same measure — and no component ever needs to know how wide the page is.

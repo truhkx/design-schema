@@ -6,6 +6,10 @@ component:
   category: container
   status: review
   anatomy: [surface, header, heading, headerActions, body, footer]
+  parts:
+    body: { kind: slot, slot: { default: true, prop: children, required: true } }
+    headerActions: { kind: slot, slot: { prop: headerActions } }
+    footer: { kind: slot, slot: { prop: footer } }
   props:
     children:
       type: content
@@ -27,6 +31,7 @@ component:
       description: The action row. Buttons in a row, primary first, following Form's action-order rule.
     inset:
       type: enum
+      enumRef: size
       values: [sm, md, lg]
       default: md
       description: Padding inside the card from the layout inset presets. `sm` for dense grids, `lg` for a single featured card.
@@ -49,14 +54,14 @@ component:
     paddingBlock: { token: 'layout.inset.{inset}' }
     paddingInline: { token: 'layout.inset.{inset}' }
     partGap: { token: layout.gap.loose, description: 'Vertical gap between header, body and footer.' }
-    headerGap: { token: layout.gap.normal, description: Horizontal gap between the heading and headerActions. }
-    footerGap: { token: layout.gap.tight, description: Horizontal gap between footer actions. }
+    headerGap: { token: layout.gap.normal, part: header, description: Horizontal gap between the heading and headerActions. }
+    footerGap: { token: layout.gap.tight, part: footer, description: Horizontal gap between footer actions. }
     actionsGap: { token: layout.gap.tight, description: Horizontal gap between the headerActions controls. }
     background: { token: 'color.background.{surface}' }
     border: { token: color.border }
     borderWidth: { token: border.width.thin, description: 'Rendered only with surface default.' }
     radius: { token: radius.lg }
-    hoverBackground: { token: color.background.subtle, description: 'Interactive cards only, on pointer hover; subtle cards use color.background.strong.' }
+    hoverBackground: { token: color.background.subtle, state: hover, description: 'Interactive cards only, on pointer hover; subtle cards use color.background.strong.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
     transition: { token: motion.duration.fast, description: 'Interactive hover, with motion.easing.standard.' }
@@ -84,6 +89,44 @@ component:
       element: VStack
       props: [.padding, .background, .overlay=border, .clipShape, .accessibilityElement=contain, .accessibilityLabel, .contentShape, .focusable, .focused]
       notes: 'Surface from the tokens, `inset` padding, header row (`Heading` + `headerActions` HStack), body, footer with the gap bindings. `.accessibilityElement(children: .contain)` labelled by the heading. `interactive`: the card is wrapped in a `Button` whose action is the single child link/button''s action (found by the child declaring itself through `CardActionPreference`), the child is `.accessibilityHidden` inside it, and hover shows `hoverBackground` on iPad pointer — one target, one focus stop. `focusable`: `.focusable()` with the focus ring drawn on the card, for Feed''s PageUp/PageDown.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum ones from the schema.
+    - name: heading-is-rendered-as-a-heading
+      description: The heading is rendered as a Heading at the card's level, and it is what a screen-reader user jumps to.
+      given: { heading: 'Team plan' }
+      then:
+        - { text: 'Team plan' }
+        - { role: heading, platforms: [web] }
+    - name: a-card-with-a-heading-is-an-article
+      description: A card with a heading is an article labelled by that heading, so screen-reader users can navigate card by card.
+      given: { heading: 'Team plan' }
+      then:
+        - { role: article, platforms: [web] }
+    - name: interactive-adds-no-focus-stop
+      description: An interactive card extends its single child link or button to the whole area; the card itself is never a second tab stop.
+      given: { interactive: true }
+      then:
+        - { focusable: false }
+      platforms: [web, lit]
+    - name: focusable-takes-scripted-focus-only
+      description: 'A focusable card carries tabindex=-1 so a container (Feed) can move focus to it by script; it is not a tab stop.'
+      given: { focusable: true }
+      then:
+        - { attribute: tabindex, is: '-1', platforms: [web] }
+        - { focusable: true, platforms: [web] }
+  examples:
+    - name: plan-card
+      description: A card as a unit in a list of choices, with its own heading at the list's level.
+      given: { heading: 'Team plan', headingLevel: '3', children: 'What the plan includes' }
+    - name: dense-grid-card
+      description: A card in a dense grid, on the tinted surface and with the tighter inset.
+      given: { children: 'A search result', inset: sm, surface: subtle }
+    - name: whole-card-is-a-link
+      description: A card whose single child link leads somewhere, with the card as the hit area and the link as the only tab stop.
+      given: { heading: 'September invoice', children: 'A Link to the invoice', interactive: true }
+    - name: card-focused-by-a-feed
+      description: A card a Feed moves focus to with PageUp/PageDown, which draws its own ring when focused that way.
+      given: { heading: 'New comment', children: 'The comment body', focusable: true }
 ---
 
 A Card frames one thing so it can sit among others: a search result, a plan to choose, a setting group, a dashboard panel. It is a Box with conventions — a heading row, a body, an action row, consistent padding and gaps from the theme's rhythm — so that every card on every screen has the same internal spacing without anyone choosing it.

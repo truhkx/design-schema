@@ -77,6 +77,9 @@ component:
     value:
       type: string
       description: Controlled value. Omit for an uncontrolled field.
+      controls:
+        event: onChange
+        default: defaultValue
     defaultValue:
       type: string
       description: Initial value for an uncontrolled field.
@@ -115,6 +118,7 @@ component:
         for a field whose context already names it: a DataGrid cell editor, a Search.'
     size:
       type: enum
+      enumRef: size
       values:
       - sm
       - md
@@ -151,6 +155,12 @@ component:
         lit: change
         rn: onChangeText
         swiftui: onChange
+      payload:
+      - name: value
+        type: string
+        description: The new value.
+      fires:
+      - user
     onFocus:
       description: Fired when the field receives focus.
       platforms:
@@ -158,6 +168,8 @@ component:
         lit: focus (native, retargeted — no CustomEvent)
         rn: onFocus
         swiftui: onFocus
+      fires:
+      - user
     onBlur:
       description: Fired when the field loses focus. The usual moment to validate.
       platforms:
@@ -165,6 +177,8 @@ component:
         lit: blur (native, retargeted — no CustomEvent)
         rn: onBlur
         swiftui: onBlur
+      fires:
+      - user
   styles:
     background:
       token: color.background
@@ -189,6 +203,7 @@ component:
       locked: true
     descriptionText:
       token: color.foreground.muted
+      part: description
       locked: true
     borderWidth:
       token: border.width.thin
@@ -198,17 +213,15 @@ component:
       locked: false
     paddingInline:
       token: space.md
+      by: size
+      values:
+        sm: space.2
       locked: false
     paddingBlock:
       token: space.sm
-      locked: false
-    paddingBlockSm:
-      token: space.1
-      description: Vertical padding at size sm.
-      locked: false
-    paddingInlineSm:
-      token: space.2
-      description: Horizontal padding at size sm.
+      by: size
+      values:
+        sm: space.1
       locked: false
     partGap:
       token: space.1
@@ -222,6 +235,7 @@ component:
       locked: false
     labelWeight:
       token: font.weight.medium
+      part: label
       locked: false
     helperSize:
       token: font.size.sm
@@ -275,7 +289,19 @@ component:
     - foreground: color.border.strong
       background: color.background
       level: AA
-      large: true
+      nonText: true
+  form:
+    role: field
+    value: value
+    valueType: string
+    name: name
+    validation:
+    - required
+    - invalid
+    messages:
+      required: required
+      invalid: invalid
+    discovery: context
   platforms:
     web:
       element: input
@@ -293,6 +319,7 @@ component:
       tag: ds-input
       reflect:
       - type
+      - size
       - required
       - disabled
       - invalid
@@ -341,11 +368,132 @@ component:
         into `.accessibilityHint`; `invalid` adds copy.invalid to the value; `required`
         appends the indicator to the visible label. Registers with the Form environment.
         `size: sm` swaps the Sm bindings.'
+  behavior:
+  - name: typing-reports-the-new-value
+    description: onChange fires with the string value on every keystroke.
+    when:
+      type: a
+    then:
+    - event: onChange
+      with: a
+  - name: focus-is-reported
+    description: onFocus fires when the field receives focus.
+    when:
+      focus: field
+    then:
+    - event: onFocus
+  - name: required-is-shown-in-the-label
+    description: required appends copy.requiredIndicator to the visible label and
+      sets aria-required - text and attributes, not color alone.
+    given:
+      required: true
+    then:
+    - copy: requiredIndicator
+    - attribute: aria-required
+      is: 'true'
+      platforms:
+      - web
+  - name: error-is-announced-when-it-appears
+    description: The error is rendered in the error slot with role=alert so it is
+      announced when it appears (WCAG 3.3.1).
+    given:
+      error: Enter an email address like name@example.com
+    then:
+    - role: alert
+      platforms:
+      - web
+      - lit
+  - name: disabled-stays-focusable-and-is-announced
+    description: Disabled fields are visible, readable and focusable (aria-disabled,
+      never the native disabled attribute).
+    given:
+      disabled: true
+    then:
+    - state: disabled
+      is: true
+    - focusable: true
+      platforms:
+      - web
+      - lit
+  examples:
+  - name: email-with-a-description
+    description: A field whose format matters, with persistent helper text and the
+      matching touch keyboard.
+    given:
+      label: Email address
+      name: email
+      type: email
+      description: Use the email you signed up with.
+  - name: required-field
+    description: A field that must have a value to submit, marked in the label rather
+      than by color.
+    given:
+      label: Full name
+      name: name
+      required: true
+  - name: field-with-an-error
+    description: A field failing validation, whose message says what is wrong and
+      how to fix it.
+    given:
+      label: Email address
+      name: email
+      type: email
+      error: Enter an email address like name@example.com
+  - name: dense-grid-editor
+    description: A small field inside a grid cell, where the column header already
+      names it.
+    given:
+      label: Quantity
+      name: quantity
+      type: number
+      size: sm
+      hideLabel: true
 ```
+
+## Events
+
+- `onChange`: emit `onChangeText`
+  - payload, positional, in this order: `value: string`
+  - fires on: user
+- `onFocus`: emit `onFocus`
+  - fires on: user
+- `onBlur`: emit `onBlur`
+  - fires on: user
 
 ## Controlled state
 
-- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; paired by name, so no event is declared
+- `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `onChangeText`)
+
+## Style bindings
+
+- `descriptionText`: token `color.foreground.muted`; part `description`; locked
+- `paddingInline`: token `space.md`; by `size`: sm → `space.2`, any other value → `space.md`
+- `paddingBlock`: token `space.sm`; by `size`: sm → `space.1`, any other value → `space.sm`
+- `labelWeight`: token `font.weight.medium`; part `label`
+
+## Form and overlay
+
+```yaml
+form:
+  role: field
+  value: value
+  valueType: string
+  name: name
+  validation:
+  - required
+  - invalid
+  messages:
+    required: required
+    invalid: invalid
+  discovery: context
+```
+
+## Constants and examples
+
+- example `email-with-a-description`, story `EmailWithADescription`: given `label: "Email address"`, `name: "email"`, `type: "email"`, `description: "Use the email you signed up with."`; A field whose format matters, with persistent helper text and the matching touch keyboard.
+- example `required-field`, story `RequiredField`: given `label: "Full name"`, `name: "name"`, `required: true`; A field that must have a value to submit, marked in the label rather than by color.
+- example `field-with-an-error`, story `FieldWithAnError`: given `label: "Email address"`, `name: "email"`, `type: "email"`, `error: "Enter an email address like name@example.com"`; A field failing validation, whose message says what is wrong and how to fix it.
+- example `dense-grid-editor`, story `DenseGridEditor`: given `label: "Quantity"`, `name: "quantity"`, `type: "number"`, `size: "sm"`, `hideLabel: true`; A small field inside a grid cell, where the column header already names it.
 
 ## Overrides (per-instance styling contract)
 
@@ -355,14 +503,42 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 
 The `platforms.rn.props` list names the native props the schema cares about; `overrides` and `testID` apply to every component regardless of whether that list mentions them.
 
-Overridable: `borderInvalid`, `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `paddingBlockSm`, `paddingInlineSm`, `partGap`, `fontFamily`, `fontSize`, `labelWeight`, `helperSize`, `lineHeight`, `disabledOpacity`
+Overridable: `borderInvalid`, `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `partGap`, `fontFamily`, `fontSize`, `labelWeight`, `helperSize`, `lineHeight`, `disabledOpacity`
 Locked (accessibility-bearing, never overridable): `background`, `foreground`, `placeholder`, `border`, `borderFocus`, `errorText`, `descriptionText`, `minTarget`, `minTargetSm`, `focusRingWidth`
 
-## Behavior scenarios (11)
+## Behavior scenarios (15)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: typing-reports-the-new-value
+  description: onChange fires with the string value on every keystroke.
+  when:
+    type: a
+  then:
+  - event: onChange
+    with: a
+- name: focus-is-reported
+  description: onFocus fires when the field receives focus.
+  when:
+    focus: field
+  then:
+  - event: onFocus
+- name: required-is-shown-in-the-label
+  description: required appends copy.requiredIndicator to the visible label and sets
+    aria-required - text and attributes, not color alone.
+  given:
+    required: true
+  then:
+  - copy: requiredIndicator
+- name: disabled-stays-focusable-and-is-announced
+  description: Disabled fields are visible, readable and focusable (aria-disabled,
+    never the native disabled attribute).
+  given:
+    disabled: true
+  then:
+  - state: disabled
+    is: true
 - name: renders
   then:
   - renders: true

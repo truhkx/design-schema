@@ -31,6 +31,14 @@ function setup(given: Partial<FieldsetProps> = {}) {
 }
 
 describe('Fieldset', () => {
+  test('the-legend-names-the-group', () => {
+    const s = setup({"legend": "Delivery window"});
+    expect(screen.getByText(new RegExp("Delivery\\ window"))).toBeOnTheScreen();
+  });
+  test('the-description-is-rendered', () => {
+    const s = setup({"description": "We only ship within the EU."});
+    expect(screen.getByText(new RegExp("We\\ only\\ ship\\ within\\ the\\ EU\\."))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

@@ -19,8 +19,12 @@
       ],
       "action": "Closes and returns focus to the trigger.",
       "from": "inside",
-      "expect": "focus-trigger",
-      "when": "open"
+      "expect": "closes",
+      "when": "open",
+      "expectAll": [
+        "closes",
+        "focus-trigger"
+      ]
     },
     {
       "keys": [
@@ -29,7 +33,10 @@
       "action": "Non-modal: after the last element in the panel, closes and moves focus to the element after the trigger. Modal: wraps within the panel.",
       "from": "last",
       "expect": "manual",
-      "when": "open"
+      "when": "open",
+      "given": {
+        "modal": false
+      }
     },
     {
       "keys": [
@@ -38,7 +45,11 @@
       "action": "Non-modal: from the first element in the panel, returns focus to the trigger and closes.",
       "from": "first",
       "expect": "focus-trigger",
-      "when": "open"
+      "when": "open",
+      "expectAll": [
+        "focus-trigger",
+        "closes"
+      ]
     }
   ]
 }

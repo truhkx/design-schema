@@ -77,6 +77,9 @@ component:
       type: boolean
       required: true
       description: Controlled visibility.
+      controls:
+        event: onClose
+        state: open
     heading:
       type: string
       description: What the actions apply to ("Photo.jpg"), shown muted above the
@@ -105,6 +108,14 @@ component:
         lit: action
         rn: onAction
         swiftui: onAction
+      payload:
+      - name: id
+        type: string
+        description: The id of the chosen action.
+      fires:
+      - user
+      timing:
+        phase: request
     onClose:
       description: 'Dismissed without choosing: reason `escape`, `scrim`, `cancel`,
         or `drag`.'
@@ -113,6 +124,23 @@ component:
         lit: close
         rn: onClose
         swiftui: onClose
+      payload:
+      - name: reason
+        type: enum
+        values:
+        - escape
+        - scrim
+        - cancel
+        - drag
+      reasons:
+        escape: Escape pressed while open
+        scrim: the scrim was clicked
+        cancel: the cancel action was chosen
+        drag: the sheet was dragged past the dismiss threshold
+      fires:
+      - user
+      timing:
+        phase: request
   keyboard:
   - keys:
     - Escape
@@ -160,9 +188,11 @@ component:
   styles:
     scrim:
       token: color.overlay.scrim
+      part: scrim
       locked: false
     surface:
       token: color.overlay.surface
+      part: surface
       locked: true
     shadow:
       token: shadow.overlay
@@ -172,28 +202,36 @@ component:
       locked: false
     itemPaddingBlock:
       token: space.sm
+      part: item
       locked: false
     itemPaddingInline:
       token: layout.inset.md
+      part: item
       locked: false
     itemGap:
       token: layout.gap.normal
+      part: item
       description: 'Between icon and label. Rows have no gap between them: their rhythm
         comes from itemPaddingBlock.'
       locked: false
     headerPaddingBlock:
       token: space.sm
+      part: header
       description: Vertical padding of the header (handle + heading) and of the cancel
         row.
       locked: false
     itemHover:
       token: color.background.subtle
+      part: item
+      state: hover
       locked: true
     itemColor:
       token: color.foreground
+      part: item
       locked: true
     itemDangerColor:
       token: color.foreground.danger
+      part: item
       locked: true
     titleColor:
       token: color.foreground.muted
@@ -239,9 +277,30 @@ component:
     focusRingWidth:
       token: border.width.focus
       locked: true
+  constants:
+    dismissDistance:
+      description: Fraction of the sheet height a downward drag must pass for release
+        to dismiss it rather than spring back.
+      value: 0.25
+      unit: ratio
+    dismissVelocity:
+      description: Drag speed at release that dismisses the sheet whatever the distance
+        travelled.
+      value: 1.5
+      unit: px/ms
   copy:
     cancelLabel: Cancel
     defaultLabel: Actions
+  overlay:
+    layer: sheet
+    open: open
+    closeEvent: onClose
+    dismiss:
+    - escape
+    - scrim
+    - close-button
+    - swipe
+    modal: true
   a11y:
     role: menu
     requires:
@@ -319,7 +378,189 @@ component:
         expect and VoiceOver handles it natively; the doc''s surface bindings are
         no-ops here (the gallery notes it), `description` becomes the message. `onAction`
         with the action id, `onClose` on dismissal.'
+  behavior:
+  - name: choosing-an-action-fires-on-action
+    description: A row reports the chosen action; the consumer performs it and closes.
+    given:
+      open: true
+      heading: Photo.jpg
+      actions:
+      - id: share
+        label: Share
+      - id: rename
+        label: Rename
+      - id: delete
+        label: Delete photo
+        tone: danger
+    when:
+      click: item
+    then:
+    - event: onAction
+  - name: the-cancel-row-fires-on-close
+    description: The explicit Cancel row is a dismissal, not a choice, so onAction
+      stays silent.
+    given:
+      open: true
+      heading: Photo.jpg
+      actions:
+      - id: share
+        label: Share
+      - id: rename
+        label: Rename
+    when:
+      click: cancelButton
+    then:
+    - event: onClose
+    - event: onAction
+      fired: false
+  - name: non-dismissible-still-reports-escape
+    description: As in Dialog, Escape reports through onClose even when `dismissible`
+      is false.
+    given:
+      open: true
+      heading: Photo.jpg
+      dismissible: false
+      actions:
+      - id: share
+        label: Share
+      - id: rename
+        label: Rename
+    when:
+      key: Escape
+    then:
+    - event: onClose
+    platforms:
+    - web
+    - lit
+  - name: the-cancel-row-is-named-from-copy
+    description: With no cancelLabel the cancel row falls back to copy.cancelLabel.
+    given:
+      open: true
+      heading: Photo.jpg
+      actions:
+      - id: share
+        label: Share
+      - id: rename
+        label: Rename
+    then:
+    - copy: cancelLabel
+  - name: the-list-is-a-menu
+    description: The actions are a menu of menuitems (APG menu button), not a list
+      of buttons.
+    given:
+      open: true
+      heading: Photo.jpg
+      actions:
+      - id: share
+        label: Share
+      - id: rename
+        label: Rename
+    then:
+    - role: menu
+  - name: closed-sheet-renders-nothing
+    given:
+      open: false
+      actions:
+      - id: share
+        label: Share
+    then:
+    - renders: false
+  examples:
+  - name: photo-actions
+    description: Contextual actions on an item, with the destructive one last.
+    given:
+      open: true
+      heading: Photo.jpg
+      actions:
+      - id: share
+        label: Share
+        icon: external
+      - id: rename
+        label: Rename
+      - id: duplicate
+        label: Duplicate
+      - id: delete
+        label: Delete photo
+        icon: danger
+        tone: danger
+  - name: unnamed-sheet
+    description: A sheet with no heading, named by copy.defaultLabel for assistive
+      technology.
+    given:
+      open: true
+      actions:
+      - id: copy
+        label: Copy link
+      - id: open
+        label: Open in new tab
+  - name: with-an-unavailable-action
+    description: An action that is shown but cannot be used here, announced as disabled
+      rather than hidden.
+    given:
+      open: true
+      heading: Invoice 4821
+      cancelLabel: Not now
+      actions:
+      - id: download
+        label: Download
+      - id: void
+        label: Void invoice
+        tone: danger
+        disabled: true
 ```
+
+## Events
+
+- `onAction`: emit `onAction`
+  - payload, positional, in this order: `id: string`
+  - fires on: user
+  - timing: request
+- `onClose`: emit `onClose`
+  - payload, positional, in this order: `reason: 'escape' | 'scrim' | 'cancel' | 'drag'`
+  - reasons: `escape` (Escape pressed while open); `scrim` (the scrim was clicked); `cancel` (the cancel action was chosen); `drag` (the sheet was dragged past the dismiss threshold)
+  - fires on: user
+  - timing: request
+
+## Controlled state
+
+- `open` is controlled when given, uncontrolled from its initial state when omitted; changes reported by `onClose` (emit `onClose`); drives state `open`
+
+## Style bindings
+
+- `scrim`: token `color.overlay.scrim`; part `scrim`
+- `surface`: token `color.overlay.surface`; part `surface`; locked
+- `itemPaddingBlock`: token `space.sm`; part `item`
+- `itemPaddingInline`: token `layout.inset.md`; part `item`
+- `itemGap`: token `layout.gap.normal`; part `item`
+- `headerPaddingBlock`: token `space.sm`; part `header`
+- `itemHover`: token `color.background.subtle`; part `item`; state `hover`; locked
+- `itemColor`: token `color.foreground`; part `item`; locked
+- `itemDangerColor`: token `color.foreground.danger`; part `item`; locked
+
+## Form and overlay
+
+```yaml
+overlay:
+  layer: sheet
+  open: open
+  closeEvent: onClose
+  dismiss:
+  - escape
+  - scrim
+  - close-button
+  - swipe
+  modal: true
+```
+
+`overlay.closeEvent` emits `onClose`.
+
+## Constants and examples
+
+- constant `dismissDistance`: 0.25 ratio
+- constant `dismissVelocity`: 1.5 px/ms
+- example `photo-actions`, story `PhotoActions`: given `open: true`, `heading: "Photo.jpg"`, `actions: [{"id":"share","label":"Share","icon":"external"},{"id":"rename","label":"Rename"},{"id":"duplicate","label":"Duplicate"},{"id":"delete","label":"Delete photo","icon":"danger","tone":"danger"}]`; Contextual actions on an item, with the destructive one last.
+- example `unnamed-sheet`, story `UnnamedSheet`: given `open: true`, `actions: [{"id":"copy","label":"Copy link"},{"id":"open","label":"Open in new tab"}]`; A sheet with no heading, named by copy.defaultLabel for assistive technology.
+- example `with-an-unavailable-action`, story `WithAnUnavailableAction`: given `open: true`, `heading: "Invoice 4821"`, `cancelLabel: "Not now"`, `actions: [{"id":"download","label":"Download"},{"id":"void","label":"Void invoice","tone":"danger","disabled":true}]`; An action that is shown but cannot be used here, announced as disabled rather than hidden.
 
 ## Overrides (per-instance styling contract)
 
@@ -389,11 +630,78 @@ Below the breakpoint, reuse BottomSheet's `<dialog>` mechanics with `height: con
 
 BottomSheet, Menu, Button, AlertDialog.
 
-## Behavior scenarios (2)
+## Behavior scenarios (8)
 
 One test per scenario, in this order.
 
 ```yaml
+- name: choosing-an-action-fires-on-action
+  description: A row reports the chosen action; the consumer performs it and closes.
+  given:
+    open: true
+    heading: Photo.jpg
+    actions:
+    - id: share
+      label: Share
+    - id: rename
+      label: Rename
+    - id: delete
+      label: Delete photo
+      tone: danger
+  when:
+    click: item
+  then:
+  - event: onAction
+- name: the-cancel-row-fires-on-close
+  description: The explicit Cancel row is a dismissal, not a choice, so onAction stays
+    silent.
+  given:
+    open: true
+    heading: Photo.jpg
+    actions:
+    - id: share
+      label: Share
+    - id: rename
+      label: Rename
+  when:
+    click: cancelButton
+  then:
+  - event: onClose
+  - event: onAction
+    fired: false
+- name: the-cancel-row-is-named-from-copy
+  description: With no cancelLabel the cancel row falls back to copy.cancelLabel.
+  given:
+    open: true
+    heading: Photo.jpg
+    actions:
+    - id: share
+      label: Share
+    - id: rename
+      label: Rename
+  then:
+  - copy: cancelLabel
+- name: the-list-is-a-menu
+  description: The actions are a menu of menuitems (APG menu button), not a list of
+    buttons.
+  given:
+    open: true
+    heading: Photo.jpg
+    actions:
+    - id: share
+      label: Share
+    - id: rename
+      label: Rename
+  then:
+  - role: menu
+- name: closed-sheet-renders-nothing
+  given:
+    open: false
+    actions:
+    - id: share
+      label: Share
+  then:
+  - renders: false
 - name: renders
   then:
   - renders: true
@@ -401,5 +709,17 @@ One test per scenario, in this order.
 - name: has-accessible-name
   then:
   - name: true
+  derived: true
+- name: escape-fires-on-close
+  given:
+    open: true
+  when:
+    key: Escape
+  then:
+  - event: onClose
+  platforms:
+  - lit
+  - swiftui
+  - web
   derived: true
 ```

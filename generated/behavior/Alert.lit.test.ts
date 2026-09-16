@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/Alert.js';
 import meta from '../../packages/lit/src/Alert.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -49,6 +53,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     container: () => (deep(root, '[role="status"]') ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
+    dismissButton: () => (deep(root, '[part="dismissButton"]') ?? deep(root, '[data-part="dismissButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -58,6 +63,23 @@ beforeEach(() => {
 });
 
 describe('ds-alert', () => {
+  test('dismiss-fires-on-dismiss', async () => {
+    const s = await setup({"dismissible": true});
+    await userEvent.click(s.dismissButton());
+    expect(s.events.onDismiss).toHaveBeenCalled();
+  });
+  test('live-alert-renders-the-alert-role', async () => {
+    const s = await setup({"live": "alert"});
+    expect(s.el.shadowRoot!.querySelector('[role="alert"]')).not.toBeNull();
+  });
+  test('live-status-renders-the-status-role', async () => {
+    const s = await setup({"live": "status"});
+    expect(s.el.shadowRoot!.querySelector('[role="status"]')).not.toBeNull();
+  });
+  test('the-heading-is-rendered', async () => {
+    const s = await setup({"heading": "Payment failed"});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Payment\\ failed"));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

@@ -4,6 +4,10 @@ import { userEvent } from 'vitest/browser';
 import '../../packages/lit/src/Feed.js';
 import meta from '../../packages/lit/src/Feed.stories.js';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function deep(root: ParentNode, selector: string): Element | null {
   const direct = root.querySelector(selector);
   if (direct) return direct;
@@ -53,6 +57,7 @@ async function setup(given: Record<string, unknown> = {}) {
     props,
     root_: () => el,
     container: () => (deep(root, '[role="feed"]') ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
+    newItemsButton: () => (deep(root, '[part="newItemsButton"]') ?? deep(root, '[data-part="newItemsButton"]')) as HTMLElement,
   };
   return s;
 }
@@ -62,6 +67,27 @@ beforeEach(() => {
 });
 
 describe('ds-feed', () => {
+  test('an-empty-feed-asks-for-its-first-page', async () => {
+    const s = await setup({"items": [], "hasMore": true, "loading": false});
+    expect(s.events.onLoadMore).toHaveBeenCalled();
+  });
+  test('pressing-show-new-asks-for-the-newer-items', async () => {
+    const s = await setup({"newItemsCount": 3, "items": [{"id": "a1", "heading": "Ana commented on Invoice 42", "timestamp": "2026-09-15T09:00:00Z", "content": "Looks right to me."}]});
+    await userEvent.click(s.newItemsButton());
+    expect(s.events.onShowNew).toHaveBeenCalled();
+  });
+  test('the-end-message-shows-when-there-is-nothing-more', async () => {
+    const s = await setup({"hasMore": false, "items": [{"id": "a1", "heading": "Ana commented on Invoice 42", "timestamp": "2026-09-15T09:00:00Z", "content": "Looks right to me."}]});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("You\\ are\\ all\\ caught\\ up\\."));
+  });
+  test('a-custom-end-message-replaces-the-default', async () => {
+    const s = await setup({"hasMore": false, "endMessage": "That is everything from this week.", "items": [{"id": "a1", "heading": "Ana commented on Invoice 42", "timestamp": "2026-09-15T09:00:00Z", "content": "Looks right to me."}]});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("That\\ is\\ everything\\ from\\ this\\ week\\."));
+  });
+  test('an-empty-feed-that-is-not-loading-says-so', async () => {
+    const s = await setup({"items": [], "hasMore": false, "loading": false});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Nothing\\ here\\ yet\\."));
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

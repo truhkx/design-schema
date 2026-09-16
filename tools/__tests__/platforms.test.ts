@@ -67,7 +67,8 @@ describe('the Lit tag check', () => {
 
   function withLit(lit: Dict): Dict {
     const c = component();
-    c.platforms.lit = lit;
+    // The fixture's bindings interpolate {variant} and {size}, which a supported Lit block must reflect.
+    c.platforms.lit = { reflect: ['variant', 'size'], ...lit };
     c.events.onPress.platforms.lit = 'press';
     return c;
   }

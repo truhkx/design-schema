@@ -84,6 +84,10 @@ describe('Checkbox', () => {
     expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.control()).not.toBeChecked();
   });
+  test('hidden-label-is-still-the-accessible-name', () => {
+    const s = setup({"hideLabel": true});
+    expect(screen.getByRole('checkbox', { name: s.props.label })).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

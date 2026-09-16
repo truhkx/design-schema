@@ -731,13 +731,13 @@
       },
       "snippets": {
         "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} defaultActiveValue=\"cherry\" />",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Assignees\" .options=${FRUIT_OPTIONS} name=\"fruit\" default-active-value=\"cherry\"></ds-listbox>\n`;",
         "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultActiveValue=\"jo\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "DefaultActiveValue",
-        "lit": null,
+        "lit": "DefaultActiveValueSet",
         "rn": "DefaultActiveValue",
         "swift": null
       },

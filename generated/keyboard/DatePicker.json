@@ -28,8 +28,13 @@
       ],
       "action": "Closes the calendar without changing the value and returns focus to the calendar button.",
       "from": "inside",
-      "expect": "focus-trigger",
-      "when": "open"
+      "expect": "manual",
+      "when": "open",
+      "expectAll": [
+        "closes",
+        "focus-trigger"
+      ],
+      "target": "popover"
     },
     {
       "keys": [

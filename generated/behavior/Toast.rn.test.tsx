@@ -6,6 +6,10 @@ import type { ToastProps } from '../../packages/rn/src/Toast';
 import meta from '../../packages/rn/src/Toast.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function setup(given: Partial<ToastProps> = {}) {
   const events = {
     onAction: jest.fn(),
@@ -24,12 +28,32 @@ function setup(given: Partial<ToastProps> = {}) {
     props,
     root: () => screen.queryByTestId('Toast') ?? screen.UNSAFE_root,
     region: () => screen.queryByRole('status') ?? s.root(),
+    actionButton: () => screen.queryByTestId('Toast.actionButton') ?? s.root(),
+    dismissButton: () => screen.queryByTestId('Toast.dismissButton') ?? s.root(),
     rerender: (next: Partial<ToastProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
 }
 
 describe('Toast', () => {
+  test('the-dismiss-button-fires-on-dismiss', () => {
+    const s = setup({"dismissible": true});
+    fireEvent.press(s.dismissButton());
+    expect(s.events.onDismiss).toHaveBeenCalled();
+  });
+  test('the-action-button-fires-on-action', () => {
+    const s = setup({"actionLabel": "Undo"});
+    fireEvent.press(s.actionButton());
+    expect(s.events.onAction).toHaveBeenCalled();
+  });
+  test('danger-toasts-are-announced-assertively', () => {
+    const s = setup({"tone": "danger"});
+    expect(screen.getByRole('alert')).toBeOnTheScreen();
+  });
+  test('the-message-is-rendered', () => {
+    const s = setup({"message": "3 files moved to Archive"});
+    expect(screen.getByText(new RegExp("3\\ files\\ moved\\ to\\ Archive"))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

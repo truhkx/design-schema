@@ -70,7 +70,7 @@ test.describe('NumberInput (web) keyboard', () => {
   test.skip('ArrowDown: Decreases by `step` (clamped to min). — manual', async () => {});
   test.skip('PageUp: Changes by ten steps. — manual', async () => {});
   test.skip('PageDown: Changes by ten steps. — manual', async () => {});
-  test.skip('Home: Sets min / max when they are defined; otherwise the input\'s native caret movement. — manual', async () => {});
-  test.skip('End: Sets min / max when they are defined; otherwise the input\'s native caret movement. — manual', async () => {});
+  test.skip('Home: Sets min / max when they are defined; otherwise the input\'s native caret movement. — native', async () => {});
+  test.skip('End: Sets min / max when they are defined; otherwise the input\'s native caret movement. — native', async () => {});
   test.skip('Enter: Commits (rounds and clamps) the typed value; inside a Form, submits. — manual', async () => {});
 });

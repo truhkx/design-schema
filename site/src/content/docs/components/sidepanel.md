@@ -13,6 +13,8 @@ component:
     closeButton: Button
     body: Box
     footer: Stack
+  parts:
+    trigger: { kind: slot, slot: { prop: trigger } }
   props:
     trigger:
       type: content
@@ -20,6 +22,9 @@ component:
     open:
       type: boolean
       description: Controlled visibility. Omit for uncontrolled (the trigger toggles it).
+      controls:
+        event: onOpenChange
+        state: open
     heading:
       type: string
       required: true
@@ -77,25 +82,38 @@ component:
     onOpenChange:
       description: 'Fired when the panel opens or closes, with the new state and a reason: `trigger`, `escape`, `close-button`, `scrim`, `swipe`, `action`, `navigation` (a Link inside was followed).'
       platforms: { web: onOpenChange, lit: open-change, rn: onOpenChange, swiftui: onOpenChange }
+      payload:
+        - { name: open, type: boolean, description: The new state of the panel. }
+        - { name: reason, type: enum, values: [trigger, escape, close-button, scrim, swipe, action, navigation] }
+      reasons:
+        trigger: the trigger was activated
+        escape: Escape pressed while open
+        close-button: the close button was activated
+        scrim: the scrim was clicked
+        swipe: the panel was swiped away
+        action: a footer action asked to close
+        navigation: a Link inside the panel was followed
+      fires: [user]
+      timing: { phase: after-change }
   keyboard:
     - { keys: [Enter, ' '], action: 'Toggles the panel from the trigger (aria-expanded flips). Non-modal: focus stays on the trigger. Modal: focus moves into the panel.', when: focus on trigger, from: trigger, expect: toggles }
     - { keys: [Tab], action: 'Non-modal: from the trigger, moves into the open panel (it is next in DOM order); from the last element in the panel, continues into the page. Modal: from the last element wraps to the first.', when: open, from: trigger, expect: manual }
-    - { keys: [Escape], action: 'Closes and returns focus to the trigger (from inside the panel; a persistent sidebar ignores it).', when: open, from: inside, expect: closes }
+    - { keys: [Escape], action: 'Closes and returns focus to the trigger (from inside the panel; a persistent sidebar ignores it).', when: open, from: inside, expect: [closes, focus-trigger], target: surface }
     - { keys: [Shift+Tab], action: 'Non-modal: from the first element in the panel, returns to the trigger and leaves the panel open. Modal: wraps to the last element.', when: open, from: first, expect: focus-trigger }
   styles:
-    scrim: { token: color.overlay.scrim }
-    surface: { token: color.overlay.surface }
+    scrim: { token: color.overlay.scrim, part: scrim }
+    surface: { token: color.overlay.surface, part: surface }
     shadow: { token: shadow.overlay, description: 'Overlay mode only; the persistent sidebar has a border instead.' }
     border: { token: color.border, description: 'The inner edge of a persistent sidebar.' }
     borderWidth: { token: border.width.thin }
     width: { token: layout.maxWidth.prose, description: 'Default panel width on wide screens; narrow is space.20 × 3 (a link list), wide is layout.maxWidth.content. Below the prose breakpoint the panel is the viewport minus `edgeGutter`.' }
-    widthNarrow: { token: space.20, description: 'Multiplied by 3 — the doc states the arithmetic so no literal appears in code.' }
+    widthNarrow: { token: space.20, computed: { times: 3 } }
     widthWide: { token: layout.maxWidth.content }
     edgeGutter: { token: space.12, description: 'The strip of scrim left visible beside a phone-width panel, so the page is still seen and tappable to close.' }
     inset: { token: layout.inset.lg }
-    headerGap: { token: layout.gap.normal, description: 'Between title and close button.' }
+    headerGap: { token: layout.gap.normal, part: header, description: 'Between title and close button.' }
     partGap: { token: layout.gap.loose, description: 'Between header, body and footer.' }
-    footerGap: { token: layout.gap.tight }
+    footerGap: { token: layout.gap.tight, part: footer }
     layer: { token: layer.sheet }
     enter: { token: motion.duration.base, description: 'Slide in from the edge with the scrim fading; motion.easing.standard; instant under reduced motion.' }
     exit: { token: motion.duration.fast, description: 'Slide out with motion.easing.exit; a swipe dismiss continues at the swipe velocity.' }
@@ -103,6 +121,13 @@ component:
     focusRingWidth: { token: border.width.focus }
   copy:
     closeLabel: Close
+    expanded: Expanded
+  overlay:
+    layer: sheet
+    open: open
+    closeEvent: onOpenChange
+    dismiss: [escape, scrim, close-button, swipe]
+    modal: false
   a11y:
     role: none
     requires: [accessible-name, expanded-state, focus-restore, escape-dismiss, gesture-alternative, keyboard-operable, focus-visible, contrast-aa, reduced-motion, target-44px, landmark-role, focus-trap, inert-background, scroll-lock]
@@ -117,7 +142,7 @@ component:
       notes: 'Non-modal (default, APG disclosure): the trigger Button gets aria-expanded and aria-controls={panelId}; the panel is an <aside aria-labelledby> (or <nav> when `as: nav`) rendered immediately after the trigger in DOM order so Tab flows trigger → panel → page, with the `hidden` attribute when closed (after the exit transition), position: fixed at the edge, full height, on layer.sheet, with an optional scrim <div aria-hidden> that closes on click. Focus stays on the trigger on open; Escape anywhere inside closes and refocuses the trigger; a focusout to outside the panel and trigger does NOT close it (unlike Popover — a navigation panel should survive a stray click) but a pointerdown on the scrim or outside does when dismissible. Modal: the same content in the native <dialog> via showModal() as Dialog and BottomSheet, inert page and scroll lock through FocusScope''s modal contract, focus moved to the first control. A Link followed inside the panel closes it with reason navigation (a client-side router fires onOpenChange; a full navigation makes it moot). Persistent mode above the chosen breakpoint (matchMedia on the token): render a plain <aside role="complementary" aria-labelledby> (or <nav> when the body is navigation — the caller passes `as: nav` through the Landmark component) in the page grid beside the content, no dialog, no scrim, no trap, trigger hidden with display none. The switch must not lose the panel''s content state (the same children render in both). Safe-area padding via env(safe-area-inset-left/right).'
     lit:
       tag: ds-side-panel
-      reflect: [open, side, width, persistent, dismissible, swipeable]
+      reflect: [open, side, width, persistent, { prop: dismissible, attribute: no-dismiss }, { prop: swipeable, attribute: no-swipeable }]
       notes: 'Slots `trigger`, default and `footer`. Shadow <dialog> for overlay mode; in persistent mode the host itself lays out as the sidebar (display: block in the parent grid) and the slotted content renders in an <aside> in the shadow root. Composed `open-change`. matchMedia listener on the persistent breakpoint. `aria-controls` cannot reach the shadow panel from the slotted trigger, so only aria-expanded is set on it; the panel is named by its heading inside the shadow root. `role` selects the landmark role of the shadow region. `container` is not needed: the panel lives in the shadow root.'
     rn:
       element: Modal
@@ -127,6 +152,50 @@ component:
       element: ZStack
       props: [.offset, .transition, withAnimation, FocusScope, .accessibilityAddTraits=isModal, .accessibilityValue=expanded, Button, .gesture=DragGesture]
       notes: 'A panel slid in from `side` with `.offset` animated over the motion tokens (instant under reduced motion), rendered by the app as the trailing sibling of its content (`SidePanel` is placed in the view tree where it overlays; `.dsPortalHost` is not needed). The trigger `Button` carries `.accessibilityValue(copy.expanded / collapsed)` (no expanded trait) and controls the panel; `modal` adds the scrim `Rectangle` (`color.overlay.scrim`, tap closes when `dismissOnScrim`), FocusScope trap and `.isModal`; non-modal panels push content aside (`inline`) or overlay it without a scrim. Edge-swipe to close is an addition to the visible close `Button`.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name/escape ones from the schema.
+    - name: close-button-fires-on-open-change
+      description: The close button requests close; the consumer flips `open` when it is controlled.
+      given: { open: true }
+      when: { click: closeButton }
+      then:
+        - { event: onOpenChange }
+    - name: the-close-button-works-without-the-swipe
+      description: The swipe is purely additive — the trigger and close button always exist (WCAG 2.5.1, gesture-alternative).
+      given: { open: true, swipeable: false }
+      when: { click: closeButton }
+      then:
+        - { event: onOpenChange }
+    - name: non-dismissible-still-reports-escape
+      description: With `dismissible` false the close button is not rendered and taps outside do nothing; Escape still reports with reason escape, as in Dialog.
+      given: { open: true, dismissible: false }
+      when: { key: Escape }
+      then:
+        - { event: onOpenChange }
+      platforms: [web, lit]
+    - name: non-dismissible-scrim-tap-does-nothing
+      given: { open: true, dismissible: false }
+      when: { click: scrim }
+      then:
+        - { event: onOpenChange, fired: false }
+    - name: the-heading-is-rendered
+      description: The title names what the panel holds and is shown unless hideHeading.
+      given: { open: true, heading: 'Your cart' }
+      then:
+        - { text: 'Your cart' }
+  examples:
+    - name: navigation-drawer
+      description: The phone hamburger menu that becomes the permanent sidebar on desktop, with a self-explanatory list.
+      given: { trigger: 'An icon-only Button with the menu Icon, labelled Menu', heading: 'Menu', children: 'A List of navigation Links with the current page marked', hideHeading: true, role: navigation, persistent: content }
+    - name: filters
+      description: A wide filter panel beside a results page, ending in an action row.
+      given: { trigger: 'A Filters Button', heading: 'Filters', children: 'A Form of filter controls', footer: 'Clear and Apply Buttons', width: wide }
+    - name: cart
+      description: A checkout panel from the end edge that must be finished or dismissed, so it is modal.
+      given: { open: true, heading: 'Your cart', children: 'A Stack of line-item Cards', footer: 'A Checkout Button', side: end, modal: true }
+    - name: detail-panel
+      description: A narrow detail panel that should feel like part of the page, so it has no scrim.
+      given: { open: true, heading: 'Order details', children: 'A Stack of labelled values for the selected order', side: end, width: narrow, scrim: false }
 ---
 
 A side panel is the drawer: hidden off the edge until a button asks for it, then sliding in beside the page. It is built on the simplest APG pattern that fits — a button with `aria-expanded` that controls a region — so by default it behaves like a disclosure that happens to slide: focus stays on the button, Tab walks into the panel, Escape puts it away. Only when a panel must be finished or dismissed does it become a modal dialog at the edge. It holds whatever a page needs at hand but not on screen — the navigation List, a set of filters, the cart — and on a wide screen the same component can stay put as a sidebar, so a product has one menu, not a phone menu and a desktop one.

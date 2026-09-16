@@ -35,12 +35,15 @@ component:
       shape: 'Row[] where Row = { id: string; [key: string]: unknown }'
       description: The rows. `id` must be stable. Large arrays are fine; only visible rows are rendered.
     rowCount:
-      type: number
+      type: integer
       description: 'Total rows when `data` is a window of a larger set (server paging). Sets aria-rowcount; `onRangeNeeded` asks for more. `data` is always a contiguous prefix of the full set starting at row 0 and only grows by appending; keyboard navigation is clamped to loaded rows.'
     sort:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
       description: Controlled sort state; as Table.
+      controls:
+        event: onSortChange
+        default: defaultSort
     defaultSort:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
@@ -87,21 +90,50 @@ component:
     onSortChange:
       description: As Table.
       platforms: { web: onSortChange, lit: sort-change, rn: onSortChange, swiftui: onSortChange }
+      payload:
+        - { name: column, type: string, description: The key of the column now sorted on. }
+        - { name: direction, type: enum, values: [ascending, descending] }
+      fires: [user]
     onSelectionChange:
       description: 'Fired with the selection: row ids, one cell `{ rowId, column }`, or a range `{ from, to }`.'
       platforms: { web: onSelectionChange, lit: selection-change, rn: onSelectionChange, swiftui: onSelectionChange }
+      payload:
+        - { name: selection, type: union, shape: 'string[] | { rowId: string; column: string } | { from: { rowId: string; column: string }; to: { rowId: string; column: string } }', description: 'Row ids, one cell, or a range, matching selectable.' }
+      fires: [user]
     onCellChange:
       description: 'Fired when an edit commits, with `{ rowId, column, value, previous }`. The caller updates `data`; the grid shows the old value until it does (a rejected edit reverts visibly).'
       platforms: { web: onCellChange, lit: cell-change, rn: onCellChange, swiftui: onCellChange }
+      payload:
+        - { name: rowId, type: string, description: The row that was edited. }
+        - { name: column, type: string, description: The key of the edited column. }
+        - { name: value, type: union, shape: 'string | number | boolean', description: 'The committed value, as the column editor produces it.' }
+        - { name: previous, type: union, shape: 'string | number | boolean', description: The value the cell held before the edit. }
+      fires: [user]
+      timing: { phase: request }
     onEditStart:
       description: 'Fired when an editor opens; return false (web) or call preventDefault (lit) to refuse editing that cell.'
       platforms: { web: onEditStart, lit: edit-start, rn: onEditStart, swiftui: onEditStart }
+      payload:
+        - { name: rowId, type: string, description: The row about to be edited. }
+        - { name: column, type: string, description: The key of the column about to be edited. }
+      cancelable: true
+      fires: [user]
+      timing: { phase: before-change }
     onRangeNeeded:
       description: 'Fired when the visible window (or Ctrl+End / PageDown) comes within one page of the end of `data` and `rowCount` says there is more, with `{ start, end }` row indexes to load; fired once per `end` until `data` grows.'
       platforms: { web: onRangeNeeded, lit: range-needed, rn: onEndReached, swiftui: onRangeNeeded }
+      payload:
+        - { name: start, type: number, description: The first row index to load. }
+        - { name: end, type: number, description: The last row index to load. }
+      fires: [user]
     onColumnResize:
       description: Fired with `{ column, width }` when the user finishes dragging a resizable column edge.
       platforms: { web: onColumnResize, lit: column-resize, rn: onColumnResize, swiftui: onColumnResize }
+      payload:
+        - { name: column, type: string, description: The key of the resized column. }
+        - { name: width, type: number, description: Its new width. }
+      fires: [user]
+      timing: { phase: commit }
   keyboard:
     - { keys: [Tab], action: 'Enters the grid on the last-focused cell (initially the first header cell) and, from inside, leaves it — the grid is one tab stop. Inside a cell that contains a control, Tab still leaves the grid; use Enter to interact with the control. While an editor is open, Tab commits and opens the next editable cell in the row (Shift+Tab the previous); from the last editable cell it commits and leaves the grid.', from: any, expect: manual }
     - { keys: [ArrowRight], action: Next cell in the row., from: first, expect: manual }
@@ -119,35 +151,35 @@ component:
     - { keys: [Shift+ArrowRight, Shift+ArrowLeft, Shift+ArrowDown, Shift+ArrowUp], action: 'Extends the range selection from the anchor; a plain arrow collapses the range to the newly focused cell and makes it the anchor.', when: selectable is range and focus in the body, from: inside, expect: manual }
     - { keys: [Shift+ArrowRight, Shift+ArrowLeft], action: 'Widens / narrows the column by resizeStep and fires onColumnResize on release of Shift.', when: focus on the header cell of a resizable column, from: inside, expect: manual }
     - { keys: [Control+a], action: 'Selects all loaded rows or cells (bound by key code KeyA, so it works on any layout).', when: selectable is row or range, from: inside, expect: manual }
-    - { keys: [Control+c], action: 'Copies the selection as tab-separated text (with headers when whole columns are selected); bound by key code KeyC.', when: selectable is range, from: inside, expect: manual }
+    - { keys: [Control+c], action: 'Copies the selection as tab-separated text (with headers when whole columns are selected); bound by key code KeyC.', when: selectable is range, from: inside, expect: manual, platforms: [web, lit, swiftui] }
     - { keys: [Delete, Backspace], action: Clears the value of editable cells in the selection., when: editable and selection, from: inside, expect: manual }
   styles:
     surface: { token: color.background }
-    headerSurface: { token: color.background.subtle }
-    headerColor: { token: color.foreground }
-    headerWeight: { token: font.weight.semibold }
-    headerSize: { token: font.size.sm }
-    headerBorder: { token: color.border.strong }
-    headerBorderWidth: { token: border.width.thin }
-    headerShadow: { token: shadow.raised, description: 'Under the sticky header once the body has scrolled.' }
-    gridLine: { token: color.border, description: 'Cell borders on both axes — a grid shows its cells, unlike Table which shows rows.' }
-    gridLineWidth: { token: border.width.thin }
-    rowHeight: { token: size.target.min, description: 'Compact rows are the minimum target height (rows are the unit people click); comfortable rows use rowHeightComfortable. Virtualization measures one rendered row (ResizeObserver) rather than reading the token, so density and overrides both work.' }
-    rowHeightComfortable: { token: size.target.comfortable }
-    rowHover: { token: color.action.ghost.backgroundHover, description: 'Row under the pointer; the grid is interactive by nature so hover is allowed, and the focused cell ring is the non-hover signal.' }
-    rowSelected: { token: color.background.subtle }
-    rowSelectedBorder: { token: color.control.selectedBackground, description: 'Start-edge bar on selected rows.' }
-    rowSelectedBorderWidth: { token: border.width.focus }
-    cellColor: { token: color.foreground }
-    cellMutedColor: { token: color.foreground.muted }
-    cellPaddingInline: { token: space.2 }
-    cellFocusRing: { token: color.border.focus, description: 'Drawn inside the cell (inset) so it is never clipped by neighbors or the scroll region.' }
-    cellFocusRingWidth: { token: border.width.focus }
-    cellEditingBackground: { token: color.control.background }
-    cellEditingBorder: { token: color.border.focus }
-    cellInvalidBorder: { token: color.border.danger }
-    cellInvalidBackground: { token: color.status.danger.background }
-    cellInvalidForeground: { token: color.status.danger.foreground }
+    headerSurface: { token: color.background.subtle, part: header }
+    headerColor: { token: color.foreground, part: header }
+    headerWeight: { token: font.weight.semibold, part: header }
+    headerSize: { token: font.size.sm, part: header }
+    headerBorder: { token: color.border.strong, part: header }
+    headerBorderWidth: { token: border.width.thin, part: header }
+    headerShadow: { token: shadow.raised, part: header, description: 'Under the sticky header once the body has scrolled.' }
+    gridLine: { token: color.border, part: grid, description: 'Cell borders on both axes — a grid shows its cells, unlike Table which shows rows.' }
+    gridLineWidth: { token: border.width.thin, part: grid }
+    rowHeight: { token: size.target.min, part: row, description: 'Compact rows are the minimum target height (rows are the unit people click); comfortable rows use rowHeightComfortable. Virtualization measures one rendered row (ResizeObserver) rather than reading the token, so density and overrides both work.' }
+    rowHeightComfortable: { token: size.target.comfortable, part: row }
+    rowHover: { token: color.action.ghost.backgroundHover, part: row, state: hover, description: 'Row under the pointer; the grid is interactive by nature so hover is allowed, and the focused cell ring is the non-hover signal.' }
+    rowSelected: { token: color.background.subtle, part: row }
+    rowSelectedBorder: { token: color.control.selectedBackground, part: row, description: 'Start-edge bar on selected rows.' }
+    rowSelectedBorderWidth: { token: border.width.focus, part: row }
+    cellColor: { token: color.foreground, part: cell }
+    cellMutedColor: { token: color.foreground.muted, part: cell }
+    cellPaddingInline: { token: space.2, part: cell }
+    cellFocusRing: { token: color.border.focus, part: cell, description: 'Drawn inside the cell (inset) so it is never clipped by neighbors or the scroll region.' }
+    cellFocusRingWidth: { token: border.width.focus, part: cell }
+    cellEditingBackground: { token: color.control.background, part: cell }
+    cellEditingBorder: { token: color.border.focus, part: cell }
+    cellInvalidBorder: { token: color.border.danger, part: cell }
+    cellInvalidBackground: { token: color.status.danger.background, part: cell }
+    cellInvalidForeground: { token: color.status.danger.foreground, part: cell }
     rangeBackground: { token: color.background.strong, description: 'Selected range fill; the range border marks its edge.' }
     rangeBorder: { token: color.control.selectedBackground }
     rangeBorderWidth: { token: border.width.focus }
@@ -155,13 +187,13 @@ component:
     resizeHandle: { token: color.border.strong, description: 'The column edge grab area, visible on hover/focus of the header cell.' }
     resizeHandleWidth: { token: space.1 }
     resizeStep: { token: space.4, description: 'Width change per Shift+Arrow press on a resizable header cell.' }
-    statusBarSurface: { token: color.background.subtle }
-    statusBarColor: { token: color.foreground.muted }
-    statusBarSize: { token: font.size.xs }
-    statusBarPadding: { token: space.2 }
-    captionSize: { token: font.size.md }
-    captionWeight: { token: font.weight.semibold }
-    captionGap: { token: space.2 }
+    statusBarSurface: { token: color.background.subtle, part: statusBar }
+    statusBarColor: { token: color.foreground.muted, part: statusBar }
+    statusBarSize: { token: font.size.xs, part: statusBar }
+    statusBarPadding: { token: space.2, part: statusBar }
+    captionSize: { token: font.size.md, part: caption }
+    captionWeight: { token: font.weight.semibold, part: caption }
+    captionGap: { token: space.2, part: caption }
     fixedHeight: { token: space.20, description: 'The grid height for `height: fixed`; overridable by design (a page decides how tall its grid is). space.20 is the floor, not a recommendation.' }
     fontFamily: { token: font.family.body }
     fontSize: { token: font.size.sm }
@@ -172,19 +204,66 @@ component:
     focusRingWidth: { token: border.width.focus }
     transition: { token: motion.duration.fast, description: 'Hover and editor open; navigation and scrolling are instant.' }
   copy:
-    sortAscending: 'Sort by {column}, ascending'
-    sortDescending: 'Sort by {column}, descending'
-    sortedAnnouncement: 'Sorted by {column}, {direction}'
+    sortAscending:
+      text: 'Sort by {column}, ascending'
+      params:
+        column: { type: string, description: The column header text. }
+    sortDescending:
+      text: 'Sort by {column}, descending'
+      params:
+        column: { type: string, description: The column header text. }
+    sortedAnnouncement:
+      text: 'Sorted by {column}, {direction}'
+      params:
+        column: { type: string, description: The column header text. }
+        direction: { type: string, description: 'The new direction: ascending or descending.' }
     selectAll: Select all rows
-    selectRow: 'Select {rowName}'
-    selectedRows: '{count} of {total} rows selected'
-    selectedRange: '{rows} rows by {columns} columns selected'
-    copied: 'Copied {cells} cells'
-    editing: 'Editing {column}. Enter to save, Escape to cancel.'
-    invalid: '{message}'
-    rowCount: '{count} rows'
-    position: 'Row {row}, {column}'
-    resize: 'Resize {column}'
+    selectRow:
+      text: 'Select {rowName}'
+      params:
+        rowName: { type: string, description: The row's name from its row-header cell. }
+    selectedRows:
+      text: '{count} of {total} rows selected'
+      params:
+        count: { type: number, description: How many rows are selected. }
+        total: { type: number, description: How many rows the grid has. }
+    selectedRange:
+      text: '{rows} rows by {columns} columns selected'
+      params:
+        rows: { type: number, description: How many rows the selected range covers. }
+        columns: { type: number, description: How many columns the selected range covers. }
+    copied:
+      plural:
+        by: cells
+        one: 'Copied {cells} cell'
+        other: 'Copied {cells} cells'
+      params:
+        cells: { type: number, description: How many cells were written to the clipboard. }
+      platforms: [web, lit, swiftui]
+    editing:
+      text: 'Editing {column}. Enter to save, Escape to cancel.'
+      params:
+        column: { type: string, description: The column header text. }
+    invalid:
+      text: '{message}'
+      params:
+        message: { type: string, description: The message the column's validate returned. }
+    rowCount:
+      plural:
+        by: count
+        one: '{count} row'
+        other: '{count} rows'
+      params:
+        count: { type: number, description: How many rows the grid has. }
+    position:
+      text: 'Row {row}, {column}'
+      params:
+        row: { type: number, description: The active cell's row number. }
+        column: { type: string, description: The column header text. }
+    resize:
+      text: 'Resize {column}'
+      params:
+        column: { type: string, description: The column header text. }
     loading: Loading
     empty: Nothing to show.
     scrollHint: Scroll sideways to see more columns
@@ -199,10 +278,10 @@ component:
       - { foreground: color.foreground, background: color.background.strong, level: AA }
       - { foreground: color.foreground, background: color.control.background, level: AA }
       - { foreground: color.status.danger.foreground, background: color.status.danger.background, level: AA }
-      - { foreground: color.control.selectedBackground, background: color.background, level: AA, large: true }
-      - { foreground: color.control.selectedBackground, background: color.background.subtle, level: AA, large: true }
-      - { foreground: color.border.focus, background: color.control.background, level: AA, large: true }
-      - { foreground: color.border.danger, background: color.background, level: AA, large: true }
+      - { foreground: color.control.selectedBackground, background: color.background, level: AA, nonText: true }
+      - { foreground: color.control.selectedBackground, background: color.background.subtle, level: AA, nonText: true }
+      - { foreground: color.border.focus, background: color.control.background, level: AA, nonText: true }
+      - { foreground: color.border.danger, background: color.background, level: AA, nonText: true }
   platforms:
     web:
       element: div
@@ -210,7 +289,7 @@ component:
       notes: 'Built from <div>s with explicit roles (role="grid" > "rowgroup" > "row" > "columnheader"/"rowheader"/"gridcell"), never <table>: virtualization renders only visible rows, which breaks a native table''s layout and its implicit roles anyway, and pinned columns need independent positioning. Every rendered row carries aria-rowindex and every cell aria-colindex so a screen reader knows the position among the unrendered rows; aria-rowcount/aria-colcount on the grid. Focus: the grid container is the tab stop (tabindex=0) and uses aria-activedescendant pointing at the current cell (cells have ids and tabindex=-1); this keeps focus stable while rows are recycled. Except when a cell contains an interactive element or an editor is open: then real focus moves into it (the APG "focus inside the cell" mode) and returns to the cell on Escape/commit. Virtualization: a fixed rowHeight makes offsets arithmetic; a spacer sets the scroll height; rows render with translateY; overscan of one page. Editing: the editor is the system Input/NumberInput/Select/DatePicker/Checkbox rendered inside the cell with its label visually hidden, size sm, `overrides` for inset zero; validate on commit, and an invalid cell keeps the editor open with the message in the status bar and aria-describedby. Range selection is drawn with an absolutely positioned overlay, not per-cell styles. Column resize: a separator (role="separator" aria-orientation="vertical" aria-valuenow) on the header cell edge draggable with the pointer and adjustable with arrow keys. Copy writes text/plain TSV to the clipboard. Live region announces sort, selection counts, copy, and edit state.'
     lit:
       tag: ds-data-grid
-      reflect: [selectable, editable, density, height, loading, hide-caption, no-status-bar, no-sticky-header]
+      reflect: [selectable, editable, density, height, loading, hide-caption, { prop: showStatusBar, attribute: no-status-bar }, { prop: stickyHeader, attribute: no-sticky-header }]
       notes: '`columns` and `data` as properties; `showStatusBar` and `stickyHeader` default true, so their attributes are the negated `no-status-bar` / `no-sticky-header`. the grid renders in the shadow root with `repeat` keyed by row id over the visible window. aria-activedescendant works inside one shadow root. Editors are the ds-* form elements composed in the cell. Composed events as listed. ElementInternals role="grid" is NOT used on the host; the inner container carries the role so ids for activedescendant resolve within the same root.'
     rn:
       element: FlatList
@@ -220,6 +299,132 @@ component:
       element: ScrollView
       props: [ScrollView=both-axes, LazyVStack, LazyHStack, .accessibilityElement=contain, .focusable, .onMoveCommand, .onKeyPress, '@FocusState', .accessibilityAction, Checkbox, UIPasteboard, Grid]
       notes: 'Tablets and Catalyst first, as on RN. A `ScrollView([.horizontal, .vertical])` with a `LazyVStack` of row `HStack`s of fixed-width cells; the header row is pinned with `pinnedViews: .sectionHeaders`; pinned columns are drawn in a second `LazyVStack` overlaid at the leading edge and scrolled in sync through `.scrollPosition`. The grid is one focus section: an active-cell index in `@FocusState` moved by the keyboard table on iPad (`.onMoveCommand`, `.onKeyPress` for Page/Home/End/F2/Enter/Escape/Space/Ctrl+A/C); each cell is an accessibility element labelled ''{column}: {value}'' with `.accessibilityValue(copy.position)`; VoiceOver users tap to select or edit and use custom actions (`sort`, `select row`, `edit`, `copy`). Editors are the package Input/NumberInput/Select/DatePicker/Checkbox with `hideLabel`, `size: sm` shown in place (select/date in a sheet on phones). Range selection needs a hardware keyboard or a two-finger drag and degrades to `row` on phones with a debug warning; Ctrl+C writes TSV to `UIPasteboard.general`. Column resize: a `DragGesture` on the header edge plus an adjustable action on the header cell by `resizeStep`.'
+  behavior:
+    # Authored scenarios; the parser adds renders/enum/accessible-name ones from the schema. The grid's
+    # two-dimensional movement runs an aria-activedescendant no clause can state, so what is asserted here is
+    # what the grid reports: its events and the selected state.
+    - name: activating-a-sortable-header-reports-the-sort
+      given:
+        columns:
+          - { key: sku, header: SKU, isRowHeader: true }
+          - { key: price, header: Price, align: end, sortable: true }
+        data:
+          - { id: a, sku: A-1, price: 10 }
+          - { id: b, sku: B-2, price: 20 }
+      when: { click: sortButton }
+      then:
+        - { event: onSortChange }
+    - name: enter-on-a-sortable-header-sorts
+      description: 'The grid enters on the first header cell; on a header cell Enter sorts (if sortable).'
+      given:
+        columns:
+          - { key: sku, header: SKU, isRowHeader: true, sortable: true }
+          - { key: price, header: Price, align: end }
+        data:
+          - { id: a, sku: A-1, price: 10 }
+          - { id: b, sku: B-2, price: 20 }
+      when: { key: Enter }
+      then:
+        - { event: onSortChange }
+      platforms: [web, lit]
+    - name: selecting-a-row-reports-the-selection
+      description: 'Selection is separate from focus in row mode: focus is where the keyboard is, selection is what an action applies to.'
+      given:
+        selectable: row
+        columns:
+          - { key: sku, header: SKU, isRowHeader: true }
+        data:
+          - { id: a, sku: A-1 }
+          - { id: b, sku: B-2 }
+      when: { click: selectCell }
+      then:
+        - { event: onSelectionChange }
+    - name: a-selected-row-is-marked-selected
+      given:
+        selectable: row
+        selected: [a]
+        columns:
+          - { key: sku, header: SKU, isRowHeader: true }
+        data:
+          - { id: a, sku: A-1 }
+          - { id: b, sku: B-2 }
+      then:
+        - { attribute: aria-selected, is: 'true', 'on': row }
+      platforms: [web]
+    - name: the-empty-message-shows-when-there-are-no-rows
+      given:
+        columns:
+          - { key: sku, header: SKU, isRowHeader: true }
+        data: []
+      then:
+        - { copy: empty }
+    - name: a-custom-empty-message-replaces-the-default
+      given:
+        emptyMessage: No prices loaded.
+        columns:
+          - { key: sku, header: SKU, isRowHeader: true }
+        data: []
+      then:
+        - { text: No prices loaded. }
+    - name: loading-marks-the-grid-busy
+      description: loading sets aria-busy and shows copy.loading in the status bar; existing rows stay.
+      given:
+        loading: true
+        columns:
+          - { key: sku, header: SKU, isRowHeader: true }
+        data:
+          - { id: a, sku: A-1 }
+      then:
+        - { attribute: aria-busy, is: 'true' }
+      platforms: [web]
+  examples:
+    - name: price-list
+      description: The read-only grid people scroll and scan, sorted by a column they choose.
+      given:
+        caption: Price list
+        columns:
+          - { key: sku, header: SKU, isRowHeader: true, width: 160 }
+          - { key: name, header: Name }
+          - { key: price, header: Price, align: end, sortable: true }
+        data:
+          - { id: a, sku: A-1, name: Widget, price: 10 }
+          - { id: b, sku: B-2, name: Sprocket, price: 20 }
+    - name: editable-cells
+      description: A grid meant to be worked in, where Enter or F2 opens the editor on an editable column.
+      given:
+        caption: Stock levels
+        editable: true
+        columns:
+          - { key: sku, header: SKU, isRowHeader: true }
+          - { key: onHand, header: On hand, align: end, editable: true, editor: number }
+        data:
+          - { id: a, sku: A-1, onHand: 12 }
+          - { id: b, sku: B-2, onHand: 4 }
+    - name: row-selection-for-bulk-actions
+      description: A checkbox column and Shift/Ctrl row selection, for acting on many rows at once.
+      given:
+        caption: Orders
+        selectable: row
+        density: comfortable
+        columns:
+          - { key: order, header: Order, isRowHeader: true }
+          - { key: customer, header: Customer }
+        data:
+          - { id: a, order: '1001', customer: Ana Souza }
+          - { id: b, order: '1002', customer: Bo Lin }
+    - name: range-selection-in-a-fixed-height-grid
+      description: Spreadsheet-style rectangles that can be copied as tab-separated text, in a grid the caller sizes.
+      given:
+        caption: Daily figures
+        selectable: range
+        height: fixed
+        columns:
+          - { key: day, header: Day, isRowHeader: true }
+          - { key: visits, header: Visits, align: end }
+          - { key: signups, header: Signups, align: end }
+        data:
+          - { id: a, day: Monday, visits: 1200, signups: 30 }
+          - { id: b, day: Tuesday, visits: 1450, signups: 41 }
 ---
 
 A data grid is for working in data, not reading it: hundreds or thousands of rows, arrow keys from cell to cell, type to edit, select a block and copy it. It shares Table's column and data model so a screen can start as a Table and become a DataGrid when the job changes, but it is a different role with a different keyboard contract, and the two are never one component with a switch.

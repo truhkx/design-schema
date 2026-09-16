@@ -1,6 +1,7 @@
 /* Toast — styled only through Design Schema token custom properties. */
 
 .ds-toast {
+  /* locked: surface, text */
   --ds-toast-surface: var(--color-inverse-surface);
   --ds-toast-text: var(--color-inverse-foreground);
   --ds-toast-radius: var(--radius-md);
@@ -12,12 +13,14 @@
   --ds-toast-font-family: var(--font-family-body);
   --ds-toast-font-size: var(--font-size-md);
   --ds-toast-line-height: var(--font-line-height-normal);
+  --ds-toast-min-target: var(--size-target-min);
   --ds-toast-enter: var(--motion-duration-base);
   --ds-toast-exit: var(--motion-duration-fast);
   box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: var(--ds-toast-gap);
+  min-block-size: var(--ds-toast-min-target);
   max-inline-size: var(--ds-toast-max-width);
   padding-block: var(--ds-toast-padding-block);
   padding-inline: var(--ds-toast-padding-inline);
@@ -28,62 +31,65 @@
   font-family: var(--ds-toast-font-family);
   font-size: var(--ds-toast-font-size);
   line-height: var(--ds-toast-line-height);
-  /* icon/actionColor/dismissColor/focusRingInverse/minTarget are locked bindings satisfied entirely
-     by the composed Icon/Button (Button's `inverse` prop already draws color.inverse.link text,
-     color.inverse.focus focus rings and size.target.min); nothing to declare on the root for them. */
+  /* exit: fade and sink back over `exit`; the base state is what a dismissal animates to. */
   opacity: 0;
-  transform: translateY(var(--space-2));
+  transform: translateY(var(--space-sm));
   transition-property: opacity, transform;
   transition-duration: var(--ds-toast-exit);
-  transition-timing-function: var(--motion-easing-exit);
-}
-
-/* enter: rise-and-fade in over `enter` with motion.easing.standard; the base state above (exit) is what a dismiss animates back to. */
-.ds-toast--entered {
-  opacity: 1;
-  transform: translateY(0);
-  transition-duration: var(--ds-toast-enter);
   transition-timing-function: var(--motion-easing-standard);
 }
 
-.ds-toast__icon {
-  display: inline-flex;
-  flex: 0 0 auto;
-  line-height: 0;
+/* enter: rise and fade over `enter`. */
+.ds-toast--entered {
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--ds-toast-enter);
 }
 
-/* message: grows to fill the row; color -> color.inverse.foreground. Text's `color` binding is
-   locked, so the inverse color comes through Text's CSS hook — the sanctioned escape hatch —
-   rather than its `overrides` prop. */
-.ds-toast__message {
+/* icon → color.inverse.status.{tone} (locked), forwarded to Icon's `color` override; neutral renders none.
+   actionColor, dismissColor and focusRingInverse come from Button's `ghost` + `inverse`. */
+.ds-toast > [data-part='icon'] {
+  flex: none;
+}
+
+/* message: text on the inverse surface. Text has no inverse tone, so the toast sets Text's
+   public hooks (the sanctioned CSS escape hatch) rather than passing it a class. */
+.ds-toast [data-part='message'] {
   --ds-text-color: var(--ds-toast-text);
+  --ds-text-font-family: var(--ds-toast-font-family);
+  --ds-text-font-size: var(--ds-toast-font-size);
+  --ds-text-line-height: var(--ds-toast-line-height);
   flex: 1 1 auto;
   min-inline-size: 0;
 }
 
 .ds-toast__action,
 .ds-toast__dismiss {
-  flex: 0 0 auto;
+  display: inline-flex;
+  flex: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ds-toast {
+  .ds-toast,
+  .ds-toast--entered {
+    transform: none;
     transition: none;
   }
 }
 
+/* region: bottom center on phones, bottom-start on wide screens, above the safe area. */
 .ds-toast-region {
   --ds-toast-region-inset: var(--layout-gutter);
-  --ds-toast-region-stack-gap: var(--layout-gap-tight);
-  --ds-toast-region-layer: var(--layer-toast);
+  --ds-toast-stack-gap: var(--layout-gap-tight);
+  --ds-toast-layer: var(--layer-toast);
   position: fixed;
-  inset-block-end: var(--ds-toast-region-inset);
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
+  inset-block-end: calc(var(--ds-toast-region-inset) + env(safe-area-inset-bottom, 0px)); /* literal-ok: env() fallback for browsers without safe areas */
+  inset-inline: var(--ds-toast-region-inset);
   display: flex;
   flex-direction: column;
-  gap: var(--ds-toast-region-stack-gap);
-  z-index: var(--ds-toast-region-layer);
+  align-items: center;
+  gap: var(--ds-toast-stack-gap);
+  z-index: var(--ds-toast-layer);
   pointer-events: none;
 }
 
@@ -91,10 +97,10 @@
   pointer-events: auto;
 }
 
-/* regionInset/start: bottom-start once there is room for it beside page content, matching Container's wide-screen threshold (layout.maxWidth.content). Below it, centered. */
+/* Wide screens: bottom-start once there is room beside the page content (Container's layout.maxWidth.content threshold). */
 @media (min-width: 960px) { /* literal-ok: breakpoint mirrors layout.maxWidth.content, matching Container's wide-screen threshold */
   .ds-toast-region {
-    inset-inline-start: var(--ds-toast-region-inset);
-    transform: none;
+    inset-inline-end: auto;
+    align-items: flex-start;
   }
 }

@@ -18,3 +18,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-10 17:56 — round 1
 
 - FocusScope: the schema's returnFocusTo shape is written cross-platform as `RefObject<HTMLElement | View>`, but `View` is a React Native type with no web equivalent — typed it as `RefObject<HTMLElement>` for this platform and wired it into the unmount restore logic (preferred over the recorded opener, which still wins over the next-focusable fallback) since the existing FocusScope.tsx (present since the initial commit) was otherwise complete but had never implemented this prop at all.
+
+## 2026-09-16 05:44 — round 1
+
+- FocusScope: platforms.web.attributes lists a static `tabindex=-1`, but the scenario the-wrapper-is-not-focusable and the Web guidance (`tabindex={autoFocus === 'container' ? -1 : undefined}`) make it conditional; chose conditional.
+- FocusScope: the Web guidance says a sentinel 'redirects to the opposite edge', while platforms.web.notes says each sentinel continues the direction of travel (start → first, end → last); followed the notes.
+- FocusScope: returnFocusTo shape `RefObject<HTMLElement | View>` names a React Native type; web types it `RefObject<HTMLElement | null>`.
+- FocusScope: sentinels are described without saying whether they render when `trapped` is false (they would add two do-nothing tab stops); rendered them only while trapped.
+- FocusScope: the doc doesn't say what a sentinel or the focusin pull-back does while the scope is paused (`active: false`) or not top of the stack; they do nothing, so focus can rest on a sentinel of a paused scope.
+- FocusScope: the focusin pull-back has no target when the scope has no focusable descendants and autoFocus is not container (the wrapper has no tabindex); it leaves focus where it went, and relies on the development warning.
+- FocusScope: 'Nested scopes register in a module-level stack' doesn't cover scopes mounted in the same commit, where child effects run before the parent's; added a context-held parent link so an outer scope inserts below its already-registered inner scope.
+- FocusScope: 'disabled subtrees are excluded' is unspecified for aria-disabled (which the system keeps focusable); only native :disabled (including fieldset[disabled] descendants), inert and aria-hidden are excluded.
+- FocusScope: the examples' `children` are prose descriptions ('A full-screen onboarding overlay with its own close Button'); the stories pass the string as args exactly and render it as Text plus the Buttons it names in a story render function.
+- FocusScope: anatomy `scope` is the root; put data-part="scope" on it but let a composing overlay's own data-part (Dialog's `focusScope`) override it, since the doc doesn't say which wins.
+- FocusScope: Shift+Tab from the wrapper itself (autoFocus container) isn't covered by the keyboard rules; it leaves the scope and the focusin pull-back returns focus to the first descendant.
+- Dialog (found while verifying): Button writes data-part="container" after ...rest, so Dialog's data-part="closeButton" never reaches the DOM and the generated scenario initial-focus-lands-on-the-close-button compares focus against the dialog root; focus is correct, the part hook is lost.

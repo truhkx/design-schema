@@ -1,79 +1,101 @@
 /**
  * Toast — behavior scenarios from the component doc, one test each, in the doc's order.
- * The doc (site/src/content/docs/components/toast.md) is the source of truth; the tests
- * gate runs this file after every generation round. See generated/prompts/Toast.web.md.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { Toast, type ToastProps } from './Toast';
+import userEvent from '@testing-library/user-event';
+import type { ComponentProps } from 'react';
+import { Toast } from './Toast';
 import meta from './Toast.stories';
 
+type Props = ComponentProps<typeof Toast>;
+
 /** The Default story's args plus the scenario's `given`. */
-function setup(given: Partial<ToastProps> = {}) {
-  const props = { ...meta.args, ...given } as ToastProps;
+function setup(given: Partial<Props> = {}) {
+  const onAction = vi.fn();
+  const onDismiss = vi.fn();
+  const props = { ...meta.args, onAction, onDismiss, ...given } as Props;
   const utils = render(<Toast {...props} />);
   return {
     ...utils,
     props,
-    toast: () => document.querySelector('[data-ds="Toast"]') as HTMLElement,
+    onAction,
+    onDismiss,
+    user: userEvent.setup(),
+    toast: () => document.querySelector<HTMLElement>('[data-ds="Toast"]'),
+    button: (name: string) => document.querySelector<HTMLElement>(`[data-part="${name}"] button`),
   };
 }
 
 describe('Toast', () => {
-  /* derived: a11y.role */
-  it('renders', () => {
-    const t = setup();
-    expect(t.toast()).not.toBeNull();
+  it('the-dismiss-button-fires-on-dismiss', async () => {
+    const s = setup({ dismissible: true });
+    await s.user.click(s.button('dismissButton')!);
+    expect(s.onDismiss).toHaveBeenCalledWith('dismiss-button');
   });
 
-  /* derived: props.tone */
+  it('the-action-button-fires-on-action', async () => {
+    const s = setup({ actionLabel: 'Undo' });
+    await s.user.click(s.button('actionButton')!);
+    expect(s.onAction).toHaveBeenCalledTimes(1);
+    expect(s.onDismiss).toHaveBeenCalledWith('action');
+    expect(s.onAction.mock.invocationCallOrder[0]!).toBeLessThan(s.onDismiss.mock.invocationCallOrder[0]!);
+  });
+
+  it('escape-dismisses-the-focused-toast', async () => {
+    const s = setup();
+    s.button('dismissButton')!.focus();
+    await s.user.keyboard('{Escape}');
+    expect(s.onDismiss).toHaveBeenCalledWith('escape');
+  });
+
+  it('danger-toasts-are-announced-assertively', () => {
+    const s = setup({ tone: 'danger' });
+    expect(screen.getByRole('alert')).toBe(s.toast());
+  });
+
+  it('the-message-is-rendered', () => {
+    const s = setup({ message: '3 files moved to Archive' });
+    expect(s.toast()).toHaveTextContent('3 files moved to Archive');
+  });
+
+  /* derived */
+  it('renders', () => {
+    expect(setup().toast()).not.toBeNull();
+  });
+
   it('renders-tone-neutral', () => {
-    const t = setup({ tone: 'neutral' });
-    expect(t.toast()).not.toBeNull();
+    expect(setup({ tone: 'neutral' }).toast()).not.toBeNull();
   });
 
   it('renders-tone-success', () => {
-    const t = setup({ tone: 'success' });
-    expect(t.toast()).not.toBeNull();
+    expect(setup({ tone: 'success' }).toast()).not.toBeNull();
   });
 
   it('renders-tone-warning', () => {
-    const t = setup({ tone: 'warning' });
-    expect(t.toast()).not.toBeNull();
+    expect(setup({ tone: 'warning' }).toast()).not.toBeNull();
   });
 
   it('renders-tone-danger', () => {
-    const t = setup({ tone: 'danger' });
-    expect(t.toast()).not.toBeNull();
+    expect(setup({ tone: 'danger' }).toast()).not.toBeNull();
   });
 
-  /* derived: props.duration */
   it('renders-duration-short', () => {
-    const t = setup({ duration: 'short' });
-    expect(t.toast()).not.toBeNull();
+    expect(setup({ duration: 'short' }).toast()).not.toBeNull();
   });
 
   it('renders-duration-long', () => {
-    const t = setup({ duration: 'long' });
-    expect(t.toast()).not.toBeNull();
+    expect(setup({ duration: 'long' }).toast()).not.toBeNull();
   });
 
   it('renders-duration-persistent', () => {
-    const t = setup({ duration: 'persistent' });
-    expect(t.toast()).not.toBeNull();
+    expect(setup({ duration: 'persistent' }).toast()).not.toBeNull();
   });
 
-  /* derived: a11y.requires */
   it('has-accessible-name', () => {
-    const t = setup();
-    expect(screen.getByText(t.props.message)).toBeInTheDocument();
-    expect(t.toast()).toHaveAttribute('role', 'status');
-  });
-
-  it('control-is-focusable', () => {
-    setup();
-    const dismiss = screen.getByRole('button', { name: 'Dismiss' });
-    dismiss.focus();
-    expect(dismiss).toHaveFocus();
+    const s = setup();
+    expect(screen.getByRole('status')).toBe(s.toast());
+    expect(s.toast()).toHaveTextContent(s.props.message);
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeInTheDocument();
   });
 });

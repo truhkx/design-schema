@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html } from 'lit';
+import { html, nothing, type TemplateResult } from 'lit';
 import './FocusScope.js';
 import type { FocusScopeAutoFocus } from './FocusScope.js';
 
@@ -8,7 +8,23 @@ interface FocusScopeArgs {
   autoFocus: FocusScopeAutoFocus;
   restoreFocus: boolean;
   active: boolean;
+  /** Example stories only: a description of the confined content, rendered as its first line. */
+  children?: string | undefined;
 }
+
+const renderScope = (args: FocusScopeArgs): TemplateResult => html`
+  <ds-focus-scope
+    .trapped=${args.trapped}
+    .autoFocus=${args.autoFocus}
+    .restoreFocus=${args.restoreFocus}
+    .active=${args.active}
+  >
+    ${args.children ? html`<p>${args.children}</p>` : nothing}
+    <button type="button">One</button>
+    <button type="button">Two</button>
+    <button type="button">Three</button>
+  </ds-focus-scope>
+`;
 
 const meta: Meta<FocusScopeArgs> = {
   title: 'FocusScope/Lit',
@@ -28,18 +44,7 @@ const meta: Meta<FocusScopeArgs> = {
     restoreFocus: true,
     active: true,
   },
-  render: (args) => html`
-    <ds-focus-scope
-      ?trapped=${args.trapped}
-      auto-focus=${args.autoFocus}
-      ?restore-focus=${args.restoreFocus}
-      ?active=${args.active}
-    >
-      <button type="button">One</button>
-      <button type="button">Two</button>
-      <button type="button">Three</button>
-    </ds-focus-scope>
-  `,
+  render: renderScope,
 };
 
 export default meta;
@@ -56,6 +61,7 @@ export const AutoFocusNone: Story = { args: { autoFocus: 'none' } };
 /* boolean states */
 export const TrappedFalse: Story = { args: { trapped: false } };
 export const ActiveFalse: Story = { args: { active: false } };
+export const RestoreFocusFalse: Story = { args: { restoreFocus: false } };
 
 /**
  * Renders trapped, present, with three focusable children so the keyboard
@@ -63,11 +69,35 @@ export const ActiveFalse: Story = { args: { active: false } };
  */
 export const Keyboard: Story = {
   args: { trapped: true, autoFocus: 'first' },
-  render: (args) => html`
-    <ds-focus-scope ?trapped=${args.trapped} auto-focus=${args.autoFocus}>
-      <button type="button">One</button>
-      <button type="button">Two</button>
-      <button type="button">Three</button>
-    </ds-focus-scope>
-  `,
+};
+
+/* examples */
+export const ModalTakeover: Story = {
+  args: {
+    children: 'A full-screen onboarding overlay with its own close Button',
+    trapped: true,
+    autoFocus: 'first',
+  },
+};
+
+export const NonModalDrawer: Story = {
+  args: {
+    children: 'A slide-in filter drawer',
+    trapped: false,
+    autoFocus: 'first',
+  },
+};
+
+export const ReadingFirst: Story = {
+  args: {
+    children: 'A long terms-of-service body with Accept and Decline Buttons',
+    autoFocus: 'container',
+  },
+};
+
+export const PausedOuterScope: Story = {
+  args: {
+    children: 'A dialog body with a Menu open inside it',
+    active: false,
+  },
 };

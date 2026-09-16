@@ -520,10 +520,10 @@ export class DsSidePanel extends LitElement {
     const content = html`
       <ds-focus-scope
         part="focus-scope"
-        ?trapped=${this.modal && !isPersistent}
-        ?active=${isOpen || isPersistent}
+        .trapped=${this.modal && !isPersistent}
+        .active=${isOpen || isPersistent}
         auto-focus="none"
-        ?restore-focus=${false}
+        .restoreFocus=${false}
         style="display: flex; flex-direction: column; gap: var(--ds-side-panel-part-gap); min-block-size: 0; flex: 1 1 auto"
       >
         <div class="header" part="header">

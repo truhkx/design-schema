@@ -455,10 +455,10 @@ export class DsPopover extends LitElement {
 
     const panelContent = html`
       <ds-focus-scope
-        ?trapped=${this.modal}
-        ?active=${isOpen}
+        .trapped=${this.modal}
+        .active=${isOpen}
         auto-focus="none"
-        ?restore-focus=${false}
+        .restoreFocus=${false}
       >
         <div class=${classMap({ content: true, 'has-close': this.dismissible })}>
           ${hasHeading

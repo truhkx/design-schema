@@ -1,9 +1,9 @@
 import {
   Children,
   cloneElement,
+  useCallback,
   useEffect,
   useId,
-  useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
@@ -16,12 +16,13 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
+import { Text, type TextOverridableBinding } from './Text';
 import './Tooltip.css';
 
 export type TooltipPlacement = 'top' | 'bottom' | 'start' | 'end';
 export type TooltipDelay = 'default' | 'none';
 
-/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+/** Style bindings that can be overridden per instance; `surface` and `text` are locked and never in this list. */
 export type TooltipOverridableBinding =
   | 'radius'
   | 'paddingBlock'
@@ -42,7 +43,7 @@ const OVERRIDE_HOOK: Record<TooltipOverridableBinding, string> = {
   paddingInline: '--ds-tooltip-padding-inline',
   offset: '--ds-tooltip-offset',
   maxWidth: '--ds-tooltip-max-width',
-  fontFamily: '--ds-tooltip-font-family', /* literal-ok: CSS custom-property name, not a font stack */
+  fontFamily: '--ds-tooltip-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-tooltip-font-size',
   lineHeight: '--ds-tooltip-line-height',
   shadow: '--ds-tooltip-shadow',
@@ -51,132 +52,160 @@ const OVERRIDE_HOOK: Record<TooltipOverridableBinding, string> = {
   exit: '--ds-tooltip-exit',
 };
 
+/** Typography bindings belong to the composed Text, so they are forwarded to its `overrides` under the same names. */
+const TEXT_BINDINGS: readonly (TooltipOverridableBinding & TextOverridableBinding)[] = ['fontFamily', 'fontSize', 'lineHeight'];
+
 function overridesToStyle(overrides: Partial<Record<TooltipOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as TooltipOverridableBinding[]) {
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    const hook = OVERRIDE_HOOK[binding];
+    if (ref && hook) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
 }
+
+/* Constants, read through their token expressions at the moment they are needed. */
+/** hoverDelay: motion.duration.base × 3, when `delay` is `default`. */
+const HOVER_DELAY = 'calc(var(--motion-duration-base) * 3)';
+/** warmWindow: motion.duration.base — after one tooltip hides, the next shows with no delay. */
+const WARM_WINDOW = 'var(--motion-duration-base)';
+/** pointerGrace: motion.duration.fast — the pointer may cross the `offset` gap onto the bubble. */
+const POINTER_GRACE = 'var(--motion-duration-fast)';
 
 /* Only declared when the bundler defines it; never assumed. */
 declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
-/** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    : false;
-}
-
-/** No hover surface on touch; the trigger still carries the accessible description/name. */
-function hasNoHover(): boolean {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(hover: none), (pointer: coarse)').matches
-    : false;
-}
-
-/** delay.default: motion.duration.base × 3 — the doc calls out ~600ms with `motion.duration.base` at 200ms. */
-const DEFAULT_DELAY_MS = 600;
-/**
- * How long a tooltip stays "warm" after it closes, so the next one in a toolbar opens instantly.
- * Not a token: the doc names the effect but not a duration, so this reuses the show delay's length.
- */
-const WARM_WINDOW_MS = DEFAULT_DELAY_MS;
-/** Grace period before actually hiding, so the pointer can cross the `offset` gap onto the popup itself (WCAG 1.4.13 hoverable). Not specified by the doc. */
-const CLOSE_GRACE_MS = 100;
-
+/** Shared "warm until" timestamp: a toolbar's tooltips show instantly while one has just hidden. */
 let warmUntil = 0;
 
-function markWarm() {
-  warmUntil = Date.now() + WARM_WINDOW_MS;
+function matches(query: string): boolean {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(query).matches : false;
 }
 
-function isWarm(): boolean {
-  return Date.now() < warmUntil;
+/** `0.6s`, `600ms` → milliseconds; anything unresolved (jsdom has no `var()`) is 0. */
+function parseTime(value: string): number {
+  const first = value.split(',')[0]?.trim() ?? '';
+  const amount = Number.parseFloat(first);
+  if (Number.isNaN(amount)) return 0;
+  return first.endsWith('ms') ? amount : amount * 1000;
+}
+
+/**
+ * Resolves a CSS expression to its computed value by letting the browser evaluate it on a detached
+ * probe inside `host`, so logic follows the live tokens (and any hook set on `host`).
+ */
+function resolveComputed(host: Element, property: 'transitionDuration' | 'paddingLeft', expression: string): string {
+  const probe = document.createElement('span');
+  probe.hidden = true;
+  probe.style[property] = expression;
+  host.appendChild(probe);
+  const value = getComputedStyle(probe)[property];
+  probe.remove();
+  return value;
+}
+
+function resolveMs(host: Element, expression: string): number {
+  return parseTime(resolveComputed(host, 'transitionDuration', expression));
 }
 
 function mergeIds(existing: string | undefined, id: string): string {
   return existing ? `${existing} ${id}` : id;
 }
 
-/** Positions the popup from the trigger's rect for `placement`, flipping when it would overflow the viewport. */
+function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
+  if (typeof ref === 'function') ref(value);
+  else if (ref) (ref as { current: T | null }).current = value;
+}
+
+/** Positions the bubble `gap` away from the trigger on `placement`, flipping to the opposite side when it would overflow the viewport. */
 function computePosition(
   triggerRect: DOMRect,
   popupRect: DOMRect,
   placement: TooltipPlacement,
   rtl: boolean,
-): { style: CSSProperties; resolved: TooltipPlacement } {
+  gap: number,
+): { style: CSSProperties; side: TooltipPlacement } {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
-
-  let resolved = placement;
-  if (placement === 'top' && triggerRect.top - popupRect.height < 0 && triggerRect.bottom + popupRect.height <= viewportHeight) {
-    resolved = 'bottom';
-  } else if (
-    placement === 'bottom' &&
-    triggerRect.bottom + popupRect.height > viewportHeight &&
-    triggerRect.top - popupRect.height >= 0
-  ) {
-    resolved = 'top';
-  } else if (
-    placement === 'start' &&
-    (rtl ? triggerRect.right + popupRect.width > viewportWidth : triggerRect.left - popupRect.width < 0) &&
-    (rtl ? triggerRect.left - popupRect.width >= 0 : triggerRect.right + popupRect.width <= viewportWidth)
-  ) {
-    resolved = 'end';
-  } else if (
-    placement === 'end' &&
-    (rtl ? triggerRect.left - popupRect.width < 0 : triggerRect.right + popupRect.width > viewportWidth) &&
-    (rtl ? triggerRect.right + popupRect.width <= viewportWidth : triggerRect.left - popupRect.width >= 0)
-  ) {
-    resolved = 'start';
-  }
-
   const style: Record<string, number> = {};
 
-  if (resolved === 'top' || resolved === 'bottom') {
+  if (placement === 'top' || placement === 'bottom') {
+    const fitsAbove = triggerRect.top - gap - popupRect.height >= 0;
+    const fitsBelow = triggerRect.bottom + gap + popupRect.height <= viewportHeight;
+    let side: TooltipPlacement = placement;
+    if (side === 'top' && !fitsAbove && fitsBelow) side = 'bottom';
+    else if (side === 'bottom' && !fitsBelow && fitsAbove) side = 'top';
+
     const centerX = triggerRect.left + triggerRect.width / 2;
-    const left = Math.min(Math.max(centerX - popupRect.width / 2, 0), Math.max(viewportWidth - popupRect.width, 0));
-    style.left = left;
-    if (resolved === 'top') style.bottom = viewportHeight - triggerRect.top;
-    else style.top = triggerRect.bottom;
-  } else {
-    const centerY = triggerRect.top + triggerRect.height / 2;
-    const top = Math.min(Math.max(centerY - popupRect.height / 2, 0), Math.max(viewportHeight - popupRect.height, 0));
-    style.top = top;
-    // start/end are logical: start is the inline-start edge, which is the left edge in LTR and the right edge in RTL.
-    const startIsLeft = !rtl;
-    const wantsLeftSide = resolved === 'start' ? startIsLeft : !startIsLeft;
-    if (wantsLeftSide) style.right = viewportWidth - triggerRect.left;
-    else style.left = triggerRect.right;
+    style.left = Math.min(Math.max(centerX - popupRect.width / 2, 0), Math.max(viewportWidth - popupRect.width, 0));
+    if (side === 'top') style.bottom = viewportHeight - triggerRect.top + gap;
+    else style.top = triggerRect.bottom + gap;
+    return { style: style as CSSProperties, side };
   }
 
-  return { style: style as CSSProperties, resolved };
+  // start/end are logical: inline-start is the left edge in LTR and the right edge in RTL.
+  const fitsLeft = triggerRect.left - gap - popupRect.width >= 0;
+  const fitsRight = triggerRect.right + gap + popupRect.width <= viewportWidth;
+  let side: TooltipPlacement = placement;
+  const wantsLeft = (side === 'start') !== rtl;
+  if ((wantsLeft && !fitsLeft && fitsRight) || (!wantsLeft && !fitsRight && fitsLeft)) {
+    side = side === 'start' ? 'end' : 'start';
+  }
+  const onLeft = (side === 'start') !== rtl;
+
+  const centerY = triggerRect.top + triggerRect.height / 2;
+  style.top = Math.min(Math.max(centerY - popupRect.height / 2, 0), Math.max(viewportHeight - popupRect.height, 0));
+  if (onLeft) style.right = viewportWidth - triggerRect.left + gap;
+  else style.left = triggerRect.right + gap;
+  return { style: style as CSSProperties, side };
 }
+
+type TriggerProps = {
+  ref?: Ref<HTMLElement> | undefined;
+  'aria-describedby'?: string | undefined;
+  'aria-labelledby'?: string | undefined;
+  onPointerEnter?: ((event: ReactPointerEvent<HTMLElement>) => void) | undefined;
+  onPointerLeave?: ((event: ReactPointerEvent<HTMLElement>) => void) | undefined;
+  onFocus?: ((event: ReactFocusEvent<HTMLElement>) => void) | undefined;
+  onBlur?: ((event: ReactFocusEvent<HTMLElement>) => void) | undefined;
+};
 
 export interface TooltipProps {
   /** The tooltip text. One short phrase or sentence; no markup, no links, no line breaks. */
   content: string;
-  /** Exactly one focusable element (a Button, Link, Input). The tooltip attaches to it; a non-focusable child is an error, because keyboard users could never see the tooltip. */
+  /**
+   * Exactly one focusable element (a Button, Link, Input). The tooltip attaches to it; a
+   * non-focusable child is an error, because keyboard users could never see the tooltip.
+   */
   children: ReactElement<any>;
-  /** Preferred side; flips when it would overflow the viewport. */
+  /**
+   * Preferred side; flips when it would overflow the viewport. `start`/`end` are logical and
+   * mirror in right-to-left writing.
+   */
   placement?: TooltipPlacement | undefined;
   /**
    * `true`: the tooltip is supplementary and becomes the child's accessible description
    * (aria-describedby). `false`: the tooltip IS the child's name (an icon-only button whose label
-   * equals the tooltip) and is linked as aria-labelledby instead.
+   * equals the tooltip) and is linked as aria-labelledby instead — set this when the child has no
+   * visible text and its `label` equals `content`, to avoid announcing it twice.
    */
   describes?: boolean | undefined;
   /**
-   * Hover delay before showing: `default` uses `motion.duration.base` × 3 (roughly 600ms); `none`
-   * for toolbars where a sibling tooltip is already open.
+   * Controlled visibility, for stories and tests only (the Keyboard story renders the tooltip open
+   * with it). Product code never sets it: a tooltip is hover and focus driven.
+   */
+  open?: boolean | undefined;
+  /**
+   * Hover delay before showing: `default` uses `motion.duration.base` × 3 (roughly 600ms, so casual
+   * mouse movement does not flash tooltips); `none` for toolbars where a sibling tooltip is already open.
    */
   delay?: TooltipDelay | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<TooltipOverridableBinding, TokenRef | undefined>> | undefined;
+  /** Portal target for the bubble. Defaults to `document.body`. */
+  container?: HTMLElement | undefined;
 }
 
 /**
@@ -188,259 +217,241 @@ export interface TooltipProps {
  * clarification ("Includes archived items"). Use it in toolbars, table headers and dense UI where
  * visible labels do not fit. Keep it to a phrase.
  *
- * Do not put essential instructions, error messages or any content the user must read in a
- * tooltip; use helper text (Input `description`), an Alert, or a Disclosure. Do not put links or
- * buttons in it — a tooltip is not interactive, and an interactive overlay is a Popover (planned).
- * Do not attach it to a non-focusable element (an icon, a span): keyboard users could never open
- * it. Do not use it on touch-first screens to explain controls; on native the text becomes a hint
- * and is not visible.
+ * The description lives in two nodes: a visually-hidden `role="tooltip"` span carrying the id,
+ * always in the accessibility tree, and the positioned bubble (the root, `data-ds="Tooltip"`),
+ * which is `aria-hidden` and only a visible copy.
  */
-export const Tooltip = function Tooltip({ ref, content, children, placement = 'top', describes = true, delay = 'default', overrides }: TooltipProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
-  const generatedId = useId();
-  const tooltipId = `ds-tooltip${generatedId}`;
+export const Tooltip = function Tooltip({
+  ref,
+  content,
+  children,
+  placement = 'top',
+  describes = true,
+  open,
+  delay = 'default',
+  overrides,
+  container,
+}: TooltipProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
+  const tooltipId = useId();
+
+  const [internalOpen, setInternalOpen] = useState(false);
+  // Escape hides the tooltip until the trigger loses hover and focus, or the `open` prop changes.
+  const [dismissed, setDismissed] = useState(false);
+  const isOpen = !dismissed && (open ?? internalOpen);
+
+  // Mounted while open and while the exit fade runs; `entered` drives the fade.
+  const [present, setPresent] = useState(isOpen);
+  if (isOpen && !present) setPresent(true);
+  const [entered, setEntered] = useState(false);
+  const [position, setPosition] = useState<CSSProperties>();
+  const [side, setSide] = useState<TooltipPlacement>(placement);
 
   const triggerRef = useRef<HTMLElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
-  useImperativeHandle(ref, () => popupRef.current as HTMLDivElement, []);
+  const hoveringTrigger = useRef(false);
+  const hoveringPopup = useRef(false);
+  const focused = useRef(false);
+  const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Mounted while the tooltip should show, and while the exit transition finishes after it hides.
-  const [present, setPresent] = useState(false);
-  // Drives the entered/exited CSS state; toggled a frame after mount so the enter transition runs.
-  const [visible, setVisible] = useState(false);
-  const [popupStyle, setPopupStyle] = useState<CSSProperties>();
-  const [resolvedPlacement, setResolvedPlacement] = useState<TooltipPlacement>(placement);
+  const portalTarget = (): HTMLElement => container ?? document.body;
 
-  // Open is derived from hover/focus, not stored directly: `present` is the source of truth for
-  // whether the popup exists, mirroring the mount/exit pattern used by AlertDialog and Menu.
-  const wantOpenRef = useRef(false);
-  const hoveringTriggerRef = useRef(false);
-  const hoveringPopupRef = useRef(false);
-  const focusedRef = useRef(false);
-  const dismissedRef = useRef(false);
-  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearShow = () => {
+    if (showTimer.current) clearTimeout(showTimer.current);
+    showTimer.current = null;
+  };
+  const clearHide = () => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = null;
+  };
 
-  const latest = useRef({ delay, placement });
-  latest.current = { delay, placement };
-
-  if (isDev && !content) {
-    console.warn('Tooltip: `content` is required and becomes the trigger’s accessible description or name; it must not be empty.');
-  }
-  if (isDev && Children.count(children) !== 1) {
-    console.warn('Tooltip: `children` must be exactly one focusable element.');
-  }
-
-  const clearShowTimer = () => {
-    if (showTimerRef.current) {
-      clearTimeout(showTimerRef.current);
-      showTimerRef.current = null;
+  const show = (immediate: boolean) => {
+    clearHide();
+    if (immediate || delay === 'none' || Date.now() < warmUntil) {
+      clearShow();
+      setInternalOpen(true);
+      return;
     }
-  };
-  const clearHideTimer = () => {
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-  };
-
-  const open = () => {
-    clearShowTimer();
-    clearHideTimer();
-    if (wantOpenRef.current) return;
-    wantOpenRef.current = true;
-    markWarm();
-    setPresent(true);
+    if (showTimer.current) return;
+    showTimer.current = setTimeout(() => {
+      showTimer.current = null;
+      setInternalOpen(true);
+    }, resolveMs(portalTarget(), HOVER_DELAY));
   };
 
-  const close = () => {
-    clearShowTimer();
-    clearHideTimer();
-    if (!wantOpenRef.current) return;
-    wantOpenRef.current = false;
-    markWarm();
-    setVisible(false);
+  const scheduleHide = () => {
+    clearShow();
+    if (hideTimer.current) return;
+    hideTimer.current = setTimeout(() => {
+      hideTimer.current = null;
+      if (hoveringTrigger.current || hoveringPopup.current || focused.current) return;
+      setInternalOpen(false);
+      setDismissed(false);
+    }, resolveMs(portalTarget(), POINTER_GRACE));
   };
 
-  const requestOpen = (immediate: boolean) => {
-    if (wantOpenRef.current) return;
-    clearHideTimer();
-    if (immediate || latest.current.delay === 'none' || isWarm()) {
-      open();
-    } else if (!showTimerRef.current) {
-      showTimerRef.current = setTimeout(() => {
-        showTimerRef.current = null;
-        open();
-      }, DEFAULT_DELAY_MS);
-    }
-  };
+  useEffect(() => {
+    setDismissed(false);
+  }, [open]);
 
-  const requestClose = () => {
-    clearShowTimer();
-    if (!wantOpenRef.current) return;
-    if (hideTimerRef.current) return;
-    hideTimerRef.current = setTimeout(() => {
-      hideTimerRef.current = null;
-      if (!hoveringTriggerRef.current && !hoveringPopupRef.current && !focusedRef.current) close();
-    }, CLOSE_GRACE_MS);
-  };
+  useEffect(
+    () => () => {
+      clearShow();
+      clearHide();
+    },
+    [],
+  );
 
-  // Position on mount, reveal on the next frame, and reposition while the viewport moves.
+  // Position from the trigger rect before paint, and follow scroll and resize.
   useLayoutEffect(() => {
     if (!present) return undefined;
     const trigger = triggerRef.current;
     const popup = popupRef.current;
     if (!trigger || !popup) return undefined;
-
     const reposition = () => {
-      const triggerRect = trigger.getBoundingClientRect();
-      const popupRect = popup.getBoundingClientRect();
+      const gap = Number.parseFloat(resolveComputed(popup, 'paddingLeft', 'var(--ds-tooltip-offset)')) || 0;
       const rtl = getComputedStyle(trigger).direction === 'rtl';
-      const result = computePosition(triggerRect, popupRect, latest.current.placement, rtl);
-      setPopupStyle(result.style);
-      setResolvedPlacement(result.resolved);
+      const result = computePosition(trigger.getBoundingClientRect(), popup.getBoundingClientRect(), placement, rtl, gap);
+      setPosition(result.style);
+      setSide(result.side);
     };
     reposition();
-
-    if (prefersReducedMotion()) setVisible(true);
-    else requestAnimationFrame(() => setVisible(true));
-
     window.addEventListener('scroll', reposition, true);
     window.addEventListener('resize', reposition);
     return () => {
       window.removeEventListener('scroll', reposition, true);
       window.removeEventListener('resize', reposition);
     };
-  }, [present]);
+  }, [present, placement, content]);
 
-  // Exit: hide, then unmount once the transition finishes (immediately under reduced motion).
-  useEffect(() => {
-    if (wantOpenRef.current || !present) return undefined;
-    const popup = popupRef.current;
-    if (!popup || prefersReducedMotion()) {
-      setPresent(false);
-      return undefined;
-    }
-    const handleExited = (event: TransitionEvent) => {
-      if (event.target !== popup || event.propertyName !== 'opacity') return;
-      setPresent(false);
-    };
-    popup.addEventListener('transitionend', handleExited);
-    return () => popup.removeEventListener('transitionend', handleExited);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, present]);
-
-  // Escape hides without moving focus, and does not reopen while the trigger stays focused/hovered.
+  // Enter on the next frame so the fade runs; on hide, fade out for `exit`, then unmount and warm siblings.
   useEffect(() => {
     if (!present) return undefined;
+    const popup = popupRef.current;
+    if (isOpen) {
+      const frame = requestAnimationFrame(() => setEntered(true));
+      return () => cancelAnimationFrame(frame);
+    }
+    setEntered(false);
+    const host = popup ?? portalTarget();
+    warmUntil = Date.now() + resolveMs(host, WARM_WINDOW);
+    const exit = matches('(prefers-reduced-motion: reduce)') ? 0 : resolveMs(host, 'var(--ds-tooltip-exit)');
+    const timer = setTimeout(() => setPresent(false), exit);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, present]);
+
+  // Escape hides a visible tooltip without moving focus; it is consumed so an enclosing overlay stays open.
+  useEffect(() => {
+    if (!isOpen) return undefined;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      dismissedRef.current = true;
-      close();
+      event.stopPropagation();
+      clearShow();
+      setDismissed(true);
     };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [present]);
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [isOpen]);
 
-  useEffect(() => () => clearShowTimer(), []);
-  useEffect(() => () => clearHideTimer(), []);
+  useEffect(() => {
+    if (!isDev) return;
+    if (!content) console.warn('Tooltip: `content` is required; it is the trigger’s accessible description or name.');
+    const trigger = triggerRef.current;
+    if (!trigger) console.warn('Tooltip: the child must forward `ref` to its focusable element.');
+    else if (trigger.tabIndex < 0) console.warn('Tooltip: the child must be focusable, or keyboard users can never see the tooltip.');
+  }, [content]);
 
-  const handleTriggerPointerEnter = () => {
-    if (hasNoHover()) return;
-    hoveringTriggerRef.current = true;
-    if (!dismissedRef.current) requestOpen(false);
-  };
-  const handleTriggerPointerLeave = () => {
-    hoveringTriggerRef.current = false;
-    dismissedRef.current = false;
-    requestClose();
-  };
-  const handleTriggerFocus = () => {
-    focusedRef.current = true;
-    if (!dismissedRef.current) requestOpen(true);
-  };
-  const handleTriggerBlur = (event: ReactFocusEvent) => {
-    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
-    focusedRef.current = false;
-    dismissedRef.current = false;
-    requestClose();
-  };
-  const handlePopupPointerEnter = () => {
-    hoveringPopupRef.current = true;
-    clearHideTimer();
-  };
-  const handlePopupPointerLeave = () => {
-    hoveringPopupRef.current = false;
-    requestClose();
-  };
+  if (isDev && Children.count(children) !== 1) {
+    console.warn('Tooltip: `children` must be exactly one focusable element.');
+  }
 
-  const child = Children.only(children) as ReactElement<{
-    'aria-describedby'?: string | undefined;
-    'aria-labelledby'?: string | undefined;
-    onPointerEnter?: ((event: ReactPointerEvent) => void) | undefined;
-    onPointerLeave?: ((event: ReactPointerEvent) => void) | undefined;
-    onFocus?: ((event: ReactFocusEvent) => void) | undefined;
-    onBlur?: ((event: ReactFocusEvent) => void) | undefined;
-  }>;
+  const child = Children.only(children) as ReactElement<TriggerProps>;
+  const childRef = child.props.ref;
 
-  // `children` is an arbitrary, unknown element type, so there is no generic-safe way to type a
-  // `ref` in cloneElement's config (React's own typings only admit `ref` for statically known
-  // element/class types). Cast the config, not the element or its props, to keep the rest typed.
-  const clonedProps = {
-    ref: triggerRef,
+  const setTriggerRef = useCallback(
+    (node: HTMLElement | null) => {
+      triggerRef.current = node;
+      assignRef(childRef, node);
+    },
+    [childRef],
+  );
+  const setPopupRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      popupRef.current = node;
+      assignRef(ref, node);
+    },
+    [ref],
+  );
+
+  // `children` is an unknown element type, so React's typings cannot admit `ref` in the clone config;
+  // cast the config only.
+  const cloned = cloneElement(child, {
+    ref: setTriggerRef,
     'aria-describedby': describes ? mergeIds(child.props['aria-describedby'], tooltipId) : child.props['aria-describedby'],
-    'aria-labelledby': !describes ? mergeIds(child.props['aria-labelledby'], tooltipId) : child.props['aria-labelledby'],
-    onPointerEnter: (event: ReactPointerEvent) => {
+    'aria-labelledby': describes ? child.props['aria-labelledby'] : mergeIds(child.props['aria-labelledby'], tooltipId),
+    onPointerEnter: (event: ReactPointerEvent<HTMLElement>) => {
       child.props.onPointerEnter?.(event);
-      handleTriggerPointerEnter();
+      // No hover surface on touch; the description stays in the accessibility tree.
+      if (event.pointerType === 'touch' || matches('(pointer: coarse)')) return;
+      hoveringTrigger.current = true;
+      show(false);
     },
-    onPointerLeave: (event: ReactPointerEvent) => {
+    onPointerLeave: (event: ReactPointerEvent<HTMLElement>) => {
       child.props.onPointerLeave?.(event);
-      handleTriggerPointerLeave();
+      hoveringTrigger.current = false;
+      scheduleHide();
     },
-    onFocus: (event: ReactFocusEvent) => {
+    onFocus: (event: ReactFocusEvent<HTMLElement>) => {
       child.props.onFocus?.(event);
-      handleTriggerFocus();
+      focused.current = true;
+      show(true);
     },
-    onBlur: (event: ReactFocusEvent) => {
+    onBlur: (event: ReactFocusEvent<HTMLElement>) => {
       child.props.onBlur?.(event);
-      handleTriggerBlur(event);
+      if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+      focused.current = false;
+      scheduleHide();
     },
-  } as unknown as Attributes;
-  const cloned = cloneElement(child, clonedProps);
+  } as unknown as Attributes);
 
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = { ...popupStyle, ...overrideStyle };
+  const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  for (const binding of TEXT_BINDINGS) {
+    const token = overrides?.[binding];
+    if (token) textOverrides[binding] = token;
+  }
 
-  const popupClasses = ['ds-tooltip', visible ? 'ds-tooltip--entered' : null].filter(Boolean).join(' ');
+  const classes = ['ds-tooltip', entered ? 'ds-tooltip--entered' : null].filter(Boolean).join(' ');
 
   return (
     <>
       {cloned}
-      {/*
-        Always mounted (unlike the portaled popup below) so `aria-describedby`/`aria-labelledby`
-        never dangles while the popup is closed — a visually-hidden node is the "real" accessible
-        description/name; the popup is a second, presentational copy for sighted users.
-      */}
-      <span id={tooltipId} role="tooltip" className="ds-tooltip__visually-hidden" data-part="text">
+      <span id={tooltipId} role="tooltip" className="ds-tooltip__description">
         {content}
       </span>
       {present
         ? createPortal(
             <div
-              ref={popupRef}
-              aria-hidden="true"
+              ref={setPopupRef}
               data-ds="Tooltip"
-              data-placement={resolvedPlacement}
-              className={popupClasses}
-              style={mergedStyle}
-              onPointerEnter={handlePopupPointerEnter}
-              onPointerLeave={handlePopupPointerLeave}
+              data-placement={side}
+              aria-hidden="true"
+              className={classes}
+              style={{ ...position, ...(overrides ? overridesToStyle(overrides) : undefined) }}
+              onPointerEnter={() => {
+                hoveringPopup.current = true;
+                clearHide();
+              }}
+              onPointerLeave={() => {
+                hoveringPopup.current = false;
+                scheduleHide();
+              }}
             >
-              <span className="ds-tooltip__text" data-part="text">
+              <Text element="span" size="sm" data-part="text" overrides={textOverrides}>
                 {content}
-              </span>
+              </Text>
             </div>,
-            document.body,
+            portalTarget(),
           )
         : null}
     </>

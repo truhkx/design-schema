@@ -1,19 +1,75 @@
 /**
- * FocusScope — restore-to-opener, through a parent that moves focus in its own layout effect.
+ * FocusScope — behavior scenarios from the doc, then restore-to-opener through a parent that moves focus in its own layout effect.
  * Every overlay composite renders <FocusScope autoFocus="none" restoreFocus> and focuses its own
  * content in useLayoutEffect; the scope must record the opener before that move, or it "restores"
  * to an element inside the overlay that is gone once it unmounts.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import { ActionSheet } from './ActionSheet';
 import { AlertDialog } from './AlertDialog';
 import { BottomSheet } from './BottomSheet';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
-import { FocusScope } from './FocusScope';
+import { FocusScope, type FocusScopeProps } from './FocusScope';
+import meta from './FocusScope.stories';
 import { SidePanel } from './SidePanel';
+
+/** The Default story's args plus the scenario's `given`. */
+function setup(given: Partial<FocusScopeProps> = {}) {
+  const props = { ...meta.args, ...given } as ComponentProps<typeof FocusScope>;
+  const utils = render(<FocusScope {...props} />);
+  return { ...utils, root: () => utils.container.querySelector<HTMLElement>('[data-ds="FocusScope"]')! };
+}
+
+/** Behavior scenarios from the component doc, one test each, in the doc's order. */
+describe('FocusScope behavior', () => {
+  it('auto-focus-container-focuses-the-wrapper', () => {
+    const s = setup({ autoFocus: 'container' });
+    expect(s.root()).toHaveAttribute('tabindex', '-1');
+    expect(s.root()).toHaveFocus();
+  });
+
+  it('auto-focus-none-moves-focus-nowhere', () => {
+    const before = document.activeElement;
+    const s = setup({ autoFocus: 'none' });
+    expect(document.activeElement).toBe(before);
+    expect(s.root().contains(document.activeElement)).toBe(false);
+  });
+
+  it('the-wrapper-is-not-focusable', () => {
+    const s = setup({ autoFocus: 'none' });
+    expect(s.root()).not.toHaveAttribute('tabindex');
+    s.root().focus();
+    expect(s.root()).not.toHaveFocus();
+  });
+
+  it('the-scope-adds-no-role', () => {
+    const s = setup();
+    expect(s.root().getAttribute('role')).toBeNull();
+  });
+
+  it('renders', () => {
+    expect(setup().root()).toBeInTheDocument();
+  });
+
+  it('renders-auto-focus-first', () => {
+    expect(setup({ autoFocus: 'first' }).root()).toBeInTheDocument();
+  });
+
+  it('renders-auto-focus-last', () => {
+    expect(setup({ autoFocus: 'last' }).root()).toBeInTheDocument();
+  });
+
+  it('renders-auto-focus-container', () => {
+    expect(setup({ autoFocus: 'container' }).root()).toBeInTheDocument();
+  });
+
+  it('renders-auto-focus-none', () => {
+    expect(setup({ autoFocus: 'none' }).root()).toBeInTheDocument();
+  });
+});
 
 // jsdom has no matchMedia and never fires transitionend: report reduced motion so exits finish
 // synchronously, and no wide viewport so the sheets keep their bottom-edge presentation.

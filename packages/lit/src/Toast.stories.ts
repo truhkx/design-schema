@@ -10,6 +10,7 @@ interface ToastArgs {
   actionLabel?: string | undefined;
   duration: ToastDuration;
   dismissible: boolean;
+  toastId?: string | undefined;
 }
 
 const meta: Meta<ToastArgs> = {
@@ -35,6 +36,7 @@ const meta: Meta<ToastArgs> = {
       tone=${args.tone}
       action-label=${ifDefined(args.actionLabel)}
       duration=${args.duration}
+      toast-id=${ifDefined(args.toastId)}
       ?no-dismiss=${!args.dismissible}
     ></ds-toast>
   `,
@@ -46,32 +48,36 @@ type Story = StoryObj<ToastArgs>;
 export const Default: Story = {};
 
 /* tone */
-export const ToneNeutral: Story = { args: { tone: 'neutral', message: 'Preferences updated' } };
-export const ToneSuccess: Story = { args: { tone: 'success', message: 'Message sent' } };
-export const ToneWarning: Story = { args: { tone: 'warning', message: 'Connection is unstable' } };
-export const ToneDanger: Story = {
-  args: { tone: 'danger', message: 'Export failed', duration: 'persistent' },
-};
+export const ToneNeutral: Story = { args: { tone: 'neutral' } };
+export const ToneSuccess: Story = { args: { tone: 'success' } };
+export const ToneWarning: Story = { args: { tone: 'warning' } };
+export const ToneDanger: Story = { args: { tone: 'danger' } };
 
 /* duration */
 export const DurationShort: Story = { args: { duration: 'short' } };
 export const DurationLong: Story = { args: { duration: 'long' } };
 export const DurationPersistent: Story = { args: { duration: 'persistent' } };
 
-/* notable states */
-export const WithAction: Story = {
+/* examples */
+export const UndoADelete: Story = {
   args: { message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' },
 };
-
-export const NotDismissible: Story = {
-  args: { message: 'Syncing…', dismissible: false },
+export const Saved: Story = { args: { message: 'Changes saved', tone: 'success' } };
+export const BackgroundResult: Story = {
+  args: { message: 'Export ready', actionLabel: 'View', duration: 'long' },
+};
+export const FailedUpload: Story = {
+  args: { message: 'Upload failed', tone: 'danger', actionLabel: 'Retry', duration: 'persistent' },
 };
 
+/* notable states */
+export const NotDismissible: Story = { args: { dismissible: false } };
+
 /**
- * Renders present alongside its region and three focusable siblings, so the
- * keyboard gate can verify `F6` moves focus into the toast's action and
- * dismiss buttons, `Escape` dismisses and returns focus, and `Tab` moves
- * between the two buttons and out again.
+ * A toast present in its region with focusable content before and after it,
+ * so the keyboard gate can check that `F6` moves focus to the toast's action
+ * button and back, `Escape` dismisses, and `Tab` moves between the action and
+ * dismiss buttons and out of the region.
  */
 export const Keyboard: Story = {
   render: () => html`

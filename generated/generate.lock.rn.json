@@ -454,18 +454,19 @@
     }
   },
   "FocusScope.rn": {
-    "hash": "5ba9ada9c87eb2b6",
-    "lastAttemptHash": "5ba9ada9c87eb2b6",
-    "generatedAt": "2026-09-10T22:04:13+00:00",
-    "model": "sonnet",
+    "hash": "e73128e359a836d7",
+    "lastAttemptHash": "e73128e359a836d7",
+    "generatedAt": "2026-09-16T09:50:32+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5735,
+    "costUsd": 0.7663,
     "files": [
       "packages/rn/src/FocusScope.stories.tsx",
+      "packages/rn/src/FocusScope.test.tsx",
       "packages/rn/src/FocusScope.tsx"
     ],
-    "gaps": 3,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1076,17 +1077,20 @@
     }
   },
   "Toast.rn": {
-    "hash": "d9e501be7be27eaa",
-    "lastAttemptHash": "d9e501be7be27eaa",
-    "generatedAt": "2026-09-10T22:09:06+00:00",
-    "model": "sonnet",
+    "hash": "9036b3511d5a3b73",
+    "lastAttemptHash": "9036b3511d5a3b73",
+    "generatedAt": "2026-09-16T10:12:39+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9349,
+    "costUsd": 1.7215,
     "files": [
-      "packages/rn/src/Toast.tsx"
+      "packages/rn/src/Toast.stories.tsx",
+      "packages/rn/src/Toast.test.tsx",
+      "packages/rn/src/Toast.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1119,20 +1123,18 @@
     }
   },
   "Tooltip.rn": {
-    "hash": "97048474c12effd8",
-    "lastAttemptHash": "97048474c12effd8",
-    "generatedAt": "2026-09-10T22:05:55+00:00",
-    "model": "sonnet",
+    "hash": "df5752983ecef931",
+    "lastAttemptHash": "df5752983ecef931",
+    "generatedAt": "2026-09-16T10:01:01+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4639,
+    "costUsd": 1.7139,
     "files": [
       "packages/rn/src/Tooltip.stories.tsx",
-      "packages/rn/src/Tooltip.test.tsx",
-      "packages/rn/src/Tooltip.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Tooltip.tsx"
     ],
-    "gaps": 6,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,

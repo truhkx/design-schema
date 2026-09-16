@@ -111,6 +111,7 @@ export type {
   ToastOverridableBinding,
   ToastProps,
   ToastProviderProps,
+  ToastResult,
   ToastTone,
 } from './Toast';
 

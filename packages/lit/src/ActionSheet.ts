@@ -488,10 +488,10 @@ export class DsActionSheet extends LitElement {
         >
           <ds-focus-scope
             part="focus-scope"
-            trapped
-            ?active=${this.open}
+            .trapped=${true}
+            .active=${this.open}
             auto-focus="none"
-            ?restore-focus=${false}
+            .restoreFocus=${false}
             style="display: flex; flex-direction: column"
           >
             <span class="handle" aria-hidden="true"></span>

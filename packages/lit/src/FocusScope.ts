@@ -1,12 +1,30 @@
-import { LitElement, css, html, type CSSResult, type TemplateResult } from 'lit';
+import { LitElement, css, html, type CSSResult, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
+import type { Ref } from 'lit/directives/ref.js';
 
 export type FocusScopeAutoFocus = 'first' | 'last' | 'container' | 'none';
 
+export type FocusScopeEscapeAttemptDirection = 'forward' | 'backward';
+
 /** Detail carried by the `escape-attempt` CustomEvent. */
 export interface FocusScopeEscapeAttemptDetail {
-  direction: 'forward' | 'backward';
+  direction: FocusScopeEscapeAttemptDirection;
 }
+
+/**
+ * Where focus is restored instead of the recorded opener: an element, or a Lit
+ * `Ref` (`createRef()`), the Lit counterpart of the doc's `RefObject`.
+ */
+export type FocusScopeReturnTarget = HTMLElement | Ref<HTMLElement>;
+
+const NEGATED_BOOLEAN_CONVERTER = {
+  fromAttribute(value: string | null): boolean {
+    return value === null;
+  },
+  toAttribute(value: boolean): string | null {
+    return value ? null : '';
+  },
+};
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -28,9 +46,6 @@ function isFocusable(el: Element): el is HTMLElement {
   if (el.hasAttribute('data-focus-sentinel') || el.hasAttribute('data-focus-scope-anchor')) {
     return false;
   }
-  if (el.hasAttribute('inert') || el.getAttribute('aria-hidden') === 'true') {
-    return false;
-  }
   const tabindex = el.getAttribute('tabindex');
   if (tabindex !== null && Number(tabindex) < 0) {
     return false;
@@ -41,6 +56,9 @@ function isFocusable(el: Element): el is HTMLElement {
 /** Walks light DOM, slot assignments and open shadow roots in tree order. */
 function collectFocusable(node: Element, results: HTMLElement[]): void {
   if (node.hasAttribute('inert') || node.getAttribute('aria-hidden') === 'true') {
+    return;
+  }
+  if (node instanceof HTMLFieldSetElement && node.disabled) {
     return;
   }
   if (isFocusable(node)) {
@@ -66,16 +84,34 @@ function getDeepActiveElement(root: Document | ShadowRoot = document): Element |
   return active;
 }
 
-function findFocusableInDocument(): HTMLElement[] {
-  const results: HTMLElement[] = [];
-  for (const child of Array.from(document.body.children)) {
-    collectFocusable(child, results);
+/** The element itself, or the outermost shadow host holding it, so it can be ordered against document nodes. */
+function documentHost(el: Element): Element {
+  let node = el;
+  let root = node.getRootNode();
+  while (root instanceof ShadowRoot) {
+    node = root.host;
+    root = node.getRootNode();
   }
-  return results;
+  return node;
 }
 
-/** Scopes currently mounted with `trapped` and `active`; the last entry owns Tab. */
+/**
+ * Mounted scopes in activation order. Only the last active entry is effective;
+ * a scope moves to the top when it mounts or becomes active again.
+ */
 const scopeStack: DsFocusScope[] = [];
+
+function pushScope(scope: DsFocusScope): void {
+  removeScope(scope);
+  scopeStack.push(scope);
+}
+
+function removeScope(scope: DsFocusScope): void {
+  const index = scopeStack.indexOf(scope);
+  if (index !== -1) {
+    scopeStack.splice(index, 1);
+  }
+}
 
 /**
  * `<ds-focus-scope>` — FocusScope (category: primitive).
@@ -83,27 +119,21 @@ const scopeStack: DsFocusScope[] = [];
  * A wrapper that renders no appearance and claims no role: it moves focus in
  * on mount, keeps Tab confined to its focusable descendants while `trapped`
  * and `active`, and restores focus to the opener on unmount. The host itself
- * is the wrapper (`display: block`, not `display: contents`, which breaks
- * focus delegation) with a default slot for the confined content. Two
- * visually hidden sentinels in the shadow root catch focus arriving from the
- * browser chrome and pass it through to the real content; a `focusin`
- * listener on `document` pulls focus back if it leaves the scope by any other
- * means while trapped and active. Nested scopes register on a module-level
- * stack so only the innermost trapped, active scope owns Tab.
+ * is the wrapper (`display: block`, not `display: contents`) with a default
+ * slot for the confined content, and it is never focusable or tabbable.
+ * `delegatesFocus` is deliberately off: it would send a `focus()` on the host
+ * into the first focusable descendant. `autoFocus: container` instead focuses
+ * an invisible `tabindex="-1"` anchor rendered first in the shadow root.
  *
- * ## When to use
+ * Two visually hidden sentinels catch focus arriving from the browser chrome
+ * while trapped: the start sentinel sends it to the first descendant, the end
+ * sentinel to the last. A `focusin` listener on `document` pulls focus back to
+ * the last focused descendant if it leaves while trapped and active. Nested
+ * scopes register on a module-level stack; only the top active scope is
+ * effective. The scope never handles Escape and never makes anything inert.
  *
- * Compose it inside a new modal surface the system does not already provide
- * (Dialog, AlertDialog, BottomSheet and ActionSheet already do), with
- * `trapped` on and your own Escape handling — or with `trapped="false"` for a
- * non-modal panel that should still move focus in and restore it on close.
- *
- * ## When not to use
- *
- * Never trap focus in something that is not modal (a sidebar, a form
- * section, a toolbar) — a user who cannot Tab past it is trapped in the WCAG
- * sense. Not for composites like a menu or tab list; those use a roving
- * tabindex and let Tab leave.
+ * Boolean props that default to `true` are exposed as negated attributes:
+ * `no-trapped`, `no-active`, `no-restore-focus`.
  *
  * @fires escape-attempt - Fired just before trapped focus wraps (Tab from the
  *   last descendant, Shift+Tab from the first), with `{ direction }`.
@@ -112,11 +142,6 @@ const scopeStack: DsFocusScope[] = [];
  */
 @customElement('ds-focus-scope')
 export class DsFocusScope extends LitElement {
-  static override shadowRootOptions: ShadowRootInit = {
-    ...LitElement.shadowRootOptions,
-    delegatesFocus: true,
-  };
-
   static override styles: CSSResult = css`
     :host {
       display: block;
@@ -124,7 +149,7 @@ export class DsFocusScope extends LitElement {
     :host([hidden]) {
       display: none;
     }
-    /* literal-ok: standard visually-hidden clip pattern, exempt from token-only rule */
+    /* literal-ok: standard visually-hidden clip pattern */
     .visually-hidden {
       position: fixed;
       width: 1px;
@@ -136,151 +161,191 @@ export class DsFocusScope extends LitElement {
       white-space: nowrap;
       border: 0;
     }
+    .visually-hidden:focus {
+      outline: none;
+    }
   `;
 
-  /** Tab and Shift+Tab wrap within the scope; focus outside is pulled back in. */
-  @property({ type: Boolean, reflect: true }) accessor trapped = true;
+  /**
+   * Tab and Shift+Tab wrap within the scope's focusable descendants, and focus
+   * that lands outside is pulled back in. False turns the scope into a plain
+   * "move focus in and restore on exit" helper. Attribute: `no-trapped`.
+   */
+  @property({ attribute: 'no-trapped', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  accessor trapped = true;
 
-  /** Where focus goes on mount. */
+  /** Where focus goes on mount: the first focusable descendant, the last, the scope's own anchor, or nowhere. */
   @property({ attribute: 'auto-focus' }) accessor autoFocus: FocusScopeAutoFocus = 'first';
 
-  /** On unmount, return focus to the opener (or the next focusable element if it is gone). */
-  @property({ type: Boolean, attribute: 'restore-focus' }) accessor restoreFocus = true;
+  /**
+   * On unmount, focus returns to the element that was focused when the scope
+   * mounted, or to the next focusable element if that one is gone.
+   * Attribute: `no-restore-focus`.
+   */
+  @property({ attribute: 'no-restore-focus', converter: NEGATED_BOOLEAN_CONVERTER })
+  accessor restoreFocus = true;
 
-  /** Pauses the scope without unmounting it, so a nested scope can own Tab instead. */
-  @property({ type: Boolean, reflect: true }) accessor active = true;
+  /** Explicit element (or Lit `Ref`) to restore focus to instead of the recorded opener. Property only. */
+  @property({ attribute: false }) accessor returnFocusTo: FocusScopeReturnTarget | undefined;
 
   /**
-   * Explicit element to restore focus to instead of the recorded opener. Not
-   * an attribute — set the property directly (there is no React ref concept
-   * in Lit; this is a plain element reference).
+   * Pause the scope without unmounting it, so a nested scope can own Tab.
+   * Attribute: `no-active`.
    */
-  @property({ attribute: false }) accessor returnFocusTo: HTMLElement | null | undefined;
+  @property({ attribute: 'no-active', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  accessor active = true;
 
-  @query('[data-focus-scope-anchor]') private accessor anchorEl!: HTMLElement;
+  @query('[data-focus-scope-anchor]') private accessor anchorEl!: HTMLElement | null;
 
-  @query('[data-focus-sentinel="start"]') private accessor startSentinelEl!: HTMLElement;
+  @query('[data-focus-sentinel="start"]') private accessor startSentinelEl!: HTMLElement | null;
 
   private openerElement: HTMLElement | null = null;
-  private documentFocusableSnapshot: HTMLElement[] = [];
+  /** Marker left beside the opener, so "the next focusable element" survives the opener's removal. */
+  private openerMarker: Comment | null = null;
   private lastFocused: HTMLElement | null = null;
+  private childrenSettled: Promise<void> = Promise.resolve();
 
   private readonly handleKeydown = (event: KeyboardEvent): void => {
-    if (event.key !== 'Tab' || !this.trapped || !this.isEffectivelyActive()) {
+    if (event.key !== 'Tab' || event.defaultPrevented || !this.isEffective()) {
       return;
     }
     const focusable = this.getFocusableDescendants();
-    if (focusable.length === 0) {
-      return;
-    }
-    const active = getDeepActiveElement();
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
-    if (!event.shiftKey && active === last) {
+    if (!first || !last) {
+      return;
+    }
+    const current = getDeepActiveElement();
+    if (!event.shiftKey && current === last) {
       event.preventDefault();
       this.dispatchEscapeAttempt('forward');
-      first!.focus();
-    } else if (event.shiftKey && active === first) {
+      first.focus();
+    } else if (event.shiftKey && current === first) {
       event.preventDefault();
       this.dispatchEscapeAttempt('backward');
-      last!.focus();
+      last.focus();
     }
   };
 
   private readonly handleDocumentFocusIn = (): void => {
-    if (!this.trapped || !this.isEffectivelyActive()) {
-      return;
-    }
-    const active = getDeepActiveElement();
-    if (active instanceof HTMLElement && this.scopeContains(active)) {
-      if (isFocusable(active)) {
-        this.lastFocused = active;
+    const current = getDeepActiveElement();
+    if (current instanceof HTMLElement && this.scopeContains(current)) {
+      if (isFocusable(current)) {
+        this.lastFocused = current;
       }
       return;
     }
-    const fallback = this.lastFocused ?? this.getFocusableDescendants()[0] ?? null;
-    fallback?.focus();
+    if (!this.isEffective()) {
+      return;
+    }
+    const remembered = this.lastFocused?.isConnected ? this.lastFocused : null;
+    (remembered ?? this.getFocusableDescendants()[0] ?? this.anchorEl)?.focus();
   };
 
   private readonly handleSentinelFocus = (event: FocusEvent): void => {
-    if (!this.trapped) {
-      return;
-    }
     const focusable = this.getFocusableDescendants();
-    if (focusable.length === 0) {
-      this.anchorEl.focus();
-      return;
-    }
-    if (event.target === this.startSentinelEl) {
-      focusable[0]!.focus();
-    } else {
-      focusable[focusable.length - 1]!.focus();
-    }
+    const target = event.target === this.startSentinelEl ? focusable[0] : focusable[focusable.length - 1];
+    (target ?? this.anchorEl)?.focus();
   };
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.dataset.ds = 'FocusScope';
-    this.openerElement = getDeepActiveElement() as HTMLElement | null;
-    this.documentFocusableSnapshot = findFocusableInDocument();
+    this.recordOpener();
     this.addEventListener('keydown', this.handleKeydown);
     document.addEventListener('focusin', this.handleDocumentFocusIn);
-    scopeStack.push(this);
+    pushScope(this);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this.handleKeydown);
     document.removeEventListener('focusin', this.handleDocumentFocusIn);
-    const index = scopeStack.indexOf(this);
-    if (index !== -1) {
-      scopeStack.splice(index, 1);
-    }
+    removeScope(this);
     if (this.restoreFocus) {
       this.restoreFocusOnExit();
     }
+    this.openerMarker?.remove();
+    this.openerMarker = null;
+    this.openerElement = null;
+    this.lastFocused = null;
   }
 
   protected override firstUpdated(): void {
-    this.applyAutoFocus();
-    this.warnInDev();
+    // Slotted custom elements (ds-button, ds-input) render their focusable
+    // internals in their own update, after this one: wait for them first.
+    this.childrenSettled = this.settleChildren().then(() => {
+      if (this.isConnected) {
+        this.applyAutoFocus();
+        this.warnInDev();
+      }
+    });
+  }
+
+  protected override async getUpdateComplete(): Promise<boolean> {
+    const result = await super.getUpdateComplete();
+    await this.childrenSettled;
+    return result;
+  }
+
+  protected override updated(changed: PropertyValues): void {
+    if (changed.has('active') && changed.get('active') === false && this.active) {
+      pushScope(this);
+    }
   }
 
   protected override render(): TemplateResult {
+    const sentinelTabIndex = this.trapped && this.active ? '0' : '-1';
     return html`
-      <span class="visually-hidden" tabindex="-1" data-focus-scope-anchor></span>
       <span
         class="visually-hidden"
-        tabindex="0"
+        part="scope"
+        data-part="scope"
+        tabindex="-1"
+        data-focus-scope-anchor
+      ></span>
+      <span
+        class="visually-hidden"
+        tabindex=${sentinelTabIndex}
         data-focus-sentinel="start"
         @focus=${this.handleSentinelFocus}
       ></span>
       <slot></slot>
       <span
         class="visually-hidden"
-        tabindex="0"
+        tabindex=${sentinelTabIndex}
         data-focus-sentinel="end"
         @focus=${this.handleSentinelFocus}
       ></span>
     `;
   }
 
+  private recordOpener(): void {
+    const current = getDeepActiveElement();
+    this.openerElement = current instanceof HTMLElement && current !== document.body ? current : null;
+    this.openerMarker?.remove();
+    this.openerMarker = null;
+    const opener = this.openerElement;
+    if (opener?.parentNode && !this.contains(opener)) {
+      this.openerMarker = document.createComment('ds-focus-scope opener');
+      opener.after(this.openerMarker);
+    }
+  }
+
   private applyAutoFocus(): void {
     switch (this.autoFocus) {
       case 'first': {
         const [first] = this.getFocusableDescendants();
-        (first ?? this.anchorEl).focus();
+        (first ?? this.anchorEl)?.focus();
         break;
       }
       case 'last': {
         const focusable = this.getFocusableDescendants();
-        (focusable[focusable.length - 1] ?? this.anchorEl).focus();
+        (focusable[focusable.length - 1] ?? this.anchorEl)?.focus();
         break;
       }
       case 'container':
-        // delegatesFocus redirects this to the anchor, the shadow tree's first
-        // script-focusable (tabindex=-1) descendant, standing in for the host.
-        this.focus();
+        this.anchorEl?.focus();
         break;
       case 'none':
       default:
@@ -288,35 +353,44 @@ export class DsFocusScope extends LitElement {
     }
   }
 
+  private resolveReturnTarget(): HTMLElement | undefined {
+    const target = this.returnFocusTo;
+    if (target instanceof HTMLElement) {
+      return target;
+    }
+    return target?.value;
+  }
+
   private restoreFocusOnExit(): void {
-    const explicit = this.returnFocusTo;
-    if (explicit && explicit.isConnected && isFocusable(explicit)) {
+    const explicit = this.resolveReturnTarget();
+    if (explicit?.isConnected) {
       explicit.focus();
       return;
     }
     const opener = this.openerElement;
-    if (opener && opener.isConnected && isFocusable(opener)) {
+    if (opener?.isConnected) {
       opener.focus();
       return;
     }
-    const snapshot = this.documentFocusableSnapshot;
-    const openerIndex = opener ? snapshot.indexOf(opener) : -1;
-    if (openerIndex === -1) {
+    const marker = this.openerMarker;
+    if (!marker?.isConnected) {
       return;
     }
-    const isUsable = (el: HTMLElement): boolean => el !== opener && el.isConnected && isFocusable(el);
-    for (let i = openerIndex + 1; i < snapshot.length; i += 1) {
-      if (isUsable(snapshot[i]!)) {
-        snapshot[i]!.focus();
-        return;
-      }
-    }
-    for (let i = openerIndex - 1; i >= 0; i -= 1) {
-      if (isUsable(snapshot[i]!)) {
-        snapshot[i]!.focus();
-        return;
-      }
-    }
+    const all: HTMLElement[] = [];
+    collectFocusable(document.body, all);
+    const next = all.find(
+      (el) => !this.scopeContains(el) && Boolean(marker.compareDocumentPosition(documentHost(el)) & Node.DOCUMENT_POSITION_FOLLOWING),
+    );
+    next?.focus();
+  }
+
+  private async settleChildren(): Promise<void> {
+    const slot = this.shadowRoot?.querySelector('slot');
+    const elements = (slot?.assignedElements({ flatten: true }) ?? []).flatMap((el) => [
+      el,
+      ...Array.from(el.querySelectorAll('*')),
+    ]);
+    await Promise.all(elements.map((el) => (el as Partial<LitElement>).updateComplete));
   }
 
   private getFocusableDescendants(): HTMLElement[] {
@@ -331,22 +405,28 @@ export class DsFocusScope extends LitElement {
     return results;
   }
 
+  /** Composed-tree containment: focus inside a slotted child's own shadow root still counts as inside. */
   private scopeContains(el: Element): boolean {
-    if (this.contains(el)) {
-      return true;
+    let node: Node | null = el;
+    while (node) {
+      if (node === this) {
+        return true;
+      }
+      node = node.parentNode instanceof ShadowRoot ? node.parentNode.host : node.parentNode;
     }
-    return this.shadowRoot?.contains(el) ?? false;
+    return false;
   }
 
-  private isEffectivelyActive(): boolean {
-    if (!this.active || !this.isConnected) {
+  /** Trapped, active, connected, and the top active scope on the stack. */
+  private isEffective(): boolean {
+    if (!this.trapped || !this.active || !this.isConnected) {
       return false;
     }
-    const trappedActive = scopeStack.filter((scope) => scope.trapped && scope.active);
-    return trappedActive[trappedActive.length - 1] === this;
+    const activeScopes = scopeStack.filter((scope) => scope.active);
+    return activeScopes[activeScopes.length - 1] === this;
   }
 
-  private dispatchEscapeAttempt(direction: 'forward' | 'backward'): void {
+  private dispatchEscapeAttempt(direction: FocusScopeEscapeAttemptDirection): void {
     this.dispatchEvent(
       new CustomEvent<FocusScopeEscapeAttemptDetail>('escape-attempt', {
         detail: { direction },
@@ -357,11 +437,11 @@ export class DsFocusScope extends LitElement {
   }
 
   private warnInDev(): void {
-    if (!import.meta.env.DEV || !this.trapped) {
+    if (!import.meta.env.DEV || !this.trapped || !this.active) {
       return;
     }
     if (this.getFocusableDescendants().length === 0) {
-      console.warn('<ds-focus-scope trapped> has no focusable descendants; it would trap focus with no escape.', this);
+      console.warn('<ds-focus-scope> is trapped with no focusable descendants; it would trap focus with no escape.', this);
     }
   }
 }

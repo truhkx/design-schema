@@ -327,10 +327,10 @@ export class DsAlertDialog extends LitElement {
         <div class="surface${this.closing ? ' closing' : ''}" part="surface">
           <ds-focus-scope
             part="focus-scope"
-            trapped
-            ?active=${this.open}
+            .trapped=${true}
+            .active=${this.open}
             auto-focus="none"
-            ?restore-focus=${false}
+            .restoreFocus=${false}
             style="display: flex; flex-direction: column; gap: var(--ds-alert-dialog-part-gap)"
           >
             <div class="content">

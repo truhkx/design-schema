@@ -1,15 +1,19 @@
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useImperativeHandle,
   useRef,
   useState,
   useSyncExternalStore,
   type ComponentPropsWithoutRef,
+  type Context,
   type CSSProperties,
-  type Ref, type ReactElement, type ReactPortal,
+  type ReactElement,
+  type Ref,
 } from 'react';
-import { createPortal } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -19,9 +23,13 @@ import './Toast.css';
 
 export type ToastTone = 'neutral' | 'success' | 'warning' | 'danger';
 export type ToastDuration = 'short' | 'long' | 'persistent';
-export type ToastDismissReason = 'timeout' | 'dismiss-button' | 'action' | 'replaced';
+export type ToastDismissReason = 'timeout' | 'dismiss-button' | 'escape' | 'action' | 'replaced';
 
-/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+/**
+ * Style bindings that can be overridden on a toast; accessibility-bearing bindings are never in
+ * this list. `stackGap`, `regionInset` and `layer` belong to the region: see
+ * `ToastRegionOverridableBinding`.
+ */
 export type ToastOverridableBinding =
   | 'radius'
   | 'shadow'
@@ -49,11 +57,24 @@ const OVERRIDE_HOOK: Record<ToastOverridableBinding, string> = {
   exit: '--ds-toast-exit',
 };
 
-function overridesToStyle(overrides: Partial<Record<ToastOverridableBinding, TokenRef | undefined>>): CSSProperties {
+/** Style bindings that can be overridden on the region (ToastRegion). */
+export type ToastRegionOverridableBinding = 'stackGap' | 'regionInset' | 'layer';
+
+const REGION_OVERRIDE_HOOK: Record<ToastRegionOverridableBinding, string> = {
+  stackGap: '--ds-toast-stack-gap',
+  regionInset: '--ds-toast-region-inset',
+  layer: '--ds-toast-layer',
+};
+
+function hooksToStyle<Binding extends string>(
+  hooks: Record<Binding, string>,
+  overrides: Partial<Record<Binding, TokenRef | undefined>> | undefined,
+): CSSProperties | undefined {
+  if (!overrides) return undefined;
   const style: Record<string, string> = {};
-  for (const binding of Object.keys(overrides) as ToastOverridableBinding[]) {
+  for (const binding of Object.keys(hooks) as Binding[]) {
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    if (ref) style[hooks[binding]] = cssVar(ref);
   }
   return style as CSSProperties;
 }
@@ -64,6 +85,23 @@ const COPY = { dismissLabel: 'Dismiss', regionLabel: 'Notifications' };
 declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
+/** Constants `shortDuration` / `longDuration`: motion.duration.loop × 6 / × 12, in ms. */
+const LOOP_MULTIPLIER: Record<Exclude<ToastDuration, 'persistent'>, number> = { short: 6, long: 12 };
+
+/** A resolved CSS time (`800ms`, `0.8s`) in ms; `null` when it cannot be read. */
+function parseTime(value: string): number | null {
+  const match = /^(-?\d*\.?\d+)(ms|s)$/.exec(value.trim());
+  if (!match) return null;
+  const amount = Number(match[1]);
+  return match[2] === 's' ? amount * 1000 : amount;
+}
+
+/** The resolved motion.duration.loop on `el`, or `null` when the theme's tokens are not loaded. */
+function resolveLoopMs(el: Element): number | null {
+  const ms = parseTime(getComputedStyle(el).getPropertyValue('--motion-duration-loop'));
+  return ms !== null && ms > 0 ? ms : null;
+}
+
 /** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
@@ -71,33 +109,37 @@ function prefersReducedMotion(): boolean {
     : false;
 }
 
-/**
- * `short`/`long` in ms. Computed from the doc's stated ~5s/~10s (motion.duration.loop × 6 / × 12);
- * hardcoded because a component has no way to read the active theme's resolved token value at
- * runtime without measuring the DOM (same reasoning as Tooltip's `DEFAULT_DELAY_MS`), so themes
- * with a different `motion.duration.loop` still get exactly these fallback times.
- */
-const SHORT_DURATION_MS = 5000;
-const LONG_DURATION_MS = 10000;
-
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-/** Moves focus to the next focusable element after `root` in reading order, or the previous one when there is none. */
-function focusOutside(root: HTMLElement) {
+/** Where focus was before it entered the toast region (by F6 or Tab); Escape and the buttons send it back. */
+let returnFocusTarget: HTMLElement | null = null;
+
+/** Moves focus to the element it came from, or else the next focusable element after `root` (the previous one when there is none). */
+function returnFocus(root: HTMLElement): void {
+  const target = returnFocusTarget;
+  returnFocusTarget = null;
+  if (target && target.isConnected && !root.contains(target)) {
+    target.focus();
+    return;
+  }
   const candidates = Array.from(root.ownerDocument.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
     (el) => !root.contains(el),
   );
-  const isAfter = (el: HTMLElement) => (root.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  const isAfter = (el: HTMLElement): boolean =>
+    (root.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
   const next = candidates.find(isAfter);
   const previous = next === undefined ? candidates.filter((el) => !isAfter(el)).pop() : undefined;
   (next ?? previous)?.focus();
 }
 
-export interface ToastProps
-  extends Omit<
-    ComponentPropsWithoutRef<'div'>,
-    'id' | 'children' | 'role' | 'onPointerEnter' | 'onPointerLeave' | 'onFocus' | 'onBlur' | 'onKeyDown'
-  > {
+/** The region's timing, measured once at region mount; `loopMs` is `undefined` until then. */
+interface RegionTiming {
+  loopMs: number | null | undefined;
+}
+
+const ToastRegionContext: Context<RegionTiming | null> = createContext<RegionTiming | null>(null);
+
+export interface ToastProps extends Omit<ComponentPropsWithoutRef<'div'>, 'id' | 'children' | 'role' | 'style' | 'className'> {
   /** One sentence saying what happened ("Message sent", "3 files deleted"). */
   message: string;
   /** Sets the leading icon; `neutral` has none. Toasts do not use tinted backgrounds — the icon and message carry the tone. */
@@ -105,8 +147,10 @@ export interface ToastProps
   /** Label for a single action button ("Undo", "View"). When present the toast stays longer and pauses on hover and focus. */
   actionLabel?: string | undefined;
   /**
-   * `short` ≈ 5s, `long` ≈ 10s, `persistent` until dismissed — required when there is an action
-   * the user may need time to take, and for danger tone.
+   * `short` ≈ 5s, `long` ≈ 10s (both computed from motion.duration.loop × 6 / × 12 so themes
+   * without motion still get sensible times), `persistent` until dismissed. When `action` is set or
+   * `tone` is danger the toast is persistent regardless of this prop (a dev warning notes the
+   * override).
    */
   duration?: ToastDuration | undefined;
   /** Shows a dismiss button. Persistent toasts are always dismissible. */
@@ -115,7 +159,7 @@ export interface ToastProps
   toastId?: string | undefined;
   /** The action button was activated. The toast dismisses. */
   onAction?: (() => void) | undefined;
-  /** The toast left the screen: reason `timeout`, `dismiss-button`, `action`, or `replaced`. */
+  /** The toast left the screen: reason `timeout`, `dismiss-button`, `escape`, `action`, or `replaced`. */
   onDismiss?: ((reason: ToastDismissReason) => void) | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<ToastOverridableBinding, TokenRef | undefined>> | undefined;
@@ -129,62 +173,91 @@ export interface ToastProps
  * deleted, copied), to offer Undo for a reversible action, or to report a background result
  * ("Export ready" with a "View" action). Match `tone` to the outcome; use `persistent` whenever
  * there is an action, and for `danger`, so nobody misses the one they needed.
+ *
+ * Toasts are normally shown with `toast({ message })`, which renders them in the one
+ * `ToastRegion`; rendering `<Toast>` directly is for previews and custom hosts.
  */
-export const Toast = function Toast({
+export function Toast({
   ref,
   message,
   tone = 'neutral',
   actionLabel,
-  duration = 'short',
+  duration,
   dismissible = true,
-  toastId,
+  toastId: _toastId,
   onAction,
   onDismiss,
   overrides,
-  className,
-  style,
   ...rest
-}: ToastProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
+}: ToastProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement | null {
   const rootRef = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => rootRef.current as HTMLDivElement, []);
 
+  const regionTiming = useContext(ToastRegionContext);
+  const [ownLoopMs, setOwnLoopMs] = useState<number | null | undefined>(undefined);
+  const loopMs = regionTiming ? regionTiming.loopMs : ownLoopMs;
+
   const [visible, setVisible] = useState(false);
+  const [gone, setGone] = useState(false);
   const dismissedRef = useRef(false);
-  const pendingReasonRef = useRef<ToastDismissReason | null>(null);
-  const hoveringRef = useRef(false);
-  const focusedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onDismissLatest = useRef(onDismiss);
   onDismissLatest.current = onDismiss;
 
-  // An action or danger tone forces the toast to stay until dismissed, regardless of `duration`.
+  // An action or danger tone keeps the toast until dismissed, regardless of `duration`.
   const forcedPersistent = Boolean(actionLabel) || tone === 'danger';
-  const effectiveDuration: ToastDuration = forcedPersistent ? 'persistent' : duration;
+  const effectiveDuration: ToastDuration = forcedPersistent ? 'persistent' : (duration ?? 'short');
   const showDismiss = dismissible || effectiveDuration === 'persistent';
 
-  if (isDev && !message) {
-    console.warn('Toast: `message` is required and is the toast’s content; it must not be empty.');
-  }
-  if (isDev && duration !== 'persistent' && forcedPersistent) {
-    console.warn(
-      'Toast: `duration` should be `persistent` when an action is present or `tone` is `danger`, so the toast is never missed.',
-    );
-  }
+  useEffect(() => {
+    if (isDev && forcedPersistent && duration !== undefined && duration !== 'persistent') {
+      console.warn(
+        `Toast: \`duration: ${duration}\` is ignored — a toast with an action or \`tone: danger\` is persistent until dismissed.`,
+      );
+    }
+  }, [forcedPersistent, duration]);
 
-  const dismiss = useCallback((reason: ToastDismissReason) => {
-    if (dismissedRef.current) return;
+  // Outside a region, measure motion.duration.loop on the toast itself at mount.
+  useEffect(() => {
+    if (regionTiming || !rootRef.current) return;
+    setOwnLoopMs(resolveLoopMs(rootRef.current));
+  }, [regionTiming]);
+
+  const dismiss = useCallback((reason: Exclude<ToastDismissReason, 'replaced'>) => {
+    const node = rootRef.current;
+    if (dismissedRef.current || !node) return;
     dismissedRef.current = true;
-    pendingReasonRef.current = reason;
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    if (node.contains(node.ownerDocument.activeElement)) returnFocus(node);
+
+    const finish = (): void => {
+      setGone(true);
+      onDismissLatest.current?.(reason);
+    };
+    // The exit transition runs for the resolved `exit` hook; onDismiss fires once it has finished.
+    const exitMs = prefersReducedMotion() ? null : parseTime(getComputedStyle(node).getPropertyValue('--ds-toast-exit'));
+    if (exitMs === null || exitMs <= 0) {
+      finish();
+      return;
+    }
     setVisible(false);
+    exitTimerRef.current = setTimeout(finish, exitMs);
   }, []);
 
-  // Enter: reveal on the next frame so the transition runs; instant under reduced motion.
+  useEffect(
+    () => () => {
+      if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+    },
+    [],
+  );
+
+  // Enter: reveal on the next frame so the rise-and-fade runs; instant under reduced motion.
   useEffect(() => {
-    if (prefersReducedMotion()) {
+    if (prefersReducedMotion() || typeof requestAnimationFrame !== 'function') {
       setVisible(true);
       return undefined;
     }
@@ -192,151 +265,118 @@ export const Toast = function Toast({
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  // Exit: once `visible` drops for a dismissal, wait for the transition (or fire immediately under
-  // reduced motion) before telling the consumer the toast is actually gone.
+  // Auto-dismiss: paused while hovered or touched, focused within, or the page is hidden. Without a
+  // resolvable motion.duration.loop there is no time to count, so the toast stays until dismissed.
   useEffect(() => {
-    if (visible || !dismissedRef.current) return undefined;
-    const reason = pendingReasonRef.current;
-    if (!reason) return undefined;
-    if (prefersReducedMotion()) {
-      onDismissLatest.current?.(reason);
-      return undefined;
-    }
     const node = rootRef.current;
-    if (!node) return undefined;
-    const handleTransitionEnd = (event: TransitionEvent) => {
-      if (event.target !== node || event.propertyName !== 'opacity') return;
-      onDismissLatest.current?.(reason);
-    };
-    node.addEventListener('transitionend', handleTransitionEnd);
-    return () => node.removeEventListener('transitionend', handleTransitionEnd);
-  }, [visible]);
+    if (effectiveDuration === 'persistent' || loopMs === undefined || loopMs === null || !node) return undefined;
+    let remaining = loopMs * LOOP_MULTIPLIER[effectiveDuration];
+    let startedAt = 0;
+    let hovering = false;
+    let focused = node.contains(node.ownerDocument.activeElement);
 
-  // Auto-dismiss timer: paused while hovered, focused-within, or the page is hidden.
-  useEffect(() => {
-    if (effectiveDuration === 'persistent') return undefined;
-    let remaining = effectiveDuration === 'long' ? LONG_DURATION_MS : SHORT_DURATION_MS;
-    let startedAt = Date.now();
-
-    const start = () => {
+    const start = (): void => {
+      if (timerRef.current || dismissedRef.current || hovering || focused || document.hidden) return;
       startedAt = Date.now();
       timerRef.current = setTimeout(() => dismiss('timeout'), remaining);
     };
-    const pause = () => {
+    const pause = (): void => {
       if (!timerRef.current) return;
       clearTimeout(timerRef.current);
       timerRef.current = null;
       remaining -= Date.now() - startedAt;
     };
-    const resume = () => {
-      if (timerRef.current || dismissedRef.current) return;
-      if (hoveringRef.current || focusedRef.current || document.hidden) return;
+    const handlePointerEnter = (): void => {
+      hovering = true;
+      pause();
+    };
+    const handlePointerLeave = (): void => {
+      hovering = false;
       start();
+    };
+    const handleFocusIn = (): void => {
+      focused = true;
+      pause();
+    };
+    const handleFocusOut = (event: FocusEvent): void => {
+      if (node.contains(event.relatedTarget as Node | null)) return;
+      focused = false;
+      start();
+    };
+    const handleVisibilityChange = (): void => {
+      if (document.hidden) pause();
+      else start();
     };
 
     start();
-
-    const node = rootRef.current;
-    const handlePointerEnter = () => {
-      hoveringRef.current = true;
-      pause();
-    };
-    const handlePointerLeave = () => {
-      hoveringRef.current = false;
-      resume();
-    };
-    const handleFocusIn = () => {
-      focusedRef.current = true;
-      pause();
-    };
-    const handleFocusOut = (event: FocusEvent) => {
-      if (node?.contains(event.relatedTarget as Node | null)) return;
-      focusedRef.current = false;
-      resume();
-    };
-    const handleVisibilityChange = () => {
-      if (document.hidden) pause();
-      else resume();
-    };
-
-    node?.addEventListener('pointerenter', handlePointerEnter);
-    node?.addEventListener('pointerleave', handlePointerLeave);
-    node?.addEventListener('focusin', handleFocusIn);
-    node?.addEventListener('focusout', handleFocusOut);
+    node.addEventListener('pointerenter', handlePointerEnter);
+    node.addEventListener('pointerleave', handlePointerLeave);
+    node.addEventListener('focusin', handleFocusIn);
+    node.addEventListener('focusout', handleFocusOut);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-      node?.removeEventListener('pointerenter', handlePointerEnter);
-      node?.removeEventListener('pointerleave', handlePointerLeave);
-      node?.removeEventListener('focusin', handleFocusIn);
-      node?.removeEventListener('focusout', handleFocusOut);
+      node.removeEventListener('pointerenter', handlePointerEnter);
+      node.removeEventListener('pointerleave', handlePointerLeave);
+      node.removeEventListener('focusin', handleFocusIn);
+      node.removeEventListener('focusout', handleFocusOut);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [effectiveDuration, dismiss]);
+  }, [effectiveDuration, loopMs, dismiss]);
 
-  // Escape dismisses the focused toast and moves focus out first, so it is never lost.
+  // Remember where focus came from when it enters by Tab, and dismiss on Escape.
   useEffect(() => {
     const node = rootRef.current;
     if (!node) return undefined;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.stopPropagation();
-      focusOutside(node);
-      dismiss('dismiss-button');
+    const handleFocusIn = (event: FocusEvent): void => {
+      const from = event.relatedTarget;
+      const region = node.closest('[data-ds="ToastRegion"]') ?? node;
+      if (from instanceof HTMLElement && !region.contains(from)) returnFocusTarget = from;
     };
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      dismiss('escape');
+    };
+    node.addEventListener('focusin', handleFocusIn);
     node.addEventListener('keydown', handleKeyDown);
-    return () => node.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      node.removeEventListener('focusin', handleFocusIn);
+      node.removeEventListener('keydown', handleKeyDown);
+    };
   }, [dismiss]);
 
-  const handleActionClick = () => {
+  if (gone) return null;
+
+  const handleActionClick = (): void => {
     onAction?.();
     dismiss('action');
   };
-  const handleDismissClick = () => dismiss('dismiss-button');
-
-  const classes = ['ds-toast', visible ? 'ds-toast--entered' : null, className ?? null].filter(Boolean).join(' ');
-
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
 
   return (
     <div
       {...rest}
       ref={rootRef}
-      id={toastId}
       data-ds="Toast"
       data-part="toast"
-      data-tone={tone}
-      className={classes}
-      style={mergedStyle}
+      className={`ds-toast ds-toast--${tone}${visible ? ' ds-toast--entered' : ''}`}
+      style={hooksToStyle(OVERRIDE_HOOK, overrides)}
       role={tone === 'danger' ? 'alert' : 'status'}
     >
       {tone !== 'neutral' ? (
-        <span className="ds-toast__icon" data-part="icon" aria-hidden="true">
-          <Icon name={tone} overrides={{ color: `color.inverse.status.${tone}` as TokenRef }} />
-        </span>
+        <Icon data-part="icon" name={tone} overrides={{ color: `color.inverse.status.${tone}` as TokenRef }} />
       ) : null}
-      <Text
-        element="span"
-        data-part="message"
-        className="ds-toast__message"
-        // The inverse-surface color is not forwarded here: Text's `color` binding is locked, so the
-        // message reads Toast's own `--ds-toast-text` hook through `.ds-toast__message` instead.
-        overrides={{
-          ...(overrides?.fontFamily ? { fontFamily: overrides.fontFamily } : null),
-          ...(overrides?.fontSize ? { fontSize: overrides.fontSize } : null),
-          ...(overrides?.lineHeight ? { lineHeight: overrides.lineHeight } : null),
-        }}
-      >
+      <Text element="span" data-part="message">
         {message}
       </Text>
+      {/* Button owns its root's data-part, so each button part is a wrapper around it (as in Alert). */}
       {actionLabel ? (
         <span className="ds-toast__action" data-part="actionButton">
-          <Button variant="ghost" inverse size="sm" label={actionLabel} onClick={handleActionClick} />
+          <Button variant="ghost" inverse label={actionLabel} onClick={handleActionClick} />
         </span>
       ) : null}
       {showDismiss ? (
@@ -344,127 +384,116 @@ export const Toast = function Toast({
           <Button
             variant="ghost"
             inverse
-            size="sm"
             iconOnly
             label={COPY.dismissLabel}
             leadingIcon={<Icon name="close" inline />}
-            onClick={handleDismissClick}
+            onClick={() => dismiss('dismiss-button')}
           />
         </span>
       ) : null}
     </div>
   );
-};
+}
 
-/** Options for the imperative `toast()` call; the same fields as `ToastProps`, minus what only makes sense on a directly-rendered `<Toast>`. */
+/** Options for `toast()`: the toast's props, shown in the region. */
 export interface ToastOptions {
+  /** One sentence saying what happened ("Message sent", "3 files deleted"). */
   message: string;
+  /** Sets the leading icon; `neutral` has none. */
   tone?: ToastTone | undefined;
+  /** Label for a single action button ("Undo", "View"). */
   actionLabel?: string | undefined;
+  /** `short` ≈ 5s, `long` ≈ 10s, `persistent` until dismissed. */
   duration?: ToastDuration | undefined;
+  /** Shows a dismiss button. Persistent toasts are always dismissible. */
   dismissible?: boolean | undefined;
+  /** Stable identity; showing a toast with the same toastId replaces the previous one instead of stacking. */
   toastId?: string | undefined;
+  /** The action button was activated. The toast dismisses. */
   onAction?: (() => void) | undefined;
+  /** The toast left the screen. */
   onDismiss?: ((reason: ToastDismissReason) => void) | undefined;
 }
 
 interface ToastEntry {
-  id: string;
-  message: string;
-  tone: ToastTone;
-  actionLabel?: string | undefined;
-  duration: ToastDuration;
-  dismissible: boolean;
-  onAction?: (() => void) | undefined;
-  onDismiss?: ((reason: ToastDismissReason) => void) | undefined;
+  key: number;
+  options: ToastOptions;
+  resolve: (result: { reason: ToastDismissReason }) => void;
 }
 
+/** "Do not stack more than three; the region replaces the oldest." */
 const MAX_STACKED = 3;
 
 let entries: ToastEntry[] = [];
 const listeners = new Set<() => void>();
-let toastCounter = 0;
+let entryCounter = 0;
+let regionMountCount = 0;
+let autoRoot: Root | null = null;
 
-function notify() {
+function notify(): void {
   for (const listener of listeners) listener();
 }
 
-function subscribe(listener: () => void) {
+function subscribe(listener: () => void): () => void {
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
-function getSnapshot() {
+function getSnapshot(): ToastEntry[] {
   return entries;
 }
 
-/** Called by a Toast's own `onDismiss` once it has finished its exit transition. */
-function removeEntry(id: string, reason: ToastDismissReason) {
-  const target = entries.find((entry) => entry.id === id);
-  if (!target) return;
-  entries = entries.filter((entry) => entry.id !== id);
+function settle(entry: ToastEntry, reason: ToastDismissReason): void {
+  entry.options.onDismiss?.(reason);
+  entry.resolve({ reason });
+}
+
+/** A toast finished leaving on its own (timeout, button, Escape, action). */
+function removeEntry(key: number, reason: ToastDismissReason): void {
+  const entry = entries.find((item) => item.key === key);
+  if (!entry) return;
+  entries = entries.filter((item) => item.key !== key);
   notify();
-  target.onDismiss?.(reason);
+  settle(entry, reason);
 }
 
-function pushEntry(entry: ToastEntry) {
-  const existingIndex = entries.findIndex((item) => item.id === entry.id);
-  if (existingIndex !== -1) {
-    const previous = entries[existingIndex];
-    const next = entries.slice();
-    next[existingIndex] = entry;
-    entries = next;
-    previous!.onDismiss?.('replaced');
-  } else {
-    let next = [...entries, entry];
-    let evicted: ToastEntry | null = null;
-    if (next.length > MAX_STACKED) {
-      evicted = next[0]!;
-      next = next.slice(1);
-    }
-    entries = next;
-    evicted?.onDismiss?.('replaced');
-  }
+/** Adds a toast; one with the same toastId, or the oldest beyond three, leaves immediately as `replaced`. */
+function pushEntry(entry: ToastEntry): void {
+  const id = entry.options.toastId;
+  const replaced = id === undefined ? undefined : entries.find((item) => item.options.toastId === id);
+  let next = replaced ? entries.map((item) => (item === replaced ? entry : item)) : [...entries, entry];
+  const evicted = next.length > MAX_STACKED ? next.slice(0, next.length - MAX_STACKED) : [];
+  next = next.slice(evicted.length);
+  entries = next;
   notify();
+  if (replaced) settle(replaced, 'replaced');
+  for (const item of evicted) settle(item, 'replaced');
 }
-
-/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
-export type ToastRegionOverridableBinding = 'regionInset' | 'stackGap' | 'layer';
-
-const REGION_OVERRIDE_HOOK: Record<ToastRegionOverridableBinding, string> = {
-  regionInset: '--ds-toast-region-inset',
-  stackGap: '--ds-toast-region-stack-gap',
-  layer: '--ds-toast-region-layer',
-};
-
-function regionOverridesToStyle(overrides: Partial<Record<ToastRegionOverridableBinding, TokenRef | undefined>>): CSSProperties {
-  const style: Record<string, string> = {};
-  for (const binding of Object.keys(overrides) as ToastRegionOverridableBinding[]) {
-    const ref = overrides[binding];
-    if (ref) style[REGION_OVERRIDE_HOOK[binding]] = cssVar(ref);
-  }
-  return style as CSSProperties;
-}
-
-let regionMountCount = 0;
 
 export interface ToastRegionProps {
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  /** Per-instance style overrides for the region's own bindings (`stackGap`, `regionInset`, `layer`). */
   overrides?: Partial<Record<ToastRegionOverridableBinding, TokenRef | undefined>> | undefined;
+  /** Portal target; defaults to `document.body`. */
+  container?: HTMLElement | undefined;
 }
 
 /**
- * ToastRegion — the one persistent landmark that holds every visible Toast.
+ * ToastRegion — the one persistent `role="region"` live region that holds every visible Toast.
  *
- * Mount it once at the app root (or let `toast()` auto-mount it on first use). It exists before
- * any toast so announcements fire, is reachable from anywhere with F6, and stacks up to three
- * toasts above one another, newest last.
+ * Mount it once at the app root, or let `toast()` create it on first use. It exists before any
+ * toast so announcements fire; F6 moves focus into it from anywhere and back again.
  */
-export const ToastRegion = function ToastRegion({ ref, overrides }: ToastRegionProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactPortal | null {
+export function ToastRegion({
+  ref,
+  overrides,
+  container,
+}: ToastRegionProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement | null {
   const list = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const regionRef = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => regionRef.current as HTMLDivElement, []);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const [timing, setTiming] = useState<RegionTiming>({ loopMs: undefined });
 
   useEffect(() => {
     regionMountCount += 1;
@@ -473,34 +502,38 @@ export const ToastRegion = function ToastRegion({ ref, overrides }: ToastRegionP
     };
   }, []);
 
-  // F6 moves focus into the region's first toast from anywhere, and back out again on a second press.
+  // The two durations come from motion.duration.loop as resolved on the region at mount.
+  useEffect(() => {
+    if (regionRef.current) setTiming({ loopMs: resolveLoopMs(regionRef.current) });
+  }, []);
+
+  // F6 moves focus to the first toast's first button from anywhere, and back where it was on the next press.
   useEffect(() => {
     if (list.length === 0) return undefined;
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== 'F6') return;
       const region = regionRef.current;
       if (!region) return;
       if (region.contains(document.activeElement)) {
-        const previous = previousFocusRef.current;
-        if (!previous) return;
+        const target = returnFocusTarget;
+        returnFocusTarget = null;
+        if (!target || !target.isConnected) return;
         event.preventDefault();
-        previousFocusRef.current = null;
-        previous.focus();
-      } else {
-        const target = region.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-        if (!target) return;
-        event.preventDefault();
-        previousFocusRef.current = document.activeElement as HTMLElement | null;
         target.focus();
+        return;
       }
+      const first = region.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+      if (!first) return;
+      event.preventDefault();
+      const active = document.activeElement;
+      returnFocusTarget = active instanceof HTMLElement && active !== document.body ? active : null;
+      first.focus();
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [list.length]);
 
-  if (list.length === 0) return null;
-
-  const overrideStyle = overrides ? regionOverridesToStyle(overrides) : undefined;
+  if (typeof document === 'undefined') return null;
 
   return createPortal(
     <div
@@ -511,68 +544,46 @@ export const ToastRegion = function ToastRegion({ ref, overrides }: ToastRegionP
       data-ds="ToastRegion"
       data-part="region"
       className="ds-toast-region"
-      style={overrideStyle}
+      style={hooksToStyle(REGION_OVERRIDE_HOOK, overrides)}
     >
-      {list.map((entry) => (
-        <Toast
-          key={entry.id}
-          toastId={entry.id}
-          message={entry.message}
-          tone={entry.tone}
-          actionLabel={entry.actionLabel}
-          duration={entry.duration}
-          dismissible={entry.dismissible}
-          onAction={entry.onAction}
-          onDismiss={(reason) => removeEntry(entry.id, reason)}
-        />
-      ))}
+      <ToastRegionContext.Provider value={timing}>
+        {list.map((entry) => (
+          <Toast
+            key={entry.key}
+            message={entry.options.message}
+            tone={entry.options.tone}
+            actionLabel={entry.options.actionLabel}
+            duration={entry.options.duration}
+            dismissible={entry.options.dismissible}
+            toastId={entry.options.toastId}
+            onAction={entry.options.onAction}
+            onDismiss={(reason) => removeEntry(entry.key, reason)}
+          />
+        ))}
+      </ToastRegionContext.Provider>
     </div>,
-    document.body,
+    container ?? document.body,
   );
-};
-
-let autoRoot: Root | null = null;
-
-/** Creates a `<ToastRegion>` in `document.body` the first time `toast()` is called with none mounted. */
-function ensureRegionMounted() {
-  if (regionMountCount > 0 || autoRoot || typeof document === 'undefined') return;
-  const container = document.createElement('div');
-  document.body.appendChild(container);
-  autoRoot = createRoot(container);
-  autoRoot.render(<ToastRegion />);
 }
 
 /**
  * Shows a toast. A notification is an event, not a place in the tree, so it is called rather than
- * rendered: `toast({ message: 'Link copied' })`. Returns the toast's `id`.
+ * rendered: `toast({ message: 'Link copied' })`. Resolves with `{ reason }` when the toast leaves.
  */
-export function toast(options: ToastOptions): string {
-  const id = options.toastId ?? `ds-toast-${++toastCounter}`;
-  const tone = options.tone ?? 'neutral';
-  const duration = options.duration ?? 'short';
-
-  if (isDev) {
-    if (!options.message) {
-      console.warn('toast: `message` is required and is the toast’s content; it must not be empty.');
+export function toast(options: ToastOptions): Promise<{ reason: ToastDismissReason }> {
+  return new Promise((resolve) => {
+    const entry: ToastEntry = { key: ++entryCounter, options, resolve };
+    if (regionMountCount > 0 || autoRoot || typeof document === 'undefined') {
+      pushEntry(entry);
+      return;
     }
-    if (duration !== 'persistent' && (options.actionLabel || tone === 'danger')) {
-      console.warn(
-        'toast: `duration` should be `persistent` when an action is present or `tone` is `danger`, so the toast is never missed.',
-      );
-    }
-  }
-
-  pushEntry({
-    id,
-    message: options.message,
-    tone,
-    actionLabel: options.actionLabel,
-    duration,
-    dismissible: options.dismissible ?? true,
-    onAction: options.onAction,
-    onDismiss: options.onDismiss,
+    // Create the region empty first, so the live region exists before the content it announces.
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    autoRoot = root;
+    flushSync(() => root.render(<ToastRegion />));
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => pushEntry(entry));
+    else pushEntry(entry);
   });
-  ensureRegionMounted();
-
-  return id;
 }

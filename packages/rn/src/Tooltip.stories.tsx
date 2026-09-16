@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { View } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './Button';
 import { Icon } from './Icon';
+import { Stack } from './Stack';
+import { Toolbar } from './Toolbar';
 import { Tooltip } from './Tooltip';
 import { withTheme } from './decorators';
 
@@ -35,40 +36,80 @@ export const PlacementEnd: Story = { args: { placement: 'end' } };
 export const DelayDefault: Story = { args: { delay: 'default' } };
 export const DelayNone: Story = { args: { delay: 'none' } };
 
-// describes
-export const DescribesClarification: Story = {
-  args: {
-    content: 'Includes archived items',
-    describes: true,
-    children: <Button label="Search" />,
-  },
-};
+// states
+export const Open: Story = { args: { open: true } };
 
 export const WithOverrides: Story = {
   args: {
-    overrides: { radius: 'radius.full', maxWidth: 'space.16' },
+    open: true,
+    overrides: { radius: 'radius.md', maxWidth: 'space.20' },
+  },
+};
+
+// examples
+
+/** The tooltip is the control's name, not a second announcement, so it is linked as the label. */
+export const IconOnlyButtonName: Story = {
+  args: {
+    content: 'Bold',
+    // The icon table has no `bold` glyph yet; `plus` stands in.
+    children: <Button iconOnly label="Bold" leadingIcon={<Icon name="plus" />} />,
+    describes: false,
+  },
+};
+
+/** A clarification on a labelled control in dense UI. */
+export const ColumnHeaderHint: Story = {
+  args: {
+    content: 'Includes archived items',
+    children: <Button variant="ghost" size="sm" label="Items" />,
+    describes: true,
+  },
+};
+
+/** A toolbar where a sibling tooltip is already open, so the next one shows instantly. */
+export const WarmToolbar: Story = {
+  args: {
+    content: 'Italic',
+    children: <Button iconOnly variant="ghost" label="Italic" leadingIcon={<Icon name="minus" />} />,
+    delay: 'none',
+  },
+  render: (args) => (
+    <Toolbar label="Formatting">
+      <Tooltip content="Bold" describes={false} delay="none">
+        <Button iconOnly variant="ghost" label="Bold" leadingIcon={<Icon name="plus" />} />
+      </Tooltip>
+      <Tooltip {...args} describes={false} />
+    </Toolbar>
+  ),
+};
+
+/** A trigger at the top of the page, where the bubble reads better underneath. */
+export const BelowTheTrigger: Story = {
+  args: {
+    content: 'Copy link',
+    children: <Button iconOnly label="Copy link" leadingIcon={<Icon name="external" />} />,
+    placement: 'bottom',
   },
 };
 
 /**
- * Three focusable triggers in a row, each with its own tooltip — the toolbar shape
- * the "warm" delay behavior is written for. Focus or long-press a trigger to open
- * its tooltip for the axe gate and manual keyboard checks on react-native-web; there
- * is no `open` prop on this component (there is nothing to control — visibility is
- * entirely hover/focus/long-press driven), so it cannot be rendered pre-opened here.
+ * Rendered open (the `open` prop) on the first of three focusable triggers, for the axe
+ * gate and manual keyboard checks on react-native-web: Escape hides it without moving
+ * focus; focusing any trigger shows its own tooltip.
  */
 export const Keyboard: Story = {
   render: () => (
-    <View style={{ flexDirection: 'row', gap: 8 }}>
-      <Tooltip content="Add item" describes={false}>
-        <Button iconOnly label="Add item" leadingIcon={<Icon name="plus" />} variant="ghost" />
+    <Stack direction="horizontal" gap="tight">
+      <Tooltip content="Add item" describes={false} open>
+        <Button iconOnly variant="ghost" label="Add item" leadingIcon={<Icon name="plus" />} />
       </Tooltip>
       <Tooltip content="Remove item" describes={false}>
-        <Button iconOnly label="Remove item" leadingIcon={<Icon name="minus" />} variant="ghost" />
+        <Button iconOnly variant="ghost" label="Remove item" leadingIcon={<Icon name="minus" />} />
       </Tooltip>
       <Tooltip content="Search" describes={false}>
-        <Button iconOnly label="Search" leadingIcon={<Icon name="search" />} variant="ghost" />
+        <Button iconOnly variant="ghost" label="Search" leadingIcon={<Icon name="search" />} />
       </Tooltip>
-    </View>
+    </Stack>
   ),
 };

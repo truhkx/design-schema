@@ -186,7 +186,12 @@ export { DsDivider } from './Divider.js';
 export type { DividerOrientation, DividerSpacing, DividerOverridableBinding } from './Divider.js';
 
 export { DsFocusScope } from './FocusScope.js';
-export type { FocusScopeAutoFocus, FocusScopeEscapeAttemptDetail } from './FocusScope.js';
+export type {
+  FocusScopeAutoFocus,
+  FocusScopeEscapeAttemptDirection,
+  FocusScopeEscapeAttemptDetail,
+  FocusScopeReturnTarget,
+} from './FocusScope.js';
 
 export { DsDialog } from './Dialog.js';
 export type {

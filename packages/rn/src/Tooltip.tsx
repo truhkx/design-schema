@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Animated, I18nManager, Platform, View } from 'react-native';
-import type { LayoutChangeEvent, ViewStyle } from 'react-native';
+import { Animated, I18nManager, Platform, View, useWindowDimensions } from 'react-native';
+import type { LayoutChangeEvent, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Text, TextForegroundContext } from './Text';
@@ -27,162 +27,282 @@ export type TooltipOverridableBinding =
 export interface TooltipProps {
   /** The tooltip text. One short phrase or sentence; no markup, no links, no line breaks. */
   content: string;
-  /** Exactly one focusable element (a Button, Link, Input). The tooltip attaches to it. */
+  /** Exactly one focusable element (a Button, Link, Input). The tooltip attaches to it; a non-focusable child is an error. */
   children: React.ReactNode;
-  /** Preferred side; native has no viewport to flip against, so this is not adjusted automatically. */
+  /** Preferred side; flips when it would overflow the window (measured with `measureInWindow`). `start`/`end` are logical and mirror in right-to-left. */
   placement?: TooltipPlacement | undefined;
   /** `true`: supplementary, becomes the child's `accessibilityHint`. `false`: it IS the child's name and becomes `accessibilityLabel` instead. */
   describes?: boolean | undefined;
-  /** Hover delay (react-native-web only — there is no hover on touch): `default` waits `motion.duration.base` × 3; `none` shows instantly, as does any hover while a sibling tooltip is still "warm". */
+  /** Controlled visibility, for stories and tests only. Product code never sets it: a tooltip is hover, focus and long-press driven. */
+  open?: boolean | undefined;
+  /** Hover delay before showing (react-native-web): `default` waits `motion.duration.base` × 3; `none` shows instantly. */
   delay?: TooltipDelay | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<TooltipOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root `View`. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 type Size = { width: number; height: number };
+type Rect = Size & { x: number; y: number };
+type Sources = { hover: boolean; bubble: boolean; focus: boolean; press: boolean };
 
-/** Module-level "warm until" timestamp, shared by every Tooltip: moving the pointer from one just-hidden tooltip's trigger to the next shows it instantly instead of waiting out `delay`, the same toolbar behavior the web platform implements. */
+const NO_SOURCES: Sources = { hover: false, bubble: false, focus: false, press: false };
+
+/** Module-level "warm until" timestamp shared by every Tooltip: after one hides, a sibling hovered within `warmWindow` shows with no delay. */
 let warmUntil = 0;
 
-/** Positions the bubble from the trigger's own measured size — there is no portal, so this is relative to the shared parent rather than the window — flipping `start`/`end` against the writing direction. Does not flip `top`/`bottom` on overflow: unlike Menu's dropdown, native has no window-rect measurement wired up for this transient, non-portaled view. */
-function computeBubbleOffset(placement: TooltipPlacement, trigger: Size, bubble: Size, offset: number): ViewStyle {
-  switch (placement) {
-    case 'top':
-      return { bottom: trigger.height + offset, left: (trigger.width - bubble.width) / 2 };
-    case 'bottom':
-      return { top: trigger.height + offset, left: (trigger.width - bubble.width) / 2 };
-    case 'start':
-      return I18nManager.isRTL
-        ? { left: trigger.width + offset, top: (trigger.height - bubble.height) / 2 }
-        : { right: trigger.width + offset, top: (trigger.height - bubble.height) / 2 };
-    case 'end':
-      return I18nManager.isRTL
-        ? { right: trigger.width + offset, top: (trigger.height - bubble.height) / 2 }
-        : { left: trigger.width + offset, top: (trigger.height - bubble.height) / 2 };
-  }
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(value, max));
 }
 
 /**
+ * Positions the bubble from the trigger's window rect for `placement`, flipping to the
+ * opposite side when the preferred one would overflow the window and shifting the cross
+ * axis to stay inside it. Returns coordinates relative to the trigger, because the bubble
+ * is laid out inside Tooltip's own root rather than a portal.
+ */
+function computeBubblePosition(
+  placement: TooltipPlacement,
+  trigger: Rect,
+  bubble: Size,
+  windowSize: Size,
+  offset: number,
+): { top: number; left: number } {
+  if (placement === 'start' || placement === 'end') {
+    let onLeft = I18nManager.isRTL ? placement === 'end' : placement === 'start';
+    const spaceLeft = trigger.x;
+    const spaceRight = windowSize.width - (trigger.x + trigger.width);
+    if (onLeft && spaceLeft < bubble.width + offset && spaceRight >= bubble.width + offset) {
+      onLeft = false;
+    } else if (!onLeft && spaceRight < bubble.width + offset && spaceLeft >= bubble.width + offset) {
+      onLeft = true;
+    }
+    const left = onLeft ? trigger.x - offset - bubble.width : trigger.x + trigger.width + offset;
+    const top = clamp(trigger.y + trigger.height / 2 - bubble.height / 2, 0, windowSize.height - bubble.height);
+    return { top: top - trigger.y, left: left - trigger.x };
+  }
+
+  let below = placement === 'bottom';
+  const spaceAbove = trigger.y;
+  const spaceBelow = windowSize.height - (trigger.y + trigger.height);
+  if (below && spaceBelow < bubble.height + offset && spaceAbove > spaceBelow) {
+    below = false;
+  } else if (!below && spaceAbove < bubble.height + offset && spaceBelow > spaceAbove) {
+    below = true;
+  }
+  const top = below ? trigger.y + trigger.height + offset : trigger.y - offset - bubble.height;
+  const left = clamp(trigger.x + trigger.width / 2 - bubble.width / 2, 0, windowSize.width - bubble.width);
+  return { top: top - trigger.y, left: left - trigger.x };
+}
+
+type Handler = ((event: unknown) => void) | undefined;
+
+/**
  * Tooltip — the smallest overlay: a label that names an icon-only button or adds a
- * short clarification to a control, shown on hover or focus and gone the moment
- * attention moves on.
+ * short clarification to a control, shown while attention is on it.
  *
- * When to use: Attach it to an icon-only Button (`describes={false}` so the tooltip
- * becomes the accessible name instead of a second announcement) or to a labelled
- * control that needs one more short phrase. Never put essential information, links
- * or controls in it — a touch user will never see it.
+ * When to use: attach it to an icon-only Button (`describes={false}`, so the tooltip is
+ * the accessible name rather than a second announcement) or to a labelled control that
+ * needs one more short phrase. Never put essential information, links or controls in it.
  *
- * There is no hover on touch, so native shows nothing by default: `content` is
- * cloned onto the single child as `accessibilityHint` (or `accessibilityLabel` when
- * `describes` is `false`), and a long-press reveals a transient inverted-surface
- * `View` above the child, as a sighted-user aid, for the duration of the press. On
- * react-native-web `content` — and the informational content is already covered by
- * that clone regardless of platform — hover and focus behave as on web: focus shows
- * it immediately, hover waits out `delay` (`motion.duration.base` × 3, or instantly
- * when `delay` is `none` or a sibling tooltip's `hide()` left the shared module-level
- * "warm" window still open), and Escape hides it without moving focus via a `window`
- * `keydown` listener (a real browser exists under react-native-web; native has no
- * hardware-keyboard Escape to bind to and the popup is never shown there to begin
- * with). The bubble itself carries `accessibilityElementsHidden` — it is decorative,
- * since the real accessible information is the hint/label on the trigger, per the
- * schema's own "never hover-only" rule.
+ * There is no hover on touch, so native shows nothing by default: `content` is cloned
+ * onto the single child as `accessibilityHint` (or `accessibilityLabel` when `describes`
+ * is `false`), so the information is never hover-only. A long-press shows the inverted
+ * bubble above the child until the press ends, as a sighted-user aid. On
+ * react-native-web hover and focus behave as on web: focus shows it immediately, hover
+ * waits `hoverDelay` (none when `delay` is `none` or a sibling hid within `warmWindow`),
+ * leaving the trigger hides it after `pointerGrace` unless the pointer reaches the
+ * bubble, and Escape hides it without moving focus. The bubble is hidden from
+ * accessibility — the hint or label on the trigger already carries the text.
  *
- * Acknowledged native limits: this package's own `Button`/`Link`/`Input` do not
- * forward unrecognized props, so the `accessibilityHint`/`accessibilityLabel` and
- * the hover/focus/long-press handlers cloned here have no effect when the child is
- * one of those three — only a child that forwards extra props onto a native
- * `Pressable`/`TextInput` (or a raw core-RN element) actually receives them. Making
- * this work for the package's own trigger components requires those components'
- * own schemas to grow a passthrough, which is out of scope here. `top`/`bottom`
- * placement is not flipped on overflow (no window-rect measurement for a
- * non-portaled view); `start`/`end` still resolve against writing direction.
+ * The bubble is not portaled: it is absolutely positioned inside Tooltip's root on
+ * `layer.toast`, placed from the trigger's `measureInWindow` rect and flipped on
+ * overflow. An ancestor that clips (`overflow: 'hidden'`) or a sibling stacking context
+ * above the root can still cover it — the acknowledged native limit.
  */
 export function Tooltip({
   content,
   children,
   placement = 'top',
   describes = true,
+  open: openProp,
   delay = 'default',
   overrides,
+  ref,
 }: TooltipProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
-
-  const [open, setOpen] = React.useState(false);
-  const [mounted, setMounted] = React.useState(false);
-  const [triggerSize, setTriggerSize] = React.useState<Size | null>(null);
-  const [bubbleSize, setBubbleSize] = React.useState<Size | null>(null);
-  const progress = React.useRef(new Animated.Value(0)).current;
-  const hoverTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const windowSize = useWindowDimensions();
 
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusSm;
   const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t.space1;
   const paddingInline = overrides?.paddingInline ? (resolveToken(t, overrides.paddingInline) as number) : t.space2;
   const offset = overrides?.offset ? (resolveToken(t, overrides.offset) as number) : t.space1;
-  // space.20 × 3 per the schema's own description — a multiplier, not a new token.
-  const maxWidth = overrides?.maxWidth ? (resolveToken(t, overrides.maxWidth) as number) : t.space20 * 3; // literal-ok: schema-specified multiplier
+  const maxWidth = overrides?.maxWidth ? (resolveToken(t, overrides.maxWidth) as number) : t.space20 * 3; // literal-ok: schema computed times 3
   const shadow = overrides?.shadow ? (resolveToken(t, overrides.shadow) as typeof t.shadowRaised) : t.shadowRaised;
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerToast;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationFast;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
 
-  const clearHoverTimer = React.useCallback(() => {
-    if (hoverTimer.current !== null) {
-      clearTimeout(hoverTimer.current);
-      hoverTimer.current = null;
+  // Constants, read through their token expressions.
+  const hoverDelay = t.motionDurationBase * 3; // literal-ok: schema constant hoverDelay multiply 3
+  const warmWindow = t.motionDurationBase;
+  const pointerGrace = t.motionDurationFast;
+
+  const [sources, setSources] = React.useState<Sources>(NO_SOURCES);
+  // Escape while controlled: hides until the `open` prop changes.
+  const [escaped, setEscaped] = React.useState(false);
+  React.useEffect(() => setEscaped(false), [openProp]);
+
+  const visible =
+    openProp !== undefined ? openProp && !escaped : sources.hover || sources.bubble || sources.focus || sources.press;
+
+  const hoverTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const graceTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearTimer = (timer: React.RefObject<ReturnType<typeof setTimeout> | null>): void => {
+    if (timer.current !== null) {
+      clearTimeout(timer.current);
+      timer.current = null;
     }
+  };
+  React.useEffect(
+    () => () => {
+      clearTimer(hoverTimer);
+      clearTimer(graceTimer);
+    },
+    [],
+  );
+
+  const setSource = React.useCallback((key: keyof Sources, value: boolean) => {
+    setSources((prev) => (prev[key] === value ? prev : { ...prev, [key]: value }));
   }, []);
-  React.useEffect(() => clearHoverTimer, [clearHoverTimer]);
 
-  const show = React.useCallback(() => {
-    clearHoverTimer();
-    setOpen(true);
-  }, [clearHoverTimer]);
+  // Leaving a visible tooltip opens the shared warm window for its siblings.
+  const wasVisible = React.useRef(visible);
+  React.useEffect(() => {
+    if (wasVisible.current && !visible) {
+      warmUntil = Date.now() + warmWindow;
+    }
+    wasVisible.current = visible;
+  }, [visible, warmWindow]);
 
-  const hide = React.useCallback(() => {
-    clearHoverTimer();
-    setOpen((wasOpen) => {
-      if (wasOpen) {
-        warmUntil = Date.now() + t.motionDurationBase;
-      }
-      return false;
-    });
-  }, [clearHoverTimer, t.motionDurationBase]);
-
-  // `delay.default` is `motion.duration.base` × 3 per the schema; a sibling tooltip
-  // hidden within the last `motion.duration.base` leaves the toolbar "warm" so this
-  // one shows instantly instead, mirroring the web platform's own implementation.
-  const handleHoverIn = React.useCallback(() => {
-    clearHoverTimer();
-    if (delay === 'none' || Date.now() < warmUntil) {
-      show();
+  const handleHoverIn = (): void => {
+    clearTimer(graceTimer);
+    clearTimer(hoverTimer);
+    if (delay === 'none' || visible || Date.now() < warmUntil) {
+      setSource('hover', true);
       return;
     }
-    hoverTimer.current = setTimeout(show, t.motionDurationBase * 3); // literal-ok: schema-specified multiplier
-  }, [clearHoverTimer, delay, show, t.motionDurationBase]);
+    hoverTimer.current = setTimeout(() => setSource('hover', true), hoverDelay);
+  };
 
+  const handleHoverOut = (): void => {
+    clearTimer(hoverTimer);
+    clearTimer(graceTimer);
+    graceTimer.current = setTimeout(() => setSource('hover', false), pointerGrace);
+  };
+
+  const handleBubbleEnter = (): void => {
+    clearTimer(graceTimer);
+    setSource('bubble', true);
+  };
+
+  const handleBubbleLeave = (): void => {
+    clearTimer(graceTimer);
+    graceTimer.current = setTimeout(() => {
+      setSource('bubble', false);
+      setSource('hover', false);
+    }, pointerGrace);
+  };
+
+  const dismiss = React.useCallback(() => {
+    clearTimer(hoverTimer);
+    clearTimer(graceTimer);
+    setSources(NO_SOURCES);
+    setEscaped(true);
+  }, []);
+
+  // Escape hides without moving focus. Only react-native-web has a keyboard event to
+  // listen for; native hardware keyboards have no Escape binding for a non-modal view.
   React.useEffect(() => {
-    if (open) {
+    if (Platform.OS !== 'web' || !visible) {
+      return undefined;
+    }
+    type KeyListener = (event: { key?: string | undefined }) => void;
+    const globalWindow = (
+      globalThis as {
+        window?:
+          | { addEventListener: (type: 'keydown', listener: KeyListener) => void; removeEventListener: (type: 'keydown', listener: KeyListener) => void }
+          | undefined;
+      }
+    ).window;
+    if (globalWindow === undefined) {
+      return undefined;
+    }
+    const handleKeyDown: KeyListener = (event) => {
+      if (event.key === 'Escape') {
+        dismiss();
+      }
+    };
+    globalWindow.addEventListener('keydown', handleKeyDown);
+    return () => globalWindow.removeEventListener('keydown', handleKeyDown);
+  }, [visible, dismiss]);
+
+  const isSingleElement = React.isValidElement(children) && React.Children.count(children) === 1;
+  React.useEffect(() => {
+    if (__DEV__ && !isSingleElement) {
+      console.warn('Tooltip: `children` must be exactly one focusable element (a Button, Link or Input).');
+    }
+  }, [isSingleElement]);
+
+  const child = isSingleElement ? (children as React.ReactElement<Record<string, unknown>>) : null;
+  const childProps = child?.props ?? {};
+  const chain =
+    (name: string, own: () => void) =>
+    (event: unknown): void => {
+      (childProps[name] as Handler)?.(event);
+      own();
+    };
+
+  const trigger =
+    child !== null
+      ? React.cloneElement(child, {
+          ...(describes ? { accessibilityHint: content } : { accessibilityLabel: content }),
+          onLongPress: chain('onLongPress', () => setSource('press', true)),
+          onPressOut: chain('onPressOut', () => setSource('press', false)),
+          ...(Platform.OS === 'web'
+            ? {
+                onHoverIn: chain('onHoverIn', handleHoverIn),
+                onHoverOut: chain('onHoverOut', handleHoverOut),
+                onFocus: chain('onFocus', () => setSource('focus', true)),
+                onBlur: chain('onBlur', () => setSource('focus', false)),
+              }
+            : {}),
+        })
+      : children;
+
+  // Mounted stays true through the exit fade.
+  const [mounted, setMounted] = React.useState(visible);
+  const progress = React.useRef(new Animated.Value(0)).current;
+  React.useEffect(() => {
+    if (visible) {
       setMounted(true);
     }
-  }, [open]);
+  }, [visible]);
 
   React.useEffect(() => {
     if (!mounted) {
       return undefined;
     }
-    if (open) {
+    const easing = toEasing(t.motionEasingStandard);
+    if (visible) {
       if (reducedMotion) {
         progress.setValue(1);
         return undefined;
       }
-      const animation = Animated.timing(progress, {
-        toValue: 1,
-        duration: enterDuration,
-        easing: toEasing(t.motionEasingStandard),
-        // react-native-web has no native animated module.
-        useNativeDriver: false,
-      });
+      // react-native-web has no native animated module.
+      const animation = Animated.timing(progress, { toValue: 1, duration: enterDuration, easing, useNativeDriver: false });
       animation.start();
       return () => animation.stop();
     }
@@ -191,140 +311,80 @@ export function Tooltip({
       setMounted(false);
       return undefined;
     }
-    const animation = Animated.timing(progress, {
-      toValue: 0,
-      duration: exitDuration,
-      easing: toEasing(t.motionEasingStandard),
-      useNativeDriver: false,
-    });
+    const animation = Animated.timing(progress, { toValue: 0, duration: exitDuration, easing, useNativeDriver: false });
     animation.start(({ finished }) => {
       if (finished) {
         setMounted(false);
       }
     });
     return () => animation.stop();
-    // Reacts to the open/mounted transition; the animation's own config is read fresh.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, mounted, reducedMotion]);
+  }, [visible, mounted, reducedMotion, enterDuration, exitDuration, progress, t.motionEasingStandard]);
 
-  // Escape hides the tooltip without moving focus. There is no hardware-keyboard
-  // event API on native, and the popup is never shown there; react-native-web runs
-  // in a real browser, so a `window` listener covers exactly the case that needs it.
+  const triggerRef = React.useRef<ViewInstance>(null);
+  const [triggerRect, setTriggerRect] = React.useState<Rect | null>(null);
+  const [bubbleSize, setBubbleSize] = React.useState<Size | null>(null);
+
+  const measureTrigger = React.useCallback(() => {
+    triggerRef.current?.measureInWindow((x, y, width, height) => {
+      setTriggerRect((prev) =>
+        prev !== null && prev.x === x && prev.y === y && prev.width === width && prev.height === height
+          ? prev
+          : { x, y, width, height },
+      );
+    });
+  }, []);
+
   React.useEffect(() => {
-    if (Platform.OS !== 'web' || !open) {
-      return undefined;
+    if (mounted) {
+      measureTrigger();
     }
-    const globalWindow = (
-      globalThis as {
-        window?: {
-          addEventListener: (type: 'keydown', listener: (event: { key?: string | undefined }) => void) => void;
-          removeEventListener: (type: 'keydown', listener: (event: { key?: string | undefined }) => void) => void;
-        } | undefined;
-      }
-    ).window;
-    if (globalWindow === undefined) {
-      return undefined;
-    }
-    const handleKeyDown = (event: { key?: string | undefined }): void => {
-      if (event.key === 'Escape') {
-        hide();
-      }
-    };
-    globalWindow.addEventListener('keydown', handleKeyDown);
-    return () => globalWindow.removeEventListener('keydown', handleKeyDown);
-  }, [open, hide]);
-
-  const isElement = React.isValidElement(children);
-  React.useEffect(() => {
-    if (__DEV__ && (!isElement || React.Children.count(children) !== 1)) {
-      console.warn('Tooltip: `children` must be exactly one focusable element (Button, Link, or Input).');
-    }
-  }, [isElement, children]);
-
-  const child = isElement ? (children as React.ReactElement<Record<string, unknown>>) : null;
-  const childProps = child?.props ?? {};
-
-  const trigger =
-    child !== null
-      ? React.cloneElement(child, {
-          ...(describes ? { accessibilityHint: content } : { accessibilityLabel: content }),
-          onLongPress: (event: unknown) => {
-            (childProps.onLongPress as ((e: unknown) => void) | undefined)?.(event);
-            show();
-          },
-          onPressOut: (event: unknown) => {
-            (childProps.onPressOut as ((e: unknown) => void) | undefined)?.(event);
-            hide();
-          },
-          ...(Platform.OS === 'web'
-            ? {
-                onHoverIn: (event: unknown) => {
-                  (childProps.onHoverIn as ((e: unknown) => void) | undefined)?.(event);
-                  handleHoverIn();
-                },
-                onHoverOut: (event: unknown) => {
-                  (childProps.onHoverOut as ((e: unknown) => void) | undefined)?.(event);
-                  hide();
-                },
-                onFocus: (event: unknown) => {
-                  (childProps.onFocus as ((e: unknown) => void) | undefined)?.(event);
-                  show();
-                },
-                onBlur: (event: unknown) => {
-                  (childProps.onBlur as ((e: unknown) => void) | undefined)?.(event);
-                  hide();
-                },
-              }
-            : {}),
-        })
-      : children;
-
-  const handleTriggerLayout = (event: LayoutChangeEvent): void => {
-    const { width, height } = event.nativeEvent.layout;
-    setTriggerSize((prev) => (prev !== null && prev.width === width && prev.height === height ? prev : { width, height }));
-  };
+  }, [mounted, measureTrigger, windowSize.width, windowSize.height]);
 
   const handleBubbleLayout = (event: LayoutChangeEvent): void => {
     const { width, height } = event.nativeEvent.layout;
     setBubbleSize((prev) => (prev !== null && prev.width === width && prev.height === height ? prev : { width, height }));
   };
 
-  const hostStyle: ViewStyle = {
-    position: 'relative',
-    alignSelf: 'flex-start',
-  };
-
-  const bubblePosition =
-    triggerSize !== null ? computeBubbleOffset(placement, triggerSize, bubbleSize ?? { width: 0, height: 0 }, offset) : {};
+  const position =
+    triggerRect !== null
+      ? computeBubblePosition(placement, triggerRect, bubbleSize ?? { width: 0, height: 0 }, windowSize, offset)
+      : null;
 
   const bubbleStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
-    ...bubblePosition,
+    top: position?.top ?? 0,
+    left: position?.left ?? 0,
     maxWidth,
     paddingVertical: paddingBlock,
     paddingHorizontal: paddingInline,
     borderRadius: radius,
     backgroundColor: t.colorInverseSurface,
     zIndex: layer,
-    opacity: progress,
+    // Stays transparent until it has been measured and placed.
+    opacity: position !== null && bubbleSize !== null ? progress : 0,
     ...shadow,
   };
 
   return (
-    <View testID="Tooltip" style={hostStyle}>
-      <View onLayout={handleTriggerLayout}>{trigger}</View>
-      {mounted && triggerSize !== null ? (
+    <View ref={ref} testID="Tooltip" style={{ position: 'relative', alignSelf: 'flex-start', ...(mounted ? { zIndex: layer } : {}) }}>
+      {/* `collapsable={false}` keeps this View in the native tree on Android so measureInWindow stays reliable. */}
+      <View ref={triggerRef} collapsable={false}>
+        {trigger}
+      </View>
+      {mounted ? (
         <Animated.View
           testID="Tooltip.popup"
           onLayout={handleBubbleLayout}
-          pointerEvents="none"
+          // Hoverable under react-native-web (WCAG 1.4.13); inert on touch.
+          pointerEvents={Platform.OS === 'web' ? 'auto' : 'none'}
+          onPointerEnter={handleBubbleEnter}
+          onPointerLeave={handleBubbleLeave}
           accessibilityElementsHidden
-          importantForAccessibility="no"
+          importantForAccessibility="no-hide-descendants"
+          aria-hidden
           style={bubbleStyle}
         >
-          {/* surface: color.inverse.surface, text: color.inverse.foreground — both locked, and
-              Text's own `color` binding is locked as well, so the popup provides its foreground to
-              the subtree instead of forwarding a color override to the composed Text. */}
+          {/* surface and text are locked: the bubble provides its foreground to the composed Text (whose color is locked too) instead of overriding it. */}
           <TextForegroundContext.Provider value={t.colorInverseForeground}>
             <Text
               size="sm"

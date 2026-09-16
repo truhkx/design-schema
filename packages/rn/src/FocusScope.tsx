@@ -28,6 +28,8 @@ export interface FocusScopeProps {
    * to confine, so this never fires on this platform.
    */
   onEscapeAttempt?: ((direction: FocusScopeEscapeDirection) => void) | undefined;
+  /** The wrapper `View`. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 /**
@@ -63,8 +65,12 @@ export function FocusScope({
   active = true,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onEscapeAttempt,
+  ref,
 }: FocusScopeProps): React.JSX.Element {
   const wrapperRef = React.useRef<ViewInstance>(null);
+  // The wrapper ref is needed internally for setAccessibilityFocus, so the caller's
+  // ref is served from it rather than attached directly.
+  React.useImperativeHandle(ref, () => wrapperRef.current!, []);
   const capturedOpenerRef = React.useRef<ReturnType<typeof TextInput.State.currentlyFocusedInput> | null>(null);
 
   React.useEffect(() => {

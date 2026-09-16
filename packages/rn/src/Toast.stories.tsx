@@ -41,6 +41,20 @@ export const WithAction: Story = {
   args: { message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' },
 };
 
+// examples
+/** The reason most reversible actions need no AlertDialog; an action makes the toast persistent. */
+export const UndoADelete: Story = {
+  args: { message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' },
+};
+/** The plain confirmation of something the user did not have to watch. */
+export const Saved: Story = { args: { message: 'Changes saved', tone: 'success' } };
+/** A result that arrived on its own, with one way to look at it. */
+export const BackgroundResult: Story = { args: { message: 'Export ready', actionLabel: 'View', duration: 'long' } };
+/** A danger toast, persistent so nobody misses the one they needed. */
+export const FailedUpload: Story = {
+  args: { message: 'Upload failed', tone: 'danger', actionLabel: 'Retry', duration: 'persistent' },
+};
+
 export const NotDismissible: Story = { args: { dismissible: false } };
 
 export const WithOverrides: Story = {

@@ -3,6 +3,8 @@ import { html } from 'lit';
 import './Tooltip.js';
 import './Button.js';
 import './Icon.js';
+import './Toolbar.js';
+import './Stack.js';
 import type { TooltipDelay, TooltipPlacement } from './Tooltip.js';
 
 interface TooltipArgs {
@@ -10,6 +12,7 @@ interface TooltipArgs {
   placement: TooltipPlacement;
   describes: boolean;
   delay: TooltipDelay;
+  open: boolean | undefined;
 }
 
 const meta: Meta<TooltipArgs> = {
@@ -19,19 +22,22 @@ const meta: Meta<TooltipArgs> = {
     placement: { control: 'select', options: ['top', 'bottom', 'start', 'end'] },
     describes: { control: 'boolean' },
     delay: { control: 'select', options: ['default', 'none'] },
+    open: { control: 'boolean' },
   },
   args: {
     content: 'Includes archived items',
     placement: 'top',
     describes: true,
     delay: 'default',
+    open: undefined,
   },
   render: (args) => html`
     <ds-tooltip
       content=${args.content}
       placement=${args.placement}
-      ?describes=${args.describes}
+      ?no-describes=${!args.describes}
       delay=${args.delay}
+      .open=${args.open}
     >
       <ds-button label="Show all" variant="secondary"></ds-button>
     </ds-tooltip>
@@ -44,47 +50,77 @@ type Story = StoryObj<TooltipArgs>;
 export const Default: Story = {};
 
 /* placement */
-export const PlacementTop: Story = { args: { placement: 'top' } };
-export const PlacementBottom: Story = { args: { placement: 'bottom' } };
-export const PlacementStart: Story = { args: { placement: 'start' } };
-export const PlacementEnd: Story = { args: { placement: 'end' } };
+export const PlacementTop: Story = { args: { placement: 'top', open: true } };
+export const PlacementBottom: Story = { args: { placement: 'bottom', open: true } };
+export const PlacementStart: Story = { args: { placement: 'start', open: true } };
+export const PlacementEnd: Story = { args: { placement: 'end', open: true } };
 
 /* delay */
 export const DelayDefault: Story = { args: { delay: 'default' } };
 export const DelayNone: Story = { args: { delay: 'none' } };
 
-/* describes */
-export const DescribesTrue: Story = { args: { describes: true } };
+/* examples */
 
-/**
- * `describes: false` — the child has no visible text, so the tooltip becomes
- * its accessible name (`aria-labelledby`) instead of a description. `content`
- * equals the button's own `label` for exactly this reason.
- */
-export const DescribesFalse: Story = {
-  args: { describes: false, content: 'Search' },
+/** The tooltip is the control's name, not a second announcement, so it is linked as the label. */
+export const IconOnlyButtonName: Story = {
+  args: { content: 'Bold', describes: false },
   render: (args) => html`
-    <ds-tooltip content=${args.content} placement=${args.placement} ?describes=${args.describes} delay=${args.delay}>
-      <ds-button icon-only label="Search" variant="ghost">
-        <ds-icon slot="leading-icon" name="search"></ds-icon>
+    <ds-tooltip content=${args.content} placement=${args.placement} ?no-describes=${!args.describes} delay=${args.delay} .open=${args.open}>
+      <ds-button icon-only label="Bold" variant="ghost">
+        <ds-icon slot="leading-icon" name="menu"></ds-icon>
       </ds-button>
+    </ds-tooltip>
+  `,
+};
+
+/** A clarification on a labelled control in dense UI. */
+export const ColumnHeaderHint: Story = {
+  args: { content: 'Includes archived items' },
+  render: (args) => html`
+    <ds-tooltip content=${args.content} placement=${args.placement} ?no-describes=${!args.describes} delay=${args.delay} .open=${args.open}>
+      <ds-button label="Items" variant="ghost" size="sm"></ds-button>
+    </ds-tooltip>
+  `,
+};
+
+/** A toolbar where a sibling tooltip is already open, so the next one shows instantly. */
+export const WarmToolbar: Story = {
+  args: { content: 'Italic', delay: 'none' },
+  render: (args) => html`
+    <ds-toolbar label="Formatting">
+      <ds-tooltip content="Bold" no-describes delay=${args.delay}>
+        <ds-button icon-only label="Bold" variant="ghost"><ds-icon slot="leading-icon" name="menu"></ds-icon></ds-button>
+      </ds-tooltip>
+      <ds-tooltip content=${args.content} placement=${args.placement} no-describes delay=${args.delay} .open=${args.open}>
+        <ds-button icon-only label=${args.content} variant="ghost"><ds-icon slot="leading-icon" name="list"></ds-icon></ds-button>
+      </ds-tooltip>
+    </ds-toolbar>
+  `,
+};
+
+/** A trigger at the top of the page, where the bubble reads better underneath. */
+export const BelowTheTrigger: Story = {
+  args: { content: 'Copy link', placement: 'bottom' },
+  render: (args) => html`
+    <ds-tooltip content=${args.content} placement=${args.placement} ?no-describes=${!args.describes} delay=${args.delay} .open=${args.open}>
+      <ds-button icon-only label="Copy link" variant="ghost"><ds-icon slot="leading-icon" name="external"></ds-icon></ds-button>
     </ds-tooltip>
   `,
 };
 
 /**
  * Renders `open` so the tooltip is present on mount, among three focusable
- * siblings so the keyboard gate can verify Escape hides it without moving
- * focus and Tab still reaches every control normally.
+ * controls, so the keyboard gate can check Escape hides it without moving focus.
  */
 export const Keyboard: Story = {
-  render: () => html`
-    <div style="display: flex; gap: var(--space-md);">
-      <button type="button">Before</button>
-      <ds-tooltip content="Includes archived items" open>
-        <ds-button label="Show all"></ds-button>
+  args: { open: true },
+  render: (args) => html`
+    <ds-stack direction="horizontal" gap="normal">
+      <ds-button label="Before" variant="secondary"></ds-button>
+      <ds-tooltip content=${args.content} placement=${args.placement} ?no-describes=${!args.describes} delay=${args.delay} .open=${args.open}>
+        <ds-button label="Show all" variant="secondary"></ds-button>
       </ds-tooltip>
-      <button type="button">After</button>
-    </div>
+      <ds-button label="After" variant="secondary"></ds-button>
+    </ds-stack>
   `,
 };

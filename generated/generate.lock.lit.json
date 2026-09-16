@@ -454,17 +454,26 @@
     }
   },
   "FocusScope.lit": {
-    "hash": "8770f7c37d07790e",
-    "lastAttemptHash": "8770f7c37d07790e",
-    "generatedAt": "2026-09-10T21:49:52+00:00",
-    "model": "sonnet",
+    "hash": "368ac180437cd4f2",
+    "lastAttemptHash": "368ac180437cd4f2",
+    "generatedAt": "2026-09-16T09:49:29+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2765,
+    "costUsd": 3.1762,
     "files": [
-      "packages/lit/src/FocusScope.ts"
+      "packages/lit/src/ActionSheet.ts",
+      "packages/lit/src/AlertDialog.ts",
+      "packages/lit/src/BottomSheet.ts",
+      "packages/lit/src/Dialog.ts",
+      "packages/lit/src/FocusScope.stories.ts",
+      "packages/lit/src/FocusScope.test.ts",
+      "packages/lit/src/FocusScope.ts",
+      "packages/lit/src/Popover.ts",
+      "packages/lit/src/SidePanel.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 1,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1062,18 +1071,19 @@
     }
   },
   "Toast.lit": {
-    "hash": "7fc68d0cb2477ee0",
-    "lastAttemptHash": "7fc68d0cb2477ee0",
-    "generatedAt": "2026-09-10T21:55:33+00:00",
-    "model": "sonnet",
+    "hash": "49cb1819e3895788",
+    "lastAttemptHash": "49cb1819e3895788",
+    "generatedAt": "2026-09-16T10:09:48+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.842,
+    "costUsd": 2.3771,
     "files": [
       "packages/lit/src/Toast.stories.ts",
+      "packages/lit/src/Toast.test.ts",
       "packages/lit/src/Toast.ts"
     ],
-    "gaps": 4,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1106,18 +1116,19 @@
     }
   },
   "Tooltip.lit": {
-    "hash": "c434919b696c07ab",
-    "lastAttemptHash": "c434919b696c07ab",
-    "generatedAt": "2026-09-10T21:51:52+00:00",
-    "model": "sonnet",
+    "hash": "dc5dafda8c7889d1",
+    "lastAttemptHash": "dc5dafda8c7889d1",
+    "generatedAt": "2026-09-16T09:58:22+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5124,
+    "costUsd": 1.9188,
     "files": [
       "packages/lit/src/Tooltip.stories.ts",
+      "packages/lit/src/Tooltip.test.ts",
       "packages/lit/src/Tooltip.ts"
     ],
-    "gaps": 2,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -40,15 +40,10 @@ const HOOKS: Record<TooltipOverridableBinding, string> = {
 /** Whether the running browser implements the Popover API. Evaluated once. */
 const POPOVER_SUPPORTED = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
 
-/** `delay: default` multiplies motion.duration.base by this to get the hover delay (~600ms). */
-const DELAY_MULTIPLIER = 3;
-
-/**
- * Grace window, in ms, between a trigger's pointerleave and actually hiding —
- * long enough for a diagonal mouse move to land on the popup itself (WCAG
- * 1.4.13 hoverable). Not a design token — an interaction timing, not a motion one.
- */
-const POINTER_LEAVE_GRACE_MS = 100;
+/** Constants, each read through its token expression at the moment it is needed. */
+const HOVER_DELAY = { token: '--motion-duration-base', multiply: 3 } as const;
+const WARM_WINDOW = { token: '--motion-duration-base', multiply: 1 } as const;
+const POINTER_GRACE = { token: '--motion-duration-fast', multiply: 1 } as const;
 
 let idCounter = 0;
 function nextTooltipId(): string {
@@ -56,119 +51,141 @@ function nextTooltipId(): string {
   return `ds-tooltip-${idCounter}`;
 }
 
-/** Reads a `--motion-duration-*` custom property off `el` and returns it in ms. */
-function readDurationMs(el: HTMLElement, varName: string): number {
-  const raw = getComputedStyle(el).getPropertyValue(varName).trim();
+/** Resolves a duration constant (`token` × `multiply`) off `el`, in ms. */
+function constantMs(el: HTMLElement, constant: { token: string; multiply: number }): number {
+  const raw = getComputedStyle(el).getPropertyValue(constant.token).trim();
+  let ms = 0;
   if (raw.endsWith('ms')) {
-    return parseFloat(raw);
+    ms = parseFloat(raw);
+  } else if (raw.endsWith('s')) {
+    ms = parseFloat(raw) * 1000;
   }
-  if (raw.endsWith('s')) {
-    return parseFloat(raw) * 1000;
-  }
-  return 0;
+  return (Number.isFinite(ms) ? ms : 0) * constant.multiply;
 }
 
-/** Timestamp until which a newly hovered tooltip should skip its delay — set whenever any tooltip closes. */
+/** Shared "warm" state: until this timestamp a newly hovered tooltip shows with no delay. Set whenever any tooltip hides. */
 let warmUntil = 0;
 
-const POPUP_CLASS = 'ds-tooltip-popup';
-const POPUP_STYLE_MARKER = 'data-ds-tooltip-popup-style';
+const BUBBLE_CLASS = 'ds-tooltip-bubble';
+const DESCRIPTION_CLASS = 'ds-tooltip-description';
+const LIGHT_STYLE_MARKER = 'data-ds-tooltip-style';
 
-/* surface: color.inverse.surface, text: color.inverse.foreground — both locked, so the popup's
-   background is set here; Text's own `color` binding is locked too, so the popup cannot forward a
-   color override to the composed <ds-text> and re-scopes the token that element already reads. */
-const POPUP_STYLE_CSS = `
-.${POPUP_CLASS} {
+/* The description copy and the bubble live in the light DOM (so the trigger's ID reference resolves), which
+   `ds-tooltip`'s shadow stylesheet cannot reach; their rules are injected into the tree they live in.
+   surface: color.inverse.surface and text: color.inverse.foreground are locked. Text's color is locked too,
+   so the bubble re-scopes --color-foreground on its own container and composes <ds-text> unchanged. */
+const LIGHT_STYLE_CSS = `
+.${DESCRIPTION_CLASS} {
+  /* literal-ok: standard visually-hidden clip pattern, exempt from token-only rule */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.${BUBBLE_CLASS} {
   --color-foreground: var(--color-inverse-foreground);
   position: fixed;
   inset: auto;
   box-sizing: border-box;
   margin: 0;
+  border: none;
   padding-block: var(--ds-tooltip-padding-block);
   padding-inline: var(--ds-tooltip-padding-inline);
   border-radius: var(--ds-tooltip-radius);
   background: var(--color-inverse-surface);
+  color: var(--color-inverse-foreground);
   box-shadow: var(--ds-tooltip-shadow);
   max-inline-size: calc(var(--ds-tooltip-max-width) * 3);
+  font-family: var(--ds-tooltip-font-family);
+  font-size: var(--ds-tooltip-font-size);
+  line-height: var(--ds-tooltip-line-height);
   z-index: var(--ds-tooltip-layer);
   opacity: 0;
   pointer-events: none;
   transition:
     opacity var(--ds-tooltip-exit) var(--motion-easing-standard),
-    display var(--ds-tooltip-exit) allow-discrete;
+    display var(--ds-tooltip-exit) allow-discrete,
+    overlay var(--ds-tooltip-exit) allow-discrete;
 }
-.${POPUP_CLASS}:popover-open {
+.${BUBBLE_CLASS}:popover-open,
+.${BUBBLE_CLASS}[data-open] {
   opacity: 1;
   pointer-events: auto;
   transition:
     opacity var(--ds-tooltip-enter) var(--motion-easing-standard),
-    display var(--ds-tooltip-enter) allow-discrete;
+    display var(--ds-tooltip-enter) allow-discrete,
+    overlay var(--ds-tooltip-enter) allow-discrete;
 }
 @starting-style {
-  .${POPUP_CLASS}:popover-open {
+  .${BUBBLE_CLASS}:popover-open,
+  .${BUBBLE_CLASS}[data-open] {
     opacity: 0;
   }
 }
-.${POPUP_CLASS}[hidden] {
+.${BUBBLE_CLASS}[hidden] {
   display: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .${POPUP_CLASS} {
+  .${BUBBLE_CLASS},
+  .${BUBBLE_CLASS}:popover-open,
+  .${BUBBLE_CLASS}[data-open] {
     transition: none;
   }
 }
 `;
 
-/** Roots that already carry the popup's stylesheet (a Document per page, a ShadowRoot per nesting host). */
-const styledPopupRoots = new WeakSet<Document | ShadowRoot>();
+/** Roots that already carry the light-DOM stylesheet (a Document per page, a ShadowRoot per nesting host). */
+const styledRoots = new WeakSet<Document | ShadowRoot>();
 
-/**
- * Injects the popup's rule into the tree the popup element actually lives in
- * (the page, or an ancestor shadow root) — it is a light-DOM sibling of the
- * trigger, not a shadow-root child, so `ds-tooltip`'s own stylesheet can't
- * reach it.
- */
-function ensurePopupStyle(root: Document | ShadowRoot): void {
-  if (styledPopupRoots.has(root)) {
+function ensureLightStyle(root: Node): void {
+  if (!(root instanceof Document) && !(root instanceof ShadowRoot)) {
     return;
   }
-  styledPopupRoots.add(root);
+  if (styledRoots.has(root)) {
+    return;
+  }
+  styledRoots.add(root);
   const target = root instanceof Document ? root.head : root;
-  if (target.querySelector(`style[${POPUP_STYLE_MARKER}]`) !== null) {
+  if (target.querySelector(`style[${LIGHT_STYLE_MARKER}]`) !== null) {
     return;
   }
   const style = document.createElement('style');
-  style.setAttribute(POPUP_STYLE_MARKER, '');
-  style.textContent = POPUP_STYLE_CSS;
+  style.setAttribute(LIGHT_STYLE_MARKER, '');
+  style.textContent = LIGHT_STYLE_CSS;
   target.appendChild(style);
 }
 
 /**
  * `<ds-tooltip>` — Tooltip (category: overlay, APG pattern: tooltip).
  *
- * `<ds-tooltip content="Includes archived items"><ds-button label="Show all">…</ds-button></ds-tooltip>`
+ * `<ds-tooltip content="Bold" no-describes><ds-button icon-only label="Bold">…</ds-button></ds-tooltip>`
  * wraps its single focusable child. Because `aria-describedby`/`aria-labelledby`
- * cannot cross a shadow boundary, the popup is not rendered inside this
- * element's shadow root: it is a plain `<div role="tooltip">` created once and
- * appended to the host itself (light DOM, a sibling of the slotted trigger),
- * positioned with the Popover API (`popover="manual"`) when available and a
- * `position: fixed` fallback otherwise, so its `id` resolves from the trigger's
- * attribute. It shows after `delay` on hover, immediately on focus, stays open
- * while the pointer is over either element (hoverable), and hides on Escape,
- * on blur, or when the pointer leaves both.
+ * cannot cross a shadow boundary, the tooltip is not rendered in this element's
+ * shadow root. Two light-DOM nodes are appended to the host, siblings of the
+ * trigger: a visually-hidden `<span role="tooltip" id>` that the trigger's
+ * `aria-describedby` (or `aria-labelledby`) points at and that is always in the
+ * accessibility tree, and the positioned bubble — `aria-hidden`, the visible
+ * copy — shown with the Popover API (`popover="manual"`) or a `position: fixed`
+ * fallback. The bubble shows after `delay` on hover, immediately on focus, stays
+ * while the pointer is over it (hoverable), and hides on Escape without moving
+ * focus, when focus leaves the trigger, or when the pointer leaves both.
  *
  * ## When to use
  *
- * Use a Tooltip on an icon-only Button to supply its name (`describes="false"`,
- * content equal to the child's label) or on a labelled control to add a short
- * clarification. Keep it to a phrase; never put essential information,
- * interactive content or links in it.
+ * On an icon-only Button to show its name (`describes: false`, content equal to
+ * the child's label), or on a labelled control to add a short clarification.
+ * Keep it to a phrase.
  *
  * ## When not to use
  *
- * Not for content the user must read (use helper text, an Alert or a
- * Disclosure instead), not for anything interactive (a Popover, planned), and
- * never on a non-focusable child — keyboard users could never see it.
+ * Not for content the user must read (helper text, an Alert or a Disclosure),
+ * not for anything interactive (a Popover, planned), and never on a
+ * non-focusable child — keyboard users could never see it.
  *
  * @slot - Exactly one focusable element (a Button, Link, Input) the tooltip attaches to.
  */
@@ -196,68 +213,63 @@ export class DsTooltip extends LitElement {
     }
   `;
 
-  /** The tooltip text. One short phrase; no markup, links or line breaks. */
-  @property() accessor content!: string;
+  /** The tooltip text. One short phrase or sentence; no markup, no links, no line breaks. */
+  @property() accessor content: string = '';
 
-  /** Preferred side; flips when it would overflow the viewport. */
-  @property({ reflect: true }) accessor placement: TooltipPlacement = 'top';
-
-  /** `true`: supplementary, linked as the child's `aria-describedby`. `false`: linked as `aria-labelledby` — the tooltip IS the child's name. */
-  @property({ type: Boolean, reflect: true }) accessor describes = true;
-
-  /** Hover delay before showing: `default` (motion.duration.base × 3) or `none` for a warm toolbar item. */
-  @property() accessor delay: TooltipDelay = 'default';
+  /** Preferred side; flips when it would overflow the viewport. `start`/`end` are logical and mirror in right-to-left writing. */
+  @property({ type: String, reflect: true }) accessor placement: TooltipPlacement = 'top';
 
   /**
-   * Controlled visibility, for stories and tests only (the `Keyboard` story
-   * renders the tooltip open with it). Product code never sets this: a
-   * tooltip is hover and focus driven.
+   * `true`: supplementary, linked as the child's `aria-describedby`. `false`: the tooltip IS the child's name
+   * and is linked as `aria-labelledby`. Defaults to true, so the attribute is the negated `no-describes`.
+   */
+  @property({
+    type: Boolean,
+    reflect: true,
+    attribute: 'no-describes',
+    converter: {
+      fromAttribute: (value: string | null): boolean => value === null,
+      toAttribute: (value: boolean): string | null => (value ? null : ''),
+    },
+  })
+  accessor describes: boolean = true;
+
+  /** Hover delay before showing: `default` (motion.duration.base × 3) or `none` for a warm toolbar. */
+  @property({ type: String }) accessor delay: TooltipDelay = 'default';
+
+  /**
+   * Controlled visibility, for stories and tests only (the `Keyboard` story renders the tooltip open with it).
+   * Product code never sets it: a tooltip is hover and focus driven.
    */
   @property({ type: Boolean }) accessor open: boolean | undefined;
 
-  /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
+  /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are not in the type. */
   @property({ attribute: false }) accessor overrides: Partial<Record<TooltipOverridableBinding, TokenRef | undefined>> | undefined;
 
-  private popupEl!: HTMLDivElement;
-  private popupId!: string;
+  private readonly tooltipId: string = nextTooltipId();
+  private descriptionEl: HTMLSpanElement | null = null;
+  private bubbleEl: HTMLDivElement | null = null;
   private triggerEl: HTMLElement | null = null;
   private visible = false;
   private pointerOverTrigger = false;
-  private pointerOverPopup = false;
+  private pointerOverBubble = false;
   private triggerFocused = false;
-  private showTimerId?: ReturnType<typeof setTimeout> | undefined;
-  private hideGraceTimerId?: ReturnType<typeof setTimeout> | undefined;
+  private showTimerId: ReturnType<typeof setTimeout> | undefined;
+  private hideGraceTimerId: ReturnType<typeof setTimeout> | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Tooltip');
-    if (!this.popupEl) {
-      this.popupId = nextTooltipId();
-      this.popupEl = document.createElement('div');
-      this.popupEl.id = this.popupId;
-      this.popupEl.dataset.part = 'popup';
-      this.popupEl.setAttribute('role', 'tooltip');
-      this.popupEl.className = POPUP_CLASS;
-      if (POPOVER_SUPPORTED) {
-        this.popupEl.setAttribute('popover', 'manual');
-      } else {
-        this.popupEl.hidden = true;
-      }
-      this.popupEl.addEventListener('pointerenter', this.handlePopupPointerEnter);
-      this.popupEl.addEventListener('pointerleave', this.handlePopupPointerLeave);
-    }
-    if (!this.popupEl.isConnected) {
-      this.appendChild(this.popupEl);
-    }
-    ensurePopupStyle(this.getRootNode() as Document | ShadowRoot);
-    this.renderPopupContent();
+    this.ensureLightNodes();
+    ensureLightStyle(this.getRootNode());
+    this.renderLightContent();
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     clearTimeout(this.showTimerId);
     clearTimeout(this.hideGraceTimerId);
-    this.removeGlobalListeners();
+    this.hideBubble();
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -265,7 +277,7 @@ export class DsTooltip extends LitElement {
       this.applyOverrides();
     }
     if (changed.has('content') || changed.has('overrides')) {
-      this.renderPopupContent();
+      this.renderLightContent();
     }
     if (changed.has('describes')) {
       this.updateTriggerAria();
@@ -274,35 +286,71 @@ export class DsTooltip extends LitElement {
 
   protected override updated(changed: PropertyValues): void {
     if (changed.has('open')) {
-      if (this.open) {
-        this.showPopup();
+      if (this.open === true) {
+        this.showBubble();
       } else if (this.open === false) {
-        this.hidePopup();
+        this.hideBubble();
       }
     }
     if (this.visible && changed.has('placement')) {
       this.updatePosition();
     }
-    this.warnInDev();
+    if (changed.has('content')) {
+      this.warnInDev();
+    }
   }
 
   protected override render(): TemplateResult {
     return html`<slot @slotchange=${this.handleSlotChange}></slot>`;
   }
 
+  /** Creates the description copy and the bubble once, and appends them only when not already in place. */
+  private ensureLightNodes(): void {
+    if (!this.descriptionEl) {
+      const description = document.createElement('span');
+      description.id = this.tooltipId;
+      description.setAttribute('role', 'tooltip');
+      description.className = DESCRIPTION_CLASS;
+      this.descriptionEl = description;
+    }
+    if (!this.bubbleEl) {
+      const bubble = document.createElement('div');
+      bubble.className = BUBBLE_CLASS;
+      bubble.setAttribute('aria-hidden', 'true');
+      if (POPOVER_SUPPORTED) {
+        bubble.setAttribute('popover', 'manual');
+      } else {
+        bubble.hidden = true;
+      }
+      bubble.addEventListener('pointerenter', this.handleBubblePointerEnter);
+      bubble.addEventListener('pointerleave', this.handleBubblePointerLeave);
+      this.bubbleEl = bubble;
+    }
+    if (this.descriptionEl.parentElement !== this) {
+      this.appendChild(this.descriptionEl);
+    }
+    if (this.bubbleEl.parentElement !== this) {
+      this.appendChild(this.bubbleEl);
+    }
+  }
+
   private readonly handleSlotChange = (event: Event): void => {
     const slot = event.target as HTMLSlotElement;
-    const assigned = slot.assignedElements({ flatten: true }).filter((el) => el !== this.popupEl);
-    const next = (assigned[0] as HTMLElement | undefined) ?? null;
+    const assigned = slot
+      .assignedElements({ flatten: true })
+      .filter((el): el is HTMLElement => el !== this.bubbleEl && el !== this.descriptionEl && el instanceof HTMLElement);
+    if (import.meta.env.DEV && assigned.length > 1) {
+      console.warn('<ds-tooltip> takes exactly one focusable child; only the first is the trigger.', this);
+    }
+    const next = assigned[0] ?? null;
     if (next === this.triggerEl) {
-      this.updateTriggerAria();
       return;
     }
     this.detachTrigger();
     this.triggerEl = next;
     this.attachTrigger();
-    if (this.open) {
-      this.showPopup();
+    if (this.open === true) {
+      this.showBubble();
     }
   };
 
@@ -313,8 +361,8 @@ export class DsTooltip extends LitElement {
     }
     trigger.addEventListener('pointerenter', this.handleTriggerPointerEnter);
     trigger.addEventListener('pointerleave', this.handleTriggerPointerLeave);
-    trigger.addEventListener('focus', this.handleTriggerFocus);
-    trigger.addEventListener('blur', this.handleTriggerBlur);
+    trigger.addEventListener('focusin', this.handleTriggerFocusIn);
+    trigger.addEventListener('focusout', this.handleTriggerFocusOut);
     trigger.addEventListener('keydown', this.handleTriggerKeydown);
     this.updateTriggerAria();
     this.warnInDev();
@@ -327,33 +375,41 @@ export class DsTooltip extends LitElement {
     }
     trigger.removeEventListener('pointerenter', this.handleTriggerPointerEnter);
     trigger.removeEventListener('pointerleave', this.handleTriggerPointerLeave);
-    trigger.removeEventListener('focus', this.handleTriggerFocus);
-    trigger.removeEventListener('blur', this.handleTriggerBlur);
+    trigger.removeEventListener('focusin', this.handleTriggerFocusIn);
+    trigger.removeEventListener('focusout', this.handleTriggerFocusOut);
     trigger.removeEventListener('keydown', this.handleTriggerKeydown);
-    trigger.removeAttribute('aria-describedby');
-    trigger.removeAttribute('aria-labelledby');
-    this.hidePopup();
+    if (trigger.getAttribute('aria-describedby') === this.tooltipId) {
+      trigger.removeAttribute('aria-describedby');
+    }
+    if (trigger.getAttribute('aria-labelledby') === this.tooltipId) {
+      trigger.removeAttribute('aria-labelledby');
+    }
+    this.pointerOverTrigger = false;
+    this.triggerFocused = false;
+    this.hideBubble();
   }
 
   private updateTriggerAria(): void {
-    if (!this.triggerEl) {
+    const trigger = this.triggerEl;
+    if (!trigger) {
       return;
     }
-    if (this.describes) {
-      this.triggerEl.setAttribute('aria-describedby', this.popupId);
-      this.triggerEl.removeAttribute('aria-labelledby');
-    } else {
-      this.triggerEl.setAttribute('aria-labelledby', this.popupId);
-      this.triggerEl.removeAttribute('aria-describedby');
+    const [set, clear] = this.describes ? ['aria-describedby', 'aria-labelledby'] : ['aria-labelledby', 'aria-describedby'];
+    if (trigger.getAttribute(set) !== this.tooltipId) {
+      trigger.setAttribute(set, this.tooltipId);
+    }
+    if (trigger.getAttribute(clear) === this.tooltipId) {
+      trigger.removeAttribute(clear);
     }
   }
 
   private readonly handleTriggerPointerEnter = (event: PointerEvent): void => {
-    // Never shown on touch; the description stays reachable via aria-describedby/labelledby.
+    // Never shown on touch (no hover); the text stays in the tree through the description copy.
     if (event.pointerType === 'touch') {
       return;
     }
     this.pointerOverTrigger = true;
+    clearTimeout(this.hideGraceTimerId);
     this.requestShow(false);
   };
 
@@ -370,29 +426,41 @@ export class DsTooltip extends LitElement {
     this.scheduleMaybeHide();
   };
 
-  private readonly handleTriggerFocus = (): void => {
+  private readonly handleTriggerFocusIn = (): void => {
     this.triggerFocused = true;
     this.requestShow(true);
   };
 
-  private readonly handleTriggerBlur = (): void => {
+  private readonly handleTriggerFocusOut = (event: FocusEvent): void => {
+    const next = event.relatedTarget;
+    if (next instanceof Node && this.triggerEl?.contains(next)) {
+      return;
+    }
     this.triggerFocused = false;
-    this.hidePopup();
+    this.hideBubble();
   };
 
+  /** Escape: hides the tooltip without moving focus. */
   private readonly handleTriggerKeydown = (event: KeyboardEvent): void => {
     if (event.key === 'Escape' && this.visible) {
-      this.hidePopup();
+      this.hideBubble();
     }
   };
 
-  private readonly handlePopupPointerEnter = (): void => {
-    this.pointerOverPopup = true;
+  /** Escape while shown by hover alone (focus elsewhere): still dismissable without moving the pointer (WCAG 1.4.13). */
+  private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape' && this.visible && !this.triggerFocused) {
+      this.hideBubble();
+    }
+  };
+
+  private readonly handleBubblePointerEnter = (): void => {
+    this.pointerOverBubble = true;
     clearTimeout(this.hideGraceTimerId);
   };
 
-  private readonly handlePopupPointerLeave = (): void => {
-    this.pointerOverPopup = false;
+  private readonly handleBubblePointerLeave = (): void => {
+    this.pointerOverBubble = false;
     this.scheduleMaybeHide();
   };
 
@@ -407,126 +475,133 @@ export class DsTooltip extends LitElement {
       return;
     }
     clearTimeout(this.showTimerId);
-    const warm = Date.now() < warmUntil;
-    if (immediate || this.delay === 'none' || warm) {
-      this.showPopup();
+    this.showTimerId = undefined;
+    if (immediate || this.delay === 'none' || Date.now() < warmUntil) {
+      this.showBubble();
     } else {
-      this.showTimerId = setTimeout(() => this.showPopup(), this.computeDelayMs());
+      this.showTimerId = setTimeout(() => this.showBubble(), constantMs(this, HOVER_DELAY));
     }
   }
 
+  /** Waits one pointerGrace so the pointer can cross the `offset` gap to the bubble. */
   private scheduleMaybeHide(): void {
     clearTimeout(this.hideGraceTimerId);
     this.hideGraceTimerId = setTimeout(() => {
-      if (!this.pointerOverTrigger && !this.pointerOverPopup && !this.triggerFocused) {
-        this.hidePopup();
+      if (!this.pointerOverTrigger && !this.pointerOverBubble && !this.triggerFocused) {
+        this.hideBubble();
       }
-    }, POINTER_LEAVE_GRACE_MS);
+    }, constantMs(this, POINTER_GRACE));
   }
 
-  private computeDelayMs(): number {
-    return readDurationMs(this, '--motion-duration-base') * DELAY_MULTIPLIER;
-  }
-
-  private showPopup(): void {
-    if (this.visible || !this.triggerEl) {
+  private showBubble(): void {
+    const bubble = this.bubbleEl;
+    if (this.visible || !this.triggerEl || !bubble || !this.isConnected) {
       return;
     }
     this.visible = true;
     clearTimeout(this.showTimerId);
     this.showTimerId = undefined;
     if (POPOVER_SUPPORTED) {
-      this.popupEl.showPopover();
+      if (!bubble.matches(':popover-open')) {
+        bubble.showPopover();
+      }
     } else {
-      this.popupEl.hidden = false;
+      bubble.hidden = false;
+      bubble.toggleAttribute('data-open', true);
     }
     this.updatePosition();
-    this.addGlobalListeners();
+    window.addEventListener('scroll', this.handleReposition, true);
+    window.addEventListener('resize', this.handleReposition);
+    document.addEventListener('keydown', this.handleDocumentKeydown);
   }
 
-  private hidePopup(): void {
+  private hideBubble(): void {
     if (!this.visible) {
+      clearTimeout(this.showTimerId);
+      this.showTimerId = undefined;
       return;
     }
     this.visible = false;
     clearTimeout(this.showTimerId);
     clearTimeout(this.hideGraceTimerId);
     this.showTimerId = undefined;
-    if (POPOVER_SUPPORTED) {
-      if (this.popupEl.matches(':popover-open')) {
-        this.popupEl.hidePopover();
+    const bubble = this.bubbleEl;
+    if (bubble) {
+      if (POPOVER_SUPPORTED) {
+        if (bubble.matches(':popover-open')) {
+          bubble.hidePopover();
+        }
+      } else {
+        bubble.toggleAttribute('data-open', false);
+        bubble.hidden = true;
       }
-    } else {
-      this.popupEl.hidden = true;
     }
-    this.removeGlobalListeners();
-    warmUntil = Date.now() + readDurationMs(this, '--motion-duration-base');
-  }
-
-  private addGlobalListeners(): void {
-    window.addEventListener('scroll', this.handleReposition, true);
-    window.addEventListener('resize', this.handleReposition);
-  }
-
-  private removeGlobalListeners(): void {
     window.removeEventListener('scroll', this.handleReposition, true);
     window.removeEventListener('resize', this.handleReposition);
+    document.removeEventListener('keydown', this.handleDocumentKeydown);
+    warmUntil = Date.now() + constantMs(this, WARM_WINDOW);
   }
 
+  /** Positions the bubble from the trigger rect at `placement`, resolving start/end from the trigger's direction and flipping on overflow. */
   private updatePosition(): void {
     const trigger = this.triggerEl;
-    const popup = this.popupEl;
-    if (!trigger || !popup) {
+    const bubble = this.bubbleEl;
+    if (!trigger || !bubble) {
       return;
     }
     const triggerRect = trigger.getBoundingClientRect();
-    const popupRect = popup.getBoundingClientRect();
+    const bubbleRect = bubble.getBoundingClientRect();
     const viewportWidth = document.documentElement.clientWidth;
     const viewportHeight = document.documentElement.clientHeight;
     const gap = parseFloat(getComputedStyle(this).getPropertyValue('--ds-tooltip-offset')) || 0;
-    const gutter = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--layout-gutter')) || 0;
+    const rtl = getComputedStyle(trigger).direction === 'rtl';
 
-    let placement = this.placement;
-    if (placement === 'top' && triggerRect.top - gap - popupRect.height < 0) {
-      placement = 'bottom';
-    } else if (placement === 'bottom' && triggerRect.bottom + gap + popupRect.height > viewportHeight) {
-      placement = 'top';
-    } else if (placement === 'start' && triggerRect.left - gap - popupRect.width < 0) {
-      placement = 'end';
-    } else if (placement === 'end' && triggerRect.right + gap + popupRect.width > viewportWidth) {
-      placement = 'start';
+    type Side = 'top' | 'bottom' | 'left' | 'right';
+    let side: Side =
+      this.placement === 'start' ? (rtl ? 'right' : 'left') : this.placement === 'end' ? (rtl ? 'left' : 'right') : this.placement;
+    if (side === 'top' && triggerRect.top - gap - bubbleRect.height < 0) {
+      side = 'bottom';
+    } else if (side === 'bottom' && triggerRect.bottom + gap + bubbleRect.height > viewportHeight) {
+      side = 'top';
+    } else if (side === 'left' && triggerRect.left - gap - bubbleRect.width < 0) {
+      side = 'right';
+    } else if (side === 'right' && triggerRect.right + gap + bubbleRect.width > viewportWidth) {
+      side = 'left';
     }
 
     let top: number;
     let left: number;
-    switch (placement) {
+    switch (side) {
       case 'top':
-        top = triggerRect.top - gap - popupRect.height;
-        left = triggerRect.left + triggerRect.width / 2 - popupRect.width / 2;
+        top = triggerRect.top - gap - bubbleRect.height;
+        left = triggerRect.left + triggerRect.width / 2 - bubbleRect.width / 2;
         break;
       case 'bottom':
         top = triggerRect.bottom + gap;
-        left = triggerRect.left + triggerRect.width / 2 - popupRect.width / 2;
+        left = triggerRect.left + triggerRect.width / 2 - bubbleRect.width / 2;
         break;
-      case 'start':
-        left = triggerRect.left - gap - popupRect.width;
-        top = triggerRect.top + triggerRect.height / 2 - popupRect.height / 2;
+      case 'left':
+        left = triggerRect.left - gap - bubbleRect.width;
+        top = triggerRect.top + triggerRect.height / 2 - bubbleRect.height / 2;
         break;
-      case 'end':
       default:
         left = triggerRect.right + gap;
-        top = triggerRect.top + triggerRect.height / 2 - popupRect.height / 2;
+        top = triggerRect.top + triggerRect.height / 2 - bubbleRect.height / 2;
         break;
     }
 
-    left = Math.min(Math.max(left, gutter), Math.max(gutter, viewportWidth - popupRect.width - gutter));
-    top = Math.min(Math.max(top, gutter), Math.max(gutter, viewportHeight - popupRect.height - gutter));
-    popup.style.top = `${top}px`;
-    popup.style.left = `${left}px`;
+    left = Math.min(Math.max(left, 0), Math.max(0, viewportWidth - bubbleRect.width));
+    top = Math.min(Math.max(top, 0), Math.max(0, viewportHeight - bubbleRect.height));
+    bubble.style.top = `${top}px`;
+    bubble.style.left = `${left}px`;
   }
 
-  private renderPopupContent(): void {
-    if (!this.popupEl) {
+  /** Writes `content` into both copies: plain text in the description, a composed <ds-text data-part="text"> in the bubble. */
+  private renderLightContent(): void {
+    if (this.descriptionEl && this.descriptionEl.textContent !== this.content) {
+      this.descriptionEl.textContent = this.content;
+    }
+    if (!this.bubbleEl) {
       return;
     }
     const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
@@ -541,7 +616,7 @@ export class DsTooltip extends LitElement {
     }
     litRender(
       html`<ds-text data-part="text" size="sm" element="span" .overrides=${textOverrides}>${this.content}</ds-text>`,
-      this.popupEl,
+      this.bubbleEl,
     );
   }
 
@@ -564,7 +639,8 @@ export class DsTooltip extends LitElement {
     if (!this.content) {
       console.warn('<ds-tooltip> requires `content`.', this);
     }
-    if (this.triggerEl && typeof this.triggerEl.focus !== 'function') {
+    const trigger = this.triggerEl;
+    if (trigger && trigger.tabIndex < 0 && trigger.shadowRoot?.delegatesFocus !== true) {
       console.warn(
         '<ds-tooltip> child must be focusable, so hover and keyboard focus are equivalent (WCAG 1.4.13, 2.1.1).',
         this,

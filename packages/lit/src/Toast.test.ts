@@ -2,12 +2,13 @@
  * <ds-toast> — behavior scenarios from the component doc, one test each, in the doc's order.
  * Runs in headless Chromium (Vitest browser mode).
  */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import './Toast.js';
-import type { DsToast } from './Toast.js';
+import type { DsToast, ToastDismissDetail } from './Toast.js';
 import meta from './Toast.stories.js';
 
-type Given = Partial<Pick<DsToast, 'message' | 'tone' | 'actionLabel' | 'duration' | 'dismissible'>>;
+type Given = Partial<Pick<DsToast, 'message' | 'tone' | 'actionLabel' | 'duration' | 'dismissible' | 'toastId'>>;
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
 async function setup(given: Given = {}) {
@@ -16,9 +17,22 @@ async function setup(given: Given = {}) {
   for (const [key, value] of Object.entries(props)) {
     if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
   }
+  const calls: string[] = [];
+  const action = vi.fn<(event: CustomEvent<void>) => void>(() => calls.push('action'));
+  const dismiss = vi.fn<(event: CustomEvent<ToastDismissDetail>) => void>(() => calls.push('dismiss'));
+  el.addEventListener('action', action as unknown as EventListener);
+  el.addEventListener('dismiss', dismiss as unknown as EventListener);
   document.body.append(el);
   await el.updateComplete;
-  return { el, props };
+  const root = el.shadowRoot!;
+  return {
+    el,
+    props,
+    calls,
+    action,
+    dismiss,
+    part: <T extends Element = HTMLElement>(name: string) => root.querySelector<T>(`[data-part="${name}"]`),
+  };
 }
 
 beforeEach(() => {
@@ -26,52 +40,63 @@ beforeEach(() => {
 });
 
 describe('ds-toast', () => {
+  it('the-dismiss-button-fires-on-dismiss', async () => {
+    const t = await setup({ dismissible: true });
+    await userEvent.click(t.part('dismissButton')!);
+    await expect.poll(() => t.dismiss.mock.calls.length).toBe(1);
+    expect(t.dismiss.mock.calls[0]![0].detail).toEqual({ reason: 'dismiss-button' });
+  });
+
+  it('the-action-button-fires-on-action', async () => {
+    const t = await setup({ actionLabel: 'Undo' });
+    await userEvent.click(t.part('actionButton')!);
+    expect(t.action).toHaveBeenCalledTimes(1);
+    await expect.poll(() => t.dismiss.mock.calls.length).toBe(1);
+    expect(t.dismiss.mock.calls[0]![0].detail).toEqual({ reason: 'action' });
+    expect(t.calls).toEqual(['action', 'dismiss']);
+  });
+
+  it('escape-dismisses-the-focused-toast', async () => {
+    const t = await setup();
+    t.part('dismissButton')!.focus();
+    expect(t.el.matches(':focus-within')).toBe(true);
+    await userEvent.keyboard('{Escape}');
+    await expect.poll(() => t.dismiss.mock.calls.length).toBe(1);
+    expect(t.dismiss.mock.calls[0]![0].detail).toEqual({ reason: 'escape' });
+  });
+
+  it('danger-toasts-are-announced-assertively', async () => {
+    const t = await setup({ tone: 'danger' });
+    expect(t.el.getAttribute('role')).toBe('alert');
+  });
+
+  it('the-message-is-rendered', async () => {
+    const t = await setup({ message: '3 files moved to Archive' });
+    expect(t.part('message')).toHaveTextContent('3 files moved to Archive');
+  });
+
+  /* derived */
   it('renders', async () => {
-    const { el } = await setup();
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    const t = await setup();
+    expect(t.part('toast')).not.toBeNull();
   });
 
-  /* derived: props.tone */
-  it('renders-tone-neutral', async () => {
-    const { el } = await setup({ tone: 'neutral' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
-  });
+  for (const tone of ['neutral', 'success', 'warning', 'danger'] as const) {
+    it(`renders-tone-${tone}`, async () => {
+      const t = await setup({ tone });
+      expect(t.part('toast')).not.toBeNull();
+    });
+  }
 
-  it('renders-tone-success', async () => {
-    const { el } = await setup({ tone: 'success' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
-  });
+  for (const duration of ['short', 'long', 'persistent'] as const) {
+    it(`renders-duration-${duration}`, async () => {
+      const t = await setup({ duration });
+      expect(t.part('toast')).not.toBeNull();
+    });
+  }
 
-  it('renders-tone-warning', async () => {
-    const { el } = await setup({ tone: 'warning' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
-  });
-
-  it('renders-tone-danger', async () => {
-    const { el } = await setup({ tone: 'danger' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
-  });
-
-  /* derived: props.duration */
-  it('renders-duration-short', async () => {
-    const { el } = await setup({ duration: 'short' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
-  });
-
-  it('renders-duration-long', async () => {
-    const { el } = await setup({ duration: 'long' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
-  });
-
-  it('renders-duration-persistent', async () => {
-    const { el } = await setup({ duration: 'persistent' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
-  });
-
-  /* derived: a11y.requires. The host carries the "status"/"alert" role and its
-     accessible name through ElementInternals, set to `message`. */
   it('has-accessible-name', async () => {
-    const { el, props } = await setup();
-    expect(el).toHaveAccessibleName(props.message);
+    const t = await setup();
+    expect(t.el).toHaveAccessibleName(t.props.message);
   });
 });

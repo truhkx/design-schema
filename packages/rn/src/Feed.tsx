@@ -1,38 +1,34 @@
 import * as React from 'react';
 import { FlatList, View } from 'react-native';
-import type { ListRenderItemInfo, ListViewToken, ViewStyle } from 'react-native';
+import type { ListRenderItemInfo, ListViewToken, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
+import type { ButtonOverridableBinding } from './Button';
 import { Card } from './Card';
-import type { CardOverridableBinding, CardHeadingLevel } from './Card';
+import type { CardOverridableBinding } from './Card';
 import { ProgressBar } from './ProgressBar';
+import { Stack } from './Stack';
 import { Text } from './Text';
 import type { TextOverridableBinding } from './Text';
 import { useTheme } from './theme';
 
-/** Heading level for each article's `Heading`. The schema declares the values as strings; numbers are accepted for ergonomics. */
+/** Heading level for each article's heading. The schema declares the values as strings; numbers are accepted too. */
 export type FeedHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
 
-export interface FeedItem {
+export type FeedItem = {
   id: string;
-  /** Names the article, with the actor first ("Ana commented on Invoice 42"). Rendered as a Heading inside the article's Card. */
   heading: string;
-  /** ISO timestamp, rendered relative ("3 min ago"). */
   timestamp: string;
-  /** The article's body. Keep it to a few lines with a Link to the full thing. */
   content: React.ReactNode;
-  /** At most two Buttons, primary first. */
   actions?: React.ReactNode;
-  /** Marks an item the user has not seen: a start-edge bar plus a hidden "unread" word. */
-  unread?: boolean | undefined;
-}
+  unread?: boolean;
+};
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/** The style bindings a caller may replace with a different token. Locked: unreadBorder, unreadBorderWidth, timestampColor, endMessageColor, focusRing, focusRingWidth. */
 export type FeedOverridableBinding =
   | 'itemGap'
   | 'articleInset'
-  | 'unreadBorderWidth'
   | 'timestampSize'
   | 'newItemsOffset'
   | 'loadingInset'
@@ -41,32 +37,34 @@ export type FeedOverridableBinding =
   | 'fontFamily';
 
 export interface FeedProps {
-  /** What the feed contains ("Activity", "Notifications"). Its accessible name. */
+  /** What the feed contains ("Activity", "Notifications"). The list's accessible name. */
   label: string;
-  /** Articles, newest first. The feed renders them in the order given; it never re-sorts. */
+  /**
+   * Articles, newest first. `heading` names the article (the Card's heading); `timestamp`
+   * is ISO and rendered relative ("3 min ago", or the absolute date after seven days);
+   * `unread` marks items the user has not seen.
+   */
   items: FeedItem[];
-  /** More items exist beyond the last; the feed asks for them with `onEndReached` as the end approaches. */
+  /** More items exist beyond the last; the feed asks for them with `onEndReached` as the end approaches, and once on mount when `items` is empty and not `loading`. */
   hasMore?: boolean | undefined;
-  /** More items are being fetched; a loading indicator is shown after the last article and the feed is marked busy. */
+  /** More items are being fetched; a loading indicator is shown after the last article and the list is marked busy. */
   loading?: boolean | undefined;
-  /** Number of newer items available above. Shows a "Show {count} new" button at the top; the feed never inserts them itself. */
+  /** Number of newer items available above. The feed does not insert them; it shows a "Show {count} new" button above the list. Whole numbers only. */
   newItemsCount?: number | undefined;
-  /** Heading level for article headings, matching the page outline. Native has no heading levels; this controls only the default typography. */
+  /** Heading level for article headings. React Native has no heading levels: headings carry the `header` role and this controls only typography. */
   headingLevel?: FeedHeadingLevel | undefined;
-  /** Shown after the last item when `hasMore` is false. Defaults to `copy.end`. */
+  /** Shown after the last item when `hasMore` is false and `items` is not empty. Defaults to `copy.end`. */
   endMessage?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<FeedOverridableBinding, TokenRef | undefined>> | undefined;
-  /**
-   * Fired when the last rendered article is within one screen of view and `hasMore`
-   * is set, and once on mount when `items` is empty and not `loading` (so an empty
-   * feed fetches its first page itself).
-   */
+  /** The root `View`. */
+  ref?: React.Ref<ViewInstance> | undefined;
+  /** Load more (`onLoadMore`): the last article is within one screen of view with `hasMore`, or an empty feed mounted with `hasMore` and not `loading`. */
   onEndReached?: (() => void) | undefined;
-  /** Fired when the new-items button is pressed; the caller prepends the items and clears `newItemsCount`. */
+  /** The new-items button was pressed; the caller prepends the items and clears `newItemsCount`. */
   onShowNew?: (() => void) | undefined;
-  /** Fired with an item id once it has been substantially visible for a moment (mark as read). */
-  onViewableItemsChanged?: ((itemId: string) => void) | undefined;
+  /** Item visible (`onItemVisible`): the item has been at least half visible for a second (mark as read). */
+  onViewableItemsChanged?: ((id: string) => void) | undefined;
 }
 
 const COPY = {
@@ -76,59 +74,57 @@ const COPY = {
   unread: 'unread',
   position: (index: number, total: number): string => `${index} of ${total}`,
   empty: 'Nothing here yet.',
-};
+  justNow: 'just now',
+  minutesAgo: (n: number): string => `${n} min ago`,
+  hoursAgo: (n: number): string => `${n} hr ago`,
+  daysAgo: (n: number): string => `${n} d ago`,
+} as const;
 
-/** A View clipped to a point but still exposed to assistive technology, for text that has no visible slot. */
+/** Clipped to a point but still exposed to assistive technology: text with no visible slot. */
 const HIDDEN_STYLE: ViewStyle = { position: 'absolute', width: 1, height: 1, overflow: 'hidden' };
 
-const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 50, minimumViewTime: 1000 };
+/** Half visible for one second, as the schema's platform notes state. */
+const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 50, minimumViewTime: 1000 }; // literal-ok: schema-declared visibility rule, not a style value
 
-/** Renders "3 min ago" style relative time. Falls back to the raw string when `timestamp` does not parse. */
-function formatRelativeTime(timestamp: string, now: number): string {
+const MINUTE = 60_000; // literal-ok: milliseconds in a minute
+const HOUR = 60 * MINUTE; // literal-ok: minutes in an hour
+const DAY = 24 * HOUR; // literal-ok: hours in a day
+const WEEK = 7 * DAY; // literal-ok: days in a week
+
+/** Relative time from the copy strings; the absolute date in the user's locale from seven days on. The raw string when it does not parse. */
+function formatTimestamp(timestamp: string, now: number): string {
   const then = new Date(timestamp).getTime();
   if (!Number.isFinite(then)) {
     return timestamp;
   }
-  const diffSeconds = Math.round(Math.abs(now - then) / 1000);
-  if (diffSeconds < 60) {
-    return 'just now';
+  const elapsed = Math.max(0, now - then);
+  if (elapsed < MINUTE) {
+    return COPY.justNow;
   }
-  const diffMinutes = Math.round(diffSeconds / 60);
-  if (diffMinutes < 60) {
-    return `${diffMinutes} min ago`;
+  if (elapsed < HOUR) {
+    return COPY.minutesAgo(Math.floor(elapsed / MINUTE));
   }
-  const diffHours = Math.round(diffMinutes / 60);
-  if (diffHours < 24) {
-    return `${diffHours} hr ago`;
+  if (elapsed < DAY) {
+    return COPY.hoursAgo(Math.floor(elapsed / HOUR));
   }
-  const diffDays = Math.round(diffHours / 24);
-  return `${diffDays} d ago`;
+  if (elapsed < WEEK) {
+    return COPY.daysAgo(Math.floor(elapsed / DAY));
+  }
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(then);
 }
 
 /**
- * Feed — a list that never quite ends: it grows as the reader nears the bottom, and
- * newer items arrive at the top without moving what is on screen.
+ * Feed — a stream of time-ordered articles that grows as the reader nears the end, with
+ * newer items offered by a button rather than inserted under the reader.
  *
- * When to use: Use a Feed for a stream of similar, time-ordered items whose total is
- * unknown or large — activity, notifications, comments, audit events. Use
- * `newItemsCount` with `onShowNew` for live streams rather than inserting items while
- * the reader is looking, and `onViewableItemsChanged` to mark things read.
- *
- * Renders a `FlatList` (`accessibilityRole="list"`, `accessibilityLabel={label}`,
- * `accessibilityState={{ busy: loading }}`) of articles, each a `Card` wrapped in a
- * plain `View` that carries the start-edge unread bar and a visually-hidden
- * "unread"/position hint — the wrapper is not itself `accessible` so a Card's
- * composed action `Button`s and any `Link` in `content` stay individually
- * focusable, unlike the single-node grouping the web `role="article"` achieves.
- * `onEndReached` fires `hasMore`'s load request (guarded against firing while
- * already `loading`), once on mount when `items` is empty (there is no last
- * article for `FlatList` to observe, so the first page has to be asked for
- * directly), and again as the reader nears the bottom; `maintainVisibleContentPosition`
- * keeps the reader's place when `onShowNew`'s caller prepends items. The footer is
- * an indeterminate `ProgressBar` or the end message, from `ListFooterComponent`;
- * `ListEmptyComponent` is suppressed while `loading` so the loading indicator is
- * what shows, not `copy.empty`. `newItemsCount > 0` renders a `secondary`/`sm`
- * `Button` above the list rather than inside it, so it never scrolls away.
+ * Renders a `FlatList` (`accessibilityRole="list"`, `accessibilityLabel={label}`, busy
+ * while `loading`) of `Card`s. Cards are left un-collapsed so action Buttons and Links in
+ * an article stay individually focusable; the hidden "unread" word and, when the total
+ * is known (`hasMore` false), the "{index} of {total}" position sit before each Card.
+ * `onEndReached` fires with threshold one screen; `maintainVisibleContentPosition` keeps
+ * the reader's place when the caller prepends after `onShowNew`. There is no hardware
+ * keyboard feed model on native (no Page or Ctrl keys); screen readers browse with their
+ * own gestures. The absolute time is not exposed on native.
  */
 export function Feed({
   label,
@@ -139,6 +135,7 @@ export function Feed({
   headingLevel = '3',
   endMessage,
   overrides,
+  ref,
   onEndReached,
   onShowNew,
   onViewableItemsChanged,
@@ -146,46 +143,40 @@ export function Feed({
   const { tokens: t } = useTheme();
 
   const itemGap = overrides?.itemGap ? (resolveToken(t, overrides.itemGap) as number) : t.layoutGapNormal;
-  const unreadBorderWidth = overrides?.unreadBorderWidth
-    ? (resolveToken(t, overrides.unreadBorderWidth) as number)
-    : t.borderWidthFocus;
   const newItemsOffset = overrides?.newItemsOffset ? (resolveToken(t, overrides.newItemsOffset) as number) : t.space3;
   const loadingInset = overrides?.loadingInset ? (resolveToken(t, overrides.loadingInset) as number) : t.layoutInsetMd;
-  const endMessageInset = overrides?.endMessageInset ? (resolveToken(t, overrides.endMessageInset) as number) : t.layoutInsetMd;
+  const endMessageInset = overrides?.endMessageInset
+    ? (resolveToken(t, overrides.endMessageInset) as number)
+    : t.layoutInsetMd;
 
-  const cardOverrides: Partial<Record<CardOverridableBinding, TokenRef | undefined>> | undefined = overrides?.articleInset
-    ? { paddingBlock: overrides.articleInset, paddingInline: overrides.articleInset }
-    : undefined;
+  const articleInset = overrides?.articleInset;
+  const timestampSize = overrides?.timestampSize;
+  const endMessageSize = overrides?.endMessageSize;
+  const fontFamily = overrides?.fontFamily;
 
-  const timestampTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined =
-    overrides?.timestampSize || overrides?.fontFamily
-      ? {
-          ...(overrides?.timestampSize ? { fontSize: overrides.timestampSize } : {}),
-          ...(overrides?.fontFamily ? { fontFamily: overrides.fontFamily } : {}),
-        }
-      : undefined;
+  const cardOverrides = React.useMemo<Partial<Record<CardOverridableBinding, TokenRef | undefined>> | undefined>(
+    () => (articleInset ? { paddingBlock: articleInset, paddingInline: articleInset } : undefined),
+    [articleInset],
+  );
+  const timestampOverrides = React.useMemo<Partial<Record<TextOverridableBinding, TokenRef | undefined>>>(
+    () => ({ fontSize: timestampSize, fontFamily }),
+    [timestampSize, fontFamily],
+  );
+  const endMessageOverrides = React.useMemo<Partial<Record<TextOverridableBinding, TokenRef | undefined>>>(
+    () => ({ fontSize: endMessageSize, fontFamily }),
+    [endMessageSize, fontFamily],
+  );
+  const textOverrides = React.useMemo<Partial<Record<TextOverridableBinding, TokenRef | undefined>>>(
+    () => ({ fontFamily }),
+    [fontFamily],
+  );
+  const buttonOverrides = React.useMemo<Partial<Record<ButtonOverridableBinding, TokenRef | undefined>>>(
+    () => ({ fontFamily }),
+    [fontFamily],
+  );
 
-  const endMessageTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined =
-    overrides?.endMessageSize || overrides?.fontFamily
-      ? {
-          ...(overrides?.endMessageSize ? { fontSize: overrides.endMessageSize } : {}),
-          ...(overrides?.fontFamily ? { fontFamily: overrides.fontFamily } : {}),
-        }
-      : undefined;
-
-  const newItemsButtonOverrides = overrides?.fontFamily ? { fontFamily: overrides.fontFamily } : undefined;
-
-  const showNewItemsButton = newItemsCount !== undefined && newItemsCount > 0;
-
-  const handleEndReached = (): void => {
-    if (hasMore && !loading) {
-      onEndReached?.();
-    }
-  };
-
-  // An empty `FlatList` has no last article for `onEndReached` to fire from, so a
-  // freshly mounted, empty feed asks for its first page directly. Intentionally
-  // runs once, on mount only — see the `onEndReached` prop doc.
+  // An empty FlatList has no last article to observe, so an empty feed asks for its
+  // first page once, on mount.
   React.useEffect(() => {
     if (items.length === 0 && hasMore && !loading) {
       onEndReached?.();
@@ -193,92 +184,112 @@ export function Feed({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const latestOnViewable = React.useRef(onViewableItemsChanged);
-  React.useEffect(() => {
-    latestOnViewable.current = onViewableItemsChanged;
-  }, [onViewableItemsChanged]);
+  const handleEndReached = (): void => {
+    // The empty case is the mount request above; the list asks only once it has articles.
+    if (hasMore && !loading && items.length > 0) {
+      onEndReached?.();
+    }
+  };
 
-  // A stable identity, since FlatList warns when `onViewableItemsChanged` changes
-  // across renders; fresh state is read through the ref instead.
-  const handleViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: ListViewToken[] }): void => {
-    for (const entry of viewableItems) {
-      if (entry.isViewable && entry.item) {
-        latestOnViewable.current?.((entry.item as FeedItem).id);
+  // FlatList rejects a changing `onViewableItemsChanged`; the latest handler is read through a ref.
+  const onVisibleRef = React.useRef(onViewableItemsChanged);
+  React.useEffect(() => {
+    onVisibleRef.current = onViewableItemsChanged;
+  }, [onViewableItemsChanged]);
+  const handleViewableItemsChanged = React.useRef(({ changed }: { changed: ListViewToken[] }): void => {
+    for (const entry of changed) {
+      if (entry.isViewable && entry.item != null) {
+        onVisibleRef.current?.((entry.item as FeedItem).id);
       }
     }
   }).current;
 
+  const total = hasMore ? undefined : items.length;
+  const unreadColor = t.colorControlSelectedBackground;
+  const unreadWidth = t.borderWidthFocus;
+
   const renderItem = React.useCallback(
-    ({ item, index }: ListRenderItemInfo<FeedItem>): React.JSX.Element => {
-      const now = Date.now();
-      const relative = formatRelativeTime(item.timestamp, now);
-
-      const wrapperStyle: ViewStyle = item.unread
-        ? { borderStartWidth: unreadBorderWidth, borderStartColor: t.colorControlSelectedBackground }
-        : {};
-
-      return (
-        <View testID="Feed.article" style={wrapperStyle}>
-          {item.unread ? (
-            <View style={HIDDEN_STYLE}>
-              <Text size="xs">{COPY.unread}</Text>
-            </View>
-          ) : null}
-          {!hasMore ? (
-            <View style={HIDDEN_STYLE}>
-              <Text size="xs">{COPY.position(index + 1, items.length)}</Text>
-            </View>
-          ) : null}
-          <Card
-            heading={item.heading}
-            headingLevel={headingLevel as CardHeadingLevel}
-            footer={item.actions ? <View testID="Feed.articleActions">{item.actions}</View> : undefined}
-            overrides={cardOverrides}
-          >
-            <View testID="Feed.articleBody" style={{ gap: t.layoutGapTight }}>
+    ({ item, index }: ListRenderItemInfo<FeedItem>): React.JSX.Element => (
+      <View
+        testID="Feed.article"
+        style={item.unread ? { borderStartWidth: unreadWidth, borderStartColor: unreadColor } : undefined}
+      >
+        {item.unread ? (
+          <View style={HIDDEN_STYLE}>
+            <Text overrides={textOverrides}>{COPY.unread}</Text>
+          </View>
+        ) : null}
+        {total !== undefined ? (
+          <View style={HIDDEN_STYLE}>
+            <Text overrides={textOverrides}>{COPY.position(index + 1, total)}</Text>
+          </View>
+        ) : null}
+        <Card
+          heading={item.heading}
+          headingLevel={headingLevel}
+          inset="md"
+          overrides={cardOverrides}
+          footer={item.actions != null ? <View testID="Feed.articleActions">{item.actions}</View> : undefined}
+        >
+          <View testID="Feed.articleBody">
+            <Stack gap="tight">
               <View testID="Feed.timestamp">
-                <Text size="xs" tone="muted" overrides={timestampTextOverrides}>
-                  {relative}
+                <Text size="xs" tone="muted" overrides={timestampOverrides}>
+                  {formatTimestamp(item.timestamp, Date.now())}
                 </Text>
               </View>
-              {item.content}
-            </View>
-          </Card>
-        </View>
-      );
-    },
-    [cardOverrides, hasMore, headingLevel, items.length, t.colorControlSelectedBackground, t.layoutGapTight, timestampTextOverrides, unreadBorderWidth],
+              {/* React Native cannot render a bare string outside Text. */}
+              {typeof item.content === 'string' || typeof item.content === 'number' ? (
+                <Text overrides={textOverrides}>{item.content}</Text>
+              ) : (
+                item.content
+              )}
+            </Stack>
+          </View>
+        </Card>
+      </View>
+    ),
+    [cardOverrides, headingLevel, textOverrides, timestampOverrides, total, unreadColor, unreadWidth],
   );
 
   const footer = loading ? (
-    <View testID="Feed.loadingIndicator" style={{ paddingHorizontal: loadingInset, paddingVertical: loadingInset }}>
-      <ProgressBar label={COPY.loading} />
+    <View testID="Feed.loadingIndicator" style={{ padding: loadingInset }}>
+      <ProgressBar label={COPY.loading} hideLabel />
     </View>
   ) : !hasMore && items.length > 0 ? (
-    <View testID="Feed.endMessage" style={{ paddingHorizontal: endMessageInset, paddingVertical: endMessageInset }}>
-      <Text size="sm" tone="muted" overrides={endMessageTextOverrides}>
+    <View testID="Feed.endMessage" style={{ padding: endMessageInset }}>
+      <Text size="sm" tone="muted" overrides={endMessageOverrides}>
         {endMessage ?? COPY.end}
       </Text>
     </View>
-  ) : undefined; // FlatList's strict prop type takes an element or undefined, not null
+  ) : undefined;
 
-  // Suppressed while `loading` so a freshly mounted, empty feed shows the loading
-  // indicator rather than `copy.empty`.
+  // While loading with no items the loading indicator shows, not copy.empty.
   const empty = loading ? undefined : (
-    <View testID="Feed.emptyState" style={{ padding: t.layoutInsetMd }}>
-      <Text tone="muted">{COPY.empty}</Text>
+    <View testID="Feed.emptyState">
+      <Text tone="muted" overrides={textOverrides}>
+        {COPY.empty}
+      </Text>
     </View>
   );
 
+  const showNewItems = newItemsCount !== undefined && newItemsCount > 0;
+
   return (
-    <View testID="Feed.container">
-      {showNewItemsButton ? (
+    <View ref={ref} testID="Feed">
+      {showNewItems ? (
         <View testID="Feed.newItemsButton" style={{ alignSelf: 'flex-start', paddingTop: newItemsOffset }}>
-          <Button label={COPY.showNew(newItemsCount as number)} variant="secondary" size="sm" overrides={newItemsButtonOverrides} onPress={onShowNew} />
+          <Button
+            label={COPY.showNew(Math.trunc(newItemsCount))}
+            variant="secondary"
+            size="sm"
+            overrides={buttonOverrides}
+            onPress={onShowNew}
+          />
         </View>
       ) : null}
       <FlatList
-        testID="Feed"
+        testID="Feed.container"
         accessibilityRole="list"
         accessibilityLabel={label}
         accessibilityState={{ busy: loading }}

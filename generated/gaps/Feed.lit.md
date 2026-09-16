@@ -18,3 +18,19 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Feed: FeedItem's `content`/`actions` are typed `unknown` per lit notes ("any lit-html renderable") rather than a stricter TemplateResult union — the doc gives no exact type, so `unknown` was kept as the existing stand-in for ReactNode.
 - Feed: `endMessage` prop's default fallback text (copy.end) is applied at render time (`this.endMessage ?? COPY_END`) rather than as the property's default value, since `undefined` must be distinguishable from an explicit empty string; not stated either way in the spec.
 - Feed: on Ctrl+End with `hasMore`, the doc says 'press again once it has loaded and hasMore is false' to escape the feed — implemented by simply re-checking live `hasMore` on each Ctrl+End press (no explicit retry/debounce state), since the spec doesn't describe what happens if the caller never flips `hasMore` to false.
+
+## 2026-09-16 13:01 — round 1
+
+- Feed: the doc's own behavior list has 6 scenarios, but the 10 scenarios for this platform leave out `loading-marks-the-feed-busy` (it is marked web-only, and Lit also runs on the web). I wrote only the 10 given; the host still gets aria-busy="true" while loading.
+- Feed: the doc says articles have aria-labelledby, but Lit's Card names itself with aria-label because ids don't work across shadow roots. I let Card set the name and added no aria-labelledby.
+- Feed: `unreadBorder` has no `part`, and drawing the bar on the Card would restyle a child. I draw it on a wrapper row Feed owns around each card. The doc should name the part that carries the bar (or give Card an accent-edge option).
+- Feed: `endMessageInset` is on part endMessage, which is composed as Text, and Text has no padding. The padding is on a wrapper row, and data-part=endMessage is on the ds-text inside it. `loadingInset` has no part, so it goes on the loadingIndicator wrapper.
+- Feed: `timestampColor` and `endMessageColor` are locked colours on composed Text. I used Text tone="muted" instead of setting the colour, and passed `timestampSize`/`endMessageSize`/`fontFamily` through Text's --ds-text-font-size/--ds-text-font-family hooks. The doc doesn't say whether these bindings belong to Feed or to Text's props.
+- Feed: `articleInset` is 'passed to each Card as its inset', but Card's inset is a sm/md/lg choice and can't take any token. I set inset="md" and pass overrides through Card's --ds-card-padding-block/inline hooks.
+- Feed: articleBody has no gap binding, so the space between the timestamp and the content isn't specified. I used ds-stack gap="tight". The doc also doesn't say where the hidden `unread` and `position` text goes; I put both at the start of articleBody.
+- Feed: the doc doesn't say what to show with no items, `hasMore` true and not `loading` (the moment right after the first load-more). I show copy.empty.
+- Feed: it isn't clear whether Ctrl+End with `hasMore` should fire load-more again while `loading`, or how often load-more may fire while the last article stays in view. I fire on every Ctrl+End, and the observer fires once until `items`, `hasMore` or `loading` changes.
+- Feed: `onItemVisible` doesn't say whether it fires again when an item scrolls back into view. I fire once per id per element.
+- Feed: the doc names no date/time style for the absolute time. I used Intl.DateTimeFormat dateStyle 'medium' for dates older than a week and dateStyle 'medium' + timeStyle 'short' for the title. Relative times don't refresh as time passes (not specified). An unparseable timestamp is shown as the raw string.
+- Feed: the doc doesn't say whether the PageUp/PageDown/Ctrl commands should work from the new-items button, or where focus goes after show-new if `items` never changes. The commands only act from inside an article, and focus moves to the first article on the next `items` update after a press.
+- Feed: `label` is required but has no default. I warn in development when it is empty.

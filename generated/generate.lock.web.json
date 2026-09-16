@@ -435,20 +435,20 @@
     }
   },
   "Feed.web": {
-    "hash": "fc829c6ec2b814a9",
-    "lastAttemptHash": "fc829c6ec2b814a9",
-    "generatedAt": "2026-09-10T23:25:39+00:00",
-    "model": "sonnet",
+    "hash": "009a4e8db52d1311",
+    "lastAttemptHash": "009a4e8db52d1311",
+    "generatedAt": "2026-09-16T16:57:37+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3832,
+    "costUsd": 1.6088,
     "files": [
       "packages/react/src/Feed.css",
       "packages/react/src/Feed.stories.tsx",
-      "packages/react/src/Feed.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Feed.test.tsx",
+      "packages/react/src/Feed.tsx"
     ],
-    "gaps": 5,
+    "gaps": 17,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -959,20 +959,20 @@
     }
   },
   "Splitter.web": {
-    "hash": "2649f5a61099227a",
-    "lastAttemptHash": "2649f5a61099227a",
-    "generatedAt": "2026-09-10T23:24:19+00:00",
-    "model": "sonnet",
+    "hash": "04a35c81e3cbe94b",
+    "lastAttemptHash": "04a35c81e3cbe94b",
+    "generatedAt": "2026-09-16T16:45:39+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3968,
+    "costUsd": 2.5027,
     "files": [
       "packages/react/src/Splitter.css",
       "packages/react/src/Splitter.stories.tsx",
-      "packages/react/src/Splitter.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Splitter.test.tsx",
+      "packages/react/src/Splitter.tsx"
     ],
-    "gaps": 1,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,

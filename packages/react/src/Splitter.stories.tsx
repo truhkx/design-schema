@@ -28,6 +28,7 @@ const secondaryContent = (
 const meta: Meta<typeof Splitter> = {
   title: 'Splitter/React',
   component: Splitter,
+  tags: ['autodocs'],
   args: {
     label: 'Sidebar width',
     orientation: 'horizontal',
@@ -40,6 +41,14 @@ const meta: Meta<typeof Splitter> = {
     collapsible: false,
     stackBelow: 'prose',
   },
+  // A vertical splitter needs a height to divide; the frame is a plain, non-focusable box.
+  decorators: [
+    (Story) => (
+      <div style={{ blockSize: 'var(--layout-max-width-prose)' }}>
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export default meta;
@@ -53,22 +62,8 @@ export const OrientationVertical: Story = {
   args: {
     orientation: 'vertical',
     label: 'Preview height',
-    primary: (
-      <Stack gap="normal">
-        <Text element="p" weight="medium">
-          Editor
-        </Text>
-        <Text element="p">Code goes here.</Text>
-      </Stack>
-    ),
-    secondary: (
-      <Stack gap="normal">
-        <Text element="p" weight="medium">
-          Preview
-        </Text>
-        <Text element="p">Rendered output goes here.</Text>
-      </Stack>
-    ),
+    primary: <Text element="p">Editor</Text>,
+    secondary: <Text element="p">Preview</Text>,
   },
 };
 
@@ -79,14 +74,9 @@ export const StackBelowNever: Story = { args: { stackBelow: 'never' } };
 
 /* notable states */
 export const Collapsible: Story = { args: { collapsible: true } };
+export const Collapsed: Story = { args: { collapsible: true, defaultCollapsed: true } };
 
-export const Collapsed: Story = { args: { collapsible: true, collapsed: true } };
-
-export const WithPersistKey: Story = {
-  args: { collapsible: true, persistKey: 'demo-splitter-sidebar' },
-};
-
-/** Open/present with at least three focusable children, for the keyboard gate. */
+/** Present with its separator, collapse Button and at least three focusable children, for the keyboard gate. */
 export const Keyboard: Story = {
   args: {
     collapsible: true,
@@ -97,5 +87,46 @@ export const Keyboard: Story = {
       </Stack>
     ),
     secondary: <Button label="Detail action" variant="secondary" size="sm" />,
+  },
+};
+
+/* examples */
+export const SidebarAndContent: Story = {
+  args: {
+    label: 'Sidebar width',
+    primary: 'A navigation tree',
+    secondary: 'The selected document',
+    defaultSize: 25,
+    persistKey: 'app-sidebar',
+  },
+};
+
+export const CollapsibleNavigation: Story = {
+  args: {
+    label: 'Sidebar width',
+    primary: 'A navigation tree',
+    secondary: 'The selected document',
+    collapsible: true,
+    minSize: 15,
+  },
+};
+
+export const EditorOverPreview: Story = {
+  args: {
+    label: 'Editor height',
+    primary: 'The editor',
+    secondary: 'The preview',
+    orientation: 'vertical',
+    defaultSize: 60,
+  },
+};
+
+export const NeverStackingWorkbench: Story = {
+  args: {
+    label: 'List width',
+    primary: 'The result list',
+    secondary: 'The detail view',
+    stackBelow: 'never',
+    step: 5,
   },
 };

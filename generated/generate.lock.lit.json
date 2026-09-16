@@ -413,19 +413,19 @@
     }
   },
   "Feed.lit": {
-    "hash": "f6a48617f54262f3",
-    "lastAttemptHash": "f6a48617f54262f3",
-    "generatedAt": "2026-09-10T23:15:54+00:00",
-    "model": "sonnet",
+    "hash": "0c59e501b3f7b80e",
+    "lastAttemptHash": "0c59e501b3f7b80e",
+    "generatedAt": "2026-09-16T17:01:22+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9761,
+    "costUsd": 2.1185,
     "files": [
       "packages/lit/src/Feed.stories.ts",
-      "packages/lit/src/Feed.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Feed.test.ts",
+      "packages/lit/src/Feed.ts"
     ],
-    "gaps": 3,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -926,19 +926,19 @@
     }
   },
   "Splitter.lit": {
-    "hash": "3e95cc3765e66e9f",
-    "lastAttemptHash": "3e95cc3765e66e9f",
-    "generatedAt": "2026-09-10T23:12:01+00:00",
-    "model": "sonnet",
+    "hash": "b75870b1635fce28",
+    "lastAttemptHash": "b75870b1635fce28",
+    "generatedAt": "2026-09-16T16:50:51+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3767,
+    "costUsd": 2.377,
     "files": [
       "packages/lit/src/Splitter.stories.ts",
-      "packages/lit/src/Splitter.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Splitter.test.ts",
+      "packages/lit/src/Splitter.ts"
     ],
-    "gaps": 1,
+    "gaps": 16,
     "gates": {
       "parse": true,
       "contrast": true,

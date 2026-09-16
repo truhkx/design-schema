@@ -23,3 +23,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - handleSize (overridable) and minTarget (locked) don't state how they compose for hit area; implemented effective hit area as max(handleSize, minTarget) so the locked floor can't be overridden away.
 - collapseButtonOffset's anchor/direction isn't specified; anchored along the drag axis at one edge and centered on the cross axis via translate of half the target-min size (actual Button size isn't known pre-layout).
 - separatorHover (locked) has no meaning on a touch-only platform (no pointer hover); left unused — only separatorActive is applied while dragging.
+
+## 2026-09-16 12:53 — round 1
+
+- Splitter: the rn guidance says 'persistKey via AsyncStorage when the package is present', but the persistKey prop and the package rule forbid any storage dependency; chose the module-level memory map.
+- Splitter: the rn guidance says 'Stack below the prose width' as if fixed, but the stackBelow prop says all three values apply on every platform; chose prose/content/never from layoutMaxWidthProse/layoutMaxWidthContent, measured with onLayout on the splitter's own width. Before the first layout (and in the Jest renderer) it renders side by side.
+- Splitter: the spec doesn't say whether onSizeChangeEnd fires when a drag collapses the pane past minSize; chose to fire only onCollapseChange and ignore the rest of that drag, with no end event.
+- Splitter: the minSize prop says 'stepping below it collapses', but the Home action sets minSize and doesn't collapse; chose: decrement below minSize collapses when collapsible, setMinimum clamps to minSize.
+- Splitter: separatorActive is described as 'while dragging or focused', but the rn separator is a plain View with no focus events; it applies only while dragging.
+- Splitter: the transition binding covers the separator colour on web; on native the colour switches instantly (only collapse and restore animate). The spec doesn't say whether native should animate the colour.
+- Splitter: the grip is a 'rounded bar', but no radius binding is given; used t.radiusFull.
+- Splitter: the collapse Button's Icon names and colour are not specified; chose chevron-left/right (horizontal) and chevron-up/down (vertical) by collapsed state, coloured t.colorActionGhostForeground.
+- Splitter: 'centered across the separator and overlaps both panes' can't be done inside the thin separator View on Android (touches outside a parent's bounds are dropped); the Button is a positioned sibling placed from the measured separator position and Button size.
+- Splitter: handle size uses hitSlop on native, but react-native-web ignores hitSlop on View; added an absolutely positioned handle child that overflows the separator so the grab area works on web too. The spec doesn't say how RN should render the handle part.
+- Splitter: accessibilityActions increment/decrement/setMinimum/setMaximum have no copy for their labels; left them unlabelled (the system supplies names for increment/decrement) and labelled activate with copy.collapse/expand.
+- Splitter: keyboard rules say hardware Enter should activate on native, but the rn notes expose Enter, Home and End only as accessibility actions, and RN 0.87 View has no typed key handler; hardware arrow/Home/End/Enter keys on react-native-web do nothing.
+- Splitter: paneMinTarget on native is applied as minWidth/minHeight on both panes on the drag axis (dropped for the primary pane while collapsed); the CSS minmax() wording has no RN mapping stated.
+- Splitter: example stories pass plain strings as primary/secondary, which crash on native outside Text; the component wraps string/number pane content in Text (as Disclosure does). The spec doesn't say how content props should handle strings.
+- Splitter: copy.sizeText's percent param is not specified as rounded; passed the size value as-is (drag produces fractional percents, e.g. '37.4812%').

@@ -1,5 +1,13 @@
 /* Splitter — styled only through Design Schema token custom properties. */
 
+/* The primary size is registered so collapse and restore can interpolate it where @property is
+   supported; elsewhere they are instant and only the separator colour transitions. */
+@property --ds-splitter-primary-size {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
+}
+
 .ds-splitter {
   --ds-splitter-separator-size: var(--space-1);
   --ds-splitter-separator-color: var(--color-border);
@@ -17,41 +25,40 @@
   display: grid;
   inline-size: 100%;
   block-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 0;
 }
 
+/* paneMinTarget: a minmax() floor on both tracks beneath the percent clamp. */
 .ds-splitter--horizontal {
   grid-template-columns:
-    minmax(var(--ds-splitter-pane-min-target), var(--ds-splitter-primary-size)) auto
+    minmax(var(--ds-splitter-pane-min-target), var(--ds-splitter-primary-size))
+    auto
     minmax(var(--ds-splitter-pane-min-target), 1fr);
-  grid-template-rows: none;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .ds-splitter--vertical {
-  grid-template-columns: none;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows:
-    minmax(var(--ds-splitter-pane-min-target), var(--ds-splitter-primary-size)) auto
+    minmax(var(--ds-splitter-pane-min-target), var(--ds-splitter-primary-size))
+    auto
     minmax(var(--ds-splitter-pane-min-target), 1fr);
 }
 
-/* collapsed: the primary track drops the paneMinTarget floor entirely (unlike a normal small
-   size, a collapsed pane is meant to reach true 0, not just its usable minimum). */
+/* Collapsed: the primary track drops its floor so collapse reaches zero. */
 .ds-splitter--collapsed.ds-splitter--horizontal {
-  grid-template-columns: 0 auto minmax(var(--ds-splitter-pane-min-target), 1fr);
+  grid-template-columns: minmax(0, var(--ds-splitter-primary-size)) auto minmax(var(--ds-splitter-pane-min-target), 1fr);
 }
 
 .ds-splitter--collapsed.ds-splitter--vertical {
-  grid-template-rows: 0 auto minmax(var(--ds-splitter-pane-min-target), 1fr);
+  grid-template-rows: minmax(0, var(--ds-splitter-primary-size)) auto minmax(var(--ds-splitter-pane-min-target), 1fr);
 }
 
-/* stacked: below stackBelow's width a horizontal splitter has no room for two panes side by
-   side — both render in full, in source order, and the (now inert) separator collapses away. */
-.ds-splitter--stacked {
-  grid-template-columns: none;
+/* Stacked (below stackBelow): one column, both panes in full, in source order; no separator. */
+.ds-splitter--stacked.ds-splitter--horizontal {
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto;
-}
-
-.ds-splitter--stacked .ds-splitter__separator {
-  display: none;
 }
 
 .ds-splitter__primary-pane,
@@ -61,123 +68,139 @@
   overflow: auto;
 }
 
-/* separator: a thin visible line whose interactive hit area is widened by the ::before handle,
-   overlapping both panes without changing the grid track (overflow is visible by default, so the
-   pseudo-element's box still participates in pointer hit-testing beyond the track's own width). */
+.ds-splitter--collapsed .ds-splitter__primary-pane {
+  overflow: hidden;
+}
+
+.ds-splitter--collapsed.ds-splitter--horizontal .ds-splitter__primary-pane {
+  inline-size: 0;
+}
+
+.ds-splitter--collapsed.ds-splitter--vertical .ds-splitter__primary-pane {
+  block-size: 0;
+}
+
+/* The separator's grid track; it also positions the collapse Button on the separator. */
+.ds-splitter__track {
+  position: relative;
+  display: grid;
+}
+
+/* separatorSize, separatorColor: the visible line. */
 .ds-splitter__separator {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   background-color: var(--ds-splitter-separator-color);
-  cursor: pointer;
   touch-action: none;
 }
 
 .ds-splitter--horizontal .ds-splitter__separator {
   inline-size: var(--ds-splitter-separator-size);
-  block-size: 100%;
   cursor: col-resize;
 }
 
 .ds-splitter--vertical .ds-splitter__separator {
   block-size: var(--ds-splitter-separator-size);
-  inline-size: 100%;
   cursor: row-resize;
 }
 
-.ds-splitter__separator[role='presentation'] {
+.ds-splitter--collapsed .ds-splitter__separator {
   cursor: default;
 }
 
+/* handleSize, minTarget: the pointer grab area, max(handleSize, minTarget) centered on the line and
+   overlapping both panes. */
 .ds-splitter__separator::before {
   content: '';
   position: absolute;
-  inset-block: 0;
-  inset-inline: 0;
 }
 
 .ds-splitter--horizontal .ds-splitter__separator::before {
   inset-block: 0;
-  inset-inline-start: 50%;
-  inline-size: var(--ds-splitter-handle-size);
-  min-inline-size: var(--ds-splitter-min-target);
-  block-size: 100%;
-  transform: translateX(-50%);
+  inline-size: max(var(--ds-splitter-handle-size), var(--ds-splitter-min-target));
+  inset-inline-start: calc(
+    (var(--ds-splitter-separator-size) - max(var(--ds-splitter-handle-size), var(--ds-splitter-min-target))) / 2
+  );
 }
 
 .ds-splitter--vertical .ds-splitter__separator::before {
   inset-inline: 0;
-  inset-block-start: 50%;
-  block-size: var(--ds-splitter-handle-size);
-  min-block-size: var(--ds-splitter-min-target);
-  inline-size: 100%;
-  transform: translateY(-50%);
+  block-size: max(var(--ds-splitter-handle-size), var(--ds-splitter-min-target));
+  inset-block-start: calc(
+    (var(--ds-splitter-separator-size) - max(var(--ds-splitter-handle-size), var(--ds-splitter-min-target))) / 2
+  );
 }
 
-/* grip: a short centered mark so the divider reads as draggable. */
+/* grip, gripLength: a short rounded bar, gripLength along the separator and separatorSize across. */
 .ds-splitter__separator::after {
   content: '';
-  position: relative;
   background-color: var(--ds-splitter-grip);
   border-radius: var(--radius-full);
 }
 
 .ds-splitter--horizontal .ds-splitter__separator::after {
-  inline-size: 100%;
+  inline-size: var(--ds-splitter-separator-size);
   block-size: var(--ds-splitter-grip-length);
 }
 
 .ds-splitter--vertical .ds-splitter__separator::after {
-  block-size: 100%;
   inline-size: var(--ds-splitter-grip-length);
+  block-size: var(--ds-splitter-separator-size);
 }
 
+/* separatorHover (locked) */
 .ds-splitter__separator:hover {
   background-color: var(--ds-splitter-separator-hover);
 }
 
+/* separatorActive (locked): while dragging or focused. */
 .ds-splitter__separator:focus,
 .ds-splitter--dragging .ds-splitter__separator {
   background-color: var(--ds-splitter-separator-active);
 }
 
+/* focusRing, focusRingWidth (locked) */
 .ds-splitter__separator:focus-visible {
   outline: var(--ds-splitter-focus-ring-width) solid var(--ds-splitter-focus-ring);
   outline-offset: var(--ds-splitter-focus-ring-width);
 }
 
+/* collapseButtonOffset: from the separator's start edge along it, centered across it. A zero-size
+   flex box centers the Button on the line without measuring it. */
 .ds-splitter__collapse-button {
   position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ds-splitter--horizontal .ds-splitter__collapse-button {
   inset-block-start: var(--ds-splitter-collapse-button-offset);
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
+  inset-inline-start: calc(var(--ds-splitter-separator-size) / 2);
+  inline-size: 0;
 }
 
 .ds-splitter--vertical .ds-splitter__collapse-button {
   inset-inline-start: var(--ds-splitter-collapse-button-offset);
-  inset-block-start: 50%;
-  transform: translateY(-50%);
+  inset-block-start: calc(var(--ds-splitter-separator-size) / 2);
+  block-size: 0;
 }
 
-/* transition: collapse/restore (the grid track) and the separator's color; a live drag follows the
-   pointer with no transition (the --dragging modifier below removes it). */
+/* transition: collapse and restore, and the separator colour; dragging and key steps are instant. */
 @media (prefers-reduced-motion: no-preference) {
-  .ds-splitter--horizontal {
-    transition: grid-template-columns var(--ds-splitter-transition) var(--motion-easing-standard);
-  }
-  .ds-splitter--vertical {
-    transition: grid-template-rows var(--ds-splitter-transition) var(--motion-easing-standard);
-  }
   .ds-splitter__separator {
     transition: background-color var(--ds-splitter-transition) var(--motion-easing-standard);
   }
+
+  .ds-splitter--animate:not(.ds-splitter--dragging) {
+    transition: --ds-splitter-primary-size var(--ds-splitter-transition) var(--motion-easing-standard);
+  }
 }
 
-.ds-splitter--dragging.ds-splitter--horizontal,
-.ds-splitter--dragging.ds-splitter--vertical {
-  transition: none;
+@media (prefers-reduced-motion: reduce) {
+  .ds-splitter,
+  .ds-splitter__separator {
+    transition: none;
+  }
 }

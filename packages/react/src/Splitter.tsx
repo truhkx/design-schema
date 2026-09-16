@@ -7,33 +7,34 @@ import {
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactElement,
   type ReactNode,
-  type Ref, type ReactElement,
+  type Ref,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
-import { Icon } from './Icon';
+import { Icon, type IconName } from './Icon';
 import './Splitter.css';
 
 export type SplitterOrientation = 'horizontal' | 'vertical';
 export type SplitterStackBelow = 'prose' | 'content' | 'never';
 
-/** copy.* — used verbatim; `{label}`/`{percent}` are replaced. */
+/** copy.* — used verbatim; `{label}` and `{percent}` are the only substitutions. */
 const COPY = {
   collapse: 'Collapse {label}',
   expand: 'Expand {label}',
   sizeText: '{percent}%',
-};
+} as const;
 
-/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+/** Style bindings that can be overridden per instance; locked (accessibility-bearing) bindings are not in this union. */
 export type SplitterOverridableBinding =
   | 'separatorSize'
   | 'separatorColor'
   | 'handleSize'
   | 'gripLength'
   | 'collapseButtonOffset'
-  | 'paneMinTarget'
   | 'transition';
 
 const OVERRIDE_HOOK: Record<SplitterOverridableBinding, string> = {
@@ -42,43 +43,60 @@ const OVERRIDE_HOOK: Record<SplitterOverridableBinding, string> = {
   handleSize: '--ds-splitter-handle-size',
   gripLength: '--ds-splitter-grip-length',
   collapseButtonOffset: '--ds-splitter-collapse-button-offset',
-  paneMinTarget: '--ds-splitter-pane-min-target',
   transition: '--ds-splitter-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<SplitterOverridableBinding, TokenRef | undefined>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<SplitterOverridableBinding, TokenRef | undefined>>): Record<string, string> {
   const style: Record<string, string> = {};
-  for (const binding of Object.keys(overrides) as SplitterOverridableBinding[]) {
+  for (const binding of Object.keys(OVERRIDE_HOOK) as SplitterOverridableBinding[]) {
     const ref = overrides[binding];
     if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
   }
-  return style as CSSProperties;
+  return style;
 }
 
-/* Only declared when the bundler defines it; never assumed. */
-declare const process: { env: Record<string, string | undefined> } | undefined;
-const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+declare const process: { env: { NODE_ENV?: string } };
+const isDev: boolean = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
-const FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  '[contenteditable]:not([contenteditable="false"])',
-  '[tabindex]:not([tabindex="-1"])',
-].join(',');
-
-const BREAKPOINT_VAR: Record<Exclude<SplitterStackBelow, 'never'>, string> = {
+/** stackBelow → the layout.maxWidth.* token whose resolved length is the breakpoint. */
+const BREAKPOINT_TOKEN: Record<Exclude<SplitterStackBelow, 'never'>, string> = {
   prose: '--layout-max-width-prose',
   content: '--layout-max-width-content',
 };
 
-function readPersisted(key: string | undefined): { size?: number | undefined; collapsed?: boolean | undefined } | null {
+const FOCUSABLE_SELECTOR =
+  'a[href], button, input, select, textarea, [contenteditable]:not([contenteditable="false"]), [tabindex]';
+
+/**
+ * The breakpoint in CSS pixels, read from the loaded token stylesheet (literal-ok: the number is
+ * the theme's layout.maxWidth.*, never written here). `null` when the tokens are not loaded.
+ */
+function readBreakpoint(el: Element, stackBelow: Exclude<SplitterStackBelow, 'never'>): number | null {
+  const raw = getComputedStyle(el).getPropertyValue(BREAKPOINT_TOKEN[stackBelow]).trim();
+  const value = parseFloat(raw);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  if (raw.endsWith('rem')) return value * parseFloat(getComputedStyle(document.documentElement).fontSize);
+  if (raw.endsWith('em')) return value * parseFloat(getComputedStyle(el).fontSize);
+  return value;
+}
+
+interface PersistedState {
+  size?: number | undefined;
+  collapsed?: boolean | undefined;
+}
+
+function readPersisted(key: string | undefined): PersistedState | null {
   if (!key || typeof window === 'undefined') return null;
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as { size?: number | undefined; collapsed?: boolean | undefined }) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object') return null;
+    const { size, collapsed } = parsed as Record<string, unknown>;
+    return {
+      size: typeof size === 'number' && Number.isFinite(size) ? size : undefined,
+      collapsed: typeof collapsed === 'boolean' ? collapsed : undefined,
+    };
   } catch {
     return null;
   }
@@ -89,11 +107,11 @@ function writePersisted(key: string | undefined, value: { size: number; collapse
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    /* storage unavailable (private mode, quota) — the size just does not stick */
+    /* storage unavailable (private mode, quota): the size just does not stick */
   }
 }
 
-export interface SplitterProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
+export interface SplitterProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'className' | 'style'> {
   /** What the divider resizes ("Sidebar width", "Preview height"). The separator's accessible name. */
   label: string;
   /** `horizontal` places panes side by side (the separator is vertical); `vertical` stacks them. */
@@ -106,47 +124,58 @@ export interface SplitterProps extends Omit<ComponentPropsWithoutRef<'div'>, 'ch
   size?: number | undefined;
   /** Initial primary size, percent. */
   defaultSize?: number | undefined;
-  /** Smallest primary size, percent. Below this the pane collapses instead, when `collapsible`. */
+  /**
+   * Smallest primary size, percent. With `collapsible`, dragging or stepping below it collapses the
+   * pane instead of clamping; otherwise it is the hard floor.
+   */
   minSize?: number | undefined;
   /** Largest primary size, percent. */
   maxSize?: number | undefined;
   /** Arrow-key increment, percent. */
   step?: number | undefined;
   /**
-   * The primary pane can collapse to nothing: drag past the minimum, press Enter on the
-   * separator, or use the collapse button. Enter again restores the last size.
+   * The primary pane can collapse to nothing: drag past the minimum, press Enter on the separator,
+   * or use the collapse button. Enter again restores the last size.
    */
   collapsible?: boolean | undefined;
   /** Controlled collapsed state. */
   collapsed?: boolean | undefined;
-  /** When set, the size is remembered per user under this key (localStorage) so a sidebar stays where it was left. */
+  /** Initial collapsed state when uncontrolled. */
+  defaultCollapsed?: boolean | undefined;
+  /**
+   * When set, the size and collapsed state are remembered per user under this key so a sidebar
+   * stays where it was left: localStorage on web (in try/catch).
+   */
   persistKey?: string | undefined;
   /**
-   * Below this layout width a horizontal splitter stacks its panes and the separator becomes
-   * inert (a phone has no room for two panes side by side).
+   * Below this width of the splitter's own box (a container query, not the viewport, so nested
+   * splitters work) a horizontal splitter stacks its panes and the separator is not rendered. A
+   * vertical splitter never stacks. `content` = layout.maxWidth.content, `never` = no stacking.
    */
   stackBelow?: SplitterStackBelow | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  /** Per-instance style overrides: each entry sets the matching `--ds-splitter-*` hook to that token. */
   overrides?: Partial<Record<SplitterOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired continuously while dragging and on each key press, with the primary size in percent. */
   onSizeChange?: ((size: number) => void) | undefined;
-  /** Fired once when a drag ends, with the final size. */
+  /**
+   * Fired with the final size once when a drag ends and after each key press (a key press is a
+   * complete interaction), so a caller can persist on it.
+   */
   onSizeChangeEnd?: ((size: number) => void) | undefined;
   /** Fired when the primary pane collapses or restores. */
   onCollapseChange?: ((collapsed: boolean) => void) | undefined;
 }
 
 /**
- * Splitter — Design Schema, category: layout.
+ * Splitter — Design Schema, category: layout. APG window splitter.
  *
  * When to use:
  * Use a Splitter when two regions compete for space and the right split depends on the task: a
  * navigation tree beside content, a list beside a detail view, a code editor beside its output, a
- * map beside results. Make the primary pane the one whose size matters (the sidebar), set
- * sensible `minSize`/`maxSize`, and use `persistKey` so the choice sticks. Use `collapsible` for
- * sidebars.
+ * map beside results. Make the primary pane the one whose size matters (the sidebar), set sensible
+ * `minSize`/`maxSize`, and use `persistKey` so the choice sticks. Use `collapsible` for sidebars.
  */
-export const Splitter = function Splitter({
+export function Splitter({
   ref,
   label,
   orientation = 'horizontal',
@@ -159,239 +188,249 @@ export const Splitter = function Splitter({
   step = 2,
   collapsible = false,
   collapsed,
+  defaultCollapsed = false,
   persistKey,
   stackBelow = 'prose',
   overrides,
   onSizeChange,
   onSizeChangeEnd,
   onCollapseChange,
-  id: idProp,
-  className,
-  style,
   onKeyDown,
   ...rest
 }: SplitterProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
-  const generatedId = useId();
-  const id = idProp ?? `ds-splitter${generatedId}`;
-  const primaryId = `${id}-primary`;
-  const secondaryId = `${id}-secondary`;
+  const primaryId = `ds-splitter${useId()}-primary`;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const primaryRef = useRef<HTMLDivElement | null>(null);
   const separatorRef = useRef<HTMLDivElement | null>(null);
   const secondaryRef = useRef<HTMLDivElement | null>(null);
+  const collapseButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  if (isDev && !label) {
-    console.warn('Splitter: `label` is required and becomes the separator’s accessible name.');
-  }
+  useEffect(() => {
+    if (isDev && !label) console.warn('Splitter: `label` is required; it is the separator’s accessible name.');
+  }, [label]);
 
-  const isControlled = size !== undefined;
-  const [internalSize, setInternalSize] = useState<number>(() => readPersisted(persistKey)?.size ?? defaultSize);
-  const current = isControlled ? (size as number) : internalSize;
+  const clamp = (value: number): number => Math.min(Math.max(value, minSize), maxSize);
+
+  // Size: controlled when `size` is given; otherwise local state from persistence or defaultSize.
+  const [internalSize, setInternalSize] = useState<number>(() => clamp(readPersisted(persistKey)?.size ?? defaultSize));
+  const current = size !== undefined ? clamp(size) : internalSize;
   const latestSizeRef = useRef(current);
   latestSizeRef.current = current;
 
-  const isCollapsedControlled = collapsed !== undefined;
-  const [internalCollapsed, setInternalCollapsed] = useState<boolean>(() => readPersisted(persistKey)?.collapsed ?? false);
-  const collapsedState = isCollapsedControlled ? (collapsed as boolean) : internalCollapsed;
-  const lastSizeRef = useRef(current);
+  // Collapsed: controlled when `collapsed` is given; otherwise local state.
+  const [internalCollapsed, setInternalCollapsed] = useState<boolean>(
+    () => readPersisted(persistKey)?.collapsed ?? defaultCollapsed,
+  );
+  const collapsedState = collapsible && (collapsed !== undefined ? collapsed : internalCollapsed);
 
-  // The size stacking checks against the splitter's own inline size, not the viewport — this is a
-  // real container query, not a page-layout breakpoint (see SidePanel's `persistent`).
+  // Stacking: a container query on the splitter's own inline size, measured with a ResizeObserver.
+  const canStack = orientation === 'horizontal' && stackBelow !== 'never';
   const [isStacked, setIsStacked] = useState(false);
-  useEffect(() => {
-    if (orientation !== 'horizontal' || stackBelow === 'never') {
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    // jsdom and older browsers have no ResizeObserver: the splitter simply never stacks there.
+    if (!canStack || !el || typeof ResizeObserver === 'undefined') {
       setIsStacked(false);
       return undefined;
     }
-    const el = containerRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return undefined;
-    // literal-ok: breakpoint value read from the token custom property at runtime, not a literal.
-    const raw = getComputedStyle(document.documentElement).getPropertyValue(BREAKPOINT_VAR[stackBelow]).trim();
-    const breakpoint = parseFloat(raw) || 0;
-    const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width ?? el.getBoundingClientRect().width;
+    const breakpoint = readBreakpoint(el, stackBelow);
+    if (breakpoint === null) {
+      setIsStacked(false);
+      return undefined;
+    }
+    let lastWidth = -1;
+    const measure = (width: number): void => {
+      // observe() always delivers an initial notification; only a changed width may set state.
+      if (width === lastWidth) return;
+      lastWidth = width;
       setIsStacked(width < breakpoint);
+    };
+    measure(el.getBoundingClientRect().width);
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) measure(entry.contentRect.width);
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [orientation, stackBelow]);
+  }, [canStack, stackBelow]);
 
   const effectiveCollapsed = collapsedState && !isStacked;
 
+  // Collapse and restore animate; keyboard steps and drags do not (the transition binding's scope).
+  const [animateCollapse, setAnimateCollapse] = useState(false);
+  const [prevCollapsed, setPrevCollapsed] = useState(effectiveCollapsed);
+  if (prevCollapsed !== effectiveCollapsed) {
+    setPrevCollapsed(effectiveCollapsed);
+    setAnimateCollapse(true);
+  }
+
   useLayoutEffect(() => {
     const node = primaryRef.current;
-    if (node) node.inert = effectiveCollapsed;
+    if (node && node.inert !== effectiveCollapsed) node.inert = effectiveCollapsed;
   }, [effectiveCollapsed]);
 
   useEffect(() => {
     writePersisted(persistKey, { size: current, collapsed: collapsedState });
   }, [persistKey, current, collapsedState]);
 
-  function clamp(value: number): number {
-    return Math.min(Math.max(value, minSize), maxSize);
-  }
-
-  function commitSize(next: number): void {
+  function changeSize(next: number): boolean {
     const clamped = clamp(next);
-    if (!isControlled) setInternalSize(clamped);
+    setAnimateCollapse(false);
+    if (clamped === latestSizeRef.current) return false;
+    if (size === undefined) setInternalSize(clamped);
     latestSizeRef.current = clamped;
     onSizeChange?.(clamped);
+    return true;
   }
 
   function setCollapsed(next: boolean): void {
-    if (!isCollapsedControlled) setInternalCollapsed(next);
+    if (next === collapsedState) return;
+    if (collapsed === undefined) setInternalCollapsed(next);
     onCollapseChange?.(next);
   }
 
-  function collapse(): void {
-    if (collapsedState) return;
-    lastSizeRef.current = current;
-    setCollapsed(true);
-  }
-
-  function restore(): void {
-    if (!collapsedState) return;
-    setCollapsed(false);
-    commitSize(lastSizeRef.current);
-  }
-
-  function toggleCollapse(): void {
-    if (collapsedState) restore();
-    else collapse();
-  }
+  // ── Pointer drag ────────────────────────────────────────────────────────────
+  const [isDragging, setIsDragging] = useState(false);
+  const draggingRef = useRef(false);
 
   function percentFromPoint(clientX: number, clientY: number): number {
     const el = containerRef.current;
-    if (!el) return current;
+    if (!el) return latestSizeRef.current;
     const rect = el.getBoundingClientRect();
     if (orientation === 'horizontal') {
-      const rtl = getComputedStyle(el).direction === 'rtl';
-      const ratio = rect.width === 0 ? 0 : (clientX - rect.left) / rect.width;
-      return Math.min(Math.max(rtl ? 1 - ratio : ratio, 0), 1) * 100;
+      if (rect.width === 0) return latestSizeRef.current;
+      const ratio = (clientX - rect.left) / rect.width;
+      return (getComputedStyle(el).direction === 'rtl' ? 1 - ratio : ratio) * 100;
     }
-    const ratio = rect.height === 0 ? 0 : (clientY - rect.top) / rect.height;
-    return Math.min(Math.max(ratio, 0), 1) * 100;
+    if (rect.height === 0) return latestSizeRef.current;
+    return ((clientY - rect.top) / rect.height) * 100;
   }
 
-  const draggingRef = useRef(false);
-  const [isDragging, setIsDragging] = useState(false);
-
-  const handleSeparatorPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (isStacked || event.button !== 0) return;
-    if ((event.target as HTMLElement).closest('button')) return;
-    event.preventDefault();
-    draggingRef.current = true;
-    setIsDragging(true);
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current) return;
+  function stopDrag(target: HTMLDivElement, pointerId: number): void {
     draggingRef.current = false;
     setIsDragging(false);
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    if (target.hasPointerCapture(pointerId)) target.releasePointerCapture(pointerId);
+  }
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    if (effectiveCollapsed || event.button !== 0) return;
+    event.preventDefault();
+    event.currentTarget.focus();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    draggingRef.current = true;
+    setIsDragging(true);
+    setAnimateCollapse(false);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    if (!draggingRef.current) return;
+    const raw = percentFromPoint(event.clientX, event.clientY);
+    if (collapsible && raw < minSize) {
+      // Dragging past the minimum collapses; the drag ends here and the last size is kept to restore.
+      stopDrag(event.currentTarget, event.pointerId);
+      onSizeChangeEnd?.(latestSizeRef.current);
+      setCollapsed(true);
+      return;
+    }
+    changeSize(raw);
+  };
+
+  const handlePointerEnd = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    if (!draggingRef.current) return;
+    stopDrag(event.currentTarget, event.pointerId);
     onSizeChangeEnd?.(latestSizeRef.current);
   };
 
-  const handleSeparatorPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current || effectiveCollapsed) return;
-    const raw = percentFromPoint(event.clientX, event.clientY);
-    if (collapsible && raw < minSize) {
-      draggingRef.current = false;
-      setIsDragging(false);
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-      collapse();
-      return;
-    }
-    commitSize(raw);
-  };
-
-  const handleSeparatorPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => endDrag(event);
-  const handleSeparatorPointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => endDrag(event);
-
-  const keyChangedRef = useRef(false);
-
-  const handleSeparatorKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (isStacked || event.target !== event.currentTarget) return;
-    if (effectiveCollapsed) {
-      if (event.key === 'Enter' && collapsible) {
-        event.preventDefault();
-        restore();
-      }
+  // ── Keyboard ────────────────────────────────────────────────────────────────
+  const handleSeparatorKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    if (event.key === 'Enter') {
+      if (!collapsible) return;
+      event.preventDefault();
+      setCollapsed(!collapsedState);
       return;
     }
     const growKey = orientation === 'horizontal' ? 'ArrowRight' : 'ArrowDown';
     const shrinkKey = orientation === 'horizontal' ? 'ArrowLeft' : 'ArrowUp';
+    let next: number;
     switch (event.key) {
       case growKey:
-        event.preventDefault();
-        commitSize(current + step);
-        keyChangedRef.current = true;
+        next = latestSizeRef.current + step;
         break;
       case shrinkKey:
-        event.preventDefault();
-        commitSize(current - step);
-        keyChangedRef.current = true;
+        next = latestSizeRef.current - step;
         break;
       case 'Home':
-        event.preventDefault();
-        commitSize(minSize);
-        keyChangedRef.current = true;
+        next = minSize;
         break;
       case 'End':
-        event.preventDefault();
-        commitSize(maxSize);
-        keyChangedRef.current = true;
-        break;
-      case 'Enter':
-        if (collapsible) {
-          event.preventDefault();
-          collapse();
-        }
+        next = maxSize;
         break;
       default:
-        break;
+        return;
     }
-  };
-
-  const handleSeparatorKeyUp = () => {
-    if (keyChangedRef.current) {
-      keyChangedRef.current = false;
-      onSizeChangeEnd?.(latestSizeRef.current);
-    }
-  };
-
-  // F6: the APG convenience for cycling focus between the two panes and the separator, regardless
-  // of which of the three currently holds focus.
-  const handleContainerKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    onKeyDown?.(event);
-    if (event.key !== 'F6' || isStacked) return;
-    const active = document.activeElement;
-    const regions = [primaryRef, separatorRef, secondaryRef];
-    const activeIndex = regions.findIndex((r) => r.current === active || (r.current?.contains(active) ?? false));
-    const nextRegion = regions[activeIndex === -1 ? 0 : (activeIndex + 1) % regions.length]!.current;
-    if (!nextRegion) return;
     event.preventDefault();
-    const focusable = nextRegion.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-    (focusable ?? nextRegion).focus();
+    // While collapsed, arrows, Home and End do nothing; only Enter or the collapse button restores.
+    if (effectiveCollapsed) return;
+    if (collapsible && event.key === shrinkKey && latestSizeRef.current <= minSize) {
+      // Stepping below the floor collapses instead of clamping.
+      setCollapsed(true);
+      return;
+    }
+    if (changeSize(next)) onSizeChangeEnd?.(latestSizeRef.current);
   };
 
-  const handleCollapseButtonClick = () => toggleCollapse();
+  // F6 cycles primary pane → separator → secondary pane, wrapping; inert or unrendered regions are skipped.
+  const handleContainerKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    onKeyDown?.(event);
+    if (event.defaultPrevented || event.key !== 'F6' || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+    const regions = [effectiveCollapsed ? null : primaryRef.current, separatorRef.current, secondaryRef.current];
+    const active = document.activeElement;
+    const separatorTrack = separatorRef.current?.parentElement ?? null;
+    let from = regions.findIndex((region, index) =>
+      index === 1 ? separatorTrack?.contains(active) ?? false : region?.contains(active) ?? false,
+    );
+    if (from === -1) from = regions.length - 1;
+    for (let offset = 1; offset <= regions.length; offset += 1) {
+      const region = regions[(from + offset) % regions.length];
+      if (!region) continue;
+      event.preventDefault();
+      if (region === separatorRef.current) {
+        region.focus();
+        return;
+      }
+      const target = Array.from(region.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).find(
+        (el) => el.tabIndex >= 0 && !el.closest('[inert]') && el.getAttribute('aria-disabled') !== 'true',
+      );
+      if (target) {
+        target.focus();
+      } else {
+        if (region.getAttribute('tabindex') !== '-1') region.setAttribute('tabindex', '-1');
+        region.focus();
+      }
+      return;
+    }
+  };
 
-  const setContainerRef = (node: HTMLDivElement | null) => {
+  // The collapseButton part is a wrapper; a click on it reaches the composed Button.
+  const handleCollapseTargetClick = (event: ReactMouseEvent<HTMLSpanElement>): void => {
+    const button = collapseButtonRef.current;
+    if (!button || button.contains(event.target as Node)) return;
+    button.click();
+  };
+
+  const setContainerRef = (node: HTMLDivElement | null): void => {
     containerRef.current = node;
     if (typeof ref === 'function') ref(node);
-    else if (ref) (ref as { current: HTMLDivElement | null }).current = node;
+    else if (ref) ref.current = node;
   };
 
-  const displayedPercent = effectiveCollapsed ? 0 : Math.round(current);
-  const valueText = COPY.sizeText.replace('{percent}', String(displayedPercent));
+  const percent = effectiveCollapsed ? 0 : Math.round(current);
+  const valueText = COPY.sizeText.replace('{percent}', String(percent));
 
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const rootStyle: CSSProperties = {
-    ...overrideStyle,
-    ...style,
+  const rootStyle = {
+    ...(overrides ? overridesToStyle(overrides) : undefined),
     '--ds-splitter-primary-size': `${effectiveCollapsed ? 0 : current}%`,
   } as CSSProperties;
 
@@ -401,12 +440,12 @@ export const Splitter = function Splitter({
     isStacked ? 'ds-splitter--stacked' : null,
     effectiveCollapsed ? 'ds-splitter--collapsed' : null,
     isDragging ? 'ds-splitter--dragging' : null,
-    className ?? null,
+    animateCollapse ? 'ds-splitter--animate' : null,
   ]
     .filter(Boolean)
     .join(' ');
 
-  const collapseIcon =
+  const collapseIcon: IconName =
     orientation === 'horizontal'
       ? effectiveCollapsed
         ? 'chevron-right'
@@ -419,58 +458,54 @@ export const Splitter = function Splitter({
     <div
       {...rest}
       ref={setContainerRef}
-      id={id}
       data-ds="Splitter"
       data-part="container"
       className={classes}
       style={rootStyle}
       onKeyDown={handleContainerKeyDown}
     >
-      <div
-        ref={primaryRef}
-        id={primaryId}
-        data-part="primaryPane"
-        className="ds-splitter__primary-pane"
-        tabIndex={-1}
-      >
+      <div ref={primaryRef} id={primaryId} data-part="primaryPane" className="ds-splitter__primary-pane">
         {primary}
       </div>
-      <div
-        ref={separatorRef}
-        data-part="separator"
-        className="ds-splitter__separator"
-        role={isStacked ? 'presentation' : 'separator'}
-        tabIndex={isStacked ? undefined : 0}
-        aria-orientation={isStacked ? undefined : orientation === 'horizontal' ? 'vertical' : 'horizontal'}
-        aria-label={isStacked ? undefined : label}
-        aria-controls={isStacked ? undefined : primaryId}
-        aria-valuenow={isStacked ? undefined : displayedPercent}
-        aria-valuemin={isStacked ? undefined : minSize}
-        aria-valuemax={isStacked ? undefined : maxSize}
-        aria-valuetext={isStacked ? undefined : valueText}
-        onPointerDown={handleSeparatorPointerDown}
-        onPointerMove={handleSeparatorPointerMove}
-        onPointerUp={handleSeparatorPointerUp}
-        onPointerCancel={handleSeparatorPointerCancel}
-        onKeyDown={handleSeparatorKeyDown}
-        onKeyUp={handleSeparatorKeyUp}
-      >
-        {collapsible && !isStacked ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            data-part="collapseButton"
-            className="ds-splitter__collapse-button"
-            label={(effectiveCollapsed ? COPY.expand : COPY.collapse).replace('{label}', label)}
-            leadingIcon={<Icon name={collapseIcon} inline />}
-            onClick={handleCollapseButtonClick}
+      {isStacked ? null : (
+        <div className="ds-splitter__track">
+          <div
+            ref={separatorRef}
+            role="separator"
+            tabIndex={0}
+            data-part="separator"
+            className="ds-splitter__separator"
+            aria-orientation={orientation === 'horizontal' ? 'vertical' : 'horizontal'}
+            aria-valuenow={percent}
+            aria-valuemin={effectiveCollapsed ? 0 : minSize}
+            aria-valuemax={maxSize}
+            aria-valuetext={valueText}
+            aria-label={label}
+            aria-controls={primaryId}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerEnd}
+            onPointerCancel={handlePointerEnd}
+            onKeyDown={handleSeparatorKeyDown}
           />
-        ) : null}
-      </div>
-      <div ref={secondaryRef} id={secondaryId} data-part="secondaryPane" className="ds-splitter__secondary-pane" tabIndex={-1}>
+          {collapsible ? (
+            <span className="ds-splitter__collapse-button" data-part="collapseButton" onClick={handleCollapseTargetClick}>
+              <Button
+                ref={collapseButtonRef}
+                variant="ghost"
+                size="sm"
+                iconOnly
+                label={(effectiveCollapsed ? COPY.expand : COPY.collapse).replace('{label}', label)}
+                leadingIcon={<Icon name={collapseIcon} inline />}
+                onClick={() => setCollapsed(!collapsedState)}
+              />
+            </span>
+          ) : null}
+        </div>
+      )}
+      <div ref={secondaryRef} data-part="secondaryPane" className="ds-splitter__secondary-pane">
         {secondary}
       </div>
     </div>
   );
-};
+}

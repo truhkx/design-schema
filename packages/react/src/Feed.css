@@ -7,50 +7,50 @@
   --ds-feed-new-items-offset: var(--space-3);
   --ds-feed-loading-inset: var(--layout-inset-md);
   --ds-feed-end-message-inset: var(--layout-inset-md);
-  --ds-feed-focus-ring: var(--color-border-focus);
-  --ds-feed-focus-ring-width: var(--border-width-focus);
+  --ds-feed-font-family: var(--font-family-body);
+  font-family: var(--ds-feed-font-family);
+}
+
+/* The live row is always rendered so the count is announced when the button appears; it takes
+   space only while the button is shown. newItemsOffset is padding: the row is the first child. */
+.ds-feed__new-items {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--layer-raised);
+  display: flex;
+  justify-content: center;
+}
+
+.ds-feed__new-items--shown {
+  padding-block-start: var(--ds-feed-new-items-offset);
+}
+
+.ds-feed__items {
   display: flex;
   flex-direction: column;
   gap: var(--ds-feed-item-gap);
 }
 
-/* newItemsOffset: space above the sticky button, as padding since there is no prior sibling to
-   space against (the button is always first) and margins between siblings are never used. */
-.ds-feed__new-items {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 1;
-  display: flex;
-  justify-content: center;
-  padding-block-start: var(--ds-feed-new-items-offset);
+/* unreadBorder / unreadBorderWidth (locked): a start-edge bar drawn by Feed's own item wrapper, beside
+   the Card rather than on it, paired with the visually-hidden "unread" word. */
+.ds-feed__item {
+  position: relative;
 }
 
-/* unreadBorder (locked) / unreadBorderWidth: a start-edge bar, paired with the visually-hidden
-   "unread" word — never the only signal. */
-.ds-feed [data-ds='Card'][data-unread] {
-  border-inline-start: var(--ds-feed-unread-border-width) solid var(--ds-feed-unread-border);
-}
-
-/* focusRing/focusRingWidth (locked): the composed article (a Card) has no focus treatment of its
-   own for a programmatically-focused, non-interactive root, so Feed supplies one directly on the
-   part it owns conceptually — the article's focus-visible state. */
-.ds-feed [data-ds='Card']:focus-visible {
-  outline: var(--ds-feed-focus-ring-width) solid var(--ds-feed-focus-ring);
-  outline-offset: var(--ds-feed-focus-ring-width);
+.ds-feed__item--unread::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--ds-feed-unread-border-width);
+  background: var(--ds-feed-unread-border);
+  pointer-events: none;
 }
 
 .ds-feed__article-body {
   display: flex;
   flex-direction: column;
   gap: var(--layout-gap-tight);
-}
-
-.ds-feed__timestamp {
-  display: block;
-}
-
-.ds-feed__empty {
-  padding: var(--layout-inset-md);
 }
 
 .ds-feed__visually-hidden {
@@ -60,7 +60,6 @@
   margin: -1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;

@@ -12,53 +12,23 @@ interface TreeArgs {
   selectChildren: boolean;
   selectOnFocus: boolean;
   showGuides: boolean;
+  expanded?: string[] | undefined;
   defaultExpanded?: string[] | undefined;
+  selected?: string[] | undefined;
   defaultSelected?: string[] | undefined;
 }
 
 const FOLDER_NODES: TreeNode[] = [
   {
-    id: 'documents',
+    id: 'docs',
     label: 'Documents',
-    icon: 'external',
+    icon: 'folder',
     children: [
-      { id: 'resume', label: 'Resume.pdf', badge: '2' },
-      { id: 'taxes', label: 'Taxes', children: [{ id: 'taxes-2025', label: '2025.pdf' }] },
+      { id: 'invoices', label: 'Invoices', icon: 'file' },
+      { id: 'contracts', label: 'Contracts', icon: 'file' },
     ],
   },
-  {
-    id: 'photos',
-    label: 'Photos',
-    children: [
-      { id: 'vacation', label: 'Vacation', badge: '48' },
-      { id: 'family', label: 'Family', disabled: true },
-    ],
-  },
-  { id: 'downloads', label: 'Downloads', badge: '3' },
-];
-
-const NAVIGATION_NODES: TreeNode[] = [
-  {
-    id: 'guides',
-    label: 'Guides',
-    children: [
-      { id: 'getting-started', label: 'Getting started', href: '#getting-started' },
-      { id: 'installation', label: 'Installation', href: '#installation' },
-    ],
-  },
-  {
-    id: 'components',
-    label: 'Components',
-    children: [
-      { id: 'button', label: 'Button', href: '#button' },
-      { id: 'tree', label: 'Tree', href: '#tree' },
-    ],
-  },
-];
-
-const LAZY_NODES: TreeNode[] = [
-  { id: 'root', label: 'Project', children: 'lazy' },
-  { id: 'sibling', label: 'Other project', children: [{ id: 'sibling-child', label: 'README.md' }] },
+  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },
 ];
 
 const meta: Meta<TreeArgs> = {
@@ -80,7 +50,7 @@ const meta: Meta<TreeArgs> = {
     selectChildren: false,
     selectOnFocus: false,
     showGuides: true,
-    defaultExpanded: ['documents'],
+    defaultExpanded: ['docs'],
   },
   render: (args) => html`
     <ds-tree
@@ -92,7 +62,9 @@ const meta: Meta<TreeArgs> = {
       ?select-children=${args.selectChildren}
       ?select-on-focus=${args.selectOnFocus}
       ?hide-guides=${!args.showGuides}
+      .expanded=${args.expanded}
       .defaultExpanded=${args.defaultExpanded}
+      .selected=${args.selected}
       .defaultSelected=${args.defaultSelected}
     ></ds-tree>
   `,
@@ -103,45 +75,95 @@ type Story = StoryObj<TreeArgs>;
 
 export const Default: Story = {};
 
-/* selectable */
-export const SelectableNone: Story = { args: { selectable: 'none' } };
-export const SelectableSingle: Story = { args: { selectable: 'single', defaultSelected: ['resume'] } };
-export const SelectableMultiple: Story = {
-  args: { selectable: 'multiple', selectChildren: true, defaultSelected: ['resume'] },
-};
-
-export const ShowLabel: Story = { args: { showLabel: true } };
-
 /* headingLevel */
 export const HeadingLevel2: Story = { args: { showLabel: true, headingLevel: '2' } };
 export const HeadingLevel3: Story = { args: { showLabel: true, headingLevel: '3' } };
 export const HeadingLevel4: Story = { args: { showLabel: true, headingLevel: '4' } };
 
-export const NoGuides: Story = { args: { showGuides: false } };
+/* selectable */
+export const SelectableNone: Story = { args: { selectable: 'none' } };
+export const SelectableSingle: Story = { args: { selectable: 'single', defaultSelected: ['invoices'] } };
+export const SelectableMultiple: Story = { args: { selectable: 'multiple', defaultSelected: ['invoices'] } };
 
-export const SelectOnFocus: Story = {
-  args: { selectOnFocus: true, defaultSelected: ['resume'] },
+export const SelectChildren: Story = {
+  args: { selectable: 'multiple', selectChildren: true, defaultSelected: ['invoices'] },
 };
-
-export const NavigationTree: Story = {
-  args: { label: 'Site sections', nodes: NAVIGATION_NODES, defaultExpanded: ['guides', 'components'] },
-};
-
-export const LazyLoading: Story = {
-  args: { label: 'Projects', nodes: LAZY_NODES },
-};
-
+export const SelectOnFocus: Story = { args: { selectOnFocus: true } };
+export const HideGuides: Story = { args: { showGuides: false } };
 export const DisabledNode: Story = {
-  args: { defaultExpanded: ['photos'] },
+  args: {
+    nodes: [
+      { id: 'docs', label: 'Documents', icon: 'folder', children: [{ id: 'invoices', label: 'Invoices', disabled: true }] },
+      { id: 'media', label: 'Media', icon: 'folder' },
+    ],
+  },
 };
-
 export const Empty: Story = { args: { nodes: [] } };
 
-/**
- * Renders open with at least three focusable nodes so the keyboard gate can
- * verify arrow navigation, Home/End, type-ahead, expand/collapse, Enter/Space
- * and Tab.
- */
+/* examples */
+export const FolderTree: Story = {
+  args: {
+    label: 'Folders',
+    defaultExpanded: ['docs'],
+    nodes: [
+      {
+        id: 'docs',
+        label: 'Documents',
+        icon: 'folder',
+        children: [
+          { id: 'invoices', label: 'Invoices', icon: 'file' },
+          { id: 'contracts', label: 'Contracts', icon: 'file' },
+        ],
+      },
+      { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },
+    ],
+  },
+};
+
+export const NavigationSidebar: Story = {
+  args: {
+    label: 'Settings sections',
+    showLabel: true,
+    headingLevel: '2',
+    selectOnFocus: true,
+    nodes: [
+      { id: 'account', label: 'Account', href: '/settings/account' },
+      { id: 'billing', label: 'Billing', href: '/settings/billing' },
+    ],
+  },
+};
+
+export const CategoryPickerWithCascade: Story = {
+  args: {
+    label: 'Categories',
+    selectable: 'multiple',
+    selectChildren: true,
+    defaultExpanded: ['*'],
+    nodes: [
+      {
+        id: 'clothing',
+        label: 'Clothing',
+        children: [
+          { id: 'shirts', label: 'Shirts' },
+          { id: 'shoes', label: 'Shoes' },
+        ],
+      },
+    ],
+  },
+};
+
+export const ReadOnlySiteMap: Story = {
+  args: {
+    label: 'Site map',
+    selectable: 'none',
+    nodes: [
+      { id: 'guides', label: 'Guides', badge: '12', children: [{ id: 'start', label: 'Getting started' }] },
+      { id: 'api', label: 'API', badge: '48', children: 'lazy' },
+    ],
+  },
+};
+
+/** Present with at least three focusable treeitems for the keyboard gate. */
 export const Keyboard: Story = {
-  args: { nodes: FOLDER_NODES, defaultExpanded: ['documents', 'photos'] },
+  args: { defaultExpanded: ['docs'] },
 };

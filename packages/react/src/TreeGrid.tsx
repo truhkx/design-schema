@@ -1,20 +1,23 @@
 import {
   useEffect,
   useId,
-  useImperativeHandle,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ComponentPropsWithoutRef,
   type CSSProperties,
+  type FocusEvent as ReactFocusEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactElement,
   type Ref,
-  type UIEvent, type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
-import { Button } from './Button';
+import { Button, type ButtonOverridableBinding } from './Button';
 import { Checkbox } from './Checkbox';
+import type { DataGridColumn } from './DataGrid';
 import { DatePicker, type DatePickerValue } from './DatePicker';
 import { Heading } from './Heading';
 import { Icon } from './Icon';
@@ -22,7 +25,6 @@ import { Input } from './Input';
 import { NumberInput } from './NumberInput';
 import { Select } from './Select';
 import { Text } from './Text';
-import type { DataGridColumn } from './DataGrid';
 import './TreeGrid.css';
 
 export type TreeGridSelectable = 'none' | 'row' | 'cell';
@@ -30,83 +32,33 @@ export type TreeGridDensity = 'compact' | 'comfortable';
 export type TreeGridHeight = 'content' | 'viewport' | 'fixed';
 export type TreeGridSortDirection = 'ascending' | 'descending';
 
-/** A row's children: a loaded subtree, `"lazy"` (loaded on first expand through `onExpand`), or
- * absent (a leaf). */
+/** A row's children: a loaded subtree, or `"lazy"` (loaded on first expand through `onExpand`). */
 export type TreeGridChildren = TreeGridRow[] | 'lazy';
 
-/** A nested row. `id` must be stable — expansion, selection and React keys all use it. */
+/** `TreeRow = { id: string; children?: TreeRow[] | "lazy"; [key: string]: unknown }` */
 export interface TreeGridRow {
   id: string;
   children?: TreeGridChildren | undefined;
   [key: string]: unknown;
 }
 
-/** Controlled sort state. Sorting orders siblings within each level; hierarchy is kept. */
+/** `{ column: string; direction: "ascending" | "descending" }` */
 export interface TreeGridSortState {
   column: string;
   direction: TreeGridSortDirection;
 }
 
-/** One cell, referenced by row id and column key. */
-export interface TreeGridCellRef {
-  rowId: string;
-  column: string;
-}
+export type TreeGridCellRef = { rowId: string; column: string };
+/** Row ids, or one cell, matching `selectable`. */
+export type TreeGridSelection = string[] | TreeGridCellRef;
+/** A committed or previous cell value, as the column editor produces it. */
+export type TreeGridCellValue = string | number | boolean;
 
-export type TreeGridSelectionChangeDetail = string[] | TreeGridCellRef;
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are locked. */
+export type TreeGridOverridableBinding = 'indent' | 'expandGap' | 'guideLine' | 'guideLineWidth' | 'parentWeight' | 'transition';
 
-export interface TreeGridCellChangeDetail {
-  rowId: string;
-  column: string;
-  value: unknown;
-  previous: unknown;
-}
-
-/** copy.* — used verbatim; placeholders are replaced with the running values. */
-const COPY = {
-  expand: 'Expand {rowName}',
-  collapse: 'Collapse {rowName}',
-  level: 'Level {level}',
-  childCount: '{count} items',
-  loading: 'Loading',
-  expandAll: 'Expand all',
-  collapseAll: 'Collapse all',
-};
-
-/**
- * The schema's own copy block has no strings for the sort button, the selection summary, or the
- * empty state — all behaviors this component reuses "as DataGrid" verbatim. Borrowed from
- * DataGrid's copy block (see the gap list) rather than invented.
- */
-const BORROWED_COPY = {
-  sortAscending: 'Sort by {column}, ascending',
-  sortDescending: 'Sort by {column}, descending',
-  sortedAnnouncement: 'Sorted by {column}, {direction}',
-  selectAll: 'Select all rows',
-  selectRow: 'Select {rowName}',
-  selectedRows: '{count} of {total} rows selected',
-  rowCount: '{count} rows',
-  editing: 'Editing {column}. Enter to save, Escape to cancel.',
-  invalid: '{message}',
-  empty: 'Nothing to show.',
-};
-
-const DEFAULT_COLUMN_WIDTH = 160;
-const ANNOUNCEMENT_TIMEOUT_MS = 5000;
-
-/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
-export type TreeGridOverridableBinding =
-  | 'indent'
-  | 'expandButtonSize'
-  | 'expandGap'
-  | 'guideLine'
-  | 'guideLineWidth'
-  | 'parentWeight'
-  | 'transition';
-
-const ROOT_OVERRIDE_HOOK: Record<TreeGridOverridableBinding, string> = {
+const OVERRIDE_HOOKS: Record<TreeGridOverridableBinding, string> = {
   indent: '--ds-tree-grid-indent',
-  expandButtonSize: '--ds-tree-grid-expand-button-size',
   expandGap: '--ds-tree-grid-expand-gap',
   guideLine: '--ds-tree-grid-guide-line',
   guideLineWidth: '--ds-tree-grid-guide-line-width',
@@ -114,208 +66,196 @@ const ROOT_OVERRIDE_HOOK: Record<TreeGridOverridableBinding, string> = {
   transition: '--ds-tree-grid-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<TreeGridOverridableBinding, TokenRef | undefined>>): CSSProperties {
-  const style: Record<string, string> = {};
-  for (const binding of Object.keys(overrides) as TreeGridOverridableBinding[]) {
-    const ref = overrides[binding];
-    if (ref) style[ROOT_OVERRIDE_HOOK[binding]] = cssVar(ref);
-  }
-  return style as CSSProperties;
-}
+/** copy.* — verbatim. */
+const COPY = {
+  expand: 'Expand {rowName}',
+  collapse: 'Collapse {rowName}',
+  loading: 'Loading',
+  empty: 'Nothing to show.',
+  sortAscending: 'Sort by {column}, ascending',
+  sortDescending: 'Sort by {column}, descending',
+  sortedAnnouncement: 'Sorted by {column}, {direction}',
+  selectAll: 'Select all rows',
+  selectRow: 'Select {rowName}',
+  selectedRows: '{count} of {total} rows selected',
+  editing: 'Editing {column}. Enter to save, Escape to cancel.',
+  invalid: '{message}',
+  rowCount: { one: '{count} row', other: '{count} rows' },
+  position: 'Row {row}, {column}',
+  resize: 'Resize {column}',
+  scrollHint: 'Scroll sideways to see more columns',
+} as const;
 
-/* Only declared when the bundler defines it; never assumed. */
+/** The column width when `width` is omitted (DataGrid's schema default). */
+const DEFAULT_COLUMN_WIDTH = 160; // literal-ok: schema default column width, in CSS pixels
+/** Rows rendered before one row has been measured (a row count, not a size). */
+const UNMEASURED_ROW_LIMIT = 50;
+/** The selection column: a minimum target plus the cell's own inline padding on both sides. */
+const SELECT_COLUMN_SIZE = 'calc(var(--size-target-min) + 2 * var(--ds-tree-grid-cell-padding-inline))';
+/** The row block size for the density (set in CSS from size.target.min / size.target.comfortable). */
+const ROW_SIZE = 'var(--ds-tree-grid-row-size)';
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+/** Interactive content a cell's `render` may hold, whatever its tabindex. */
+const CONTROL_SELECTOR = 'a[href], button, input, select, textarea, [contenteditable="true"]';
+const NAVIGATION_KEYS = new Set(['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End']);
+const PLACEHOLDER_PREFIX = 'ds-tree-grid-loading:';
+
 declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
 function interpolate(template: string, values: Record<string, string | number>): string {
-  return Object.keys(values).reduce((text, key) => text.replaceAll(`{${key}}`, String(values[key])), template);
+  let text = template;
+  for (const [key, value] of Object.entries(values)) text = text.replaceAll(`{${key}}`, String(value));
+  return text;
 }
 
-function compareRowValues(a: unknown, b: unknown): number {
-  if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b, undefined, { numeric: true });
-  return Number(a) - Number(b);
+function pluralForm(forms: { one: string; other: string }, count: number): string {
+  const locale = typeof document !== 'undefined' ? document.documentElement.lang || undefined : undefined;
+  return new Intl.PluralRules(locale).select(count) === 'one' ? forms.one : forms.other;
 }
 
-function cellValue(column: DataGridColumn, row: TreeGridRow): unknown {
-  return row[column.key];
+function compareValues(a: unknown, b: unknown): number {
+  if (typeof a === 'number' && typeof b === 'number') return a - b;
+  return String(a ?? '').localeCompare(String(b ?? ''), undefined, { numeric: true });
 }
 
-function cellText(column: DataGridColumn, row: TreeGridRow): string {
-  const value = cellValue(column, row);
+function textOf(value: unknown): string {
   return value === undefined || value === null ? '' : String(value);
 }
 
-function rowName(row: TreeGridRow, rowHeaderColumn: DataGridColumn | undefined): string {
-  if (!rowHeaderColumn) return row.id;
-  return cellText(rowHeaderColumn, row) || row.id;
+function toCellValue(value: unknown): TreeGridCellValue {
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
+  return value === undefined || value === null ? '' : String(value);
 }
 
-function hasLoadedOrLazyChildren(row: TreeGridRow): boolean {
+function joinClasses(...parts: (string | false | null | undefined)[]): string {
+  return parts.filter(Boolean).join(' ');
+}
+
+/** A row shows the expand control when its children are lazy or a non-empty loaded list. */
+function hasChildren(row: TreeGridRow): boolean {
   return row.children === 'lazy' || (Array.isArray(row.children) && row.children.length > 0);
 }
 
-function sortSiblings(rows: TreeGridRow[], sort: TreeGridSortState | undefined): TreeGridRow[] {
-  if (!sort) return rows;
-  const factor = sort.direction === 'ascending' ? 1 : -1;
-  return [...rows].sort((a, b) => compareRowValues(a[sort.column], b[sort.column]) * factor);
+/** Every loaded descendant id (a `"lazy"` subtree contributes nothing). O(subtree). */
+function descendantIds(row: TreeGridRow): string[] {
+  if (!Array.isArray(row.children)) return [];
+  const ids: string[] = [];
+  const walk = (list: TreeGridRow[]): void => {
+    for (const child of list) {
+      ids.push(child.id);
+      if (Array.isArray(child.children)) walk(child.children);
+    }
+  };
+  walk(row.children);
+  return ids;
 }
 
-interface VisibleRow {
-  id: string;
+/** `["*"]` stands for every loaded row that has loaded children. */
+function resolveExpanded(ids: string[], data: TreeGridRow[]): string[] {
+  if (!ids.includes('*')) return ids;
+  const resolved = ids.filter((id) => id !== '*');
+  const walk = (list: TreeGridRow[]): void => {
+    for (const row of list) {
+      if (Array.isArray(row.children) && row.children.length > 0) {
+        if (!resolved.includes(row.id)) resolved.push(row.id);
+        walk(row.children);
+      }
+    }
+  };
+  walk(data);
+  return resolved;
+}
+
+type VisibleRow = {
+  key: string;
   row: TreeGridRow;
   level: number;
   posinset: number;
   setsize: number;
   hasChildren: boolean;
   parentId: string | null;
-  isPlaceholder?: boolean | undefined;
-}
+  placeholder: boolean;
+};
 
-function flattenTree(rows: TreeGridRow[], expandedSet: Set<string>, sort: TreeGridSortState | undefined): VisibleRow[] {
-  const result: VisibleRow[] = [];
-  const walk = (list: TreeGridRow[], level: number, parentId: string | null) => {
-    const siblings = sortSiblings(list, sort);
-    siblings.forEach((row, index) => {
-      const hasChildren = hasLoadedOrLazyChildren(row);
-      result.push({ id: row.id, row, level, posinset: index + 1, setsize: siblings.length, hasChildren, parentId });
-      if (hasChildren && expandedSet.has(row.id)) {
-        if (row.children === 'lazy') {
-          result.push({
-            id: `${row.id}__loading`,
-            row,
-            level: level + 1,
-            posinset: 1,
-            setsize: 1,
-            hasChildren: false,
-            parentId: row.id,
-            isPlaceholder: true,
-          });
-        } else if (Array.isArray(row.children)) {
-          walk(row.children, level + 1, row.id);
-        }
-      }
-    });
-  };
-  walk(rows, 1, null);
-  return result;
-}
-
-/** O(n) per call — fine for interaction-driven lookups; only rendering is windowed for scale. */
-function findRowAndParent(rows: TreeGridRow[], id: string, parent: TreeGridRow | null = null): { row: TreeGridRow; parent: TreeGridRow | null } | undefined {
-  for (const row of rows) {
-    if (row.id === id) return { row, parent };
-    if (Array.isArray(row.children)) {
-      const found = findRowAndParent(row.children, id, row);
-      if (found) return found;
-    }
-  }
-  return undefined;
-}
-
-function collectDescendantIds(row: TreeGridRow): string[] {
-  if (!Array.isArray(row.children)) return [];
-  const ids: string[] = [];
-  for (const child of row.children) {
-    ids.push(child.id, ...collectDescendantIds(child));
-  }
-  return ids;
-}
-
-function collectAllIds(rows: TreeGridRow[]): string[] {
-  const ids: string[] = [];
-  for (const row of rows) {
-    ids.push(row.id);
-    if (Array.isArray(row.children)) ids.push(...collectAllIds(row.children));
-  }
-  return ids;
-}
-
-function collectExpandableIds(rows: TreeGridRow[]): string[] {
-  const ids: string[] = [];
-  for (const row of rows) {
-    if (hasLoadedOrLazyChildren(row)) ids.push(row.id);
-    if (Array.isArray(row.children)) ids.push(...collectExpandableIds(row.children));
-  }
-  return ids;
-}
-
-function rowCheckedState(row: TreeGridRow, selectedSet: Set<string>, selectChildren: boolean): 'checked' | 'unchecked' | 'indeterminate' {
-  if (!selectChildren) return selectedSet.has(row.id) ? 'checked' : 'unchecked';
-  const descendants = collectDescendantIds(row);
-  if (descendants.length === 0) return selectedSet.has(row.id) ? 'checked' : 'unchecked';
-  const allIds = [row.id, ...descendants];
-  const selectedCount = allIds.filter((id) => selectedSet.has(id)).length;
-  if (selectedCount === 0) return 'unchecked';
-  if (selectedCount === allIds.length) return 'checked';
-  return 'indeterminate';
-}
-
-const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-export interface TreeGridProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
-  /** What the tree grid holds ("Chart of accounts"). The accessible name; visually hidden with `hideCaption`. */
+export interface TreeGridProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'className' | 'style'> {
+  /** What the tree grid holds ("Chart of accounts"). The accessible name. */
   caption: string;
   /** Visually hide the caption; it remains the accessible name. */
   hideCaption?: boolean | undefined;
-  /** Column model. The `isRowHeader` column is required: it carries the indent and expand button,
-   * and must come first after the selection column. */
+  /** DataGrid's column model. The `isRowHeader` column is required here: it carries the indent and the expand
+   * button, so it must exist and come first after the selection column. */
   columns: DataGridColumn[];
-  /** Nested rows. `children: "lazy"` marks a row loaded on first expand through `onExpand`. */
+  /** Nested rows. `children: "lazy"` marks a row whose children are loaded on first expand through `onExpand`;
+   * the row shows the expand button and a loading state until `data` is updated. */
   data: TreeGridRow[];
   /** Controlled ids of expanded rows. */
   expanded?: string[] | undefined;
   /** Initially expanded ids. `["*"]` expands every loaded row. */
   defaultExpanded?: string[] | undefined;
-  /** Controlled sort state. Sorting orders siblings within each level; hierarchy is kept. */
+  /** Sort applies within each level; siblings are ordered, hierarchy is kept. */
   sort?: TreeGridSortState | undefined;
-  /** `row` adds a checkbox column; `cell` selects one cell. `row` selection of a parent does not
-   * select its descendants unless `selectChildren`. */
+  /** As DataGrid. */
+  defaultSort?: TreeGridSortState | undefined;
+  /** As DataGrid without `range` (rectangles across levels are not meaningful). `row` selection of a parent does
+   * not select its children unless `selectChildren`. */
   selectable?: TreeGridSelectable | undefined;
-  /** Selecting a parent row selects its descendants; the parent shows indeterminate when only some
-   * are selected. */
+  /** As DataGrid. */
+  selected?: string[] | undefined;
+  /** Initially selected row ids. */
+  defaultSelected?: string[] | undefined;
+  /** Toggling a parent row sets or clears its own id and every loaded descendant; a parent's shown state is
+   * derived from its loaded descendants (checked when all, indeterminate when some, else its own id). A `"lazy"`
+   * subtree contributes nothing until loaded. Select-all covers every loaded row at every level. */
   selectChildren?: boolean | undefined;
-  /** Master switch: cells whose column is `editable` can be edited. */
+  /** As DataGrid. */
   editable?: boolean | undefined;
-  /** Row height: compact suits the grid's purpose; comfortable for touch. */
+  /** As DataGrid. */
   density?: TreeGridDensity | undefined;
-  /** `viewport` fills the height available under the header; `content` grows with rows (no
-   * virtualization); `fixed` uses `overrides.fixedHeight`. */
+  /** As DataGrid. */
   height?: TreeGridHeight | undefined;
-  /** Sets aria-busy and shows `copy.loading` in the status bar; existing rows stay. */
+  /** As DataGrid. */
   loading?: boolean | undefined;
-  /** A footer line with row count and, while editing, the validation message. */
+  /** As DataGrid. */
   showStatusBar?: boolean | undefined;
-  /** Portal target for editors that open a popup (Select, DatePicker). Defaults to `document.body`.
-   * Not part of the schema; added so those composed editors can be portaled per their own contract. */
+  /** As DataGrid. */
+  stickyHeader?: boolean | undefined;
+  /** As DataGrid. */
+  emptyMessage?: string | undefined;
+  /** Portal target for the composed Select and DatePicker editors (default `document.body`). Platform prop. */
   container?: HTMLElement | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  /** Per-instance style overrides; each entry sets the matching `--ds-tree-grid-*` hook to that token. */
   overrides?: Partial<Record<TreeGridOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired with the new array of expanded ids. */
-  onExpandChange?: ((expanded: string[]) => void) | undefined;
-  /** Fired when a `children: "lazy"` row is expanded for the first time, with its id; the caller
-   * loads and replaces `children`. */
+  /** Fired with the new array of expanded ids (the bare array, as Tree; not wrapped in an object). */
+  onExpandChange?: ((ids: string[]) => void) | undefined;
+  /** Fired with its id (bare string) each time a row whose `children` is still `"lazy"` is expanded, so a failed
+   * load can retry; once the caller replaces `children` it never fires again for that row. */
   onExpand?: ((id: string) => void) | undefined;
-  /** Fired when a sortable header is activated, with the new sort state. */
-  onSortChange?: ((sort: TreeGridSortState) => void) | undefined;
-  /** Fired with the selection: row ids, or one cell. */
-  onSelectionChange?: ((selection: TreeGridSelectionChangeDetail) => void) | undefined;
-  /** Fired when an edit commits. The caller updates `data`; the grid shows the old value until it does. */
-  onCellChange?: ((detail: TreeGridCellChangeDetail) => void) | undefined;
+  /** As DataGrid. */
+  onSortChange?: ((column: string, direction: TreeGridSortDirection) => void) | undefined;
+  /** As DataGrid (row ids or one cell). */
+  onSelectionChange?: ((selection: TreeGridSelection) => void) | undefined;
+  /** As DataGrid. */
+  onCellChange?: ((rowId: string, column: string, value: TreeGridCellValue, previous: TreeGridCellValue) => void) | undefined;
+  /** As DataGrid; return false to refuse editing that cell. */
+  onEditStart?: ((rowId: string, column: string) => boolean | void) | undefined;
+  /** As DataGrid. */
+  onColumnResize?: ((column: string, width: number) => void) | undefined;
 }
 
-type ActiveCell = { row: number; col: number };
+type Active = { key: string | null; col: number };
+type Editing = { rowId: string; column: string };
 
 /**
- * TreeGrid — Design Schema, category: data.
+ * TreeGrid — Design Schema, category: data. APG treegrid built on DataGrid's structure.
  *
- * When to use:
- * Use a TreeGrid when records nest and each record has several comparable fields: a chart of
- * accounts with balances, folders and files with sizes and dates, a bill of materials with
- * quantities and costs, an org chart with headcount. Use `children: "lazy"` for deep or large
- * trees so the first paint is fast. Use `selectChildren` when selection means "this and everything
- * in it" (a folder to export).
+ * When to use: Use a TreeGrid when records nest and each record has several comparable fields: a chart of
+ * accounts with balances, folders and files with sizes and dates, a bill of materials with quantities and costs,
+ * an org chart with headcount. Use `children: "lazy"` for deep or large trees so the first paint is fast. Use
+ * `selectChildren` when selection means "this and everything in it" (a folder to export).
  */
-export const TreeGrid = function TreeGrid({
+export function TreeGrid({
   ref,
   caption,
   hideCaption = false,
@@ -324,13 +264,18 @@ export const TreeGrid = function TreeGrid({
   expanded,
   defaultExpanded,
   sort,
+  defaultSort,
   selectable = 'none',
+  selected,
+  defaultSelected,
   selectChildren = false,
   editable = false,
   density = 'compact',
   height = 'viewport',
   loading = false,
   showStatusBar = true,
+  stickyHeader = true,
+  emptyMessage,
   container,
   overrides,
   onExpandChange,
@@ -338,800 +283,1080 @@ export const TreeGrid = function TreeGrid({
   onSortChange,
   onSelectionChange,
   onCellChange,
-  className,
-  style,
+  onEditStart,
+  onColumnResize,
   ...rest
 }: TreeGridProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
-  const generatedId = useId();
-  const baseId = `ds-tree-grid${generatedId}`;
+  const baseId = `ds-tree-grid-${useId()}`;
   const captionId = `${baseId}-caption`;
-  const statusBarId = `${baseId}-status`;
+  const statusId = `${baseId}-status`;
+  const cellPrefix = `${baseId}-cell-`;
+  const cellId = (row: number, col: number): string => `${cellPrefix}${row < 0 ? 'h' : row}_${col}`;
 
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  useImperativeHandle(ref, () => rootRef.current as HTMLDivElement, []);
-  const scrollRegionRef = useRef<HTMLDivElement | null>(null);
-  const sizerRef = useRef<HTMLDivElement | null>(null);
-  const cellRefs = useRef(new Map<string, HTMLDivElement>());
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const targetSizerRef = useRef<HTMLSpanElement | null>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
 
-  const rowHeaderColumn = useMemo(() => columns.find((column) => column.isRowHeader), [columns]);
-  const rowHeaderIndex = useMemo(() => columns.findIndex((column) => column.isRowHeader), [columns]);
-
-  if (isDev) {
-    const rowHeaderCount = columns.filter((column) => column.isRowHeader).length;
-    if (rowHeaderCount !== 1) {
-      console.warn(`TreeGrid: exactly one column should set \`isRowHeader\`; found ${rowHeaderCount}.`);
-    } else if (rowHeaderIndex !== 0) {
-      console.warn('TreeGrid: the `isRowHeader` column should come first (immediately after the selection column).');
-    }
+  /* ---------- development warnings (once) ---------- */
+  const warnedRef = useRef(false);
+  if (isDev && !warnedRef.current) {
+    warnedRef.current = true;
+    const rowHeaders = columns.filter((column) => column.isRowHeader).length;
+    if (rowHeaders !== 1) console.warn(`TreeGrid: exactly one column must be \`isRowHeader\`; found ${rowHeaders}.`);
+    else if (!columns[0]?.isRowHeader) console.warn('TreeGrid: the `isRowHeader` column must come first.');
   }
 
-  /* ---------- expansion ---------- */
-  const isExpandedControlled = expanded !== undefined;
-  const [internalExpanded, setInternalExpanded] = useState<string[]>(() =>
-    defaultExpanded?.includes('*') ? collectExpandableIds(data) : (defaultExpanded ?? []),
-  );
-  const expandedIds = isExpandedControlled ? (expanded as string[]) : internalExpanded;
-  const expandedSet = useMemo(() => new Set(expandedIds), [expandedIds]);
-
-  const setExpanded = (next: string[]) => {
-    if (!isExpandedControlled) setInternalExpanded(next);
-    onExpandChange?.(next);
-  };
-
-  const toggleExpand = (id: string) => {
-    const next = expandedSet.has(id) ? expandedIds.filter((existing) => existing !== id) : [...expandedIds, id];
-    setExpanded(next);
-  };
-
-  const expandSiblings = (visRow: VisibleRow) => {
-    const siblingList = visRow.parentId ? findRowAndParent(data, visRow.parentId)?.row.children : data;
-    if (!Array.isArray(siblingList)) return;
-    const ids = siblingList.filter(hasLoadedOrLazyChildren).map((sibling) => sibling.id);
-    setExpanded(Array.from(new Set([...expandedIds, ...ids])));
-  };
-
-  /* Lazy rows fire `onExpand` exactly once per expand transition, including ids expanded up front
-     through `defaultExpanded={['*']}` or a controlled `expanded` prop. */
-  const requestedLazyRef = useRef(new Set<string>());
-  useEffect(() => {
-    for (const id of expandedIds) {
-      if (requestedLazyRef.current.has(id)) continue;
-      const found = findRowAndParent(data, id);
-      if (found?.row.children === 'lazy') {
-        requestedLazyRef.current.add(id);
-        onExpand?.(id);
-      }
-    }
-  }, [expandedIds, data, onExpand]);
-
-  const visible = useMemo(() => flattenTree(data, expandedSet, sort), [data, expandedSet, sort]);
-  const allIds = useMemo(() => collectAllIds(data), [data]);
-
-  /* ---------- sort (fully controlled — the schema gives TreeGrid `sort` but no `defaultSort`) ---------- */
-  const nextSortDirection = (columnKey: string): TreeGridSortDirection =>
-    sort?.column === columnKey && sort.direction === 'ascending' ? 'descending' : 'ascending';
-
-  const handleSort = (column: DataGridColumn) => {
-    const next: TreeGridSortState = { column: column.key, direction: nextSortDirection(column.key) };
-    onSortChange?.(next);
-    announce(interpolate(BORROWED_COPY.sortedAnnouncement, { column: column.header, direction: next.direction }));
-  };
-
-  const sortButtonLabel = (column: DataGridColumn): string => {
-    const next = nextSortDirection(column.key);
-    const template = next === 'ascending' ? BORROWED_COPY.sortAscending : BORROWED_COPY.sortDescending;
-    return interpolate(template, { column: column.header });
-  };
-
-  /* ---------- announcements / status bar ---------- */
-  const [announcement, setAnnouncement] = useState('');
-  const announcementTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const announce = (message: string, sticky = false) => {
-    if (announcementTimer.current) clearTimeout(announcementTimer.current);
-    setAnnouncement(message);
-    if (!sticky) announcementTimer.current = setTimeout(() => setAnnouncement(''), ANNOUNCEMENT_TIMEOUT_MS);
-  };
-  useEffect(() => () => clearTimeout(announcementTimer.current), []);
-
-  /* ---------- selection (uncontrolled only — the schema gives no `selected` prop) ---------- */
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-  const [cellSelection, setCellSelection] = useState<TreeGridCellRef | undefined>();
-  const anchorRef = useRef<string | null>(null);
-
-  const commitRowSelection = (next: string[]) => {
-    setSelectedIds(next);
-    onSelectionChange?.(next);
-    announce(interpolate(BORROWED_COPY.selectedRows, { count: next.length, total: allIds.length }));
-  };
-
-  const toggleRowSelection = (row: TreeGridRow) => {
-    const ids = selectChildren ? [row.id, ...collectDescendantIds(row)] : [row.id];
-    const shouldSelect = rowCheckedState(row, selectedSet, selectChildren) !== 'checked';
-    if (shouldSelect) {
-      commitRowSelection(Array.from(new Set([...selectedIds, ...ids])));
-    } else {
-      const remove = new Set(ids);
-      commitRowSelection(selectedIds.filter((id) => !remove.has(id)));
-    }
-  };
-
-  const allSelected = allIds.length > 0 && allIds.every((id) => selectedSet.has(id));
-  const someSelected = !allSelected && allIds.some((id) => selectedSet.has(id));
-  const handleToggleAll = () => commitRowSelection(allSelected ? [] : allIds);
-
-  /* ---------- editing ---------- */
-  const [editing, setEditing] = useState<TreeGridCellRef | undefined>();
-  const [editingValue, setEditingValue] = useState<unknown>();
-  const [editingError, setEditingError] = useState<string | undefined>();
-  const editingValueRef = useRef<unknown>(undefined);
-  const isEditingRef = useRef(false);
-  isEditingRef.current = editing !== undefined;
-
-  const focusGrid = () => scrollRegionRef.current?.focus();
-
-  const openEditor = (rowId: string, columnKey: string) => {
-    const column = columns.find((entry) => entry.key === columnKey);
-    const found = findRowAndParent(data, rowId);
-    if (!column || !found) return;
-    const initial = cellValue(column, found.row);
-    editingValueRef.current = initial;
-    setEditing({ rowId, column: columnKey });
-    setEditingValue(initial);
-    setEditingError(undefined);
-    announce(interpolate(BORROWED_COPY.editing, { column: column.header }), true);
-  };
-
-  const updateEditingValue = (value: unknown) => {
-    editingValueRef.current = value;
-    setEditingValue(value);
-  };
-
-  const cancelEdit = () => {
-    isEditingRef.current = false;
-    setEditing(undefined);
-    setEditingValue(undefined);
-    setEditingError(undefined);
-    focusGrid();
-  };
-
-  const commitEditWithValue = (value: unknown, moveDown: boolean) => {
-    if (!editing) return;
-    const column = columns.find((entry) => entry.key === editing.column);
-    const found = findRowAndParent(data, editing.rowId);
-    if (!column || !found) return;
-    const error = column.validate?.(value, found.row);
-    if (error) {
-      setEditingError(error);
-      announce(interpolate(BORROWED_COPY.invalid, { message: error }), true);
-      return;
-    }
-    const previous = cellValue(column, found.row);
-    isEditingRef.current = false;
-    setEditing(undefined);
-    setEditingValue(undefined);
-    setEditingError(undefined);
-    onCellChange?.({ rowId: editing.rowId, column: editing.column, value, previous });
-    if (moveDown) moveActiveCell(1, 0);
-    focusGrid();
-  };
-
-  /* ---------- column widths ---------- */
+  /* ---------- columns ---------- */
   const hasSelectColumn = selectable === 'row';
-  const colCount = (hasSelectColumn ? 1 : 0) + columns.length;
-  const gridTemplateColumns = [
-    hasSelectColumn ? 'var(--size-target-min)' : null,
-    ...columns.map((column) => `${column.width ?? column.minWidth ?? DEFAULT_COLUMN_WIDTH}px`),
-  ]
+  const colOffset = hasSelectColumn ? 1 : 0;
+  const colCount = colOffset + columns.length;
+  const dataColumnAt = (col: number): DataGridColumn | undefined => (col < colOffset ? undefined : columns[col - colOffset]);
+  const rowHeaderIndex = columns.findIndex((column) => column.isRowHeader);
+  const rowHeaderColumn = columns[rowHeaderIndex];
+  const rowHeaderCol = rowHeaderIndex < 0 ? -1 : rowHeaderIndex + colOffset;
+
+  const [resizedWidths, setResizedWidths] = useState<Record<string, number>>({});
+  const widthOf = (column: DataGridColumn): number => resizedWidths[column.key] ?? column.width ?? DEFAULT_COLUMN_WIDTH;
+  const gridTemplateColumns = [hasSelectColumn ? SELECT_COLUMN_SIZE : null, ...columns.map((column) => `${widthOf(column)}px`)]
     .filter(Boolean)
     .join(' ');
 
-  /* ---------- row height measurement (mirrors DataGrid: density is CSS-driven, virtualization
-     arithmetic needs the resolved pixel value) ---------- */
-  const [rowHeightPx, setRowHeightPx] = useState(32);
-  useLayoutEffect(() => {
-    const sizer = sizerRef.current;
-    if (!sizer || typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(([entry]) => setRowHeightPx(entry!.contentRect.height || 32));
-    observer.observe(sizer);
-    return () => observer.disconnect();
-  }, [density]);
+  const pinnedStyle = (column: DataGridColumn, index: number): CSSProperties | undefined => {
+    if (column.pinned === 'start') {
+      let before = 0;
+      for (let i = 0; i < index; i += 1) before += widthOf(columns[i]!);
+      return { insetInlineStart: hasSelectColumn ? `calc(${SELECT_COLUMN_SIZE} + ${before}px)` : `${before}px` };
+    }
+    if (column.pinned === 'end') {
+      let after = 0;
+      for (let i = index + 1; i < columns.length; i += 1) after += widthOf(columns[i]!);
+      return { insetInlineEnd: `${after}px` };
+    }
+    return undefined;
+  };
 
-  /* ---------- virtualization over the flattened, visible-row list ---------- */
-  const virtualize = height !== 'content';
-  const [scrollTop, setScrollTop] = useState(0);
+  /* ---------- tree lookups (O(n) walks of data) ---------- */
+  const { rowById, parentById, loadedIds } = useMemo(() => {
+    const byId = new Map<string, TreeGridRow>();
+    const parents = new Map<string, string | null>();
+    const ids: string[] = [];
+    const walk = (list: TreeGridRow[], parentId: string | null): void => {
+      for (const row of list) {
+        byId.set(row.id, row);
+        parents.set(row.id, parentId);
+        ids.push(row.id);
+        if (Array.isArray(row.children)) walk(row.children, row.id);
+      }
+    };
+    walk(data, null);
+    return { rowById: byId, parentById: parents, loadedIds: ids };
+  }, [data]);
+  const total = loadedIds.length;
+
+  const [announcement, setAnnouncement] = useState('');
+
+  /* ---------- expansion ---------- */
+  const expandedControlled = expanded !== undefined;
+  const [internalExpanded, setInternalExpanded] = useState<string[]>(() => resolveExpanded(defaultExpanded ?? [], data));
+  const expandedIds = useMemo(
+    () => (expandedControlled ? resolveExpanded(expanded, data) : internalExpanded),
+    [expandedControlled, expanded, data, internalExpanded],
+  );
+  const expandedSet = useMemo(() => new Set(expandedIds), [expandedIds]);
+
+  /* ---------- sort ---------- */
+  const sortControlled = sort !== undefined;
+  const [internalSort, setInternalSort] = useState<TreeGridSortState | undefined>(defaultSort);
+  const activeSort = sortControlled ? sort : internalSort;
+
+  const activateSort = (column: DataGridColumn): void => {
+    const direction: TreeGridSortDirection =
+      activeSort?.column === column.key && activeSort.direction === 'ascending' ? 'descending' : 'ascending';
+    if (!sortControlled) setInternalSort({ column: column.key, direction });
+    onSortChange?.(column.key, direction);
+    setAnnouncement(interpolate(COPY.sortedAnnouncement, { column: column.header, direction }));
+  };
+
+  /* ---------- the flattened visible-row list (what is virtualized and indexed) ---------- */
+  const visible = useMemo(() => {
+    const localSort = sortControlled ? undefined : activeSort;
+    const list: VisibleRow[] = [];
+    const walk = (rows: TreeGridRow[], level: number, parentId: string | null): void => {
+      const siblings = localSort
+        ? [...rows].sort(
+            (a, b) => compareValues(a[localSort.column], b[localSort.column]) * (localSort.direction === 'ascending' ? 1 : -1),
+          )
+        : rows;
+      siblings.forEach((row, index) => {
+        const parent = hasChildren(row);
+        list.push({ key: row.id, row, level, posinset: index + 1, setsize: siblings.length, hasChildren: parent, parentId, placeholder: false });
+        if (!parent || !expandedSet.has(row.id)) return;
+        if (row.children === 'lazy') {
+          list.push({
+            key: `${PLACEHOLDER_PREFIX}${row.id}`,
+            row,
+            level: level + 1,
+            posinset: 1,
+            setsize: 1,
+            hasChildren: false,
+            parentId: row.id,
+            placeholder: true,
+          });
+        } else if (Array.isArray(row.children)) walk(row.children, level + 1, row.id);
+      });
+    };
+    walk(data, 1, null);
+    return list;
+  }, [data, expandedSet, sortControlled, activeSort]);
+  const visibleCount = visible.length;
+  const indexByKey = useMemo(() => new Map(visible.map((entry, i) => [entry.key, i])), [visible]);
+
+  /* ---------- active cell (aria-activedescendant), tracked by row so collapsing never moves it sideways ---------- */
+  const [active, setActiveState] = useState<Active>({ key: null, col: 0 });
+  const resolveIndex = (key: string | null): number => {
+    let current = key;
+    while (current !== null) {
+      const index = indexByKey.get(current);
+      if (index !== undefined) return index;
+      current = current.startsWith(PLACEHOLDER_PREFIX)
+        ? current.slice(PLACEHOLDER_PREFIX.length)
+        : (parentById.get(current) ?? null);
+    }
+    return -1;
+  };
+  const activeRow = Math.min(resolveIndex(active.key), visibleCount - 1);
+  const activeCol = Math.max(0, Math.min(active.col, colCount - 1));
+  const activeEntry = activeRow >= 0 ? visible[activeRow] : undefined;
+  const keyboardMoveRef = useRef(false);
+
+  const commitExpanded = (next: string[], opened: string[]): void => {
+    if (!expandedControlled) setInternalExpanded(next);
+    for (const id of opened) if (rowById.get(id)?.children === 'lazy') onExpand?.(id);
+    onExpandChange?.(next);
+  };
+
+  const toggleExpand = (id: string): void => {
+    if (expandedSet.has(id)) {
+      // Focus inside the collapsing subtree moves up to the collapsed row.
+      let current = active.key;
+      while (current !== null && current !== id) {
+        current = current.startsWith(PLACEHOLDER_PREFIX) ? current.slice(PLACEHOLDER_PREFIX.length) : (parentById.get(current) ?? null);
+      }
+      if (current === id && active.key !== id) setActiveState({ key: id, col: active.col });
+      commitExpanded(
+        expandedIds.filter((existing) => existing !== id),
+        [],
+      );
+    } else {
+      commitExpanded([...expandedIds, id], [id]);
+    }
+  };
+
+  const expandLevel = (entry: VisibleRow): void => {
+    const siblings = entry.parentId === null ? data : rowById.get(entry.parentId)?.children;
+    if (!Array.isArray(siblings)) return;
+    const opened = siblings.filter((row) => hasChildren(row) && !expandedSet.has(row.id)).map((row) => row.id);
+    if (opened.length > 0) commitExpanded([...expandedIds, ...opened], opened);
+  };
+
+  /* ---------- selection ---------- */
+  const selectedControlled = selected !== undefined;
+  const [internalSelected, setInternalSelected] = useState<string[]>(defaultSelected ?? []);
+  const selectedIds = selectedControlled ? selected : internalSelected;
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const rowAnchorRef = useRef<string | null>(null);
+
+  const shownState = (row: TreeGridRow): 'checked' | 'mixed' | 'unchecked' => {
+    if (selectChildren) {
+      const descendants = descendantIds(row);
+      if (descendants.length > 0) {
+        const count = descendants.filter((id) => selectedSet.has(id)).length;
+        if (count === descendants.length) return 'checked';
+        if (count > 0) return 'mixed';
+      }
+    }
+    return selectedSet.has(row.id) ? 'checked' : 'unchecked';
+  };
+
+  const commitRows = (ids: string[]): void => {
+    if (!selectedControlled) setInternalSelected(ids);
+    onSelectionChange?.(ids);
+    setAnnouncement(interpolate(COPY.selectedRows, { count: ids.length, total }));
+  };
+  const toggleRow = (row: TreeGridRow): void => {
+    rowAnchorRef.current = row.id;
+    const ids = selectChildren ? [row.id, ...descendantIds(row)] : [row.id];
+    const drop = new Set(ids);
+    const kept = selectedIds.filter((id) => !drop.has(id));
+    commitRows(shownState(row) === 'checked' ? kept : [...kept, ...ids]);
+  };
+  /** Shift+Space / Shift+click: anchor through target over the visible rows; never cascades. */
+  const extendRows = (target: number): void => {
+    const anchor = rowAnchorRef.current !== null ? indexByKey.get(rowAnchorRef.current) : undefined;
+    const entry = visible[target];
+    if (!entry || entry.placeholder) return;
+    if (anchor === undefined) return toggleRow(entry.row);
+    const span = visible
+      .slice(Math.min(anchor, target), Math.max(anchor, target) + 1)
+      .filter((item) => !item.placeholder)
+      .map((item) => item.key);
+    const inSpan = new Set(span);
+    commitRows([...selectedIds.filter((id) => !inSpan.has(id)), ...span]);
+  };
+  const allSelected = total > 0 && loadedIds.every((id) => selectedSet.has(id));
+  const someSelected = !allSelected && loadedIds.some((id) => selectedSet.has(id));
+  const toggleAll = (): void => commitRows(allSelected ? [] : loadedIds);
+
+  /* ---------- measurement: one rendered row, the scroll region, horizontal overflow ---------- */
+  const [rowHeightPx, setRowHeightPx] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [scrolledX, setScrolledX] = useState(false);
+  const [overflowX, setOverflowX] = useState(false);
+
+  const virtualize = height !== 'content';
+  const measured = rowHeightPx > 0 && viewportHeight > 0;
+  const pageSize = measured ? Math.max(1, Math.floor(viewportHeight / rowHeightPx) - 1) : 1;
+  let windowStart = 0;
+  let windowEnd = visibleCount - 1;
+  if (virtualize) {
+    if (measured) {
+      const first = Math.floor(scrollTop / rowHeightPx);
+      windowStart = Math.max(0, Math.min(first, visibleCount) - pageSize);
+      windowEnd = Math.min(visibleCount - 1, first + 2 * pageSize + 1);
+    } else {
+      windowEnd = Math.min(visibleCount, UNMEASURED_ROW_LIMIT) - 1;
+    }
+  }
+  const activeRendered = activeRow === -1 || (activeRow >= windowStart && activeRow <= windowEnd);
+
   useLayoutEffect(() => {
-    const region = scrollRegionRef.current;
-    if (!region || typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(([entry]) => setViewportHeight(entry!.contentRect.height));
+    const region = scrollRef.current;
+    if (!region) return undefined;
+    const measure = (): void => {
+      const viewport = region.clientHeight;
+      setViewportHeight((prev) => (prev === viewport ? prev : viewport));
+      const rowEl = region.querySelector<HTMLElement>('[data-part="body"] > [data-part="row"]');
+      const rowHeight = rowEl ? rowEl.getBoundingClientRect().height : 0;
+      if (rowHeight > 0) setRowHeightPx((prev) => (prev === rowHeight ? prev : rowHeight));
+      const overflow = region.scrollWidth > region.clientWidth;
+      setOverflowX((prev) => (prev === overflow ? prev : overflow));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
     observer.observe(region);
+    const rowEl = region.querySelector<HTMLElement>('[data-part="body"] > [data-part="row"]');
+    if (rowEl) observer.observe(rowEl);
     return () => observer.disconnect();
-  }, []);
+  }, [density, windowStart, visibleCount === 0, height, colCount]);
 
-  const pageSize = Math.max(1, Math.ceil((viewportHeight || rowHeightPx * 10) / rowHeightPx));
-  const startIndex = virtualize ? Math.max(0, Math.floor(scrollTop / rowHeightPx) - pageSize) : 0;
-  const endIndex = virtualize ? Math.min(visible.length - 1, Math.floor(scrollTop / rowHeightPx) + pageSize * 2) : visible.length - 1;
-
-  const [scrolledUnderHeader, setScrolledUnderHeader] = useState(false);
-  const handleScroll = (event: UIEvent<HTMLDivElement>) => {
-    setScrollTop(event.currentTarget.scrollTop);
-    setScrolledUnderHeader(event.currentTarget.scrollTop > 0);
+  const handleScroll = (): void => {
+    const region = scrollRef.current;
+    if (!region) return;
+    setScrollTop((prev) => (prev === region.scrollTop ? prev : region.scrollTop));
+    const x = region.scrollLeft !== 0;
+    setScrolledX((prev) => (prev === x ? prev : x));
   };
 
-  /* ---------- focus (roving via aria-activedescendant, as DataGrid) ---------- */
-  const [activeCell, setActiveCell] = useState<ActiveCell>({ row: -1, col: 0 });
-  const cellId = (row: number, col: number) => (row === -1 ? `${baseId}-header-cell-${col}` : `${baseId}-cell-${row}-${col}`);
-  const activeDescendantId = editing ? undefined : cellId(activeCell.row, activeCell.col);
+  useLayoutEffect(() => {
+    if (!keyboardMoveRef.current) return;
+    keyboardMoveRef.current = false;
+    const el = typeof document !== 'undefined' ? document.getElementById(cellId(activeRow, activeEntry?.placeholder ? 0 : activeCol)) : null;
+    el?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  });
 
-  const columnAtIndex = (col: number): DataGridColumn | 'select' | undefined => {
-    if (hasSelectColumn && col === 0) return 'select';
-    return columns[col - (hasSelectColumn ? 1 : 0)];
-  };
-  const rowHeaderColIndex = rowHeaderIndex + (hasSelectColumn ? 1 : 0);
+  const focusGrid = (): void => gridRef.current?.focus();
 
-  const scrollRowIntoView = (rowIndex: number) => {
-    const region = scrollRegionRef.current;
-    if (!region || !virtualize) return;
-    const top = rowIndex * rowHeightPx;
-    const bottom = top + rowHeightPx;
-    if (top < region.scrollTop) region.scrollTop = top;
-    else if (bottom > region.scrollTop + region.clientHeight) region.scrollTop = bottom - region.clientHeight;
-  };
-
-  const applyFocusForSelectable = (row: number, col: number) => {
-    if (row < 0) return;
-    const column = columnAtIndex(col);
-    if (!column || column === 'select' || selectable !== 'cell') return;
-    const visRow = visible[row];
-    if (!visRow || visRow.isPlaceholder) return;
-    const next = { rowId: visRow.id, column: column.key };
-    setCellSelection(next);
-    onSelectionChange?.(next);
+  const moveTo = (row: number, col: number): void => {
+    const r = Math.max(-1, Math.min(row, visibleCount - 1));
+    const c = Math.max(0, Math.min(col, colCount - 1));
+    const entry = r >= 0 ? visible[r] : undefined;
+    keyboardMoveRef.current = true;
+    setActiveState({ key: entry ? entry.key : null, col: c });
+    setAnnouncement('');
+    const region = scrollRef.current;
+    if (region && virtualize && rowHeightPx > 0 && r >= 0) {
+      const top = r * rowHeightPx;
+      if (top < region.scrollTop) region.scrollTop = top;
+      else if (top + rowHeightPx > region.scrollTop + viewportHeight - rowHeightPx) {
+        region.scrollTop = top + 2 * rowHeightPx - viewportHeight;
+      }
+    }
+    const column = dataColumnAt(c);
+    if (selectable === 'cell' && column && entry && !entry.placeholder) onSelectionChange?.({ rowId: entry.key, column: column.key });
   };
 
-  const setActiveCellTo = (row: number, col: number) => {
-    const clampedRow = Math.max(-1, Math.min(visible.length - 1, row));
-    const clampedCol = Math.max(0, Math.min(colCount - 1, col));
-    applyFocusForSelectable(clampedRow, clampedCol);
-    if (clampedRow >= 0) scrollRowIntoView(clampedRow);
-    setActiveCell({ row: clampedRow, col: clampedCol });
+  /* ---------- editing ---------- */
+  const [editing, setEditingState] = useState<Editing | null>(null);
+  const editingRef = useRef<Editing | null>(null);
+  const setEditing = (next: Editing | null): void => {
+    editingRef.current = next;
+    setEditingState(next);
+  };
+  const editValueRef = useRef<unknown>(undefined);
+  const pickerOpenRef = useRef(false);
+  const [editError, setEditError] = useState<string | undefined>(undefined);
+
+  const openEditor = (rowIndex: number, col: number): boolean => {
+    const column = dataColumnAt(col);
+    const entry = visible[rowIndex];
+    if (!editable || !column?.editable || !entry || entry.placeholder) return false;
+    if (onEditStart?.(entry.key, column.key) === false) return false;
+    editValueRef.current = entry.row[column.key];
+    pickerOpenRef.current = false;
+    setActiveState({ key: entry.key, col });
+    setEditing({ rowId: entry.key, column: column.key });
+    setEditError(undefined);
+    setAnnouncement(interpolate(COPY.editing, { column: column.header }));
+    return true;
   };
 
-  const moveActiveCell = (deltaRow: number, deltaCol: number) => {
-    setActiveCellTo(activeCell.row + deltaRow, activeCell.col + deltaCol);
+  const closeEditor = (): void => {
+    setEditing(null);
+    setEditError(undefined);
+    setAnnouncement('');
   };
 
-  /* ---------- editor wrapper: owns Enter/F2/Escape while editing ---------- */
-  const handleEditorWrapperKeyDown = (column: DataGridColumn) => (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      commitEditWithValue(editingValueRef.current, true);
-    } else if (event.key === 'F2') {
-      event.preventDefault();
-      commitEditWithValue(editingValueRef.current, false);
-    } else if (event.key === 'Escape' && (column.editor === 'text' || column.editor === 'number' || column.editor === undefined)) {
+  const cancelEdit = (): void => {
+    closeEditor();
+    focusGrid();
+  };
+
+  /** Validates and commits the open editor; false when validation kept it open. */
+  const commitEdit = (): boolean => {
+    const current = editingRef.current;
+    if (!current) return true;
+    const row = rowById.get(current.rowId);
+    const column = columns.find((entry) => entry.key === current.column);
+    if (!row || !column) {
+      closeEditor();
+      return true;
+    }
+    const value = editValueRef.current;
+    const message = column.validate?.(value, row);
+    if (message) {
+      setEditError(message);
+      setAnnouncement(interpolate(COPY.invalid, { message }));
+      return false;
+    }
+    const previous = row[column.key];
+    closeEditor();
+    if (!Object.is(value, previous)) onCellChange?.(row.id, column.key, toCellValue(value), toCellValue(previous));
+    return true;
+  };
+
+  const editableCols = (): number[] => columns.flatMap((column, i) => (column.editable ? [i + colOffset] : []));
+
+  const handleEditorKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>, column: DataGridColumn): void => {
+    const kind = column.editor ?? 'text';
+    event.stopPropagation();
+    if (event.key === 'Escape') {
+      if (pickerOpenRef.current) return;
       event.preventDefault();
       cancelEdit();
+    } else if (event.key === 'Enter') {
+      if (kind === 'select' || (kind === 'date' && pickerOpenRef.current)) return;
+      event.preventDefault();
+      if (commitEdit()) {
+        focusGrid();
+        moveTo(activeRow + 1, activeCol);
+      }
+    } else if (event.key === 'F2') {
+      event.preventDefault();
+      if (commitEdit()) focusGrid();
+    } else if (event.key === 'Tab') {
+      const row = activeRow;
+      const cols = editableCols();
+      const next = event.shiftKey ? [...cols].reverse().find((c) => c < activeCol) : cols.find((c) => c > activeCol);
+      if (!commitEdit()) {
+        event.preventDefault();
+        return;
+      }
+      focusGrid();
+      if (next !== undefined) {
+        event.preventDefault();
+        if (!openEditor(row, next)) setActiveState({ key: visible[row]?.key ?? null, col: next });
+      }
+      // From the last (or first) editable cell the default Tab now leaves the grid.
     }
+  };
+
+  const handleEditorBlur = (event: ReactFocusEvent<HTMLDivElement>, cell: Editing): void => {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null) || pickerOpenRef.current) return;
+    const current = editingRef.current;
+    if (!current || current.rowId !== cell.rowId || current.column !== cell.column) return;
+    const kind = columns.find((column) => column.key === cell.column)?.editor ?? 'text';
+    if (kind === 'text' || kind === 'number' || kind === 'date') commitEdit();
+  };
+
+  useEffect(() => {
+    if (!editing) return;
+    editorRef.current?.querySelector<HTMLElement>('input, button, select, textarea, [tabindex]')?.focus();
+  }, [editing]);
+
+  /* ---------- keep controls inside cells out of the tab order (the grid is one tab stop) ---------- */
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    for (const el of grid.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)) {
+      if (el === grid || el.closest('[data-part="editor"]')) continue;
+      if (el.tabIndex !== -1) el.tabIndex = -1;
+    }
+  });
+
+  /* ---------- column resize (pointer) ---------- */
+  const minWidthOf = (column: DataGridColumn): number => column.minWidth ?? targetSizerRef.current?.getBoundingClientRect().width ?? 0;
+  const resizeTo = (column: DataGridColumn, width: number): number => {
+    const next = Math.round(Math.max(minWidthOf(column), width));
+    setResizedWidths((prev) => (prev[column.key] === next ? prev : { ...prev, [column.key]: next }));
+    return next;
+  };
+
+  const startPointerResize = (event: ReactPointerEvent<HTMLDivElement>, column: DataGridColumn): void => {
+    event.preventDefault();
     event.stopPropagation();
-  };
-
-  const handleEditorBlur = () => {
-    if (isEditingRef.current) commitEditWithValue(editingValueRef.current, false);
-  };
-
-  const activateCellControl = (visRow: VisibleRow, col: number) => {
-    const column = columnAtIndex(col);
-    if (!column || column === 'select') return;
-    const element = cellRefs.current.get(`${visRow.id}:${column.key}`);
-    const control = element?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-    control?.focus();
-    control?.click();
+    const handle = event.currentTarget;
+    const startX = event.clientX;
+    const startWidth = widthOf(column);
+    const rtl = typeof getComputedStyle === 'function' && getComputedStyle(handle).direction === 'rtl';
+    let width = startWidth;
+    handle.setPointerCapture?.(event.pointerId);
+    const move = (e: PointerEvent): void => {
+      width = resizeTo(column, startWidth + (rtl ? startX - e.clientX : e.clientX - startX));
+    };
+    const up = (e: PointerEvent): void => {
+      handle.releasePointerCapture?.(e.pointerId);
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+      handle.removeEventListener('pointercancel', up);
+      onColumnResize?.(column.key, width);
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up);
+    handle.addEventListener('pointercancel', up);
   };
 
   /* ---------- keyboard model ---------- */
-  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (editing) return; // the open editor owns its own keys
-    const { row, col } = activeCell;
-    const column = columnAtIndex(col);
-    const visRow = row >= 0 ? visible[row] : undefined;
-    const onRowHeader = col === rowHeaderColIndex && visRow && !visRow.isPlaceholder;
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    if (editingRef.current) return;
+    const grid = gridRef.current;
+    if (!grid) return;
+    if (event.target !== grid) {
+      // Real focus is inside a cell's control (APG "focus inside the cell").
+      if (event.key === 'Escape' || event.key === 'F2') {
+        event.preventDefault();
+        focusGrid();
+        return;
+      }
+      if (event.key === 'Tab' && event.shiftKey) {
+        focusGrid();
+        return;
+      }
+      if (!NAVIGATION_KEYS.has(event.key)) return;
+      focusGrid();
+    }
+    const row = activeRow;
+    const col = activeCol;
+    const entry = activeEntry;
+    const column = dataColumnAt(col);
+    const ctrl = event.ctrlKey || event.metaKey;
+    const onRowHeader = entry !== undefined && !entry.placeholder && col === rowHeaderCol;
 
     switch (event.key) {
+      case 'ArrowRight':
+        event.preventDefault();
+        if (onRowHeader && entry.hasChildren && !expandedSet.has(entry.key)) toggleExpand(entry.key);
+        else moveTo(row, col + 1);
+        return;
+      case 'ArrowLeft': {
+        event.preventDefault();
+        if (onRowHeader && entry.hasChildren && expandedSet.has(entry.key)) {
+          toggleExpand(entry.key);
+          return;
+        }
+        if (entry && (onRowHeader || entry.placeholder)) {
+          const parent = entry.parentId !== null ? indexByKey.get(entry.parentId) : undefined;
+          if (parent !== undefined) moveTo(parent, rowHeaderCol);
+          return;
+        }
+        moveTo(row, col - 1);
+        return;
+      }
       case 'ArrowDown':
         event.preventDefault();
-        moveActiveCell(1, 0);
+        moveTo(row + 1, col);
         return;
       case 'ArrowUp':
         event.preventDefault();
-        moveActiveCell(-1, 0);
-        return;
-      case 'ArrowRight':
-        event.preventDefault();
-        if (onRowHeader && visRow.hasChildren && !expandedSet.has(visRow.id)) {
-          toggleExpand(visRow.id);
-        } else {
-          moveActiveCell(0, 1);
-        }
-        return;
-      case 'ArrowLeft':
-        event.preventDefault();
-        if (onRowHeader && visRow.hasChildren && expandedSet.has(visRow.id)) {
-          toggleExpand(visRow.id);
-        } else if (onRowHeader && visRow.parentId) {
-          const parentIndex = visible.findIndex((entry) => entry.id === visRow.parentId);
-          if (parentIndex >= 0) setActiveCellTo(parentIndex, rowHeaderColIndex);
-        } else {
-          moveActiveCell(0, -1);
-        }
+        moveTo(row - 1, col);
         return;
       case 'Home':
         event.preventDefault();
-        setActiveCellTo(event.ctrlKey ? 0 : row, 0);
+        moveTo(ctrl ? Math.min(0, visibleCount - 1) : row, 0);
         return;
       case 'End':
         event.preventDefault();
-        setActiveCellTo(event.ctrlKey ? visible.length - 1 : row, colCount - 1);
+        moveTo(ctrl ? visibleCount - 1 : row, colCount - 1);
         return;
-      case 'Enter':
+      case 'Enter': {
         event.preventDefault();
         if (row === -1) {
-          if (column && column !== 'select' && column.sortable) handleSort(column);
+          if (hasSelectColumn && col === 0) toggleAll();
+          else if (column?.sortable) activateSort(column);
           return;
         }
-        if (!visRow || visRow.isPlaceholder) return;
-        if (onRowHeader) {
-          if (visRow.hasChildren) toggleExpand(visRow.id);
+        if (!entry || entry.placeholder) return;
+        if (hasSelectColumn && col === 0) {
+          toggleRow(entry.row);
           return;
         }
-        if (column && column !== 'select') {
-          if (editable && column.editable) openEditor(visRow.id, column.key);
-          else activateCellControl(visRow, col);
+        if (onRowHeader && entry.hasChildren) {
+          toggleExpand(entry.key);
+          return;
+        }
+        if (openEditor(row, col)) return;
+        const control = document.getElementById(cellId(row, col))?.querySelector<HTMLElement>(CONTROL_SELECTOR);
+        if (control) {
+          control.focus();
+          control.click();
         }
         return;
+      }
       case '*':
         event.preventDefault();
-        if (visRow && !visRow.isPlaceholder) expandSiblings(visRow);
+        if (entry && !entry.placeholder) expandLevel(entry);
         return;
       case 'F2':
         event.preventDefault();
-        if (visRow && !visRow.isPlaceholder && column && column !== 'select' && editable && column.editable) {
-          openEditor(visRow.id, column.key);
-        }
+        if (row >= 0) openEditor(row, col);
         return;
-      case ' ':
-        if (selectable === 'row') {
-          event.preventDefault();
-          if (!visRow || visRow.isPlaceholder) return;
-          if (event.shiftKey && anchorRef.current) {
-            const anchorIndex = visible.findIndex((entry) => entry.id === anchorRef.current);
-            const lo = Math.min(anchorIndex, row);
-            const hi = Math.max(anchorIndex, row);
-            commitRowSelection(visible.slice(lo, hi + 1).filter((entry) => !entry.isPlaceholder).map((entry) => entry.id));
-          } else {
-            anchorRef.current = visRow.id;
-            toggleRowSelection(visRow.row);
-          }
-        }
+      case ' ': {
+        if (selectable !== 'row') return;
+        event.preventDefault();
+        if (!entry || entry.placeholder) return;
+        if (event.shiftKey) extendRows(row);
+        else toggleRow(entry.row);
         return;
-      case 'a':
-      case 'A':
-        if (event.ctrlKey && selectable === 'row') {
-          event.preventDefault();
-          commitRowSelection(allIds);
-        }
-        return;
+      }
       default:
+    }
+
+    if (ctrl && event.key.toLowerCase() === 'a' && selectable === 'row') {
+      event.preventDefault();
+      commitRows(loadedIds);
     }
   };
 
-  /* ---------- editors ---------- */
-  const renderEditor = (column: DataGridColumn, row: TreeGridRow) => {
-    const editorName = `${baseId}-editor-${row.id}-${column.key}`;
-    switch (column.editor) {
+  /* ---------- pointer ---------- */
+  const positionOf = (target: EventTarget | null): { row: number; col: number } | null => {
+    const cell =
+      target instanceof Element ? target.closest<HTMLElement>('[role="gridcell"], [role="rowheader"], [role="columnheader"]') : null;
+    if (!cell || !cell.id.startsWith(cellPrefix) || !gridRef.current?.contains(cell)) return null;
+    const [r, c] = cell.id.slice(cellPrefix.length).split('_');
+    return { row: r === 'h' ? -1 : Number(r), col: Number(c) };
+  };
+
+  const handleMouseDown = (event: ReactMouseEvent<HTMLDivElement>): void => {
+    const target = event.target as Element;
+    if (target.closest('[data-part="expandButton"]')) {
+      // The chevron is a pointer convenience; focus stays on the grid.
+      event.preventDefault();
+      focusGrid();
+      return;
+    }
+    if (target.closest('[data-part="editor"]') || target.closest(CONTROL_SELECTOR)) return;
+    if (!positionOf(target)) return;
+    event.preventDefault();
+    focusGrid();
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    if (event.button !== 0) return;
+    const target = event.target as Element;
+    if (target.closest('[data-part="editor"]')) return;
+    const pos = positionOf(target);
+    if (!pos) return;
+    const entry = pos.row >= 0 ? visible[pos.row] : undefined;
+    setActiveState({ key: entry ? entry.key : null, col: pos.col });
+    setAnnouncement('');
+    const column = dataColumnAt(pos.col);
+    if (!entry || entry.placeholder || !column) return;
+    if (selectable === 'cell') onSelectionChange?.({ rowId: entry.key, column: column.key });
+    else if (selectable === 'row') {
+      if (event.shiftKey) extendRows(pos.row);
+      else if (event.ctrlKey || event.metaKey) toggleRow(entry.row);
+    }
+  };
+
+  const handleDoubleClick = (event: ReactMouseEvent<HTMLDivElement>): void => {
+    if ((event.target as Element).closest('[data-part="expandButton"]')) return;
+    const pos = positionOf(event.target);
+    if (pos && pos.row >= 0 && !editingRef.current) openEditor(pos.row, pos.col);
+  };
+
+  /* ---------- overrides ---------- */
+  const rootStyle: Record<string, string> = {};
+  for (const [binding, hook] of Object.entries(OVERRIDE_HOOKS) as [TreeGridOverridableBinding, string][]) {
+    const token = overrides?.[binding];
+    if (token) rootStyle[hook] = cssVar(token);
+  }
+  const headerTextOverrides: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> = {
+    paddingInline: 'space.0',
+    fontSize: 'font.size.sm',
+    fontWeight: 'font.weight.semibold',
+  };
+
+  /* ---------- render: editors ---------- */
+  const renderEditor = (column: DataGridColumn, row: TreeGridRow): ReactElement => {
+    const name = `${baseId}-editor`;
+    const current = row[column.key];
+    const setValue = (value: unknown): void => {
+      editValueRef.current = value;
+    };
+    const commitOnChange = (value: unknown): void => {
+      setValue(value);
+      if (commitEdit()) focusGrid();
+    };
+    const zeroInset = { paddingInline: 'space.0', paddingBlock: 'space.0' } as const;
+    switch (column.editor ?? 'text') {
       case 'number':
         return (
           <NumberInput
             label={column.header}
-            name={editorName}
-            value={typeof editingValue === 'number' ? editingValue : undefined}
-            error={editingError}
-            autoFocus
-            onChange={(value) => updateEditingValue(value)}
+            hideLabel
+            size="sm"
+            name={name}
+            defaultValue={typeof current === 'number' ? current : undefined}
+            overrides={zeroInset}
+            onChange={setValue}
           />
         );
       case 'select':
         return (
           <Select
             label={column.header}
-            name={editorName}
+            hideLabel
+            size="sm"
+            name={name}
             options={column.options ?? []}
-            value={typeof editingValue === 'string' ? editingValue : ''}
-            error={editingError}
+            defaultValue={textOf(current)}
             container={container}
-            onChange={(value) => {
-              updateEditingValue(value);
-              commitEditWithValue(value, true);
+            overrides={{ triggerPaddingInline: 'space.0', triggerPaddingBlock: 'space.0' }}
+            onOpenChange={(open) => {
+              pickerOpenRef.current = open;
             }}
+            onChange={(value) => commitOnChange(Array.isArray(value) ? value[0] : value)}
           />
         );
       case 'date':
         return (
           <DatePicker
             label={column.header}
-            name={editorName}
-            value={typeof editingValue === 'string' ? (editingValue as DatePickerValue) : undefined}
-            error={editingError}
+            hideLabel
+            size="sm"
+            name={name}
+            defaultValue={typeof current === 'string' ? (current as DatePickerValue) : undefined}
             container={container}
-            onChange={(value) => {
-              updateEditingValue(value);
-              if (value !== undefined) commitEditWithValue(value, true);
+            overrides={zeroInset}
+            onOpenChange={(open) => {
+              pickerOpenRef.current = open;
             }}
+            onChange={(value) => setValue(typeof value === 'string' ? value : undefined)}
           />
         );
       case 'checkbox':
-        return (
-          <Checkbox
-            label={column.header}
-            name={editorName}
-            checked={Boolean(editingValue)}
-            onChange={(checked) => {
-              updateEditingValue(checked);
-              commitEditWithValue(checked, true);
-            }}
-          />
-        );
-      case 'text':
+        return <Checkbox label={column.header} hideLabel name={name} checked={Boolean(current)} onChange={commitOnChange} />;
       default:
         return (
-          <Input
-            label={column.header}
-            name={editorName}
-            value={typeof editingValue === 'string' ? editingValue : ''}
-            error={editingError}
-            autoFocus
-            onChange={(value) => updateEditingValue(value)}
-          />
+          <Input label={column.header} hideLabel size="sm" name={name} defaultValue={textOf(current)} overrides={zeroInset} onChange={setValue} />
         );
     }
   };
 
   /* ---------- render: header ---------- */
-  const renderHeaderCell = (column: DataGridColumn, index: number) => {
-    const colIndex = index + (hasSelectColumn ? 1 : 0);
-    const isActive = activeCell.row === -1 && activeCell.col === colIndex;
-    const sorted = column.sortable ? sort?.column === column.key : undefined;
-    const classes = [
-      'ds-tree-grid__cell',
-      'ds-tree-grid__cell--header',
-      column.align === 'end' ? 'ds-tree-grid__cell--align-end' : column.align === 'center' ? 'ds-tree-grid__cell--align-center' : null,
-    ]
-      .filter(Boolean)
-      .join(' ');
+  const headerCell = (column: DataGridColumn, index: number): ReactElement => {
+    const col = index + colOffset;
+    const sorted = activeSort?.column === column.key ? activeSort.direction : undefined;
+    const next = sorted === 'ascending' ? 'descending' : 'ascending';
+    const width = widthOf(column);
     return (
       <div
         key={column.key}
-        id={cellId(-1, colIndex)}
+        id={cellId(-1, col)}
         role="columnheader"
-        aria-colindex={colIndex + 1}
-        aria-sort={column.sortable ? (sorted ? (sort as TreeGridSortState).direction : 'none') : undefined}
+        aria-colindex={col + 1}
+        aria-sort={column.sortable ? sorted : undefined}
+        tabIndex={-1}
         data-part="columnHeader"
-        data-active={isActive ? 'true' : undefined}
-        className={classes}
-        onMouseDown={() => {
-          focusGrid();
-          setActiveCell({ row: -1, col: colIndex });
-        }}
+        className={joinClasses(
+          'ds-tree-grid__cell',
+          'ds-tree-grid__cell--header',
+          column.align && column.align !== 'start' && `ds-tree-grid__cell--align-${column.align}`,
+          column.pinned && 'ds-tree-grid__cell--pinned',
+          activeRow === -1 && activeCol === col && 'ds-tree-grid__cell--active',
+        )}
+        style={pinnedStyle(column, index)}
       >
         {column.sortable ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            label={sortButtonLabel(column)}
-            trailingIcon={<Icon name={sorted && sort?.direction === 'descending' ? 'chevron-down' : 'chevron-up'} inline />}
-            className="ds-tree-grid__sort-button"
-            data-part="sortButton"
-            tabIndex={-1}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => handleSort(column)}
-          />
+          <span className="ds-tree-grid__sort" data-part="sortButton" onClick={() => activateSort(column)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              label={column.header}
+              accessibleName={interpolate(next === 'ascending' ? COPY.sortAscending : COPY.sortDescending, { column: column.header })}
+              trailingIcon={sorted ? <Icon name={sorted === 'ascending' ? 'chevron-up' : 'chevron-down'} inline /> : undefined}
+              overrides={headerTextOverrides}
+              tabIndex={-1}
+            />
+          </span>
         ) : column.abbr ? (
           <>
-            <span aria-hidden="true">{column.abbr}</span>
-            <span className="ds-tree-grid__visually-hidden">{column.header}</span>
+            <span aria-hidden="true">{column.header}</span>
+            <span className="ds-tree-grid__visually-hidden">{column.abbr}</span>
           </>
         ) : (
           column.header
         )}
+        {column.resizable ? (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-valuenow={width}
+            aria-valuemin={column.minWidth}
+            aria-label={interpolate(COPY.resize, { column: column.header })}
+            className="ds-tree-grid__resize-handle"
+            onPointerDown={(event) => startPointerResize(event, column)}
+          />
+        ) : null}
       </div>
     );
   };
 
-  /* ---------- render: cells ---------- */
-  const renderRowHeaderContent = (visRow: VisibleRow, column: DataGridColumn) => {
-    const expandedState = expandedSet.has(visRow.id);
-    const name = rowName(visRow.row, rowHeaderColumn);
+  /* ---------- render: body ---------- */
+  const rowHeaderContent = (entry: VisibleRow, column: DataGridColumn, name: string): ReactElement => {
+    const isExpanded = expandedSet.has(entry.key);
     return (
-      <div
-        className="ds-tree-grid__row-header-inner"
-        style={{ paddingInlineStart: `calc(var(--ds-tree-grid-indent) * ${visRow.level - 1})` }}
-      >
-        {Array.from({ length: visRow.level - 1 }).map((_, ancestorIndex) => (
-          <span
-            key={ancestorIndex}
-            aria-hidden="true"
-            className="ds-tree-grid__guide"
-            style={{ insetInlineStart: `calc(var(--ds-tree-grid-indent) * ${ancestorIndex} + var(--ds-tree-grid-expand-button-size) / 2)` }}
-          />
-        ))}
-        {visRow.hasChildren ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            label={interpolate(expandedState ? COPY.collapse : COPY.expand, { rowName: name })}
-            leadingIcon={
-              <Icon
-                name="chevron-right"
-                inline
-                className={expandedState ? 'ds-tree-grid__expand-icon ds-tree-grid__expand-icon--expanded' : 'ds-tree-grid__expand-icon'}
+      <>
+        <span aria-hidden="true" className="ds-tree-grid__indent" data-part="indent" />
+        <span className="ds-tree-grid__row-header">
+          {entry.hasChildren ? (
+            <span className="ds-tree-grid__expand" data-part="expandButton" onClick={() => toggleExpand(entry.key)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                iconOnly
+                label={interpolate(isExpanded ? COPY.collapse : COPY.expand, { rowName: name })}
+                leadingIcon={
+                  <span className={joinClasses('ds-tree-grid__chevron', isExpanded && 'ds-tree-grid__chevron--expanded')}>
+                    <Icon name="chevron-right" inline />
+                  </span>
+                }
+                overrides={{ paddingInline: 'space.0', paddingBlock: 'space.0' }}
+                tabIndex={-1}
+                aria-hidden="true"
               />
-            }
-            className="ds-tree-grid__expand-button"
-            tabIndex={-1}
-            aria-hidden="true"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => toggleExpand(visRow.id)}
-          />
-        ) : (
-          <span className="ds-tree-grid__expand-spacer" aria-hidden="true" />
-        )}
-        <span className={visRow.hasChildren ? 'ds-tree-grid__row-header-text ds-tree-grid__row-header-text--parent' : 'ds-tree-grid__row-header-text'}>
-          {column.render ? column.render(visRow.row) : name}
+            </span>
+          ) : (
+            <span aria-hidden="true" className="ds-tree-grid__expand" />
+          )}
+          <span
+            className={joinClasses('ds-tree-grid__cell-content', entry.hasChildren && 'ds-tree-grid__cell-content--parent')}
+            data-part="cellContent"
+          >
+            {column.render ? column.render(entry.row) : textOf(entry.row[column.key])}
+          </span>
         </span>
-      </div>
+      </>
     );
   };
 
-  const renderCell = (visRow: VisibleRow, rowIndex: number, column: DataGridColumn, colIndex: number) => {
-    const isActive = activeCell.row === rowIndex && activeCell.col === colIndex;
-    const isEditingThis = editing?.rowId === visRow.id && editing.column === column.key;
-    const isSelected = selectable === 'cell' && cellSelection?.rowId === visRow.id && cellSelection.column === column.key;
-    const classes = [
-      'ds-tree-grid__cell',
-      column.align === 'end' ? 'ds-tree-grid__cell--align-end' : column.align === 'center' ? 'ds-tree-grid__cell--align-center' : null,
-      isSelected ? 'ds-tree-grid__cell--selected' : null,
-      isEditingThis ? 'ds-tree-grid__cell--editing' : null,
-      isEditingThis && editingError ? 'ds-tree-grid__cell--invalid' : null,
-    ]
-      .filter(Boolean)
-      .join(' ');
-    const role = column.isRowHeader ? 'rowheader' : 'gridcell';
+  const bodyCell = (entry: VisibleRow, rowIndex: number, column: DataGridColumn, index: number, name: string): ReactElement => {
+    const col = index + colOffset;
+    const isEditing = editing?.rowId === entry.key && editing.column === column.key;
+    const isActive = activeRow === rowIndex && activeCol === col;
     return (
       <div
         key={column.key}
-        id={cellId(rowIndex, colIndex)}
-        ref={(node) => {
-          if (node) cellRefs.current.set(`${visRow.id}:${column.key}`, node);
-          else cellRefs.current.delete(`${visRow.id}:${column.key}`);
-        }}
-        role={role}
-        aria-colindex={colIndex + 1}
-        aria-selected={selectable === 'cell' ? (isSelected ? 'true' : 'false') : undefined}
+        id={cellId(rowIndex, col)}
+        role={column.isRowHeader ? 'rowheader' : 'gridcell'}
+        aria-colindex={col + 1}
+        aria-selected={selectable === 'cell' ? isActive : undefined}
+        aria-readonly={editable && !column.editable ? true : undefined}
+        aria-describedby={isEditing && editError ? statusId : undefined}
         tabIndex={-1}
         data-part={column.isRowHeader ? 'rowHeader' : 'cell'}
-        data-active={isActive ? 'true' : undefined}
-        className={classes}
-        onMouseDown={() => {
-          focusGrid();
-          setActiveCellTo(rowIndex, colIndex);
-        }}
-        onDoubleClick={() => {
-          if (editable && column.editable) openEditor(visRow.id, column.key);
-        }}
+        className={joinClasses(
+          'ds-tree-grid__cell',
+          column.isRowHeader && 'ds-tree-grid__cell--row-header',
+          column.align && column.align !== 'start' && `ds-tree-grid__cell--align-${column.align}`,
+          column.pinned && 'ds-tree-grid__cell--pinned',
+          isActive && 'ds-tree-grid__cell--active',
+          isEditing && 'ds-tree-grid__cell--editing',
+          isEditing && editError && 'ds-tree-grid__cell--invalid',
+        )}
+        style={pinnedStyle(column, index)}
       >
-        {isEditingThis ? (
+        {isEditing && editing ? (
           <div
+            ref={editorRef}
             className="ds-tree-grid__editor"
             data-part="editor"
-            onKeyDown={handleEditorWrapperKeyDown(column)}
-            onBlur={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) handleEditorBlur();
-            }}
+            onKeyDown={(event) => handleEditorKeyDown(event, column)}
+            onBlur={(event) => handleEditorBlur(event, editing)}
           >
-            {renderEditor(column, visRow.row)}
+            {renderEditor(column, entry.row)}
           </div>
         ) : column.isRowHeader ? (
-          renderRowHeaderContent(visRow, column)
-        ) : column.render ? (
-          <div className="ds-tree-grid__cell-content" data-part="cellContent">
-            {column.render(visRow.row)}
-          </div>
+          rowHeaderContent(entry, column, name)
         ) : (
           <span className="ds-tree-grid__cell-content" data-part="cellContent">
-            {cellText(column, visRow.row)}
+            {column.render ? column.render(entry.row) : textOf(entry.row[column.key])}
           </span>
         )}
       </div>
     );
   };
 
-  const renderRow = (visRow: VisibleRow, rowIndex: number) => {
-    const style: CSSProperties = { gridTemplateColumns };
-    if (virtualize) {
-      style.position = 'absolute';
-      style.insetBlockStart = 0;
-      style.insetInlineStart = 0;
-      style.inlineSize = '100%';
-      style.transform = `translateY(${rowIndex * rowHeightPx}px)`;
-    }
+  const bodyRow = (entry: VisibleRow, rowIndex: number): ReactElement => {
+    const style: Record<string, string> = { gridTemplateColumns, '--ds-tree-grid-depth': String(entry.level - 1) };
+    if (virtualize) style.transform = `translateY(calc(${rowIndex} * ${ROW_SIZE}))`;
+    const rowClass = joinClasses('ds-tree-grid__row', entry.level > 1 && 'ds-tree-grid__row--nested');
 
-    if (visRow.isPlaceholder) {
+    if (entry.placeholder) {
       return (
         <div
-          key={visRow.id}
+          key={entry.key}
           role="row"
-          aria-level={visRow.level}
           aria-rowindex={rowIndex + 2}
-          className="ds-tree-grid__row"
+          aria-level={entry.level}
+          aria-setsize={entry.setsize}
+          aria-posinset={entry.posinset}
           data-part="row"
-          style={style}
+          className={rowClass}
+          style={style as CSSProperties}
         >
           <div
+            id={cellId(rowIndex, 0)}
             role="gridcell"
-            className="ds-tree-grid__cell ds-tree-grid__loading-cell"
-            style={{
-              gridColumn: `1 / span ${colCount}`,
-              paddingInlineStart: `calc(var(--ds-tree-grid-indent) * ${visRow.level - 1})`,
-            }}
+            aria-colindex={1}
+            tabIndex={-1}
+            className={joinClasses('ds-tree-grid__cell', 'ds-tree-grid__cell--placeholder', activeRow === rowIndex && 'ds-tree-grid__cell--active')}
+            style={{ gridColumn: '1 / -1' }}
           >
-            <Text size="sm" className="ds-tree-grid__loading-text">
-              {COPY.loading}
-            </Text>
+            {hasSelectColumn ? <span aria-hidden="true" className="ds-tree-grid__select-spacer" /> : null}
+            <span aria-hidden="true" className="ds-tree-grid__indent" />
+            <span className="ds-tree-grid__row-header">
+              <span aria-hidden="true" className="ds-tree-grid__expand" />
+              <Text element="span" size="sm" tone="muted">
+                {COPY.loading}
+              </Text>
+            </span>
           </div>
         </div>
       );
     }
 
-    const isSelected = selectable === 'row' && selectedSet.has(visRow.id);
-    const checkedState = selectable === 'row' ? rowCheckedState(visRow.row, selectedSet, selectChildren) : 'unchecked';
+    const row = entry.row;
+    const name = rowHeaderColumn ? textOf(row[rowHeaderColumn.key]) || row.id : row.id;
+    const isExpanded = expandedSet.has(entry.key);
+    const state = hasSelectColumn ? shownState(row) : 'unchecked';
     return (
       <div
-        key={visRow.id}
+        key={entry.key}
         role="row"
-        aria-level={visRow.level}
-        aria-setsize={visRow.setsize}
-        aria-posinset={visRow.posinset}
-        aria-expanded={visRow.hasChildren ? (expandedSet.has(visRow.id) ? 'true' : 'false') : undefined}
-        aria-busy={visRow.hasChildren && expandedSet.has(visRow.id) && visRow.row.children === 'lazy' ? 'true' : undefined}
         aria-rowindex={rowIndex + 2}
-        aria-selected={selectable === 'row' ? (isSelected ? 'true' : 'false') : undefined}
-        className={['ds-tree-grid__row', isSelected ? 'ds-tree-grid__row--selected' : null].filter(Boolean).join(' ')}
+        aria-level={entry.level}
+        aria-setsize={entry.setsize}
+        aria-posinset={entry.posinset}
+        aria-expanded={entry.hasChildren ? isExpanded : undefined}
+        aria-busy={entry.hasChildren && isExpanded && row.children === 'lazy' ? true : undefined}
+        aria-selected={hasSelectColumn ? state === 'checked' : undefined}
         data-part="row"
-        style={style}
+        className={rowClass}
+        style={style as CSSProperties}
       >
         {hasSelectColumn ? (
-          <div role="gridcell" aria-colindex={1} className="ds-tree-grid__cell ds-tree-grid__cell--select" data-part="selectCell">
+          <div
+            id={cellId(rowIndex, 0)}
+            role="gridcell"
+            aria-colindex={1}
+            tabIndex={-1}
+            data-part="selectCell"
+            className={joinClasses(
+              'ds-tree-grid__cell',
+              'ds-tree-grid__cell--select',
+              'ds-tree-grid__cell--pinned',
+              activeRow === rowIndex && activeCol === 0 && 'ds-tree-grid__cell--active',
+            )}
+            style={{ insetInlineStart: 0 }}
+            onClick={(event) => {
+              if (!(event.target as Element).closest('[data-ds="Checkbox"]')) toggleRow(row);
+            }}
+          >
             <Checkbox
-              label={interpolate(BORROWED_COPY.selectRow, { rowName: rowName(visRow.row, rowHeaderColumn) })}
-              name={`${baseId}-select-${visRow.id}`}
-              checked={checkedState === 'checked'}
-              indeterminate={checkedState === 'indeterminate'}
-              onChange={() => toggleRowSelection(visRow.row)}
+              label={interpolate(COPY.selectRow, { rowName: name })}
+              hideLabel
+              name={`${baseId}-select`}
+              value={row.id}
+              checked={state === 'checked'}
+              indeterminate={state === 'mixed'}
+              tabIndex={-1}
+              onChange={() => toggleRow(row)}
             />
           </div>
         ) : null}
-        {columns.map((column, index) => renderCell(visRow, rowIndex, column, index + (hasSelectColumn ? 1 : 0)))}
+        {columns.map((column, index) => bodyCell(entry, rowIndex, column, index, name))}
       </div>
     );
   };
 
-  const classes = [
-    'ds-tree-grid',
-    `ds-tree-grid--density-${density}`,
-    `ds-tree-grid--height-${height}`,
-    scrolledUnderHeader ? 'ds-tree-grid--scrolled-under-header' : null,
-    className ?? null,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const renderedRows: ReactElement[] = [];
+  for (let i = Math.max(0, windowStart); i <= windowEnd; i += 1) {
+    const entry = visible[i];
+    if (entry) renderedRows.push(bodyRow(entry, i));
+  }
 
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+  /* ---------- status bar ---------- */
+  const summary = [interpolate(pluralForm(COPY.rowCount, total), { count: total })];
+  if (selectable === 'row' && selectedIds.length > 0) summary.push(interpolate(COPY.selectedRows, { count: selectedIds.length, total }));
+  const liveText = loading ? COPY.loading : editError ? interpolate(COPY.invalid, { message: editError }) : announcement;
+  const activeColumn = activeEntry?.placeholder ? rowHeaderColumn : dataColumnAt(activeCol);
+  const position = activeRow >= 0 && activeColumn ? interpolate(COPY.position, { row: activeRow + 1, column: activeColumn.header }) : '';
 
-  const visibleRows = visible.slice(startIndex, endIndex + 1);
-
-  const statusText = loading
-    ? COPY.loading
-    : editingError
-      ? interpolate(BORROWED_COPY.invalid, { message: editingError })
-      : announcement ||
-        (selectable === 'row' && selectedIds.length > 0
-          ? interpolate(BORROWED_COPY.selectedRows, { count: selectedIds.length, total: allIds.length })
-          : interpolate(BORROWED_COPY.rowCount, { count: visible.length }));
+  const empty = visibleCount === 0 && !loading;
+  const activeDescendant =
+    activeRendered && colCount > 0 && !empty ? cellId(activeRow, activeEntry?.placeholder ? 0 : activeCol) : undefined;
 
   return (
-    <div {...rest} ref={rootRef} data-ds="TreeGrid" data-part="container" className={classes} style={mergedStyle}>
-      <div id={captionId} data-part="caption" className={hideCaption ? 'ds-tree-grid__visually-hidden' : 'ds-tree-grid__caption'}>
-        <Heading level={2} size="md">
+    <div
+      {...rest}
+      ref={ref}
+      data-ds="TreeGrid"
+      data-part="container"
+      className={joinClasses(
+        'ds-tree-grid',
+        `ds-tree-grid--density-${density}`,
+        `ds-tree-grid--height-${height}`,
+        hasSelectColumn && 'ds-tree-grid--selectable-row',
+        virtualize && 'ds-tree-grid--virtual',
+        (stickyHeader || virtualize) && 'ds-tree-grid--sticky-header',
+        scrollTop > 0 && 'ds-tree-grid--scrolled-y',
+        scrolledX && 'ds-tree-grid--scrolled-x',
+        loading && 'ds-tree-grid--loading',
+      )}
+      style={rootStyle as CSSProperties}
+    >
+      <span ref={targetSizerRef} aria-hidden="true" className="ds-tree-grid__sizer" />
+      <div data-part="caption" className={hideCaption ? 'ds-tree-grid__visually-hidden' : 'ds-tree-grid__caption'}>
+        <Heading id={captionId} level={2} size="md" overrides={{ marginBlockEnd: 'space.0' }}>
           {caption}
         </Heading>
       </div>
-      <div
-        ref={scrollRegionRef}
-        role="treegrid"
-        data-part="scrollRegion"
-        className="ds-tree-grid__scroll-region"
-        aria-labelledby={captionId}
-        aria-rowcount={visible.length + 1}
-        aria-colcount={colCount}
-        aria-multiselectable={selectable === 'row' ? 'true' : undefined}
-        aria-readonly={!editable ? 'true' : undefined}
-        aria-busy={loading ? 'true' : undefined}
-        aria-describedby={statusBarId}
-        tabIndex={0}
-        aria-activedescendant={activeDescendantId}
-        onKeyDown={handleKeyDown}
-        onScroll={handleScroll}
-      >
-        <div ref={sizerRef} aria-hidden="true" className="ds-tree-grid__row-sizer" />
-        <div role="rowgroup" data-part="header" className="ds-tree-grid__header">
-          <div role="row" aria-rowindex={1} className="ds-tree-grid__row ds-tree-grid__row--header" data-part="headerRow" style={{ gridTemplateColumns }}>
-            {hasSelectColumn ? (
-              <div
-                role="columnheader"
-                aria-colindex={1}
-                id={cellId(-1, 0)}
-                data-part="selectAllCell"
-                data-active={activeCell.row === -1 && activeCell.col === 0 ? 'true' : undefined}
-                className="ds-tree-grid__cell ds-tree-grid__cell--header ds-tree-grid__cell--select"
-                onMouseDown={() => {
-                  focusGrid();
-                  setActiveCell({ row: -1, col: 0 });
-                }}
-              >
-                <Checkbox
-                  label={BORROWED_COPY.selectAll}
-                  name={`${baseId}-select-all`}
-                  checked={allSelected}
-                  indeterminate={someSelected}
-                  onChange={handleToggleAll}
-                />
+      <div ref={scrollRef} data-part="scrollRegion" className="ds-tree-grid__scroll-region" onScroll={handleScroll}>
+        <div
+          ref={gridRef}
+          role="treegrid"
+          data-part="grid"
+          className="ds-tree-grid__grid"
+          tabIndex={0}
+          aria-labelledby={captionId}
+          aria-describedby={showStatusBar ? statusId : undefined}
+          aria-rowcount={visibleCount + 1}
+          aria-colcount={colCount}
+          aria-multiselectable={selectable === 'row' ? true : undefined}
+          aria-readonly={!editable}
+          aria-busy={loading ? true : undefined}
+          aria-activedescendant={activeDescendant}
+          onKeyDown={handleKeyDown}
+          onMouseDown={handleMouseDown}
+          onPointerDown={handlePointerDown}
+          onDoubleClick={handleDoubleClick}
+        >
+          <div role="rowgroup" data-part="header" className="ds-tree-grid__header">
+            <div role="row" aria-rowindex={1} data-part="headerRow" className="ds-tree-grid__row" style={{ gridTemplateColumns }}>
+              {hasSelectColumn ? (
+                <div
+                  id={cellId(-1, 0)}
+                  role="columnheader"
+                  aria-colindex={1}
+                  tabIndex={-1}
+                  data-part="selectAllCell"
+                  className={joinClasses(
+                    'ds-tree-grid__cell',
+                    'ds-tree-grid__cell--header',
+                    'ds-tree-grid__cell--select',
+                    'ds-tree-grid__cell--pinned',
+                    activeRow === -1 && activeCol === 0 && 'ds-tree-grid__cell--active',
+                  )}
+                  style={{ insetInlineStart: 0 }}
+                  onClick={(event) => {
+                    if (!(event.target as Element).closest('[data-ds="Checkbox"]')) toggleAll();
+                  }}
+                >
+                  <Checkbox
+                    label={COPY.selectAll}
+                    hideLabel
+                    name={`${baseId}-select-all`}
+                    checked={allSelected}
+                    indeterminate={someSelected}
+                    tabIndex={-1}
+                    onChange={toggleAll}
+                  />
+                </div>
+              ) : null}
+              {columns.map(headerCell)}
+            </div>
+          </div>
+          <div
+            role="rowgroup"
+            data-part="body"
+            className="ds-tree-grid__body"
+            style={virtualize ? { blockSize: `calc(${empty ? 0 : visibleCount} * ${ROW_SIZE})` } : undefined}
+          >
+            {empty ? (
+              <div role="row" aria-rowindex={2} className="ds-tree-grid__empty-row">
+                <div role="gridcell" aria-colindex={1} className="ds-tree-grid__empty" style={{ gridColumn: '1 / -1' }}>
+                  <Text element="p" tone="muted" data-part="emptyState">
+                    {emptyMessage ?? COPY.empty}
+                  </Text>
+                </div>
               </div>
-            ) : null}
-            {columns.map((column, index) => renderHeaderCell(column, index))}
+            ) : (
+              renderedRows
+            )}
           </div>
         </div>
-        <div role="rowgroup" data-part="body" className="ds-tree-grid__body">
-          {visible.length === 0 ? (
-            <div role="row" className="ds-tree-grid__row">
-              <div role="gridcell" className="ds-tree-grid__empty" style={{ gridColumn: `1 / span ${colCount}` }}>
-                <Text element="p" tone="muted" data-part="emptyState">
-                  {loading ? COPY.loading : BORROWED_COPY.empty}
-                </Text>
-              </div>
-            </div>
-          ) : virtualize ? (
-            <div className="ds-tree-grid__spacer" style={{ position: 'relative', blockSize: visible.length * rowHeightPx }}>
-              {visibleRows.map((visRow, i) => renderRow(visRow, startIndex + i))}
-            </div>
-          ) : (
-            visibleRows.map((visRow, i) => renderRow(visRow, i))
-          )}
-        </div>
       </div>
-      {showStatusBar ? (
-        <div id={statusBarId} role="status" aria-live="polite" className="ds-tree-grid__status-bar" data-part="statusBar">
-          <Text size="xs" tone="muted">
-            {statusText}
+      <div data-part="statusBar" className={showStatusBar ? 'ds-tree-grid__status-bar' : 'ds-tree-grid__visually-hidden'}>
+        <span className="ds-tree-grid__status-group">
+          {showStatusBar
+            ? summary.map((text) => (
+                <Text key={text} element="span" size="xs" tone="muted">
+                  {text}
+                </Text>
+              ))
+            : null}
+          <Text id={statusId} element="span" size="xs" tone="muted" role="status" aria-live="polite">
+            {liveText}
           </Text>
-        </div>
-      ) : (
-        <span id={statusBarId} role="status" aria-live="polite" className="ds-tree-grid__visually-hidden">
-          {announcement}
         </span>
-      )}
+        {showStatusBar ? (
+          <span className="ds-tree-grid__status-group">
+            {overflowX && !scrolledX ? (
+              <Text element="span" size="xs" tone="muted">
+                {COPY.scrollHint}
+              </Text>
+            ) : null}
+            {position ? (
+              <Text element="span" size="xs" tone="muted">
+                {position}
+              </Text>
+            ) : null}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
-};
+}

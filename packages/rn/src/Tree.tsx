@@ -1,44 +1,35 @@
 import * as React from 'react';
-import { AccessibilityInfo, Animated, FlatList, Linking, Platform, Pressable, View } from 'react-native';
-import type { AccessibilityActionEvent, ListRenderItemInfo, ViewStyle } from 'react-native';
+import { AccessibilityInfo, Animated, FlatList, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import type { AccessibilityActionEvent, ListRenderItemInfo, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Heading } from './Heading';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
+import { Link } from './Link';
 import { Text } from './Text';
 import { toEasing, useReducedMotion, useTheme } from './theme';
+import type { Tokens } from './theme';
 
 export type TreeSelectable = 'none' | 'single' | 'multiple';
 
-/** Heading level for the visible `label`. The schema declares the values as strings; numbers are accepted for ergonomics. Its size is `headingSize` regardless of level. */
+/** Heading level of the visible label. The schema's values are quoted digits; numbers are accepted too. Its size is `headingSize` regardless. */
 export type TreeHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
 
-/** A hierarchy entry. `href` makes the node a link (navigation trees); `badge` is a short trailing count or status; `children: "lazy"` loads on first expand through `onExpand`. */
-export interface TreeNode {
-  id: string;
-  label: string;
-  icon?: IconName | undefined;
-  badge?: string | undefined;
-  disabled?: boolean | undefined;
-  href?: string | undefined;
-  children?: TreeNode[] | 'lazy' | undefined;
-}
+/** A hierarchy entry. `href` makes the label a Link; `badge` is a short trailing count or status; `children: "lazy"` loads on first expand through `onExpand`. */
+export type TreeNode = { id: string; label: string; icon?: IconName; badge?: string; disabled?: boolean; href?: string; children?: TreeNode[] | 'lazy' };
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/** The style bindings a caller may replace with a different token; locked bindings are excluded. */
 export type TreeOverridableBinding =
   | 'indent'
-  | 'rowHeight'
   | 'rowPaddingInline'
   | 'rowRadius'
   | 'rowGap'
   | 'rowHover'
-  | 'rowSelectedBorderWidth'
   | 'labelSelectedWeight'
   | 'headingSize'
   | 'badgeSize'
-  | 'expandButtonSize'
   | 'guideLine'
   | 'guideLineWidth'
   | 'checkboxGap'
@@ -54,9 +45,9 @@ export type TreeOverridableBinding =
 export interface TreeProps {
   /** What the tree lists ("Folders", "Categories"). The accessible name; visible only with `showLabel`. */
   label: string;
-  /** Show `label` as a heading above the tree. */
+  /** Show the label as a Heading above the tree. */
   showLabel?: boolean | undefined;
-  /** Heading level of the visible label in the page outline; its size is `headingSize` regardless. */
+  /** Heading level of the visible label in the page outline; its size is headingSize regardless. */
   headingLevel?: TreeHeadingLevel | undefined;
   /** The hierarchy. */
   nodes: TreeNode[];
@@ -64,28 +55,30 @@ export interface TreeProps {
   expanded?: string[] | undefined;
   /** Initially expanded ids; `["*"]` for all. */
   defaultExpanded?: string[] | undefined;
-  /** `single`: one current node. `multiple`: checkbox selection, cascading to descendants when `selectChildren`. `none`: expand/collapse only. */
+  /** `single`: one current node. `multiple`: checkbox-like selection, cascading with `selectChildren`. `none`: expand/collapse only. */
   selectable?: TreeSelectable | undefined;
-  /** Controlled selected ids. */
+  /** Controlled selected ids. Always an array, even in `single` mode. */
   selected?: string[] | undefined;
   /** Initially selected ids. */
   defaultSelected?: string[] | undefined;
-  /** With `multiple`, selecting a parent selects its (loaded) descendants; parents show indeterminate when only some are selected. */
+  /** With `multiple`, selecting a parent selects its descendants and parents show indeterminate. */
   selectChildren?: boolean | undefined;
-  /** With `single`, moving focus to a node (an external keyboard, or assistive-technology navigation) also selects it. Off by default. */
+  /** With `single`, focus reaching a node (hardware keyboard, assistive technology) also selects it. */
   selectOnFocus?: boolean | undefined;
   /** Vertical guide lines under open parents. */
   showGuides?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<TreeOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired with the selected ids. */
-  onSelectionChange?: ((selected: string[]) => void) | undefined;
-  /** Fired with the expanded ids. */
-  onExpandChange?: ((expanded: string[]) => void) | undefined;
-  /** Fired when a `children: "lazy"` node is expanded for the first time, with its id; the caller loads and replaces `children`. */
+  /** Fired with every selected id, as a bare array. */
+  onSelectionChange?: ((ids: string[]) => void) | undefined;
+  /** Fired with every expanded id, as a bare array. */
+  onExpandChange?: ((ids: string[]) => void) | undefined;
+  /** Fired when a lazy node is expanded for the first time, with its id. */
   onExpand?: ((id: string) => void) | undefined;
-  /** Fired when a node is activated by tap; nodes with `href` navigate instead. */
+  /** Fired when a node is activated, with its id. Nodes with `href` navigate instead. */
   onActivate?: ((id: string) => void) | undefined;
+  /** The root view. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 const COPY = {
@@ -96,148 +89,120 @@ const COPY = {
   empty: 'Nothing here.',
 } as const;
 
-/** Visually clips content to 1x1 while keeping it in the accessibility tree, for live-region announcements. */
+const LABEL_SELECTED_WEIGHT: TokenRef = 'font.weight.medium';
+const HEADING_SIZE: TokenRef = 'font.size.md';
+const BADGE_SIZE: TokenRef = 'font.size.xs';
+
+/** Clips content to one point while keeping it in the accessibility tree (the Android live region). */
 const HIDDEN_STYLE: ViewStyle = { position: 'absolute', width: 1, height: 1, overflow: 'hidden' };
 
-function collectAllIds(nodes: TreeNode[]): string[] {
-  const ids: string[] = [];
-  for (const node of nodes) {
-    ids.push(node.id);
-    if (node.children !== undefined && node.children !== 'lazy') {
-      ids.push(...collectAllIds(node.children));
-    }
-  }
-  return ids;
+function tokenOr<T>(t: Tokens, ref: TokenRef | undefined, fallback: T): T {
+  return ref === undefined ? fallback : (resolveToken(t, ref) as T);
 }
 
-function collectLoadedDescendantIds(node: TreeNode): string[] {
-  if (node.children === undefined || node.children === 'lazy') {
-    return [];
-  }
-  const ids: string[] = [];
-  for (const child of node.children) {
-    ids.push(child.id);
-    ids.push(...collectLoadedDescendantIds(child));
-  }
-  return ids;
+function hasChildren(node: TreeNode): boolean {
+  return node.children === 'lazy' || (Array.isArray(node.children) && node.children.length > 0);
 }
 
-interface TreeVisibleNode {
+/** One entry of the flattened visible list; collapsed subtrees never appear here. */
+interface FlatNode {
   key: string;
-  node: TreeNode;
   level: number;
-  hasChildren: boolean;
-  isExpanded: boolean;
+  /** A lazy parent's loading placeholder. */
   placeholder: boolean;
+  node: TreeNode;
 }
 
-/** Flattens the tree into the visible-row list: what gets rendered, virtualized and counted. Collapsed descendants are not rendered at all. */
-function flattenNodes(nodes: TreeNode[], expandedSet: Set<string>, level: number): TreeVisibleNode[] {
-  const result: TreeVisibleNode[] = [];
+function flattenNodes(nodes: TreeNode[], expanded: Set<string>, level: number, out: FlatNode[] = []): FlatNode[] {
   for (const node of nodes) {
-    const hasChildren = node.children !== undefined && (node.children === 'lazy' || node.children.length > 0);
-    const isExpanded = hasChildren && expandedSet.has(node.id);
-    result.push({ key: node.id, node, level, hasChildren, isExpanded, placeholder: false });
-    if (isExpanded) {
+    out.push({ key: node.id, level, placeholder: false, node });
+    if (hasChildren(node) && expanded.has(node.id)) {
       if (node.children === 'lazy') {
-        result.push({
-          key: `${node.id}::loading`,
-          node: { id: `${node.id}::loading`, label: COPY.loading },
-          level: level + 1,
-          hasChildren: false,
-          isExpanded: false,
-          placeholder: true,
-        });
-      } else if (node.children !== undefined) {
-        result.push(...flattenNodes(node.children, expandedSet, level + 1));
+        out.push({ key: `${node.id}::loading`, level: level + 1, placeholder: true, node });
+      } else if (Array.isArray(node.children)) {
+        flattenNodes(node.children, expanded, level + 1, out);
       }
     }
   }
-  return result;
+  return out;
 }
 
-interface TreeExpandButtonProps {
-  expanded: boolean;
-  label: string;
-  transitionDuration: number;
-  color: string;
-  onPress: () => void;
+/** Every loaded parent, at any depth — what `["*"]` expands. */
+function expandableIds(nodes: TreeNode[], out: string[] = []): string[] {
+  for (const node of nodes) {
+    if (Array.isArray(node.children) && node.children.length > 0) {
+      out.push(node.id);
+      expandableIds(node.children, out);
+    }
+  }
+  return out;
 }
 
-/** The expand/collapse control for a node row. Its own component so the chevron rotation can hold an `Animated.Value` per node. */
-function TreeExpandButton({ expanded, label, transitionDuration, color, onPress }: TreeExpandButtonProps): React.JSX.Element {
+/** Every loaded, enabled descendant id. */
+function descendantIds(node: TreeNode, out: string[] = []): string[] {
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      if (child.disabled !== true) {
+        out.push(child.id);
+      }
+      descendantIds(child, out);
+    }
+  }
+  return out;
+}
+
+type CheckState = 'checked' | 'unchecked' | 'mixed';
+
+/** The expand control's chevron, rotated over `transition`; instant under reduced motion. */
+function Chevron({ expanded, color, duration }: { expanded: boolean; color: string; duration: number }): React.JSX.Element {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
   const rotation = React.useRef(new Animated.Value(expanded ? 1 : 0)).current;
-
   React.useEffect(() => {
     const toValue = expanded ? 1 : 0;
     if (reducedMotion) {
       rotation.setValue(toValue);
       return;
     }
-    Animated.timing(rotation, {
-      toValue,
-      duration: transitionDuration,
-      easing: toEasing(t.motionEasingStandard),
-      useNativeDriver: false,
-    }).start();
-  }, [expanded, reducedMotion, rotation, transitionDuration, t.motionEasingStandard]);
-
-  const rotate = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '90deg'] });
-
+    Animated.timing(rotation, { toValue, duration, easing: toEasing(t.motionEasingStandard), useNativeDriver: false }).start();
+  }, [expanded, reducedMotion, duration, rotation, t.motionEasingStandard]);
+  const style: Animated.WithAnimatedValue<ViewStyle> = {
+    transform: [{ rotate: rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '90deg'] }) }],
+  };
   return (
-    <Button
-      label={label}
-      variant="ghost"
-      size="sm"
-      iconOnly
-      leadingIcon={
-        <Animated.View style={{ transform: [{ rotate }] }}>
-          <Icon name="chevron-right" inline color={color} />
-        </Animated.View>
-      }
-      onPress={onPress}
-    />
+    <Animated.View style={style}>
+      <Icon name="chevron-right" size="sm" color={color} />
+    </Animated.View>
   );
 }
 
 /**
  * Tree — a list that knows about nesting: a file browser's sidebar, a category
- * picker, a documentation site's navigation. One field per node, a chevron to
- * open it, a tap to act on it.
+ * picker, a documentation site's navigation. One field per node.
  *
- * When to use: a hierarchy the user navigates or picks from. `single` selection
- * with `href` nodes is a navigation tree; `multiple` with `selectChildren` is a
- * picker (choose folders to sync). Use `TreeGrid` instead when nodes need
- * several comparable fields.
+ * When to use: a hierarchy the user navigates or picks from. `single` with `href`
+ * nodes is a navigation tree; `multiple` with `selectChildren` is a picker. Not for
+ * one level (Listbox, a list of Links), several fields per node (TreeGrid) or a
+ * Menu.
  *
- * There is no `tree`/`treeitem` role on native. Renders an optional `Heading`
- * (`showLabel`) then a `FlatList` (`accessibilityRole="list"`,
- * `accessibilityLabel={label}`) over the flattened visible nodes — collapsing a
- * parent removes its descendants from the list entirely, keeping deep or wide
- * trees cheap until opened. Each row's indent reserves `indent` per level and
- * draws a vertical guide line (`showGuides`) for every open ancestor, aligned
- * with that ancestor's chevron; a `children: "lazy"` node shows one placeholder
- * child in `copy.loading` (and fires `onExpand`) until the caller replaces its
- * children.
+ * Native has no tree role: an optional `Heading` (`showLabel`, at `headingLevel`,
+ * sized by headingSize) above a `FlatList` (`accessibilityRole="list"`, labelled by
+ * `label`) over the flattened visible nodes — groups have no wrapper, collapsed
+ * subtrees are absent. Each node is a row: indent per level with one guide line per
+ * open ancestor (`showGuides`), a ghost `Button` chevron as the real expand target,
+ * then a `Pressable` (`button`, or `link` for `href`) holding the drawn checkbox in
+ * `multiple` mode, the `Icon`, the label `Text` (or `Link`) and the badge `Text`.
+ * The row announces "{label}, level {n}" with `accessibilityState` expanded,
+ * selected, checked (`mixed` for a partly selected cascading parent), disabled and
+ * busy (an open lazy parent), and `expand`/`collapse` accessibility actions.
  *
- * Every row is a `Pressable` with `accessibilityRole` `"link"` (nodes with
- * `href`, opened through `Linking`) or `"button"` (everything else, calling
- * `onActivate`) — never the `Checkbox` component, so the row stays one hit
- * target. In `none`/`single` mode a tap activates (and, in `single`, selects);
- * `single` also selects as soon as focus reaches the row when `selectOnFocus`
- * is set, since native has no separate "move" and "activate" keys. In
- * `multiple` mode a tap instead toggles selection and a long press activates,
- * so `href` and `onActivate` remain reachable; the row draws its own checkbox
- * glyph (the `checkbox*` bindings, a `check`/`dash` `Icon`) beside the label
- * and reflects `accessibilityState.checked` (`'mixed'` when only some loaded
- * descendants are selected under `selectChildren`). There are no hardware
- * arrow keys, so the chevron `Button` is a real, always-visible touch target,
- * and each row also exposes `expand`/`collapse` `accessibilityActions` for
- * assistive technology. Selection changes in `multiple` mode announce
- * `copy.selectedCount` (`AccessibilityInfo` on iOS, a hidden polite live
- * region on Android).
+ * A tap is Enter: it activates (`onActivate`, or opens `href` through `Linking`)
+ * and, in `single`, selects. In `multiple` a tap toggles selection and a long press
+ * activates; the row carries the standard `longpress` accessibility action so a
+ * screen reader can still reach activation. `selectOnFocus` selects from the
+ * Pressable's `onFocus`. Selection changes in `multiple` announce
+ * `copy.selectedCount` (iOS `announceForAccessibility`, an Android live region).
+ * No arrow keys, `*` or type-ahead on this platform.
  */
 export function Tree({
   label,
@@ -257,45 +222,40 @@ export function Tree({
   onExpandChange,
   onExpand,
   onActivate,
+  ref,
 }: TreeProps): React.JSX.Element {
   const { tokens: t } = useTheme();
 
-  // ---- tokens ----
+  // ---- Bindings ----
+  const indent = tokenOr<number>(t, overrides?.indent, t.space5);
+  const rowHeight = t.sizeTargetMin;
+  const rowPaddingInline = tokenOr<number>(t, overrides?.rowPaddingInline, t.space2);
+  const rowRadius = tokenOr<number>(t, overrides?.rowRadius, t.radiusSm);
+  const rowGap = tokenOr<number>(t, overrides?.rowGap, t.layoutGapTight);
+  const rowHover = tokenOr<string>(t, overrides?.rowHover, t.colorActionGhostBackgroundHover);
+  const rowSelected = t.colorBackgroundStrong;
+  const rowSelectedBorder = t.colorControlSelectedBackground;
+  const rowSelectedBorderWidth = t.borderWidthFocus;
+  const expandButtonSize = t.sizeTargetMin;
+  const guideLine = tokenOr<string>(t, overrides?.guideLine, t.colorBorder);
+  const guideLineWidth = tokenOr<number>(t, overrides?.guideLineWidth, t.borderWidthThin);
+  const checkboxGap = tokenOr<number>(t, overrides?.checkboxGap, t.layoutGapTight);
+  const checkboxSize = tokenOr<number>(t, overrides?.checkboxSize, t.space4);
+  const checkboxBackground = tokenOr<string>(t, overrides?.checkboxBackground, t.colorControlBackground);
+  const checkboxRadius = tokenOr<number>(t, overrides?.checkboxRadius, t.radiusSm);
+  const disabledOpacity = tokenOr<number>(t, overrides?.disabledOpacity, t.opacityDisabled);
+  const transition = tokenOr<number>(t, overrides?.transition, t.motionDurationFast);
+  const labelSelectedWeight = overrides?.labelSelectedWeight ?? LABEL_SELECTED_WEIGHT;
+  const headingSize = overrides?.headingSize ?? HEADING_SIZE;
+  const badgeSize = overrides?.badgeSize ?? BADGE_SIZE;
+  // fontFamily/fontSize/lineHeight have no part of their own; they reach the label Text only when overridden.
+  const labelTypography = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
 
-  const indentValue = overrides?.indent ? (resolveToken(t, overrides.indent) as number) : t.space5;
-  const rowHeightValue = overrides?.rowHeight ? (resolveToken(t, overrides.rowHeight) as number) : t.sizeTargetMin;
-  const rowPaddingInlineValue = overrides?.rowPaddingInline ? (resolveToken(t, overrides.rowPaddingInline) as number) : t.space2;
-  const rowRadiusValue = overrides?.rowRadius ? (resolveToken(t, overrides.rowRadius) as number) : t.radiusSm;
-  const rowGapValue = overrides?.rowGap ? (resolveToken(t, overrides.rowGap) as number) : t.layoutGapTight;
-  const rowHoverColor = overrides?.rowHover ? (resolveToken(t, overrides.rowHover) as string) : t.colorActionGhostBackgroundHover;
-  const rowSelectedBorderWidthValue = overrides?.rowSelectedBorderWidth ? (resolveToken(t, overrides.rowSelectedBorderWidth) as number) : t.borderWidthFocus;
-  const badgeSizeRef: TokenRef = overrides?.badgeSize ?? ('font.size.xs' as TokenRef);
-  const labelSelectedWeightRef: TokenRef = overrides?.labelSelectedWeight ?? ('font.weight.medium' as TokenRef);
-  const headingSizeRef: TokenRef = overrides?.headingSize ?? ('font.size.md' as TokenRef);
-  const expandButtonSizeValue = overrides?.expandButtonSize ? (resolveToken(t, overrides.expandButtonSize) as number) : t.sizeTargetMin;
-  const guideLineColor = overrides?.guideLine ? (resolveToken(t, overrides.guideLine) as string) : t.colorBorder;
-  const guideLineWidthValue = overrides?.guideLineWidth ? (resolveToken(t, overrides.guideLineWidth) as number) : t.borderWidthThin;
-  const checkboxGapValue = overrides?.checkboxGap ? (resolveToken(t, overrides.checkboxGap) as number) : t.layoutGapTight;
-  const checkboxSizeValue = overrides?.checkboxSize ? (resolveToken(t, overrides.checkboxSize) as number) : t.space4;
-  const checkboxBackgroundColor = overrides?.checkboxBackground ? (resolveToken(t, overrides.checkboxBackground) as string) : t.colorControlBackground;
-  const checkboxRadiusValue = overrides?.checkboxRadius ? (resolveToken(t, overrides.checkboxRadius) as number) : t.radiusSm;
-  const disabledOpacityValue = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
-  const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
-  const typographyOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
-  const badgeOverrides = { ...typographyOverrides, fontSize: badgeSizeRef };
-
-  // `minTarget` is locked: whatever `rowHeight` resolves to, the touch target never drops below it.
-  const effectiveRowHeight = Math.max(rowHeightValue, t.sizeTargetMin);
-  const targetDeficit = Math.max(0, t.sizeTargetMin - rowHeightValue) / 2;
-  const rowHitSlop = targetDeficit > 0 ? { top: targetDeficit, bottom: targetDeficit } : undefined;
-
-  // ---- expansion ----
-
-  const [internalExpanded, setInternalExpanded] = React.useState<string[]>(() =>
-    defaultExpanded?.includes('*') ? collectAllIds(nodes) : (defaultExpanded ?? []),
-  );
+  // ---- Expansion ----
+  const [internalExpanded, setInternalExpanded] = React.useState<string[]>(() => (defaultExpanded?.includes('*') ? expandableIds(nodes) : (defaultExpanded ?? [])));
   const expandedIds = expanded ?? internalExpanded;
   const expandedSet = React.useMemo(() => new Set(expandedIds), [expandedIds]);
+  const lazyRequested = React.useRef(new Set<string>());
 
   const commitExpanded = (next: string[]): void => {
     if (expanded === undefined) {
@@ -305,317 +265,327 @@ export function Tree({
   };
 
   const toggleExpand = (node: TreeNode): void => {
-    const isExpandedNow = expandedSet.has(node.id);
-    const next = isExpandedNow ? expandedIds.filter((id) => id !== node.id) : [...expandedIds, node.id];
-    commitExpanded(next);
-    if (!isExpandedNow && node.children === 'lazy') {
+    if (expandedSet.has(node.id)) {
+      commitExpanded(expandedIds.filter((id) => id !== node.id));
+      return;
+    }
+    if (node.children === 'lazy' && !lazyRequested.current.has(node.id)) {
+      lazyRequested.current.add(node.id);
       onExpand?.(node.id);
     }
+    commitExpanded([...expandedIds, node.id]);
   };
 
-  const nodeAccessibilityAction = (node: TreeNode, isExpanded: boolean) => (event: AccessibilityActionEvent): void => {
-    if (event.nativeEvent.actionName === 'expand' && !isExpanded) {
-      toggleExpand(node);
-    } else if (event.nativeEvent.actionName === 'collapse' && isExpanded) {
-      toggleExpand(node);
-    }
-  };
+  const visible = React.useMemo(() => flattenNodes(nodes, expandedSet, 1), [nodes, expandedSet]);
 
-  const visibleNodes = React.useMemo(() => flattenNodes(nodes, expandedSet, 1), [nodes, expandedSet]);
-
-  // ---- selection ----
-
+  // ---- Selection ----
   const [internalSelected, setInternalSelected] = React.useState<string[]>(defaultSelected ?? []);
   const selectedIds = selected ?? internalSelected;
   const selectedSet = React.useMemo(() => new Set(selectedIds), [selectedIds]);
+  const [announcement, setAnnouncement] = React.useState('');
 
   const commitSelection = (next: string[]): void => {
     if (selected === undefined) {
       setInternalSelected(next);
     }
     onSelectionChange?.(next);
+    if (selectable === 'multiple') {
+      const message = COPY.selectedCount(next.length);
+      setAnnouncement(message);
+      if (Platform.OS === 'ios') {
+        AccessibilityInfo.announceForAccessibility(message);
+      }
+    }
   };
 
-  const selectSingle = (id: string): void => commitSelection([id]);
+  const checkStateOf = (node: TreeNode): CheckState => {
+    const own = selectedSet.has(node.id);
+    if (!selectChildren) {
+      return own ? 'checked' : 'unchecked';
+    }
+    const ids = descendantIds(node);
+    if (ids.length === 0) {
+      return own ? 'checked' : 'unchecked';
+    }
+    const count = ids.filter((id) => selectedSet.has(id)).length;
+    if (count === ids.length) {
+      return 'checked';
+    }
+    return count > 0 || own ? 'mixed' : 'unchecked';
+  };
 
-  const toggleMultiple = (node: TreeNode): void => {
+  const selectNode = (node: TreeNode): void => {
+    if (selectedIds.length === 1 && selectedIds[0] === node.id) {
+      return;
+    }
+    commitSelection([node.id]);
+  };
+
+  const toggleNode = (node: TreeNode): void => {
+    const ids = selectChildren ? [node.id, ...descendantIds(node)] : [node.id];
+    const clear = checkStateOf(node) === 'checked';
     const next = new Set(selectedSet);
-    const ids = selectChildren ? [node.id, ...collectLoadedDescendantIds(node)] : [node.id];
-    const willSelect = !next.has(node.id);
-    ids.forEach((id) => {
-      if (willSelect) {
-        next.add(id);
-      } else {
-        next.delete(id);
-      }
-    });
+    ids.forEach((id) => (clear ? next.delete(id) : next.add(id)));
     commitSelection(Array.from(next));
   };
 
-  const checkState = (node: TreeNode, hasChildren: boolean): { checked: boolean; indeterminate: boolean } => {
-    const isSelected = selectedSet.has(node.id);
-    if (!selectChildren || !hasChildren) {
-      return { checked: isSelected, indeterminate: false };
-    }
-    const descendantIds = collectLoadedDescendantIds(node);
-    if (descendantIds.length === 0) {
-      return { checked: isSelected, indeterminate: false };
-    }
-    const selectedDescendants = descendantIds.filter((id) => selectedSet.has(id)).length;
-    const allSelected = isSelected && selectedDescendants === descendantIds.length;
-    const someSelected = isSelected || selectedDescendants > 0;
-    return { checked: allSelected, indeterminate: !allSelected && someSelected };
-  };
-
-  const isFirstSelection = React.useRef(true);
-  React.useEffect(() => {
-    if (selectable !== 'multiple') {
-      return;
-    }
-    if (isFirstSelection.current) {
-      isFirstSelection.current = false;
-      return;
-    }
-    if (Platform.OS === 'ios') {
-      AccessibilityInfo.announceForAccessibility(COPY.selectedCount(selectedIds.length));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIds.length, selectable]);
-
-  // ---- activation & focus ----
-
-  const [focusedId, setFocusedId] = React.useState<string | null>(null);
-
-  const handleActivate = (node: TreeNode): void => {
+  // ---- Activation ----
+  const activate = (node: TreeNode): void => {
     if (node.href !== undefined) {
-      Linking.openURL(node.href).catch(() => undefined);
-    } else {
-      onActivate?.(node.id);
+      Promise.resolve(Linking.openURL(node.href)).catch(() => undefined);
+      return;
     }
+    onActivate?.(node.id);
   };
 
-  const handleRowPress = (node: TreeNode): void => {
-    if (node.disabled) {
+  /** A tap: toggles in `multiple`; otherwise Enter — selects in `single` and activates. */
+  const press = (node: TreeNode): void => {
+    if (node.disabled === true) {
+      return;
+    }
+    if (selectable === 'multiple') {
+      toggleNode(node);
       return;
     }
     if (selectable === 'single') {
-      selectSingle(node.id);
+      selectNode(node);
     }
-    handleActivate(node);
+    activate(node);
   };
 
-  // In `multiple` mode the row's tap toggles selection instead of activating, since
-  // the checkbox glyph is drawn inside the same Pressable rather than composing the
-  // Checkbox component; a long press is the only way left to reach `onActivate`/`href`.
-  const handleMultiplePress = (node: TreeNode): void => {
-    if (node.disabled) {
-      return;
+  const longPress = (node: TreeNode): void => {
+    if (node.disabled !== true && selectable === 'multiple') {
+      activate(node);
     }
-    toggleMultiple(node);
   };
 
-  const handleMultipleLongPress = (node: TreeNode): void => {
-    if (node.disabled) {
-      return;
-    }
-    handleActivate(node);
-  };
+  // ---- Focus and hover ----
+  const [focusedId, setFocusedId] = React.useState<string | null>(null);
+  const [hoveredId, setHoveredId] = React.useState<string | null>(null);
 
-  const handleRowFocus = (node: TreeNode): void => {
+  const handleFocus = (node: TreeNode): void => {
     setFocusedId(node.id);
-    if (selectOnFocus && selectable === 'single' && !node.disabled) {
-      selectSingle(node.id);
+    if (selectOnFocus && selectable === 'single' && node.disabled !== true) {
+      selectNode(node);
     }
   };
 
-  const handleRowBlur = (id: string): void => {
-    setFocusedId((prev) => (prev === id ? null : prev));
-  };
-
-  // ---- parts ----
-
-  const renderIndent = (visible: TreeVisibleNode): React.JSX.Element => {
-    const { node, level, hasChildren, isExpanded } = visible;
-    const guideOffsets = showGuides ? Array.from({ length: level - 1 }, (_, i) => indentValue * i + expandButtonSizeValue / 2) : [];
-    const indentContainerWidth = indentValue * (level - 1) + expandButtonSizeValue;
-    return (
-      <View style={{ width: indentContainerWidth, height: effectiveRowHeight, marginRight: rowGapValue }} testID="Tree.indent">
-        {guideOffsets.map((offset) => (
+  // ---- Parts ----
+  /** One full-height line per open ancestor, centred on that ancestor's expand button. */
+  const guides = (level: number): React.JSX.Element | null =>
+    showGuides && level > 1 ? (
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
+        {Array.from({ length: level - 1 }, (_, ancestor) => (
           <View
-            key={offset}
-            style={{ position: 'absolute', left: offset, top: 0, bottom: 0, width: guideLineWidthValue, backgroundColor: guideLineColor }}
+            key={ancestor}
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              start: rowPaddingInline + ancestor * indent + (expandButtonSize - guideLineWidth) / 2,
+              width: guideLineWidth,
+              backgroundColor: guideLine,
+            }}
           />
         ))}
-        {hasChildren ? (
-          <View style={{ position: 'absolute', left: indentValue * (level - 1), top: 0, bottom: 0, justifyContent: 'center' }} testID="Tree.expandButton">
-            <TreeExpandButton
-              expanded={isExpanded}
+      </View>
+    ) : null;
+
+  const checkbox = (state: CheckState): React.JSX.Element => (
+    <View
+      testID="Tree.checkbox"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={{
+        width: checkboxSize,
+        height: checkboxSize,
+        borderRadius: checkboxRadius,
+        borderWidth: t.borderWidthThin,
+        borderColor: state === 'unchecked' ? t.colorControlBorder : t.colorControlSelectedBackground,
+        backgroundColor: state === 'unchecked' ? checkboxBackground : t.colorControlSelectedBackground,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {state === 'unchecked' ? null : <Icon name={state === 'mixed' ? 'dash' : 'check'} size="xs" color={t.colorControlSelectedForeground} />}
+    </View>
+  );
+
+  const renderPlaceholder = (item: FlatNode): React.JSX.Element => (
+    <View
+      testID="Tree.node"
+      style={{ flexDirection: 'row', alignItems: 'center', minHeight: rowHeight, paddingHorizontal: rowPaddingInline, gap: rowGap }}
+    >
+      {guides(item.level)}
+      <View testID="Tree.indent" style={{ width: (item.level - 1) * indent }} />
+      <View style={{ width: expandButtonSize }} />
+      <Text size="sm" tone="muted">
+        {COPY.loading}
+      </Text>
+    </View>
+  );
+
+  const renderNode = ({ item }: ListRenderItemInfo<FlatNode>): React.JSX.Element => {
+    if (item.placeholder) {
+      return renderPlaceholder(item);
+    }
+    const { node, level } = item;
+    const parent = hasChildren(node);
+    const isExpanded = parent && expandedSet.has(node.id);
+    const disabled = node.disabled === true;
+    const checkState = selectable === 'multiple' ? checkStateOf(node) : 'unchecked';
+    const isSelected = selectable === 'single' ? selectedSet.has(node.id) : selectable === 'multiple' && checkState === 'checked';
+    const highlighted = !disabled && hoveredId === node.id;
+
+    const actions: { name: string; label?: string }[] = [];
+    if (parent) {
+      actions.push({ name: 'expand', label: COPY.expand(node.label) }, { name: 'collapse', label: COPY.collapse(node.label) });
+    }
+    if (selectable === 'multiple' && !disabled) {
+      actions.push({ name: 'longpress' });
+    }
+    const handleAction = (event: AccessibilityActionEvent): void => {
+      const action = event.nativeEvent.actionName;
+      if ((action === 'expand' && !isExpanded) || (action === 'collapse' && isExpanded)) {
+        toggleExpand(node);
+      } else if (action === 'longpress') {
+        longPress(node);
+      }
+    };
+
+    return (
+      <View
+        testID="Tree.node"
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          minHeight: rowHeight,
+          paddingHorizontal: rowPaddingInline,
+          gap: rowGap,
+          borderRadius: rowRadius,
+          backgroundColor: isSelected ? rowSelected : highlighted ? rowHover : undefined,
+          opacity: disabled ? disabledOpacity : 1,
+        }}
+      >
+        {guides(level)}
+        {isSelected ? (
+          <View accessibilityElementsHidden importantForAccessibility="no" style={{ position: 'absolute', top: 0, bottom: 0, start: 0, width: rowSelectedBorderWidth, backgroundColor: rowSelectedBorder, pointerEvents: 'none' }} />
+        ) : null}
+        <View testID="Tree.indent" style={{ width: (level - 1) * indent }} />
+        <View testID="Tree.expandButton" style={{ width: expandButtonSize, minHeight: expandButtonSize, alignItems: 'center', justifyContent: 'center' }}>
+          {parent ? (
+            <Button
               label={isExpanded ? COPY.collapse(node.label) : COPY.expand(node.label)}
-              transitionDuration={transitionDuration}
-              color={t.colorForegroundMuted}
+              variant="ghost"
+              size="sm"
+              iconOnly
+              expanded={isExpanded}
+              leadingIcon={<Chevron expanded={isExpanded} color={t.colorForeground} duration={transition} />}
               onPress={() => toggleExpand(node)}
             />
+          ) : null}
+        </View>
+        <Pressable
+          testID="Tree.nodeRow"
+          accessibilityRole={node.href !== undefined ? 'link' : 'button'}
+          accessibilityLabel={`${node.label}, level ${level}`}
+          accessibilityState={{
+            disabled,
+            expanded: parent ? isExpanded : undefined,
+            selected: selectable === 'single' ? isSelected : undefined,
+            checked: selectable === 'multiple' ? (checkState === 'mixed' ? 'mixed' : checkState === 'checked') : undefined,
+            busy: isExpanded && node.children === 'lazy' ? true : undefined,
+          }}
+          accessibilityActions={actions.length > 0 ? actions : undefined}
+          onAccessibilityAction={actions.length > 0 ? handleAction : undefined}
+          onPress={() => press(node)}
+          onLongPress={selectable === 'multiple' ? () => longPress(node) : undefined}
+          onFocus={() => handleFocus(node)}
+          onBlur={() => setFocusedId((prev) => (prev === node.id ? null : prev))}
+          onHoverIn={() => setHoveredId(node.id)}
+          onHoverOut={() => setHoveredId((prev) => (prev === node.id ? null : prev))}
+          onPressIn={() => setHoveredId(node.id)}
+          onPressOut={() => setHoveredId((prev) => (prev === node.id ? null : prev))}
+          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: checkboxGap }}
+        >
+          {selectable === 'multiple' ? checkbox(checkState) : null}
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: rowGap }}>
+            {node.icon !== undefined ? (
+              <View testID="Tree.icon">
+                <Icon name={node.icon} size="sm" color={t.colorForegroundMuted} />
+              </View>
+            ) : null}
+            <View style={{ flex: 1 }}>
+              {node.href !== undefined ? (
+                <View testID="Tree.link">
+                  <Text size="sm" truncate overrides={labelTypography}>
+                    <Link
+                      href={node.href}
+                      label={node.label}
+                      onPress={() => {
+                        // The row decides: it selects and opens `href` itself, so Link's own hand-off is skipped.
+                        press(node);
+                        return false;
+                      }}
+                      onLongPress={selectable === 'multiple' ? () => longPress(node) : undefined}
+                    />
+                  </Text>
+                </View>
+              ) : (
+                <View testID="Tree.label">
+                  <Text size="sm" truncate overrides={isSelected ? { ...labelTypography, fontWeight: labelSelectedWeight } : labelTypography}>
+                    {node.label}
+                  </Text>
+                </View>
+              )}
+            </View>
+            {node.badge !== undefined ? (
+              <View testID="Tree.badge">
+                <Text size="xs" tone="muted" overrides={{ fontSize: badgeSize }}>
+                  {node.badge}
+                </Text>
+              </View>
+            ) : null}
           </View>
+        </Pressable>
+        {focusedId === node.id ? (
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+            style={[StyleSheet.absoluteFill, { borderWidth: t.borderWidthFocus, borderColor: t.colorBorderFocus, borderRadius: rowRadius, pointerEvents: 'none' }]}
+          />
         ) : null}
       </View>
     );
   };
 
-  const renderIcon = (node: TreeNode): React.JSX.Element | null =>
-    node.icon ? (
-      <View style={{ marginRight: rowGapValue }} testID="Tree.icon">
-        <Icon name={node.icon} inline color={t.colorForegroundMuted} />
-      </View>
-    ) : null;
-
-  /** The drawn checkbox glyph for `multiple` mode — not the `Checkbox` component, so the row stays one hit target (a tap toggles, a long press activates). */
-  const renderCheckboxGlyph = (checked: boolean, indeterminate: boolean): React.JSX.Element => {
-    const filled = checked || indeterminate;
-    return (
-      <View
-        style={{
-          width: checkboxSizeValue,
-          height: checkboxSizeValue,
-          borderRadius: checkboxRadiusValue,
-          borderWidth: t.borderWidthThin,
-          borderColor: t.colorControlBorder,
-          backgroundColor: filled ? t.colorControlSelectedBackground : checkboxBackgroundColor,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-        testID="Tree.checkbox"
-      >
-        {filled ? <Icon name={indeterminate ? 'dash' : 'check'} size="xs" color={t.colorControlSelectedForeground} /> : null}
-      </View>
-    );
-  };
-
-  const renderBadge = (node: TreeNode): React.JSX.Element | null =>
-    node.badge !== undefined ? (
-      <View style={{ marginLeft: rowGapValue }} testID="Tree.badge">
-        <Text size="xs" tone="muted" overrides={badgeOverrides}>
-          {node.badge}
-        </Text>
-      </View>
-    ) : null;
-
-  const renderNode = ({ item }: ListRenderItemInfo<TreeVisibleNode>): React.JSX.Element => {
-    if (item.placeholder) {
-      const placeholderIndent = indentValue * (item.level - 1) + expandButtonSizeValue;
-      return (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: rowGapValue,
-            minHeight: effectiveRowHeight,
-            paddingHorizontal: rowPaddingInlineValue,
-            paddingLeft: placeholderIndent + rowPaddingInlineValue,
-          }}
-          accessibilityState={{ busy: true }}
-          testID="Tree.node"
-        >
-          <Text size="sm" tone="muted">
-            {COPY.loading}
-          </Text>
-        </View>
-      );
-    }
-
-    const { node, level, hasChildren, isExpanded } = item;
-    const isSelected = selectable !== 'none' && selectedSet.has(node.id);
-    const isFocused = focusedId === node.id;
-    const nodeCheckState = selectable === 'multiple' ? checkState(node, hasChildren) : null;
-    const accessibleLabel = `${node.label}, level ${level}`;
-
-    const contentStyle: ViewStyle = {
-      justifyContent: 'center',
-      minHeight: effectiveRowHeight,
-      paddingHorizontal: rowPaddingInlineValue,
-      borderRadius: rowRadiusValue,
-      opacity: node.disabled ? disabledOpacityValue : 1,
-      borderLeftWidth: isSelected ? rowSelectedBorderWidthValue : 0,
-      borderLeftColor: isSelected ? t.colorControlSelectedBackground : 'transparent',
-      backgroundColor: isSelected ? t.colorBackgroundStrong : 'transparent',
-    };
-
-    const isMultiple = selectable === 'multiple';
-
-    return (
-      <View style={contentStyle} testID="Tree.node">
-        <Pressable
-          onPress={() => (isMultiple ? handleMultiplePress(node) : handleRowPress(node))}
-          onLongPress={isMultiple ? () => handleMultipleLongPress(node) : undefined}
-          onFocus={() => handleRowFocus(node)}
-          onBlur={() => handleRowBlur(node.id)}
-          accessibilityRole={node.href !== undefined ? 'link' : 'button'}
-          accessibilityLabel={accessibleLabel}
-          accessibilityState={{
-            disabled: node.disabled,
-            selected: selectable === 'single' ? isSelected : undefined,
-            checked: isMultiple ? (nodeCheckState?.indeterminate ? 'mixed' : (nodeCheckState?.checked ?? false)) : undefined,
-            expanded: hasChildren ? isExpanded : undefined,
-          }}
-          accessibilityActions={hasChildren ? [{ name: 'expand', label: COPY.expand(node.label) }, { name: 'collapse', label: COPY.collapse(node.label) }] : undefined}
-          onAccessibilityAction={hasChildren ? nodeAccessibilityAction(node, isExpanded) : undefined}
-          hitSlop={rowHitSlop}
-          style={({ pressed }) => [
-            { flexDirection: 'row', alignItems: 'center' },
-            pressed && !node.disabled ? { backgroundColor: rowHoverColor } : null,
-            isFocused ? { borderWidth: t.borderWidthFocus, borderColor: t.colorBorderFocus, borderRadius: rowRadiusValue } : null,
-          ]}
-          testID="Tree.nodeRow"
-        >
-          {renderIndent(item)}
-          {renderIcon(node)}
-          {isMultiple ? (
-            <View style={{ marginRight: checkboxGapValue }} testID="Tree.checkboxSlot">
-              {renderCheckboxGlyph(nodeCheckState?.checked ?? false, nodeCheckState?.indeterminate ?? false)}
-            </View>
-          ) : null}
-          <View style={{ flex: 1 }} testID="Tree.label">
-            <Text size="sm" truncate weight={isSelected ? 'medium' : 'regular'} overrides={isSelected ? { ...typographyOverrides, fontWeight: labelSelectedWeightRef } : typographyOverrides}>
-              {node.label}
-            </Text>
-          </View>
-          {renderBadge(node)}
-        </Pressable>
-      </View>
-    );
-  };
-
-  const getItemLayout = (_data: ArrayLike<TreeVisibleNode> | null | undefined, index: number): { length: number; offset: number; index: number } => ({
-    length: effectiveRowHeight,
-    offset: effectiveRowHeight * index,
-    index,
-  });
-
   return (
-    <View testID="Tree">
+    <View ref={ref} testID="Tree">
       {showLabel ? (
-        <Heading level={headingLevel} overrides={{ fontSize: headingSizeRef }}>
-          {label}
-        </Heading>
+        <View testID="Tree.heading">
+          <Heading level={headingLevel} overrides={{ fontSize: headingSize }}>
+            {label}
+          </Heading>
+        </View>
       ) : null}
       <FlatList
-        data={visibleNodes}
-        keyExtractor={(item) => item.key}
-        renderItem={renderNode}
-        getItemLayout={getItemLayout}
         accessibilityRole="list"
         accessibilityLabel={label}
+        data={visible}
+        extraData={[selectedIds, focusedId, hoveredId, selectable, selectChildren, showGuides]}
+        keyExtractor={(item) => item.key}
+        renderItem={renderNode}
         ListEmptyComponent={
-          <View style={{ padding: rowPaddingInlineValue }} accessible accessibilityLabel={COPY.empty} testID="Tree.emptyState">
-            <Text tone="muted">{COPY.empty}</Text>
+          <View testID="Tree.emptyState" style={{ minHeight: rowHeight, paddingHorizontal: rowPaddingInline, justifyContent: 'center' }}>
+            <Text size="sm" tone="muted">
+              {COPY.empty}
+            </Text>
           </View>
         }
-        testID="Tree.list"
       />
       {selectable === 'multiple' ? (
         <View accessibilityLiveRegion="polite" style={HIDDEN_STYLE}>
-          <Text>{COPY.selectedCount(selectedIds.length)}</Text>
+          <Text size="sm">{announcement}</Text>
         </View>
       ) : null}
     </View>

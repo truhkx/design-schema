@@ -1,22 +1,23 @@
 import {
-  useEffect,
   useId,
-  useImperativeHandle,
   useMemo,
   useRef,
   useState,
   type ComponentPropsWithoutRef,
   type CSSProperties,
+  type FocusEvent as ReactFocusEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type ReactElement,
   type ReactNode,
-  type Ref, type ReactElement,
+  type Ref,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
-import { Heading, type HeadingOverridableBinding } from './Heading';
+import { Heading } from './Heading';
 import { Icon, type IconName } from './Icon';
 import { Link } from './Link';
-import { Text, type TextOverridableBinding } from './Text';
+import { Text } from './Text';
 import './Tree.css';
 
 export type TreeSelectable = 'none' | 'single' | 'multiple';
@@ -24,10 +25,10 @@ export type TreeSelectable = 'none' | 'single' | 'multiple';
 /** Heading level of the visible label. Accepts the schema's string values and their numeric equivalents. */
 export type TreeHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
 
-/** A node's children: a loaded subtree, `"lazy"` (loaded on first expand through `onExpand`), or absent (a leaf). */
+/** A node's children: a loaded subtree, or `"lazy"` (loaded on first expand through `onExpand`). */
 export type TreeNodeChildren = TreeNode[] | 'lazy';
 
-/** One item in the hierarchy. `id` must be stable — expansion, selection and React keys all use it. */
+/** `TreeNode = { id: string; label: string; icon?: IconName; badge?: string; disabled?: boolean; href?: string; children?: TreeNode[] | "lazy" }` */
 export interface TreeNode {
   id: string;
   label: string;
@@ -38,33 +39,34 @@ export interface TreeNode {
   children?: TreeNodeChildren | undefined;
 }
 
-/** copy.* — used verbatim; placeholders are replaced with the running values. */
+/** copy.* — used verbatim; `{label}` and `{count}` are replaced with the running values. */
 const COPY = {
   expand: 'Expand {label}',
   collapse: 'Collapse {label}',
   selectedCount: '{count} selected',
   loading: 'Loading',
   empty: 'Nothing here.',
-};
+} as const;
+
+/** constants.typeaheadReset — how long typed characters accumulate before the buffer clears. */
+const TYPEAHEAD_RESET = 500; // literal-ok: constants.typeaheadReset, 500 ms
 
 /**
- * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
- * this list. `headingSize` and `badgeSize` are forwarded to the composed `Heading` and badge
- * `Text`'s own `overrides` (as `fontSize`), and `labelSelectedWeight` to the label `Text`'s own
- * `overrides` (as `fontWeight`), since those components already own those bindings.
+ * Style bindings that can be overridden per instance; the accessibility-bearing bindings (rowHeight,
+ * rowSelected, rowSelectedBorder, rowSelectedBorderWidth, labelColor, iconColor, badgeColor,
+ * expandButtonSize, checkboxBorder, checkboxSelected, checkboxMark, minTarget, focusRing,
+ * focusRingWidth) are locked and not in this union. `labelSelectedWeight`, `headingSize` and
+ * `badgeSize` are forwarded to the composed Text / Heading `overrides` rather than set as hooks.
  */
 export type TreeOverridableBinding =
   | 'indent'
-  | 'rowHeight'
   | 'rowPaddingInline'
   | 'rowRadius'
   | 'rowGap'
   | 'rowHover'
-  | 'rowSelectedBorderWidth'
   | 'labelSelectedWeight'
   | 'headingSize'
   | 'badgeSize'
-  | 'expandButtonSize'
   | 'guideLine'
   | 'guideLineWidth'
   | 'checkboxGap'
@@ -77,15 +79,14 @@ export type TreeOverridableBinding =
   | 'disabledOpacity'
   | 'transition';
 
-const ROOT_OVERRIDE_HOOK: Partial<Record<TreeOverridableBinding, string | undefined>> = {
+type RootHookBinding = Exclude<TreeOverridableBinding, 'labelSelectedWeight' | 'headingSize' | 'badgeSize'>;
+
+const OVERRIDE_HOOK: Record<RootHookBinding, string> = {
   indent: '--ds-tree-indent',
-  rowHeight: '--ds-tree-row-height',
   rowPaddingInline: '--ds-tree-row-padding-inline',
   rowRadius: '--ds-tree-row-radius',
   rowGap: '--ds-tree-row-gap',
   rowHover: '--ds-tree-row-hover',
-  rowSelectedBorderWidth: '--ds-tree-row-selected-border-width',
-  expandButtonSize: '--ds-tree-expand-button-size',
   guideLine: '--ds-tree-guide-line',
   guideLineWidth: '--ds-tree-guide-line-width',
   checkboxGap: '--ds-tree-checkbox-gap',
@@ -99,151 +100,105 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<TreeOverridableBinding, string | undefi
   transition: '--ds-tree-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<TreeOverridableBinding, TokenRef | undefined>>): {
-  rootStyle: CSSProperties;
-  headingOverrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>>;
-  badgeOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
-  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
-} {
-  const rootStyle: Record<string, string> = {};
-  const headingOverrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> = {};
-  const badgeOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+function overridesToStyle(overrides: Partial<Record<TreeOverridableBinding, TokenRef | undefined>>): CSSProperties {
+  const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as TreeOverridableBinding[]) {
+    const hook = (OVERRIDE_HOOK as Partial<Record<TreeOverridableBinding, string>>)[binding];
     const ref = overrides[binding];
-    if (!ref) continue;
-    const hook = ROOT_OVERRIDE_HOOK[binding];
-    if (hook) {
-      rootStyle[hook] = cssVar(ref);
-    } else if (binding === 'headingSize') {
-      headingOverrides.fontSize = ref;
-    } else if (binding === 'badgeSize') {
-      badgeOverrides.fontSize = ref;
-    } else if (binding === 'labelSelectedWeight') {
-      labelOverrides.fontWeight = ref;
-    }
+    if (hook && ref) style[hook] = cssVar(ref);
   }
-  return { rootStyle: rootStyle as CSSProperties, headingOverrides, badgeOverrides, labelOverrides };
+  return style as CSSProperties;
 }
 
 function interpolate(template: string, values: Record<string, string | number>): string {
-  return Object.keys(values).reduce((text, key) => text.replaceAll(`{${key}}`, String(values[key])), template);
+  return template.replace(/\{(\w+)\}/g, (match, key: string) => (key in values ? String(values[key]) : match));
 }
 
-function nodeHasChildren(node: TreeNode): boolean {
+function hasChildren(node: TreeNode): boolean {
   return node.children === 'lazy' || (Array.isArray(node.children) && node.children.length > 0);
 }
 
+function loadedChildren(node: TreeNode): TreeNode[] {
+  return Array.isArray(node.children) ? node.children : [];
+}
+
+/** One visible (rendered) node, in document order. */
 interface VisibleNode {
-  id: string;
   node: TreeNode;
   level: number;
-  posinset: number;
-  setsize: number;
-  hasChildren: boolean;
   parentId: string | null;
-  isPlaceholder?: boolean | undefined;
+  siblings: TreeNode[];
 }
 
-function flattenTree(nodes: TreeNode[], expandedSet: Set<string>): VisibleNode[] {
-  const result: VisibleNode[] = [];
-  const walk = (list: TreeNode[], level: number, parentId: string | null) => {
-    list.forEach((node, index) => {
-      const hasChildren = nodeHasChildren(node);
-      result.push({ id: node.id, node, level, posinset: index + 1, setsize: list.length, hasChildren, parentId });
-      if (hasChildren && expandedSet.has(node.id)) {
-        if (node.children === 'lazy') {
-          result.push({
-            id: `${node.id}__loading`,
-            node,
-            level: level + 1,
-            posinset: 1,
-            setsize: 1,
-            hasChildren: false,
-            parentId: node.id,
-            isPlaceholder: true,
-          });
-        } else if (Array.isArray(node.children)) {
-          walk(node.children, level + 1, node.id);
-        }
-      }
-    });
-  };
-  walk(nodes, 1, null);
-  return result;
-}
+type CheckedState = 'true' | 'false' | 'mixed';
 
-function collectDescendantIds(node: TreeNode): string[] {
-  if (!Array.isArray(node.children)) return [];
-  const ids: string[] = [];
-  for (const child of node.children) {
-    ids.push(child.id, ...collectDescendantIds(child));
+/** Every node id in document order, expanded or not. */
+function allNodes(nodes: TreeNode[], out: TreeNode[] = []): TreeNode[] {
+  for (const node of nodes) {
+    out.push(node);
+    allNodes(loadedChildren(node), out);
   }
+  return out;
+}
+
+/** The ids a selection toggle touches: the node, plus its enabled descendants when cascading. */
+function cascadeIds(node: TreeNode, cascade: boolean): string[] {
+  if (!cascade) return [node.id];
+  const ids = [node.id];
+  for (const descendant of allNodes(loadedChildren(node))) if (!descendant.disabled) ids.push(descendant.id);
   return ids;
 }
 
-function collectExpandableIds(nodes: TreeNode[]): string[] {
-  const ids: string[] = [];
+/** With `selectChildren`, a parent is selected exactly when every enabled child is. */
+function normalizeCascade(nodes: TreeNode[], set: Set<string>): void {
   for (const node of nodes) {
-    if (nodeHasChildren(node)) ids.push(node.id);
-    if (Array.isArray(node.children)) ids.push(...collectExpandableIds(node.children));
+    const children = loadedChildren(node);
+    if (children.length === 0) continue;
+    normalizeCascade(children, set);
+    const enabled = children.filter((child) => !child.disabled);
+    if (enabled.length === 0 || node.disabled) continue;
+    if (enabled.every((child) => set.has(child.id))) set.add(node.id);
+    else set.delete(node.id);
   }
-  return ids;
 }
 
-/** O(n) per call — fine for interaction-driven lookups over the (typically shallow) tree shape. */
-function findNode(nodes: TreeNode[], id: string): TreeNode | undefined {
-  for (const node of nodes) {
-    if (node.id === id) return node;
-    if (Array.isArray(node.children)) {
-      const found = findNode(node.children, id);
-      if (found) return found;
-    }
-  }
-  return undefined;
-}
-
-function nodeCheckedState(node: TreeNode, selectedSet: Set<string>, selectChildren: boolean): 'checked' | 'unchecked' | 'indeterminate' {
-  if (!selectChildren) return selectedSet.has(node.id) ? 'checked' : 'unchecked';
-  const descendants = collectDescendantIds(node);
-  if (descendants.length === 0) return selectedSet.has(node.id) ? 'checked' : 'unchecked';
-  const allIds = [node.id, ...descendants];
-  const selectedCount = allIds.filter((id) => selectedSet.has(id)).length;
-  if (selectedCount === 0) return 'unchecked';
-  if (selectedCount === allIds.length) return 'checked';
-  return 'indeterminate';
-}
-
-export interface TreeProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
+export interface TreeProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'className' | 'style'> {
   /** What the tree lists ("Folders", "Categories"). Not visible unless `showLabel`. */
   label: string;
-  /** Show the label as a heading above the tree. */
+  /** Show the label as a Heading above the tree (then the tree is aria-labelledby it instead of aria-label). */
   showLabel?: boolean | undefined;
-  /** Heading level of the visible label in the page outline; its size is `headingSize` regardless. */
+  /** Heading level of the visible label in the page outline; its size is headingSize regardless. */
   headingLevel?: TreeHeadingLevel | undefined;
-  /** The hierarchy. `href` makes a node a Link (navigation trees); `badge` is a short trailing count
-   * or status; `children: "lazy"` loads on first expand through `onExpand`. */
+  /**
+   * The hierarchy. `href` makes a node's label a Link (navigation trees); `icon` is an Icon glyph
+   * (`folder` and `file` exist for the usual case); `badge` is a short trailing count or status;
+   * `children: "lazy"` loads on first expand through `onExpand`.
+   */
   nodes: TreeNode[];
   /** Controlled expanded ids. */
   expanded?: string[] | undefined;
   /** Initially expanded ids; `["*"]` for all. */
   defaultExpanded?: string[] | undefined;
-  /** `single`: one current node (the usual for navigation and pickers). `multiple`: checkbox-like
+  /**
+   * `single`: one current node (the usual for navigation and pickers). `multiple`: checkbox-like
    * selection with Space, Shift+arrows and Ctrl+A; parents are checkboxes that cascade when
-   * `selectChildren`. `none`: expand/collapse only. */
+   * `selectChildren`. `none`: expand/collapse only.
+   */
   selectable?: TreeSelectable | undefined;
-  /** Controlled selected ids. */
+  /** Controlled selected ids. Always an array, even in `single` mode (zero or one element). */
   selected?: string[] | undefined;
   /** Initially selected ids. */
   defaultSelected?: string[] | undefined;
   /** With `multiple`, selecting a parent selects its descendants and parents show indeterminate. */
   selectChildren?: boolean | undefined;
-  /** With `single`, moving focus also selects (a settings sidebar where the tree drives a panel).
-   * Off by default: focus moves, Enter or Space selects. */
+  /**
+   * With `single`, moving focus also selects (a settings sidebar where the tree drives a panel).
+   * Off by default: focus moves, Enter or Space selects.
+   */
   selectOnFocus?: boolean | undefined;
   /** Vertical guide lines under open parents. */
   showGuides?: boolean | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  /** Per-instance style overrides: each entry sets the matching CSS hook (or composed child override) to that token. */
   overrides?: Partial<Record<TreeOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired with the selected ids. */
   onSelectionChange?: ((ids: string[]) => void) | undefined;
@@ -251,8 +206,7 @@ export interface TreeProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   onExpandChange?: ((ids: string[]) => void) | undefined;
   /** Fired when a lazy node is expanded for the first time, with its id. */
   onExpand?: ((id: string) => void) | undefined;
-  /** Fired on Enter or double-click on a node (open the file, navigate), with its id. Nodes with
-   * `href` navigate instead. */
+  /** Fired on Enter or double-click on a node (open the file, navigate), with its id. Nodes with `href` navigate instead. */
   onActivate?: ((id: string) => void) | undefined;
 }
 
@@ -265,7 +219,7 @@ export interface TreeProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
  * `multiple` with `selectChildren` is a picker (choose folders to sync). Use `selectOnFocus` only
  * when the tree drives a panel beside it and moving through nodes should preview them.
  */
-export const Tree = function Tree({
+export function Tree({
   ref,
   label,
   showLabel = false,
@@ -284,437 +238,444 @@ export const Tree = function Tree({
   onExpandChange,
   onExpand,
   onActivate,
-  className,
-  style,
   ...rest
 }: TreeProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
-  const generatedId = useId();
-  const baseId = `ds-tree${generatedId}`;
-  const labelId = `${baseId}-label`;
+  const baseId = useId();
+  const headingId = `${baseId}-heading`;
+  const itemRefs = useRef(new Map<string, HTMLLIElement>());
+  const typeahead = useRef<{ buffer: string; timer: ReturnType<typeof setTimeout> | undefined }>({
+    buffer: '',
+    timer: undefined,
+  });
+  const requestedLazy = useRef(new Set<string>());
 
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  useImperativeHandle(ref, () => rootRef.current as HTMLDivElement, []);
-  const nodeRefs = useRef(new Map<string, HTMLLIElement>());
-  const anchorRefs = useRef(new Map<string, HTMLAnchorElement>());
-  const typeaheadRef = useRef<{ buffer: string; timer: ReturnType<typeof setTimeout> | null }>({ buffer: '', timer: null });
+  const everyNode = useMemo(() => allNodes(nodes), [nodes]);
+  const nodeById = useMemo(() => new Map(everyNode.map((node) => [node.id, node])), [everyNode]);
 
-  /* ---------- expansion ---------- */
-  const isExpandedControlled = expanded !== undefined;
+  /* ---------- expansion (controlled or uncontrolled) ---------- */
   const [internalExpanded, setInternalExpanded] = useState<string[]>(() =>
-    defaultExpanded?.includes('*') ? collectExpandableIds(nodes) : (defaultExpanded ?? []),
+    defaultExpanded?.includes('*')
+      ? // `*` opens every loaded parent; lazy nodes wait for a user expand, which is when onExpand fires.
+        allNodes(nodes)
+          .filter((node) => Array.isArray(node.children) && node.children.length > 0)
+          .map((node) => node.id)
+      : (defaultExpanded ?? []),
   );
-  const expandedIds = isExpandedControlled ? (expanded as string[]) : internalExpanded;
+  const expandedIds = expanded ?? internalExpanded;
   const expandedSet = useMemo(() => new Set(expandedIds), [expandedIds]);
 
-  const setExpanded = (next: string[]) => {
-    if (!isExpandedControlled) setInternalExpanded(next);
-    onExpandChange?.(next);
-  };
-
-  const toggleExpand = (id: string) => {
-    const next = expandedSet.has(id) ? expandedIds.filter((existing) => existing !== id) : [...expandedIds, id];
-    setExpanded(next);
-  };
-
-  /* Lazy nodes fire `onExpand` exactly once per expand transition, including ids expanded up front
-     through `defaultExpanded={['*']}` or a controlled `expanded` prop. */
-  const requestedLazyRef = useRef(new Set<string>());
-  useEffect(() => {
-    for (const id of expandedIds) {
-      if (requestedLazyRef.current.has(id)) continue;
-      const found = findNode(nodes, id);
-      if (found?.children === 'lazy') {
-        requestedLazyRef.current.add(id);
+  const commitExpanded = (next: string[]): void => {
+    for (const id of next) {
+      if (expandedSet.has(id) || requestedLazy.current.has(id)) continue;
+      if (nodeById.get(id)?.children === 'lazy') {
+        requestedLazy.current.add(id);
         onExpand?.(id);
       }
     }
-  }, [expandedIds, nodes, onExpand]);
+    if (expanded === undefined) setInternalExpanded(next);
+    onExpandChange?.(next);
+  };
 
-  const visible = useMemo(() => flattenTree(nodes, expandedSet), [nodes, expandedSet]);
-  const navigable = useMemo(() => visible.filter((v) => !v.isPlaceholder && !v.node.disabled), [visible]);
+  const toggleExpanded = (id: string): void => {
+    commitExpanded(expandedSet.has(id) ? expandedIds.filter((existing) => existing !== id) : [...expandedIds, id]);
+  };
 
-  /* ---------- selection ---------- */
-  const isSelectedControlled = selected !== undefined;
+  /* ---------- visible, navigable nodes ---------- */
+  const visible = useMemo(() => {
+    const out: VisibleNode[] = [];
+    const walk = (list: TreeNode[], level: number, parentId: string | null): void => {
+      for (const node of list) {
+        out.push({ node, level, parentId, siblings: list });
+        if (expandedSet.has(node.id)) walk(loadedChildren(node), level + 1, node.id);
+      }
+    };
+    walk(nodes, 1, null);
+    return out;
+  }, [nodes, expandedSet]);
+  const navigable = useMemo(() => visible.filter((entry) => !entry.node.disabled), [visible]);
+
+  /* ---------- selection (controlled or uncontrolled) ---------- */
   const [internalSelected, setInternalSelected] = useState<string[]>(defaultSelected ?? []);
-  const selectedIds = isSelectedControlled ? (selected as string[]) : internalSelected;
+  const selectedIds = selected ?? internalSelected;
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
-  const commitSelection = (next: string[]) => {
-    if (!isSelectedControlled) setInternalSelected(next);
-    onSelectionChange?.(next);
+  const commitSelection = (nextSet: Set<string>): void => {
+    if (selectable === 'multiple' && selectChildren) normalizeCascade(nodes, nextSet);
+    const ordered = everyNode.map((node) => node.id).filter((id) => nextSet.has(id));
+    for (const id of nextSet) if (!nodeById.has(id)) ordered.push(id);
+    const unchanged = ordered.length === selectedIds.length && ordered.every((id) => selectedSet.has(id));
+    if (unchanged) return;
+    if (selected === undefined) setInternalSelected(ordered);
+    onSelectionChange?.(ordered);
   };
 
-  const toggleMultipleSelection = (node: TreeNode) => {
-    const ids = selectChildren ? [node.id, ...collectDescendantIds(node)] : [node.id];
-    const shouldSelect = nodeCheckedState(node, selectedSet, selectChildren) !== 'checked';
-    if (shouldSelect) {
-      commitSelection(Array.from(new Set([...selectedIds, ...ids])));
+  const selectOnly = (id: string): void => commitSelection(new Set([id]));
+
+  const toggleSelection = (node: TreeNode): void => {
+    const next = new Set(selectedIds);
+    const ids = cascadeIds(node, selectChildren);
+    if (checkedState(node) === 'true') for (const id of ids) next.delete(id);
+    else for (const id of ids) next.add(id);
+    commitSelection(next);
+  };
+
+  const addToSelection = (node: TreeNode): void => {
+    const next = new Set(selectedIds);
+    for (const id of cascadeIds(node, selectChildren)) next.add(id);
+    commitSelection(next);
+  };
+
+  /** Space and click: select in single, toggle in multiple, nothing in none. */
+  const selectAction = (node: TreeNode): void => {
+    if (node.disabled) return;
+    if (selectable === 'single') selectOnly(node.id);
+    else if (selectable === 'multiple') toggleSelection(node);
+  };
+
+  const checkedMemo = new Map<string, CheckedState>();
+  function checkedState(node: TreeNode): CheckedState {
+    const cached = checkedMemo.get(node.id);
+    if (cached) return cached;
+    let state: CheckedState = selectedSet.has(node.id) ? 'true' : 'false';
+    const children = loadedChildren(node).filter((child) => !child.disabled);
+    if (selectChildren && children.length > 0) {
+      const states = children.map((child) => checkedState(child));
+      if (states.every((s) => s === 'true')) state = 'true';
+      else if (states.some((s) => s !== 'false')) state = 'mixed';
+      else state = 'false';
+    }
+    checkedMemo.set(node.id, state);
+    return state;
+  }
+
+  /* ---------- roving tabindex ---------- */
+  const [focusedId, setFocusedId] = useState<string | undefined>(undefined);
+  const tabStopId =
+    (focusedId !== undefined && navigable.some((entry) => entry.node.id === focusedId) ? focusedId : undefined) ??
+    navigable.find((entry) => selectedSet.has(entry.node.id))?.node.id ??
+    navigable[0]?.node.id;
+
+  const focusNode = (id: string): void => {
+    setFocusedId(id);
+    itemRefs.current.get(id)?.focus();
+  };
+
+  /** Keyboard focus movement: with single + selectOnFocus, the node is selected as focus lands. */
+  const moveTo = (entry: VisibleNode | undefined): void => {
+    if (!entry) return;
+    focusNode(entry.node.id);
+    if (selectable === 'single' && selectOnFocus) selectOnly(entry.node.id);
+  };
+
+  const activate = (node: TreeNode): void => {
+    if (node.disabled) return;
+    if (selectable === 'single') selectOnly(node.id);
+    if (node.href) {
+      itemRefs.current.get(node.id)?.querySelector<HTMLAnchorElement>('[data-part="link"]')?.click();
     } else {
-      const remove = new Set(ids);
-      commitSelection(selectedIds.filter((id) => !remove.has(id)));
+      onActivate?.(node.id);
     }
   };
 
-  const selectFocused = (v: VisibleNode) => {
-    if (v.node.disabled) return;
-    if (selectable === 'single') commitSelection([v.id]);
-    else if (selectable === 'multiple') toggleMultipleSelection(v.node);
-  };
-
-  /* ---------- roving focus ---------- */
-  const [focusedId, setFocusedId] = useState<string | undefined>(() => {
-    const selectedNavigable = navigable.find((v) => selectedIds.includes(v.id));
-    return selectedNavigable?.id ?? navigable[0]?.id;
-  });
-
-  const setNodeRef = (nodeId: string) => (el: HTMLLIElement | null) => {
-    if (el) nodeRefs.current.set(nodeId, el);
-    else nodeRefs.current.delete(nodeId);
-  };
-
-  const setAnchorRef = (nodeId: string) => (el: HTMLAnchorElement | null) => {
-    if (el) anchorRefs.current.set(nodeId, el);
-    else anchorRefs.current.delete(nodeId);
-  };
-
-  const focusNode = (id: string) => {
-    setFocusedId(id);
-    nodeRefs.current.get(id)?.focus();
-  };
-
-  const moveFocus = (id: string) => {
-    focusNode(id);
-    if (selectable === 'single' && selectOnFocus) commitSelection([id]);
-  };
-
-  const activateNode = (v: VisibleNode) => {
-    if (v.node.disabled) return;
-    if (selectable === 'single') commitSelection([v.id]);
-    if (v.node.href) anchorRefs.current.get(v.id)?.click();
-    else onActivate?.(v.id);
-  };
-
-  const expandSiblings = (v: VisibleNode) => {
-    const siblingIds = visible.filter((entry) => entry.parentId === v.parentId && entry.hasChildren && !entry.isPlaceholder).map((entry) => entry.id);
-    if (siblingIds.length === 0) return;
-    setExpanded(Array.from(new Set([...expandedIds, ...siblingIds])));
-  };
-
-  /* Type-ahead: buffers keys and jumps to the next visible node whose label starts with them. */
-  const handleTypeahead = (char: string, currentIndex: number) => {
-    if (navigable.length === 0) return;
-    const state = typeaheadRef.current;
-    if (state.timer) clearTimeout(state.timer);
-    state.buffer += char.toLowerCase();
+  const handleTypeahead = (char: string, index: number): void => {
+    const state = typeahead.current;
+    if (state.timer !== undefined) clearTimeout(state.timer);
     state.timer = setTimeout(() => {
       state.buffer = '';
-    }, 500);
-
-    const startIndex = currentIndex === -1 ? 0 : currentIndex;
-    for (let offset = 1; offset <= navigable.length; offset++) {
-      const candidate = navigable[(startIndex + offset) % navigable.length];
-      if (candidate!.node.label.toLowerCase().startsWith(state.buffer)) {
-        moveFocus(candidate!.id);
+      state.timer = undefined;
+    }, TYPEAHEAD_RESET);
+    state.buffer += char.toLowerCase();
+    // A fresh first character searches after the current node; a longer buffer may stay on it.
+    const start = state.buffer.length === 1 ? index + 1 : index;
+    for (let offset = 0; offset < navigable.length; offset++) {
+      const entry = navigable[(start + offset) % navigable.length];
+      if (entry && entry.node.label.toLowerCase().startsWith(state.buffer)) {
+        moveTo(entry);
         return;
-      }
-    }
-    if (state.buffer.length > 1) {
-      const single = state.buffer.slice(-1);
-      for (let offset = 0; offset < navigable.length; offset++) {
-        const candidate = navigable[(startIndex + offset) % navigable.length];
-        if (candidate!.node.label.toLowerCase().startsWith(single)) {
-          state.buffer = single;
-          moveFocus(candidate!.id);
-          return;
-        }
       }
     }
   };
 
-  const handleKeyDown = (event: ReactKeyboardEvent<HTMLUListElement>) => {
-    if (!focusedId) return;
-    const currentIndex = navigable.findIndex((v) => v.id === focusedId);
-    if (currentIndex === -1) return;
-    const current = navigable[currentIndex];
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLUListElement>): void => {
+    const target = event.target as HTMLElement;
+    if (target.getAttribute('role') !== 'treeitem') return;
+    const index = navigable.findIndex((entry) => itemRefs.current.get(entry.node.id) === target);
+    const current = navigable[index];
+    if (!current) return;
+    const { node } = current;
+    const multiple = selectable === 'multiple';
+
+    if (event.ctrlKey && !event.altKey && !event.metaKey && event.code === 'KeyA') {
+      if (!multiple) return;
+      event.preventDefault();
+      const next = new Set(selectedIds);
+      for (const entry of navigable) next.add(entry.node.id);
+      commitSelection(next);
+      return;
+    }
 
     switch (event.key) {
-      case 'ArrowDown': {
-        event.preventDefault();
-        const next = navigable[Math.min(currentIndex + 1, navigable.length - 1)];
-        if (selectable === 'multiple' && event.shiftKey) {
-          focusNode(next!.id);
-          if (!selectedIds.includes(next!.id)) commitSelection([...selectedIds, next!.id]);
-        } else {
-          moveFocus(next!.id);
-        }
-        return;
-      }
+      case 'ArrowDown':
       case 'ArrowUp': {
         event.preventDefault();
-        const prev = navigable[Math.max(currentIndex - 1, 0)];
-        if (selectable === 'multiple' && event.shiftKey) {
-          focusNode(prev!.id);
-          if (!selectedIds.includes(prev!.id)) commitSelection([...selectedIds, prev!.id]);
+        const entry = navigable[event.key === 'ArrowDown' ? index + 1 : index - 1];
+        if (!entry) return;
+        if (multiple && event.shiftKey) {
+          focusNode(entry.node.id);
+          addToSelection(entry.node);
         } else {
-          moveFocus(prev!.id);
+          moveTo(entry);
         }
         return;
       }
       case 'ArrowRight': {
         event.preventDefault();
-        if (!current!.hasChildren) return;
-        if (!expandedSet.has(current!.id)) {
-          toggleExpand(current!.id);
+        if (!hasChildren(node)) return;
+        if (!expandedSet.has(node.id)) {
+          toggleExpanded(node.id);
         } else {
-          const child = navigable.find((v, i) => i > currentIndex && v.parentId === current!.id);
-          if (child) moveFocus(child.id);
+          const child = loadedChildren(node).find((candidate) => !candidate.disabled);
+          if (child) moveTo(navigable.find((entry) => entry.node.id === child.id));
         }
         return;
       }
       case 'ArrowLeft': {
         event.preventDefault();
-        if (current!.hasChildren && expandedSet.has(current!.id)) {
-          toggleExpand(current!.id);
-        } else if (current!.parentId) {
-          moveFocus(current!.parentId);
-        }
+        if (hasChildren(node) && expandedSet.has(node.id)) toggleExpanded(node.id);
+        else if (current.parentId !== null) moveTo(navigable.find((entry) => entry.node.id === current.parentId));
         return;
       }
       case 'Home':
         event.preventDefault();
-        moveFocus(navigable[0]!.id);
+        moveTo(navigable[0]);
         return;
       case 'End':
         event.preventDefault();
-        moveFocus(navigable[navigable.length - 1]!.id);
+        moveTo(navigable[navigable.length - 1]);
         return;
       case 'Enter':
         event.preventDefault();
-        activateNode(current!);
+        activate(node);
         return;
       case ' ':
-        if (selectable !== 'none') {
-          event.preventDefault();
-          selectFocused(current!);
-        }
-        return;
-      case '*':
+        if (selectable === 'none') return;
         event.preventDefault();
-        expandSiblings(current!);
+        selectAction(node);
         return;
-      case 'a':
-      case 'A':
-        if (selectable === 'multiple' && (event.ctrlKey || event.metaKey)) {
-          event.preventDefault();
-          commitSelection(navigable.map((v) => v.id));
-        }
+      case '*': {
+        event.preventDefault();
+        const openable = current.siblings.filter((sibling) => hasChildren(sibling) && !expandedSet.has(sibling.id));
+        if (openable.length > 0) commitExpanded([...expandedIds, ...openable.map((sibling) => sibling.id)]);
         return;
+      }
       default:
-        if (event.key.length === 1 && /^[a-z]$/i.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
-          handleTypeahead(event.key, currentIndex);
+        if (/^[a-z]$/i.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          handleTypeahead(event.key, index);
         }
     }
   };
 
-  const handleRowClick = (v: VisibleNode) => () => {
-    if (v.node.disabled) return;
-    focusNode(v.id);
-    if (selectable !== 'none') selectFocused(v);
+  const handleTreeBlur = (event: ReactFocusEvent<HTMLUListElement>): void => {
+    // Leaving the tree resets the tab stop, so Tab back in lands on the selected node, else the first.
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusedId(undefined);
   };
 
-  const handleRowDoubleClick = (v: VisibleNode) => () => {
-    activateNode(v);
-  };
+  /* ---------- render ---------- */
+  const labelWeight: TokenRef = overrides?.labelSelectedWeight ?? 'font.weight.medium';
+  const badgeSize: TokenRef = overrides?.badgeSize ?? 'font.size.xs';
+  const headingSize: TokenRef = overrides?.headingSize ?? 'font.size.md';
 
-  const { rootStyle, headingOverrides, badgeOverrides, labelOverrides } = overrides
-    ? overridesToStyle(overrides)
-    : { rootStyle: undefined, headingOverrides: {}, badgeOverrides: {}, labelOverrides: {} };
+  const renderNode = (node: TreeNode, level: number, posinset: number, setsize: number): ReactNode => {
+    const parent = hasChildren(node);
+    const isExpanded = parent && expandedSet.has(node.id);
+    const checked = selectable === 'multiple' ? checkedState(node) : undefined;
+    const isSelected = selectable === 'single' ? selectedSet.has(node.id) : checked === 'true';
+    const loading = isExpanded && node.children === 'lazy';
+    const children = loadedChildren(node);
 
-  const renderNode = (node: TreeNode, level: number, posinset: number, setsize: number, parentId: string | null): ReactNode => {
-    const hasChildren = nodeHasChildren(node);
-    const v: VisibleNode = { id: node.id, node, level, posinset, setsize, hasChildren, parentId };
-    const isExpanded = hasChildren && expandedSet.has(node.id);
-    const isSelected = selectedSet.has(node.id);
-    const checkedState = selectable === 'multiple' ? nodeCheckedState(node, selectedSet, selectChildren) : undefined;
-    const isRowSelected = selectable === 'single' ? isSelected : selectable === 'multiple' ? checkedState === 'checked' : false;
-    const itemId = `${baseId}-item-${node.id}`;
-
-    const rowClasses = ['ds-tree__row', isRowSelected ? 'ds-tree__row--selected' : null, node.disabled ? 'ds-tree__row--disabled' : null]
+    const rowClasses = ['ds-tree__row', isSelected ? 'ds-tree__row--selected' : null, node.disabled ? 'ds-tree__row--disabled' : null]
       .filter(Boolean)
       .join(' ');
 
     return (
       <li
         key={node.id}
-        ref={setNodeRef(node.id)}
-        id={itemId}
+        ref={(el) => {
+          if (el) itemRefs.current.set(node.id, el);
+          else itemRefs.current.delete(node.id);
+        }}
+        id={`${baseId}-node-${node.id}`}
         role="treeitem"
+        data-part="node"
+        className="ds-tree__node"
+        style={{ '--ds-tree-level': level - 1 } as CSSProperties}
         aria-level={level}
         aria-setsize={setsize}
         aria-posinset={posinset}
-        aria-expanded={hasChildren ? (isExpanded ? 'true' : 'false') : undefined}
-        aria-selected={selectable === 'single' ? (isSelected ? 'true' : 'false') : undefined}
-        aria-checked={selectable === 'multiple' ? (checkedState === 'indeterminate' ? 'mixed' : checkedState === 'checked' ? 'true' : 'false') : undefined}
-        aria-disabled={node.disabled ? 'true' : undefined}
-        aria-busy={isExpanded && node.children === 'lazy' ? 'true' : undefined}
-        tabIndex={node.id === focusedId ? 0 : -1}
-        data-part="node"
-        className="ds-tree__node"
-        onFocus={() => setFocusedId(node.id)}
+        aria-expanded={parent ? isExpanded : undefined}
+        aria-selected={selectable === 'single' ? isSelected : undefined}
+        aria-checked={checked}
+        aria-disabled={node.disabled ? true : undefined}
+        aria-busy={loading ? true : undefined}
+        tabIndex={node.id === tabStopId ? 0 : -1}
+        onFocus={(event) => {
+          if (event.target === event.currentTarget && !node.disabled) setFocusedId(node.id);
+        }}
       >
         <div
           className={rowClasses}
           data-part="nodeRow"
-          onClick={handleRowClick(v)}
-          onDoubleClick={handleRowDoubleClick(v)}
+          onMouseDown={(event: ReactMouseEvent) => {
+            if (node.disabled) event.preventDefault();
+          }}
+          onClick={() => {
+            if (node.disabled) return;
+            focusNode(node.id);
+            selectAction(node);
+          }}
+          onDoubleClick={() => activate(node)}
         >
-          <span
-            className="ds-tree__indent"
-            data-part="indent"
-            aria-hidden="true"
-            style={{ inlineSize: `calc(var(--ds-tree-indent) * ${level - 1})` }}
-          >
-            {showGuides
-              ? Array.from({ length: level - 1 }).map((_, ancestorIndex) => (
-                  <span
-                    key={ancestorIndex}
-                    className="ds-tree__guide"
-                    style={{ insetInlineStart: `calc(var(--ds-tree-indent) * ${ancestorIndex} + var(--ds-tree-expand-button-size) / 2)` }}
-                  />
-                ))
-              : null}
+          <span className="ds-tree__indent" data-part="indent" aria-hidden="true" />
+          <span className="ds-tree__content">
+            {parent ? (
+              <span
+                className="ds-tree__expand"
+                data-part="expandButton"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleExpanded(node.id);
+                  if (!node.disabled) focusNode(node.id);
+                }}
+                onDoubleClick={(event) => event.stopPropagation()}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  label={interpolate(isExpanded ? COPY.collapse : COPY.expand, { label: node.label })}
+                  leadingIcon={
+                    <span className={isExpanded ? 'ds-tree__chevron ds-tree__chevron--expanded' : 'ds-tree__chevron'}>
+                      <Icon name="chevron-right" inline />
+                    </span>
+                  }
+                  aria-hidden="true"
+                  tabIndex={-1}
+                />
+              </span>
+            ) : (
+              <span className="ds-tree__expand" aria-hidden="true" />
+            )}
+            <span className="ds-tree__main">
+              {checked !== undefined ? (
+                <span
+                  className={checked === 'false' ? 'ds-tree__checkbox' : 'ds-tree__checkbox ds-tree__checkbox--checked'}
+                  data-part="checkbox"
+                  aria-hidden="true"
+                >
+                  {checked === 'true' ? <Icon name="check" inline /> : checked === 'mixed' ? <Icon name="dash" inline /> : null}
+                </span>
+              ) : null}
+              <span className="ds-tree__body">
+                {node.icon ? (
+                  <span className="ds-tree__icon" data-part="icon" aria-hidden="true">
+                    <Icon name={node.icon} inline />
+                  </span>
+                ) : null}
+                <span className="ds-tree__label">
+                  {node.href ? (
+                    <Link data-part="link" href={node.href} label={node.label} tone="inherit" tabIndex={-1} />
+                  ) : (
+                    <Text
+                      data-part="label"
+                      element="span"
+                      truncate
+                      overrides={isSelected ? { fontWeight: labelWeight } : undefined}
+                    >
+                      {node.label}
+                    </Text>
+                  )}
+                </span>
+              </span>
+            </span>
+            {node.badge ? (
+              <Text data-part="badge" element="span" tone="muted" overrides={{ fontSize: badgeSize }}>
+                {node.badge}
+              </Text>
+            ) : null}
           </span>
-          {hasChildren ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              iconOnly
-              label={interpolate(isExpanded ? COPY.collapse : COPY.expand, { label: node.label })}
-              leadingIcon={
-                <Icon name="chevron-right" inline className={isExpanded ? 'ds-tree__expand-icon ds-tree__expand-icon--expanded' : 'ds-tree__expand-icon'} />
-              }
-              className="ds-tree__expand-button"
-              data-part="expandButton"
-              tabIndex={-1}
-              aria-hidden="true"
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={(event) => {
-                event.stopPropagation();
-                toggleExpand(node.id);
-              }}
-            />
-          ) : (
-            <span className="ds-tree__expand-spacer" aria-hidden="true" />
-          )}
-          {selectable === 'multiple' ? (
-            <span className={checkedState === 'unchecked' ? 'ds-tree__checkbox' : 'ds-tree__checkbox ds-tree__checkbox--filled'} data-part="checkbox" aria-hidden="true">
-              {checkedState === 'checked' ? <Icon name="check" inline /> : checkedState === 'indeterminate' ? <Icon name="dash" inline /> : null}
-            </span>
-          ) : null}
-          {node.icon ? (
-            <span className="ds-tree__icon" data-part="icon" aria-hidden="true">
-              <Icon name={node.icon} inline />
-            </span>
-          ) : null}
-          {node.href ? (
-            // labelSelectedWeight has no effect here: Link exposes no font-weight prop or override
-            // (see gaps) so a selected href node's label cannot pick up the weight change.
-            <Link
-              ref={setAnchorRef(node.id)}
-              href={node.href}
-              label={node.label}
-              tabIndex={-1}
-              className="ds-tree__label"
-              data-part="label"
-              onClick={(event) => {
-                if (node.disabled) event.preventDefault();
-              }}
-            />
-          ) : (
-            <Text
-              element="span"
-              size="sm"
-              weight={isRowSelected ? 'medium' : undefined}
-              className="ds-tree__label"
-              data-part="label"
-              overrides={isRowSelected && Object.keys(labelOverrides).length ? labelOverrides : undefined}
-            >
-              {node.label}
-            </Text>
-          )}
-          {node.badge ? (
-            <Text
-              element="span"
-              size="xs"
-              tone="muted"
-              className="ds-tree__badge"
-              data-part="badge"
-              overrides={Object.keys(badgeOverrides).length ? badgeOverrides : undefined}
-            >
-              {node.badge}
-            </Text>
-          ) : null}
         </div>
         {isExpanded ? (
-          node.children === 'lazy' ? (
-            <ul role="group" data-part="group" className="ds-tree__group">
-              <li className="ds-tree__loading" data-part="node">
-                <div className="ds-tree__row" style={{ paddingInlineStart: `calc(var(--ds-tree-indent) * ${level})` }}>
-                  <Text size="sm" tone="muted">
-                    {COPY.loading}
-                  </Text>
+          <ul role="group" data-part="group" className="ds-tree__group">
+            {loading ? (
+              <li
+                role="treeitem"
+                className="ds-tree__node"
+                style={{ '--ds-tree-level': level } as CSSProperties}
+                aria-level={level + 1}
+                aria-setsize={1}
+                aria-posinset={1}
+                aria-disabled
+                tabIndex={-1}
+              >
+                <div className="ds-tree__row ds-tree__row--placeholder">
+                  <span className="ds-tree__indent" aria-hidden="true" />
+                  <span className="ds-tree__content">
+                    <span className="ds-tree__expand" aria-hidden="true" />
+                    <Text element="span" tone="muted">
+                      {COPY.loading}
+                    </Text>
+                  </span>
                 </div>
               </li>
-            </ul>
-          ) : Array.isArray(node.children) && node.children.length > 0 ? (
-            <ul role="group" data-part="group" className="ds-tree__group">
-              {node.children.map((child, index) => renderNode(child, level + 1, index + 1, (node.children as TreeNode[]).length, node.id))}
-            </ul>
-          ) : null
+            ) : (
+              children.map((child, childIndex) => renderNode(child, level + 1, childIndex + 1, children.length))
+            )}
+          </ul>
         ) : null}
       </li>
     );
   };
 
-  const classes = ['ds-tree', className ?? null].filter(Boolean).join(' ');
-  const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
+  const rootClasses = ['ds-tree', showGuides ? null : 'ds-tree--hide-guides'].filter(Boolean).join(' ');
 
   return (
-    <div {...rest} ref={rootRef} data-ds="Tree" data-part="container" className={classes} style={mergedStyle}>
+    <div
+      {...rest}
+      ref={ref}
+      data-ds="Tree"
+      data-part="container"
+      className={rootClasses}
+      style={overrides ? overridesToStyle(overrides) : undefined}
+    >
       {showLabel ? (
-        <Heading
-          id={labelId}
-          level={headingLevel}
-          size="md"
-          className="ds-tree__heading"
-          overrides={Object.keys(headingOverrides).length ? headingOverrides : undefined}
-        >
-          {label}
-        </Heading>
+        <div className="ds-tree__heading" data-part="heading">
+          <Heading id={headingId} level={headingLevel} size="md" overrides={{ fontSize: headingSize }}>
+            {label}
+          </Heading>
+        </div>
       ) : null}
       <ul
-        id={baseId}
         role="tree"
+        className="ds-tree__tree"
         aria-label={showLabel ? undefined : label}
-        aria-labelledby={showLabel ? labelId : undefined}
-        aria-multiselectable={selectable === 'multiple' ? 'true' : undefined}
-        data-part="tree"
-        className="ds-tree__list"
+        aria-labelledby={showLabel ? headingId : undefined}
+        aria-multiselectable={selectable === 'multiple' ? true : undefined}
         onKeyDown={handleKeyDown}
+        onBlur={handleTreeBlur}
       >
-        {nodes.length === 0 ? (
-          <li className="ds-tree__empty" data-part="node">
-            <Text tone="muted" size="sm">
-              {COPY.empty}
-            </Text>
-          </li>
-        ) : (
-          nodes.map((node, index) => renderNode(node, 1, index + 1, nodes.length, null))
-        )}
+        {nodes.map((node, index) => renderNode(node, 1, index + 1, nodes.length))}
       </ul>
-      <div className="ds-tree__visually-hidden" role="status" aria-live="polite">
-        {selectable === 'multiple' ? interpolate(COPY.selectedCount, { count: selectedIds.length }) : ''}
-      </div>
+      {nodes.length === 0 ? (
+        <Text data-part="emptyState" tone="muted">
+          {COPY.empty}
+        </Text>
+      ) : null}
+      {selectable === 'multiple' ? (
+        <span className="ds-tree__visually-hidden" role="status" aria-live="polite">
+          {interpolate(COPY.selectedCount, { count: selectedIds.length })}
+        </span>
+      ) : null}
     </div>
   );
-};
+}

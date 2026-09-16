@@ -1,32 +1,30 @@
 import * as React from 'react';
 import {
   AccessibilityInfo,
+  Animated,
   FlatList,
   PanResponder,
   Platform,
   Pressable,
   ScrollView,
-  TextInput,
+  StyleSheet,
   View,
+  useWindowDimensions,
 } from 'react-native';
-import type {
-  ListRenderItemInfo,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  TextInputKeyPressEvent,
-  TextStyle,
-  ViewStyle,
-} from 'react-native';
+import type { AccessibilityActionEvent, LayoutChangeEvent, ListRenderItemInfo, Role, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
-import { BottomSheet } from './BottomSheet';
 import { Button } from './Button';
 import { Checkbox } from './Checkbox';
+import { DatePicker } from './DatePicker';
 import { Heading } from './Heading';
 import { Icon } from './Icon';
-import { Listbox } from './Listbox';
+import { Input } from './Input';
+import { NumberInput } from './NumberInput';
+import { Select } from './Select';
 import { Text } from './Text';
-import { toLineHeight, useTheme } from './theme';
+import { toEasing, useReducedMotion, useTheme } from './theme';
+import type { Tokens } from './theme';
 
 export type DataGridColumnAlign = 'start' | 'end' | 'center';
 export type DataGridColumnPinned = 'start' | 'end';
@@ -37,77 +35,46 @@ export type DataGridDensity = 'compact' | 'comfortable';
 export type DataGridHeight = 'content' | 'viewport' | 'fixed';
 
 /** A single record. `id` must be stable; it is what selection and keys use. */
-export interface DataGridRow {
-  id: string;
-  [key: string]: unknown;
-}
+export type DataGridRow = { id: string; [key: string]: unknown };
 
 /** One option for a `select` editor. */
-export interface DataGridColumnOption {
-  value: string;
-  label: string;
-}
+export type DataGridColumnOption = { value: string; label: string };
 
-/** One column definition, in display order (subject to `pinned`). */
-export interface DataGridColumn {
+/** One column: Table's column model plus grid concerns (width, resizing, pinning, editing). */
+export type DataGridColumn = {
   key: string;
   header: string;
-  abbr?: string | undefined;
-  align?: DataGridColumnAlign | undefined;
-  sortable?: boolean | undefined;
-  /** Pixel width, a multiple of `space.1` (e.g. 160). Columns do not auto-size. */
-  width?: number | undefined;
-  minWidth?: number | undefined;
-  resizable?: boolean | undefined;
-  isRowHeader?: boolean | undefined;
-  /** Keeps the column in place while the grid scrolls sideways. */
-  pinned?: DataGridColumnPinned | undefined;
-  editable?: boolean | undefined;
-  editor?: DataGridEditorKind | undefined;
-  options?: DataGridColumnOption[] | undefined;
-  render?: ((row: DataGridRow) => React.ReactNode) | undefined;
-  validate?: ((value: unknown, row: DataGridRow) => string | undefined) | undefined;
-}
+  abbr?: string;
+  align?: 'start' | 'end' | 'center';
+  sortable?: boolean;
+  width?: number;
+  minWidth?: number;
+  resizable?: boolean;
+  isRowHeader?: boolean;
+  pinned?: 'start' | 'end';
+  editable?: boolean;
+  editor?: 'text' | 'number' | 'select' | 'date' | 'checkbox';
+  options?: { value: string; label: string }[];
+  render?: (row: DataGridRow) => React.ReactNode;
+  validate?: (value: unknown, row: DataGridRow) => string | undefined;
+};
 
-/** Controlled sort state. */
-export interface DataGridSort {
-  column: string;
-  direction: DataGridSortDirection;
-}
+/** Sort state: which column, and which way. */
+export type DataGridSort = { column: string; direction: 'ascending' | 'descending' };
 
-/** A single selected cell, in `selectable="cell"` mode. */
-export interface DataGridCellSelection {
-  rowId: string;
-  column: string;
-}
+/** One cell, in `selectable="cell"` mode. */
+export type DataGridCellSelection = { rowId: string; column: string };
 
-/** A rectangular selection, in `selectable="range"` mode. Not reachable on this platform; see the generation gap notes. */
-export interface DataGridRangeSelection {
-  from: DataGridCellSelection;
-  to: DataGridCellSelection;
-}
+/** A rectangle of cells. `selectable="range"` degrades to `row` on this platform, so the grid never reports one here. */
+export type DataGridRangeSelection = { from: { rowId: string; column: string }; to: { rowId: string; column: string } };
 
 export type DataGridSelection = string[] | DataGridCellSelection | DataGridRangeSelection;
 
-/** Payload of a committed edit. */
-export interface DataGridCellChange {
-  rowId: string;
-  column: string;
-  value: unknown;
-  previous: unknown;
-}
+/** A cell value as an editor produces it; `undefined` when the cell has none. */
+export type DataGridCellValue = string | number | boolean | undefined;
 
-/** The row window the caller should load next, for server paging. */
-export interface DataGridRangeNeeded {
-  start: number;
-  end: number;
-}
-
-/** Payload fired when a resizable column finishes being dragged. */
-export interface DataGridColumnResize {
-  column: string;
-  width: number;
-}
+/** `{ column, width }` of a finished column resize (kept for TreeGrid, which shares the column model). */
+export type DataGridColumnResize = { column: string; width: number };
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type DataGridOverridableBinding =
@@ -118,16 +85,12 @@ export type DataGridOverridableBinding =
   | 'headerShadow'
   | 'gridLine'
   | 'gridLineWidth'
-  | 'rowHeight'
-  | 'rowHeightComfortable'
   | 'rowHover'
-  | 'rowSelectedBorderWidth'
   | 'cellPaddingInline'
-  | 'cellFocusRingWidth'
-  | 'rangeBorderWidth'
   | 'pinnedShadow'
   | 'resizeHandle'
   | 'resizeHandleWidth'
+  | 'resizeStep'
   | 'statusBarSize'
   | 'statusBarPadding'
   | 'captionSize'
@@ -145,36 +108,29 @@ export interface DataGridProps {
   caption: string;
   /** Visually hide the caption; it remains the accessible name. */
   hideCaption?: boolean | undefined;
-  /** Column definitions plus grid concerns (width, pinning, editing). Exactly one column may be `isRowHeader`. */
+  /** Column model. `width` is pixels (160 when omitted); exactly one column may be `isRowHeader`. */
   columns: DataGridColumn[];
   /** The rows. `id` must be stable. Only visible rows are rendered. */
   data: DataGridRow[];
-  /** Total rows when `data` is a window of a larger set (server paging). Drives `onEndReached`. */
+  /** Total rows when `data` is a prefix of a larger set (server paging); `onEndReached` asks for more. A whole number. */
   rowCount?: number | undefined;
   /** Controlled sort state; the caller sorts `data`. */
   sort?: DataGridSort | undefined;
   /** Initial sort; the grid sorts `data` itself when `rowCount` is not set. */
   defaultSort?: DataGridSort | undefined;
-  /**
-   * `row` adds a checkbox column and toggles rows; `cell` selects one cell.
-   * `range` has no touch or hardware-keyboard equivalent on this platform and degrades to `row`
-   * (a `__DEV__` warning notes this); see the generation gap notes.
-   */
+  /** `row` adds a checkbox column; `cell` selects the tapped cell. `range` has no touch model here and degrades to `row`. */
   selectable?: DataGridSelectable | undefined;
   /** Controlled selected row ids (row mode). */
   selected?: string[] | undefined;
-  /** Master switch: cells whose column is `editable` can be edited by tapping them. */
+  /** Master switch: cells whose column is `editable` open their editor when tapped. */
   editable?: boolean | undefined;
-  /** Row height: compact suits the grid's purpose; comfortable for touch. */
+  /** Row height: `compact` is the minimum target, `comfortable` the touch target. */
   density?: DataGridDensity | undefined;
-  /** The header stays visible while the body scrolls. Always true unless `height="content"`. */
+  /** The header stays visible while the body scrolls. Always true when virtualized (`height` is not `content`). */
   stickyHeader?: boolean | undefined;
-  /**
-   * `viewport` fills the height available under the header; `content` grows with rows (no
-   * virtualization, small grids); `fixed` uses `overrides.fixedHeight`.
-   */
+  /** `viewport`: window height minus twice the section gap; `content`: grows with rows; `fixed`: `overrides.fixedHeight`. */
   height?: DataGridHeight | undefined;
-  /** Data is being fetched: existing rows stay, `copy.loading` shows in the status bar. */
+  /** Marks the grid busy and shows `copy.loading` in the status bar; existing rows stay. */
   loading?: boolean | undefined;
   /** Shown when `data` is empty. Defaults to `copy.empty`. */
   emptyMessage?: string | undefined;
@@ -182,30 +138,36 @@ export interface DataGridProps {
   showStatusBar?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<DataGridOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired when a sortable header is activated, with the new sort state. */
-  onSortChange?: ((sort: DataGridSort) => void) | undefined;
-  /** Fired with the new selection: row ids, one cell, or (web/lit only) a range. */
-  onSelectionChange?: ((selection: DataGridSelection) => void) | undefined;
-  /** Fired when an edit commits, with the new and previous value. The caller updates `data`. */
-  onCellChange?: ((change: DataGridCellChange) => void) | undefined;
-  /** Fired when an editor is about to open; return `false` to refuse editing that cell. */
-  onEditStart?: ((target: DataGridCellSelection) => boolean | void) | undefined;
-  /** Fired (as `FlatList`'s `onEndReached`) when the visible window nears the end of `data` and `rowCount` says there is more. */
-  onEndReached?: ((range: DataGridRangeNeeded) => void) | undefined;
-  /** Fired with the column and its new width when a resizable column finishes being dragged. */
-  onColumnResize?: ((resize: DataGridColumnResize) => void) | undefined;
+  /** Fired when a sortable header is activated: ascending on a new column, then toggling. */
+  onSortChange?: ((column: string, direction: 'ascending' | 'descending') => void) | undefined;
+  /** Fired with the selection: row ids (row mode) or one cell (cell mode). */
+  onSelectionChange?:
+    | ((
+        selection: string[] | { rowId: string; column: string } | { from: { rowId: string; column: string }; to: { rowId: string; column: string } },
+      ) => void)
+    | undefined;
+  /** Fired when an edit commits. The caller updates `data`; the cell shows the old value until it does. */
+  onCellChange?: ((rowId: string, column: string, value: DataGridCellValue, previous: DataGridCellValue) => void) | undefined;
+  /** Fired before an editor opens; return `false` to refuse editing that cell. */
+  onEditStart?: ((rowId: string, column: string) => boolean | void) | undefined;
+  /** `onRangeNeeded` on this platform: the list came within one page of the end of `data` and `rowCount` says there is more. */
+  onEndReached?: ((start: number, end: number) => void) | undefined;
+  /** Fired with the column key and its new width when a drag on the header edge ends, or per resize accessibility action. */
+  onColumnResize?: ((column: string, width: number) => void) | undefined;
+  /** The root view. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 const COPY = {
   sortAscending: (column: string): string => `Sort by ${column}, ascending`,
   sortDescending: (column: string): string => `Sort by ${column}, descending`,
-  sortedAnnouncement: (column: string, direction: DataGridSortDirection): string => `Sorted by ${column}, ${direction}`,
+  sortedAnnouncement: (column: string, direction: string): string => `Sorted by ${column}, ${direction}`,
   selectAll: 'Select all rows',
   selectRow: (rowName: string): string => `Select ${rowName}`,
   selectedRows: (count: number, total: number): string => `${count} of ${total} rows selected`,
   editing: (column: string): string => `Editing ${column}. Enter to save, Escape to cancel.`,
-  invalid: (message: string): string => message,
-  rowCount: (count: number): string => `${count} rows`,
+  invalid: (message: string): string => `${message}`,
+  rowCount: (count: number): string => (new Intl.PluralRules().select(count) === 'one' ? `${count} row` : `${count} rows`),
   position: (row: number, column: string): string => `Row ${row}, ${column}`,
   resize: (column: string): string => `Resize ${column}`,
   loading: 'Loading',
@@ -213,136 +175,176 @@ const COPY = {
   scrollHint: 'Scroll sideways to see more columns',
 } as const;
 
-/**
- * Visually clips content to 1x1 while keeping it in the accessibility tree, for
- * live-region announcements.
- */
+/** Schema default for a column without `width`. */
+const DEFAULT_COLUMN_WIDTH = 160; // literal-ok: the column model's documented default width
+
+const JUSTIFY = { start: 'flex-start', center: 'center', end: 'flex-end' } as const;
+
+/** Clips content to one point while keeping it in the accessibility tree (hidden caption, live regions). */
 const HIDDEN_STYLE: ViewStyle = { position: 'absolute', width: 1, height: 1, overflow: 'hidden' };
 
-/** Rows requested from the caller each time the visible window nears the end of `data`. */
-const DEFAULT_PAGE_SIZE = 50;
+const HEADER_WEIGHT: TokenRef = 'font.weight.semibold';
+const CAPTION_WEIGHT: TokenRef = 'font.weight.semibold';
+const CAPTION_GAP: TokenRef = 'space.2';
+const LINE_HEIGHT: TokenRef = 'font.lineHeight.tight';
+const NUMERIC_FONT: TokenRef = 'font.family.mono';
+const INSET_ZERO: TokenRef = 'space.0';
 
-function cellValue(row: DataGridRow, key: string): string {
+type Shadow = Tokens['shadowRaised'];
+
+function tokenOr<T>(t: Tokens, ref: TokenRef | undefined, fallback: T): T {
+  return ref === undefined ? fallback : (resolveToken(t, ref) as T);
+}
+
+function cellText(row: DataGridRow, key: string): string {
   const raw = row[key];
   return raw === undefined || raw === null ? '' : String(raw);
 }
 
-function compareRows(a: DataGridRow, b: DataGridRow, column: string, direction: DataGridSortDirection): number {
-  const factor = direction === 'ascending' ? 1 : -1;
-  const av = a[column];
-  const bv = b[column];
-  if (typeof av === 'string' && typeof bv === 'string') {
-    return av.localeCompare(bv, undefined, { numeric: true }) * factor;
+function cellValue(row: DataGridRow, key: string): DataGridCellValue {
+  const raw = row[key];
+  if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean') {
+    return raw;
   }
-  const an = Number(av);
-  const bn = Number(bv);
-  if (Number.isNaN(an) || Number.isNaN(bn)) {
-    return 0;
-  }
-  return (an - bn) * factor;
+  return raw === undefined || raw === null ? undefined : String(raw);
 }
 
-interface DataGridResizeHandleProps {
+function compareRows(a: DataGridRow, b: DataGridRow, sort: DataGridSort): number {
+  const factor = sort.direction === 'ascending' ? 1 : -1;
+  const av = a[sort.column];
+  const bv = b[sort.column];
+  if (typeof av === 'number' && typeof bv === 'number') {
+    return (av - bv) * factor;
+  }
+  return cellText(a, sort.column).localeCompare(cellText(b, sort.column), undefined, { numeric: true }) * factor;
+}
+
+function sameCell(a: DataGridCellSelection | null, rowId: string, column: string): boolean {
+  return a !== null && a.rowId === rowId && a.column === column;
+}
+
+/** The row hover tint, faded over `transition` (instant under reduced motion). */
+function RowTint({ visible, color, duration }: { visible: boolean; color: string; duration: number }): React.JSX.Element {
+  const { tokens: t } = useTheme();
+  const reducedMotion = useReducedMotion();
+  const opacity = React.useRef(new Animated.Value(visible ? 1 : 0)).current;
+  React.useEffect(() => {
+    const toValue = visible ? 1 : 0;
+    if (reducedMotion) {
+      opacity.setValue(toValue);
+      return;
+    }
+    Animated.timing(opacity, { toValue, duration, easing: toEasing(t.motionEasingStandard), useNativeDriver: false }).start();
+  }, [visible, reducedMotion, duration, opacity, t.motionEasingStandard]);
+  return (
+    <Animated.View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[StyleSheet.absoluteFill, { backgroundColor: color, opacity, pointerEvents: 'none' }]}
+    />
+  );
+}
+
+/** An inset ring drawn over a cell, so neighbours and the scroll region never clip it. */
+function CellRing({ color, width }: { color: string; width: number }): React.JSX.Element {
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[StyleSheet.absoluteFill, { borderColor: color, borderWidth: width, pointerEvents: 'none' }]}
+    />
+  );
+}
+
+interface ResizeHandleProps {
   width: number;
   minWidth: number;
+  visible: boolean;
   color: string;
   handleWidth: number;
-  label: string;
+  hitSlop: number;
   onResize: (width: number) => void;
   onResizeEnd: (width: number) => void;
 }
 
-/**
- * The draggable edge of a resizable column header. Built on core `PanResponder`
- * (the package permits no gesture-handler dependency); reads and reports width
- * through refs so dragging never lags behind the parent's re-renders.
- */
-function DataGridResizeHandle({ width, minWidth, color, handleWidth, label, onResize, onResizeEnd }: DataGridResizeHandleProps): React.JSX.Element {
-  const widthRef = React.useRef(width);
-  widthRef.current = width;
-  const startWidthRef = React.useRef(width);
+/** The draggable edge of a resizable header cell, on core `PanResponder`. Callbacks go through refs so the responder is created once. */
+function ResizeHandle({ width, minWidth, visible, color, handleWidth, hitSlop, onResize, onResizeEnd }: ResizeHandleProps): React.JSX.Element {
+  const latest = React.useRef({ width, minWidth, onResize, onResizeEnd });
+  latest.current = { width, minWidth, onResize, onResizeEnd };
+  const startWidth = React.useRef(width);
+  const [dragging, setDragging] = React.useState(false);
 
   const responder = React.useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
-        startWidthRef.current = widthRef.current;
+        startWidth.current = latest.current.width;
+        setDragging(true);
       },
       onPanResponderMove: (_event, gesture) => {
-        onResize(Math.max(minWidth, startWidthRef.current + gesture.dx));
+        latest.current.onResize(Math.max(latest.current.minWidth, Math.round(startWidth.current + gesture.dx)));
       },
       onPanResponderRelease: () => {
-        onResizeEnd(widthRef.current);
+        setDragging(false);
+        latest.current.onResizeEnd(latest.current.width);
       },
       onPanResponderTerminate: () => {
-        onResizeEnd(widthRef.current);
+        setDragging(false);
+        latest.current.onResizeEnd(latest.current.width);
       },
     }),
   ).current;
 
-  const style: ViewStyle = { width: handleWidth, alignSelf: 'stretch', backgroundColor: color };
-
   return (
     <View
       {...responder.panHandlers}
-      role="separator"
-      accessibilityRole="adjustable"
-      accessibilityLabel={label}
-      style={style}
       testID="DataGrid.resizeHandle"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      hitSlop={{ left: hitSlop, right: hitSlop }}
+      style={{ width: handleWidth, alignSelf: 'stretch', backgroundColor: visible || dragging ? color : 'transparent' }}
     />
   );
 }
 
 /**
- * DataGrid — hundreds or thousands of rows navigated cell by cell, edited in place,
- * selected in blocks; the different-keyboard-model sibling of Table, which shares
- * its column and data model but is for reading and acting on records by row.
+ * DataGrid — for working in data, not reading it: many rows, cell-level selection, values
+ * edited in place. Shares Table's column and data model; a different role and contract.
  *
- * When to use: Use a DataGrid for price lists, inventory, timesheets and admin
- * views over large sets — anything a spreadsheet would otherwise be used for. Set
- * `editable` and mark the columns that may change; give every editable column a
- * `validate`. Do not use it for content read and acted on by row (Table), a
- * handful of fields (Form), or phone-first screens — its keyboard model has no
- * touch equivalent, which is why `selectable="range"` degrades to `"row"` here.
+ * When to use: price lists, inventory counts, timesheets, admin views over large sets. Set
+ * `editable` and mark the editable columns, each with a `validate`. Not for records read and
+ * acted on by row (Table), a handful of fields (Form), or phone-first screens (Table with
+ * `responsive: stack`).
  *
- * There is no grid element on native. Renders a caption (`Heading`, or hidden when
- * `hideCaption`), then a horizontal `ScrollView` (`role="grid"`, the accessible
- * name from `caption`) containing a `FlatList` whose fixed `getItemLayout` comes
- * from `density`'s row-height token, giving virtualization for free; the header
- * row is its `ListHeaderComponent`, sticky whenever the grid is virtualized
- * (`height` is not `"content"`) and gaining `headerShadow` once the body has
- * scrolled beneath it. `columns` order to `pinned: "start"` first, then unpinned,
- * then `pinned: "end"`; native has no `position: sticky` and the package permits no
- * gesture-handler/reanimated dependency for a second synced list, so — like
- * Table's approximation of a sticky row-header column — pinned columns scroll with
- * the rest and only gain `pinnedShadow` once the region has moved horizontally.
- * Resizable columns drag on core `PanResponder` (an allowed dependency-free API),
- * committing `onColumnResize` on release.
+ * There is no grid element on native. The caption is a `Heading` (level 2; visually hidden
+ * with `hideCaption`). A horizontal `ScrollView` (the scroll region, hinted with
+ * `copy.scrollHint`) holds a `FlatList` with `role="grid"`, the caption as its
+ * `accessibilityLabel`, and a fixed `getItemLayout` from the density's row height, so rows
+ * virtualize; the header row (`role="rowgroup"` > `row` > `columnheader`) is its sticky list
+ * header, sharing the horizontal scroll with the body and casting `headerShadow` once the
+ * body scrolls beneath it. Rows are `role="row"` Views of fixed-width `role="cell"` /
+ * `"rowheader"` Pressables named "{column}: {value}". Pinned columns keep their place in
+ * `columns` and scroll with the rest (native has no `position: sticky`), casting
+ * `pinnedShadow` once the region has moved sideways.
  *
- * Each cell's `accessibilityLabel` is "{column}: {value}"; an editable cell adds
- * the hint "double tap to edit" and opens its editor on a single tap, since native
- * has no double-click and Enter/F2 have no hardware-keyboard equivalent on a
- * touchscreen. `checkbox` editors are always live (no separate edit mode);
- * `select` opens a `BottomSheet` with a `Listbox` of `options`; `text`, `number`
- * and (absent a package `DatePicker` to compose — see the gap notes) `date` open
- * an inline `TextInput`, which commits on blur or the hardware Enter key and
- * cancels on the hardware Escape key where one exists (react-native-web, an
- * attached keyboard). A failed `column.validate` keeps the editor open with the
- * message surfaced in the status bar and `cellInvalidBorder`/`cellInvalidBackground`
- * on the cell; a successful edit fires `onCellChange` and waits for `data` to
- * change, reverting visibly if the caller rejects it.
+ * The web keyboard model has no equivalent in core React Native (View and Pressable have no
+ * key events), so touch replaces it: a sortable header is a `Button`; `selectable="row"`
+ * (and `range`, which degrades to it with a `__DEV__` warning) adds `Checkbox` cells and a
+ * select-all Checkbox that stands in for Ctrl+A; `cell` selects the tapped cell. An editable
+ * cell opens its editor on tap (hint "double tap to edit"), after `onEditStart` allows it:
+ * `Input` (commits on blur), `NumberInput` and `DatePicker` (commit when another cell is
+ * tapped, or through the cell's `activate` accessibility action), `Select` (opens at once and
+ * commits on change; closing it cancels) and `Checkbox` (commits on change). The `escape`
+ * accessibility action cancels. A failing `validate` keeps the editor open with the cell in
+ * cellInvalid* and the message in the status bar. Column resize is a `PanResponder` drag on
+ * the header edge plus increment/decrement accessibility actions on the header cell by
+ * `resizeStep`. Copying (Ctrl+C) is not offered: core RN has no clipboard API.
  *
- * `selectable="row"` adds a `Checkbox` select column with select-all
- * (indeterminate when some rows are selected); `"cell"` tracks one active cell and
- * reports it through `onSelectionChange`. Sorting follows Table: a controlled
- * `sort` leaves ordering to the caller; otherwise the grid sorts `data` itself from
- * `defaultSort`, except when `rowCount` is set (server paging, where only the
- * caller's window is ever shown). `rowCount` beyond `data.length` drives
- * `onEndReached` (the platform name for `onRangeNeeded`) as the list nears its end.
- * The status bar doubles as the polite live region for loading, editing and
- * selection state, matching what is shown; sort changes get their own hidden live
- * region, as in Table.
+ * The status bar is the polite live region (loading, validation, editing, selection count,
+ * the tapped cell's position, row count); sort changes use their own hidden region, and iOS
+ * gets `AccessibilityInfo.announceForAccessibility` for all but position.
  */
 export function DataGrid({
   caption,
@@ -368,552 +370,617 @@ export function DataGrid({
   onEditStart,
   onEndReached,
   onColumnResize,
+  ref,
 }: DataGridProps): React.JSX.Element {
   const { tokens: t } = useTheme();
+  const viewport = useWindowDimensions();
+  const baseId = React.useId();
 
-  const effectiveSelectable: DataGridSelectable = selectable === 'range' ? 'row' : selectable;
+  const mode: 'none' | 'row' | 'cell' = selectable === 'range' ? 'row' : selectable;
 
   const [internalSort, setInternalSort] = React.useState<DataGridSort | undefined>(defaultSort);
   const activeSort = sort ?? internalSort;
-
-  const [internalSelectedRows, setInternalSelectedRows] = React.useState<string[]>([]);
-  const selectedRowIds = selected ?? internalSelectedRows;
-  const selectedSet = React.useMemo(() => new Set(selectedRowIds), [selectedRowIds]);
-
+  const [internalSelected, setInternalSelected] = React.useState<string[]>([]);
+  const selectedIds = selected ?? internalSelected;
+  const selectedSet = React.useMemo(() => new Set(selectedIds), [selectedIds]);
   const [activeCell, setActiveCell] = React.useState<DataGridCellSelection | null>(null);
-  const [focusedCellKey, setFocusedCellKey] = React.useState<string | null>(null);
-  const [editingCell, setEditingCell] = React.useState<DataGridCellSelection | null>(null);
-  const [editingValue, setEditingValue] = React.useState('');
-  const [editingError, setEditingError] = React.useState<string | undefined>(undefined);
-  const [selectEditorTarget, setSelectEditorTarget] = React.useState<DataGridCellSelection | null>(null);
-  const [columnWidths, setColumnWidths] = React.useState<Record<string, number>>({});
+  const [focusedCell, setFocusedCell] = React.useState<string | null>(null);
+  const [hoveredRow, setHoveredRow] = React.useState<string | null>(null);
+  const [activeHeader, setActiveHeader] = React.useState<string | null>(null);
+  const [editing, setEditing] = React.useState<DataGridCellSelection | null>(null);
+  const [draft, setDraft] = React.useState<DataGridCellValue>(undefined);
+  const [editError, setEditError] = React.useState<string | undefined>(undefined);
+  const [widths, setWidths] = React.useState<Record<string, number>>({});
   const [headerScrolled, setHeaderScrolled] = React.useState(false);
-  const [bodyScrolledX, setBodyScrolledX] = React.useState(false);
+  const [scrolledX, setScrolledX] = React.useState(false);
+  const [listHeight, setListHeight] = React.useState<number | null>(null);
   const [sortAnnouncement, setSortAnnouncement] = React.useState('');
 
   React.useEffect(() => {
-    if (__DEV__ && selectable === 'range') {
-      // eslint-disable-next-line no-console
-      console.warn('DataGrid: `selectable="range"` has no touch or hardware-keyboard equivalent on React Native and degrades to `"row"`.');
+    if (!__DEV__) {
+      return;
     }
-  }, [selectable]);
+    if (selectable === 'range') {
+      console.warn('DataGrid: `selectable="range"` has no touch model on React Native and degrades to `"row"`.');
+    }
+    if (columns.filter((column) => column.isRowHeader === true).length > 1) {
+      console.warn('DataGrid: only one column may set `isRowHeader`; the first one is used.');
+    }
+  }, [selectable, columns]);
 
-  const isFirstSort = React.useRef(true);
-  React.useEffect(() => {
-    if (isFirstSort.current) {
-      isFirstSort.current = false;
-      return;
-    }
-    if (activeSort === undefined) {
-      return;
-    }
-    const column = columns.find((c) => c.key === activeSort.column);
-    const message = COPY.sortedAnnouncement(column?.header ?? activeSort.column, activeSort.direction);
-    setSortAnnouncement(message);
+  const announce = (message: string): void => {
     if (Platform.OS === 'ios') {
       AccessibilityInfo.announceForAccessibility(message);
     }
+  };
+
+  const sortKey = activeSort === undefined ? '' : `${activeSort.column}:${activeSort.direction}`;
+  const lastSortKey = React.useRef(sortKey);
+  React.useEffect(() => {
+    if (lastSortKey.current === sortKey || activeSort === undefined) {
+      lastSortKey.current = sortKey;
+      return;
+    }
+    lastSortKey.current = sortKey;
+    const header = columns.find((column) => column.key === activeSort.column)?.header ?? activeSort.column;
+    const message = COPY.sortedAnnouncement(header, activeSort.direction);
+    setSortAnnouncement(message);
+    announce(message);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSort?.column, activeSort?.direction]);
+  }, [sortKey]);
 
-  const rowHeaderColumn = columns.find((c) => c.isRowHeader === true) ?? null;
-  const orderedColumns = React.useMemo(() => {
-    const pinnedStart = columns.filter((c) => c.pinned === 'start');
-    const pinnedEnd = columns.filter((c) => c.pinned === 'end');
-    const middle = columns.filter((c) => c.pinned !== 'start' && c.pinned !== 'end');
-    return [...pinnedStart, ...middle, ...pinnedEnd];
-  }, [columns]);
+  const rowHeaderColumn = columns.find((column) => column.isRowHeader === true);
+  const columnByKey = React.useMemo(() => new Map(columns.map((column) => [column.key, column] as const)), [columns]);
 
-  const columnByKey = React.useMemo(() => new Map(columns.map((c) => [c.key, c] as const)), [columns]);
+  const rows = React.useMemo(
+    () => (sort === undefined && rowCount === undefined && internalSort !== undefined ? [...data].sort((a, b) => compareRows(a, b, internalSort)) : data),
+    [data, sort, rowCount, internalSort],
+  );
+  const total = rowCount ?? data.length;
 
-  const sortedData = React.useMemo(() => {
-    if (sort !== undefined || rowCount !== undefined || internalSort === undefined) {
-      return data;
-    }
-    return [...data].sort((a, b) => compareRows(a, b, internalSort.column, internalSort.direction));
-  }, [data, sort, rowCount, internalSort]);
+  // Bindings
+  const headerWeight = overrides?.headerWeight ?? HEADER_WEIGHT;
+  const headerBorder = tokenOr<string>(t, overrides?.headerBorder, t.colorBorderStrong);
+  const headerBorderWidth = tokenOr<number>(t, overrides?.headerBorderWidth, t.borderWidthThin);
+  const headerShadow = tokenOr<Shadow>(t, overrides?.headerShadow, t.shadowRaised);
+  const gridLine = tokenOr<string>(t, overrides?.gridLine, t.colorBorder);
+  const gridLineWidth = tokenOr<number>(t, overrides?.gridLineWidth, t.borderWidthThin);
+  const rowHover = tokenOr<string>(t, overrides?.rowHover, t.colorActionGhostBackgroundHover);
+  const cellPaddingInline = tokenOr<number>(t, overrides?.cellPaddingInline, t.space2);
+  const pinnedShadow = tokenOr<Shadow>(t, overrides?.pinnedShadow, t.shadowRaised);
+  const resizeHandle = tokenOr<string>(t, overrides?.resizeHandle, t.colorBorderStrong);
+  const resizeHandleWidth = tokenOr<number>(t, overrides?.resizeHandleWidth, t.space1);
+  const resizeStep = tokenOr<number>(t, overrides?.resizeStep, t.space4);
+  const statusBarPadding = tokenOr<number>(t, overrides?.statusBarPadding, t.space2);
+  const fixedHeight = tokenOr<number>(t, overrides?.fixedHeight, t.space20);
+  const transition = tokenOr<number>(t, overrides?.transition, t.motionDurationFast);
+  const rowHeight = density === 'comfortable' ? t.sizeTargetComfortable : t.sizeTargetMin;
 
-  const commitSort = (next: DataGridSort): void => {
-    if (sort === undefined) {
-      setInternalSort(next);
-    }
-    onSortChange?.(next);
-  };
+  const bodyText = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight ?? LINE_HEIGHT };
+  const numericText = { ...bodyText, fontFamily: overrides?.numericFont ?? NUMERIC_FONT };
+  const headerText = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight ?? LINE_HEIGHT, fontSize: overrides?.headerSize, fontWeight: headerWeight };
+  const editorInset = { paddingInline: INSET_ZERO, paddingBlock: INSET_ZERO };
 
-  const handleSort = (columnKey: string): void => {
-    const next: DataGridSort =
-      activeSort?.column === columnKey
-        ? { column: columnKey, direction: activeSort.direction === 'ascending' ? 'descending' : 'ascending' }
-        : { column: columnKey, direction: 'ascending' };
-    commitSort(next);
-  };
-
-  const commitRowSelection = (next: string[]): void => {
-    if (selected === undefined) {
-      setInternalSelectedRows(next);
-    }
-    onSelectionChange?.(next);
-  };
-
-  const toggleRow = (id: string): void => {
-    const next = new Set(selectedSet);
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
-      next.add(id);
-    }
-    commitRowSelection(Array.from(next));
-  };
-
-  const allIds = sortedData.map((row) => row.id);
-  const allSelected = allIds.length > 0 && allIds.every((id) => selectedSet.has(id));
-  const someSelected = !allSelected && allIds.some((id) => selectedSet.has(id));
-  const toggleAll = (): void => {
-    commitRowSelection(allSelected ? [] : allIds);
-  };
-
-  const selectCellTarget = (rowId: string, column: string): void => {
-    const next: DataGridCellSelection = { rowId, column };
-    setActiveCell(next);
-    onSelectionChange?.(next);
-  };
-
-  const rowName = (row: DataGridRow): string => (rowHeaderColumn ? cellValue(row, rowHeaderColumn.key) || row.id : row.id);
-
-  // ---- editing ----
-
-  const startEdit = (row: DataGridRow, column: DataGridColumn): void => {
-    if (!editable || column.editable !== true) {
-      return;
-    }
-    const allowed = onEditStart?.({ rowId: row.id, column: column.key });
-    if (allowed === false) {
-      return;
-    }
-    if (column.editor === 'checkbox') {
-      commitEdit(row, column, !row[column.key]);
-      return;
-    }
-    if (column.editor === 'select') {
-      setSelectEditorTarget({ rowId: row.id, column: column.key });
-      return;
-    }
-    setEditingCell({ rowId: row.id, column: column.key });
-    setEditingValue(cellValue(row, column.key));
-    setEditingError(undefined);
-  };
-
-  const commitEdit = (row: DataGridRow, column: DataGridColumn, value: unknown): void => {
-    const validationError = column.validate?.(value, row);
-    if (validationError !== undefined) {
-      setEditingError(validationError);
-      if (Platform.OS === 'ios') {
-        AccessibilityInfo.announceForAccessibility(COPY.invalid(validationError));
-      }
-      return;
-    }
-    const previous = row[column.key];
-    onCellChange?.({ rowId: row.id, column: column.key, value, previous });
-    setEditingCell(null);
-    setEditingError(undefined);
-    setSelectEditorTarget(null);
-  };
-
-  const cancelEdit = (): void => {
-    setEditingCell(null);
-    setEditingError(undefined);
-  };
-
-  // ---- tokens ----
-
-  const headerBorderColor = overrides?.headerBorder ? (resolveToken(t, overrides.headerBorder) as string) : t.colorBorderStrong;
-  const headerBorderWidth = overrides?.headerBorderWidth ? (resolveToken(t, overrides.headerBorderWidth) as number) : t.borderWidthThin;
-  const headerShadow = overrides?.headerShadow ? (resolveToken(t, overrides.headerShadow) as typeof t.shadowRaised) : t.shadowRaised;
-  const gridLineColor = overrides?.gridLine ? (resolveToken(t, overrides.gridLine) as string) : t.colorBorder;
-  const gridLineWidth = overrides?.gridLineWidth ? (resolveToken(t, overrides.gridLineWidth) as number) : t.borderWidthThin;
-  const rowHeightValue = overrides?.rowHeight ? (resolveToken(t, overrides.rowHeight) as number) : t.sizeTargetMin;
-  const rowHeightComfortableValue = overrides?.rowHeightComfortable ? (resolveToken(t, overrides.rowHeightComfortable) as number) : t.sizeTargetComfortable;
-  const activeRowHeight = density === 'compact' ? rowHeightValue : rowHeightComfortableValue;
-  const rowSelectedBorderWidth = overrides?.rowSelectedBorderWidth ? (resolveToken(t, overrides.rowSelectedBorderWidth) as number) : t.borderWidthFocus;
-  const cellPaddingInline = overrides?.cellPaddingInline ? (resolveToken(t, overrides.cellPaddingInline) as number) : t.space2;
-  const cellFocusRingWidth = overrides?.cellFocusRingWidth ? (resolveToken(t, overrides.cellFocusRingWidth) as number) : t.borderWidthFocus;
-  const pinnedShadow = overrides?.pinnedShadow ? (resolveToken(t, overrides.pinnedShadow) as typeof t.shadowRaised) : t.shadowRaised;
-  const resizeHandleColor = overrides?.resizeHandle ? (resolveToken(t, overrides.resizeHandle) as string) : t.colorBorderStrong;
-  const resizeHandleWidth = overrides?.resizeHandleWidth ? (resolveToken(t, overrides.resizeHandleWidth) as number) : t.space1;
-  const statusBarPadding = overrides?.statusBarPadding ? (resolveToken(t, overrides.statusBarPadding) as number) : t.space2;
-  const fixedHeightValue = overrides?.fixedHeight ? (resolveToken(t, overrides.fixedHeight) as number) : t.space20;
-  const editorFontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
-  const editorFontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t.fontSizeSm;
-  const editorLineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightTight;
-  const numericFontFamily = overrides?.numericFont ? (resolveToken(t, overrides.numericFont) as string) : t.fontFamilyMono;
-
-  const typographyOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
-  const headerTypographyOverrides = { ...typographyOverrides, fontWeight: overrides?.headerWeight, fontSize: overrides?.headerSize };
-  const cellTypographyOverrides = (align: DataGridColumnAlign | undefined) => ({
-    ...typographyOverrides,
-    fontFamily: align === 'end' ? (overrides?.numericFont ?? ('font.family.mono' as TokenRef)) : overrides?.fontFamily,
-    fontSize: overrides?.fontSize,
-  });
-
-  const widthFor = (column: DataGridColumn): number => columnWidths[column.key] ?? column.width ?? column.minWidth ?? t.space20;
+  const widthFor = (column: DataGridColumn): number => widths[column.key] ?? column.width ?? DEFAULT_COLUMN_WIDTH;
   const minWidthFor = (column: DataGridColumn): number => column.minWidth ?? t.sizeTargetMin;
 
-  const showEmpty = sortedData.length === 0;
-  const emptyText = loading && showEmpty ? COPY.loading : (emptyMessage ?? COPY.empty);
+  // ---- Sorting ----
 
-  const selectCellStyle: ViewStyle = {
-    width: t.sizeTargetComfortable,
-    alignItems: 'center',
-    justifyContent: 'center',
+  const handleSortPress = (column: string): void => {
+    commitOpenEdit();
+    const direction: DataGridSortDirection = activeSort?.column === column && activeSort.direction === 'ascending' ? 'descending' : 'ascending';
+    if (sort === undefined) {
+      setInternalSort({ column, direction });
+    }
+    onSortChange?.(column, direction);
   };
 
-  // ---- header ----
+  // ---- Selection ----
 
-  const handleHeaderScroll = (event: NativeSyntheticEvent<NativeScrollEvent>): void => {
-    setHeaderScrolled(event.nativeEvent.contentOffset.y > 0);
+  const commitRows = (next: string[]): void => {
+    if (selected === undefined) {
+      setInternalSelected(next);
+    }
+    onSelectionChange?.(next);
+    announce(COPY.selectedRows(next.length, total));
+  };
+  const toggleRow = (id: string): void => {
+    commitRows(selectedSet.has(id) ? selectedIds.filter((existing) => existing !== id) : [...selectedIds, id]);
+  };
+  const loadedIds = rows.map((row) => row.id);
+  const allSelected = loadedIds.length > 0 && loadedIds.every((id) => selectedSet.has(id));
+  const someSelected = !allSelected && loadedIds.some((id) => selectedSet.has(id));
+  const toggleAll = (): void => commitRows(allSelected ? [] : loadedIds);
+
+  const rowName = (row: DataGridRow): string => (rowHeaderColumn === undefined ? row.id : cellText(row, rowHeaderColumn.key) || row.id);
+
+  // ---- Editing ----
+
+  const closeEditor = (): void => {
+    setEditing(null);
+    setDraft(undefined);
+    setEditError(undefined);
   };
 
-  const stickyHeaderEffective = height === 'content' ? stickyHeader : true;
+  const commitEdit = (row: DataGridRow, column: DataGridColumn, value: DataGridCellValue): boolean => {
+    const message = column.validate?.(value, row);
+    if (message !== undefined) {
+      setEditError(message);
+      announce(COPY.invalid(message));
+      return false;
+    }
+    const previous = cellValue(row, column.key);
+    closeEditor();
+    if (value !== previous) {
+      onCellChange?.(row.id, column.key, value, previous);
+    }
+    return true;
+  };
 
-  const renderColumnHeader = (column: DataGridColumn): React.JSX.Element => {
-    const width = widthFor(column);
-    const isSorted = activeSort?.column === column.key;
-    const headerCellStyle: ViewStyle = {
-      width,
-      paddingHorizontal: cellPaddingInline,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderRightWidth: gridLineWidth,
-      borderRightColor: gridLineColor,
-      backgroundColor: t.colorBackgroundSubtle,
-      ...(column.pinned === 'start' && bodyScrolledX ? pinnedShadow : null),
-    };
+  /** Commits the open draft editor (text, number, date), if any; true when nothing is left open. */
+  function commitOpenEdit(): boolean {
+    if (editing === null) {
+      return true;
+    }
+    const row = rows.find((candidate) => candidate.id === editing.rowId);
+    const column = columnByKey.get(editing.column);
+    if (row === undefined || column === undefined) {
+      closeEditor();
+      return true;
+    }
+    return commitEdit(row, column, draft);
+  }
 
-    return (
-      <View key={column.key} style={headerCellStyle} role="columnheader" accessibilityRole="header" testID="DataGrid.columnHeader">
-        {column.sortable ? (
-          <View style={{ flex: 1 }} testID="DataGrid.sortButton">
-            <Button
-              label={column.abbr ?? column.header}
-              variant="ghost"
-              size="sm"
-              trailingIcon={
-                isSorted ? <Icon name={activeSort.direction === 'ascending' ? 'chevron-up' : 'chevron-down'} inline color={t.colorForeground} /> : undefined
-              }
-              overrides={{ fontWeight: overrides?.headerWeight ?? ('font.weight.semibold' as TokenRef), fontSize: overrides?.headerSize }}
-              onPress={() => handleSort(column.key)}
-            />
-            {isSorted ? (
-              <View style={HIDDEN_STYLE}>
-                <Text>{activeSort.direction === 'ascending' ? COPY.sortAscending(column.header) : COPY.sortDescending(column.header)}</Text>
-              </View>
-            ) : null}
-          </View>
-        ) : (
-          <Text size="sm" weight="semibold" truncate overrides={headerTypographyOverrides}>
-            {column.header}
-          </Text>
-        )}
-        {column.resizable ? (
-          <DataGridResizeHandle
-            width={width}
-            minWidth={minWidthFor(column)}
-            color={resizeHandleColor}
-            handleWidth={resizeHandleWidth}
-            label={COPY.resize(column.header)}
-            onResize={(next) => setColumnWidths((prev) => ({ ...prev, [column.key]: next }))}
-            onResizeEnd={(next) => onColumnResize?.({ column: column.key, width: next })}
+  const startEdit = (row: DataGridRow, column: DataGridColumn): void => {
+    if (sameCell(editing, row.id, column.key) || !commitOpenEdit()) {
+      return;
+    }
+    if (onEditStart?.(row.id, column.key) === false) {
+      return;
+    }
+    setEditing({ rowId: row.id, column: column.key });
+    setDraft(cellValue(row, column.key));
+    setEditError(undefined);
+    announce(COPY.editing(column.header));
+  };
+
+  const editorFor = (row: DataGridRow, column: DataGridColumn): React.ReactNode => {
+    const label = column.header;
+    const name = `${baseId}-${row.id}-${column.key}`;
+    const error = editError;
+    switch (column.editor) {
+      case 'number':
+        return (
+          <NumberInput
+            label={label}
+            hideLabel
+            name={name}
+            size="sm"
+            value={typeof draft === 'number' ? draft : draft === undefined || draft === '' ? undefined : Number(draft)}
+            error={error}
+            overrides={editorInset}
+            onChangeText={(value) => setDraft(value)}
           />
-        ) : null}
-      </View>
-    );
+        );
+      case 'select':
+        return (
+          <Select
+            label={label}
+            hideLabel
+            name={name}
+            size="sm"
+            open
+            options={column.options ?? []}
+            value={typeof draft === 'string' ? draft : undefined}
+            error={error}
+            overrides={{ triggerPaddingInline: INSET_ZERO, triggerPaddingBlock: INSET_ZERO }}
+            onChange={(value) => commitEdit(row, column, Array.isArray(value) ? value[0] : value)}
+            onOpenChange={(open) => {
+              if (!open) {
+                closeEditor();
+              }
+            }}
+          />
+        );
+      case 'date':
+        return (
+          <DatePicker
+            label={label}
+            hideLabel
+            name={name}
+            size="sm"
+            value={typeof draft === 'string' && draft !== '' ? draft : undefined}
+            error={error}
+            overrides={editorInset}
+            onChange={(value) => setDraft(typeof value === 'string' ? value : undefined)}
+          />
+        );
+      case 'checkbox':
+        return (
+          <Checkbox
+            label={label}
+            hideLabel
+            name={name}
+            checked={draft === true}
+            onChange={(checked) => commitEdit(row, column, checked)}
+          />
+        );
+      default:
+        return (
+          <Input
+            label={label}
+            hideLabel
+            name={name}
+            size="sm"
+            value={draft === undefined ? '' : String(draft)}
+            error={error}
+            overrides={editorInset}
+            onChange={(value) => setDraft(value)}
+            onBlur={() => commitEdit(row, column, draft)}
+          />
+        );
+    }
   };
 
-  const headerRowStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    backgroundColor: t.colorBackgroundSubtle,
-    borderBottomWidth: headerBorderWidth,
-    borderBottomColor: headerBorderColor,
-    ...(stickyHeaderEffective && headerScrolled ? headerShadow : null),
+  // ---- Header ----
+
+  const selectColumnStyle: ViewStyle = { width: t.sizeTargetComfortable, alignItems: 'center', justifyContent: 'center' };
+  const pinnedCellStyle = (column: DataGridColumn | null): ViewStyle | null =>
+    scrolledX && (column === null || column.pinned !== undefined) ? { zIndex: 1, ...pinnedShadow } : null;
+
+  const resizeTo = (column: DataGridColumn, width: number): void => {
+    setWidths((previous) => ({ ...previous, [column.key]: Math.max(minWidthFor(column), width) }));
   };
 
-  const renderHeader = (): React.JSX.Element => (
-    <View role="rowgroup" testID="DataGrid.header">
-      <View style={headerRowStyle} role="row" testID="DataGrid.headerRow">
-        {effectiveSelectable === 'row' ? (
-          <View style={selectCellStyle} testID="DataGrid.selectAllCell">
-            <Checkbox label={COPY.selectAll} name="data-grid-select-all" checked={allSelected} indeterminate={someSelected} onChange={toggleAll} />
+  const headerRow = (
+    <View
+      testID="DataGrid.header"
+      role="rowgroup"
+      style={{ backgroundColor: t.colorBackgroundSubtle, ...(stickyHeader || height !== 'content' ? (headerScrolled ? headerShadow : null) : null) }}
+    >
+      <View
+        testID="DataGrid.headerRow"
+        role="row"
+        style={{ flexDirection: 'row', alignItems: 'stretch', minHeight: rowHeight, borderBottomWidth: headerBorderWidth, borderBottomColor: headerBorder }}
+      >
+        {mode === 'row' ? (
+          <View testID="DataGrid.selectAllCell" role="columnheader" style={[selectColumnStyle, { backgroundColor: t.colorBackgroundSubtle, borderEndWidth: gridLineWidth, borderEndColor: gridLine }, pinnedCellStyle(null)]}>
+            <Checkbox label={COPY.selectAll} hideLabel name={`${baseId}-all`} checked={allSelected} indeterminate={someSelected} onChange={toggleAll} />
           </View>
         ) : null}
-        {orderedColumns.map((column) => renderColumnHeader(column))}
+        {columns.map((column) => {
+          const width = widthFor(column);
+          const sorted = activeSort?.column === column.key;
+          const resizeActions = column.resizable === true ? [{ name: 'increment', label: COPY.resize(column.header) }, { name: 'decrement', label: COPY.resize(column.header) }] : undefined;
+          const handleAction = (event: AccessibilityActionEvent): void => {
+            const delta = event.nativeEvent.actionName === 'increment' ? resizeStep : event.nativeEvent.actionName === 'decrement' ? -resizeStep : 0;
+            if (delta === 0) {
+              return;
+            }
+            const next = Math.max(minWidthFor(column), width + delta);
+            resizeTo(column, next);
+            onColumnResize?.(column.key, next);
+          };
+          return (
+            <View
+              key={column.key}
+              testID="DataGrid.columnHeader"
+              role="columnheader"
+              accessibilityActions={resizeActions}
+              onAccessibilityAction={resizeActions !== undefined ? handleAction : undefined}
+              onPointerEnter={() => setActiveHeader(column.key)}
+              onPointerLeave={() => setActiveHeader((current) => (current === column.key ? null : current))}
+              style={[
+                {
+                  width,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: JUSTIFY[column.align ?? 'start'],
+                  paddingStart: cellPaddingInline,
+                  paddingEnd: column.resizable === true ? 0 : cellPaddingInline,
+                  backgroundColor: t.colorBackgroundSubtle,
+                  borderEndWidth: gridLineWidth,
+                  borderEndColor: gridLine,
+                },
+                pinnedCellStyle(column),
+              ]}
+            >
+              <View style={{ flexGrow: 1, flexShrink: 1, alignItems: JUSTIFY[column.align ?? 'start'] }}>
+                {column.sortable === true ? (
+                  <View testID="DataGrid.sortButton">
+                    <Button
+                      label={column.header}
+                      accessibleName={sorted && activeSort.direction === 'ascending' ? COPY.sortDescending(column.header) : COPY.sortAscending(column.header)}
+                      variant="ghost"
+                      size="sm"
+                      trailingIcon={sorted ? <Icon name={activeSort.direction === 'ascending' ? 'chevron-up' : 'chevron-down'} inline color={t.colorActionGhostForeground} /> : undefined}
+                      overrides={{ fontWeight: headerWeight, fontSize: overrides?.headerSize }}
+                      onFocus={() => setActiveHeader(column.key)}
+                      onBlur={() => setActiveHeader((current) => (current === column.key ? null : current))}
+                      onPress={() => handleSortPress(column.key)}
+                    />
+                  </View>
+                ) : (
+                  <View accessible accessibilityLabel={column.abbr ?? column.header}>
+                    <Text size="sm" weight="semibold" align={column.align ?? 'start'} overrides={headerText}>
+                      {column.header}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              {column.resizable === true ? (
+                <ResizeHandle
+                  width={width}
+                  minWidth={minWidthFor(column)}
+                  visible={activeHeader === column.key}
+                  color={resizeHandle}
+                  handleWidth={resizeHandleWidth}
+                  hitSlop={(t.sizeTargetMin - resizeHandleWidth) / 2}
+                  onResize={(next) => resizeTo(column, next)}
+                  onResizeEnd={(next) => onColumnResize?.(column.key, next)}
+                />
+              ) : null}
+            </View>
+          );
+        })}
       </View>
     </View>
   );
 
-  // ---- body ----
-
-  const renderEditor = (row: DataGridRow, column: DataGridColumn): React.JSX.Element => {
-    const editorStyle: TextStyle = {
-      minHeight: t.sizeTargetMin,
-      color: t.colorForeground,
-      fontFamily: column.editor === 'number' ? numericFontFamily : editorFontFamily,
-      fontSize: editorFontSize,
-      lineHeight: toLineHeight(editorFontSize, editorLineHeightMultiplier),
-      paddingVertical: t.space1,
-    };
-
-    const handleKeyPress = (event: TextInputKeyPressEvent): void => {
-      if (event.nativeEvent.key === 'Enter') {
-        commitEdit(row, column, editingValue);
-      } else if (event.nativeEvent.key === 'Escape') {
-        cancelEdit();
-      }
-    };
-
-    return (
-      <TextInput
-        autoFocus
-        value={editingValue}
-        onChangeText={setEditingValue}
-        onKeyPress={handleKeyPress}
-        onBlur={() => commitEdit(row, column, editingValue)}
-        keyboardType={column.editor === 'number' ? 'numeric' : 'default'}
-        accessibilityLabel={COPY.editing(column.header)}
-        accessibilityHint={editingError}
-        style={editorStyle}
-        testID="DataGrid.editor"
-      />
-    );
-  };
-
-  const renderBodyCell = (row: DataGridRow, column: DataGridColumn): React.JSX.Element => {
-    const width = widthFor(column);
-    const isHeaderCell = column.isRowHeader === true;
-    const isEditingThis = editingCell !== null && editingCell.rowId === row.id && editingCell.column === column.key;
-    const cellKey = `${row.id}:${column.key}`;
-    const isFocused = focusedCellKey === cellKey;
-    const isCellSelected = effectiveSelectable === 'cell' && activeCell?.rowId === row.id && activeCell.column === column.key;
-    const hasError = isEditingThis && editingError !== undefined;
-    const canEdit = editable && column.editable === true;
-    const isCheckboxEditor = canEdit && column.editor === 'checkbox';
-
-    const cellOuterStyle: ViewStyle = {
-      width,
-      paddingHorizontal: cellPaddingInline,
-      justifyContent: 'center',
-      borderRightWidth: gridLineWidth,
-      borderRightColor: gridLineColor,
-      backgroundColor: hasError ? t.colorStatusDangerBackground : isEditingThis ? t.colorControlBackground : isCellSelected ? t.colorBackgroundSubtle : 'transparent',
-      borderWidth: isFocused ? cellFocusRingWidth : hasError ? gridLineWidth : 0,
-      borderColor: isFocused ? t.colorBorderFocus : hasError ? t.colorBorderDanger : 'transparent',
-      ...(column.pinned === 'start' && bodyScrolledX ? pinnedShadow : null),
-    };
-
-    let content: React.ReactNode;
-    if (isEditingThis) {
-      content = renderEditor(row, column);
-    } else if (isCheckboxEditor) {
-      content = (
-        <Checkbox
-          label={`${column.header}: ${row[column.key] ? 'checked' : 'unchecked'}`}
-          name={`data-grid-${row.id}-${column.key}`}
-          checked={Boolean(row[column.key])}
-          onChange={(next) => commitEdit(row, column, next)}
-        />
-      );
-    } else if (column.render) {
-      content = column.render(row);
-    } else {
-      content = (
-        <Text size="sm" align={column.align ?? 'start'} truncate overrides={cellTypographyOverrides(column.align)}>
-          {cellValue(row, column.key)}
-        </Text>
-      );
-    }
-
-    const testId = isHeaderCell ? 'DataGrid.rowHeader' : 'DataGrid.cell';
-    const role = isHeaderCell ? 'rowheader' : 'cell';
-
-    if (isEditingThis || isCheckboxEditor) {
-      return (
-        <View key={column.key} style={cellOuterStyle} role={role} testID={testId}>
-          {content}
-        </View>
-      );
-    }
-
-    return (
-      <Pressable
-        key={column.key}
-        style={cellOuterStyle}
-        onPress={() => {
-          if (canEdit) {
-            startEdit(row, column);
-          } else if (effectiveSelectable === 'cell') {
-            selectCellTarget(row.id, column.key);
-          }
-        }}
-        onFocus={() => setFocusedCellKey(cellKey)}
-        onBlur={() => setFocusedCellKey((prev) => (prev === cellKey ? null : prev))}
-        accessibilityLabel={`${column.header}: ${cellValue(row, column.key)}`}
-        accessibilityHint={canEdit ? 'double tap to edit' : undefined}
-        accessibilityState={isCellSelected ? { selected: true } : undefined}
-        role={role}
-        testID={testId}
-      >
-        {content}
-      </Pressable>
-    );
-  };
+  // ---- Body ----
 
   const renderRow = ({ item: row }: ListRenderItemInfo<DataGridRow>): React.JSX.Element => {
-    const isRowSelected = effectiveSelectable === 'row' && selectedSet.has(row.id);
-    const rowStyle: ViewStyle = {
-      flexDirection: 'row',
-      alignItems: 'stretch',
-      minHeight: activeRowHeight,
-      borderBottomWidth: gridLineWidth,
-      borderBottomColor: gridLineColor,
-      backgroundColor: isRowSelected ? t.colorBackgroundSubtle : t.colorBackground,
-      borderLeftWidth: isRowSelected ? rowSelectedBorderWidth : 0,
-      borderLeftColor: isRowSelected ? t.colorControlSelectedBackground : 'transparent',
-    };
-
+    const rowSelected = mode === 'row' && selectedSet.has(row.id);
+    const background = rowSelected ? t.colorBackgroundSubtle : t.colorBackground;
     return (
-      <View style={rowStyle} role="row" accessibilityState={effectiveSelectable !== 'none' ? { selected: isRowSelected } : undefined} testID="DataGrid.row">
-        {effectiveSelectable === 'row' ? (
-          <View style={selectCellStyle} testID="DataGrid.selectCell">
-            <Checkbox label={COPY.selectRow(rowName(row))} name={`data-grid-row-${row.id}`} checked={isRowSelected} onChange={() => toggleRow(row.id)} />
+      <View
+        testID="DataGrid.row"
+        role="row"
+        accessibilityState={mode === 'row' ? { selected: rowSelected } : undefined}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'stretch',
+          height: rowHeight,
+          backgroundColor: background,
+          borderBottomWidth: gridLineWidth,
+          borderBottomColor: gridLine,
+          borderStartWidth: t.borderWidthFocus,
+          borderStartColor: rowSelected ? t.colorControlSelectedBackground : background,
+        }}
+      >
+        <RowTint visible={hoveredRow === row.id} color={rowHover} duration={transition} />
+        {mode === 'row' ? (
+          <View testID="DataGrid.selectCell" role="cell" style={[selectColumnStyle, { backgroundColor: background, borderEndWidth: gridLineWidth, borderEndColor: gridLine }, pinnedCellStyle(null)]}>
+            <Checkbox label={COPY.selectRow(rowName(row))} hideLabel name={`${baseId}-${row.id}`} checked={rowSelected} onChange={() => toggleRow(row.id)} />
           </View>
         ) : null}
-        {orderedColumns.map((column) => renderBodyCell(row, column))}
+        {columns.map((column) => {
+          const key = `${row.id} ${column.key}`;
+          const isRowHeader = column === rowHeaderColumn;
+          const role: Role = isRowHeader ? 'rowheader' : 'cell';
+          const canEdit = editable && column.editable === true;
+          const isEditing = sameCell(editing, row.id, column.key);
+          const invalid = isEditing && editError !== undefined;
+          const cellSelected = mode === 'cell' && sameCell(activeCell, row.id, column.key);
+          const cellBackground = invalid
+            ? t.colorStatusDangerBackground
+            : isEditing
+              ? t.colorControlBackground
+              : cellSelected
+                ? t.colorBackgroundSubtle
+                : 'transparent';
+          const style: ViewStyle[] = [
+            {
+              width: widthFor(column),
+              paddingHorizontal: cellPaddingInline,
+              justifyContent: 'center',
+              alignItems: isEditing ? 'stretch' : JUSTIFY[column.align ?? 'start'],
+              backgroundColor: cellBackground,
+              borderEndWidth: gridLineWidth,
+              borderEndColor: gridLine,
+            },
+          ];
+          const pinned = pinnedCellStyle(column);
+          if (pinned !== null) {
+            style.push({ ...pinned, backgroundColor: cellBackground === 'transparent' ? background : cellBackground });
+          }
+          const ring = invalid ? (
+            <CellRing color={t.colorBorderDanger} width={t.borderWidthFocus} />
+          ) : isEditing ? (
+            <CellRing color={t.colorBorderFocus} width={t.borderWidthFocus} />
+          ) : focusedCell === key ? (
+            <CellRing color={t.colorBorderFocus} width={t.borderWidthFocus} />
+          ) : null;
+
+          if (isEditing) {
+            const handleEditorAction = (event: AccessibilityActionEvent): void => {
+              if (event.nativeEvent.actionName === 'activate') {
+                commitOpenEdit();
+              } else if (event.nativeEvent.actionName === 'escape') {
+                closeEditor();
+              }
+            };
+            return (
+              <View
+                key={column.key}
+                testID={isRowHeader ? 'DataGrid.rowHeader' : 'DataGrid.cell'}
+                role={role}
+                accessibilityActions={[{ name: 'activate' }, { name: 'escape' }]}
+                onAccessibilityAction={handleEditorAction}
+                style={style}
+              >
+                <View testID="DataGrid.editor">{editorFor(row, column)}</View>
+                {ring}
+              </View>
+            );
+          }
+
+          const value = cellText(row, column.key);
+          const content =
+            column.render !== undefined ? (
+              column.render(row)
+            ) : (
+              <Text size="sm" align={column.align ?? 'start'} truncate overrides={column.align === 'end' ? numericText : bodyText}>
+                {value}
+              </Text>
+            );
+          const interactive = canEdit || mode === 'cell' || editing !== null;
+          return (
+            <Pressable
+              key={column.key}
+              testID={isRowHeader ? 'DataGrid.rowHeader' : 'DataGrid.cell'}
+              role={role}
+              accessibilityLabel={`${column.header}: ${value}`}
+              accessibilityHint={canEdit ? 'double tap to edit' : undefined}
+              accessibilityState={mode === 'cell' ? { selected: cellSelected } : undefined}
+              onPress={
+                interactive
+                  ? () => {
+                      if (mode === 'cell' && !cellSelected) {
+                        const next = { rowId: row.id, column: column.key };
+                        setActiveCell(next);
+                        onSelectionChange?.(next);
+                      }
+                      if (canEdit) {
+                        startEdit(row, column);
+                      } else {
+                        commitOpenEdit();
+                      }
+                    }
+                  : undefined
+              }
+              onFocus={() => setFocusedCell(key)}
+              onBlur={() => setFocusedCell((current) => (current === key ? null : current))}
+              onHoverIn={() => setHoveredRow(row.id)}
+              onHoverOut={() => setHoveredRow((current) => (current === row.id ? null : current))}
+              style={style}
+            >
+              <View testID="DataGrid.cellContent" style={{ alignItems: JUSTIFY[column.align ?? 'start'] }}>
+                {content}
+              </View>
+              {ring}
+            </Pressable>
+          );
+        })}
       </View>
     );
   };
 
-  const getItemLayout = (_listData: ArrayLike<DataGridRow> | null | undefined, index: number): { length: number; offset: number; index: number } => ({
-    length: activeRowHeight,
-    offset: activeRowHeight * index,
-    index,
-  });
+  // ---- Paging ----
 
+  const requestedEnd = React.useRef<number | null>(null);
+  React.useEffect(() => {
+    requestedEnd.current = null;
+  }, [data.length]);
+  const pageRows = Math.max(1, Math.ceil((listHeight ?? viewport.height) / rowHeight));
   const handleEndReached = (): void => {
-    if (rowCount === undefined || rowCount <= sortedData.length) {
+    if (rowCount === undefined || data.length >= rowCount) {
       return;
     }
-    const start = sortedData.length;
-    const end = Math.min(rowCount, start + DEFAULT_PAGE_SIZE);
-    onEndReached?.({ start, end });
+    const end = Math.min(rowCount, data.length + pageRows) - 1;
+    if (requestedEnd.current === end) {
+      return;
+    }
+    requestedEnd.current = end;
+    onEndReached?.(data.length, end);
   };
 
-  const containerHeightStyle: ViewStyle = height === 'fixed' ? { height: fixedHeightValue } : height === 'viewport' ? { flex: 1 } : {};
+  // ---- Layout ----
 
-  const totalContentWidth = orderedColumns.reduce((sum, column) => sum + widthFor(column), 0) + (effectiveSelectable === 'row' ? t.sizeTargetComfortable : 0);
+  const listHeightStyle: ViewStyle | undefined =
+    height === 'viewport' ? { height: viewport.height - 2 * t.layoutGapSection } : height === 'fixed' ? { height: fixedHeight } : undefined;
+  const contentWidth = columns.reduce((sum, column) => sum + widthFor(column), mode === 'row' ? t.sizeTargetComfortable : 0) + t.borderWidthFocus;
 
-  const grid = (
+  const emptyState = (
+    <View testID="DataGrid.emptyState" style={{ paddingHorizontal: cellPaddingInline, minHeight: rowHeight, justifyContent: 'center' }}>
+      <Text size="sm" tone="muted" overrides={bodyText}>
+        {emptyMessage ?? COPY.empty}
+      </Text>
+    </View>
+  );
+
+  let status: string;
+  if (loading) {
+    status = COPY.loading;
+  } else if (editError !== undefined) {
+    status = COPY.invalid(editError);
+  } else if (editing !== null) {
+    status = COPY.editing(columnByKey.get(editing.column)?.header ?? editing.column);
+  } else if (mode === 'row' && selectedIds.length > 0) {
+    status = COPY.selectedRows(selectedIds.length, total);
+  } else if (mode === 'cell' && activeCell !== null) {
+    const index = rows.findIndex((row) => row.id === activeCell.rowId);
+    status = COPY.position(index + 1, columnByKey.get(activeCell.column)?.header ?? activeCell.column);
+  } else {
+    status = COPY.rowCount(total);
+  }
+
+  const list = (
     <FlatList
-      data={sortedData}
+      testID="DataGrid.grid"
+      role="grid"
+      accessibilityLabel={caption}
+      accessibilityState={{ busy: loading }}
+      data={rows}
+      extraData={[selectedIds, activeSort, activeCell, focusedCell, hoveredRow, activeHeader, editing, draft, editError, widths, scrolledX, density]}
       keyExtractor={(row) => row.id}
       renderItem={renderRow}
-      ListHeaderComponent={renderHeader}
-      stickyHeaderIndices={stickyHeaderEffective ? [0] : undefined}
-      getItemLayout={getItemLayout}
-      onScroll={handleHeaderScroll}
-      scrollEventThrottle={16}
+      getItemLayout={(_items, index) => ({ length: rowHeight, offset: rowHeight * index, index })}
+      ListHeaderComponent={headerRow}
+      ListEmptyComponent={emptyState}
+      stickyHeaderIndices={height !== 'content' || stickyHeader ? [0] : undefined}
       scrollEnabled={height !== 'content'}
-      style={height === 'content' ? undefined : { flex: 1 }}
+      initialNumToRender={height === 'content' ? data.length : undefined}
+      onScroll={(event) => setHeaderScrolled(event.nativeEvent.contentOffset.y > 0)}
+      scrollEventThrottle={16}
       onEndReached={rowCount !== undefined ? handleEndReached : undefined}
-      onEndReachedThreshold={0.5}
-      accessibilityState={{ busy: loading }}
-      ListEmptyComponent={
-        <View style={{ padding: cellPaddingInline }} accessible accessibilityLabel={emptyText} testID="DataGrid.emptyState">
-          <Text tone="muted">{emptyText}</Text>
-        </View>
-      }
-      testID="DataGrid.grid"
+      onEndReachedThreshold={1}
+      onLayout={(event: LayoutChangeEvent) => setListHeight(event.nativeEvent.layout.height)}
+      style={listHeightStyle}
     />
   );
 
-  const scrollRegion = (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator
-      onScroll={(event) => setBodyScrolledX(event.nativeEvent.contentOffset.x > 0)}
-      scrollEventThrottle={16}
-      contentContainerStyle={{ minWidth: totalContentWidth, flexGrow: 1 }}
-      accessibilityLabel={caption}
-      accessibilityHint={COPY.scrollHint}
-      accessibilityState={{ busy: loading }}
-      role="grid"
-      testID="DataGrid.scrollRegion"
-    >
-      <View style={[{ flex: 1 }, containerHeightStyle]}>{grid}</View>
-    </ScrollView>
-  );
-
-  // ---- status bar ----
-
-  let statusText: string;
-  if (loading) {
-    statusText = COPY.loading;
-  } else if (editingError !== undefined) {
-    statusText = COPY.invalid(editingError);
-  } else if (editingCell !== null) {
-    statusText = COPY.editing(columnByKey.get(editingCell.column)?.header ?? editingCell.column);
-  } else if (effectiveSelectable === 'row' && selectedRowIds.length > 0) {
-    statusText = COPY.selectedRows(selectedRowIds.length, sortedData.length);
-  } else if (effectiveSelectable === 'cell' && activeCell !== null) {
-    const activeRowIndex = sortedData.findIndex((row) => row.id === activeCell.rowId);
-    const activeColumn = columnByKey.get(activeCell.column);
-    statusText = COPY.position(activeRowIndex + 1, activeColumn?.header ?? activeCell.column);
-  } else {
-    statusText = COPY.rowCount(rowCount ?? sortedData.length);
-  }
-
-  // ---- select editor (BottomSheet) ----
-
-  const selectEditorRow = selectEditorTarget ? (sortedData.find((row) => row.id === selectEditorTarget.rowId) ?? null) : null;
-  const selectEditorColumn = selectEditorTarget ? (columnByKey.get(selectEditorTarget.column) ?? null) : null;
-
   return (
-    <View testID="DataGrid">
-      {!hideCaption ? (
-        <View testID="DataGrid.caption">
-          <Heading level="2" overrides={{ fontSize: overrides?.captionSize, fontWeight: overrides?.captionWeight, marginBlockEnd: overrides?.captionGap ?? ('space.2' as TokenRef) }}>
-            {caption}
-          </Heading>
-        </View>
-      ) : null}
-      <View style={containerHeightStyle} testID="DataGrid.container">
-        {scrollRegion}
+    <View ref={ref} testID="DataGrid" style={{ backgroundColor: t.colorBackground }}>
+      <View testID="DataGrid.caption" style={hideCaption ? HIDDEN_STYLE : undefined}>
+        <Heading
+          level="2"
+          size="md"
+          overrides={{
+            fontFamily: overrides?.fontFamily,
+            fontSize: overrides?.captionSize,
+            fontWeight: overrides?.captionWeight ?? CAPTION_WEIGHT,
+            marginBlockEnd: overrides?.captionGap ?? CAPTION_GAP,
+          }}
+        >
+          {caption}
+        </Heading>
+      </View>
+      <View testID="DataGrid.container" style={{ borderStartWidth: gridLineWidth, borderTopWidth: gridLineWidth, borderColor: gridLine }}>
+        <ScrollView
+          testID="DataGrid.scrollRegion"
+          horizontal
+          accessibilityHint={COPY.scrollHint}
+          onScroll={(event) => setScrolledX(event.nativeEvent.contentOffset.x > 0)}
+          scrollEventThrottle={16}
+          contentContainerStyle={{ minWidth: contentWidth, flexGrow: 1 }}
+        >
+          <View style={{ width: contentWidth }}>{list}</View>
+        </ScrollView>
       </View>
       <View accessibilityLiveRegion="polite" style={HIDDEN_STYLE}>
-        <Text>{sortAnnouncement}</Text>
+        <Text size="sm">{sortAnnouncement}</Text>
       </View>
-      {showStatusBar ? (
-        <View
-          style={{ paddingHorizontal: statusBarPadding, paddingVertical: statusBarPadding, backgroundColor: t.colorBackgroundSubtle }}
-          role="status"
-          accessibilityLiveRegion="polite"
-          testID="DataGrid.statusBar"
-        >
-          <Text size="xs" tone="muted" overrides={{ ...typographyOverrides, fontSize: overrides?.statusBarSize }}>
-            {statusText}
-          </Text>
-        </View>
-      ) : null}
-      <BottomSheet open={selectEditorTarget !== null} heading={selectEditorColumn?.header ?? ''} onClose={() => setSelectEditorTarget(null)}>
-        {selectEditorColumn && selectEditorRow ? (
-          <Listbox
-            label={selectEditorColumn.header}
-            options={(selectEditorColumn.options ?? []).map((option) => ({ value: option.value, label: option.label }))}
-            value={cellValue(selectEditorRow, selectEditorColumn.key)}
-            onChange={(value) => commitEdit(selectEditorRow, selectEditorColumn, value)}
-          />
-        ) : null}
-      </BottomSheet>
+      <View
+        testID="DataGrid.statusBar"
+        role="status"
+        accessibilityLiveRegion="polite"
+        style={showStatusBar ? { padding: statusBarPadding, backgroundColor: t.colorBackgroundSubtle } : HIDDEN_STYLE}
+      >
+        <Text size="xs" tone="muted" overrides={{ fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight ?? LINE_HEIGHT, fontSize: overrides?.statusBarSize }}>
+          {status}
+        </Text>
+      </View>
     </View>
   );
 }

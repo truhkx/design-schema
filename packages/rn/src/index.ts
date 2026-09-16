@@ -211,8 +211,8 @@ export type {
 
 export { DataGrid } from './DataGrid';
 export type {
-  DataGridCellChange,
   DataGridCellSelection,
+  DataGridCellValue,
   DataGridColumn,
   DataGridColumnAlign,
   DataGridColumnOption,
@@ -223,7 +223,6 @@ export type {
   DataGridHeight,
   DataGridOverridableBinding,
   DataGridProps,
-  DataGridRangeNeeded,
   DataGridRangeSelection,
   DataGridRow,
   DataGridSelectable,
@@ -234,8 +233,8 @@ export type {
 
 export { TreeGrid } from './TreeGrid';
 export type {
-  TreeGridCellChange,
   TreeGridCellSelection,
+  TreeGridCellValue,
   TreeGridDensity,
   TreeGridHeight,
   TreeGridOverridableBinding,

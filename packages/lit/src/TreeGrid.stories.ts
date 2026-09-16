@@ -2,49 +2,41 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './TreeGrid.js';
+import type { DataGridColumn } from './DataGrid.js';
 import type {
-  TreeGridCellChangeDetail,
-  TreeGridColumnResizeDetail,
   TreeGridDensity,
-  TreeGridExpandChangeDetail,
-  TreeGridExpandDetail,
   TreeGridHeight,
   TreeGridRow,
   TreeGridSelectable,
-  TreeGridSelectionChangeDetail,
-  TreeGridSortChangeDetail,
+  TreeGridSort,
 } from './TreeGrid.js';
-import type { DataGridColumn } from './DataGrid.js';
 
 interface TreeGridArgs {
   caption: string;
   hideCaption: boolean;
   columns: DataGridColumn[];
   data: TreeGridRow[];
+  expanded?: string[] | undefined;
   defaultExpanded?: string[] | undefined;
+  sort?: TreeGridSort | undefined;
+  defaultSort?: TreeGridSort | undefined;
   selectable: TreeGridSelectable;
+  selected?: string[] | undefined;
+  defaultSelected?: string[] | undefined;
   selectChildren: boolean;
   editable: boolean;
   density: TreeGridDensity;
   height: TreeGridHeight;
-  stickyHeader: boolean;
   loading: boolean;
   showStatusBar: boolean;
+  stickyHeader: boolean;
   emptyMessage?: string | undefined;
 }
 
 const accountColumns: DataGridColumn[] = [
-  { key: 'name', header: 'Account', isRowHeader: true, width: 220, resizable: true },
-  { key: 'code', header: 'Code', width: 100 },
-  {
-    key: 'balance',
-    header: 'Balance (USD)',
-    align: 'end',
-    sortable: true,
-    editable: true,
-    editor: 'number',
-    width: 140,
-  },
+  { key: 'name', header: 'Account', isRowHeader: true, width: 240, resizable: true },
+  { key: 'code', header: 'Code', width: 96 },
+  { key: 'balance', header: 'Balance', align: 'end', sortable: true, editable: true, editor: 'number', width: 144 },
 ];
 
 const accountsData: TreeGridRow[] = [
@@ -80,13 +72,7 @@ const accountsData: TreeGridRow[] = [
     balance: 42000,
     children: [{ id: 'payables', name: 'Accounts payable', code: '2100', balance: 42000 }],
   },
-  {
-    id: 'equity',
-    name: 'Equity',
-    code: '3000',
-    balance: 83000,
-    children: 'lazy',
-  },
+  { id: 'equity', name: 'Equity', code: '3000', balance: 83000, children: 'lazy' },
 ];
 
 const meta: Meta<TreeGridArgs> = {
@@ -94,7 +80,7 @@ const meta: Meta<TreeGridArgs> = {
   tags: ['autodocs'],
   parameters: {
     actions: {
-      handles: ['expand-change', 'expand', 'sort-change', 'selection-change', 'cell-change', 'column-resize'],
+      handles: ['expand-change', 'expand', 'sort-change', 'selection-change', 'cell-change', 'edit-start', 'column-resize'],
     },
   },
   argTypes: {
@@ -104,9 +90,9 @@ const meta: Meta<TreeGridArgs> = {
     hideCaption: { control: 'boolean' },
     selectChildren: { control: 'boolean' },
     editable: { control: 'boolean' },
-    stickyHeader: { control: 'boolean' },
     loading: { control: 'boolean' },
     showStatusBar: { control: 'boolean' },
+    stickyHeader: { control: 'boolean' },
     emptyMessage: { control: 'text' },
   },
   args: {
@@ -120,9 +106,9 @@ const meta: Meta<TreeGridArgs> = {
     editable: false,
     density: 'compact',
     height: 'viewport',
-    stickyHeader: true,
     loading: false,
     showStatusBar: true,
+    stickyHeader: true,
   },
   render: (args) => html`
     <ds-tree-grid
@@ -130,23 +116,21 @@ const meta: Meta<TreeGridArgs> = {
       ?hide-caption=${args.hideCaption}
       .columns=${args.columns}
       .data=${args.data}
-      .defaultExpanded=${args.defaultExpanded ?? []}
+      .expanded=${args.expanded}
+      .defaultExpanded=${args.defaultExpanded}
+      .sort=${args.sort}
+      .defaultSort=${args.defaultSort}
       selectable=${args.selectable}
+      .selected=${args.selected}
+      .defaultSelected=${args.defaultSelected}
       ?select-children=${args.selectChildren}
       ?editable=${args.editable}
       density=${args.density}
       height=${args.height}
-      ?no-sticky-header=${!args.stickyHeader}
       ?loading=${args.loading}
       ?no-status-bar=${!args.showStatusBar}
+      ?no-sticky-header=${!args.stickyHeader}
       empty-message=${ifDefined(args.emptyMessage)}
-      @expand-change=${(event: CustomEvent<TreeGridExpandChangeDetail>) => console.log('expand-change', event.detail)}
-      @expand=${(event: CustomEvent<TreeGridExpandDetail>) => console.log('expand', event.detail)}
-      @sort-change=${(event: CustomEvent<TreeGridSortChangeDetail>) => console.log('sort-change', event.detail)}
-      @selection-change=${(event: CustomEvent<TreeGridSelectionChangeDetail>) =>
-        console.log('selection-change', event.detail)}
-      @cell-change=${(event: CustomEvent<TreeGridCellChangeDetail>) => console.log('cell-change', event.detail)}
-      @column-resize=${(event: CustomEvent<TreeGridColumnResizeDetail>) => console.log('column-resize', event.detail)}
     ></ds-tree-grid>
   `,
 };
@@ -172,20 +156,83 @@ export const HeightFixed: Story = { args: { height: 'fixed' } };
 
 /* notable states */
 export const HideCaption: Story = { args: { hideCaption: true } };
-export const SelectChildren: Story = { args: { selectable: 'row', selectChildren: true } };
+export const SelectChildren: Story = { args: { selectable: 'row', selectChildren: true, defaultExpanded: ['*'] } };
 export const Editable: Story = { args: { editable: true } };
 export const Loading: Story = { args: { loading: true } };
+export const LazyRowLoading: Story = { args: { defaultExpanded: ['equity'] } };
 export const Empty: Story = { args: { data: [] } };
 export const NoStatusBar: Story = { args: { showStatusBar: false } };
 export const NoStickyHeader: Story = { args: { stickyHeader: false, height: 'content' } };
-export const AllExpanded: Story = { args: { defaultExpanded: ['*'] } };
-export const Lazy: Story = { args: { defaultExpanded: ['equity'] } };
-export const CustomEmptyMessage: Story = { args: { data: [], emptyMessage: 'No accounts yet.' } };
+
+/* examples */
+export const ChartOfAccounts: Story = {
+  args: {
+    caption: 'Chart of accounts',
+    defaultExpanded: ['assets'],
+    columns: [
+      { key: 'account', header: 'Account', isRowHeader: true, width: 240 },
+      { key: 'balance', header: 'Balance', align: 'end' },
+    ],
+    data: [
+      {
+        id: 'assets',
+        account: 'Assets',
+        balance: 1400,
+        children: [
+          { id: 'cash', account: 'Cash', balance: 400 },
+          { id: 'stock', account: 'Stock', balance: 1000 },
+        ],
+      },
+      { id: 'equity', account: 'Equity', balance: 1400 },
+    ],
+  },
+};
+
+export const LazyFolders: Story = {
+  args: {
+    caption: 'Files',
+    columns: [
+      { key: 'name', header: 'Name', isRowHeader: true },
+      { key: 'size', header: 'Size', align: 'end' },
+    ],
+    data: [
+      { id: 'docs', name: 'Documents', size: 0, children: 'lazy' },
+      { id: 'media', name: 'Media', size: 0, children: 'lazy' },
+    ],
+  },
+};
+
+export const CascadingSelection: Story = {
+  args: {
+    caption: 'Bill of materials',
+    selectable: 'row',
+    selectChildren: true,
+    defaultExpanded: ['*'],
+    columns: [
+      { key: 'part', header: 'Part', isRowHeader: true },
+      { key: 'quantity', header: 'Quantity', align: 'end' },
+    ],
+    data: [{ id: 'frame', part: 'Frame', quantity: 1, children: [{ id: 'bolt', part: 'Bolt', quantity: 8 }] }],
+  },
+};
+
+export const EditableQuantities: Story = {
+  args: {
+    caption: 'Bill of materials',
+    editable: true,
+    defaultExpanded: ['*'],
+    columns: [
+      { key: 'part', header: 'Part', isRowHeader: true },
+      { key: 'quantity', header: 'Quantity', align: 'end', editable: true, editor: 'number' },
+    ],
+    data: [{ id: 'frame', part: 'Frame', quantity: 1, children: [{ id: 'bolt', part: 'Bolt', quantity: 8 }] }],
+  },
+};
 
 /**
- * A fully expanded tree with a sortable, editable balance column — enough focusable structure (several row
- * headers with children, several leaves) to exercise ArrowLeft/ArrowRight/`*` expansion and Enter/F2 editing.
+ * Fully expanded, sortable and editable: several parent row headers and leaves to exercise ArrowLeft/ArrowRight,
+ * `*`, Enter and F2. The grid is one tab stop; its cells are reached with the arrows.
  */
 export const Keyboard: Story = {
-  args: { defaultExpanded: ['*'], editable: true },
+  args: { defaultExpanded: ['*'], editable: true, selectable: 'row', height: 'content' },
 };

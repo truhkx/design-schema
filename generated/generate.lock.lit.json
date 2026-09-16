@@ -297,19 +297,20 @@
     }
   },
   "DataGrid.lit": {
-    "hash": "ce284cc144c780d1",
-    "lastAttemptHash": "ce284cc144c780d1",
-    "generatedAt": "2026-09-10T22:59:01+00:00",
-    "model": "sonnet",
+    "hash": "050cb6bee9422aa6",
+    "lastAttemptHash": "050cb6bee9422aa6",
+    "generatedAt": "2026-09-16T15:51:48+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4984,
+    "costUsd": 7.1516,
     "files": [
       "packages/lit/src/DataGrid.stories.ts",
+      "packages/lit/src/DataGrid.test.ts",
       "packages/lit/src/DataGrid.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 12,
+    "gaps": 19,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1158,19 +1159,19 @@
     }
   },
   "Tree.lit": {
-    "hash": "7e86f3fe33e24e3a",
-    "lastAttemptHash": "7e86f3fe33e24e3a",
-    "generatedAt": "2026-09-10T23:10:31+00:00",
-    "model": "sonnet",
+    "hash": "91c67ac316228c0c",
+    "lastAttemptHash": "91c67ac316228c0c",
+    "generatedAt": "2026-09-16T16:27:08+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.9893,
+    "costUsd": 2.6261,
     "files": [
       "packages/lit/src/Tree.stories.ts",
-      "packages/lit/src/Tree.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Tree.test.ts",
+      "packages/lit/src/Tree.ts"
     ],
-    "gaps": 3,
+    "gaps": 18,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1181,19 +1182,20 @@
     }
   },
   "TreeGrid.lit": {
-    "hash": "7f941976fcb99cef",
-    "lastAttemptHash": "7f941976fcb99cef",
-    "generatedAt": "2026-09-10T23:04:03+00:00",
-    "model": "sonnet",
+    "hash": "cb5b8c61762c70c0",
+    "lastAttemptHash": "cb5b8c61762c70c0",
+    "generatedAt": "2026-09-16T16:12:22+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7649,
+    "costUsd": 4.2492,
     "files": [
       "packages/lit/src/TreeGrid.stories.ts",
+      "packages/lit/src/TreeGrid.test.ts",
       "packages/lit/src/TreeGrid.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 16,
     "gates": {
       "parse": true,
       "contrast": true,

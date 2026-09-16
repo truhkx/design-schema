@@ -3,31 +3,26 @@ import { Tree, type TreeNode } from './Tree';
 
 const NODES: TreeNode[] = [
   {
-    id: 'inbox',
-    label: 'Inbox',
+    id: 'docs',
+    label: 'Documents',
     icon: 'folder',
-    badge: '12',
+    badge: '3',
     children: [
-      { id: 'inbox-updates', label: 'Updates', icon: 'file' },
-      { id: 'inbox-forums', label: 'Forums', icon: 'file' },
+      { id: 'invoices', label: 'Invoices', icon: 'file' },
+      { id: 'contracts', label: 'Contracts', icon: 'file' },
+      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },
     ],
   },
   {
-    id: 'projects',
-    label: 'Projects',
+    id: 'media',
+    label: 'Media',
     icon: 'folder',
     children: [
-      { id: 'projects-design-schema', label: 'Design Schema', icon: 'file' },
-      { id: 'projects-archive', label: 'Archive', icon: 'file', disabled: true },
+      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },
+      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },
     ],
   },
-  { id: 'starred', label: 'Starred', icon: 'folder', badge: '3' },
-  { id: 'docs', label: 'Documentation', icon: 'file', href: '/docs' },
-];
-
-const LAZY_NODES: TreeNode[] = [
-  { id: 'shared', label: 'Shared with me', children: 'lazy' },
-  { id: 'recent', label: 'Recent', children: 'lazy' },
+  { id: 'notes', label: 'Notes', icon: 'file' },
 ];
 
 const meta: Meta<typeof Tree> = {
@@ -36,7 +31,6 @@ const meta: Meta<typeof Tree> = {
   args: {
     label: 'Folders',
     nodes: NODES,
-    defaultExpanded: ['inbox'],
   },
   tags: ['autodocs'],
 };
@@ -47,56 +41,92 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 /* selectable */
-export const SelectableNone: Story = { args: { selectable: 'none' } };
-export const SelectableSingle: Story = { args: { selectable: 'single', defaultSelected: ['starred'] } };
-export const SelectableMultiple: Story = { args: { selectable: 'multiple', defaultSelected: ['starred', 'inbox-updates'] } };
+export const SelectableNone: Story = { args: { selectable: 'none', defaultExpanded: ['docs'] } };
+export const SelectableSingle: Story = { args: { selectable: 'single', defaultExpanded: ['docs'], defaultSelected: ['invoices'] } };
+export const SelectableMultiple: Story = {
+  args: { selectable: 'multiple', defaultExpanded: ['docs'], defaultSelected: ['invoices', 'notes'] },
+};
 
-/* headingLevel (visible only with showLabel) */
+/* headingLevel — visible with showLabel */
 export const HeadingLevel2: Story = { args: { showLabel: true, headingLevel: '2' } };
 export const HeadingLevel3: Story = { args: { showLabel: true, headingLevel: '3' } };
 export const HeadingLevel4: Story = { args: { showLabel: true, headingLevel: '4' } };
 
 /* notable states */
-export const ShowLabel: Story = { args: { showLabel: true } };
-
-export const GuidesHidden: Story = { args: { showGuides: false } };
-
 export const SelectChildren: Story = {
-  args: {
-    selectable: 'multiple',
-    selectChildren: true,
-    defaultExpanded: ['inbox', 'projects'],
-    defaultSelected: ['inbox-updates'],
-  },
+  args: { selectable: 'multiple', selectChildren: true, defaultExpanded: ['*'], defaultSelected: ['invoices'] },
 };
-
-export const SelectOnFocus: Story = { args: { selectable: 'single', selectOnFocus: true } };
-
-export const DefaultExpandAll: Story = { args: { defaultExpanded: ['*'] } };
-
-export const Collapsed: Story = { args: { defaultExpanded: [] } };
-
+export const GuidesHidden: Story = { args: { showGuides: false, defaultExpanded: ['*'] } };
+export const LazyLoading: Story = { args: { defaultExpanded: ['media', 'videos'] } };
 export const Empty: Story = { args: { nodes: [] } };
 
-/**
- * `children: "lazy"` nodes show the expand control and a loading placeholder until the caller
- * supplies real children through `onExpand`.
- */
-export const LazyChildren: Story = {
+/** Keyboard gate: present with the first branch open — Documents, Invoices, Contracts, Media, Notes are focusable. */
+export const Keyboard: Story = { args: { defaultExpanded: ['docs'] } };
+
+/* examples */
+
+/** The everyday file tree, one branch open, each node with its glyph. */
+export const FolderTree: Story = {
   args: {
-    nodes: LAZY_NODES,
-    defaultExpanded: ['shared'],
-    onExpand: () => undefined,
+    label: 'Folders',
+    defaultExpanded: ['docs'],
+    nodes: [
+      {
+        id: 'docs',
+        label: 'Documents',
+        icon: 'folder',
+        children: [
+          { id: 'invoices', label: 'Invoices', icon: 'file' },
+          { id: 'contracts', label: 'Contracts', icon: 'file' },
+        ],
+      },
+      { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },
+    ],
   },
 };
 
-/**
- * Open/present with at least three focusable children, for the keyboard gate: Inbox and its two
- * children (expanded by default), plus Projects, Starred and Documentation.
- */
-export const Keyboard: Story = {
+/** A settings sidebar whose visible heading names it and whose selection drives the panel beside it. */
+export const NavigationSidebar: Story = {
   args: {
+    label: 'Settings sections',
+    showLabel: true,
+    headingLevel: '2',
+    selectOnFocus: true,
+    nodes: [
+      { id: 'account', label: 'Account', href: '/settings/account' },
+      { id: 'billing', label: 'Billing', href: '/settings/billing' },
+    ],
+  },
+};
+
+/** Multi-select categories where choosing a parent chooses everything under it. */
+export const CategoryPickerWithCascade: Story = {
+  args: {
+    label: 'Categories',
     selectable: 'multiple',
-    defaultExpanded: ['inbox', 'projects'],
+    selectChildren: true,
+    defaultExpanded: ['*'],
+    nodes: [
+      {
+        id: 'clothing',
+        label: 'Clothing',
+        children: [
+          { id: 'shirts', label: 'Shirts' },
+          { id: 'shoes', label: 'Shoes' },
+        ],
+      },
+    ],
+  },
+};
+
+/** A tree that only expands and collapses, with counts after each branch. */
+export const ReadOnlySiteMap: Story = {
+  args: {
+    label: 'Site map',
+    selectable: 'none',
+    nodes: [
+      { id: 'guides', label: 'Guides', badge: '12', children: [{ id: 'start', label: 'Getting started' }] },
+      { id: 'api', label: 'API', badge: '48', children: 'lazy' },
+    ],
   },
 };

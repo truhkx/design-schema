@@ -1,52 +1,39 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DataGrid, type DataGridColumn, type DataGridRow } from './DataGrid';
 
-interface Product extends DataGridRow {
-  name: string;
-  category: string;
-  qty: number;
-  price: number;
-  active: boolean;
-}
-
-const DATA: Product[] = [
-  { id: 'sku-1001', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39.0, active: true },
-  { id: 'sku-1002', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129.0, active: true },
-  { id: 'sku-1003', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5, active: false },
-  { id: 'sku-1004', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89.0, active: true },
-  { id: 'sku-1005', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24.0, active: true },
-];
-
-const CATEGORY_OPTIONS = [
-  { value: 'Lighting', label: 'Lighting' },
-  { value: 'Furniture', label: 'Furniture' },
-  { value: 'Decor', label: 'Decor' },
-];
-
 const COLUMNS: DataGridColumn[] = [
-  { key: 'name', header: 'Name', isRowHeader: true, width: 200, resizable: true },
-  { key: 'category', header: 'Category', width: 160, editable: true, editor: 'select', options: CATEGORY_OPTIONS },
+  { key: 'sku', header: 'SKU', isRowHeader: true, width: 120, pinned: 'start' },
+  { key: 'name', header: 'Name', width: 200, resizable: true },
+  {
+    key: 'category',
+    header: 'Category',
+    editable: true,
+    editor: 'select',
+    options: [
+      { value: 'Lighting', label: 'Lighting' },
+      { value: 'Furniture', label: 'Furniture' },
+      { value: 'Decor', label: 'Decor' },
+    ],
+  },
   {
     key: 'qty',
     header: 'Qty',
     align: 'end',
-    width: 100,
+    width: 80,
     sortable: true,
     editable: true,
     editor: 'number',
     validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Qty must be zero or more.'),
   },
-  {
-    key: 'price',
-    header: 'Price (USD)',
-    abbr: 'Price',
-    align: 'end',
-    width: 140,
-    sortable: true,
-    editable: true,
-    editor: 'number',
-    render: (row) => `$${(row as Product).price.toFixed(2)}`,
-  },
+  { key: 'price', header: 'Price (USD)', abbr: 'Price in US dollars', align: 'end', sortable: true },
+];
+
+const DATA: DataGridRow[] = [
+  { id: 'a', sku: 'A-1', name: 'Aster desk lamp', category: 'Lighting', qty: 42, price: 39 },
+  { id: 'b', sku: 'B-2', name: 'Bramble side table', category: 'Furniture', qty: 8, price: 129 },
+  { id: 'c', sku: 'C-3', name: 'Cedar wall clock', category: 'Decor', qty: 15, price: 54.5 },
+  { id: 'd', sku: 'D-4', name: 'Driftwood shelf', category: 'Furniture', qty: 23, price: 89 },
+  { id: 'e', sku: 'E-5', name: 'Ember candle set', category: 'Decor', qty: 60, price: 24 },
 ];
 
 const meta: Meta<typeof DataGrid> = {
@@ -77,50 +64,103 @@ export const DensityComfortable: Story = { args: { density: 'comfortable' } };
 
 /* height */
 export const HeightContent: Story = { args: { height: 'content' } };
-export const HeightViewport: Story = {
-  args: { height: 'viewport' },
-  decorators: [(Story) => <div style={{ blockSize: '400px' }}><Story /></div>], // literal-ok: Storybook canvas height, not a component style
-};
+export const HeightViewport: Story = { args: { height: 'viewport' } };
 export const HeightFixed: Story = { args: { height: 'fixed' } };
 
-/* notable states */
-export const HideCaption: Story = { args: { hideCaption: true } };
-
-export const NoStickyHeader: Story = { args: { stickyHeader: false } };
-
-export const Empty: Story = { args: { data: [] } };
-
-export const EmptyWithMessage: Story = { args: { data: [], emptyMessage: 'No products match these filters.' } };
-
-export const Loading: Story = { args: { loading: true } };
-
-export const DefaultSort: Story = { args: { defaultSort: { column: 'price', direction: 'descending' } } };
-
-export const Editable: Story = { args: { editable: true, selectable: 'cell' } };
-
-export const PinnedColumns: Story = {
+/* examples */
+export const PriceList: Story = {
   args: {
+    caption: 'Price list',
     columns: [
-      { ...COLUMNS[0]!, pinned: 'start' },
-      ...COLUMNS.slice(1, -1),
-      { ...COLUMNS[COLUMNS.length - 1]!, pinned: 'end' },
+      { key: 'sku', header: 'SKU', isRowHeader: true, width: 160 },
+      { key: 'name', header: 'Name' },
+      { key: 'price', header: 'Price', align: 'end', sortable: true },
+    ],
+    data: [
+      { id: 'a', sku: 'A-1', name: 'Widget', price: 10 },
+      { id: 'b', sku: 'B-2', name: 'Sprocket', price: 20 },
     ],
   },
 };
 
+export const EditableCells: Story = {
+  args: {
+    caption: 'Stock levels',
+    editable: true,
+    columns: [
+      { key: 'sku', header: 'SKU', isRowHeader: true },
+      { key: 'onHand', header: 'On hand', align: 'end', editable: true, editor: 'number' },
+    ],
+    data: [
+      { id: 'a', sku: 'A-1', onHand: 12 },
+      { id: 'b', sku: 'B-2', onHand: 4 },
+    ],
+  },
+};
+
+export const RowSelectionForBulkActions: Story = {
+  args: {
+    caption: 'Orders',
+    selectable: 'row',
+    density: 'comfortable',
+    columns: [
+      { key: 'order', header: 'Order', isRowHeader: true },
+      { key: 'customer', header: 'Customer' },
+    ],
+    data: [
+      { id: 'a', order: '1001', customer: 'Ana Souza' },
+      { id: 'b', order: '1002', customer: 'Bo Lin' },
+    ],
+  },
+};
+
+export const RangeSelectionInAFixedHeightGrid: Story = {
+  args: {
+    caption: 'Daily figures',
+    selectable: 'range',
+    height: 'fixed',
+    columns: [
+      { key: 'day', header: 'Day', isRowHeader: true },
+      { key: 'visits', header: 'Visits', align: 'end' },
+      { key: 'signups', header: 'Signups', align: 'end' },
+    ],
+    data: [
+      { id: 'a', day: 'Monday', visits: 1200, signups: 30 },
+      { id: 'b', day: 'Tuesday', visits: 1450, signups: 41 },
+    ],
+  },
+};
+
+/* notable states */
+export const HideCaption: Story = { args: { hideCaption: true } };
+export const Loading: Story = { args: { loading: true } };
+export const Empty: Story = { args: { data: [] } };
+export const EmptyMessage: Story = { args: { data: [], emptyMessage: 'No prices loaded.' } };
+export const DefaultSort: Story = { args: { defaultSort: { column: 'price', direction: 'descending' } } };
+export const Editable: Story = { args: { editable: true } };
+export const NoStatusBar: Story = { args: { showStatusBar: false } };
 export const ServerPaged: Story = {
   args: {
-    data: DATA.slice(0, 2),
     rowCount: 500,
     onRangeNeeded: () => undefined,
   },
 };
-
-export const HideStatusBar: Story = { args: { showStatusBar: false } };
+export const ManyRows: Story = {
+  args: {
+    data: Array.from({ length: 2000 }, (_, i) => ({
+      id: `r${i}`,
+      sku: `S-${i + 1}`,
+      name: `Item ${i + 1}`,
+      category: 'Decor',
+      qty: i % 50,
+      price: (i % 40) + 1,
+    })),
+  },
+};
 
 /**
- * Open/present with at least three focusable children, for the keyboard gate: the sortable
- * headers' Buttons and the select-all Checkbox plus one per row.
+ * The grid present with a sortable header, the select-all Checkbox and one Checkbox per row — well over
+ * three focusable children — for the keyboard gate. No decorators.
  */
 export const Keyboard: Story = {
   args: {

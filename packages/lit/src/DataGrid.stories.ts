@@ -1,39 +1,38 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import './DataGrid.js';
 import type {
-  DataGridCellChangeDetail,
   DataGridColumn,
-  DataGridColumnResizeDetail,
   DataGridDensity,
-  DataGridEditStartDetail,
   DataGridHeight,
-  DataGridRangeNeededDetail,
   DataGridRow,
   DataGridSelectable,
-  DataGridSelectionChangeDetail,
-  DataGridSortChangeDetail,
+  DataGridSort,
 } from './DataGrid.js';
 
 interface DataGridArgs {
   caption: string;
-  hideCaption: boolean;
+  hideCaption?: boolean | undefined;
   columns: DataGridColumn[];
   data: DataGridRow[];
   rowCount?: number | undefined;
-  selectable: DataGridSelectable;
-  editable: boolean;
-  density: DataGridDensity;
-  stickyHeader: boolean;
-  height: DataGridHeight;
-  loading: boolean;
+  sort?: DataGridSort | undefined;
+  defaultSort?: DataGridSort | undefined;
+  selectable?: DataGridSelectable | undefined;
+  selected?: string[] | undefined;
+  editable?: boolean | undefined;
+  density?: DataGridDensity | undefined;
+  stickyHeader?: boolean | undefined;
+  height?: DataGridHeight | undefined;
+  loading?: boolean | undefined;
   emptyMessage?: string | undefined;
-  showStatusBar: boolean;
+  showStatusBar?: boolean | undefined;
 }
 
-const priceListColumns: DataGridColumn[] = [
-  { key: 'name', header: 'Item', isRowHeader: true, resizable: true, width: 180 },
-  { key: 'sku', header: 'SKU', width: 120 },
+const columns: DataGridColumn[] = [
+  { key: 'sku', header: 'SKU', isRowHeader: true, width: 120, pinned: 'start' },
+  { key: 'name', header: 'Name', width: 200, resizable: true, editable: true, editor: 'text' },
   {
     key: 'price',
     header: 'Price (USD)',
@@ -42,40 +41,29 @@ const priceListColumns: DataGridColumn[] = [
     editable: true,
     editor: 'number',
     width: 120,
-    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a positive amount.'),
+    validate: (value) => (typeof value === 'number' && value >= 0 ? undefined : 'Enter a price of 0 or more.'),
   },
-  {
-    key: 'quantity',
-    header: 'Qty',
-    abbr: 'Quantity',
-    align: 'end',
-    sortable: true,
-    editable: true,
-    editor: 'number',
-    width: 100,
-  },
+  { key: 'qty', header: 'Qty', abbr: 'Quantity', align: 'end', sortable: true, width: 80 },
   {
     key: 'category',
     header: 'Category',
+    width: 160,
     editable: true,
     editor: 'select',
-    width: 160,
     options: [
       { value: 'hardware', label: 'Hardware' },
       { value: 'software', label: 'Software' },
-      { value: 'services', label: 'Services' },
     ],
   },
-  { key: 'inStock', header: 'In stock', editable: true, editor: 'checkbox', width: 100 },
+  { key: 'inStock', header: 'In stock', width: 96, editable: true, editor: 'checkbox' },
 ];
 
-const priceListRows: DataGridRow[] = [
-  { id: 'sku-1001', name: 'USB-C cable', sku: 'CBL-1001', price: 12.5, quantity: 240, category: 'hardware', inStock: true },
-  { id: 'sku-1002', name: 'Wireless mouse', sku: 'MSE-1002', price: 24.0, quantity: 85, category: 'hardware', inStock: true },
-  { id: 'sku-1003', name: 'Design Schema license', sku: 'LIC-1003', price: 199.0, quantity: 12, category: 'software', inStock: false },
-  { id: 'sku-1004', name: 'Onboarding session', sku: 'SVC-1004', price: 450.0, quantity: 4, category: 'services', inStock: true },
-  { id: 'sku-1005', name: 'Mechanical keyboard', sku: 'KEY-1005', price: 89.0, quantity: 32, category: 'hardware', inStock: true },
-  { id: 'sku-1006', name: 'Cloud storage plan', sku: 'LIC-1006', price: 15.0, quantity: 500, category: 'software', inStock: true },
+const data: DataGridRow[] = [
+  { id: 'a', sku: 'A-1', name: 'Widget', price: 10, qty: 240, category: 'hardware', inStock: true },
+  { id: 'b', sku: 'B-2', name: 'Sprocket', price: 20, qty: 85, category: 'hardware', inStock: true },
+  { id: 'c', sku: 'C-3', name: 'License', price: 199, qty: 12, category: 'software', inStock: false },
+  { id: 'd', sku: 'D-4', name: 'Gear', price: 45, qty: 4, category: 'hardware', inStock: true },
+  { id: 'e', sku: 'E-5', name: 'Plan', price: 15, qty: 500, category: 'software', inStock: true },
 ];
 
 const meta: Meta<DataGridArgs> = {
@@ -90,46 +78,30 @@ const meta: Meta<DataGridArgs> = {
     selectable: { control: 'select', options: ['none', 'row', 'cell', 'range'] },
     density: { control: 'select', options: ['compact', 'comfortable'] },
     height: { control: 'select', options: ['content', 'viewport', 'fixed'] },
-    hideCaption: { control: 'boolean' },
-    editable: { control: 'boolean' },
-    stickyHeader: { control: 'boolean' },
-    loading: { control: 'boolean' },
-    showStatusBar: { control: 'boolean' },
   },
   args: {
     caption: 'Price list',
-    hideCaption: false,
-    columns: priceListColumns,
-    data: priceListRows,
-    selectable: 'none',
-    editable: false,
-    density: 'compact',
-    stickyHeader: true,
-    height: 'viewport',
-    loading: false,
-    showStatusBar: true,
+    columns,
+    data,
   },
   render: (args) => html`
     <ds-data-grid
       caption=${args.caption}
-      ?hide-caption=${args.hideCaption}
+      ?hide-caption=${args.hideCaption ?? false}
       .columns=${args.columns}
       .data=${args.data}
-      selectable=${args.selectable}
-      ?editable=${args.editable}
-      density=${args.density}
-      ?no-sticky-header=${!args.stickyHeader}
-      height=${args.height}
-      ?loading=${args.loading}
-      empty-message=${args.emptyMessage ?? ''}
-      ?no-status-bar=${!args.showStatusBar}
-      @sort-change=${(event: CustomEvent<DataGridSortChangeDetail>) => console.log('sort-change', event.detail)}
-      @selection-change=${(event: CustomEvent<DataGridSelectionChangeDetail>) =>
-        console.log('selection-change', event.detail)}
-      @cell-change=${(event: CustomEvent<DataGridCellChangeDetail>) => console.log('cell-change', event.detail)}
-      @edit-start=${(event: CustomEvent<DataGridEditStartDetail>) => console.log('edit-start', event.detail)}
-      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}
-      @column-resize=${(event: CustomEvent<DataGridColumnResizeDetail>) => console.log('column-resize', event.detail)}
+      .rowCount=${args.rowCount}
+      .sort=${args.sort}
+      .defaultSort=${args.defaultSort}
+      selectable=${args.selectable ?? 'none'}
+      .selected=${args.selected}
+      ?editable=${args.editable ?? false}
+      density=${args.density ?? 'compact'}
+      ?no-sticky-header=${args.stickyHeader === false}
+      height=${args.height ?? 'viewport'}
+      ?loading=${args.loading ?? false}
+      empty-message=${ifDefined(args.emptyMessage)}
+      ?no-status-bar=${args.showStatusBar === false}
     ></ds-data-grid>
   `,
 };
@@ -156,30 +128,77 @@ export const HeightFixed: Story = { args: { height: 'fixed' } };
 
 /* notable states */
 export const HideCaption: Story = { args: { hideCaption: true } };
-export const Editable: Story = { args: { editable: true, selectable: 'range' } };
 export const Loading: Story = { args: { loading: true } };
 export const Empty: Story = { args: { data: [] } };
-export const EmptyMessage: Story = { args: { data: [], emptyMessage: 'No items match these filters.' } };
 export const NoStatusBar: Story = { args: { showStatusBar: false } };
+export const DefaultSort: Story = { args: { defaultSort: { column: 'price', direction: 'descending' } } };
+export const ServerPaged: Story = { args: { rowCount: 200, height: 'fixed' } };
 
-export const ServerPaged: Story = {
-  args: { data: priceListRows.slice(0, 3), rowCount: 200, height: 'fixed' },
-  render: (args) => html`
-    <ds-data-grid
-      caption=${args.caption}
-      .columns=${args.columns}
-      .data=${args.data}
-      row-count=${args.rowCount ?? ''}
-      height="fixed"
-      @range-needed=${(event: CustomEvent<DataGridRangeNeededDetail>) => console.log('range-needed', event.detail)}
-    ></ds-data-grid>
-  `,
+/* examples */
+export const PriceList: Story = {
+  args: {
+    caption: 'Price list',
+    columns: [
+      { key: 'sku', header: 'SKU', isRowHeader: true, width: 160 },
+      { key: 'name', header: 'Name' },
+      { key: 'price', header: 'Price', align: 'end', sortable: true },
+    ],
+    data: [
+      { id: 'a', sku: 'A-1', name: 'Widget', price: 10 },
+      { id: 'b', sku: 'B-2', name: 'Sprocket', price: 20 },
+    ],
+  },
 };
 
-/**
- * A grid with a sortable, editable price list and range selection — enough focusable structure (header sort
- * button, resizable column, several editable cells) to exercise arrow navigation, Enter/F2 editing and Escape.
- */
+export const EditableCells: Story = {
+  args: {
+    caption: 'Stock levels',
+    editable: true,
+    columns: [
+      { key: 'sku', header: 'SKU', isRowHeader: true },
+      { key: 'onHand', header: 'On hand', align: 'end', editable: true, editor: 'number' },
+    ],
+    data: [
+      { id: 'a', sku: 'A-1', onHand: 12 },
+      { id: 'b', sku: 'B-2', onHand: 4 },
+    ],
+  },
+};
+
+export const RowSelectionForBulkActions: Story = {
+  args: {
+    caption: 'Orders',
+    selectable: 'row',
+    density: 'comfortable',
+    columns: [
+      { key: 'order', header: 'Order', isRowHeader: true },
+      { key: 'customer', header: 'Customer' },
+    ],
+    data: [
+      { id: 'a', order: '1001', customer: 'Ana Souza' },
+      { id: 'b', order: '1002', customer: 'Bo Lin' },
+    ],
+  },
+};
+
+export const RangeSelectionInAFixedHeightGrid: Story = {
+  args: {
+    caption: 'Daily figures',
+    selectable: 'range',
+    height: 'fixed',
+    columns: [
+      { key: 'day', header: 'Day', isRowHeader: true },
+      { key: 'visits', header: 'Visits', align: 'end' },
+      { key: 'signups', header: 'Signups', align: 'end' },
+    ],
+    data: [
+      { id: 'a', day: 'Monday', visits: 1200, signups: 30 },
+      { id: 'b', day: 'Tuesday', visits: 1450, signups: 41 },
+    ],
+  },
+};
+
+/** The grid present with sortable headers, a resizable column and editable cells to navigate between. */
 export const Keyboard: Story = {
-  args: { selectable: 'range', editable: true },
+  args: { selectable: 'range', editable: true, height: 'content' },
 };

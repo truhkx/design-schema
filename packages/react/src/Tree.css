@@ -2,13 +2,10 @@
 
 .ds-tree {
   --ds-tree-indent: var(--space-5);
-  --ds-tree-row-height: var(--size-target-min);
   --ds-tree-row-padding-inline: var(--space-2);
   --ds-tree-row-radius: var(--radius-sm);
   --ds-tree-row-gap: var(--layout-gap-tight);
   --ds-tree-row-hover: var(--color-action-ghost-background-hover);
-  --ds-tree-row-selected-border-width: var(--border-width-focus);
-  --ds-tree-expand-button-size: var(--size-target-min);
   --ds-tree-guide-line: var(--color-border);
   --ds-tree-guide-line-width: var(--border-width-thin);
   --ds-tree-checkbox-gap: var(--layout-gap-tight);
@@ -28,25 +25,43 @@
   color: var(--color-foreground);
 }
 
-.ds-tree__heading {
-  margin-block-end: var(--space-2);
-}
-
-.ds-tree__list,
+.ds-tree__tree,
 .ds-tree__group {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+.ds-tree__group {
+  position: relative;
+}
+
+/* guideLine / guideLineWidth: under an open parent, centred on its chevron column. */
+.ds-tree__group::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(
+    var(--ds-tree-row-padding-inline) + var(--ds-tree-indent) * var(--ds-tree-level) + var(--size-target-min) / 2
+  );
+  inline-size: var(--ds-tree-guide-line-width);
+  background-color: var(--ds-tree-guide-line);
+  pointer-events: none;
+}
+
+.ds-tree--hide-guides .ds-tree__group::before {
+  display: none;
+}
+
 .ds-tree__node {
   display: block;
 }
 
-/* focusRing / focusRingWidth: locked. Real DOM focus lands on the treeitem itself (roving tabindex). */
+/* focusRing / focusRingWidth, locked. Focus is on the treeitem; the ring is drawn on its own row. */
 .ds-tree__node:focus-visible {
   outline: none;
 }
+
 .ds-tree__node:focus-visible > .ds-tree__row {
   outline: var(--border-width-focus) solid var(--color-border-focus);
   outline-offset: calc(-1 * var(--border-width-focus));
@@ -57,13 +72,12 @@
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: var(--ds-tree-row-gap);
-  min-block-size: var(--ds-tree-row-height);
-  /* minTarget: size.target.min, locked */
+  /* rowHeight / minTarget: size.target.min, locked */
+  min-block-size: var(--size-target-min);
   min-inline-size: var(--size-target-min);
-  padding-inline-end: var(--ds-tree-row-padding-inline);
+  padding-inline: var(--ds-tree-row-padding-inline);
   border-radius: var(--ds-tree-row-radius);
-  cursor: pointer;
+  cursor: default;
 }
 
 @media (hover: hover) {
@@ -72,59 +86,76 @@
   }
 }
 
-/* rowSelected / rowSelectedBorder: locked. */
+/* rowSelected / rowSelectedBorder / rowSelectedBorderWidth, locked: a fill plus a start-edge bar. */
 .ds-tree__row--selected {
   background-color: var(--color-background-strong);
-  box-shadow: inset var(--ds-tree-row-selected-border-width) 0 0 0 var(--color-control-selected-background);
+  box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+}
+
+.ds-tree:dir(rtl) .ds-tree__row--selected {
+  box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
 }
 
 .ds-tree__row--disabled {
-  cursor: default;
   opacity: var(--ds-tree-disabled-opacity);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-tree__row {
-    transition: background-color var(--ds-tree-transition) var(--motion-easing-standard);
-  }
+.ds-tree__row--placeholder:hover {
+  background-color: transparent;
 }
 
 .ds-tree__indent {
-  position: relative;
   flex: none;
-  align-self: stretch;
+  inline-size: calc(var(--ds-tree-indent) * var(--ds-tree-level));
 }
 
-.ds-tree__guide {
-  position: absolute;
-  inset-block: 0;
-  inline-size: var(--ds-tree-guide-line-width);
-  background-color: var(--ds-tree-guide-line);
+.ds-tree__content {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--ds-tree-row-gap);
+  min-inline-size: 0;
 }
 
-.ds-tree__expand-button {
+/* expandButtonSize: size.target.min, locked. The column is reserved on leaves too so labels align. */
+.ds-tree__expand {
   flex: none;
-  min-inline-size: var(--ds-tree-expand-button-size);
-  min-block-size: var(--ds-tree-expand-button-size);
-  --ds-button-padding-inline: 0;
-  --ds-button-padding-block: 0;
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--size-target-min);
+  min-block-size: var(--size-target-min);
 }
 
-.ds-tree__expand-icon {
-  transform: rotate(0deg);
+.ds-tree__chevron {
+  display: inline-flex;
 }
-.ds-tree__expand-icon--expanded {
+
+.ds-tree__chevron--expanded {
   transform: rotate(90deg);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .ds-tree__expand-icon {
-    transition: transform var(--ds-tree-transition) var(--motion-easing-standard);
-  }
+
+.ds-tree:dir(rtl) .ds-tree__chevron {
+  transform: scaleX(-1);
 }
 
-.ds-tree__expand-spacer {
-  flex: none;
-  inline-size: var(--ds-tree-expand-button-size);
+.ds-tree:dir(rtl) .ds-tree__chevron--expanded {
+  transform: rotate(90deg);
+}
+
+.ds-tree__main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--ds-tree-checkbox-gap);
+  min-inline-size: 0;
+}
+
+.ds-tree__body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--ds-tree-row-gap);
+  min-inline-size: 0;
 }
 
 .ds-tree__checkbox {
@@ -134,7 +165,6 @@
   place-items: center;
   inline-size: var(--ds-tree-checkbox-size);
   block-size: var(--ds-tree-checkbox-size);
-  margin-inline-end: var(--ds-tree-checkbox-gap);
   /* checkboxBorder: locked */
   border: var(--border-width-thin) solid var(--color-control-border);
   border-radius: var(--ds-tree-checkbox-radius);
@@ -142,41 +172,33 @@
   /* checkboxMark: locked */
   color: var(--color-control-selected-foreground);
 }
-.ds-tree__checkbox--filled {
-  /* checkboxSelected: locked, fills over checkboxBackground when checked or indeterminate */
+
+/* checkboxSelected: locked, fill when checked or indeterminate. */
+.ds-tree__checkbox--checked {
   border-color: var(--color-control-selected-background);
   background-color: var(--color-control-selected-background);
 }
 
 .ds-tree__icon {
   flex: none;
+  display: inline-flex;
   /* iconColor: color.foreground.muted, locked */
   color: var(--color-foreground-muted);
 }
 
 .ds-tree__label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-decoration: none;
-  color: inherit;
+  flex: 1;
+  min-inline-size: 0;
 }
 
-.ds-tree__badge {
-  flex: none;
-  margin-inline-start: auto;
-  /* badgeColor: color.foreground.muted, locked */
-  color: var(--color-foreground-muted);
-}
+@media (prefers-reduced-motion: no-preference) {
+  .ds-tree__row {
+    transition: background-color var(--ds-tree-transition) var(--motion-easing-standard);
+  }
 
-.ds-tree__loading {
-  /* loadingColor: reuses color.foreground.muted, as the label of a disabled/inert row would. */
-  color: var(--color-foreground-muted);
-}
-
-.ds-tree__empty {
-  display: block;
-  padding-block: var(--space-2);
+  .ds-tree__chevron {
+    transition: transform var(--ds-tree-transition) var(--motion-easing-standard);
+  }
 }
 
 .ds-tree__visually-hidden {

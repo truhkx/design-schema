@@ -1,24 +1,25 @@
-import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
+import { LitElement, css, html, nothing, type CSSResult, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
+import { live } from 'lit/directives/live.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
-import './Heading.js';
 import './Button.js';
 import './Checkbox.js';
+import './DatePicker.js';
+import './Heading.js';
 import './Icon.js';
-import './Text.js';
 import './Input.js';
 import './NumberInput.js';
 import './Select.js';
-import './DatePicker.js';
-import type { CheckboxChangeDetail } from './Checkbox.js';
-import type { InputChangeDetail } from './Input.js';
-import type { NumberInputChangeDetail } from './NumberInput.js';
-import type { SelectChangeDetail, SelectValue } from './Select.js';
-import type { DatePickerChangeDetail, DatePickerValue } from './DatePicker.js';
-import type { HeadingOverridableBinding } from './Heading.js';
+import './Text.js';
+import type { CheckboxChangeDetail, DsCheckbox } from './Checkbox.js';
+import type { DatePickerOverridableBinding, DsDatePicker } from './DatePicker.js';
+import type { DsInput, InputOverridableBinding } from './Input.js';
+import type { DsNumberInput, NumberInputOverridableBinding } from './NumberInput.js';
+import type { DsSelect, SelectOverridableBinding } from './Select.js';
 
 /** A single record. `id` must be stable across renders. */
 export interface DataGridRow {
@@ -35,22 +36,25 @@ export interface DataGridColumnOption {
   label: string;
 }
 
-/** A column definition. Exactly one column should set `isRowHeader`. */
+/** A column definition. Exactly one column may set `isRowHeader`. */
 export interface DataGridColumn {
   key: string;
   header: string;
+  /** The spoken form of a short header ("Quantity" for "Qty"). */
   abbr?: string | undefined;
   align?: DataGridColumnAlign | undefined;
   sortable?: boolean | undefined;
-  /** Pixel width; a multiple of space.1 (e.g. 160). Grid columns do not auto-size. */
+  /** Pixel width, a multiple of space.1; 160 when omitted. Grid columns do not auto-size. */
   width?: number | undefined;
   minWidth?: number | undefined;
   resizable?: boolean | undefined;
   isRowHeader?: boolean | undefined;
+  /** Pinned columns must be contiguous at the start or end of `columns`. */
   pinned?: DataGridColumnPinned | undefined;
   editable?: boolean | undefined;
   editor?: DataGridEditorKind | undefined;
   options?: DataGridColumnOption[] | undefined;
+  /** Cell content: a lit `TemplateResult`, string or number. */
   render?: ((row: DataGridRow) => unknown) | undefined;
   validate?: ((value: unknown, row: DataGridRow) => string | undefined) | undefined;
 }
@@ -76,34 +80,38 @@ export interface DataGridRangeRef {
   to: DataGridCellRef;
 }
 
+/** Row ids (`row`), one cell (`cell`) or a range (`range`), matching `selectable`. */
+export type DataGridSelection = string[] | DataGridCellRef | DataGridRangeRef;
+
+/** A committed cell value; `undefined` when Delete/Backspace clears the cell. */
+export type DataGridCellValue = string | number | boolean | undefined;
+
 /** Detail carried by the `sort-change` CustomEvent. */
 export interface DataGridSortChangeDetail {
   column: string;
   direction: DataGridSortDirection;
 }
 
-/** Detail carried by the `selection-change` CustomEvent; exactly one of `rows`/`cell`/`range` is set, matching `selectable`. */
+/** Detail carried by the `selection-change` CustomEvent. */
 export interface DataGridSelectionChangeDetail {
-  rows?: string[] | undefined;
-  cell?: DataGridCellRef | null | undefined;
-  range?: DataGridRangeRef | null | undefined;
+  selection: DataGridSelection;
 }
 
-/** Detail carried by the `cell-change` CustomEvent. */
+/** Detail carried by the `cell-change` CustomEvent. The caller updates `data`; the grid shows the old value until then. */
 export interface DataGridCellChangeDetail {
   rowId: string;
   column: string;
-  value: unknown;
-  previous: unknown;
+  value: DataGridCellValue;
+  previous: DataGridCellValue;
 }
 
-/** Detail carried by the `edit-start` CustomEvent. Cancelable: `preventDefault()` refuses the edit. */
+/** Detail carried by the cancelable `edit-start` CustomEvent: `preventDefault()` refuses the edit. */
 export interface DataGridEditStartDetail {
   rowId: string;
   column: string;
 }
 
-/** Detail carried by the `range-needed` CustomEvent. */
+/** Detail carried by the `range-needed` CustomEvent: inclusive row indexes to load. */
 export interface DataGridRangeNeededDetail {
   start: number;
   end: number;
@@ -118,28 +126,37 @@ export interface DataGridColumnResizeDetail {
 /* copy.* — used verbatim */
 const COPY_SORT_ASCENDING = (column: string): string => `Sort by ${column}, ascending`;
 const COPY_SORT_DESCENDING = (column: string): string => `Sort by ${column}, descending`;
-const COPY_SORTED_ANNOUNCEMENT = (column: string, direction: DataGridSortDirection): string =>
-  `Sorted by ${column}, ${direction}`;
+const COPY_SORTED_ANNOUNCEMENT = (column: string, direction: string): string => `Sorted by ${column}, ${direction}`;
 const COPY_SELECT_ALL = 'Select all rows';
 const COPY_SELECT_ROW = (rowName: string): string => `Select ${rowName}`;
 const COPY_SELECTED_ROWS = (count: number, total: number): string => `${count} of ${total} rows selected`;
 const COPY_SELECTED_RANGE = (rows: number, columns: number): string => `${rows} rows by ${columns} columns selected`;
-const COPY_COPIED = (cells: number): string => `Copied ${cells} cells`;
+const COPY_COPIED = {
+  one: (cells: number): string => `Copied ${cells} cell`,
+  other: (cells: number): string => `Copied ${cells} cells`,
+};
 const COPY_EDITING = (column: string): string => `Editing ${column}. Enter to save, Escape to cancel.`;
-const COPY_INVALID = (message: string): string => message;
-const COPY_ROW_COUNT = (count: number): string => `${count} rows`;
+const COPY_INVALID = (message: string): string => `${message}`;
+const COPY_ROW_COUNT = {
+  one: (count: number): string => `${count} row`,
+  other: (count: number): string => `${count} rows`,
+};
 const COPY_POSITION = (row: number, column: string): string => `Row ${row}, ${column}`;
 const COPY_RESIZE = (column: string): string => `Resize ${column}`;
 const COPY_LOADING = 'Loading';
 const COPY_EMPTY = 'Nothing to show.';
 const COPY_SCROLL_HINT = 'Scroll sideways to see more columns';
 
+/** The documented column width when `width` is omitted (literal-ok: the doc's pixel default, a multiple of space.1). */
 const DEFAULT_COLUMN_WIDTH = 160;
-const MIN_COLUMN_WIDTH = 64;
-const SELECT_COLUMN_KEY = '__select__';
 
-/** Negates a boolean attribute: `no-sticky-header`/`no-status-bar` present means the property is `false`. */
-const NEGATED_BOOLEAN_CONVERTER = {
+/** Selects `one`/`other` with the document locale's plural rules. */
+function pluralForm(count: number): 'one' | 'other' {
+  return new Intl.PluralRules(document.documentElement.lang || undefined).select(count) === 'one' ? 'one' : 'other';
+}
+
+/** `showStatusBar`/`stickyHeader` default true, so their attributes are the negated `no-status-bar`/`no-sticky-header`. */
+const NEGATED_BOOLEAN = {
   fromAttribute(value: string | null): boolean {
     return value === null;
   },
@@ -148,11 +165,11 @@ const NEGATED_BOOLEAN_CONVERTER = {
   },
 };
 
-/** Overridable style hooks; see the `overrides` property. Accessibility-bearing bindings (`surface`, `headerSurface`,
-    `headerColor`, `rowSelected`, `rowSelectedBorder`, `cellColor`, `cellMutedColor`, `cellFocusRing`,
-    `cellEditingBackground`, `cellEditingBorder`, `cellInvalidBorder`, `cellInvalidBackground`,
-    `cellInvalidForeground`, `rangeBackground`, `rangeBorder`, `statusBarSurface`, `statusBarColor`, `minTarget`,
-    `focusRing`, `focusRingWidth`) are locked and excluded. */
+/**
+ * Overridable style hooks; see the `overrides` property. Accessibility-bearing bindings (`surface`, `headerSurface`,
+ * `headerColor`, `rowHeight`, `rowHeightComfortable`, `rowSelected*`, `cellColor`, `cellMutedColor`, `cellFocusRing*`,
+ * `cellEditing*`, `cellInvalid*`, `range*`, `statusBarSurface`, `statusBarColor`, `minTarget`, `focusRing*`) are locked.
+ */
 export type DataGridOverridableBinding =
   | 'headerWeight'
   | 'headerSize'
@@ -161,16 +178,12 @@ export type DataGridOverridableBinding =
   | 'headerShadow'
   | 'gridLine'
   | 'gridLineWidth'
-  | 'rowHeight'
-  | 'rowHeightComfortable'
   | 'rowHover'
-  | 'rowSelectedBorderWidth'
   | 'cellPaddingInline'
-  | 'cellFocusRingWidth'
-  | 'rangeBorderWidth'
   | 'pinnedShadow'
   | 'resizeHandle'
   | 'resizeHandleWidth'
+  | 'resizeStep'
   | 'statusBarSize'
   | 'statusBarPadding'
   | 'captionSize'
@@ -191,16 +204,12 @@ const HOOKS: Record<DataGridOverridableBinding, string> = {
   headerShadow: '--ds-data-grid-header-shadow',
   gridLine: '--ds-data-grid-grid-line',
   gridLineWidth: '--ds-data-grid-grid-line-width',
-  rowHeight: '--ds-data-grid-row-height',
-  rowHeightComfortable: '--ds-data-grid-row-height-comfortable',
   rowHover: '--ds-data-grid-row-hover',
-  rowSelectedBorderWidth: '--ds-data-grid-row-selected-border-width',
   cellPaddingInline: '--ds-data-grid-cell-padding-inline',
-  cellFocusRingWidth: '--ds-data-grid-cell-focus-ring-width',
-  rangeBorderWidth: '--ds-data-grid-range-border-width',
   pinnedShadow: '--ds-data-grid-pinned-shadow',
   resizeHandle: '--ds-data-grid-resize-handle',
   resizeHandleWidth: '--ds-data-grid-resize-handle-width',
+  resizeStep: '--ds-data-grid-resize-step',
   statusBarSize: '--ds-data-grid-status-bar-size',
   statusBarPadding: '--ds-data-grid-status-bar-padding',
   captionSize: '--ds-data-grid-caption-size',
@@ -214,61 +223,95 @@ const HOOKS: Record<DataGridOverridableBinding, string> = {
   transition: '--ds-data-grid-transition',
 };
 
-let idCounter = 0;
-function nextDataGridId(): string {
-  idCounter += 1;
-  return `ds-data-grid-${idCounter}`;
+/* Editors are composed with their inset zeroed through their own overrides. */
+const INPUT_INSET: Partial<Record<InputOverridableBinding, TokenRef | undefined>> = {
+  paddingBlock: 'space.0',
+  paddingInline: 'space.0',
+};
+const NUMBER_INSET: Partial<Record<NumberInputOverridableBinding, TokenRef | undefined>> = {
+  paddingBlock: 'space.0',
+  paddingInline: 'space.0',
+};
+const SELECT_INSET: Partial<Record<SelectOverridableBinding, TokenRef | undefined>> = {
+  triggerPaddingBlock: 'space.0',
+  triggerPaddingInline: 'space.0',
+};
+const DATE_INSET: Partial<Record<DatePickerOverridableBinding, TokenRef | undefined>> = {
+  paddingBlock: 'space.0',
+  paddingInline: 'space.0',
+};
+
+/** Content that takes focus inside a cell; demoted to `tabindex="-1"` so the grid stays one tab stop. */
+const CELL_CONTROLS = 'a[href], button, input, select, textarea, [tabindex], ds-button, ds-link, ds-checkbox';
+
+interface CellPos {
+  row: number;
+  col: number;
+}
+
+interface RangeState {
+  anchor: CellPos;
+  focus: CellPos;
 }
 
 interface EditingState {
   rowId: string;
   column: string;
-  value: unknown;
-  previous: unknown;
+  /** A typed character that opened a text or number editor; replaces the value. */
+  seed?: string | undefined;
   error?: string | undefined;
+}
+
+/** A data value as `cell-change` reports it. */
+function cellValue(raw: unknown): DataGridCellValue {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean') {
+    return raw;
+  }
+  return String(raw);
+}
+
+function textOf(raw: unknown): string {
+  return raw === undefined || raw === null ? '' : String(raw);
+}
+
+function compareValues(left: unknown, right: unknown): number {
+  if (typeof left === 'number' && typeof right === 'number') {
+    return left - right;
+  }
+  return textOf(left).localeCompare(textOf(right), undefined, { numeric: true });
+}
+
+/** An IDREF-safe token for a row id. */
+function idToken(value: string): string {
+  return value.replace(/[^A-Za-z0-9_-]/g, (ch) => `_${ch.charCodeAt(0).toString(16)}_`);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }
 
 /**
  * `<ds-data-grid>` — DataGrid (category: data, APG pattern: grid).
  *
- * `<ds-data-grid caption="Price list" .columns=${columns} .data=${rows}>` builds an APG grid from `div`s with
- * explicit `role="grid"`/`"rowgroup"`/`"row"`/`"columnheader"`/`"rowheader"`/`"gridcell"` (never a native `<table>`,
- * since virtualization renders only the visible window). The grid is one tab stop: focus moves between cells with
- * `aria-activedescendant` while a fixed roving tabindex stays on the scroll region itself. `height: "viewport"` and
- * `"fixed"` virtualize the body (a fixed row height, a spacer sized to the row count, rows translated into place);
- * `height: "content"` renders every row in normal flow.
+ * `<ds-data-grid caption="Price list" .columns=${columns} .data=${rows} editable selectable="range">` builds an APG
+ * grid in its shadow root from `div`s with explicit `grid`/`rowgroup`/`row`/`columnheader`/`rowheader`/`gridcell`
+ * roles. The grid element is the one tab stop and points `aria-activedescendant` at the current cell; real focus
+ * moves into a cell only for an open editor or a control the cell renders, and returns on Escape or commit.
+ * `height: viewport` and `fixed` virtualize the body: one measured row height, a spacer sized to the whole set,
+ * rows translated into place with one page of overscan, `repeat` keyed by row id.
  *
- * ## When to use
+ * Editors are the composed `ds-input`, `ds-number-input`, `ds-select`, `ds-date-picker` and `ds-checkbox` with a
+ * visually hidden label, `size="sm"` and a zero inset. The status bar is the visible counterpart of the live region.
  *
- * Use a DataGrid when people navigate cell by cell, edit values in place, select ranges, or scroll through more
- * rows than fit in memory as DOM. Set `editable` and mark the columns that may change; give every editable column
- * a `validate`. Prefer a `Table` when rows are read and acted on as a whole, not a phone-first screen.
- *
- * @fires sort-change - Fired when a sortable header is activated, with `{ column, direction }`.
- * @fires selection-change - Fired with the selection matching `selectable`: `{ rows }`, `{ cell }`, or `{ range }`.
- * @fires cell-change - Fired when an edit commits, with `{ rowId, column, value, previous }`.
- * @fires edit-start - Fired when an editor is about to open, with `{ rowId, column }`; cancelable.
- * @fires range-needed - Fired with `{ start, end }` row indexes when the visible window nears the end of loaded `data`.
- * @fires column-resize - Fired with `{ column, width }` when a resizable column edge drag ends.
- * @csspart container - The wrapper (anatomy: container).
- * @csspart scroll-region - The scrolling grid element (anatomy: scrollRegion; same element as `grid`).
- * @csspart grid - The `role="grid"` element (anatomy: grid; same element as `scroll-region`).
- * @csspart caption - The caption (anatomy: caption).
- * @csspart header - The sticky header `rowgroup` (anatomy: header).
- * @csspart header-row - The header `row` (anatomy: headerRow).
- * @csspart column-header - Each `columnheader` (anatomy: columnHeader).
- * @csspart sort-button - The composed `<ds-button>` inside a sortable header (anatomy: sortButton).
- * @csspart body - The body `rowgroup` (anatomy: body).
- * @csspart row - Each body `row` (anatomy: row).
- * @csspart row-header - A row's `rowheader` cell (anatomy: rowHeader).
- * @csspart cell - A body `gridcell` (anatomy: cell).
- * @csspart cell-content - The rendered value inside a cell (anatomy: cellContent).
- * @csspart editor - The composed editor field (anatomy: editor).
- * @csspart select-cell - A row's selection `gridcell` (anatomy: selectCell).
- * @csspart select-all-cell - The header's select-all cell (anatomy: selectAllCell).
- * @csspart range-overlay - The selected-range overlay (anatomy: rangeOverlay).
- * @csspart empty-state - The composed `<ds-text>` shown when `data` is empty (anatomy: emptyState).
- * @csspart status-bar - The footer status line (anatomy: statusBar).
+ * @fires sort-change - A sortable header was activated, with `{ column, direction }`.
+ * @fires selection-change - The selection changed, with `{ selection }` (row ids, a cell or a range).
+ * @fires cell-change - An edit committed, with `{ rowId, column, value, previous }`.
+ * @fires edit-start - An editor is about to open, with `{ rowId, column }`; cancelable.
+ * @fires range-needed - The window neared the end of loaded `data`, with `{ start, end }` row indexes to load.
+ * @fires column-resize - A column resize finished, with `{ column, width }`.
  */
 @customElement('ds-data-grid')
 export class DsDataGrid extends LitElement {
@@ -277,11 +320,6 @@ export class DsDataGrid extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
-      font-family: var(--ds-data-grid-font-family);
-      font-size: var(--ds-data-grid-font-size);
-      line-height: var(--ds-data-grid-line-height);
-      /* cellColor: color.foreground, locked */
-      color: var(--color-foreground);
       --ds-data-grid-header-weight: var(--font-weight-semibold);
       --ds-data-grid-header-size: var(--font-size-sm);
       --ds-data-grid-header-border: var(--color-border-strong);
@@ -289,16 +327,12 @@ export class DsDataGrid extends LitElement {
       --ds-data-grid-header-shadow: var(--shadow-raised);
       --ds-data-grid-grid-line: var(--color-border);
       --ds-data-grid-grid-line-width: var(--border-width-thin);
-      --ds-data-grid-row-height: var(--size-target-min);
-      --ds-data-grid-row-height-comfortable: var(--size-target-comfortable);
       --ds-data-grid-row-hover: var(--color-action-ghost-background-hover);
-      --ds-data-grid-row-selected-border-width: var(--border-width-focus);
       --ds-data-grid-cell-padding-inline: var(--space-2);
-      --ds-data-grid-cell-focus-ring-width: var(--border-width-focus);
-      --ds-data-grid-range-border-width: var(--border-width-focus);
       --ds-data-grid-pinned-shadow: var(--shadow-raised);
       --ds-data-grid-resize-handle: var(--color-border-strong);
       --ds-data-grid-resize-handle-width: var(--space-1);
+      --ds-data-grid-resize-step: var(--space-4);
       --ds-data-grid-status-bar-size: var(--font-size-xs);
       --ds-data-grid-status-bar-padding: var(--space-2);
       --ds-data-grid-caption-size: var(--font-size-md);
@@ -310,6 +344,11 @@ export class DsDataGrid extends LitElement {
       --ds-data-grid-line-height: var(--font-line-height-tight);
       --ds-data-grid-numeric-font: var(--font-family-mono);
       --ds-data-grid-transition: var(--motion-duration-fast);
+      font-family: var(--ds-data-grid-font-family);
+      font-size: var(--ds-data-grid-font-size);
+      line-height: var(--ds-data-grid-line-height);
+      /* cellColor (locked) */
+      color: var(--color-foreground);
     }
 
     :host([hidden]) {
@@ -329,126 +368,123 @@ export class DsDataGrid extends LitElement {
       border: 0;
     }
 
-    .container {
+    [data-part='container'] {
       position: relative;
     }
 
-    .caption {
+    /* captionSize / captionWeight reach the composed Heading through its documented hooks; captionGap separates it. */
+    [data-part='caption'] {
       padding-block-end: var(--ds-data-grid-caption-gap);
     }
+    [data-part='caption'] ds-heading {
+      --ds-heading-font-size: var(--ds-data-grid-caption-size);
+      --ds-heading-font-weight: var(--ds-data-grid-caption-weight);
+      --ds-heading-margin-block-end: var(--space-0);
+    }
 
-    .grid-scroll {
+    [data-part='scrollRegion'] {
       position: relative;
       overflow: auto;
-      outline: none;
-      /* surface: color.background, locked */
+      /* surface (locked) */
       background: var(--color-background);
       border: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
     }
-
-    :host([height='content']) .grid-scroll {
-      block-size: auto;
-      overflow-y: visible;
+    :host([height='viewport']) [data-part='scrollRegion'] {
+      block-size: calc(100vh - 2 * var(--layout-gap-section));
     }
-
-    :host([height='viewport']) .grid-scroll {
-      /* the section rhythm on both ends, not specified further by the doc */
-      block-size: calc(100vh - var(--layout-gap-section) * 2);
-    }
-
-    :host([height='fixed']) .grid-scroll {
+    :host([height='fixed']) [data-part='scrollRegion'] {
       block-size: var(--ds-data-grid-fixed-height);
     }
-
-    .grid-scroll:focus-visible {
-      /* focusRing / focusRingWidth: locked */
+    /* focusRing / focusRingWidth (locked): the grid is the tab stop */
+    [data-part='scrollRegion']:has([data-part='grid']:focus-visible) {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: calc(-1 * var(--border-width-focus));
     }
 
-    .header {
-      position: sticky;
-      inset-block-start: 0;
+    [data-part='grid'] {
+      position: relative;
+      outline: none;
+    }
+
+    [data-part='header'] {
       z-index: 3;
     }
-
-    :host([height='content'][no-sticky-header]) .header {
-      position: static;
+    [data-part='header'].sticky {
+      position: sticky;
+      inset-block-start: 0;
     }
-
-    :host([data-header-scrolled]) .header {
+    /* headerShadow: once the body has scrolled */
+    [data-part='header'].raised {
       box-shadow: var(--ds-data-grid-header-shadow);
     }
 
-    .row-grid {
+    .row-layout {
       display: grid;
-      align-items: stretch;
+      box-sizing: border-box;
     }
 
-    .header-row {
-      block-size: var(--ds-data-grid-row-height);
+    /* rowHeight / rowHeightComfortable (locked) */
+    [data-part='headerRow'],
+    [data-part='row'] {
+      block-size: var(--size-target-min);
+    }
+    :host([density='comfortable']) [data-part='headerRow'],
+    :host([density='comfortable']) [data-part='row'] {
+      block-size: var(--size-target-comfortable);
     }
 
-    :host([density='comfortable']) .header-row {
-      block-size: var(--ds-data-grid-row-height-comfortable);
-    }
-
-    .body {
+    [data-part='body'] {
       position: relative;
     }
 
-    .row {
-      block-size: var(--ds-data-grid-row-height);
+    [data-part='row'] {
+      position: relative;
+      z-index: 1;
       transition: background-color var(--ds-data-grid-transition) var(--motion-easing-standard);
     }
-
-    :host([density='comfortable']) .row {
-      block-size: var(--ds-data-grid-row-height-comfortable);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .row {
-        transition: none;
-      }
-    }
-
-    :host(:not([height='content'])) .row {
+    [data-part='row'].virtual {
       position: absolute;
-      inset-inline: 0;
+      inset-block-start: 0;
+      inset-inline-start: 0;
     }
-
-    .row:hover {
+    /* rowHover */
+    [data-part='row']:hover {
       background: var(--ds-data-grid-row-hover);
     }
-
-    .row[aria-selected='true'] {
-      /* rowSelected: color.background.subtle, locked */
+    /* rowSelected (locked) */
+    [data-part='row'][aria-selected='true'] {
       background: var(--color-background-subtle);
     }
-
-    .row[aria-selected='true'] .row-header {
-      /* rowSelectedBorder: color.control.selectedBackground, locked; a start-edge bar */
-      box-shadow: inset var(--ds-data-grid-row-selected-border-width) 0 0 0 var(--color-control-selected-background);
+    /* rowSelectedBorder / rowSelectedBorderWidth (locked): a start-edge bar, so selection is not fill alone */
+    [data-part='row'][aria-selected='true'] > :first-child {
+      box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+    }
+    [data-part='row'][aria-selected='true'] > :first-child:dir(rtl) {
+      box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
     }
 
-    .column-header,
-    .row-header,
-    .cell,
-    .select-cell,
-    .select-all-cell {
+    .cell {
+      position: relative;
       box-sizing: border-box;
       display: flex;
       align-items: center;
+      min-inline-size: 0;
       padding-inline: var(--ds-data-grid-cell-padding-inline);
+      /* gridLine / gridLineWidth: cell borders on both axes */
       border-inline-end: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
       border-block-end: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
       overflow: hidden;
-      position: relative;
+      white-space: nowrap;
+      outline: none;
+    }
+    [data-part='cellContent'] {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .column-header,
-    .select-all-cell {
-      /* headerSurface / headerColor: locked */
+    /* headerSurface / headerColor (locked); headerWeight / headerSize / headerBorder / headerBorderWidth */
+    [data-part='columnHeader'],
+    [data-part='selectAllCell'] {
       background: var(--color-background-subtle);
       color: var(--color-foreground);
       font-weight: var(--ds-data-grid-header-weight);
@@ -456,32 +492,33 @@ export class DsDataGrid extends LitElement {
       border-block-end: var(--ds-data-grid-header-border-width) solid var(--ds-data-grid-header-border);
     }
 
-    .row-header {
-      font-weight: var(--ds-data-grid-header-weight);
-    }
-
-    .cell,
-    .row-header {
-      /* cellColor: color.foreground, locked */
+    [data-part='rowHeader'],
+    [data-part='cell'] {
       color: var(--color-foreground);
     }
-
+    /* cellMutedColor (locked): a cell with no value */
     .cell.muted {
-      /* cellMutedColor: color.foreground.muted, locked */
       color: var(--color-foreground-muted);
     }
-
-    .align-end {
+    .cell.numeric {
+      font-family: var(--ds-data-grid-numeric-font);
+      font-variant-numeric: tabular-nums;
+    }
+    .cell.align-end {
       justify-content: flex-end;
       text-align: end;
     }
-    .align-center {
+    .cell.align-center {
       justify-content: center;
       text-align: center;
     }
-    .numeric {
-      font-family: var(--ds-data-grid-numeric-font);
-      font-variant-numeric: tabular-nums;
+
+    /* minTarget (locked) */
+    [data-part='selectCell'],
+    [data-part='selectAllCell'] {
+      justify-content: center;
+      padding-inline: 0;
+      min-inline-size: var(--size-target-min);
     }
 
     .pinned-start,
@@ -490,124 +527,137 @@ export class DsDataGrid extends LitElement {
       z-index: 2;
       background: var(--color-background);
     }
-    .column-header.pinned-start,
-    .column-header.pinned-end,
-    .select-all-cell.pinned-start {
+    [data-part='columnHeader'].pinned-start,
+    [data-part='columnHeader'].pinned-end,
+    [data-part='selectAllCell'].pinned-start {
       z-index: 4;
       background: var(--color-background-subtle);
     }
-
-    :host([data-x-scrolled]) .pinned-start,
-    :host([data-x-scrolled]) .pinned-end {
+    /* pinnedShadow: once the body has scrolled sideways */
+    .x-scrolled .pinned-start,
+    .x-scrolled .pinned-end {
       box-shadow: var(--ds-data-grid-pinned-shadow);
     }
 
-    .cell[data-active],
-    .row-header[data-active],
-    .column-header[data-active] {
-      /* cellFocusRing: color.border.focus, locked */
-      box-shadow: inset 0 0 0 var(--ds-data-grid-cell-focus-ring-width) var(--color-border-focus);
-      z-index: 1;
+    /* cellFocusRing / cellFocusRingWidth (locked): inset, so neighbors and the scroll region never clip it */
+    [data-part='grid']:focus-within .cell.active::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      box-shadow: inset 0 0 0 var(--border-width-focus) var(--color-border-focus);
     }
 
+    /* cellEditingBackground / cellEditingBorder (locked) */
     .cell.editing {
-      /* cellEditingBackground / cellEditingBorder: locked */
       background: var(--color-control-background);
       box-shadow: inset 0 0 0 var(--border-width-focus) var(--color-border-focus);
       padding-inline: 0;
-      align-items: stretch;
+      transition: background-color var(--ds-data-grid-transition) var(--motion-easing-standard);
     }
-
+    /* cellInvalidBorder / cellInvalidBackground / cellInvalidForeground (locked) */
     .cell.invalid {
-      /* cellInvalidBorder / cellInvalidBackground / cellInvalidForeground: locked */
       background: var(--color-status-danger-background);
       color: var(--color-status-danger-foreground);
       box-shadow: inset 0 0 0 var(--border-width-focus) var(--color-border-danger);
     }
-
-    .editor {
+    .editor-frame {
+      display: flex;
+      align-items: center;
       inline-size: 100%;
       block-size: 100%;
     }
-    .editor ds-input,
-    .editor ds-number-input,
-    .editor ds-select,
-    .editor ds-date-picker {
+    .editor-frame > * {
       inline-size: 100%;
     }
 
-    .sort-button {
-      --ds-button-padding-inline: 0;
-      --ds-button-padding-block: 0;
-    }
-
+    /* resizeHandle / resizeHandleWidth: visible on hover or focus of the header cell */
     .resize-handle {
       position: absolute;
       inset-block: 0;
-      inset-inline-end: calc(var(--ds-data-grid-resize-handle-width) / -2);
+      inset-inline-end: 0;
       inline-size: var(--ds-data-grid-resize-handle-width);
       cursor: col-resize;
       touch-action: none;
       z-index: 5;
     }
-    .resize-handle:hover,
-    .resize-handle.active {
+    [data-part='columnHeader']:hover .resize-handle,
+    [data-part='grid']:focus-within [data-part='columnHeader'].active .resize-handle,
+    .resize-handle.dragging {
       background: var(--ds-data-grid-resize-handle);
     }
 
-    .range-overlay {
+    /* rangeBackground / rangeBorder / rangeBorderWidth (locked): one overlay under the transparent cells */
+    [data-part='rangeOverlay'] {
       position: absolute;
+      z-index: 0;
       pointer-events: none;
-      /* rangeBackground / rangeBorder: locked */
-      background: color-mix(in srgb, var(--color-background-strong) 100%, transparent);
-      box-shadow: inset 0 0 0 var(--ds-data-grid-range-border-width) var(--color-control-selected-background);
-      z-index: 2;
-      display: none;
-    }
-    .range-overlay.visible {
-      display: block;
+      box-sizing: border-box;
+      background: var(--color-background-strong);
+      border: var(--border-width-focus) solid var(--color-control-selected-background);
     }
 
     .empty-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding-block: var(--layout-inset-md, var(--space-6));
-      block-size: 100%;
+      min-block-size: var(--size-target-comfortable);
+      padding-inline: var(--ds-data-grid-cell-padding-inline);
     }
 
+    /* statusBarSurface / statusBarColor (locked); statusBarSize / statusBarPadding */
     .status-bar {
-      /* statusBarSurface / statusBarColor: locked */
-      background: var(--color-background-subtle);
-      color: var(--color-foreground-muted);
-      font-size: var(--ds-data-grid-status-bar-size);
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-2);
       padding: var(--ds-data-grid-status-bar-padding);
+      background: var(--color-background-subtle);
+      border: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
+      border-block-start: 0;
+    }
+    .status-bar ds-text {
+      --ds-text-font-size: var(--ds-data-grid-status-bar-size);
+    }
+
+    .probe {
+      position: absolute;
+      visibility: hidden;
+      pointer-events: none;
+      inline-size: var(--ds-data-grid-resize-step);
+      block-size: var(--size-target-min);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      [data-part='row'],
+      .cell.editing {
+        transition: none;
+      }
     }
   `;
 
   /** What the grid holds ("Price list"). The accessible name; visually hidden with `hideCaption`. */
-  @property() accessor caption!: string;
+  @property() accessor caption = '';
 
-  /** Visually hides the caption; it remains the accessible name. */
+  /** Visually hide the caption; it remains the accessible name. */
   @property({ type: Boolean, reflect: true, attribute: 'hide-caption' }) accessor hideCaption = false;
 
-  /** Column definitions in display order. A property, not an attribute. */
+  /** The column model. A property, not an attribute. */
   @property({ attribute: false }) accessor columns: DataGridColumn[] = [];
 
-  /** The rows. `id` must be stable. A property, not an attribute. */
+  /** The rows. `id` must be stable; only visible rows are rendered. A property, not an attribute. */
   @property({ attribute: false }) accessor data: DataGridRow[] = [];
 
-  /** Total rows when `data` is a window of a larger set (server paging). */
+  /** Total rows when `data` is a contiguous prefix of a larger set (server paging). Sets aria-rowcount. */
   @property({ type: Number, attribute: 'row-count' }) accessor rowCount: number | undefined;
 
-  /** Controlled sort state. */
+  /** Controlled sort state; the caller sorts `data`. */
   @property({ attribute: false }) accessor sort: DataGridSort | undefined;
 
   /** Initial sort; the grid sorts `data` itself when `rowCount` is not set. */
   @property({ attribute: false }) accessor defaultSort: DataGridSort | undefined;
 
-  /** `row` adds a checkbox column; `cell` selects one cell; `range` allows rectangle selection. */
-  @property({ reflect: true }) accessor selectable: DataGridSelectable = 'none';
+  /** `row` adds a checkbox column; `cell` selects the focused cell; `range` selects rectangles. */
+  @property({ type: String, reflect: true }) accessor selectable: DataGridSelectable = 'none';
 
   /** Controlled selected row ids (row mode). */
   @property({ attribute: false }) accessor selected: string[] | undefined;
@@ -616,52 +666,61 @@ export class DsDataGrid extends LitElement {
   @property({ type: Boolean, reflect: true }) accessor editable = false;
 
   /** Row height. */
-  @property({ reflect: true }) accessor density: DataGridDensity = 'compact';
+  @property({ type: String, reflect: true }) accessor density: DataGridDensity = 'compact';
 
-  /** The header stays visible while the body scrolls. Exposed as the negated `no-sticky-header` attribute;
-      always true when `height` is `viewport` or `fixed`. */
-  @property({ attribute: 'no-sticky-header', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  /** The header stays visible while the body scrolls; always true when virtualized. Attribute: `no-sticky-header`. */
+  @property({ attribute: 'no-sticky-header', reflect: true, converter: NEGATED_BOOLEAN })
   accessor stickyHeader = true;
 
-  /** `viewport` fills the height under the header and scrolls internally; `content` grows with rows;
-      `fixed` uses `overrides.fixedHeight`. */
-  @property({ reflect: true }) accessor height: DataGridHeight = 'viewport';
+  /** `viewport`: 100vh − 2 × layout.gap.section; `content`: grows with rows, not virtualized; `fixed`: `overrides.fixedHeight`. */
+  @property({ type: String, reflect: true }) accessor height: DataGridHeight = 'viewport';
 
-  /** Data is being fetched: sets `aria-busy` and shows `copy.loading` in the status bar. Existing rows stay. */
+  /** Sets aria-busy and shows `copy.loading` in the status bar; existing rows stay. */
   @property({ type: Boolean, reflect: true }) accessor loading = false;
 
-  /** Shown in place of the body when `data` is empty. Defaults to `copy.empty`. */
+  /** Shown when `data` is empty. Defaults to `copy.empty`. */
   @property({ attribute: 'empty-message' }) accessor emptyMessage: string | undefined;
 
-  /** A footer line with row count, selection count and validation messages. Exposed as the negated
-      `no-status-bar` attribute. */
-  @property({ attribute: 'no-status-bar', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  /** The footer status line. Attribute: `no-status-bar`. */
+  @property({ attribute: 'no-status-bar', reflect: true, converter: NEGATED_BOOLEAN })
   accessor showStatusBar = true;
 
-  /** Per-instance style overrides: `{ captionSize: 'font.size.lg' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<DataGridOverridableBinding, TokenRef | undefined>> | undefined;
+  /** Per-instance style overrides: `{ fixedHeight: 'space.40' }`. Locked bindings are not accepted. */
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<DataGridOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
   @state() private accessor internalSort: DataGridSort | undefined;
-  @state() private accessor internalSelectedRows: string[] = [];
-  @state() private accessor internalSelectedCell: DataGridCellRef | null = null;
-  @state() private accessor internalRange: DataGridRangeRef | null = null;
-  @state() private accessor activeRowIndex = -1;
-  @state() private accessor activeColKey = '';
+  @state() private accessor internalSelected: string[] = [];
+  /** The active cell: row -1 is the header row; col 0 is the selection column in row mode. */
+  @state() private accessor activeRow = -1;
+  @state() private accessor activeCol = 0;
+  @state() private accessor range: RangeState | null = null;
   @state() private accessor editing: EditingState | undefined;
   @state() private accessor columnWidths: Record<string, number> = {};
+  @state() private accessor message = '';
   @state() private accessor bodyScrollTop = 0;
-  @state() private accessor bodyScrollLeft = 0;
-  @state() private accessor viewportPx = 0;
-  @state() private accessor liveMessage = '';
+  @state() private accessor scrolledX = false;
+  @state() private accessor overflowX = false;
+  @state() private accessor viewportHeight = 0;
+  @state() private accessor headerHeight = 0;
+  @state() private accessor rowHeightPx = 0;
+  @state() private accessor draggingColumn: string | undefined;
 
-  private readonly instanceId = nextDataGridId();
-  private rowHeightPx = 0;
-  private resizeObserver?: ResizeObserver | undefined;
-  private lastRequestedEnd = -1;
-  private activeDrag?: { column: string; pointerId: number; startX: number; startWidth: number } | undefined;
-  private rangeAnchor?: { rowIndex: number; colKey: string } | undefined;
+  @query('[data-part="scrollRegion"]') private accessor scrollEl!: HTMLElement | null;
+  @query('[data-part="grid"]') private accessor gridEl!: HTMLElement | null;
+  @query('.probe') private accessor probeEl!: HTMLElement | null;
 
-  @query('.grid-scroll') private accessor gridEl!: HTMLElement | null;
+  private sortCache: { data: DataGridRow[]; sort: DataGridSort; rows: DataGridRow[] } | undefined;
+  private rowAnchorId: string | undefined;
+  private rangeDragging = false;
+  private rangeDragMoved = false;
+  private resizeDrag: { column: string; startX: number; startWidth: number; rtl: boolean } | undefined;
+  private keyboardResize: string | undefined;
+  private requestedEnds = new Set<number>();
+  private scrollActivePending = false;
+  private resizeObserver: ResizeObserver | undefined;
+  private readonly warned = new Set<string>();
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -671,1220 +730,1481 @@ export class DsDataGrid extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.resizeObserver?.disconnect();
-  }
-
-  protected override firstUpdated(): void {
-    this.internalSort = this.defaultSort;
-    if (this.gridEl) {
-      this.resizeObserver = new ResizeObserver(() => {
-        this.viewportPx = this.gridEl?.clientHeight ?? 0;
-        this.measureRowHeight();
-      });
-      this.resizeObserver.observe(this.gridEl);
-      this.viewportPx = this.gridEl.clientHeight;
-      this.measureRowHeight();
-    }
+    this.resizeObserver = undefined;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
+    if (!this.hasUpdated) {
+      this.internalSort = this.defaultSort;
+    }
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
-    if (changed.has('density')) {
-      this.measureRowHeight();
+    if (changed.has('data')) {
+      const previous = changed.get('data') as DataGridRow[] | undefined;
+      if (!previous || this.data.length !== previous.length) {
+        this.requestedEnds.clear();
+      }
+    }
+    if (changed.has('data') || changed.has('columns') || changed.has('selectable')) {
+      this.activeRow = clamp(this.activeRow, -1, this.data.length - 1);
+      this.activeCol = clamp(this.activeCol, 0, Math.max(0, this.colCount - 1));
+      if (changed.has('selectable') || changed.has('columns')) {
+        this.range = null;
+      }
     }
   }
 
+  protected override firstUpdated(): void {
+    const region = this.scrollEl;
+    if (region && typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.measure());
+      this.resizeObserver.observe(region);
+    }
+    this.measure();
+  }
+
   protected override updated(): void {
+    this.demoteCellControls();
+    this.measure();
+    if (this.scrollActivePending) {
+      this.scrollActivePending = false;
+      this.scrollActiveIntoView();
+    }
     this.warnInDev();
   }
 
   protected override render(): TemplateResult {
-    const rows = this.sortedRows();
+    const rows = this.rows;
     const total = this.rowCount ?? rows.length;
-    const columnKeys = this.effectiveColumnKeys();
-    const colCount = columnKeys.length;
-    const activeCell = this.activeCellRef(rows);
-    const visibleRange = this.visibleRowRange(rows.length);
-    const visibleRows = rows.slice(visibleRange.start, visibleRange.end + 1);
+    const virtual = this.height !== 'content';
+    const rowH = this.rowHeightPx;
+    const bodyStyle: Record<string, string | undefined> = {
+      blockSize: virtual && rows.length > 0 && rowH ? `${total * rowH}px` : undefined,
+    };
+    const layout = this.rowLayout();
 
     return html`
-      <div class="container" part="container">
-        <div
-          id="${this.instanceId}-caption"
-          class=${classMap({ caption: true, 'visually-hidden': this.hideCaption })}
-          part="caption"
-        >
-          <ds-heading level="2" size="md" .overrides=${this.captionOverrides}>${this.caption}</ds-heading>
+      <div data-part="container">
+        <div data-part="caption" class=${classMap({ 'visually-hidden': this.hideCaption })}>
+          <ds-heading id="caption" level="2" size="md">${this.caption}</ds-heading>
         </div>
-
         <div
-          class="grid-scroll"
-          part="scroll-region grid"
-          role="grid"
-          tabindex="0"
-          aria-labelledby="${this.instanceId}-caption"
-          aria-describedby="${this.instanceId}-row-count ${this.instanceId}-position ${this.instanceId}-scroll-hint"
-          aria-rowcount=${total + 1}
-          aria-colcount=${colCount}
-          aria-multiselectable=${ifDefined(this.selectable === 'none' ? undefined : 'true')}
-          aria-readonly=${this.editable ? 'false' : 'true'}
-          aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
-          aria-activedescendant=${ifDefined(this.activeDescendantId(rows))}
-          @keydown=${this.handleGridKeydown}
+          data-part="scrollRegion"
+          class=${classMap({ 'x-scrolled': this.scrolledX })}
           @scroll=${this.handleScroll}
-          @click=${this.handleGridClick}
-          @dblclick=${this.handleGridDblClick}
         >
-          <div class="header" part="header" role="rowgroup">
-            <div class="row-grid header-row" part="header-row" role="row" aria-rowindex="1" style=${this.gridTemplate()}>
-              ${this.selectable === 'row' ? this.renderSelectAllCell(rows) : nothing}
-              ${this.columns.map((column, index) => this.renderColumnHeader(column, index))}
+          <div
+            data-part="grid"
+            role="grid"
+            tabindex="0"
+            style=${styleMap({ inlineSize: `max(100%, ${layout.width})` })}
+            aria-labelledby="caption"
+            aria-describedby=${ifDefined(this.overflowX ? 'scroll-hint' : undefined)}
+            aria-rowcount=${total + 1}
+            aria-colcount=${this.colCount}
+            aria-multiselectable=${ifDefined(
+              this.selectable === 'none' ? undefined : String(this.selectable !== 'cell'),
+            )}
+            aria-readonly=${this.editable ? 'false' : 'true'}
+            aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
+            aria-activedescendant=${ifDefined(this.activeDescendantId(rows))}
+            @keydown=${this.handleKeydown}
+            @keyup=${this.handleKeyup}
+            @focusout=${this.handleGridFocusout}
+            @pointerdown=${this.handlePointerdown}
+            @pointermove=${this.handlePointermove}
+            @pointerup=${this.handlePointerup}
+            @pointercancel=${this.handlePointerup}
+            @dblclick=${this.handleDblclick}
+          >
+            ${this.renderHeader(layout)}
+            <div role="rowgroup" data-part="body" style=${styleMap(bodyStyle)}>
+              ${rows.length === 0 ? this.renderEmpty() : nothing} ${this.renderRangeOverlay(rows)}
+              ${repeat(
+                this.windowIndexes(rows.length),
+                (index) => rows[index]!.id,
+                (index) => this.renderRow(rows[index]!, index, layout),
+              )}
             </div>
           </div>
-
-          <div
-            class="body"
-            part="body"
-            role="rowgroup"
-            style=${styleMap({ blockSize: this.height === 'content' ? 'auto' : `${total * this.rowHeightPx}px` })}
-          >
-            ${rows.length === 0
-              ? this.renderEmptyState()
-              : visibleRows.map((row, i) => this.renderRow(row, visibleRange.start + i, activeCell))}
-            <div class=${classMap({ 'range-overlay': true, visible: this.selectable === 'range' && Boolean(this.internalRange) })}
-              part="range-overlay" aria-hidden="true" style=${styleMap(this.rangeOverlayStyle(rows))}
-            ></div>
-          </div>
         </div>
-
-        ${this.showStatusBar
-          ? html`<div class="status-bar" part="status-bar" role="status">
-              <ds-text size="xs" tone="muted">${this.statusText(rows.length, total)}</ds-text>
-            </div>`
-          : html`<div class="visually-hidden" role="status">${this.liveMessage}</div>`}
-
-        <span id="${this.instanceId}-row-count" class="visually-hidden">${COPY_ROW_COUNT(total)}</span>
-        <span id="${this.instanceId}-position" class="visually-hidden">${this.positionText(rows)}</span>
-        <span id="${this.instanceId}-scroll-hint" class="visually-hidden">${COPY_SCROLL_HINT}</span>
+        <div class=${classMap({ 'status-bar': true, 'visually-hidden': !this.showStatusBar })}>
+          <ds-text id="status" data-part="statusBar" role="status" element="span" size="xs" tone="muted"
+            >${this.statusText(rows, total)}</ds-text
+          >
+          ${this.showStatusBar && this.positionText()
+            ? html`<ds-text element="span" size="xs" tone="muted">${this.positionText()}</ds-text>`
+            : nothing}
+        </div>
+        <span id="scroll-hint" class="visually-hidden">${COPY_SCROLL_HINT}</span>
+        <span class="probe" aria-hidden="true"></span>
       </div>
     `;
   }
 
-  private renderSelectAllCell(rows: DataGridRow[]) {
-    const selected = this.currentSelectedRows();
-    const allSelected = rows.length > 0 && rows.every((row) => selected.includes(row.id));
-    const someSelected = !allSelected && rows.some((row) => selected.includes(row.id));
-    return html`
-      <div
-        id="${this.instanceId}-h-${SELECT_COLUMN_KEY}"
-        class=${classMap({ 'select-all-cell': true, pinned: false })}
-        part="select-all-cell"
-        role="columnheader"
-        aria-colindex="1"
-        data-active=${ifDefined(this.activeRowIndex === -1 && this.activeColKey === SELECT_COLUMN_KEY ? '' : undefined)}
-        data-ds-cell-key=${SELECT_COLUMN_KEY}
-      >
-        <ds-checkbox
-          tabindex="-1"
-          label=${COPY_SELECT_ALL}
-          .checked=${allSelected}
-          .indeterminate=${someSelected}
-          @change=${(event: CustomEvent<CheckboxChangeDetail>) => this.handleSelectAllChange(event, rows)}
-        ></ds-checkbox>
-      </div>
-    `;
-  }
+  /* ---------- rendering ---------- */
 
-  private renderColumnHeader(column: DataGridColumn, index: number) {
-    const currentSort = this.currentSort();
-    const direction = currentSort?.column === column.key ? currentSort.direction : undefined;
-    const colIndex = index + 1 + (this.selectable === 'row' ? 1 : 0);
-    const pin = this.pinnedStyle(column);
-    return html`
-      <div
-        id="${this.instanceId}-h-${column.key}"
-        class=${classMap({
-          'column-header': true,
-          'align-end': column.align === 'end',
-          'align-center': column.align === 'center',
-          'pinned-start': column.pinned === 'start',
-          'pinned-end': column.pinned === 'end',
-        })}
-        part="column-header"
-        role="columnheader"
-        aria-colindex=${colIndex}
-        aria-sort=${ifDefined(column.sortable ? (direction ?? 'none') : undefined)}
-        aria-describedby="${this.instanceId}-position"
-        data-active=${ifDefined(this.activeRowIndex === -1 && this.activeColKey === column.key ? '' : undefined)}
-        data-ds-cell-key=${column.key}
-        style=${styleMap(pin)}
-      >
-        ${column.sortable
-          ? html`<ds-button
-              class="sort-button"
-              part="sort-button"
-              variant="ghost"
-              size="sm"
-              tabindex="-1"
-              label=${this.sortButtonLabel(column, direction)}
-              @press=${(event: Event) => this.handleSort(event, column.key)}
-            >
-              <ds-icon slot="trailing-icon" name=${direction === 'descending' ? 'chevron-down' : 'chevron-up'} inline></ds-icon>
-            </ds-button>`
-          : column.abbr
-            ? html`<abbr title=${column.header}>${column.abbr}</abbr>`
-            : column.header}
-        ${column.resizable ? this.renderResizeHandle(column) : nothing}
-      </div>
-    `;
-  }
-
-  private renderResizeHandle(column: DataGridColumn) {
+  private renderHeader(layout: { columns: string; width: string }): TemplateResult {
+    const sticky = this.stickyHeader || this.height !== 'content';
     return html`<div
-      class=${classMap({ 'resize-handle': true, active: this.activeDrag?.column === column.key })}
-      part="resize-handle"
-      aria-label=${COPY_RESIZE(column.header)}
-      @pointerdown=${(event: PointerEvent) => this.handleResizeStart(event, column)}
-    ></div>`;
-  }
-
-  private renderEmptyState() {
-    const message = this.emptyMessage ?? COPY_EMPTY;
-    return html`<div class="empty-row" part="empty-state">
-      <ds-text tone="muted">${message}</ds-text>
+      role="rowgroup"
+      data-part="header"
+      class=${classMap({ sticky, raised: sticky && this.bodyScrollTop > 0 })}
+    >
+      <div
+        role="row"
+        data-part="headerRow"
+        class="row-layout"
+        aria-rowindex="1"
+        style=${styleMap({ gridTemplateColumns: layout.columns, inlineSize: layout.width })}
+      >
+        ${this.hasSelectColumn ? this.renderSelectAllCell() : nothing}
+        ${this.columns.map((column, index) => this.renderColumnHeader(column, index + this.colOffset))}
+      </div>
     </div>`;
   }
 
-  private renderRow(row: DataGridRow, index: number, activeCell: DataGridCellRef | undefined) {
-    const selectedRows = this.currentSelectedRows();
-    const rowSelected =
-      this.selectable === 'row'
-        ? selectedRows.includes(row.id)
-        : this.selectable === 'cell'
-          ? this.currentSelectedCell()?.rowId === row.id
-          : false;
-    const rowHeaderColumn = this.columns.find((column) => column.isRowHeader);
-    const rowName = rowHeaderColumn ? String(row[rowHeaderColumn.key] ?? row.id) : row.id;
-    const offset = this.height === 'content' ? undefined : `${index * this.rowHeightPx}px`;
-
-    return html`
-      <div
-        class="row-grid row"
-        part="row"
-        role="row"
-        aria-rowindex=${index + 2}
-        aria-selected=${ifDefined(this.selectable === 'row' || this.selectable === 'cell' ? String(rowSelected) : undefined)}
-        style=${styleMap({ transform: offset ? `translateY(${offset})` : undefined, ...this.gridTemplateObj() })}
-      >
-        ${this.selectable === 'row' ? this.renderSelectCell(row, rowName, selectedRows.includes(row.id)) : nothing}
-        ${this.columns.map((column, colIndex) => this.renderCell(column, row, index, colIndex, activeCell))}
-      </div>
-    `;
+  private renderSelectAllCell(): TemplateResult {
+    const rows = this.rows;
+    const selected = new Set(this.currentSelected);
+    const allSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
+    const someSelected = !allSelected && rows.some((row) => selected.has(row.id));
+    return html`<div
+      role="columnheader"
+      id="h-0"
+      data-part="selectAllCell"
+      data-row="-1"
+      data-col="0"
+      tabindex="-1"
+      aria-colindex="1"
+      class=${classMap({ cell: true, 'pinned-start': true, active: this.isActive(-1, 0) })}
+      style=${styleMap({ insetInlineStart: '0' })}
+    >
+      <ds-checkbox
+        tabindex="-1"
+        label=${COPY_SELECT_ALL}
+        hide-label
+        .checked=${live(allSelected)}
+        .indeterminate=${live(someSelected)}
+        @change=${(event: CustomEvent<CheckboxChangeDetail>) => {
+          event.stopPropagation();
+          this.activeRow = -1;
+          this.activeCol = 0;
+          this.toggleAll();
+          this.focusGrid();
+        }}
+      ></ds-checkbox>
+    </div>`;
   }
 
-  private renderSelectCell(row: DataGridRow, rowName: string, selected: boolean) {
-    return html`
-      <div
-        id="${this.instanceId}-c-${row.id}-${SELECT_COLUMN_KEY}"
-        class="select-cell"
-        part="select-cell"
-        role="gridcell"
-        aria-colindex="1"
-        data-active=${ifDefined(this.activeColKey === SELECT_COLUMN_KEY && this.rowIdAtActive() === row.id ? '' : undefined)}
-        data-ds-cell-row=${row.id}
-        data-ds-cell-key=${SELECT_COLUMN_KEY}
-      >
-        <ds-checkbox
-          tabindex="-1"
-          label=${COPY_SELECT_ROW(rowName)}
-          .checked=${selected}
-          @change=${(event: CustomEvent<CheckboxChangeDetail>) => this.handleSelectRowChange(event, row.id)}
-        ></ds-checkbox>
-      </div>
-    `;
+  private renderColumnHeader(column: DataGridColumn, col: number): TemplateResult {
+    const active = this.currentSort;
+    const sorted = active?.column === column.key ? active.direction : undefined;
+    const next: DataGridSortDirection = sorted === 'ascending' ? 'descending' : 'ascending';
+    const width = this.widthOf(column);
+    return html`<div
+      role="columnheader"
+      id="h-${col}"
+      data-part="columnHeader"
+      data-row="-1"
+      data-col=${col}
+      tabindex="-1"
+      aria-colindex=${col + 1}
+      aria-sort=${ifDefined(column.sortable ? (sorted ?? 'none') : undefined)}
+      aria-label=${ifDefined(column.abbr && !column.sortable ? column.abbr : undefined)}
+      class=${classMap({ ...this.cellClasses(column), active: this.isActive(-1, col) })}
+      style=${styleMap(this.pinStyle(column))}
+    >
+      ${column.sortable
+        ? html`<ds-button
+            data-part="sortButton"
+            tabindex="-1"
+            variant="ghost"
+            size="sm"
+            label=${column.header}
+            accessible-name=${next === 'ascending' ? COPY_SORT_ASCENDING(column.header) : COPY_SORT_DESCENDING(column.header)}
+            @press=${(event: Event) => {
+              event.stopPropagation();
+              this.activeRow = -1;
+              this.activeCol = col;
+              this.sortBy(column);
+              this.focusGrid();
+            }}
+          >
+            ${sorted
+              ? html`<ds-icon slot="trailing-icon" name=${sorted === 'ascending' ? 'chevron-up' : 'chevron-down'} inline></ds-icon>`
+              : nothing}
+          </ds-button>`
+        : html`<span data-part="cellContent">${column.header}</span>`}
+      ${column.resizable
+        ? html`<div
+            class=${classMap({ 'resize-handle': true, dragging: this.draggingColumn === column.key })}
+            role="separator"
+            aria-orientation="vertical"
+            aria-valuenow=${width}
+            aria-label=${COPY_RESIZE(column.header)}
+            @pointerdown=${(event: PointerEvent) => this.handleResizeDown(event, column)}
+            @pointermove=${this.handleResizeMove}
+            @pointerup=${this.handleResizeUp}
+            @pointercancel=${this.handleResizeUp}
+          ></div>`
+        : nothing}
+    </div>`;
   }
 
-  private renderCell(
-    column: DataGridColumn,
-    row: DataGridRow,
-    rowIndex: number,
-    colIndex: number,
-    activeCell: DataGridCellRef | undefined,
-  ) {
-    const id = this.cellId(row.id, column.key);
-    const isActive = this.activeRowIndex === rowIndex && this.activeColKey === column.key;
-    const isEditing = this.editing?.rowId === row.id && this.editing.column === column.key;
-    const invalid = isEditing && Boolean(this.editing?.error);
-    const inRange = this.cellInRange(rowIndex, column.key);
-    const cellSelected =
-      this.selectable === 'cell' &&
-      this.currentSelectedCell()?.rowId === row.id &&
-      this.currentSelectedCell()?.column === column.key;
-    const colAriaIndex = colIndex + 1 + (this.selectable === 'row' ? 1 : 0);
-    const pin = this.pinnedStyle(column);
-
-    const content = column.render ? column.render(row) : String(row[column.key] ?? '');
-
-    const classes = {
-      cell: !column.isRowHeader,
-      'row-header': Boolean(column.isRowHeader),
-      'align-end': column.align === 'end',
-      'align-center': column.align === 'center',
-      numeric: column.align === 'end',
-      'pinned-start': column.pinned === 'start',
-      'pinned-end': column.pinned === 'end',
-      editing: isEditing,
-      invalid,
-      selected: cellSelected || inRange,
-    };
-
-    return html`
-      <div
-        id=${id}
-        class=${classMap(classes)}
-        part=${column.isRowHeader ? 'row-header' : 'cell'}
-        role=${column.isRowHeader ? 'rowheader' : 'gridcell'}
-        aria-colindex=${colAriaIndex}
-        aria-selected=${ifDefined(this.selectable === 'cell' || this.selectable === 'range' ? String(cellSelected || inRange) : undefined)}
-        aria-describedby="${this.instanceId}-position"
-        data-active=${ifDefined(isActive ? '' : undefined)}
-        data-ds-cell-row=${row.id}
-        data-ds-cell-key=${column.key}
-        style=${styleMap(pin)}
-      >
-        ${isEditing ? this.renderEditor(column, row) : html`<span part="cell-content" class="cell-content">${content}</span>`}
+  private renderEmpty(): TemplateResult {
+    return html`<div role="row" aria-rowindex="2" class="empty-row">
+      <div role="gridcell" aria-colindex="1">
+        <ds-text data-part="emptyState" element="p" tone="muted"
+          >${this.loading ? COPY_LOADING : (this.emptyMessage ?? COPY_EMPTY)}</ds-text
+        >
       </div>
-    `;
+    </div>`;
   }
 
-  private renderEditor(column: DataGridColumn, row: DataGridRow) {
-    const editing = this.editing;
-    if (!editing) {
+  private renderRow(row: DataGridRow, index: number, layout: { columns: string; width: string }): TemplateResult {
+    const rowMode = this.selectable === 'row';
+    const isSelected = rowMode && this.currentSelected.includes(row.id);
+    const virtual = this.height !== 'content';
+    return html`<div
+      role="row"
+      data-part="row"
+      class=${classMap({ 'row-layout': true, virtual })}
+      aria-rowindex=${index + 2}
+      aria-selected=${ifDefined(rowMode ? String(isSelected) : undefined)}
+      style=${styleMap({
+        gridTemplateColumns: layout.columns,
+        inlineSize: layout.width,
+        transform: virtual ? `translateY(${index * this.rowHeightPx}px)` : undefined,
+      })}
+    >
+      ${rowMode ? this.renderSelectCell(row, index, isSelected) : nothing}
+      ${this.columns.map((column, i) => this.renderCell(row, index, column, i + this.colOffset))}
+    </div>`;
+  }
+
+  private renderSelectCell(row: DataGridRow, index: number, isSelected: boolean): TemplateResult {
+    return html`<div
+      role="gridcell"
+      id=${this.cellId(row.id, 0)}
+      data-part="selectCell"
+      data-row=${index}
+      data-col="0"
+      tabindex="-1"
+      aria-colindex="1"
+      class=${classMap({ cell: true, 'pinned-start': true, active: this.isActive(index, 0) })}
+      style=${styleMap({ insetInlineStart: '0' })}
+    >
+      <ds-checkbox
+        tabindex="-1"
+        label=${COPY_SELECT_ROW(this.rowName(row))}
+        hide-label
+        .checked=${live(isSelected)}
+        @change=${(event: CustomEvent<CheckboxChangeDetail>) => {
+          event.stopPropagation();
+          this.activeRow = index;
+          this.activeCol = 0;
+          this.toggleRow(row.id);
+          this.focusGrid();
+        }}
+      ></ds-checkbox>
+    </div>`;
+  }
+
+  private renderCell(row: DataGridRow, index: number, column: DataGridColumn, col: number): TemplateResult {
+    const isRowHeader = column.isRowHeader === true;
+    const editing = this.editing?.rowId === row.id && this.editing.column === column.key ? this.editing : undefined;
+    const raw = row[column.key];
+    let selected: boolean | undefined;
+    if (this.selectable === 'cell') {
+      selected = this.isActive(index, col);
+    } else if (this.selectable === 'range') {
+      selected = this.inRange(index, col);
+    }
+    return html`<div
+      role=${isRowHeader ? 'rowheader' : 'gridcell'}
+      id=${this.cellId(row.id, col)}
+      data-part=${isRowHeader ? 'rowHeader' : 'cell'}
+      data-row=${index}
+      data-col=${col}
+      tabindex="-1"
+      aria-colindex=${col + 1}
+      aria-selected=${ifDefined(selected === undefined ? undefined : String(selected))}
+      aria-readonly=${ifDefined(this.editable ? String(!column.editable) : undefined)}
+      aria-describedby=${ifDefined(editing?.error ? 'status' : undefined)}
+      class=${classMap({
+        ...this.cellClasses(column),
+        active: this.isActive(index, col),
+        muted: !column.render && (raw === undefined || raw === null || raw === ''),
+        numeric: typeof raw === 'number',
+        editing: editing !== undefined,
+        invalid: Boolean(editing?.error),
+      })}
+      style=${styleMap(this.pinStyle(column))}
+    >
+      ${editing
+        ? this.renderEditor(column, row, editing)
+        : html`<span data-part="cellContent">${column.render ? column.render(row) : textOf(raw)}</span>`}
+    </div>`;
+  }
+
+  private renderEditor(column: DataGridColumn, row: DataGridRow, editing: EditingState): TemplateResult {
+    const value = cellValue(row[column.key]);
+    let editor: TemplateResult;
+    switch (column.editor ?? 'text') {
+      case 'number': {
+        const seeded = editing.seed !== undefined ? Number(editing.seed) : undefined;
+        editor = html`<ds-number-input
+          data-part="editor"
+          label=${column.header}
+          hide-label
+          size="sm"
+          .defaultValue=${seeded !== undefined && Number.isFinite(seeded) ? seeded : typeof value === 'number' ? value : undefined}
+          .overrides=${NUMBER_INSET}
+        ></ds-number-input>`;
+        break;
+      }
+      case 'select':
+        editor = html`<ds-select
+          data-part="editor"
+          label=${column.header}
+          hide-label
+          size="sm"
+          .options=${column.options ?? []}
+          .defaultValue=${value === undefined ? undefined : String(value)}
+          .overrides=${SELECT_INSET}
+          @change=${(event: Event) => {
+            event.stopPropagation();
+            this.commitAndReturn(0);
+          }}
+        ></ds-select>`;
+        break;
+      case 'date':
+        editor = html`<ds-date-picker
+          data-part="editor"
+          label=${column.header}
+          hide-label
+          size="sm"
+          .defaultValue=${typeof value === 'string' ? value : undefined}
+          .overrides=${DATE_INSET}
+          @change=${(event: Event) => event.stopPropagation()}
+        ></ds-date-picker>`;
+        break;
+      case 'checkbox':
+        editor = html`<ds-checkbox
+          data-part="editor"
+          label=${column.header}
+          hide-label
+          .defaultChecked=${value === true}
+          @change=${(event: Event) => {
+            event.stopPropagation();
+            this.commitAndReturn(0);
+          }}
+        ></ds-checkbox>`;
+        break;
+      default:
+        editor = html`<ds-input
+          data-part="editor"
+          label=${column.header}
+          hide-label
+          size="sm"
+          .defaultValue=${editing.seed ?? (value === undefined ? '' : String(value))}
+          .overrides=${INPUT_INSET}
+          @change=${(event: Event) => event.stopPropagation()}
+        ></ds-input>`;
+    }
+    return html`<div
+      class="editor-frame"
+      @keydown=${(event: KeyboardEvent) => this.handleEditorKeydown(event, column)}
+      @focusout=${(event: FocusEvent) => this.handleEditorFocusout(event, column)}
+    >
+      ${editor}
+    </div>`;
+  }
+
+  private renderRangeOverlay(rows: DataGridRow[]): TemplateResult | typeof nothing {
+    const rect = this.rangeRect();
+    const rowH = this.rowHeightPx;
+    if (this.selectable !== 'range' || !rect || !rowH || rows.length === 0) {
       return nothing;
     }
-    const kind = column.editor ?? 'text';
-    const commit = (value: unknown) => this.commitEdit(column, row, value);
-    switch (kind) {
-      case 'number':
-        return html`<div class="editor" part="editor">
-          <ds-number-input
-            label=${column.header}
-            name=${column.key}
-            .value=${typeof editing.value === 'number' ? editing.value : undefined}
-            @change=${(event: CustomEvent<NumberInputChangeDetail>) => commit(event.detail.value)}
-            @keydown=${(event: KeyboardEvent) => this.handleEditorKeydown(event, column, row)}
-          ></ds-number-input>
-        </div>`;
-      case 'select':
-        return html`<div class="editor" part="editor">
-          <ds-select
-            label=${column.header}
-            name=${column.key}
-            .options=${column.options ?? []}
-            .value=${editing.value as SelectValue}
-            @change=${(event: CustomEvent<SelectChangeDetail>) => commit(event.detail.value)}
-            @keydown=${(event: KeyboardEvent) => this.handleEditorKeydown(event, column, row)}
-          ></ds-select>
-        </div>`;
-      case 'date':
-        return html`<div class="editor" part="editor">
-          <ds-date-picker
-            label=${column.header}
-            name=${column.key}
-            .value=${editing.value as DatePickerValue}
-            @change=${(event: CustomEvent<DatePickerChangeDetail>) => commit(event.detail.value)}
-            @keydown=${(event: KeyboardEvent) => this.handleEditorKeydown(event, column, row)}
-          ></ds-date-picker>
-        </div>`;
-      case 'checkbox':
-        return html`<div class="editor" part="editor">
-          <ds-checkbox
-            label=${column.header}
-            name=${column.key}
-            .checked=${Boolean(editing.value)}
-            @change=${(event: CustomEvent<CheckboxChangeDetail>) => commit(event.detail.checked)}
-            @keydown=${(event: KeyboardEvent) => this.handleEditorKeydown(event, column, row)}
-          ></ds-checkbox>
-        </div>`;
-      default:
-        return html`<div class="editor" part="editor">
-          <ds-input
-            label=${column.header}
-            name=${column.key}
-            .value=${editing.value === undefined || editing.value === null ? '' : String(editing.value)}
-            @change=${(event: CustomEvent<InputChangeDetail>) => commit(event.detail.value)}
-            @keydown=${(event: KeyboardEvent) => this.handleEditorKeydown(event, column, row)}
-          ></ds-input>
-        </div>`;
+    let first = 0;
+    let last = rows.length - 1;
+    if (this.height !== 'content') {
+      const indexes = this.windowIndexes(rows.length);
+      first = Math.min(...indexes);
+      last = Math.max(...indexes);
     }
-  }
-
-  /* ---------- layout ---------- */
-
-  private columnWidth(column: DataGridColumn): number {
-    return this.columnWidths[column.key] ?? column.width ?? column.minWidth ?? DEFAULT_COLUMN_WIDTH;
-  }
-
-  private gridTemplate() {
-    return styleMap(this.gridTemplateObj());
-  }
-
-  private gridTemplateObj(): Record<string, string> {
-    const parts: string[] = [];
-    if (this.selectable === 'row') {
-      parts.push('var(--size-target-min)');
+    const top = Math.max(rect.rowStart, first);
+    const bottom = Math.min(rect.rowEnd, last);
+    if (bottom < top) {
+      return nothing;
     }
-    for (const column of this.columns) {
-      parts.push(`${this.columnWidth(column)}px`);
-    }
-    return { gridTemplateColumns: parts.join(' ') };
-  }
-
-  /** Sticky offsets for pinned columns; simplified to ignore the select column's own width when combined with pinning. */
-  private pinnedStyle(column: DataGridColumn): Record<string, string> {
-    if (!column.pinned) {
-      return {};
-    }
-    const index = this.columns.findIndex((candidate) => candidate.key === column.key);
-    if (column.pinned === 'start') {
-      let left = 0;
-      for (let i = 0; i < index; i += 1) {
-        if (this.columns[i]?.pinned === 'start') {
-          left += this.columnWidth(this.columns[i]!);
-        }
+    let left = 0;
+    let width = 0;
+    this.columns.forEach((column, i) => {
+      const col = i + this.colOffset;
+      if (col < rect.colStart) {
+        left += this.widthOf(column);
+      } else if (col <= rect.colEnd) {
+        width += this.widthOf(column);
       }
-      return { insetInlineStart: `${left}px` };
-    }
-    let right = 0;
-    for (let i = this.columns.length - 1; i > index; i -= 1) {
-      if (this.columns[i]?.pinned === 'end') {
-        right += this.columnWidth(this.columns[i]!);
-      }
-    }
-    return { insetInlineEnd: `${right}px` };
-  }
-
-  private measureRowHeight(): void {
-    const varName =
-      this.density === 'comfortable' ? '--ds-data-grid-row-height-comfortable' : '--ds-data-grid-row-height';
-    const raw = getComputedStyle(this).getPropertyValue(varName).trim();
-    this.rowHeightPx = Number.parseFloat(raw) || 32;
-  }
-
-  /* ---------- data ---------- */
-
-  private effectiveColumnKeys(): string[] {
-    const keys = this.columns.map((column) => column.key);
-    return this.selectable === 'row' ? [SELECT_COLUMN_KEY, ...keys] : keys;
-  }
-
-  private sortedRows(): DataGridRow[] {
-    if (this.sort !== undefined) {
-      return this.data;
-    }
-    const sortState = this.internalSort;
-    if (!sortState) {
-      return this.data;
-    }
-    const factor = sortState.direction === 'ascending' ? 1 : -1;
-    return [...this.data].sort((a, b) => {
-      const left = a[sortState.column];
-      const right = b[sortState.column];
-      if (typeof left === 'string' && typeof right === 'string') {
-        return left.localeCompare(right, undefined, { numeric: true }) * factor;
-      }
-      return (Number(left) - Number(right)) * factor;
     });
+    return html`<div
+      data-part="rangeOverlay"
+      aria-hidden="true"
+      style=${styleMap({
+        insetBlockStart: `${top * rowH}px`,
+        insetInlineStart: `${left}px`,
+        inlineSize: `${width}px`,
+        blockSize: `${(bottom - top + 1) * rowH}px`,
+      })}
+    ></div>`;
   }
 
-  private currentSort(): DataGridSort | undefined {
+  /* ---------- model ---------- */
+
+  private get hasSelectColumn(): boolean {
+    return this.selectable === 'row';
+  }
+
+  private get colOffset(): number {
+    return this.hasSelectColumn ? 1 : 0;
+  }
+
+  private get colCount(): number {
+    return this.columns.length + this.colOffset;
+  }
+
+  private get currentSort(): DataGridSort | undefined {
     return this.sort ?? this.internalSort;
   }
 
-  private currentSelectedRows(): string[] {
-    return this.selected ?? this.internalSelectedRows;
+  private get currentSelected(): string[] {
+    return this.selected ?? this.internalSelected;
   }
 
-  private currentSelectedCell(): DataGridCellRef | null {
-    return this.internalSelectedCell;
+  /** `data` in display order: sorted here only for an uncontrolled sort over a fully loaded set. */
+  private get rows(): DataGridRow[] {
+    const active = this.internalSort;
+    if (this.sort !== undefined || this.rowCount !== undefined || !active) {
+      return this.data;
+    }
+    const cache = this.sortCache;
+    if (cache && cache.data === this.data && cache.sort === active) {
+      return cache.rows;
+    }
+    const factor = active.direction === 'ascending' ? 1 : -1;
+    const rows = [...this.data].sort((a, b) => compareValues(a[active.column], b[active.column]) * factor);
+    this.sortCache = { data: this.data, sort: active, rows };
+    return rows;
   }
 
-  private cellId(rowId: string, column: string): string {
-    return `${this.instanceId}-c-${rowId}-${column}`;
+  private columnAt(col: number): DataGridColumn | undefined {
+    return col < this.colOffset ? undefined : this.columns[col - this.colOffset];
   }
 
-  private rowIdAtActive(): string | undefined {
-    return this.sortedRows()[this.activeRowIndex]?.id;
+  private widthOf(column: DataGridColumn): number {
+    const width = this.columnWidths[column.key] ?? column.width ?? DEFAULT_COLUMN_WIDTH;
+    return Math.max(width, this.minWidthOf(column));
   }
 
-  private activeCellRef(rows: DataGridRow[]): DataGridCellRef | undefined {
-    const row = rows[this.activeRowIndex];
-    return row ? { rowId: row.id, column: this.activeColKey } : undefined;
+  private minWidthOf(column: DataGridColumn): number {
+    return Math.max(column.minWidth ?? 0, this.probeEl?.offsetHeight ?? 0);
+  }
+
+  private rowLayout(): { columns: string; width: string } {
+    const widths = this.columns.map((column) => this.widthOf(column));
+    const sum = widths.reduce((total, width) => total + width, 0);
+    const tracks = widths.map((width) => `${width}px`);
+    if (this.hasSelectColumn) {
+      return {
+        columns: ['var(--size-target-min)', ...tracks].join(' '),
+        width: `calc(var(--size-target-min) + ${sum}px)`,
+      };
+    }
+    return { columns: tracks.join(' '), width: `${sum}px` };
+  }
+
+  private cellClasses(column: DataGridColumn): Record<string, boolean> {
+    return {
+      cell: true,
+      'align-end': column.align === 'end',
+      'align-center': column.align === 'center',
+      'pinned-start': column.pinned === 'start',
+      'pinned-end': column.pinned === 'end',
+    };
+  }
+
+  /** Sticky offsets for pinned columns; the selection column counts toward the start offset. */
+  private pinStyle(column: DataGridColumn): Record<string, string> {
+    const index = this.columns.indexOf(column);
+    if (column.pinned === 'start') {
+      let offset = 0;
+      for (let i = 0; i < index; i += 1) {
+        const other = this.columns[i]!;
+        if (other.pinned === 'start') {
+          offset += this.widthOf(other);
+        }
+      }
+      return {
+        insetInlineStart: this.hasSelectColumn ? `calc(var(--size-target-min) + ${offset}px)` : `${offset}px`,
+      };
+    }
+    if (column.pinned === 'end') {
+      let offset = 0;
+      for (let i = index + 1; i < this.columns.length; i += 1) {
+        const other = this.columns[i]!;
+        if (other.pinned === 'end') {
+          offset += this.widthOf(other);
+        }
+      }
+      return { insetInlineEnd: `${offset}px` };
+    }
+    return {};
+  }
+
+  private rowName(row: DataGridRow): string {
+    const header = this.columns.find((column) => column.isRowHeader);
+    return (header ? textOf(row[header.key]) : '') || row.id;
+  }
+
+  private cellId(rowId: string, col: number): string {
+    return `c-${col}-${idToken(rowId)}`;
+  }
+
+  private isActive(row: number, col: number): boolean {
+    return this.activeRow === row && this.activeCol === col;
   }
 
   private activeDescendantId(rows: DataGridRow[]): string | undefined {
-    if (this.activeRowIndex === -1) {
-      return this.activeColKey ? `${this.instanceId}-h-${this.activeColKey}` : undefined;
+    if (this.colCount === 0) {
+      return undefined;
     }
-    const row = rows[this.activeRowIndex];
-    return row && this.activeColKey ? this.cellId(row.id, this.activeColKey) : undefined;
+    if (this.activeRow === -1) {
+      return `h-${this.activeCol}`;
+    }
+    const row = rows[this.activeRow];
+    return row ? this.cellId(row.id, this.activeCol) : undefined;
   }
 
-  private positionText(rows: DataGridRow[]): string {
-    if (this.activeRowIndex === -1) {
-      const column = this.columns.find((c) => c.key === this.activeColKey);
-      return column ? COPY_POSITION(1, column.header) : '';
-    }
-    const row = rows[this.activeRowIndex];
-    const column = this.columns.find((c) => c.key === this.activeColKey);
-    if (!row || !column) {
-      return '';
-    }
-    return COPY_POSITION(this.activeRowIndex + 2, column.header);
+  private get activeCellEl(): HTMLElement | null {
+    const id = this.activeDescendantId(this.rows);
+    return id ? this.renderRoot.querySelector<HTMLElement>(`#${id}`) : null;
   }
 
-  private statusText(loadedRows: number, total: number): string {
+  /** Visible rows per page, excluding the sticky header. */
+  private pageRows(): number {
+    const rowH = this.rowHeightPx;
+    if (!rowH) {
+      return 1;
+    }
+    const space = this.height === 'content' ? window.innerHeight : this.viewportHeight - this.headerHeight;
+    return Math.max(1, Math.floor(space / rowH));
+  }
+
+  /** Rendered row indexes: the visible window plus one page of overscan each way, and the active row. */
+  private windowIndexes(count: number): number[] {
+    if (count === 0) {
+      return [];
+    }
+    if (this.height === 'content') {
+      return Array.from({ length: count }, (_, i) => i);
+    }
+    const rowH = this.rowHeightPx;
+    let start = 0;
+    let end = 1;
+    if (rowH) {
+      const page = this.pageRows();
+      const first = Math.floor(this.bodyScrollTop / rowH);
+      start = Math.max(0, first - page);
+      end = Math.min(count, first + 2 * page + 1);
+    }
+    const indexes: number[] = [];
+    for (let i = start; i < end; i += 1) {
+      indexes.push(i);
+    }
+    if (this.activeRow >= 0 && this.activeRow < count && (this.activeRow < start || this.activeRow >= end)) {
+      indexes.push(this.activeRow);
+    }
+    return indexes;
+  }
+
+  private rangeRect(): { rowStart: number; rowEnd: number; colStart: number; colEnd: number } | undefined {
+    const range = this.range;
+    if (!range) {
+      return undefined;
+    }
+    return {
+      rowStart: Math.min(range.anchor.row, range.focus.row),
+      rowEnd: Math.max(range.anchor.row, range.focus.row),
+      colStart: Math.min(range.anchor.col, range.focus.col),
+      colEnd: Math.max(range.anchor.col, range.focus.col),
+    };
+  }
+
+  private inRange(row: number, col: number): boolean {
+    const rect = this.rangeRect();
+    return rect !== undefined && row >= rect.rowStart && row <= rect.rowEnd && col >= rect.colStart && col <= rect.colEnd;
+  }
+
+  private statusText(rows: DataGridRow[], total: number): string {
     if (this.editing?.error) {
       return COPY_INVALID(this.editing.error);
     }
     if (this.editing) {
-      const column = this.columns.find((c) => c.key === this.editing?.column);
-      return COPY_EDITING(column?.header ?? this.editing.column);
+      return this.message;
     }
     if (this.loading) {
       return COPY_LOADING;
     }
-    if (this.selectable === 'row') {
-      const count = this.currentSelectedRows().length;
-      if (count > 0) {
-        return COPY_SELECTED_ROWS(count, total);
-      }
+    if (this.message) {
+      return this.message;
     }
-    if (this.selectable === 'range' && this.internalRange) {
-      const rect = this.rangeRect(this.sortedRows());
-      if (rect) {
-        return COPY_SELECTED_RANGE(rect.rowEnd - rect.rowStart + 1, rect.colEnd - rect.colStart + 1);
-      }
+    if (this.selectable === 'row' && this.currentSelected.length > 0) {
+      return COPY_SELECTED_ROWS(this.currentSelected.length, total);
     }
-    return COPY_ROW_COUNT(total);
+    const rect = this.rangeRect();
+    if (this.selectable === 'range' && rect && rows.length > 0) {
+      return COPY_SELECTED_RANGE(rect.rowEnd - rect.rowStart + 1, rect.colEnd - rect.colStart + 1);
+    }
+    return COPY_ROW_COUNT[pluralForm(total)](total);
   }
 
-  /* ---------- range selection ---------- */
-
-  private rangeRect(rows: DataGridRow[]): { rowStart: number; rowEnd: number; colStart: number; colEnd: number } | undefined {
-    const range = this.internalRange;
-    if (!range) {
-      return undefined;
+  /** `copy.position` for the active body cell; shown, never announced. */
+  private positionText(): string {
+    const column = this.columnAt(this.activeCol);
+    if (this.activeRow < 0 || !column) {
+      return '';
     }
-    const fromRow = rows.findIndex((row) => row.id === range.from.rowId);
-    const toRow = rows.findIndex((row) => row.id === range.to.rowId);
-    if (fromRow === -1 || toRow === -1) {
-      return undefined;
-    }
-    const colKeys = this.columns.map((c) => c.key);
-    const fromCol = colKeys.indexOf(range.from.column);
-    const toCol = colKeys.indexOf(range.to.column);
-    if (fromCol === -1 || toCol === -1) {
-      return undefined;
-    }
-    return {
-      rowStart: Math.min(fromRow, toRow),
-      rowEnd: Math.max(fromRow, toRow),
-      colStart: Math.min(fromCol, toCol),
-      colEnd: Math.max(fromCol, toCol),
-    };
+    return COPY_POSITION(this.activeRow + 1, column.header);
   }
 
-  private cellInRange(rowIndex: number, colKey: string): boolean {
-    if (this.selectable !== 'range' || !this.internalRange) {
-      return false;
-    }
-    const rect = this.rangeRect(this.sortedRows());
-    if (!rect) {
-      return false;
-    }
-    const colIndex = this.columns.findIndex((c) => c.key === colKey);
-    return rowIndex >= rect.rowStart && rowIndex <= rect.rowEnd && colIndex >= rect.colStart && colIndex <= rect.colEnd;
+  /* ---------- selection, sort and events ---------- */
+
+  private emit<T>(name: string, detail: T, cancelable = false): boolean {
+    return this.dispatchEvent(new CustomEvent<T>(name, { detail, bubbles: true, composed: true, cancelable }));
   }
 
-  /** Positions the range overlay by measuring the two corner cells; hidden if either is not currently rendered
-      (outside the virtualized window). Not the primary visual signal — cells in range also carry `.selected`. */
-  private rangeOverlayStyle(rows: DataGridRow[]): Record<string, string> {
-    if (this.selectable !== 'range' || !this.internalRange || !this.gridEl) {
-      return {};
-    }
-    const rect = this.rangeRect(rows);
-    if (!rect) {
-      return {};
-    }
-    const startRow = rows[rect.rowStart];
-    const endRow = rows[rect.rowEnd];
-    const startColKey = this.columns[rect.colStart]?.key;
-    const endColKey = this.columns[rect.colEnd]?.key;
-    if (!startRow || !endRow || !startColKey || !endColKey) {
-      return {};
-    }
-    const startEl = this.renderRoot.querySelector(`#${CSS.escape(this.cellId(startRow.id, startColKey))}`) as HTMLElement | null;
-    const endEl = this.renderRoot.querySelector(`#${CSS.escape(this.cellId(endRow.id, endColKey))}`) as HTMLElement | null;
-    if (!startEl || !endEl) {
-      return {};
-    }
-    const containerRect = this.gridEl.getBoundingClientRect();
-    const startRect = startEl.getBoundingClientRect();
-    const endRect = endEl.getBoundingClientRect();
-    const top = Math.min(startRect.top, endRect.top) - containerRect.top + this.gridEl.scrollTop;
-    const left = Math.min(startRect.left, endRect.left) - containerRect.left + this.gridEl.scrollLeft;
-    const bottom = Math.max(startRect.bottom, endRect.bottom) - containerRect.top + this.gridEl.scrollTop;
-    const right = Math.max(startRect.right, endRect.right) - containerRect.left + this.gridEl.scrollLeft;
-    return {
-      top: `${top}px`,
-      left: `${left}px`,
-      inlineSize: `${right - left}px`,
-      blockSize: `${bottom - top}px`,
-    };
-  }
-
-  /* ---------- events: sort / selection ---------- */
-
-  private sortButtonLabel(column: DataGridColumn, direction: DataGridSortDirection | undefined): string {
-    const next = direction === 'ascending' ? 'descending' : 'ascending';
-    return next === 'ascending' ? COPY_SORT_ASCENDING(column.header) : COPY_SORT_DESCENDING(column.header);
-  }
-
-  private handleSort(event: Event, column: string): void {
-    event.stopPropagation();
-    const current = this.currentSort();
+  private sortBy(column: DataGridColumn): void {
+    const active = this.currentSort;
     const direction: DataGridSortDirection =
-      current?.column === column && current.direction === 'ascending' ? 'descending' : 'ascending';
-    const next: DataGridSort = { column, direction };
+      active?.column === column.key && active.direction === 'ascending' ? 'descending' : 'ascending';
     if (this.sort === undefined) {
-      this.internalSort = next;
+      this.internalSort = { column: column.key, direction };
     }
-    const columnDef = this.columns.find((c) => c.key === column);
-    this.liveMessage = COPY_SORTED_ANNOUNCEMENT(columnDef?.header ?? column, direction);
-    this.dispatchEvent(new CustomEvent<DataGridSortChangeDetail>('sort-change', { detail: next, bubbles: true, composed: true }));
+    this.range = null;
+    this.message = COPY_SORTED_ANNOUNCEMENT(column.header, direction);
+    this.emit<DataGridSortChangeDetail>('sort-change', { column: column.key, direction });
   }
 
-  private handleSelectAllChange(event: CustomEvent<CheckboxChangeDetail>, rows: DataGridRow[]): void {
-    event.stopPropagation();
-    const next = event.detail.checked ? rows.map((row) => row.id) : [];
-    this.commitRowSelection(next);
-  }
-
-  private handleSelectRowChange(event: CustomEvent<CheckboxChangeDetail>, id: string): void {
-    event.stopPropagation();
-    const current = this.currentSelectedRows();
-    const next = event.detail.checked ? [...current, id] : current.filter((existing) => existing !== id);
-    this.commitRowSelection(next);
-  }
-
-  private commitRowSelection(next: string[]): void {
+  private commitRows(next: string[]): void {
     if (this.selected === undefined) {
-      this.internalSelectedRows = next;
+      this.internalSelected = next;
     }
-    this.liveMessage = COPY_SELECTED_ROWS(next.length, this.rowCount ?? this.data.length);
-    this.dispatchEvent(
-      new CustomEvent<DataGridSelectionChangeDetail>('selection-change', {
-        detail: { rows: next },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+    this.message = COPY_SELECTED_ROWS(next.length, this.rowCount ?? this.data.length);
+    this.emit<DataGridSelectionChangeDetail>('selection-change', { selection: next });
   }
 
-  private commitCellSelection(cell: DataGridCellRef | null): void {
-    this.internalSelectedCell = cell;
-    this.dispatchEvent(
-      new CustomEvent<DataGridSelectionChangeDetail>('selection-change', {
-        detail: { cell },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+  private toggleRow(id: string): void {
+    const current = this.currentSelected;
+    this.rowAnchorId = id;
+    this.commitRows(current.includes(id) ? current.filter((existing) => existing !== id) : [...current, id]);
   }
 
-  private commitRangeSelection(range: DataGridRangeRef | null): void {
-    this.internalRange = range;
-    if (range) {
-      const rect = this.rangeRect(this.sortedRows());
-      if (rect) {
-        this.liveMessage = COPY_SELECTED_RANGE(rect.rowEnd - rect.rowStart + 1, rect.colEnd - rect.colStart + 1);
-      }
+  private toggleAll(): void {
+    const rows = this.rows;
+    const selected = new Set(this.currentSelected);
+    const allSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
+    this.commitRows(allSelected ? [] : rows.map((row) => row.id));
+  }
+
+  /** Adds every row from the anchor (the last row toggled) through `index`. */
+  private extendRows(index: number): void {
+    const rows = this.rows;
+    const anchor = rows.findIndex((row) => row.id === this.rowAnchorId);
+    const target = rows[index];
+    if (!target) {
+      return;
     }
-    this.dispatchEvent(
-      new CustomEvent<DataGridSelectionChangeDetail>('selection-change', {
-        detail: { range },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+    if (anchor === -1) {
+      this.toggleRow(target.id);
+      return;
+    }
+    const next = new Set(this.currentSelected);
+    for (let i = Math.min(anchor, index); i <= Math.max(anchor, index); i += 1) {
+      next.add(rows[i]!.id);
+    }
+    this.commitRows([...next]);
+  }
+
+  private cellRef(pos: CellPos): DataGridCellRef | undefined {
+    const row = this.rows[pos.row];
+    const column = this.columnAt(pos.col);
+    return row && column ? { rowId: row.id, column: column.key } : undefined;
+  }
+
+  private setRange(range: RangeState): void {
+    this.range = range;
+    const rect = this.rangeRect()!;
+    this.message = COPY_SELECTED_RANGE(rect.rowEnd - rect.rowStart + 1, rect.colEnd - rect.colStart + 1);
+    const from = this.cellRef(range.anchor);
+    const to = this.cellRef(range.focus);
+    if (from && to) {
+      this.emit<DataGridSelectionChangeDetail>('selection-change', { selection: { from, to } });
+    }
+  }
+
+  private emitCellSelection(): void {
+    const ref = this.cellRef({ row: this.activeRow, col: this.activeCol });
+    if (ref) {
+      this.emit<DataGridSelectionChangeDetail>('selection-change', { selection: ref });
+    }
+  }
+
+  /** Moves the active cell (clamped to the loaded rows) and scrolls it into view. */
+  private moveTo(row: number, col: number): void {
+    const next = { row: clamp(row, -1, this.rows.length - 1), col: clamp(col, 0, Math.max(0, this.colCount - 1)) };
+    const changed = next.row !== this.activeRow || next.col !== this.activeCol;
+    this.activeRow = next.row;
+    this.activeCol = next.col;
+    this.scrollRowIntoView(next.row);
+    this.scrollActivePending = true;
+    if (changed && this.selectable === 'cell' && next.row >= 0) {
+      this.emitCellSelection();
+    }
+    this.maybeRequestRange(next.row);
   }
 
   /* ---------- editing ---------- */
 
-  private startEdit(column: DataGridColumn, row: DataGridRow): void {
-    if (!this.editable || !column.editable || column.isRowHeader) {
+  private startEdit(rowIndex: number, col: number, seed?: string): void {
+    const column = this.columnAt(col);
+    const row = this.rows[rowIndex];
+    if (!this.editable || !column?.editable || !row) {
       return;
     }
-    const allowed = this.dispatchEvent(
-      new CustomEvent<DataGridEditStartDetail>('edit-start', {
-        detail: { rowId: row.id, column: column.key },
-        bubbles: true,
-        composed: true,
-        cancelable: true,
-      }),
-    );
-    if (!allowed) {
+    if (!this.emit<DataGridEditStartDetail>('edit-start', { rowId: row.id, column: column.key }, true)) {
       return;
     }
-    const value = row[column.key];
-    this.editing = { rowId: row.id, column: column.key, value, previous: value };
-    this.liveMessage = COPY_EDITING(column.header);
-    this.requestUpdate();
-    this.updateComplete.then(() => this.focusEditor());
+    const kind = column.editor ?? 'text';
+    this.editing = {
+      rowId: row.id,
+      column: column.key,
+      seed: kind === 'text' || kind === 'number' ? seed : undefined,
+    };
+    this.message = COPY_EDITING(column.header);
+    void this.updateComplete.then(() => {
+      this.renderRoot.querySelector<HTMLElement>('[data-part="editor"]')?.focus();
+    });
   }
 
-  private focusEditor(): void {
-    const el = this.renderRoot.querySelector('.editor > *') as HTMLElement | null;
-    el?.focus();
+  private readEditorValue(column: DataGridColumn): DataGridCellValue {
+    const el = this.renderRoot.querySelector('[data-part="editor"]');
+    if (!el) {
+      return undefined;
+    }
+    switch (column.editor ?? 'text') {
+      case 'number':
+        return (el as DsNumberInput).valueAsNumber;
+      case 'select': {
+        const value = (el as DsSelect).currentValue;
+        return value === null ? undefined : Array.isArray(value) ? value.join(',') : value;
+      }
+      case 'date':
+        return (el as DsDatePicker).currentValue ?? undefined;
+      case 'checkbox':
+        return (el as DsCheckbox).checked;
+      default:
+        return (el as DsInput).currentValue;
+    }
   }
 
-  private commitEdit(column: DataGridColumn, row: DataGridRow, value: unknown): void {
-    if (!this.editing) {
-      return;
+  /** Validates and commits the open edit. Returns false (editor stays open) when `validate` rejects it. */
+  private commitEdit(): boolean {
+    const editing = this.editing;
+    if (!editing) {
+      return true;
     }
+    const row = this.data.find((candidate) => candidate.id === editing.rowId);
+    const column = this.columns.find((candidate) => candidate.key === editing.column);
+    if (!row || !column) {
+      this.editing = undefined;
+      return true;
+    }
+    const value = this.readEditorValue(column);
     const error = column.validate?.(value, row);
     if (error) {
-      this.editing = { ...this.editing, value, error };
-      this.liveMessage = COPY_INVALID(error);
-      return;
+      this.editing = { ...editing, error };
+      return false;
     }
-    const previous = this.editing.previous;
+    const previous = cellValue(row[column.key]);
     this.editing = undefined;
-    this.dispatchEvent(
-      new CustomEvent<DataGridCellChangeDetail>('cell-change', {
-        detail: { rowId: row.id, column: column.key, value, previous },
-        bubbles: true,
-        composed: true,
-      }),
-    );
-    this.focusGrid();
+    this.message = '';
+    if (value !== previous) {
+      this.emit<DataGridCellChangeDetail>('cell-change', { rowId: row.id, column: column.key, value, previous });
+    }
+    return true;
   }
 
   private cancelEdit(): void {
     this.editing = undefined;
+    this.message = '';
     this.focusGrid();
   }
 
+  /** Commits, then returns focus to the grid `rowDelta` rows down. */
+  private commitAndReturn(rowDelta: number): void {
+    if (!this.commitEdit()) {
+      return;
+    }
+    if (rowDelta !== 0) {
+      this.moveTo(this.activeRow + rowDelta, this.activeCol);
+    }
+    this.focusGrid();
+  }
+
+  private handleEditorKeydown(event: KeyboardEvent, column: DataGridColumn): void {
+    const kind = column.editor ?? 'text';
+    switch (event.key) {
+      case 'Escape':
+        event.preventDefault();
+        event.stopPropagation();
+        this.cancelEdit();
+        return;
+      case 'Enter': {
+        const fromField = event.composedPath()[0] instanceof HTMLInputElement;
+        if (kind === 'select' || (kind === 'date' && !fromField)) {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        this.commitAndReturn(1);
+        return;
+      }
+      case 'F2':
+        event.preventDefault();
+        event.stopPropagation();
+        this.commitAndReturn(0);
+        return;
+      case 'Tab': {
+        event.stopPropagation();
+        if (!this.commitEdit()) {
+          event.preventDefault();
+          return;
+        }
+        const step = event.shiftKey ? -1 : 1;
+        let col = this.activeCol + step;
+        while (col >= this.colOffset && col < this.colCount && !this.columnAt(col)?.editable) {
+          col += step;
+        }
+        if (col >= this.colOffset && col < this.colCount) {
+          event.preventDefault();
+          this.moveTo(this.activeRow, col);
+          this.focusGrid();
+          this.startEdit(this.activeRow, col);
+          return;
+        }
+        // The last editable cell: focus the grid and remove the editor now, so Tab leaves the grid.
+        this.gridEl?.focus({ preventScroll: true });
+        this.performUpdate();
+        return;
+      }
+      default:
+        event.stopPropagation();
+    }
+  }
+
+  private handleEditorFocusout(event: FocusEvent, column: DataGridColumn): void {
+    const frame = event.currentTarget as HTMLElement;
+    const next = event.relatedTarget as Node | null;
+    if (next && frame.contains(next)) {
+      return;
+    }
+    const kind = column.editor ?? 'text';
+    if (this.editing && (kind === 'text' || kind === 'number' || kind === 'date')) {
+      this.commitEdit();
+    }
+  }
+
   private focusGrid(): void {
-    this.updateComplete.then(() => this.gridEl?.focus());
+    this.gridEl?.focus({ preventScroll: true });
   }
 
-  private handleEditorKeydown(event: KeyboardEvent, column: DataGridColumn, row: DataGridRow): void {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      this.cancelEdit();
-      return;
-    }
-    if (event.key === 'Enter') {
-      event.stopPropagation();
-      const value = this.editing?.value;
-      this.commitEdit(column, row, value);
-      if (!this.editing) {
-        this.moveActive(1, 0);
-      }
-      return;
-    }
-    if (event.key === 'F2') {
-      event.stopPropagation();
-      const value = this.editing?.value;
-      this.commitEdit(column, row, value);
-    }
-  }
+  /* ---------- keyboard ---------- */
 
-  /* ---------- column resize ---------- */
-
-  private handleResizeStart(event: PointerEvent, column: DataGridColumn): void {
-    event.stopPropagation();
-    event.preventDefault();
-    const target = event.currentTarget as HTMLElement;
-    target.setPointerCapture(event.pointerId);
-    this.activeDrag = { column: column.key, pointerId: event.pointerId, startX: event.clientX, startWidth: this.columnWidth(column) };
-    target.addEventListener('pointermove', this.handleResizeMove);
-    target.addEventListener('pointerup', this.handleResizeEnd);
-  }
-
-  private readonly handleResizeMove = (event: PointerEvent): void => {
-    if (!this.activeDrag) {
-      return;
-    }
-    const column = this.columns.find((c) => c.key === this.activeDrag?.column);
-    const minWidth = column?.minWidth ?? MIN_COLUMN_WIDTH;
-    const delta = event.clientX - this.activeDrag.startX;
-    const width = Math.max(minWidth, this.activeDrag.startWidth + delta);
-    this.columnWidths = { ...this.columnWidths, [this.activeDrag.column]: width };
-  };
-
-  private readonly handleResizeEnd = (event: PointerEvent): void => {
-    const target = event.currentTarget as HTMLElement;
-    target.removeEventListener('pointermove', this.handleResizeMove);
-    target.removeEventListener('pointerup', this.handleResizeEnd);
-    const drag = this.activeDrag;
-    this.activeDrag = undefined;
-    if (!drag) {
-      return;
-    }
-    const width = this.columnWidths[drag.column];
-    if (width !== undefined) {
-      this.dispatchEvent(
-        new CustomEvent<DataGridColumnResizeDetail>('column-resize', {
-          detail: { column: drag.column, width },
-          bubbles: true,
-          composed: true,
-        }),
-      );
-    }
-    this.requestUpdate();
-  };
-
-  /* ---------- scrolling / virtualization ---------- */
-
-  private handleScroll(): void {
-    const el = this.gridEl;
-    if (!el) {
-      return;
-    }
-    this.bodyScrollTop = el.scrollTop;
-    this.bodyScrollLeft = el.scrollLeft;
-    this.toggleAttribute('data-x-scrolled', el.scrollLeft > 0);
-    this.toggleAttribute('data-header-scrolled', el.scrollTop > 0);
-    this.maybeRequestMoreRows();
-  }
-
-  private maybeRequestMoreRows(): void {
-    if (this.height === 'content' || !this.rowCount || this.rowCount <= this.data.length || this.rowHeightPx === 0) {
-      return;
-    }
-    const lastVisibleIndex = Math.ceil((this.bodyScrollTop + this.viewportPx) / this.rowHeightPx);
-    if (lastVisibleIndex < this.data.length - 5) {
-      return;
-    }
-    const start = this.data.length;
-    const end = Math.min(this.rowCount, start + Math.max(20, Math.ceil(this.viewportPx / this.rowHeightPx)));
-    if (end <= start || this.lastRequestedEnd >= end) {
-      return;
-    }
-    this.lastRequestedEnd = end;
-    this.dispatchEvent(
-      new CustomEvent<DataGridRangeNeededDetail>('range-needed', { detail: { start, end }, bubbles: true, composed: true }),
-    );
-  }
-
-  private visibleRowRange(total: number): { start: number; end: number } {
-    if (this.height === 'content' || this.rowHeightPx === 0) {
-      return { start: 0, end: total - 1 };
-    }
-    const overscan = Math.max(1, Math.ceil(this.viewportPx / this.rowHeightPx));
-    const start = Math.max(0, Math.floor(this.bodyScrollTop / this.rowHeightPx) - overscan);
-    const end = Math.min(total - 1, Math.ceil((this.bodyScrollTop + this.viewportPx) / this.rowHeightPx) + overscan);
-    return { start, end };
-  }
-
-  private ensureRowVisible(rowIndex: number): void {
-    if (this.height === 'content' || !this.gridEl || this.rowHeightPx === 0) {
-      return;
-    }
-    const top = rowIndex * this.rowHeightPx;
-    const bottom = top + this.rowHeightPx;
-    if (top < this.gridEl.scrollTop) {
-      this.gridEl.scrollTop = top;
-    } else if (bottom > this.gridEl.scrollTop + this.viewportPx) {
-      this.gridEl.scrollTop = bottom - this.viewportPx;
-    }
-  }
-
-  /* ---------- keyboard / focus / click ---------- */
-
-  private handleGridClick(event: MouseEvent): void {
-    const target = event.composedPath().find((el) => el instanceof HTMLElement && el.dataset.dsCellKey) as
-      | HTMLElement
-      | undefined;
-    if (!target) {
-      return;
-    }
-    const rowId = target.dataset.dsCellRow;
-    const colKey = target.dataset.dsCellKey!;
-    const rows = this.sortedRows();
-    const rowIndex = rowId === undefined ? -1 : rows.findIndex((row) => row.id === rowId);
-    this.setActive(rowIndex, colKey);
-    if (rowIndex === -1) {
-      return;
-    }
-    if (this.selectable === 'cell') {
-      this.commitCellSelection({ rowId: rowId!, column: colKey });
-    } else if (this.selectable === 'range') {
-      if (event.shiftKey && this.rangeAnchor) {
-        this.commitRangeSelection({
-          from: { rowId: rows[this.rangeAnchor.rowIndex]!.id, column: this.rangeAnchor.colKey },
-          to: { rowId: rowId!, column: colKey },
-        });
-      } else {
-        this.rangeAnchor = { rowIndex, colKey };
-        this.commitRangeSelection({ from: { rowId: rowId!, column: colKey }, to: { rowId: rowId!, column: colKey } });
-      }
-    }
-  }
-
-  private handleGridDblClick(event: MouseEvent): void {
-    const target = event.composedPath().find((el) => el instanceof HTMLElement && el.dataset.dsCellKey) as
-      | HTMLElement
-      | undefined;
-    if (!target?.dataset.dsCellRow) {
-      return;
-    }
-    const rows = this.sortedRows();
-    const row = rows.find((r) => r.id === target.dataset.dsCellRow);
-    const column = this.columns.find((c) => c.key === target.dataset.dsCellKey);
-    if (row && column) {
-      this.startEdit(column, row);
-    }
-  }
-
-  private setActive(rowIndex: number, colKey: string): void {
-    this.activeRowIndex = rowIndex;
-    this.activeColKey = colKey;
-  }
-
-  private moveActive(rowDelta: number, colDelta: number): void {
-    const rows = this.sortedRows();
-    const keys = this.effectiveColumnKeys();
-    let colIndex = Math.max(0, keys.indexOf(this.activeColKey) + colDelta);
-    colIndex = Math.min(colIndex, keys.length - 1);
-    const rowIndex = Math.max(-1, Math.min(rows.length - 1, this.activeRowIndex + rowDelta));
-    this.setActive(rowIndex, keys[colIndex] ?? keys[0]!);
-    if (rowIndex >= 0) {
-      this.ensureRowVisible(rowIndex);
-    }
-  }
-
-  private handleGridKeydown(event: KeyboardEvent): void {
+  private handleKeydown(event: KeyboardEvent): void {
     if (this.editing) {
       return;
     }
-    const rows = this.sortedRows();
-    if (this.activeColKey === '') {
-      this.setActive(-1, this.effectiveColumnKeys()[0] ?? '');
+    if (event.target !== this.gridEl) {
+      this.handleCellControlKeydown(event);
+      return;
     }
-    const keys = this.effectiveColumnKeys();
-    const colIndex = keys.indexOf(this.activeColKey);
-    const currentColumn = this.columns.find((c) => c.key === this.activeColKey);
-    const activeRow = rows[this.activeRowIndex];
+    const rows = this.rows;
+    const lastRow = rows.length - 1;
+    const lastCol = this.colCount - 1;
+    const { key, shiftKey, ctrlKey, altKey, metaKey } = event;
+    const inBody = this.activeRow >= 0;
+    const column = this.columnAt(this.activeCol);
+    let handled = true;
 
-    switch (event.key) {
+    switch (key) {
       case 'ArrowRight':
-        event.preventDefault();
-        this.moveActive(0, 1);
-        return;
-      case 'ArrowLeft':
-        event.preventDefault();
-        this.moveActive(0, -1);
-        return;
+      case 'ArrowLeft': {
+        const step = key === 'ArrowRight' ? 1 : -1;
+        if (shiftKey && !inBody && column?.resizable) {
+          this.resizeByKey(column, step);
+        } else if (shiftKey && inBody && this.selectable === 'range') {
+          this.extendRange(0, step);
+        } else {
+          this.arrowTo(this.activeRow, this.activeCol + step);
+        }
+        break;
+      }
       case 'ArrowDown':
-        event.preventDefault();
-        if (event.shiftKey && this.selectable === 'range' && this.activeRowIndex >= 0) {
-          this.extendRange(1, 0);
-          return;
+      case 'ArrowUp': {
+        const step = key === 'ArrowDown' ? 1 : -1;
+        if (shiftKey && inBody && this.selectable === 'range') {
+          this.extendRange(step, 0);
+        } else {
+          this.arrowTo(this.activeRow + step, this.activeCol);
         }
-        this.moveActive(1, 0);
-        return;
-      case 'ArrowUp':
-        event.preventDefault();
-        if (event.shiftKey && this.selectable === 'range' && this.activeRowIndex >= 0) {
-          this.extendRange(-1, 0);
-          return;
-        }
-        this.moveActive(-1, 0);
-        return;
+        break;
+      }
       case 'Home':
-        event.preventDefault();
-        if (event.ctrlKey) {
-          this.setActive(-1, keys[0]!);
-        } else {
-          this.setActive(this.activeRowIndex, keys[0]!);
-        }
-        return;
+        this.moveTo(ctrlKey ? -1 : this.activeRow, 0);
+        break;
       case 'End':
-        event.preventDefault();
-        if (event.ctrlKey) {
-          this.setActive(rows.length - 1, keys[keys.length - 1]!);
-          this.ensureRowVisible(rows.length - 1);
-        } else {
-          this.setActive(this.activeRowIndex, keys[keys.length - 1]!);
-        }
-        return;
-      case 'PageDown': {
-        event.preventDefault();
-        const page = Math.max(1, Math.floor(this.viewportPx / (this.rowHeightPx || 1)));
-        this.moveActive(page, 0);
-        return;
-      }
-      case 'PageUp': {
-        event.preventDefault();
-        const page = Math.max(1, Math.floor(this.viewportPx / (this.rowHeightPx || 1)));
-        this.moveActive(-page, 0);
-        return;
-      }
+        this.moveTo(ctrlKey ? lastRow : this.activeRow, lastCol);
+        break;
+      case 'PageDown':
+        this.moveTo(Math.min(lastRow, this.activeRow + this.pageRows()), this.activeCol);
+        break;
+      case 'PageUp':
+        this.moveTo(inBody ? Math.max(0, this.activeRow - this.pageRows()) : -1, this.activeCol);
+        break;
       case 'Enter':
-        event.preventDefault();
-        if (this.activeRowIndex === -1) {
-          if (currentColumn?.sortable) {
-            this.handleSort(event, currentColumn.key);
-          }
-          return;
-        }
-        if (activeRow && currentColumn?.editable) {
-          this.startEdit(currentColumn, activeRow);
-          return;
-        }
-        this.activateCellControl(activeRow, currentColumn);
-        return;
+        this.activateCell();
+        break;
       case 'F2':
-        event.preventDefault();
-        if (activeRow && currentColumn?.editable) {
-          this.startEdit(currentColumn, activeRow);
+        if (inBody) {
+          this.startEdit(this.activeRow, this.activeCol);
         }
-        return;
+        break;
       case 'Escape':
-        if (this.selectable === 'range' && this.internalRange) {
-          event.preventDefault();
-          this.commitRangeSelection(null);
+        if (this.range) {
+          this.range = null;
+          this.message = '';
+        } else {
+          handled = false;
         }
-        return;
+        break;
       case ' ':
-        if (this.selectable === 'row' || this.selectable === 'range') {
-          event.preventDefault();
-          this.handleSpace(event, rows, colIndex);
-        }
-        return;
-      case 'a':
-      case 'A':
-        if (event.ctrlKey && (this.selectable === 'row' || this.selectable === 'range')) {
-          event.preventDefault();
-          this.selectAll(rows);
-        }
-        return;
-      case 'c':
-      case 'C':
-        if (event.ctrlKey && this.selectable === 'range') {
-          event.preventDefault();
-          this.copyRange(rows);
-        }
-        return;
+        handled = this.handleSpace(shiftKey, ctrlKey);
+        break;
       case 'Delete':
       case 'Backspace':
-        if (this.editable) {
-          event.preventDefault();
-          this.clearSelectionValues(rows);
+        handled = this.editable;
+        if (handled) {
+          this.clearSelection();
         }
-        return;
+        break;
       default:
-        if (
-          activeRow &&
-          currentColumn?.editable &&
-          !currentColumn.isRowHeader &&
-          event.key.length === 1 &&
-          !event.ctrlKey &&
-          !event.metaKey &&
-          !event.altKey
-        ) {
-          // Typing a character opens the editor (APG grid "type ahead" convention); the character itself is not
-          // seeded into the editor — forwarding a keystroke into five different composed field components'
-          // internal value/selection state isn't implementable generically. See gaps.
-          this.startEdit(currentColumn, activeRow);
+        if (ctrlKey && event.code === 'KeyA' && (this.selectable === 'row' || this.selectable === 'range')) {
+          this.selectAll();
+        } else if (ctrlKey && event.code === 'KeyC' && this.selectable === 'range') {
+          this.copyRange();
+        } else if (key.length === 1 && !ctrlKey && !metaKey && !altKey && inBody && column?.editable) {
+          this.startEdit(this.activeRow, this.activeCol, key);
+        } else {
+          handled = false;
         }
-        return;
+    }
+    if (handled) {
+      event.preventDefault();
     }
   }
 
-  private extendRange(rowDelta: number, colDelta: number): void {
-    const rows = this.sortedRows();
-    if (!this.rangeAnchor) {
-      this.rangeAnchor = { rowIndex: this.activeRowIndex, colKey: this.activeColKey };
-    }
-    this.moveActive(rowDelta, colDelta);
-    const anchorRow = rows[this.rangeAnchor.rowIndex];
-    const focusRow = rows[this.activeRowIndex];
-    if (anchorRow && focusRow) {
-      this.commitRangeSelection({
-        from: { rowId: anchorRow.id, column: this.rangeAnchor.colKey },
-        to: { rowId: focusRow.id, column: this.activeColKey },
-      });
+  /** Real focus is on a control inside a cell: Escape hands it back; Shift+Tab leaves the grid. */
+  private handleCellControlKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.focusGrid();
+    } else if (event.key === 'Tab' && event.shiftKey) {
+      this.focusGrid();
     }
   }
 
-  private handleSpace(event: KeyboardEvent, rows: DataGridRow[], colIndex: number): void {
-    const row = rows[this.activeRowIndex];
+  private handleKeyup(event: KeyboardEvent): void {
+    if (event.key === 'Shift') {
+      this.flushKeyboardResize();
+    }
+  }
+
+  private handleGridFocusout(event: FocusEvent): void {
+    const grid = this.gridEl;
+    const next = event.relatedTarget as Node | null;
+    if (grid && (!next || !grid.contains(next))) {
+      this.flushKeyboardResize();
+    }
+  }
+
+  /** A plain arrow; in range mode it collapses the range to the newly focused body cell. */
+  private arrowTo(row: number, col: number): void {
+    this.moveTo(row, col);
+    if (this.selectable === 'range' && this.activeRow >= 0) {
+      const pos = { row: this.activeRow, col: this.activeCol };
+      this.setRange({ anchor: pos, focus: pos });
+    }
+  }
+
+  private extendRange(rowStep: number, colStep: number): void {
+    const anchor = this.range?.anchor ?? { row: this.activeRow, col: this.activeCol };
+    this.moveTo(clamp(this.activeRow + rowStep, 0, this.rows.length - 1), this.activeCol + colStep);
+    this.setRange({ anchor, focus: { row: this.activeRow, col: this.activeCol } });
+  }
+
+  private activateCell(): void {
+    const column = this.columnAt(this.activeCol);
+    if (this.activeRow === -1) {
+      if (this.hasSelectColumn && this.activeCol === 0) {
+        this.toggleAll();
+      } else if (column?.sortable) {
+        this.sortBy(column);
+      }
+      return;
+    }
+    const row = this.rows[this.activeRow];
     if (!row) {
       return;
     }
-    if (this.selectable === 'row') {
-      const current = this.currentSelectedRows();
-      const next = current.includes(row.id) ? current.filter((id) => id !== row.id) : [...current, row.id];
-      this.commitRowSelection(next);
+    if (this.hasSelectColumn && this.activeCol === 0) {
+      this.toggleRow(row.id);
       return;
     }
-    if (this.selectable === 'range') {
-      if (event.ctrlKey) {
-        const first = rows[0];
-        const last = rows[rows.length - 1];
-        if (first && last) {
-          this.commitRangeSelection({
-            from: { rowId: first.id, column: this.activeColKey },
-            to: { rowId: last.id, column: this.activeColKey },
-          });
-        }
-        return;
-      }
-      const lastColumn = this.columns[this.columns.length - 1];
-      if (lastColumn) {
-        this.commitRangeSelection({
-          from: { rowId: row.id, column: this.columns[0]?.key ?? this.activeColKey },
-          to: { rowId: row.id, column: lastColumn.key },
-        });
-      }
+    if (this.editable && column?.editable) {
+      this.startEdit(this.activeRow, this.activeCol);
+      return;
+    }
+    const control = this.activeCellEl?.querySelector<HTMLElement>(`[data-part="cellContent"] :is(${CELL_CONTROLS})`);
+    if (control) {
+      control.focus();
+      (control.shadowRoot?.querySelector<HTMLElement>('a[href], button, input') ?? control).click();
     }
   }
 
-  private selectAll(rows: DataGridRow[]): void {
+  private handleSpace(shiftKey: boolean, ctrlKey: boolean): boolean {
+    const row = this.rows[this.activeRow];
+    if (!row) {
+      return this.selectable === 'row' || this.selectable === 'range';
+    }
     if (this.selectable === 'row') {
-      this.commitRowSelection(rows.map((row) => row.id));
-      return;
+      if (shiftKey) {
+        this.extendRows(this.activeRow);
+      } else {
+        this.toggleRow(row.id);
+      }
+      return true;
     }
     if (this.selectable === 'range') {
-      const first = rows[0];
-      const last = rows[rows.length - 1];
-      const firstColumn = this.columns[0];
-      const lastColumn = this.columns[this.columns.length - 1];
-      if (first && last && firstColumn && lastColumn) {
-        this.commitRangeSelection({
-          from: { rowId: first.id, column: firstColumn.key },
-          to: { rowId: last.id, column: lastColumn.key },
+      const lastCol = this.colCount - 1;
+      if (ctrlKey) {
+        this.setRange({
+          anchor: { row: 0, col: this.activeCol },
+          focus: { row: this.rows.length - 1, col: this.activeCol },
         });
+      } else if (shiftKey && this.range) {
+        this.setRange({ anchor: { row: this.range.anchor.row, col: 0 }, focus: { row: this.activeRow, col: lastCol } });
+      } else {
+        this.setRange({ anchor: { row: this.activeRow, col: 0 }, focus: { row: this.activeRow, col: lastCol } });
       }
+      return true;
+    }
+    return false;
+  }
+
+  private selectAll(): void {
+    const rows = this.rows;
+    if (this.selectable === 'row') {
+      this.commitRows(rows.map((row) => row.id));
+    } else if (rows.length > 0 && this.colCount > 0) {
+      this.setRange({ anchor: { row: 0, col: 0 }, focus: { row: rows.length - 1, col: this.colCount - 1 } });
     }
   }
 
-  private copyRange(rows: DataGridRow[]): void {
-    const rect = this.rangeRect(rows);
-    if (!rect) {
+  private copyRange(): void {
+    const rect = this.rangeRect();
+    const rows = this.rows;
+    if (!rect || rows.length === 0) {
       return;
     }
-    const columns = this.columns.slice(rect.colStart, rect.colEnd + 1);
-    const includeHeader = rect.colStart === 0 && rect.colEnd === this.columns.length - 1;
+    const columns: DataGridColumn[] = [];
+    for (let col = rect.colStart; col <= rect.colEnd; col += 1) {
+      const column = this.columnAt(col);
+      if (column) {
+        columns.push(column);
+      }
+    }
     const lines: string[] = [];
-    if (includeHeader) {
+    if (rect.rowStart === 0 && rect.rowEnd === rows.length - 1) {
       lines.push(columns.map((column) => column.header).join('\t'));
     }
     for (let r = rect.rowStart; r <= rect.rowEnd; r += 1) {
       const row = rows[r];
-      if (!row) {
-        continue;
+      if (row) {
+        lines.push(columns.map((column) => textOf(row[column.key])).join('\t'));
       }
-      lines.push(columns.map((column) => (column.render ? String(row[column.key] ?? '') : String(row[column.key] ?? ''))).join('\t'));
     }
-    const text = lines.join('\n');
-    const cellCount = (rect.rowEnd - rect.rowStart + 1) * columns.length;
-    navigator.clipboard?.writeText(text).then(
+    const cells = (rect.rowEnd - rect.rowStart + 1) * columns.length;
+    void navigator.clipboard?.writeText(lines.join('\n')).then(
       () => {
-        this.liveMessage = COPY_COPIED(cellCount);
+        this.message = COPY_COPIED[pluralForm(cells)](cells);
       },
       () => undefined,
     );
   }
 
-  private clearSelectionValues(rows: DataGridRow[]): void {
+  /** Delete/Backspace: `cell-change` with `value: undefined` for each editable cell in the selection. */
+  private clearSelection(): void {
+    const rows = this.rows;
     const targets: { row: DataGridRow; column: DataGridColumn }[] = [];
-    if (this.selectable === 'range' && this.internalRange) {
-      const rect = this.rangeRect(rows);
-      if (rect) {
-        for (let r = rect.rowStart; r <= rect.rowEnd; r += 1) {
-          const row = rows[r];
-          if (!row) {
-            continue;
-          }
-          for (let c = rect.colStart; c <= rect.colEnd; c += 1) {
-            const column = this.columns[c];
-            if (column?.editable) {
-              targets.push({ row, column });
-            }
-          }
+    const add = (rowIndex: number, col: number): void => {
+      const row = rows[rowIndex];
+      const column = this.columnAt(col);
+      if (row && column?.editable) {
+        targets.push({ row, column });
+      }
+    };
+    const rect = this.rangeRect();
+    if (this.selectable === 'range' && rect) {
+      for (let r = rect.rowStart; r <= rect.rowEnd; r += 1) {
+        for (let c = rect.colStart; c <= rect.colEnd; c += 1) {
+          add(r, c);
         }
       }
-    } else if (this.selectable === 'cell' && this.internalSelectedCell) {
-      const row = rows.find((r) => r.id === this.internalSelectedCell?.rowId);
-      const column = this.columns.find((c) => c.key === this.internalSelectedCell?.column);
-      if (row && column?.editable) {
-        targets.push({ row, column });
-      }
-    } else {
-      const row = rows[this.activeRowIndex];
-      const column = this.columns.find((c) => c.key === this.activeColKey);
-      if (row && column?.editable) {
-        targets.push({ row, column });
-      }
+    } else if (this.selectable === 'row') {
+      const selected = new Set(this.currentSelected);
+      rows.forEach((row, r) => {
+        if (selected.has(row.id)) {
+          for (let c = this.colOffset; c < this.colCount; c += 1) {
+            add(r, c);
+          }
+        }
+      });
+    } else if (this.selectable === 'cell') {
+      add(this.activeRow, this.activeCol);
     }
     for (const { row, column } of targets) {
-      const previous = row[column.key];
-      const error = column.validate?.(undefined, row);
-      if (error) {
+      this.emit<DataGridCellChangeDetail>('cell-change', {
+        rowId: row.id,
+        column: column.key,
+        value: undefined,
+        previous: cellValue(row[column.key]),
+      });
+    }
+  }
+
+  /* ---------- pointer ---------- */
+
+  private cellFromTarget(event: Event): { pos: CellPos; el: HTMLElement; inControl: boolean } | undefined {
+    let inControl = false;
+    for (const node of event.composedPath()) {
+      if (!(node instanceof HTMLElement)) {
         continue;
       }
-      this.dispatchEvent(
-        new CustomEvent<DataGridCellChangeDetail>('cell-change', {
-          detail: { rowId: row.id, column: column.key, value: undefined, previous },
-          bubbles: true,
-          composed: true,
-        }),
-      );
+      if (node.dataset['row'] !== undefined && node.dataset['col'] !== undefined) {
+        return { pos: { row: Number(node.dataset['row']), col: Number(node.dataset['col']) }, el: node, inControl };
+      }
+      if (node.matches(`${CELL_CONTROLS}, .editor-frame, .resize-handle`)) {
+        inControl = true;
+      }
+      if (node === this.gridEl) {
+        return undefined;
+      }
     }
+    return undefined;
   }
 
-  /** Best-effort activation of a control rendered by `column.render` (Link, Button, Checkbox); the doc names this
-      case but a consumer-rendered cell's DOM shape isn't known ahead of time. */
-  private activateCellControl(row: DataGridRow | undefined, column: DataGridColumn | undefined): void {
-    if (!row || !column) {
+  private handlePointerdown(event: PointerEvent): void {
+    const hit = this.cellFromTarget(event);
+    if (!hit || event.button !== 0) {
       return;
     }
-    const cellEl = this.renderRoot.querySelector(`#${CSS.escape(this.cellId(row.id, column.key))}`);
-    const control = cellEl?.querySelector('ds-button, ds-link, ds-checkbox, button, a[href], [role="button"]') as
-      | HTMLElement
-      | undefined;
-    control?.click();
+    const { pos, inControl } = hit;
+    if (this.editing) {
+      const row = this.rows[pos.row];
+      const column = this.columnAt(pos.col);
+      if (row?.id === this.editing.rowId && column?.key === this.editing.column) {
+        return;
+      }
+    }
+    const previous = { row: this.activeRow, col: this.activeCol };
+    this.activeRow = pos.row;
+    this.activeCol = pos.col;
+    if (inControl) {
+      return;
+    }
+    const body = pos.row >= 0;
+    if (this.selectable === 'range' && body) {
+      event.preventDefault();
+      const anchor = event.shiftKey && this.range ? this.range.anchor : pos;
+      this.setRange({ anchor, focus: pos });
+      this.rangeDragging = true;
+      this.rangeDragMoved = false;
+      this.gridEl?.setPointerCapture(event.pointerId);
+    } else if (this.selectable === 'cell' && body && (previous.row !== pos.row || previous.col !== pos.col)) {
+      this.emitCellSelection();
+    } else if (this.selectable === 'row' && body && pos.col > 0) {
+      const row = this.rows[pos.row];
+      if (row && (event.ctrlKey || event.metaKey)) {
+        this.toggleRow(row.id);
+      } else if (event.shiftKey) {
+        event.preventDefault();
+        this.extendRows(pos.row);
+      }
+    } else if (this.selectable === 'row' && body && pos.col === 0) {
+      const row = this.rows[pos.row];
+      if (row) {
+        this.toggleRow(row.id);
+      }
+    }
+    this.focusGrid();
   }
 
-  /* ---------- overrides / dev warnings ---------- */
-
-  private get captionOverrides(): Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> {
-    const result: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> = { marginBlockEnd: 'space.0' };
-    if (this.overrides?.captionSize) {
-      result.fontSize = this.overrides.captionSize;
+  private handlePointermove(event: PointerEvent): void {
+    if (!this.rangeDragging || !this.range) {
+      return;
     }
-    if (this.overrides?.captionWeight) {
-      result.fontWeight = this.overrides.captionWeight;
+    const target = (this.renderRoot as ShadowRoot).elementFromPoint(event.clientX, event.clientY);
+    const cell = target?.closest<HTMLElement>('[data-row][data-col]');
+    if (!cell) {
+      return;
     }
-    return result;
+    const row = Number(cell.dataset['row']);
+    const col = Number(cell.dataset['col']);
+    if (row < 0 || (row === this.range.focus.row && col === this.range.focus.col)) {
+      return;
+    }
+    this.activeRow = row;
+    this.activeCol = col;
+    this.range = { anchor: this.range.anchor, focus: { row, col } };
+    this.rangeDragMoved = true;
   }
+
+  private handlePointerup(event: PointerEvent): void {
+    if (!this.rangeDragging) {
+      return;
+    }
+    this.rangeDragging = false;
+    if (this.gridEl?.hasPointerCapture(event.pointerId)) {
+      this.gridEl.releasePointerCapture(event.pointerId);
+    }
+    if (this.rangeDragMoved && this.range) {
+      this.setRange(this.range);
+    }
+  }
+
+  private handleDblclick(event: MouseEvent): void {
+    const hit = this.cellFromTarget(event);
+    if (hit && !hit.inControl && hit.pos.row >= 0) {
+      this.startEdit(hit.pos.row, hit.pos.col);
+    }
+  }
+
+  /* ---------- column resize ---------- */
+
+  private handleResizeDown(event: PointerEvent, column: DataGridColumn): void {
+    event.preventDefault();
+    event.stopPropagation();
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    this.resizeDrag = {
+      column: column.key,
+      startX: event.clientX,
+      startWidth: this.widthOf(column),
+      rtl: getComputedStyle(this).direction === 'rtl',
+    };
+    this.draggingColumn = column.key;
+  }
+
+  private readonly handleResizeMove = (event: PointerEvent): void => {
+    const drag = this.resizeDrag;
+    const column = drag ? this.columns.find((candidate) => candidate.key === drag.column) : undefined;
+    if (!drag || !column) {
+      return;
+    }
+    const delta = (event.clientX - drag.startX) * (drag.rtl ? -1 : 1);
+    const width = Math.max(this.minWidthOf(column), Math.round(drag.startWidth + delta));
+    if (this.columnWidths[column.key] !== width) {
+      this.columnWidths = { ...this.columnWidths, [column.key]: width };
+    }
+  };
+
+  private readonly handleResizeUp = (event: PointerEvent): void => {
+    const drag = this.resizeDrag;
+    const handle = event.currentTarget as HTMLElement;
+    if (handle.hasPointerCapture(event.pointerId)) {
+      handle.releasePointerCapture(event.pointerId);
+    }
+    this.resizeDrag = undefined;
+    this.draggingColumn = undefined;
+    const column = drag ? this.columns.find((candidate) => candidate.key === drag.column) : undefined;
+    if (drag && column && this.widthOf(column) !== drag.startWidth) {
+      this.emit<DataGridColumnResizeDetail>('column-resize', { column: column.key, width: this.widthOf(column) });
+    }
+  };
+
+  private resizeByKey(column: DataGridColumn, step: number): void {
+    const resizeStep = this.probeEl?.offsetWidth ?? 0;
+    const width = Math.max(this.minWidthOf(column), this.widthOf(column) + step * resizeStep);
+    this.columnWidths = { ...this.columnWidths, [column.key]: width };
+    this.keyboardResize = column.key;
+  }
+
+  private flushKeyboardResize(): void {
+    const key = this.keyboardResize;
+    this.keyboardResize = undefined;
+    const column = key ? this.columns.find((candidate) => candidate.key === key) : undefined;
+    if (column) {
+      this.emit<DataGridColumnResizeDetail>('column-resize', { column: column.key, width: this.widthOf(column) });
+    }
+  }
+
+  /* ---------- scrolling and measurement ---------- */
+
+  private handleScroll(): void {
+    const region = this.scrollEl;
+    if (!region) {
+      return;
+    }
+    if (this.bodyScrollTop !== region.scrollTop) {
+      this.bodyScrollTop = region.scrollTop;
+    }
+    const scrolledX = region.scrollLeft !== 0;
+    if (this.scrolledX !== scrolledX) {
+      this.scrolledX = scrolledX;
+    }
+    if (this.rowHeightPx) {
+      this.maybeRequestRange(Math.ceil((region.scrollTop + this.viewportHeight) / this.rowHeightPx));
+    }
+  }
+
+  /** `range-needed` when `index` is within one page of the end of `data` and `rowCount` says there is more. */
+  private maybeRequestRange(index: number): void {
+    const total = this.rowCount;
+    const loaded = this.data.length;
+    if (total === undefined || total <= loaded) {
+      return;
+    }
+    const page = this.pageRows();
+    if (index < loaded - page) {
+      return;
+    }
+    const end = Math.min(total - 1, Math.max(index, loaded) + page);
+    if (this.requestedEnds.has(end)) {
+      return;
+    }
+    this.requestedEnds.add(end);
+    this.emit<DataGridRangeNeededDetail>('range-needed', { start: loaded, end });
+  }
+
+  private scrollRowIntoView(row: number): void {
+    const region = this.scrollEl;
+    const rowH = this.rowHeightPx;
+    if (!region || !rowH || row < 0 || this.height === 'content') {
+      return;
+    }
+    const top = row * rowH;
+    const visible = this.viewportHeight - this.headerHeight;
+    if (top < region.scrollTop) {
+      region.scrollTop = top;
+    } else if (top + rowH > region.scrollTop + visible) {
+      region.scrollTop = top + rowH - visible;
+    }
+    this.bodyScrollTop = region.scrollTop;
+  }
+
+  /** Horizontal (and, for `height: content`, vertical) reveal of the active cell past any pinned columns. */
+  private scrollActiveIntoView(): void {
+    const cell = this.activeCellEl;
+    const region = this.scrollEl;
+    if (!cell || !region) {
+      return;
+    }
+    if (this.height === 'content') {
+      cell.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      return;
+    }
+    if (cell.classList.contains('pinned-start') || cell.classList.contains('pinned-end')) {
+      return;
+    }
+    const row = cell.parentElement;
+    let startInset = 0;
+    let endInset = 0;
+    row?.querySelectorAll<HTMLElement>('.pinned-start').forEach((el) => (startInset += el.offsetWidth));
+    row?.querySelectorAll<HTMLElement>('.pinned-end').forEach((el) => (endInset += el.offsetWidth));
+    const cellRect = cell.getBoundingClientRect();
+    const regionRect = region.getBoundingClientRect();
+    if (cellRect.left < regionRect.left + startInset) {
+      region.scrollLeft -= regionRect.left + startInset - cellRect.left;
+    } else if (cellRect.right > regionRect.right - endInset) {
+      region.scrollLeft += cellRect.right - (regionRect.right - endInset);
+    }
+  }
+
+  private measure(): void {
+    const region = this.scrollEl;
+    if (!region) {
+      return;
+    }
+    const row =
+      this.renderRoot.querySelector<HTMLElement>('[data-part="row"]') ??
+      this.renderRoot.querySelector<HTMLElement>('[data-part="headerRow"]');
+    const header = this.renderRoot.querySelector<HTMLElement>('[data-part="header"]');
+    const rowH = row?.getBoundingClientRect().height ?? 0;
+    const headerH = header?.getBoundingClientRect().height ?? 0;
+    if (rowH && rowH !== this.rowHeightPx) {
+      this.rowHeightPx = rowH;
+    }
+    if (headerH !== this.headerHeight) {
+      this.headerHeight = headerH;
+    }
+    if (region.clientHeight !== this.viewportHeight) {
+      this.viewportHeight = region.clientHeight;
+    }
+    const overflowX = region.scrollWidth > region.clientWidth;
+    if (overflowX !== this.overflowX) {
+      this.overflowX = overflowX;
+    }
+  }
+
+  /** Controls a column's `render` returns are reachable by Enter, not Tab: the grid stays one tab stop. */
+  private demoteCellControls(): void {
+    this.renderRoot.querySelectorAll<HTMLElement>(`[data-part="cellContent"] :is(${CELL_CONTROLS})`).forEach((el) => {
+      if (el.getAttribute('tabindex') !== '-1') {
+        el.setAttribute('tabindex', '-1');
+      }
+    });
+  }
+
+  /* ---------- overrides and dev warnings ---------- */
 
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as DataGridOverridableBinding[]) {
       const ref = this.overrides?.[binding];
-      const hook = HOOKS[binding];
       if (ref === undefined) {
-        this.style.removeProperty(hook);
+        this.style.removeProperty(HOOKS[binding]);
       } else {
-        this.style.setProperty(hook, cssVar(ref));
+        this.style.setProperty(HOOKS[binding], cssVar(ref));
       }
+    }
+  }
+
+  private warnOnce(key: string, message: string): void {
+    if (!this.warned.has(key)) {
+      this.warned.add(key);
+      console.warn(`<ds-data-grid> ${message}`, this);
     }
   }
 
@@ -1893,10 +2213,18 @@ export class DsDataGrid extends LitElement {
       return;
     }
     if (!this.caption) {
-      console.warn('<ds-data-grid> requires a `caption`.', this);
+      this.warnOnce('caption', 'requires a `caption`; it is the accessible name.');
     }
-    if (this.columns.length > 0 && !this.columns.some((column) => column.isRowHeader)) {
-      console.warn('<ds-data-grid> has no column with `isRowHeader: true`.', this);
+    if (this.columns.length > 0 && this.columns.filter((column) => column.isRowHeader).length !== 1) {
+      this.warnOnce('row-header', 'needs exactly one column with `isRowHeader: true`.');
+    }
+    const pins = this.columns.map((column) => column.pinned);
+    const firstUnpinnedStart = pins.findIndex((pin) => pin !== 'start');
+    const lastUnpinnedEnd = pins.map((pin) => pin !== 'end').lastIndexOf(true);
+    const strayStart = firstUnpinnedStart !== -1 && pins.slice(firstUnpinnedStart).includes('start');
+    const strayEnd = lastUnpinnedEnd !== -1 && pins.slice(0, lastUnpinnedEnd + 1).includes('end');
+    if (strayStart || strayEnd) {
+      this.warnOnce('pinned', 'pinned columns must be contiguous at the start or end of `columns`.');
     }
   }
 }

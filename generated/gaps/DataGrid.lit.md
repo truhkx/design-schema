@@ -31,3 +31,25 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - DataGrid: the `position` copy is exposed as a hidden `aria-describedby` span on the active cell rather than announced through the polite live region on every arrow press (which would make it very chatty).
 - DataGrid: Ctrl+A / Ctrl+C are bound via `event.key === 'a'/'A'/'c'/'C'`, not a `code`-based binding, despite the doc explicitly saying 'bound by key code KeyA/KeyC' — may not fire correctly on non-Latin keyboard layouts.
 - DataGrid: true drag-to-select for range mode is implemented only as click + Shift+click (anchor/extend), not a continuous pointermove-drag rectangle, though the doc's Behavior section explicitly describes pointerdown/pointermove-with-capture dragging.
+
+## 2026-09-16 11:51 — round 1
+
+- DataGrid: onCellChange payload types `value`/`previous` as `string | number | boolean`, but the Delete/Backspace rule fires `value: undefined` and an unset cell has no previous value; typed both as `string | number | boolean | undefined` (exported DataGridCellValue).
+- DataGrid: the caption is composed as Heading but there is no heading-level prop (Table has captionLevel); rendered level 2.
+- DataGrid: Escape 'clears a range selection' but the onSelectionChange union has no empty member; clearing hides the overlay and fires no event.
+- DataGrid: onCellChange 'fires when an edit commits' does not say whether committing an unchanged value fires; it fires only when the committed value differs from the cell's value.
+- DataGrid: Delete/Backspace clears 'editable cells in the selection' without saying whether `validate` runs or what `selectable: none` counts as a selection; validate is not run, and none mode clears nothing. Row mode clears every editable cell of the selected rows; cell mode clears the focused cell.
+- DataGrid: onRangeNeeded does not say how many rows to request; `end` = min(rowCount − 1, max(trigger index, loaded) + one page), inclusive.
+- DataGrid: columns.minWidth has no default floor for pointer or Shift+Arrow resize; clamped to max(minWidth, size.target.min).
+- DataGrid: cellMutedColor (part cell) and numericFont do not say which cells use them; muted = a cell with no value and no render, mono = a cell whose raw value is a number.
+- DataGrid: anatomy has no part for the column resize separator or for the copy.position text; the separator is an unnamed role=separator on the header edge, and position is a second non-live Text in the status bar, since the statusBar part is the role=status live region and position must not be announced.
+- DataGrid: anatomy lists scrollRegion and grid separately, while the web notes describe one element; rendered as two nested elements: scrollRegion scrolls and grid carries role=grid, tabindex and aria-activedescendant. The focusRing binding draws on scrollRegion while grid is :focus-visible.
+- DataGrid: statusBar is composed as Text but its bindings include a surface and padding, which a composite must not put on a child; the surface and padding go on a wrapper div, and statusBarSize reaches the Text through --ds-text-font-size.
+- DataGrid: Control+a / Control+c say Control only; implemented with ctrlKey (Cmd does nothing on macOS). The doc should say whether Meta counts.
+- DataGrid: pointer row selection ('Shift/Ctrl row selection') has no written rules; Ctrl/Cmd+click toggles a row, Shift+click extends from the anchor, a click on the select cell toggles, and a plain click on a data cell only moves focus.
+- DataGrid: Enter while editing a select or date editor collides with the composed control's own Enter (open listbox, pick a day); select Enter is left to the control, date Enter commits only from the text field.
+- DataGrid: `copy.scrollHint` has no stated placement; it is a visually hidden description referenced by aria-describedby on the grid while the columns overflow sideways.
+- DataGrid: `abbr` is described as the spoken form; on a non-sortable header it becomes aria-label, while a sortable header keeps the copy.sortAscending/sortDescending name built from `header`.
+- DataGrid: stickyHeader with height content has no scroll container to stick in (the page scrolls); the header is sticky only relative to the grid's scroll region.
+- DataGrid: range mode's plain-arrow collapse is specified for arrows only; Home/End/PageUp/PageDown move focus without collapsing the range.
+- DataGrid: `render` is typed ReactNode for web; on Lit it is `(row) => unknown`, rendered as a lit child (TemplateResult, string or number).

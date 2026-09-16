@@ -1,26 +1,37 @@
-/* TreeGrid — styled only through Design Schema token custom properties. */
+/* TreeGrid — DataGrid's structure and CSS, styled only through Design Schema token custom properties. */
 
 .ds-tree-grid {
   --ds-tree-grid-indent: var(--space-5);
-  --ds-tree-grid-expand-button-size: var(--size-target-min);
   --ds-tree-grid-expand-gap: var(--layout-gap-tight);
   --ds-tree-grid-guide-line: var(--color-border);
   --ds-tree-grid-guide-line-width: var(--border-width-thin);
   --ds-tree-grid-parent-weight: var(--font-weight-medium);
   --ds-tree-grid-transition: var(--motion-duration-fast);
+  /* Internal, not override hooks: DataGrid's cell padding and the locked row height for the density. */
+  --ds-tree-grid-cell-padding-inline: var(--space-2);
+  --ds-tree-grid-row-size: var(--size-target-min);
+  /* Internal: where the row-header column starts inside a row (after the selection column). */
+  --ds-tree-grid-guide-start: 0px; /* literal-ok: zero offset, a length so calc() can add to it */
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-family-body);
   font-size: var(--font-size-sm);
   line-height: var(--font-line-height-tight);
-  /* cellColor: color.foreground, locked */
-  color: var(--color-foreground);
-  /* surface: color.background, locked */
   background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.ds-tree-grid--density-comfortable {
+  --ds-tree-grid-row-size: var(--size-target-comfortable);
+}
+
+.ds-tree-grid--selectable-row {
+  --ds-tree-grid-guide-start: calc(var(--size-target-min) + 2 * var(--ds-tree-grid-cell-padding-inline));
 }
 
 .ds-tree-grid__caption {
   padding-block-end: var(--space-2);
-  text-align: start;
 }
 
 .ds-tree-grid__visually-hidden {
@@ -30,74 +41,50 @@
   margin: -1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+/* Measurement probe for minTarget (the resize floor), read on demand. */
+.ds-tree-grid__sizer {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  block-size: 0;
+  /* minTarget: locked */
+  inline-size: var(--size-target-min);
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .ds-tree-grid__scroll-region {
   position: relative;
   overflow: auto;
   border: var(--border-width-thin) solid var(--color-border);
+  scroll-padding-block-start: var(--ds-tree-grid-row-size);
 }
 
 .ds-tree-grid--height-viewport .ds-tree-grid__scroll-region {
-  block-size: 100%;
-  min-block-size: 0;
+  block-size: calc(100vh - 2 * var(--layout-gap-section));
 }
 
 .ds-tree-grid--height-fixed .ds-tree-grid__scroll-region {
   block-size: var(--space-20);
 }
 
-.ds-tree-grid--height-content .ds-tree-grid__scroll-region {
-  overflow: visible;
-  block-size: auto;
+.ds-tree-grid__grid {
+  position: relative;
+  min-inline-size: max-content;
 }
 
-/* focusRing / focusRingWidth: locked. Real focus stays on the container (aria-activedescendant);
-   the active cell is highlighted separately below. */
-.ds-tree-grid__scroll-region:focus-visible {
+/* focusRing / focusRingWidth: locked */
+.ds-tree-grid__grid:focus-visible {
   outline: var(--border-width-focus) solid var(--color-border-focus);
   outline-offset: calc(-1 * var(--border-width-focus));
 }
 
-.ds-tree-grid__row-sizer {
-  position: absolute;
-  inset-inline-start: -9999px; /* literal-ok: off-screen measurement sizer, never rendered visibly */
-  block-size: var(--size-target-min);
-  inline-size: 1px;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.ds-tree-grid--density-comfortable .ds-tree-grid__row-sizer {
-  block-size: var(--size-target-comfortable);
-}
-
 .ds-tree-grid__header {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: var(--layer-raised);
-}
-
-.ds-tree-grid--scrolled-under-header .ds-tree-grid__header {
-  box-shadow: var(--shadow-raised);
-}
-
-.ds-tree-grid__row {
-  display: grid;
-  align-items: stretch;
-  block-size: var(--size-target-min);
-}
-
-.ds-tree-grid--density-comfortable .ds-tree-grid__row {
-  block-size: var(--size-target-comfortable);
-}
-
-.ds-tree-grid__row--header {
-  /* headerSurface / headerColor: locked, as DataGrid */
   background-color: var(--color-background-subtle);
   color: var(--color-foreground);
   font-weight: var(--font-weight-semibold);
@@ -105,20 +92,80 @@
   border-block-end: var(--border-width-thin) solid var(--color-border-strong);
 }
 
-.ds-tree-grid__row--selected {
-  background-color: var(--color-background-subtle);
+.ds-tree-grid--sticky-header .ds-tree-grid__header {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: calc(var(--layer-raised) + 2);
+}
+
+.ds-tree-grid--sticky-header.ds-tree-grid--scrolled-y .ds-tree-grid__header {
+  box-shadow: var(--shadow-raised);
+}
+
+.ds-tree-grid__row {
+  position: relative;
+  display: grid;
+  inline-size: max-content;
+  min-inline-size: 100%;
+  block-size: var(--ds-tree-grid-row-size);
+}
+
+.ds-tree-grid__body {
+  position: relative;
+}
+
+.ds-tree-grid--virtual .ds-tree-grid__body > .ds-tree-grid__row {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
 }
 
 @media (hover: hover) {
-  .ds-tree-grid__row:not(.ds-tree-grid__row--header):hover {
+  .ds-tree-grid__body > .ds-tree-grid__row:hover,
+  .ds-tree-grid__body > .ds-tree-grid__row:hover .ds-tree-grid__cell--pinned {
     background-color: var(--color-action-ghost-background-hover);
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-tree-grid__row:not(.ds-tree-grid__row--header) {
-    transition: background-color var(--ds-tree-grid-transition) var(--motion-easing-standard);
-  }
+.ds-tree-grid__row[aria-selected='true'],
+.ds-tree-grid__row[aria-selected='true'] .ds-tree-grid__cell--pinned {
+  background-color: var(--color-background-subtle);
+}
+.ds-tree-grid__row[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--border-width-focus);
+  background-color: var(--color-control-selected-background);
+  z-index: calc(var(--layer-raised) + 1);
+}
+
+/* guideLine / guideLineWidth: one vertical line per ancestor level, the full row height, centred on that
+   ancestor's expand button (indent guides — no elbows). Decorative. */
+.ds-tree-grid__row--nested::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(
+    var(--ds-tree-grid-guide-start) + var(--ds-tree-grid-cell-padding-inline) +
+      (var(--size-target-min) - var(--ds-tree-grid-guide-line-width)) / 2
+  );
+  inline-size: calc(var(--ds-tree-grid-indent) * var(--ds-tree-grid-depth));
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--ds-tree-grid-guide-line) 0 var(--ds-tree-grid-guide-line-width),
+    transparent 0 var(--ds-tree-grid-indent)
+  );
+  pointer-events: none;
+  z-index: calc(var(--layer-raised) + 1);
+}
+.ds-tree-grid__row--nested:dir(rtl)::before {
+  background-image: repeating-linear-gradient(
+    to left,
+    var(--ds-tree-grid-guide-line) 0 var(--ds-tree-grid-guide-line-width),
+    transparent 0 var(--ds-tree-grid-indent)
+  );
 }
 
 .ds-tree-grid__cell {
@@ -127,21 +174,23 @@
   display: flex;
   align-items: center;
   min-inline-size: 0;
-  padding-inline: var(--space-2);
+  padding-inline: var(--ds-tree-grid-cell-padding-inline);
   border-inline-end: var(--border-width-thin) solid var(--color-border);
   border-block-end: var(--border-width-thin) solid var(--color-border);
   overflow: hidden;
-}
-
-.ds-tree-grid__cell--header {
-  font-weight: inherit;
-  gap: var(--space-1);
+  outline: none;
 }
 
 .ds-tree-grid__cell-content {
+  min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* parentWeight: row headers of rows with children. */
+.ds-tree-grid__cell-content--parent {
+  font-weight: var(--ds-tree-grid-parent-weight);
 }
 
 .ds-tree-grid__cell--align-end {
@@ -152,33 +201,47 @@
   justify-content: center;
   text-align: center;
 }
-.ds-tree-grid__cell--align-end:not(.ds-tree-grid__cell--header) {
+.ds-tree-grid__body .ds-tree-grid__cell--align-end {
   font-family: var(--font-family-mono);
   font-variant-numeric: tabular-nums;
+}
+
+.ds-tree-grid--loading .ds-tree-grid__body .ds-tree-grid__cell {
+  color: var(--color-foreground-muted);
 }
 
 .ds-tree-grid__cell--select {
   justify-content: center;
 }
 
-.ds-tree-grid__scroll-region:focus-visible .ds-tree-grid__cell[data-active='true'] {
+.ds-tree-grid__cell--pinned {
+  position: sticky;
+  z-index: var(--layer-raised);
+  background-color: var(--color-background);
+}
+.ds-tree-grid__header .ds-tree-grid__cell--pinned {
+  background-color: var(--color-background-subtle);
+}
+.ds-tree-grid--scrolled-x .ds-tree-grid__cell--pinned {
+  box-shadow: var(--shadow-raised);
+}
+
+/* The active cell, inset so neighbors and the scroll region never clip it. */
+.ds-tree-grid__grid:focus-within .ds-tree-grid__cell--active {
   outline: var(--border-width-focus) solid var(--color-border-focus);
   outline-offset: calc(-1 * var(--border-width-focus));
-  z-index: 1;
 }
 
-.ds-tree-grid__cell--selected {
-  background-color: var(--color-background-strong);
-}
-
-.ds-tree-grid__cell--editing {
+.ds-tree-grid__cell--editing,
+.ds-tree-grid__grid:focus-within .ds-tree-grid__cell--editing {
   background-color: var(--color-control-background);
   outline: var(--border-width-focus) solid var(--color-border-focus);
   outline-offset: calc(-1 * var(--border-width-focus));
-  z-index: 2;
+  overflow: visible;
 }
 
-.ds-tree-grid__cell--invalid {
+.ds-tree-grid__cell--invalid,
+.ds-tree-grid__grid:focus-within .ds-tree-grid__cell--invalid {
   background-color: var(--color-status-danger-background);
   color: var(--color-status-danger-foreground);
   outline-color: var(--color-border-danger);
@@ -188,93 +251,101 @@
   inline-size: 100%;
 }
 
-/* row header: indent, guide lines, expand button ------------------------------------------------ */
+/* ---- row header: indent, expand button, text ---- */
 
-.ds-tree-grid__row-header-inner {
-  position: relative;
+/* indent: per level (level 1 has none), the row header's leading inset. */
+.ds-tree-grid__indent {
+  flex: none;
+  inline-size: calc(var(--ds-tree-grid-indent) * var(--ds-tree-grid-depth, 0));
+}
+
+.ds-tree-grid__row-header {
   display: flex;
   align-items: center;
   gap: var(--ds-tree-grid-expand-gap);
   min-inline-size: 0;
-  inline-size: 100%;
 }
 
-.ds-tree-grid__guide {
-  position: absolute;
-  inset-block: 0;
-  inline-size: var(--ds-tree-grid-guide-line-width);
-  background-color: var(--ds-tree-grid-guide-line);
-}
-
-.ds-tree-grid__expand-button {
+/* expandButtonSize: locked. Leaves reserve the same inline size so names align. */
+.ds-tree-grid__expand {
   flex: none;
-  min-inline-size: var(--ds-tree-grid-expand-button-size);
-  min-block-size: var(--ds-tree-grid-expand-button-size);
-  --ds-button-padding-inline: 0;
-  --ds-button-padding-block: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--size-target-min);
+  min-block-size: var(--size-target-min);
 }
 
-.ds-tree-grid__expand-icon {
-  transform: rotate(0deg);
+.ds-tree-grid__chevron {
+  display: inline-flex;
 }
-.ds-tree-grid__expand-icon--expanded {
+.ds-tree-grid__chevron--expanded {
   transform: rotate(90deg);
 }
+.ds-tree-grid__cell:dir(rtl) .ds-tree-grid__chevron:not(.ds-tree-grid__chevron--expanded) {
+  transform: scaleX(-1);
+}
 @media (prefers-reduced-motion: no-preference) {
-  .ds-tree-grid__expand-icon {
+  .ds-tree-grid__chevron {
     transition: transform var(--ds-tree-grid-transition) var(--motion-easing-standard);
   }
 }
 
-.ds-tree-grid__expand-spacer {
+.ds-tree-grid__select-spacer {
   flex: none;
-  inline-size: var(--ds-tree-grid-expand-button-size);
+  inline-size: calc(var(--size-target-min) + var(--ds-tree-grid-cell-padding-inline));
 }
 
-.ds-tree-grid__row-header-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.ds-tree-grid__row-header-text--parent {
-  font-weight: var(--ds-tree-grid-parent-weight);
-}
+/* ---- sort, resize, empty, status bar (as DataGrid) ---- */
 
-.ds-tree-grid__loading-cell {
-  color: var(--color-foreground-muted); /* loadingColor: locked */
-}
-.ds-tree-grid__loading-text {
-  color: inherit;
-}
-
-/* sort / select / body / status bar ------------------------------------------------------------- */
-
-.ds-tree-grid__sort-button {
-  --ds-button-padding-inline: 0;
-  --ds-button-padding-block: 0;
+.ds-tree-grid__sort {
+  display: inline-flex;
   min-inline-size: 0;
 }
 
-.ds-tree-grid__body {
-  position: relative;
+.ds-tree-grid__resize-handle {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: var(--space-1);
+  cursor: col-resize;
+  touch-action: none;
+}
+.ds-tree-grid__cell--active .ds-tree-grid__resize-handle {
+  background-color: var(--color-border-strong);
+}
+@media (hover: hover) {
+  .ds-tree-grid__cell--header:hover .ds-tree-grid__resize-handle {
+    background-color: var(--color-border-strong);
+  }
 }
 
-.ds-tree-grid__spacer {
-  position: relative;
+.ds-tree-grid__empty-row {
+  display: grid;
+  min-block-size: var(--ds-tree-grid-row-size);
 }
 
 .ds-tree-grid__empty {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding-block: var(--space-6);
+  padding-inline: var(--ds-tree-grid-cell-padding-inline);
 }
 
 .ds-tree-grid__status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2);
   background-color: var(--color-background-subtle);
   color: var(--color-foreground-muted);
   font-size: var(--font-size-xs);
-  padding: var(--space-2);
   border: var(--border-width-thin) solid var(--color-border);
   border-block-start: 0;
+}
+
+.ds-tree-grid__status-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }

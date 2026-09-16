@@ -1,26 +1,17 @@
-import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DataGrid } from './DataGrid';
 import type { DataGridColumn, DataGridRow } from './DataGrid';
 import { withTheme } from './decorators';
 
 const columns: DataGridColumn[] = [
-  { key: 'name', header: 'Product', isRowHeader: true, width: 160 },
-  { key: 'sku', header: 'SKU', width: 120 },
-  { key: 'price', header: 'Price (USD)', align: 'end', sortable: true, width: 120, editable: true, editor: 'number' },
-  { key: 'status', header: 'Status', sortable: true, width: 140, editable: true, editor: 'select', options: [
-    { value: 'active', label: 'Active' },
-    { value: 'draft', label: 'Draft' },
-    { value: 'archived', label: 'Archived' },
-  ] },
-  { key: 'inStock', header: 'In stock', width: 100, editable: true, editor: 'checkbox' },
+  { key: 'sku', header: 'SKU', isRowHeader: true, width: 160 },
+  { key: 'name', header: 'Name' },
+  { key: 'price', header: 'Price', align: 'end', sortable: true },
 ];
 
 const data: DataGridRow[] = [
-  { id: '1', name: 'Desk lamp', sku: 'DL-100', price: '24.00', status: 'active', inStock: true },
-  { id: '2', name: 'Standing desk', sku: 'SD-220', price: '389.50', status: 'active', inStock: true },
-  { id: '3', name: 'Office chair', sku: 'OC-330', price: '210.00', status: 'draft', inStock: false },
-  { id: '4', name: 'Monitor arm', sku: 'MA-410', price: '75.00', status: 'archived', inStock: false },
+  { id: 'a', sku: 'A-1', name: 'Widget', price: 10 },
+  { id: 'b', sku: 'B-2', name: 'Sprocket', price: 20 },
 ];
 
 const meta: Meta<typeof DataGrid> = {
@@ -36,7 +27,7 @@ const meta: Meta<typeof DataGrid> = {
     editable: false,
     density: 'compact',
     stickyHeader: true,
-    height: 'content',
+    height: 'viewport',
     loading: false,
     showStatusBar: true,
   },
@@ -64,37 +55,94 @@ export const HeightViewport: Story = { args: { height: 'viewport' } };
 export const HeightFixed: Story = { args: { height: 'fixed' } };
 
 // notable states
-export const Editable: Story = { args: { editable: true, selectable: 'cell' } };
-
 export const Loading: Story = { args: { loading: true } };
-
-export const Empty: Story = { args: { data: [], emptyMessage: 'No products match these filters.' } };
-
+export const Empty: Story = { args: { data: [] } };
 export const HiddenCaption: Story = { args: { hideCaption: true } };
-
-export const Resizable: Story = {
+export const NoStatusBar: Story = { args: { showStatusBar: false } };
+export const ResizableAndPinned: Story = {
   args: {
-    columns: columns.map((column) => ({ ...column, resizable: true })),
+    columns: [
+      { key: 'sku', header: 'SKU', isRowHeader: true, width: 160, pinned: 'start', resizable: true },
+      { key: 'name', header: 'Name', resizable: true },
+      { key: 'price', header: 'Price', align: 'end', sortable: true, resizable: true },
+    ],
   },
 };
 
-export const Pinned: Story = {
+// examples
+export const PriceList: Story = {
   args: {
-    columns: [{ ...columns[0]!, pinned: 'start' }, ...columns.slice(1)],
+    caption: 'Price list',
+    columns: [
+      { key: 'sku', header: 'SKU', isRowHeader: true, width: 160 },
+      { key: 'name', header: 'Name' },
+      { key: 'price', header: 'Price', align: 'end', sortable: true },
+    ],
+    data: [
+      { id: 'a', sku: 'A-1', name: 'Widget', price: 10 },
+      { id: 'b', sku: 'B-2', name: 'Sprocket', price: 20 },
+    ],
   },
 };
 
-export const WithOverrides: Story = {
+export const EditableCells: Story = {
   args: {
-    overrides: { headerBorder: 'color.border.strong', captionWeight: 'font.weight.bold' },
+    caption: 'Stock levels',
+    editable: true,
+    columns: [
+      { key: 'sku', header: 'SKU', isRowHeader: true },
+      { key: 'onHand', header: 'On hand', align: 'end', editable: true, editor: 'number' },
+    ],
+    data: [
+      { id: 'a', sku: 'A-1', onHand: 12 },
+      { id: 'b', sku: 'B-2', onHand: 4 },
+    ],
   },
 };
 
-/** Open with editing and selection both reachable, for the axe gate and manual keyboard checks on react-native-web. */
+export const RowSelectionForBulkActions: Story = {
+  args: {
+    caption: 'Orders',
+    selectable: 'row',
+    density: 'comfortable',
+    columns: [
+      { key: 'order', header: 'Order', isRowHeader: true },
+      { key: 'customer', header: 'Customer' },
+    ],
+    data: [
+      { id: 'a', order: '1001', customer: 'Ana Souza' },
+      { id: 'b', order: '1002', customer: 'Bo Lin' },
+    ],
+  },
+};
+
+export const RangeSelectionInAFixedHeightGrid: Story = {
+  args: {
+    caption: 'Daily figures',
+    selectable: 'range',
+    height: 'fixed',
+    columns: [
+      { key: 'day', header: 'Day', isRowHeader: true },
+      { key: 'visits', header: 'Visits', align: 'end' },
+      { key: 'signups', header: 'Signups', align: 'end' },
+    ],
+    data: [
+      { id: 'a', day: 'Monday', visits: 1200, signups: 30 },
+      { id: 'b', day: 'Tuesday', visits: 1450, signups: 41 },
+    ],
+  },
+};
+
+/** Sortable header, select-all, row checkboxes and editable cells, for the axe gate and manual keyboard checks on react-native-web. */
 export const Keyboard: Story = {
   args: {
     selectable: 'row',
     editable: true,
     height: 'content',
+    columns: [
+      { key: 'sku', header: 'SKU', isRowHeader: true, width: 160 },
+      { key: 'name', header: 'Name', editable: true, editor: 'text' },
+      { key: 'price', header: 'Price', align: 'end', sortable: true, editable: true, editor: 'number' },
+    ],
   },
 };

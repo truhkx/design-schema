@@ -2,55 +2,36 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { DataGridColumn } from './DataGrid';
 import { TreeGrid, type TreeGridRow } from './TreeGrid';
 
+const COLUMNS: DataGridColumn[] = [
+  { key: 'account', header: 'Account', isRowHeader: true, width: 240 },
+  { key: 'balance', header: 'Balance', align: 'end', sortable: true, editable: true, editor: 'number' },
+];
+
 const DATA: TreeGridRow[] = [
   {
     id: 'assets',
-    name: 'Assets',
-    balance: 128400,
+    account: 'Assets',
+    balance: 1400,
     children: [
-      { id: 'assets-cash', name: 'Cash', balance: 42000 },
-      { id: 'assets-receivable', name: 'Accounts receivable', balance: 31400 },
+      { id: 'cash', account: 'Cash', balance: 400 },
       {
-        id: 'assets-equipment',
-        name: 'Equipment',
-        balance: 55000,
+        id: 'stock',
+        account: 'Stock',
+        balance: 1000,
         children: [
-          { id: 'assets-equipment-office', name: 'Office equipment', balance: 20000 },
-          { id: 'assets-equipment-vehicles', name: 'Vehicles', balance: 35000 },
+          { id: 'raw', account: 'Raw materials', balance: 600 },
+          { id: 'finished', account: 'Finished goods', balance: 400 },
         ],
       },
     ],
   },
   {
     id: 'liabilities',
-    name: 'Liabilities',
-    balance: 41200,
-    children: [
-      { id: 'liabilities-payable', name: 'Accounts payable', balance: 18200 },
-      { id: 'liabilities-loans', name: 'Loans payable', balance: 23000 },
-    ],
+    account: 'Liabilities',
+    balance: 0,
+    children: [{ id: 'payable', account: 'Accounts payable', balance: 0 }],
   },
-  { id: 'equity', name: "Owner's equity", balance: 87200 },
-];
-
-const LAZY_DATA: TreeGridRow[] = [
-  { id: 'assets', name: 'Assets', balance: 128400, children: 'lazy' },
-  { id: 'liabilities', name: 'Liabilities', balance: 41200, children: 'lazy' },
-];
-
-const COLUMNS: DataGridColumn[] = [
-  { key: 'name', header: 'Account', isRowHeader: true, width: 260 },
-  {
-    key: 'balance',
-    header: 'Balance (USD)',
-    abbr: 'Balance',
-    align: 'end',
-    width: 160,
-    sortable: true,
-    editable: true,
-    editor: 'number',
-    render: (row) => `$${(row.balance as number).toLocaleString()}`,
-  },
+  { id: 'equity', account: 'Equity', balance: 1400 },
 ];
 
 const meta: Meta<typeof TreeGrid> = {
@@ -60,7 +41,7 @@ const meta: Meta<typeof TreeGrid> = {
     caption: 'Chart of accounts',
     columns: COLUMNS,
     data: DATA,
-    defaultExpanded: ['assets', 'liabilities'],
+    defaultExpanded: ['assets'],
   },
   tags: ['autodocs'],
 };
@@ -73,7 +54,6 @@ export const Default: Story = {};
 /* selectable */
 export const SelectableNone: Story = { args: { selectable: 'none' } };
 export const SelectableRow: Story = { args: { selectable: 'row' } };
-export const SelectableRowSelectChildren: Story = { args: { selectable: 'row', selectChildren: true } };
 export const SelectableCell: Story = { args: { selectable: 'cell' } };
 
 /* density */
@@ -82,46 +62,97 @@ export const DensityComfortable: Story = { args: { density: 'comfortable' } };
 
 /* height */
 export const HeightContent: Story = { args: { height: 'content' } };
-export const HeightViewport: Story = {
-  args: { height: 'viewport' },
-  decorators: [(Story) => <div style={{ blockSize: '400px' }}><Story /></div>], // literal-ok: Storybook canvas height, not a component style
-};
+export const HeightViewport: Story = { args: { height: 'viewport' } };
 export const HeightFixed: Story = { args: { height: 'fixed' } };
 
-/* notable states */
-export const HideCaption: Story = { args: { hideCaption: true } };
-
-export const Editable: Story = { args: { editable: true, selectable: 'cell' } };
-
-export const Loading: Story = { args: { loading: true } };
-
-export const Empty: Story = { args: { data: [] } };
-
-export const HideStatusBar: Story = { args: { showStatusBar: false } };
-
-export const DefaultExpandAll: Story = { args: { defaultExpanded: ['*'] } };
-
-export const Collapsed: Story = { args: { defaultExpanded: [] } };
-
-/**
- * `children: "lazy"` rows show the expand control and a loading placeholder until the caller
- * supplies real children through `onExpand`.
- */
-export const LazyChildren: Story = {
+/* examples */
+export const ChartOfAccounts: Story = {
   args: {
-    data: LAZY_DATA,
+    caption: 'Chart of accounts',
     defaultExpanded: ['assets'],
-    onExpand: () => undefined,
+    columns: [
+      { key: 'account', header: 'Account', isRowHeader: true, width: 240 },
+      { key: 'balance', header: 'Balance', align: 'end' },
+    ],
+    data: [
+      {
+        id: 'assets',
+        account: 'Assets',
+        balance: 1400,
+        children: [
+          { id: 'cash', account: 'Cash', balance: 400 },
+          { id: 'stock', account: 'Stock', balance: 1000 },
+        ],
+      },
+      { id: 'equity', account: 'Equity', balance: 1400 },
+    ],
   },
 };
 
+export const LazyFolders: Story = {
+  args: {
+    caption: 'Files',
+    columns: [
+      { key: 'name', header: 'Name', isRowHeader: true },
+      { key: 'size', header: 'Size', align: 'end' },
+    ],
+    data: [
+      { id: 'docs', name: 'Documents', size: 0, children: 'lazy' },
+      { id: 'media', name: 'Media', size: 0, children: 'lazy' },
+    ],
+  },
+};
+
+export const CascadingSelection: Story = {
+  args: {
+    caption: 'Bill of materials',
+    selectable: 'row',
+    selectChildren: true,
+    defaultExpanded: ['*'],
+    columns: [
+      { key: 'part', header: 'Part', isRowHeader: true },
+      { key: 'quantity', header: 'Quantity', align: 'end' },
+    ],
+    data: [{ id: 'frame', part: 'Frame', quantity: 1, children: [{ id: 'bolt', part: 'Bolt', quantity: 8 }] }],
+  },
+};
+
+export const EditableQuantities: Story = {
+  args: {
+    caption: 'Bill of materials',
+    editable: true,
+    defaultExpanded: ['*'],
+    columns: [
+      { key: 'part', header: 'Part', isRowHeader: true },
+      { key: 'quantity', header: 'Quantity', align: 'end', editable: true, editor: 'number' },
+    ],
+    data: [{ id: 'frame', part: 'Frame', quantity: 1, children: [{ id: 'bolt', part: 'Bolt', quantity: 8 }] }],
+  },
+};
+
+/* notable states */
+export const HideCaption: Story = { args: { hideCaption: true } };
+export const Collapsed: Story = { args: { defaultExpanded: [] } };
+export const ExpandAll: Story = { args: { defaultExpanded: ['*'] } };
+export const LazyLoading: Story = {
+  args: { data: [{ id: 'assets', account: 'Assets', balance: 1400, children: 'lazy' }], defaultExpanded: ['assets'] },
+};
+export const Loading: Story = { args: { loading: true } };
+export const Empty: Story = { args: { data: [] } };
+export const EmptyMessage: Story = { args: { data: [], emptyMessage: 'No accounts yet.' } };
+export const DefaultSort: Story = { args: { defaultSort: { column: 'balance', direction: 'descending' } } };
+export const Editable: Story = { args: { editable: true } };
+export const NoStatusBar: Story = { args: { showStatusBar: false } };
+export const NoStickyHeader: Story = { args: { height: 'content', stickyHeader: false } };
+
 /**
- * Open/present with at least three focusable children, for the keyboard gate: the select-all
- * Checkbox plus one per top-level row.
+ * The tree grid present and expanded, with a sortable header, the select-all Checkbox and one Checkbox per
+ * visible row — well over three focusable children — for the keyboard gate. No decorators.
  */
 export const Keyboard: Story = {
   args: {
     selectable: 'row',
     editable: true,
+    defaultExpanded: ['*'],
   },
 };

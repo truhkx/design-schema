@@ -304,11 +304,8 @@ export type {
   DataGridHeight,
   DataGridCellRef,
   DataGridRangeRef,
-  DataGridSelectionChangeDetail,
-  DataGridCellChangeDetail,
-  DataGridEditStartDetail,
-  DataGridRangeNeededDetail,
-  DataGridColumnResizeDetail,
+  DataGridSelection,
+  DataGridCellValue,
   DataGridOverridableBinding,
 } from './DataGrid';
 
@@ -323,8 +320,8 @@ export type {
   TreeGridSortState,
   TreeGridSortDirection,
   TreeGridCellRef,
-  TreeGridSelectionChangeDetail,
-  TreeGridCellChangeDetail,
+  TreeGridSelection,
+  TreeGridCellValue,
   TreeGridOverridableBinding,
 } from './TreeGrid';
 

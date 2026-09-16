@@ -10,21 +10,22 @@ component:
   composition:
     optionIcon: Icon
     optionCheck: Icon
-    emptyState: Text
+    emptyState: { component: Text, props: { tone: muted } }
+    errorMessage: { component: Text, props: { size: sm, tone: danger } }
   props:
     label:
       type: string
       required: true
-      description: 'Accessible name of the list. When a visible Text label exists, pass its id via `labelledBy` instead and this is ignored.'
+      description: 'Accessible name of the list. When a visible Text label exists, pass its id via `labelledBy` as well; on web `aria-labelledby` then wins. Always pass `label` even with `labelledBy`: it is the `{label}` in `copy.required` and `copy.invalid` on every platform, and on Lit it is always the list''s `aria-label`, because an id outside the shadow root cannot be referenced.'
     labelledBy:
       type: string
-      description: Id of a visible element that labels the list.
+      description: 'Id of a visible element that labels the list. Web only in effect: Lit accepts it for parity but never sets `aria-labelledby` (ids do not cross shadow roots) and names the list with `label` as `aria-label`.'
       platforms: [web, lit]
     options:
       type: array
       required: true
       shape: '({ value: string; label: string; description?: string; icon?: IconName; disabled?: boolean } | { group: string; options: ListboxOption[] })[]'
-      description: Flat or grouped options. Export the item type as `ListboxOption`.
+      description: 'Flat or grouped options; groups do not nest. Export three types on every platform: `ListboxOption` is the leaf `{ value, label, description?, icon?, disabled? }`, `ListboxGroup` is `{ group, options: ListboxOption[] }`, and `ListboxItem` is `ListboxOption | ListboxGroup`, the element type of this array (Select and Combobox take the same `ListboxItem[]`).'
     multiple:
       type: boolean
       default: false
@@ -51,10 +52,10 @@ component:
     invalid:
       type: boolean
       default: false
-      description: Marks the list invalid (aria-invalid) with `copy.invalid`.
+      description: 'Marks the list invalid (aria-invalid, and `borderInvalid` when not `embedded`) with `copy.invalid`. The list is invalid while this is true OR `error` is non-empty; clearing `error` never clears an explicitly set `invalid`.'
     error:
       type: string
-      description: Error message rendered below the list and linked by aria-describedby; implies invalid.
+      description: 'Error message rendered below the list and linked by aria-describedby; implies invalid. The displayed message is `error`, then the Form''s message, then while invalid `copy.required` (required and nothing selected) else `copy.invalid`.'
     embedded:
       type: boolean
       default: false
@@ -69,10 +70,10 @@ component:
     disabled:
       type: boolean
       default: false
-      description: The whole list is inert but readable.
+      description: 'The whole list is inert but readable: it stays focusable (web and Lit keep tabindex=0 and set aria-disabled=true on the list; native sets accessibilityState.disabled on every row), keys, hover, clicks and taps do nothing, and `disabledOpacity` dims the list once (not stacked on individually disabled options; the error message stays at full opacity).'
     name:
       type: string
-      description: Field name for Form collection. Multiple values are collected as an array.
+      description: 'Field name for Form collection. The submitted value is a string in single-select and an array of strings with `multiple` (the form `valueType: string[]` covers both); nothing selected submits no key. Without `name` nothing is submitted, though the root still carries `data-ds-field` like every field (Form skips unnamed fields).'
     emptyMessage:
       type: string
       description: Shown when `options` is empty (a filtered Combobox with no matches). Defaults to `copy.empty`.
@@ -80,7 +81,7 @@ component:
       type: enum
       values: ['5', '8', '12', 'all']
       default: '8'
-      description: 'Height in rows before the list scrolls; `all` never scrolls. There is no row-height token, so the height is rows × the height measured from the first rendered row — an estimate that is a little off when that first row is a group label rather than an option.'
+      description: 'Height in rows before the list scrolls; `all` never scrolls. Computed from tokens, never measured: rows × the row height from Behavior, plus 2 × `listPadding`, plus 2 × `borderWidth` when not `embedded`. Rows with a description and group labels are taller or shorter than counted, so slightly fewer or more rows show; that is accepted.'
   events:
     onChange:
       description: Fired when the selection changes, with the new value (array when `multiple`).
@@ -89,10 +90,11 @@ component:
         - { name: value, type: union, shape: 'string | string[]', description: 'The selected value, or every selected value with multiple.' }
       fires: [user]
     onActiveChange:
-      description: 'Fired as the focused (active) option changes, with its value — Combobox uses this to keep aria-activedescendant in sync; consumers rarely need it.'
+      description: 'Fired as the focused (active) option changes, with its value — Combobox uses this to keep aria-activedescendant in sync; consumers rarely need it. Fires on keyboard moves, hover, the option made active when the list receives focus (web, Lit) or row focus (native), and with null when the list (native: the active row) loses focus. Never on mount, so the native `initialActiveValue` pre-highlight does not fire it.'
       platforms: { web: onActiveChange, lit: active-change, rn: onActiveChange, swiftui: onActiveChange }
       payload:
         - { name: value, type: union, shape: 'string | null', description: 'The value of the active option; null when no option is active.' }
+      fires: [user]
   keyboard:
     - { keys: [ArrowDown], action: Moves to the next enabled option (and selects it when selection follows focus)., from: first, expect: focus-next }
     - { keys: [ArrowUp], action: Moves to the previous enabled option., from: last, expect: focus-prev }
@@ -100,43 +102,47 @@ component:
     - { keys: [End], action: Last option., from: first, expect: focus-last }
     - { keys: [' '], action: 'Selects the focused option; with `multiple`, toggles it.', from: first, expect: selects }
     - { keys: [Enter], action: 'Selects the focused option (single) — inside a Select or Combobox, also closes the popup.', from: first, expect: selects }
-    - { keys: [Shift+ArrowDown, Shift+ArrowUp], action: 'Multiple: moves and adds the next/previous option to the selection.', when: multiple, from: first, expect: manual }
-    - { keys: [Control+a], action: 'Multiple: selects all enabled options; again clears.', when: multiple, from: first, expect: manual }
-    - { keys: [a-z], action: Typeahead to the next option whose label starts with the typed characters., from: first, expect: manual }
-    - { keys: [PageDown, PageUp], action: Moves by the visible row count., from: first, expect: manual }
+    - { keys: [Shift+ArrowDown, Shift+ArrowUp], action: 'Multiple: moves and adds the next/previous option to the selection (add only; an already-selected option stays selected).', when: multiple, from: first, expect: manual }
+    - { keys: [Control+a], action: 'Multiple: selects all enabled options; pressed again when every enabled option is selected, deselects the enabled options. Selected disabled options stay selected either way.', when: multiple, from: first, expect: manual }
+    - { keys: [a-z], action: 'Typeahead to the next option whose label starts with the typed characters; the buffer clears after `typeaheadReset`.', from: first, expect: manual }
+    - { keys: [PageDown, PageUp], action: 'Moves by the `maxVisible` row count, clamped to the last/first enabled option; with `maxVisible: all` jumps to the last/first enabled option. Follows `selectionFollowsFocus` like the arrows.', from: first, expect: manual }
   styles:
     surface: { token: color.background }
     border: { token: color.border.strong, description: 'Only when not `embedded`; inside a popup the popup owns the border.' }
+    borderInvalid: { token: color.border.danger, description: 'Replaces `border` while invalid, only when not `embedded`; an embedded list conveys invalid by aria-invalid and the error message alone.' }
+    partGap: { token: space.1, description: 'Vertical gap between the list and errorMessage. Both sit in the root wrapper, which is not an anatomy part (web: the div with data-ds, whose child is the role=listbox list part, since a listbox may only contain options and groups; Lit: an unnamed wrapper in the shadow root; native: the outer View with testID="Listbox").' }
+    errorText: { token: color.foreground.danger, part: errorMessage, description: 'Realised by the composed Text''s tone danger; declares no hook of its own.' }
     borderWidth: { token: border.width.thin }
     radius: { token: radius.md }
     listPadding: { token: space.1, part: list }
     optionPaddingBlock: { token: space.sm, part: option }
     optionPaddingInline: { token: space.md, part: option }
-    optionGap: { token: layout.gap.normal, part: option, description: 'Between check, icon, label and description.' }
+    optionGap: { token: layout.gap.normal, part: option, description: 'Between check, icon, label and description inside a row only; rows themselves have no gap between them.' }
     optionRadius: { token: radius.sm, part: option }
     optionColor: { token: color.foreground, part: option }
     optionDescriptionColor: { token: color.foreground.muted, part: optionDescription }
     optionDescriptionSize: { token: font.size.sm, part: optionDescription }
     optionActiveBackground: { token: color.background.subtle, part: option, state: active, description: 'The focused/active option (keyboard or hover). Selection is shown by the check and weight, so active and selected are never confused.' }
     optionSelectedWeight: { token: font.weight.medium, part: option }
-    optionSelectedCheck: { token: color.control.selectedBackground, part: optionCheck, description: 'The check icon on selected options (rendered only with `multiple`; single-select shows selection by the row fill), in the selected-control fill (3:1 on both surfaces by derivation); always rendered (invisible slot when unselected) so labels align.' }
+    optionSelectedCheck: { token: color.control.selectedBackground, part: optionCheck, description: 'The check icon on selected options, in the selected-control fill (3:1 on both surfaces by derivation). Only with `multiple`, where the slot is present on every row (invisible when unselected) so labels align. Single-select has no check slot and shows selection by `optionSelectedWeight` alone, never a row fill, since the fill is the active state.' }
     groupLabelColor: { token: color.foreground.muted, part: groupLabel }
     groupLabelSize: { token: font.size.xs, part: groupLabel }
     groupLabelWeight: { token: font.weight.semibold, part: groupLabel }
     groupLabelPaddingBlock: { token: space.1, part: groupLabel }
-    emptyColor: { token: color.foreground.muted }
+    emptyColor: { token: color.foreground.muted, part: emptyState, description: 'Realised by the composed Text''s tone muted (also for `copy.loading`); declares no hook of its own.' }
     fontFamily: { token: font.family.body }
     fontSize: { token: font.size.md }
     lineHeight: { token: font.lineHeight.normal }
     minTarget: { token: size.target.min }
     focusRing: { token: color.border.focus }
-    focusRingWidth: { token: border.width.focus }
+    focusRingWidth: { token: border.width.focus, description: 'Never changes layout. Web and Lit draw it as an outline on the focused list. Native draws it as a row border that is always reserved (transparent unless the row is focused), so native rows are 2 × focusRingWidth taller than the Behavior formula, and maxVisible counts that.' }
     disabledOpacity: { token: opacity.disabled }
+    typeaheadReset: { token: motion.duration.loop, part: list, description: 'How long typed characters accumulate before the typeahead buffer clears; read at runtime from the list.' }
   copy:
     empty: No options
     required: '{label} is required.'
     invalid: '{label} is not valid.'
-    selectedCount:  # not rendered by Listbox itself: exposed as accessibilityValue on native and available to the surrounding UI
+    selectedCount:  # not rendered by Listbox itself: native uses it as the multiple list's accessibilityValue text; web and Lit render no count and export it for the surrounding UI. One form: invariant in English, so no plural variants
       text: '{count} selected'
       params:
         count: { type: number, description: How many options are selected. }
@@ -149,6 +155,7 @@ component:
       - { foreground: color.foreground, background: color.background.subtle, level: AA }
       - { foreground: color.foreground.muted, background: color.background, level: AA }
       - { foreground: color.foreground.muted, background: color.background.subtle, level: AA }
+      - { foreground: color.foreground.danger, background: color.background, level: AA }
       - { foreground: color.control.selectedBackground, background: color.background, level: AA, nonText: true }
       - { foreground: color.control.selectedBackground, background: color.background.subtle, level: AA, nonText: true }
   form:
@@ -167,15 +174,15 @@ component:
     lit:
       tag: ds-listbox
       reflect: [multiple, disabled, required, invalid, embedded, loading, { prop: selectionFollowsFocus, attribute: no-selection-follows-focus }]
-      notes: '`options` and `value` are properties. Form-associated: setFormValue with a FormData carrying one entry per selected value when `multiple`, so a native <form> gets the same shape as a <select multiple>. Composed `change` (detail { value }) and `active-change`. aria-activedescendant referencing shadow options works because list and options share the shadow root; Combobox composes ds-listbox inside its own shadow root for the same reason.'
+      notes: '`options` and `value` are properties. Form-associated: setFormValue with a FormData carrying one entry per selected value when `multiple`, so a native <form> gets the same shape as a <select multiple>. A single-select list submits the string (a DsFormField `currentValue` of `string | string[] | null` covers both modes). Composed `change` (detail { value }) and `active-change`. The list always takes `label` as aria-label; `labelledBy` is never resolved across the shadow boundary. aria-activedescendant referencing shadow options works because list and options share the shadow root; Combobox composes ds-listbox inside its own shadow root for the same reason.'
     rn:
       element: FlatList
       props: [accessibilityRole=list, accessibilityState, accessibilityRole=menuitem]
-      notes: 'A FlatList (virtualised — long option lists are common) of Pressable rows with accessibilityRole="menuitem" (no listbox/option roles on native) and accessibilityState={{ selected, disabled }}; multiple: accessibilityState.checked. Because there is no listbox role here, a test finds the list by its accessible label, never by role — the `listbox` in a11y.role is the web and Lit contract. maxVisible → maxHeight = rows × row height measured from the first row. Each option is its own accessibility stop; Pressable has no key events, so arrows, Home/End, Page keys, typeahead, Shift+Arrow and Ctrl+A have no native form at all, a tap is the selection, and `selectionFollowsFocus` is accepted for parity with no runtime effect. `initialActiveValue` only pre-highlights a row here, since there is no single tab stop to move.'
+      notes: 'A FlatList (virtualised — long option lists are common) of Pressable rows with accessibilityRole="menuitem" (no listbox/option roles on native) and accessibilityState={{ selected, disabled }}; multiple: accessibilityState.checked. Because there is no listbox role here, a test finds the list by its accessible label, never by role — the `listbox` in a11y.role is the web and Lit contract. maxVisible → maxHeight from the token formula (see `maxVisible` and `focusRingWidth`), never measured. Groups are flattened into FlatList rows (no SectionList), so the `group` part has no wrapper view on native: only the group label row exists, as Text with testID `Listbox.groupLabel`. `disabled` is accessibilityState.disabled plus a press guard, never Pressable''s `disabled` prop (it removes the row from focus). The list View keeps accessibilityLabel = `label` but is not `accessible` (that would swallow the rows), so the empty/loading Text is its own stop read as-is, with no label concatenation; with `multiple` the list''s accessibilityValue text is `copy.selectedCount`. Each option is its own accessibility stop; Pressable has no key events, so arrows, Home/End, Page keys, typeahead, Shift+Arrow and Ctrl+A have no native form at all, a tap is the selection, and `selectionFollowsFocus` is accepted for parity with no runtime effect. `initialActiveValue` only pre-highlights a row here, since there is no single tab stop to move.'
     swiftui:
       element: ScrollView
       props: [ScrollView, LazyVStack, Button, .accessibilityAddTraits=isSelected, .focusable, .onMoveCommand, .onKeyPress, '@FocusState', ScrollViewReader, .accessibilityElement=contain]
-      notes: 'A `ScrollView` + `LazyVStack` of option rows (`Button`s with `.isSelected`, group headers as `Text` with `.isHeader`) inside a `.contain` element labelled by `label`/`labelledBy`; not `List`. The list is one focus section: arrows move the active `@FocusState` index, type-ahead via `.onKeyPress(characters:)`, Home/End via `.onKeyPress(.home/.end)`, Space/Enter select per mode; `ScrollViewReader` keeps the active option in view and `maxVisible` sets the frame height from the measured row height. `multiple` rows show the check Icon and the count is announced. `embedded` drops the surface bindings for Select/Combobox/Search hosts.'
+      notes: 'A `ScrollView` + `LazyVStack` of option rows (`Button`s with `.isSelected`, group headers as `Text` with `.isHeader`) inside a `.contain` element labelled by `label`/`labelledBy`; not `List`. The list is one focus section: arrows move the active `@FocusState` index, type-ahead via `.onKeyPress(characters:)`, Home/End via `.onKeyPress(.home/.end)`, Space/Enter select per mode; `ScrollViewReader` keeps the active option in view and `maxVisible` sets the frame height from the token row formula. `multiple` rows show the check Icon and the count is announced. `embedded` drops the surface bindings for Select/Combobox/Search hosts.'
   behavior:
     # Authored scenarios; the parser adds renders/enum/accessible-name/error-identified ones from the schema.
     - name: click-on-an-option-selects-it
@@ -265,7 +272,7 @@ Do not use a Listbox for two to seven options that fit on screen and need no scr
 
 ## Behavior
 
-The list is one tab stop. Arrow keys move the active option and, in single-select with `selectionFollowsFocus`, select it; Space selects or toggles, Enter selects; Home/End and PageUp/PageDown jump; typing letters moves to the matching label. In `multiple`, each option shows a check, Space toggles, Shift+Arrow extends, Ctrl/Cmd+A selects all, and `onChange` receives the array in option order. Disabled options are visible, announced, skipped by arrows and not selectable. The active option is always scrolled into view; the list scrolls after `maxVisible` rows. When `options` is empty, `emptyMessage` shows and the list is still focusable so a Combobox user hears "No options". Inside a Form, `name` collects the value (array for `multiple`) and `required` fails when nothing is selected. Arrow keys clamp at the first and last enabled option (no wrapping; Home and End reach the ends). Home, End and type-ahead follow `selectionFollowsFocus` exactly as the arrows do. Enter selects only in single-select (a no-op with `multiple`, where Space toggles). Rows are `fontSize × lineHeight + 2 × optionPaddingBlock` tall, which is what `maxVisible` and PageUp/PageDown count; the first option row, not a group label, is the measure on native. Option icons render at Icon `size: sm`. Empty groups are omitted. Without `name` the list does not register with a Form.
+The list is one tab stop. Arrow keys move the active option and, in single-select with `selectionFollowsFocus`, select it; Space selects or toggles, Enter selects; Home/End and PageUp/PageDown jump; typing letters moves to the matching label. In `multiple`, each option shows a check, Space toggles, Shift+Arrow extends, Ctrl/Cmd+A selects all, and `onChange` receives the array in option order. Disabled options are visible, announced, skipped by arrows and not selectable. The active option is always scrolled into view; the list scrolls after `maxVisible` rows. When `options` is empty, `emptyMessage` shows and the list is still focusable so a Combobox user hears "No options". Inside a Form, `name` collects the value (array for `multiple`) and `required` fails when nothing is selected. Arrow keys clamp at the first and last enabled option (no wrapping; Home and End reach the ends). Home, End, PageUp/PageDown and type-ahead follow `selectionFollowsFocus` exactly as the arrows do. When no option is active yet (keys forwarded by a Combobox before the list was focused), ArrowDown and PageDown land on the first enabled option, ArrowUp and PageUp on the last, and Space and Enter act on the resolved initial option (`initialActiveValue`, else the first selected, else the first enabled). Enter selects only in single-select (a no-op with `multiple`, where Space toggles). Rows are `max(minTarget, fontSize × lineHeight + 2 × optionPaddingBlock)` tall (native adds the reserved `2 × focusRingWidth`), computed from tokens and never measured, which is what `maxVisible` and PageUp/PageDown count. Option icons render at Icon `size: sm`. Empty groups are omitted. The error message is Text `size: sm`, `tone: danger` below the list, `partGap` from it. Without `name` the list submits nothing to a Form.
 
 ## Content guidelines
 
@@ -273,12 +280,12 @@ Option labels are short, unique within the list, sentence case, no trailing punc
 
 ## Accessibility
 
-Role `listbox` with a name, `aria-multiselectable` when `multiple`, options with `aria-selected`, groups with names (WCAG 4.1.2; APG listbox). One tab stop with arrow navigation and typeahead; the active option is announced via `aria-activedescendant` while DOM focus stays on the list (or, in Combobox, on the input). Selected and active states are visually distinct — check mark and weight for selected, background for active — so neither is color alone (1.4.1) and a sighted keyboard user can tell "where I am" from "what I chose". Options meet 24px (2.5.8) and text meets AA on both the surface and the active background; the check meets 3:1.
+Role `listbox` with a name, `aria-multiselectable` when `multiple`, options with `aria-selected`, groups with names (WCAG 4.1.2; APG listbox). One tab stop with arrow navigation and typeahead; the active option is announced via `aria-activedescendant` while DOM focus stays on the list (or, in Combobox, on the input). Selected and active states are visually distinct — check mark and weight for selected (weight alone in single-select), background for active — so neither is color alone (1.4.1) and a sighted keyboard user can tell "where I am" from "what I chose". Options meet 24px (2.5.8) and text meets AA on both the surface and the active background; the check meets 3:1.
 
 ## Platform notes
 
 ### Web
-`<div role="listbox" tabindex="0" aria-label|aria-labelledby aria-multiselectable aria-activedescendant={activeId}>` containing `<div role="group" aria-labelledby>` and `<div role="option" id aria-selected aria-disabled>` rows with `<Icon name="check">` (invisible when unselected, so labels align), optional `<Icon>`, label and description. Keydown on the list implements the table; `pointermove` over an option sets it active; click selects. Scroll the active option into view with `block: 'nearest'`. Expose `activeId` and the keydown handler through a ref/hook (`useListbox`) so Combobox can forward its input's keys to the list. Form registration as Input, with `getValue` returning the array for `multiple`.
+`<div role="listbox" tabindex="0" aria-label|aria-labelledby aria-multiselectable aria-activedescendant={activeId}>` containing `<div role="group" aria-labelledby>` and `<div role="option" id aria-selected aria-disabled>` rows with, only when `multiple`, `<Icon name="check">` (invisible when unselected, so labels align), optional `<Icon>`, label and description. Keydown on the list implements the table; `pointermove` over an option sets it active; click selects. Scroll the active option into view with `block: 'nearest'`. Expose `activeId` and the keydown handler through a ref/hook (`useListbox`) so Combobox can forward its input's keys to the list. The role=listbox div sits inside a root wrapper div (data-ds, data-ds-field) that also holds the error Text after it. Form registration as Input, with `getValue` returning the string in single-select and the array for `multiple`.
 
 ### Lit
 `<ds-listbox label="Assignees" multiple .options=${…}>`; form-associated (`setFormValue(FormData)` for multiple, string otherwise); `aria-activedescendant` between shadow siblings; composed `change` and `active-change`. Expose a `handleKey(event)` method and `activeValue` for `ds-combobox`.

@@ -17,14 +17,22 @@
         "panel"
       ],
       "composition": {
-        "item": "Disclosure"
+        "item": {
+          "component": "Disclosure",
+          "forwards": {
+            "triggerPaddingBlock": "triggerPaddingBlock",
+            "fontFamily": "triggerFontFamily",
+            "triggerFontSize": "triggerFontSize",
+            "triggerFontWeight": "triggerFontWeight"
+          }
+        }
       },
       "props": {
         "items": {
           "type": "array",
           "required": true,
           "shape": "{ id: string; summary: string; content: ReactNode; disabled?: boolean }[]",
-          "description": "The sections in order. `content` is the panel body; on Lit it is dropped from the item type and the body is a light-DOM child slotted by the item id (`<div slot=\"faq-1\">`)."
+          "description": "The sections in order. `content` is the panel body; on Lit it is dropped from the item type and the body is a light-DOM child slotted by the item id (`<div slot=\"faq-1\">`); light-DOM children that are neither a `<ds-disclosure>` nor slotted by an item id are not rendered, and only child additions and removals are observed (changing an existing child's `slot` attribute later is not). The optional field follows the package convention for optional properties (`disabled?: boolean | undefined`)."
         },
         "headingLevel": {
           "type": "enum",
@@ -41,7 +49,7 @@
         "exclusive": {
           "type": "boolean",
           "default": false,
-          "description": "Opening one section closes the others. Off by default: users usually want to compare, and forced-closing is a common frustration."
+          "description": "Opening one section closes the others. Off by default: users usually want to compare, and forced-closing is a common frustration. Turning it on while several sections are open trims the open set to the first open id without firing any event (the same as several ids in `value`/`defaultValue`)."
         },
         "value": {
           "type": "union",
@@ -87,7 +95,13 @@
           ],
           "fires": [
             "user"
-          ]
+          ],
+          "timing": {
+            "phase": "after-change",
+            "before": [
+              "onOpenChange"
+            ]
+          }
         },
         "onOpenChange": {
           "description": "Fired per section as it opens or closes, with `{ id, open, reason }` (`reason`: `trigger`, `keyboard`, `exclusive` when another section closed it, `controlled`). The per-item trigger for analytics, lazy loading of a panel's content, or scrolling the opened section into view; `onChange` remains the set-level event for state.",
@@ -120,15 +134,18 @@
             }
           ],
           "reasons": {
-            "trigger": "the section trigger was activated by pointer",
+            "trigger": "the section trigger was activated by pointer — Disclosure's `pointer` reason maps to `trigger`",
             "keyboard": "the section was toggled from the keyboard — web and Lit pass through the activation method Disclosure reports on its own toggle, so the two reasons must not be collapsed there; React Native has no such signal and reports `trigger` for every activation",
             "exclusive": "another section opened and closed this one",
-            "controlled": "the `value` prop changed to a set the accordion did not itself just emit"
+            "controlled": "the `value` prop changed to a set the accordion did not itself just emit. The accordion computes `exclusive` and `controlled` itself: a Disclosure `onToggle` with reason `controlled` is the echo of the accordion setting that Disclosure's `open`, and is ignored, so nothing is reported twice"
           },
           "fires": [
             "user",
             "controlled"
-          ]
+          ],
+          "timing": {
+            "phase": "after-change"
+          }
         }
       },
       "keyboard": [
@@ -193,22 +210,24 @@
       "styles": {
         "divider": {
           "token": "color.border",
+          "description": "Passed to each composed Divider as its `color` override; Accordion writes no divider rule of its own.",
           "locked": false
         },
         "dividerWidth": {
           "token": "border.width.thin",
+          "description": "Passed to each composed Divider as its `thickness` override.",
           "locked": false
         },
         "itemGap": {
           "token": "layout.gap.none",
-          "part": "item",
-          "description": "Items touch; the divider separates them.",
+          "part": "list",
+          "description": "Items touch; the divider separates them. Applied as the gap of the `list` container (flex `gap` on web and Lit, the `gap` style on React Native), never on the Disclosure itself, so when `divided` the gap also falls between each item and its Divider — intended: the divider sits centred in the space between items.",
           "locked": false
         },
         "triggerPaddingBlock": {
           "token": "space.md",
           "part": "trigger",
-          "description": "Roomier than a lone Disclosure, since accordion triggers are section headings.",
+          "description": "Roomier than a lone Disclosure, since accordion triggers are section headings. Forwarded to Disclosure's `triggerPaddingBlock`, like `fontFamily`, `triggerFontSize` and `triggerFontWeight` (see `composition`); the accordion does not style the trigger itself.",
           "locked": false
         },
         "fontFamily": {
@@ -227,15 +246,17 @@
         },
         "minTarget": {
           "token": "size.target.min",
-          "description": "The composed Disclosure's own minimum; the accordion's triggerPaddingBlock override raises the row to the comfortable size.",
+          "description": "The composed Disclosure's own minimum, applied by Disclosure; Accordion adds no rule for it (nor for `focusRing`/`focusRingWidth`). The `triggerPaddingBlock` forward makes the row roomier but does not guarantee a 44px target.",
           "locked": true
         },
         "focusRing": {
           "token": "color.border.focus",
+          "description": "Applied by the composed Disclosure's trigger; Accordion adds no rule.",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "description": "Applied by the composed Disclosure's trigger; Accordion adds no rule.",
           "locked": true
         }
       },
@@ -264,7 +285,7 @@
           "attributes": [
             "data-ds=Accordion"
           ],
-          "notes": "A <div> of Disclosures rendered with headingLevel and shared padding overrides; Accordion adds the arrow-key handler on the container (keydown from a trigger moves focus among triggers) and the exclusive logic. Every trigger stays a tab stop — no roving tabindex — per the APG accordion pattern."
+          "notes": "A <div> of Disclosures rendered with headingLevel and shared padding overrides; Accordion adds the arrow-key handler on the container (keydown from a trigger moves focus among triggers) and the exclusive logic. Every trigger stays a tab stop — no roving tabindex — per the APG accordion pattern. The root <div> is the `list` part (`data-part=\"list\"`). Each trigger is Disclosure's own inline trigger, so its hit area ends at the summary rather than spanning the row; Accordion does not stretch it (a full-width trigger needs a Disclosure prop)."
         },
         "lit": {
           "tag": "ds-accordion",
@@ -276,12 +297,12 @@
             },
             "heading-level"
           ],
-          "notes": "Light-DOM <ds-disclosure> children are the items (slot), so their content stays in the document; ds-accordion sets heading-level and keep-mounted on them, listens for their `toggle` to enforce exclusive, and handles arrow keys via keydown bubbling from the slotted triggers. `items` as a property is also accepted and renders <ds-disclosure> elements itself."
+          "notes": "Light-DOM <ds-disclosure> children are the items (slot), so their content stays in the document; ds-accordion sets heading-level and keep-mounted on them, listens for their `toggle` to enforce exclusive, and handles arrow keys via keydown bubbling from the slotted triggers. `items` as a property is also accepted and renders <ds-disclosure> elements itself. The shadow root's flex container is the `list` part (`data-part=\"list\"` and `part=\"list\"`). Light-DOM disclosures are assigned manually, one slot per disclosure, with <ds-divider> rendered between the slots in the shadow root, so on Lit the Dividers are not light-DOM siblings of the items (address an item as `ds-accordion > ds-disclosure`). Forwarded bindings reach each Disclosure as its `--ds-disclosure-*` hook set from the accordion's own hook (`--ds-disclosure-trigger-padding-block: var(--ds-accordion-trigger-padding-block)`), so a consumer's CSS override of the accordion hook still arrives; the Dividers get `--ds-divider-color`/`--ds-divider-thickness` the same way. A slotted disclosure's composed `toggle` is left to reach the page (the consumer owns those elements); the `toggle` of disclosures rendered from `items` is stopped at the accordion, which reports `change`/`open-change` instead. The trigger hit area ends at the summary, as on web."
         },
         "rn": {
           "element": "View",
           "props": [],
-          "notes": "A View of Disclosures with dividers; exclusive logic and headingLevel passed through. Native has no key events on Pressable, so ArrowUp/Down/Home/End are not implemented and `reason` is never `keyboard`; every trigger is an ordinary accessibility focus stop reached by swipe, which is the native equivalent of the arrow shortcut. Arrow keys apply only with a hardware keyboard on react-native-web."
+          "notes": "A View of Disclosures with dividers; exclusive logic and headingLevel passed through. Native has no key events on Pressable, so ArrowUp/Down/Home/End are not implemented and `reason` is never `keyboard`; every trigger is an ordinary accessibility focus stop reached by swipe, which is the native equivalent of the arrow shortcut. No web-only key handler is added either, so arrow keys do nothing on react-native-web too. Native has no heading levels: `headingLevel` only gives each Disclosure summary `accessibilityRole=\"header\"`, so every heading-level scenario renders the same tree and RN tests check the header role, not a level. The `list` part is the root View, and `itemGap` is its `gap` style."
         },
         "swiftui": {
           "element": "VStack",
@@ -300,7 +321,7 @@
       "behavior": [
         {
           "name": "click-on-a-trigger-reports-the-open-set",
-          "description": "onChange carries the open ids; onOpenChange reports the one section whose state changed.",
+          "description": "onChange carries the open ids; onOpenChange reports the one section whose state changed. With nothing open, clicking the first trigger fires onChange([firstId]) and then onOpenChange(firstId, true, trigger).",
           "when": {
             "click": "trigger"
           },
@@ -324,9 +345,22 @@
         },
         {
           "name": "exclusive-still-reports-both-events",
-          "description": "With exclusive, opening one section closes the others; the set-level onChange and the per-section onOpenChange both still fire.",
+          "description": "With exclusive, opening one section closes the others; the set-level onChange and the per-section onOpenChange both still fire. With `pro` open, clicking the first trigger (`free`) fires onChange([free]), then onOpenChange(free, true, trigger), then onOpenChange(pro, false, exclusive).",
           "given": {
-            "exclusive": true
+            "exclusive": true,
+            "defaultValue": "pro",
+            "items": [
+              {
+                "id": "free",
+                "summary": "Free",
+                "content": "One project and community support."
+              },
+              {
+                "id": "pro",
+                "summary": "Pro",
+                "content": "Unlimited projects and email support."
+              }
+            ]
           },
           "when": {
             "click": "trigger"
@@ -495,10 +529,10 @@
       "Overview": "An accordion is a list of Disclosures that know about each other: consistent headings, arrow keys to move between them, and optionally the rule that opening one closes the rest. It is the right shape for FAQs, settings groups and long forms broken into sections.",
       "When to use": "Use an Accordion for a series of independent sections a user scans by heading and opens selectively: an FAQ, a settings page grouped by topic, a multi-part form where each part is optional. Set `headingLevel` to fit the page outline. Leave `exclusive` off unless the panels are heavy or mutually exclusive by nature (a wizard-like \"choose one plan to see details\").",
       "When not to use": "Do not use an Accordion for content most users need — show it. Do not use it as navigation or as tabs (Tabs replace content; an accordion adds it). Do not nest accordions. Do not use one for a single section; that is a Disclosure.",
-      "Behavior": "Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows. `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)`, so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute). The `item` part is the composed Disclosure root itself — Accordion does not add a `data-part=\"item\"` hook and must not wrap items in an extra element to carry one, since Dividers are direct siblings of the items; address an item as `[data-ds=\"Accordion\"] > [data-ds=\"Disclosure\"]`. The `trigger`, `triggerIcon` and `panel` parts are tagged by Disclosure. Nothing open is `[]` or `''`, never `undefined`. `reason: 'controlled'` is reported when `value` arrives holding a set the accordion did not itself just emit; a controlled parent that answers a trigger with some other set therefore sees `controlled`, which is the intended reading.",
+      "Behavior": "Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows: arrow keys, Home and End never land on a disabled trigger, but they still work when focus starts on one (it remains a tab stop). `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)` — `pointer` becomes `trigger`, `keyboard` stays `keyboard`, and Disclosure's `controlled` (the echo of the accordion setting `open`) is ignored — so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). One toggle fires, in order: `onChange` with the new set, then `onOpenChange` for the toggled section, then one `onOpenChange(id, false, 'exclusive')` per section `exclusive` closed, in item order. With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute). The `item` part is the composed Disclosure root itself — Accordion does not add a `data-part=\"item\"` hook and must not wrap items in an extra element to carry one, since Dividers are direct siblings of the items (on web and React Native; on Lit they sit between per-item slots in the shadow root, see its notes); address an item as `[data-ds=\"Accordion\"] > [data-ds=\"Disclosure\"]`. The `trigger`, `triggerIcon` and `panel` parts are tagged by Disclosure. Nothing open is `[]` or `''`, never `undefined`. `reason: 'controlled'` is reported when `value` arrives holding a set the accordion did not itself just emit; a controlled parent that answers a trigger with some other set therefore sees `controlled`, which is the intended reading. The just-emitted set is compared only with the next `value` change and then cleared, as Disclosure does for `open`: a parent that ignores `onChange` leaves it pending until `value` next changes.",
       "Content guidelines": "Summaries are section titles — noun phrases or questions in sentence case, parallel across the list. Panel content starts with the answer, not a restatement of the heading. For FAQs, order by frequency, not alphabetically.",
-      "Accessibility": "Each trigger is a button inside a heading of the given level with `aria-expanded` and `aria-controls` (WCAG 4.1.2, 2.4.6; APG accordion), so the accordion reads as a list of headings in the rotor. Arrow keys are a convenience, not a replacement for Tab: every trigger is in the tab order so no panel content is stranded (2.1.1). Expanded state is visible (chevron) and announced. Targets meet 44px in the accordion form.",
-      "Platform notes": "### Web\nRender `<div data-ds=\"Accordion\">` containing a `Disclosure` per item with `headingLevel`, `keepMounted`, `open` controlled by the accordion's state, and `overrides={{ triggerPaddingBlock: 'space.md' }}`; a `Divider` between items when `divided`. Keydown on the container: when the event target is one of the triggers, handle ArrowUp/Down/Home/End by focusing the sibling trigger. `exclusive` maps each `onToggle` to the new open set.\n\n### Lit\n`<ds-accordion exclusive heading-level=\"3\"><ds-disclosure summary=\"…\">…</ds-disclosure>…</ds-accordion>`. On `slotchange`, set `heading-level`, `keep-mounted` and the padding override on each slotted `ds-disclosure`; listen for their composed `toggle` to enforce `exclusive` and dispatch `change`; handle arrow keys from bubbling keydown whose composed path includes a slotted trigger.\n\n### React Native\n`View` of `Disclosure`s with `Divider`s; the accordion owns the open set and passes `open`/`onToggle` to each. No arrow keys on native.",
+      "Accessibility": "Each trigger is a button inside a heading of the given level with `aria-expanded` and `aria-controls` (WCAG 4.1.2, 2.4.6; APG accordion), so the accordion reads as a list of headings in the rotor. Arrow keys are a convenience, not a replacement for Tab: every trigger is in the tab order so no panel content is stranded (2.1.1). Expanded state is visible (chevron) and announced. Targets meet the 24px minimum through Disclosure's `minTarget`; the accordion's `space.md` block padding makes rows roomier but does not guarantee 44px, and the hit area ends at the summary text rather than spanning the row.",
+      "Platform notes": "### Web\nRender `<div data-ds=\"Accordion\">` containing a `Disclosure` per item with `headingLevel`, `keepMounted`, `open` controlled by the accordion's state, and `overrides` carrying the forwarded `triggerPaddingBlock`, `triggerFontFamily` (from `fontFamily`), `triggerFontSize` and `triggerFontWeight`; a `Divider` between items when `divided`, with `overrides` `color` (from `divider`) and `thickness` (from `dividerWidth`). Keydown on the container: when the event target is one of the triggers, handle ArrowUp/Down/Home/End by focusing the sibling trigger. `exclusive` maps each `onToggle` to the new open set.\n\n### Lit\n`<ds-accordion exclusive heading-level=\"3\"><ds-disclosure summary=\"…\">…</ds-disclosure>…</ds-accordion>`. On `slotchange`, set `heading-level` and `keep-mounted` on each slotted `ds-disclosure` (the forwarded bindings arrive as hooks, see the notes); listen for their composed `toggle` to enforce `exclusive` and dispatch `change`; handle arrow keys from bubbling keydown whose composed path includes a slotted trigger.\n\n### React Native\n`View` of `Disclosure`s with `Divider`s; the accordion owns the open set and passes `open`/`onToggle` to each. No arrow keys on native.",
       "Related": "Disclosure, Tabs, Divider, Heading."
     },
     "extensions": [],
@@ -6762,7 +6796,7 @@
         "options": {
           "type": "array",
           "required": true,
-          "shape": "ListboxOption[] (flat or grouped, as Listbox)",
+          "shape": "ListboxItem[] (options and one level of groups, as Listbox)",
           "description": "The full option set, or the current page of results when `filter` is `async`. Passed through to the Listbox after filtering."
         },
         "value": {
@@ -6799,7 +6833,7 @@
         "allowCustom": {
           "type": "boolean",
           "default": false,
-          "description": "Typed text that matches no option can be committed as a value (tags, emails). Enter or a comma commits it; the list shows `copy.addCustom` as a synthetic first row, suppressed when the trimmed text already matches an existing option by either its `value` or its `label`."
+          "description": "Typed text that matches no option can be committed as a value (tags, emails). Enter or a comma commits it; the list shows `copy.addCustom` as a synthetic first row, suppressed when the trimmed text already matches an existing option by either its `value` or its `label`. Committing text that matches an option that way (Enter or a comma, same case- and diacritic-insensitive match) commits that option's `value`, never a custom string."
         },
         "filter": {
           "type": "enum",
@@ -6847,7 +6881,7 @@
         "clearable": {
           "type": "boolean",
           "default": true,
-          "description": "Show a clear button when there is a value or text."
+          "description": "Show a clear button when there is a value or text. Lit attribute: `no-clear`."
         }
       },
       "events": {
@@ -6872,7 +6906,7 @@
           ]
         },
         "onInputChange": {
-          "description": "Fired on every keystroke with the input text. The hook for `async` filtering.",
+          "description": "Fired on every text change the user causes — each keystroke, and the text a commit, Escape-to-clear or the clear button leaves behind (so `async` consumers can reset) — with the input text. Not fired when a controlled `value` change rewrites the label. The hook for `async` filtering.",
           "platforms": {
             "web": "onInputChange",
             "lit": "input-change",
@@ -6915,7 +6949,7 @@
           "keys": [
             "ArrowDown"
           ],
-          "action": "Opens the list (if closed) and moves the active option down; focus stays in the input.",
+          "action": "Opens the list (if closed) with the selected option active, else the first; when already open, moves the active option down (from none: the first match); focus stays in the input.",
           "from": "first",
           "expect": "manual"
         },
@@ -6923,7 +6957,7 @@
           "keys": [
             "ArrowUp"
           ],
-          "action": "Opens the list and moves the active option up.",
+          "action": "Opens the list with the selected option active, else the last; when already open, moves the active option up.",
           "from": "first",
           "expect": "manual"
         },
@@ -6940,7 +6974,7 @@
           "keys": [
             "Escape"
           ],
-          "action": "Closes the list if open; if closed and clearable, clears the input text.",
+          "action": "Closes the list if open; if closed and clearable, clears the input text only (the value is kept; the clear button is what empties the value).",
           "when": "list open",
           "from": "first",
           "expect": "closes",
@@ -6950,7 +6984,7 @@
           "keys": [
             "Tab"
           ],
-          "action": "Closes the list and moves focus on. Under single-select a highlighted option is NOT committed by Tab (typing intent is ambiguous).",
+          "action": "Closes the list and moves focus on. A highlighted option is NOT committed by Tab, in single or multiple mode (typing intent is ambiguous).",
           "when": "list open",
           "from": "first",
           "expect": "closes",
@@ -6979,7 +7013,7 @@
           "keys": [
             ","
           ],
-          "action": "With allowCustom, commits the typed text as a custom value (as Enter does) and clears the input.",
+          "action": "With allowCustom, commits the typed text exactly as Enter does: multiple clears the input and stays open; single shows the committed text and closes.",
           "when": "allowCustom",
           "from": "first",
           "expect": "manual"
@@ -6988,7 +7022,7 @@
           "keys": [
             "Alt+ArrowDown"
           ],
-          "action": "Opens the list without moving the active option.",
+          "action": "Opens the list with the selected option active, or no active option when nothing is selected.",
           "from": "first",
           "expect": "manual"
         }
@@ -7007,6 +7041,7 @@
         "fieldBorderFocus": {
           "token": "color.border.focus",
           "part": "field",
+          "description": "While the input itself has focus (web and Lit: `:has(input:focus-visible)`, not `:focus-within`, so a focused clear or chip-remove Button shows only its own ring).",
           "locked": true
         },
         "fieldBorderInvalid": {
@@ -7047,6 +7082,8 @@
         },
         "placeholderColor": {
           "token": "color.foreground.muted",
+          "part": "input",
+          "description": "The input placeholder (`::placeholder`; `placeholderTextColor` on native).",
           "locked": true
         },
         "chipBackground": {
@@ -7082,20 +7119,23 @@
         },
         "iconColor": {
           "token": "color.foreground.muted",
-          "description": "Toggle chevron and clear icon.",
+          "description": "Toggle chevron, clear and chip-remove icons; forwarded to each composed Icon's own `color` override.",
           "locked": true
         },
         "partGap": {
           "token": "space.1",
+          "description": "Between label, description, field and error message.",
           "locked": false
         },
         "labelWeight": {
           "token": "font.weight.medium",
           "part": "label",
+          "description": "Forwarded to the label Text's own `fontWeight` override.",
           "locked": false
         },
         "helperSize": {
           "token": "font.size.sm",
+          "description": "Forwarded to the description and error Text's own `fontSize` override.",
           "locked": false
         },
         "descriptionText": {
@@ -7114,6 +7154,11 @@
         },
         "popupBorder": {
           "token": "color.border",
+          "part": "popup",
+          "locked": false
+        },
+        "popupBorderWidth": {
+          "token": "border.width.thin",
           "part": "popup",
           "locked": false
         },
@@ -7138,10 +7183,12 @@
         },
         "fontFamily": {
           "token": "font.family.body",
+          "description": "Label and input text.",
           "locked": false
         },
         "fontSize": {
           "token": "font.size.md",
+          "description": "Label and input text.",
           "locked": false
         },
         "chipSize": {
@@ -7151,6 +7198,7 @@
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "description": "Label and input text.",
           "locked": false
         },
         "minTarget": {
@@ -7159,6 +7207,8 @@
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "part": "field",
+          "description": "Replaces fieldBorderWidth while the input is focused (the field border is its focus ring, as Input); fieldPaddingInline and fieldPaddingBlock shrink by the difference so the content does not shift.",
           "locked": true
         },
         "disabledOpacity": {
@@ -7167,12 +7217,13 @@
         },
         "enter": {
           "token": "motion.duration.fast",
+          "description": "Popup opacity fade-in and the field border-color transition; instant under reduced motion.",
           "locked": false
         }
       },
       "constants": {
         "statusDebounce": {
-          "description": "How long result-count, loading and empty announcements wait before the status live region updates.",
+          "description": "How long result-count, loading and empty announcements wait before the status live region updates. Not motion: it does not follow reduced motion, so it is computed from the theme's standard `motion.duration.base` value, never from a reduced-motion override that zeroes the token.",
           "token": "motion.duration.base",
           "multiply": 2,
           "unit": "ms"
@@ -7287,7 +7338,7 @@
             "aria-required",
             "autocomplete=off"
           ],
-          "notes": "The APG editable combobox with list autocomplete: <input role=\"combobox\" aria-autocomplete=\"list\" aria-expanded aria-controls aria-activedescendant>; the popup is a portal with the Listbox; keydown on the input is forwarded to the Listbox handler so DOM focus never leaves the input. A visually hidden <div role=\"status\" aria-live=\"polite\"> announces copy.resultCount, loading and empty states after a short debounce. Chips are <span> with a ds Button (ghost, sm, iconOnly, close icon) labelled copy.removeChip; chips are not focus stops themselves. Hidden <input name> per value for native forms."
+          "notes": "The APG editable combobox with list autocomplete: <input role=\"combobox\" aria-autocomplete=\"list\" aria-expanded aria-controls aria-activedescendant>; the popup is a portal with the Listbox; DOM focus never leaves the input. The React Listbox exports no key handler hook and no controlled active option, so today the combobox sets the active option by remounting the Listbox with `initialActiveValue` and re-dispatches ArrowUp/ArrowDown as native keydown on the Listbox root; only the keys in the keyboard table are forwarded (no PageUp/PageDown, no letter type-ahead — typing goes to the input). The ref is `Ref<HTMLInputElement>` on the input (the element above); `data-ds` sits on the wrapper div. The toggle Button is `tabIndex={-1}` (the input is the tab stop, per APG); the clear and chip-remove Buttons stay tabbable. Button sets its own `data-part=\"container\"`, so the `chipRemove`, `clearButton` and `toggleButton` parts are wrapper <span>s around their Buttons, and a scenario `click` on those parts presses the Button inside. `copy.done` and `copy.activeOption` are not rendered on web (activedescendant does the announcing). A visually hidden <div role=\"status\" aria-live=\"polite\"> announces copy.resultCount, loading and empty states after a short debounce. Chips are <span> with a ds Button (ghost, sm, iconOnly, close icon) labelled copy.removeChip; chips are not focus stops themselves. Hidden <input name> per value for native forms."
         },
         "lit": {
           "tag": "ds-combobox",
@@ -7299,9 +7350,13 @@
             "disabled",
             "invalid",
             "loading",
-            "open"
+            "open",
+            {
+              "prop": "clearable",
+              "attribute": "no-clear"
+            }
           ],
-          "notes": "Form-associated (FormData for multiple). <ds-listbox> lives in the same shadow root so aria-activedescendant resolves. Composed `change`, `input-change`, `open-change`. Popup via the Popover API when available."
+          "notes": "Form-associated (FormData for multiple). <ds-listbox> lives in the combobox's shadow root, but its options render inside ds-listbox's own shadow root, which an aria-activedescendant IDREF cannot reach; as ds-select does, the input carries no aria-activedescendant and the active option's label (`copy.activeOption`) is written to a polite live span linked by aria-describedby. Keys are forwarded through ds-listbox's `handleKey`, only those in the keyboard table. The `open` attribute mirrors the effective state (controlled or not), so an uncontrolled open list still shows it. The `chipRemove`, `clearButton` and `toggleButton` parts are wrappers around their <ds-button>s. Composed `change`, `input-change`, `open-change`. Popup via the Popover API when available."
         },
         "rn": {
           "element": "TextInput",
@@ -7312,7 +7367,7 @@
             "accessibilityState",
             "accessibilityValue"
           ],
-          "notes": "On phones the popup is a BottomSheet with the TextInput at the top of its body (keyboard-avoiding) and the Listbox below — typing on a phone with a floating list under the keyboard is unusable. Tablets and react-native-web use the anchored popup. Chips render before the input inside the field; each chip has a remove Button. Result counts are announced with announceForAccessibility. Form registration as Input. Listbox rows are touch Pressables with no key events, so the whole keyboard model — ArrowDown/ArrowUp, Home/End, Alt+ArrowDown, Tab-without-committing — has no native equivalent: a tap is the commit, Enter through the TextInput commits typed custom text, Escape arrives only from a hardware keyboard, and blurring the field closes the list. Tapping is the accessible path, and every row is its own focus stop."
+          "notes": "On phones (window width <= `layout.maxWidth.prose`, the BottomSheet breakpoint) the popup is a BottomSheet with the TextInput at the top of its body (keyboard-avoiding) and the Listbox below — typing on a phone with a floating list under the keyboard is unusable. Tablets and react-native-web use the anchored popup. Chips render before the input inside the field; each chip has a remove Button. The `status` part is visible small muted Text: a polite live region on Android, announced with announceForAccessibility on iOS only (see React Native notes). Form registration as Input; the native form handle carries only `string | boolean`, so with `multiple` the submitted value is the values joined with `,` (a comma always commits, so no typed value contains one). Button has no testID, so `chipRemove` and `clearButton` are Views carrying the testID around their Buttons; on phones `toggleButton` is the chevron Icon inside the summary Pressable (the summary is the toggle), hidden from accessibility. Listbox rows are touch Pressables with no key events, so the list keyboard model — ArrowDown/ArrowUp, Home/End, Alt+ArrowDown, Tab-without-committing — has no native equivalent: a tap is the commit, Enter through the TextInput commits typed custom text (there is no active option, so without allowCustom Enter commits nothing), Escape arrives only from a hardware keyboard, and blurring the field closes the list. The TextInput itself still honours Backspace-in-an-empty-input (removes the last chip) and comma-commits with allowCustom. There is no active option on native, so `copy.activeOption` is not announced (the screen reader reads the focused row) and `filter: none` typing only opens the list. Tapping is the accessible path, and every row is its own focus stop."
         },
         "swiftui": {
           "element": "TextField",
@@ -7690,10 +7745,10 @@
       "Overview": "A combobox is an input that helps you finish. You type, it narrows the list, you pick — or, when the thing you want does not exist yet, you keep what you typed. It is the right field whenever a Select's list would be too long to scan, and it is the multi-select of choice when picks should be visible as chips.",
       "When to use": "Use a Combobox for long lists (fifty-plus: people, cities, products), for values that can be typed faster than found (dates, codes), for `async` search against a server, and for multi-value fields where chips make the selection legible (recipients, tags, filters). Use `allowCustom` when new values are legitimate (tags, invitees by email) and never when the value must exist (a customer id). Use `filter: none` when the list is short but chips are wanted.",
       "When not to use": "Do not use a Combobox for fewer than about ten options that never grow — use Select. Do not use it as a search box that navigates to results (that is a search form with a Listbox of suggestions, planned as Search). Do not use it to pick a date (DatePicker, planned). Do not disable typing to get a Select; use Select.",
-      "Behavior": "Typing filters `options` per `filter` and opens the list with no active option (so Enter commits typed text only when `allowCustom`); ArrowDown activates the first match without moving DOM focus from the input; Enter commits the active option, fires `onChange`, and — single — closes and shows the label in the input, or — multiple — adds a chip, clears the text and keeps the list open. Escape closes the list, then clears text if pressed again. Tab closes without committing an active option. Clicking the toggle button opens the full list; the clear button empties value and text. In `multiple`, Backspace on an empty input removes the last chip, and each chip's remove button removes that one; `onChange` receives the array in selection order. With `async`, the component shows `copy.loading` while `loading`, calls `onInputChange` on each keystroke, and renders whatever `options` the consumer supplies. Result counts, loading and \"no matches\" are announced politely. Validation and Form behavior are as Input; the value collected is the option value(s), or the custom string(s). Filtering is case- and diacritic-insensitive on every platform. The result-count announcement is debounced by `motion.duration.base × 2` everywhere. The toggle button opens the full, unfiltered list for that opening; the next keystroke filters again. After a commit the input shows the selected option's label (single) or clears (multiple); a controlled `inputValue` is expected to follow the same rule. The composed Listbox is `embedded`, gets `loading` while an async filter runs, and with `allowCustom` is given a synthetic first option carrying `copy.addCustom`. On phones the chips render at the top of the sheet body.",
+      "Behavior": "Typing filters `options` per `filter` and opens the list with no active option (so Enter commits typed text only when `allowCustom`); ArrowDown activates the first match without moving DOM focus from the input; Enter commits the active option, fires `onChange`, and — single — closes and shows the label in the input, or — multiple — adds a chip, clears the text and keeps the list open. Escape closes the list, then clears the text (not the value) if pressed again. Tab closes without committing an active option, in single and multiple mode. Clicking the toggle button opens the full list; the clear button empties value and text. Only typing opens with no active option: the toggle button, a click in the input, the `open` prop and ArrowDown open with the selected option active, else the first; ArrowUp with the selected option, else the last; Alt+ArrowDown with the selected option, else none. Pressing the already-selected option in single mode fires no `onChange` (Listbox skips same-value commits), so the combobox detects that press itself, restores the label and closes. In `multiple`, Backspace on an empty input removes the last chip, and each chip's remove button removes that one; `onChange` receives the array in selection order. With `async`, the component shows `copy.loading` while `loading`, calls `onInputChange` on each user text change, and renders whatever `options` the consumer supplies; while `loading` the Listbox is given `options: []` and `loading` (so stale results are hidden and Listbox shows `copy.loading` in place of `emptyMessage`, which stays `copy.empty`), and the `copy.addCustom` row is hidden. Result counts, loading and \"no matches\" are announced politely; the count excludes the synthetic `copy.addCustom` row, so zero matches announce `copy.empty` even while that row shows. The `resultCount` plural uses the nearest `lang` ancestor's locale on web and Lit, else the runtime default. `copy.requiredIndicator` renders inside the label, so it is part of the accessible name (as Select). The Default story's args are the `fruit-picker` example; the scenarios' `apple` is its Apple option. Validation and Form behavior are as Input; the value collected is the option value(s), or the custom string(s). Filtering is case- and diacritic-insensitive on every platform. The result-count announcement is debounced by `motion.duration.base × 2` everywhere. The toggle button opens the full, unfiltered list for that opening; the next keystroke filters again. After a commit the input shows the selected option's label (single) or clears (multiple); a controlled `inputValue` is expected to follow the same rule. The composed Listbox is `embedded`, gets `loading` while an async filter runs, and with `allowCustom` is given a synthetic first option carrying `copy.addCustom`. On phones the chips render at the top of the sheet body.",
       "Content guidelines": "The label names the field (\"Assignees\"); the placeholder shows an example or a verb (\"Search people\"). Option labels are unique and short; descriptions carry the disambiguation (email under a name). The custom-entry row uses `copy.addCustom` verbatim so users learn the pattern. Chips show the option label, never the value; keep labels to roughly twenty characters, since a chip truncates with an ellipsis once the row runs out of room rather than at a fixed character count.",
       "Accessibility": "The input is a `combobox` with `aria-autocomplete=\"list\"`, `aria-expanded`, `aria-controls` and `aria-activedescendant`, and the popup a `listbox` (WCAG 4.1.2; APG editable combobox). DOM focus stays in the input while the list is navigated, so screen readers announce the active option through activedescendant and sighted users keep the caret. The number of results, loading and empty states are announced through a polite live region (4.1.3). Escape closes the list before it clears text, so a keystroke never destroys input unexpectedly (3.2.2). Chips are removable by keyboard through their buttons and by Backspace (2.1.1), each remove button named for its chip. Required and invalid are conveyed in text and attributes (1.4.1, 3.3.1). The field reaches 44px (2.5.8); the border meets 3:1 (1.4.11); text meets AA on the field and on chips.",
-      "Platform notes": "### Web\nRender the label, the field wrapper (styled as Input's border and focus ring via `:focus-within`), chips, `<input role=\"combobox\" aria-autocomplete=\"list\" aria-expanded aria-controls={listboxId} aria-activedescendant={activeId} autocomplete=\"off\">`, the clear and toggle Buttons (`ghost`, `sm`, `iconOnly`), the description and error, a hidden `<div role=\"status\" aria-live=\"polite\">` for `copy.resultCount` / loading / empty (debounced ~500ms via `motion.duration.base × 2`), and hidden inputs for the value(s). The popup is a portal (`position: fixed`, from the field rect, flip on overflow, `min-inline-size` = field width, `layer.dropdown`) containing `<Listbox labelledBy={labelId}>` with `selectionFollowsFocus={false}`; forward the input's keydown to `useListbox`'s handler; close on outside `pointerdown` and on `focusout` to outside. Filtering is case- and diacritic-insensitive.\n\n### Lit\n`<ds-combobox label=\"Assignees\" name=\"assignees\" multiple .options=${…}>`; form-associated; `<ds-listbox>` in the shadow root; chips and buttons composed from `<ds-button>` and `<ds-icon>`; composed `change`, `input-change`, `open-change`.\n\n### React Native\nPhones: the field is a `Pressable` summary (chips + placeholder) that opens a `BottomSheet height=\"full\"` containing a `TextInput` (`accessibilityRole=\"combobox\"`, autofocus) and the `Listbox`; committing closes the sheet (single) or updates the chips (multiple), with a `copy.done` Button in the sheet footer. BottomSheet has no header slot, so the chips and the TextInput sit at the top of the sheet body, not above it. The closed summary shows its chips read-only — a chip remove button nested inside the summary's own Pressable would fight it for the touch — so removing and clearing happen in the open sheet. Tablets / react-native-web: `TextInput` in the field with an anchored popup `Modal` that deliberately does not trap focus, unlike Select's and Menu's, because the APG model keeps focus in the text input while the list is browsed. The loading row and the no-matches row both come through Listbox's single `emptyMessage` seam, carrying `copy.loading` or `copy.empty`; Listbox has no separate loading row. Announce counts with `AccessibilityInfo.announceForAccessibility`. Form registration as Input.",
+      "Platform notes": "### Web\nRender the label, the field wrapper (styled as Input's border and focus ring via `:has(input:focus-visible)`, so the ring tracks the input and not a focused chip-remove or clear Button), chips, `<input role=\"combobox\" aria-autocomplete=\"list\" aria-expanded aria-controls={listboxId} aria-activedescendant={activeId} autocomplete=\"off\">`, the clear and toggle Buttons (`ghost`, `sm`, `iconOnly`), the description and error, a hidden `<div role=\"status\" aria-live=\"polite\">` for `copy.resultCount` / loading / empty (debounced ~500ms via `motion.duration.base × 2`), and hidden inputs for the value(s). The popup is a portal (`position: fixed`, from the field rect, flip on overflow, `min-inline-size` = field width, `layer.dropdown`) containing `<Listbox labelledBy={labelId}>` with `selectionFollowsFocus={false}`; drive its active option as the web platform note says (no `useListbox` hook exists); close on outside `pointerdown` and on `focusout` to outside. Filtering is case- and diacritic-insensitive.\n\n### Lit\n`<ds-combobox label=\"Assignees\" name=\"assignees\" multiple .options=${…}>`; form-associated; `<ds-listbox>` in the shadow root; chips and buttons composed from `<ds-button>` and `<ds-icon>`; composed `change`, `input-change`, `open-change`.\n\n### React Native\nPhones: the field is a `Pressable` summary (chips + placeholder) that opens a `BottomSheet height=\"full\"` containing a `TextInput` (`accessibilityRole=\"combobox\"`, autofocus) and the `Listbox`; committing closes the sheet (single) or updates the chips (multiple), with a `copy.done` Button in the sheet footer in both modes (the visible close control). The `status` part is visible small muted Text under the input (`helperSize`, `descriptionText`) with `accessibilityLiveRegion=\"polite\"` on Android; iOS has no live region, so there the debounced text is announced with `announceForAccessibility` instead (only there, to avoid a double announcement). BottomSheet has no header slot, so the chips and the TextInput sit at the top of the sheet body, not above it. The closed summary shows its chips read-only — a chip remove button nested inside the summary's own Pressable would fight it for the touch — so removing and clearing happen in the open sheet. Tablets / react-native-web: `TextInput` in the field with an anchored popup `Modal` that deliberately does not trap focus, unlike Select's and Menu's, because the APG model keeps focus in the text input while the list is browsed. The loading row comes from Listbox's own `loading` prop (set while `filter` is `async` and `loading`, with `options: []`), which shows `copy.loading` in place of `emptyMessage`; `emptyMessage` is always `copy.empty`. Form registration as Input.",
       "Related": "Listbox, Select, Input, Button, BottomSheet."
     },
     "extensions": [],
@@ -16434,17 +16489,29 @@
       "composition": {
         "optionIcon": "Icon",
         "optionCheck": "Icon",
-        "emptyState": "Text"
+        "emptyState": {
+          "component": "Text",
+          "props": {
+            "tone": "muted"
+          }
+        },
+        "errorMessage": {
+          "component": "Text",
+          "props": {
+            "size": "sm",
+            "tone": "danger"
+          }
+        }
       },
       "props": {
         "label": {
           "type": "string",
           "required": true,
-          "description": "Accessible name of the list. When a visible Text label exists, pass its id via `labelledBy` instead and this is ignored."
+          "description": "Accessible name of the list. When a visible Text label exists, pass its id via `labelledBy` as well; on web `aria-labelledby` then wins. Always pass `label` even with `labelledBy`: it is the `{label}` in `copy.required` and `copy.invalid` on every platform, and on Lit it is always the list's `aria-label`, because an id outside the shadow root cannot be referenced."
         },
         "labelledBy": {
           "type": "string",
-          "description": "Id of a visible element that labels the list.",
+          "description": "Id of a visible element that labels the list. Web only in effect: Lit accepts it for parity but never sets `aria-labelledby` (ids do not cross shadow roots) and names the list with `label` as `aria-label`.",
           "platforms": [
             "web",
             "lit"
@@ -16454,7 +16521,7 @@
           "type": "array",
           "required": true,
           "shape": "({ value: string; label: string; description?: string; icon?: IconName; disabled?: boolean } | { group: string; options: ListboxOption[] })[]",
-          "description": "Flat or grouped options. Export the item type as `ListboxOption`."
+          "description": "Flat or grouped options; groups do not nest. Export three types on every platform: `ListboxOption` is the leaf `{ value, label, description?, icon?, disabled? }`, `ListboxGroup` is `{ group, options: ListboxOption[] }`, and `ListboxItem` is `ListboxOption | ListboxGroup`, the element type of this array (Select and Combobox take the same `ListboxItem[]`)."
         },
         "multiple": {
           "type": "boolean",
@@ -16488,11 +16555,11 @@
         "invalid": {
           "type": "boolean",
           "default": false,
-          "description": "Marks the list invalid (aria-invalid) with `copy.invalid`."
+          "description": "Marks the list invalid (aria-invalid, and `borderInvalid` when not `embedded`) with `copy.invalid`. The list is invalid while this is true OR `error` is non-empty; clearing `error` never clears an explicitly set `invalid`."
         },
         "error": {
           "type": "string",
-          "description": "Error message rendered below the list and linked by aria-describedby; implies invalid."
+          "description": "Error message rendered below the list and linked by aria-describedby; implies invalid. The displayed message is `error`, then the Form's message, then while invalid `copy.required` (required and nothing selected) else `copy.invalid`."
         },
         "embedded": {
           "type": "boolean",
@@ -16511,11 +16578,11 @@
         "disabled": {
           "type": "boolean",
           "default": false,
-          "description": "The whole list is inert but readable."
+          "description": "The whole list is inert but readable: it stays focusable (web and Lit keep tabindex=0 and set aria-disabled=true on the list; native sets accessibilityState.disabled on every row), keys, hover, clicks and taps do nothing, and `disabledOpacity` dims the list once (not stacked on individually disabled options; the error message stays at full opacity)."
         },
         "name": {
           "type": "string",
-          "description": "Field name for Form collection. Multiple values are collected as an array."
+          "description": "Field name for Form collection. The submitted value is a string in single-select and an array of strings with `multiple` (the form `valueType: string[]` covers both); nothing selected submits no key. Without `name` nothing is submitted, though the root still carries `data-ds-field` like every field (Form skips unnamed fields)."
         },
         "emptyMessage": {
           "type": "string",
@@ -16530,7 +16597,7 @@
             "all"
           ],
           "default": "8",
-          "description": "Height in rows before the list scrolls; `all` never scrolls. There is no row-height token, so the height is rows × the height measured from the first rendered row — an estimate that is a little off when that first row is a group label rather than an option."
+          "description": "Height in rows before the list scrolls; `all` never scrolls. Computed from tokens, never measured: rows × the row height from Behavior, plus 2 × `listPadding`, plus 2 × `borderWidth` when not `embedded`. Rows with a description and group labels are taller or shorter than counted, so slightly fewer or more rows show; that is accepted."
         }
       },
       "events": {
@@ -16555,7 +16622,7 @@
           ]
         },
         "onActiveChange": {
-          "description": "Fired as the focused (active) option changes, with its value — Combobox uses this to keep aria-activedescendant in sync; consumers rarely need it.",
+          "description": "Fired as the focused (active) option changes, with its value — Combobox uses this to keep aria-activedescendant in sync; consumers rarely need it. Fires on keyboard moves, hover, the option made active when the list receives focus (web, Lit) or row focus (native), and with null when the list (native: the active row) loses focus. Never on mount, so the native `initialActiveValue` pre-highlight does not fire it.",
           "platforms": {
             "web": "onActiveChange",
             "lit": "active-change",
@@ -16569,6 +16636,9 @@
               "shape": "string | null",
               "description": "The value of the active option; null when no option is active."
             }
+          ],
+          "fires": [
+            "user"
           ]
         }
       },
@@ -16626,7 +16696,7 @@
             "Shift+ArrowDown",
             "Shift+ArrowUp"
           ],
-          "action": "Multiple: moves and adds the next/previous option to the selection.",
+          "action": "Multiple: moves and adds the next/previous option to the selection (add only; an already-selected option stays selected).",
           "when": "multiple",
           "from": "first",
           "expect": "manual"
@@ -16635,7 +16705,7 @@
           "keys": [
             "Control+a"
           ],
-          "action": "Multiple: selects all enabled options; again clears.",
+          "action": "Multiple: selects all enabled options; pressed again when every enabled option is selected, deselects the enabled options. Selected disabled options stay selected either way.",
           "when": "multiple",
           "from": "first",
           "expect": "manual"
@@ -16644,7 +16714,7 @@
           "keys": [
             "a-z"
           ],
-          "action": "Typeahead to the next option whose label starts with the typed characters.",
+          "action": "Typeahead to the next option whose label starts with the typed characters; the buffer clears after `typeaheadReset`.",
           "from": "first",
           "expect": "manual"
         },
@@ -16653,7 +16723,7 @@
             "PageDown",
             "PageUp"
           ],
-          "action": "Moves by the visible row count.",
+          "action": "Moves by the `maxVisible` row count, clamped to the last/first enabled option; with `maxVisible: all` jumps to the last/first enabled option. Follows `selectionFollowsFocus` like the arrows.",
           "from": "first",
           "expect": "manual"
         }
@@ -16667,6 +16737,22 @@
           "token": "color.border.strong",
           "description": "Only when not `embedded`; inside a popup the popup owns the border.",
           "locked": false
+        },
+        "borderInvalid": {
+          "token": "color.border.danger",
+          "description": "Replaces `border` while invalid, only when not `embedded`; an embedded list conveys invalid by aria-invalid and the error message alone.",
+          "locked": false
+        },
+        "partGap": {
+          "token": "space.1",
+          "description": "Vertical gap between the list and errorMessage. Both sit in the root wrapper, which is not an anatomy part (web: the div with data-ds, whose child is the role=listbox list part, since a listbox may only contain options and groups; Lit: an unnamed wrapper in the shadow root; native: the outer View with testID=\"Listbox\").",
+          "locked": false
+        },
+        "errorText": {
+          "token": "color.foreground.danger",
+          "part": "errorMessage",
+          "description": "Realised by the composed Text's tone danger; declares no hook of its own.",
+          "locked": true
         },
         "borderWidth": {
           "token": "border.width.thin",
@@ -16694,7 +16780,7 @@
         "optionGap": {
           "token": "layout.gap.normal",
           "part": "option",
-          "description": "Between check, icon, label and description.",
+          "description": "Between check, icon, label and description inside a row only; rows themselves have no gap between them.",
           "locked": false
         },
         "optionRadius": {
@@ -16732,7 +16818,7 @@
         "optionSelectedCheck": {
           "token": "color.control.selectedBackground",
           "part": "optionCheck",
-          "description": "The check icon on selected options (rendered only with `multiple`; single-select shows selection by the row fill), in the selected-control fill (3:1 on both surfaces by derivation); always rendered (invisible slot when unselected) so labels align.",
+          "description": "The check icon on selected options, in the selected-control fill (3:1 on both surfaces by derivation). Only with `multiple`, where the slot is present on every row (invisible when unselected) so labels align. Single-select has no check slot and shows selection by `optionSelectedWeight` alone, never a row fill, since the fill is the active state.",
           "locked": true
         },
         "groupLabelColor": {
@@ -16757,6 +16843,8 @@
         },
         "emptyColor": {
           "token": "color.foreground.muted",
+          "part": "emptyState",
+          "description": "Realised by the composed Text's tone muted (also for `copy.loading`); declares no hook of its own.",
           "locked": true
         },
         "fontFamily": {
@@ -16781,10 +16869,17 @@
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "description": "Never changes layout. Web and Lit draw it as an outline on the focused list. Native draws it as a row border that is always reserved (transparent unless the row is focused), so native rows are 2 × focusRingWidth taller than the Behavior formula, and maxVisible counts that.",
           "locked": true
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
+          "locked": false
+        },
+        "typeaheadReset": {
+          "token": "motion.duration.loop",
+          "part": "list",
+          "description": "How long typed characters accumulate before the typeahead buffer clears; read at runtime from the list.",
           "locked": false
         }
       },
@@ -16834,6 +16929,11 @@
           {
             "foreground": "color.foreground.muted",
             "background": "color.background.subtle",
+            "level": "AA"
+          },
+          {
+            "foreground": "color.foreground.danger",
+            "background": "color.background",
             "level": "AA"
           },
           {
@@ -16900,7 +17000,7 @@
               "attribute": "no-selection-follows-focus"
             }
           ],
-          "notes": "`options` and `value` are properties. Form-associated: setFormValue with a FormData carrying one entry per selected value when `multiple`, so a native <form> gets the same shape as a <select multiple>. Composed `change` (detail { value }) and `active-change`. aria-activedescendant referencing shadow options works because list and options share the shadow root; Combobox composes ds-listbox inside its own shadow root for the same reason."
+          "notes": "`options` and `value` are properties. Form-associated: setFormValue with a FormData carrying one entry per selected value when `multiple`, so a native <form> gets the same shape as a <select multiple>. A single-select list submits the string (a DsFormField `currentValue` of `string | string[] | null` covers both modes). Composed `change` (detail { value }) and `active-change`. The list always takes `label` as aria-label; `labelledBy` is never resolved across the shadow boundary. aria-activedescendant referencing shadow options works because list and options share the shadow root; Combobox composes ds-listbox inside its own shadow root for the same reason."
         },
         "rn": {
           "element": "FlatList",
@@ -16909,7 +17009,7 @@
             "accessibilityState",
             "accessibilityRole=menuitem"
           ],
-          "notes": "A FlatList (virtualised — long option lists are common) of Pressable rows with accessibilityRole=\"menuitem\" (no listbox/option roles on native) and accessibilityState={{ selected, disabled }}; multiple: accessibilityState.checked. Because there is no listbox role here, a test finds the list by its accessible label, never by role — the `listbox` in a11y.role is the web and Lit contract. maxVisible → maxHeight = rows × row height measured from the first row. Each option is its own accessibility stop; Pressable has no key events, so arrows, Home/End, Page keys, typeahead, Shift+Arrow and Ctrl+A have no native form at all, a tap is the selection, and `selectionFollowsFocus` is accepted for parity with no runtime effect. `initialActiveValue` only pre-highlights a row here, since there is no single tab stop to move."
+          "notes": "A FlatList (virtualised — long option lists are common) of Pressable rows with accessibilityRole=\"menuitem\" (no listbox/option roles on native) and accessibilityState={{ selected, disabled }}; multiple: accessibilityState.checked. Because there is no listbox role here, a test finds the list by its accessible label, never by role — the `listbox` in a11y.role is the web and Lit contract. maxVisible → maxHeight from the token formula (see `maxVisible` and `focusRingWidth`), never measured. Groups are flattened into FlatList rows (no SectionList), so the `group` part has no wrapper view on native: only the group label row exists, as Text with testID `Listbox.groupLabel`. `disabled` is accessibilityState.disabled plus a press guard, never Pressable's `disabled` prop (it removes the row from focus). The list View keeps accessibilityLabel = `label` but is not `accessible` (that would swallow the rows), so the empty/loading Text is its own stop read as-is, with no label concatenation; with `multiple` the list's accessibilityValue text is `copy.selectedCount`. Each option is its own accessibility stop; Pressable has no key events, so arrows, Home/End, Page keys, typeahead, Shift+Arrow and Ctrl+A have no native form at all, a tap is the selection, and `selectionFollowsFocus` is accepted for parity with no runtime effect. `initialActiveValue` only pre-highlights a row here, since there is no single tab stop to move."
         },
         "swiftui": {
           "element": "ScrollView",
@@ -16925,7 +17025,7 @@
             "ScrollViewReader",
             ".accessibilityElement=contain"
           ],
-          "notes": "A `ScrollView` + `LazyVStack` of option rows (`Button`s with `.isSelected`, group headers as `Text` with `.isHeader`) inside a `.contain` element labelled by `label`/`labelledBy`; not `List`. The list is one focus section: arrows move the active `@FocusState` index, type-ahead via `.onKeyPress(characters:)`, Home/End via `.onKeyPress(.home/.end)`, Space/Enter select per mode; `ScrollViewReader` keeps the active option in view and `maxVisible` sets the frame height from the measured row height. `multiple` rows show the check Icon and the count is announced. `embedded` drops the surface bindings for Select/Combobox/Search hosts."
+          "notes": "A `ScrollView` + `LazyVStack` of option rows (`Button`s with `.isSelected`, group headers as `Text` with `.isHeader`) inside a `.contain` element labelled by `label`/`labelledBy`; not `List`. The list is one focus section: arrows move the active `@FocusState` index, type-ahead via `.onKeyPress(characters:)`, Home/End via `.onKeyPress(.home/.end)`, Space/Enter select per mode; `ScrollViewReader` keeps the active option in view and `maxVisible` sets the frame height from the token row formula. `multiple` rows show the check Icon and the count is announced. `embedded` drops the surface bindings for Select/Combobox/Search hosts."
         }
       },
       "behavior": [
@@ -17315,10 +17415,10 @@
       "Overview": "A listbox is a list you choose from. It is the part of a dropdown that actually does the work — the arrows, the typeahead, the selection — extracted so that a visible picker, a Select's popup and a Combobox's suggestions all behave identically, including for multi-select. If Select is the trigger and Combobox is the input, Listbox is the engine.",
       "When to use": "Use a standalone Listbox when the options should stay visible: a settings picker with five to twenty entries, a transfer list, the sidebar of a two-pane chooser. Use `multiple` for \"pick any\": tags, recipients, filters. Set `selectionFollowsFocus: false` when selecting has side effects (loading a preview), so arrow-key browsing does not trigger them. Everywhere else, use Select (short lists, form fields) or Combobox (long lists, typing to filter) — both open a Listbox.",
       "When not to use": "Do not use a Listbox for two to seven options that fit on screen and need no scrolling; a RadioGroup (single) or a set of Checkboxes (multiple) is simpler and has native semantics. Do not use it for actions (Menu) or for navigation (Links). Do not present a multi-select without showing the selected count or chips somewhere, or users lose track of what they picked.",
-      "Behavior": "The list is one tab stop. Arrow keys move the active option and, in single-select with `selectionFollowsFocus`, select it; Space selects or toggles, Enter selects; Home/End and PageUp/PageDown jump; typing letters moves to the matching label. In `multiple`, each option shows a check, Space toggles, Shift+Arrow extends, Ctrl/Cmd+A selects all, and `onChange` receives the array in option order. Disabled options are visible, announced, skipped by arrows and not selectable. The active option is always scrolled into view; the list scrolls after `maxVisible` rows. When `options` is empty, `emptyMessage` shows and the list is still focusable so a Combobox user hears \"No options\". Inside a Form, `name` collects the value (array for `multiple`) and `required` fails when nothing is selected. Arrow keys clamp at the first and last enabled option (no wrapping; Home and End reach the ends). Home, End and type-ahead follow `selectionFollowsFocus` exactly as the arrows do. Enter selects only in single-select (a no-op with `multiple`, where Space toggles). Rows are `fontSize × lineHeight + 2 × optionPaddingBlock` tall, which is what `maxVisible` and PageUp/PageDown count; the first option row, not a group label, is the measure on native. Option icons render at Icon `size: sm`. Empty groups are omitted. Without `name` the list does not register with a Form.",
+      "Behavior": "The list is one tab stop. Arrow keys move the active option and, in single-select with `selectionFollowsFocus`, select it; Space selects or toggles, Enter selects; Home/End and PageUp/PageDown jump; typing letters moves to the matching label. In `multiple`, each option shows a check, Space toggles, Shift+Arrow extends, Ctrl/Cmd+A selects all, and `onChange` receives the array in option order. Disabled options are visible, announced, skipped by arrows and not selectable. The active option is always scrolled into view; the list scrolls after `maxVisible` rows. When `options` is empty, `emptyMessage` shows and the list is still focusable so a Combobox user hears \"No options\". Inside a Form, `name` collects the value (array for `multiple`) and `required` fails when nothing is selected. Arrow keys clamp at the first and last enabled option (no wrapping; Home and End reach the ends). Home, End, PageUp/PageDown and type-ahead follow `selectionFollowsFocus` exactly as the arrows do. When no option is active yet (keys forwarded by a Combobox before the list was focused), ArrowDown and PageDown land on the first enabled option, ArrowUp and PageUp on the last, and Space and Enter act on the resolved initial option (`initialActiveValue`, else the first selected, else the first enabled). Enter selects only in single-select (a no-op with `multiple`, where Space toggles). Rows are `max(minTarget, fontSize × lineHeight + 2 × optionPaddingBlock)` tall (native adds the reserved `2 × focusRingWidth`), computed from tokens and never measured, which is what `maxVisible` and PageUp/PageDown count. Option icons render at Icon `size: sm`. Empty groups are omitted. The error message is Text `size: sm`, `tone: danger` below the list, `partGap` from it. Without `name` the list submits nothing to a Form.",
       "Content guidelines": "Option labels are short, unique within the list, sentence case, no trailing punctuation; use `description` for the second line rather than a longer label. Group labels are one or two words. The empty message states the situation, not an instruction (\"No matching people\", not \"Try another search\"). When the list is multi-select, the surrounding UI shows `copy.selectedCount` or the selected items.",
-      "Accessibility": "Role `listbox` with a name, `aria-multiselectable` when `multiple`, options with `aria-selected`, groups with names (WCAG 4.1.2; APG listbox). One tab stop with arrow navigation and typeahead; the active option is announced via `aria-activedescendant` while DOM focus stays on the list (or, in Combobox, on the input). Selected and active states are visually distinct — check mark and weight for selected, background for active — so neither is color alone (1.4.1) and a sighted keyboard user can tell \"where I am\" from \"what I chose\". Options meet 24px (2.5.8) and text meets AA on both the surface and the active background; the check meets 3:1.",
-      "Platform notes": "### Web\n`<div role=\"listbox\" tabindex=\"0\" aria-label|aria-labelledby aria-multiselectable aria-activedescendant={activeId}>` containing `<div role=\"group\" aria-labelledby>` and `<div role=\"option\" id aria-selected aria-disabled>` rows with `<Icon name=\"check\">` (invisible when unselected, so labels align), optional `<Icon>`, label and description. Keydown on the list implements the table; `pointermove` over an option sets it active; click selects. Scroll the active option into view with `block: 'nearest'`. Expose `activeId` and the keydown handler through a ref/hook (`useListbox`) so Combobox can forward its input's keys to the list. Form registration as Input, with `getValue` returning the array for `multiple`.\n\n### Lit\n`<ds-listbox label=\"Assignees\" multiple .options=${…}>`; form-associated (`setFormValue(FormData)` for multiple, string otherwise); `aria-activedescendant` between shadow siblings; composed `change` and `active-change`. Expose a `handleKey(event)` method and `activeValue` for `ds-combobox`.\n\n### React Native\n`FlatList` of `Pressable` rows with `accessibilityRole=\"menuitem\"`, `accessibilityState={{ selected, checked: multiple ? selected : undefined, disabled }}`, and `accessibilityLabel` = label plus description. `maxVisible` becomes `maxHeight`. Groups are plain `Text` rows (not the header trait, which would enter the headings rotor). No activedescendant on native; each row is a stop. Form registration as Input.",
+      "Accessibility": "Role `listbox` with a name, `aria-multiselectable` when `multiple`, options with `aria-selected`, groups with names (WCAG 4.1.2; APG listbox). One tab stop with arrow navigation and typeahead; the active option is announced via `aria-activedescendant` while DOM focus stays on the list (or, in Combobox, on the input). Selected and active states are visually distinct — check mark and weight for selected (weight alone in single-select), background for active — so neither is color alone (1.4.1) and a sighted keyboard user can tell \"where I am\" from \"what I chose\". Options meet 24px (2.5.8) and text meets AA on both the surface and the active background; the check meets 3:1.",
+      "Platform notes": "### Web\n`<div role=\"listbox\" tabindex=\"0\" aria-label|aria-labelledby aria-multiselectable aria-activedescendant={activeId}>` containing `<div role=\"group\" aria-labelledby>` and `<div role=\"option\" id aria-selected aria-disabled>` rows with, only when `multiple`, `<Icon name=\"check\">` (invisible when unselected, so labels align), optional `<Icon>`, label and description. Keydown on the list implements the table; `pointermove` over an option sets it active; click selects. Scroll the active option into view with `block: 'nearest'`. Expose `activeId` and the keydown handler through a ref/hook (`useListbox`) so Combobox can forward its input's keys to the list. The role=listbox div sits inside a root wrapper div (data-ds, data-ds-field) that also holds the error Text after it. Form registration as Input, with `getValue` returning the string in single-select and the array for `multiple`.\n\n### Lit\n`<ds-listbox label=\"Assignees\" multiple .options=${…}>`; form-associated (`setFormValue(FormData)` for multiple, string otherwise); `aria-activedescendant` between shadow siblings; composed `change` and `active-change`. Expose a `handleKey(event)` method and `activeValue` for `ds-combobox`.\n\n### React Native\n`FlatList` of `Pressable` rows with `accessibilityRole=\"menuitem\"`, `accessibilityState={{ selected, checked: multiple ? selected : undefined, disabled }}`, and `accessibilityLabel` = label plus description. `maxVisible` becomes `maxHeight`. Groups are plain `Text` rows (not the header trait, which would enter the headings rotor). No activedescendant on native; each row is a stop. Form registration as Input.",
       "Related": "Select, Combobox, RadioGroup, Checkbox, Menu."
     },
     "extensions": [],
@@ -22074,13 +22174,13 @@
         "label": {
           "type": "string",
           "required": true,
-          "description": "Accessible name of the control (\"View mode\"). Not shown; put a visible Text label beside it when the meaning is not obvious from context."
+          "description": "Accessible name of the control (\"View mode\"). Not shown; put a visible Text label beside it when the meaning is not obvious from context. Lit, where an attribute can be absent, defaults the property to an empty string and warns in development when it is empty."
         },
         "options": {
           "type": "array",
           "required": true,
           "shape": "{ value: string; label: string; icon?: IconName; disabled?: boolean }[]",
-          "description": "Two to five options. Labels are one word; with `iconOnly` the label becomes the accessible name."
+          "description": "Two to five options (guidance, not enforced: any count renders, with no warning). Labels are one word; with `iconOnly` the label becomes the accessible name."
         },
         "value": {
           "type": "string",
@@ -22092,12 +22192,12 @@
         },
         "defaultValue": {
           "type": "string",
-          "description": "Initially selected value. Defaults to the first enabled option — a segmented control always has a selection."
+          "description": "Initially selected value. Defaults to the first enabled option — a segmented control always has a selection. A `value` or `defaultValue` is taken as given, never corrected: one naming a disabled option keeps that segment checked with the pill under it (arrows still skip it); one matching no option checks nothing and draws no pill. In both cases the tab stop is the first enabled segment, and arrows move from there."
         },
         "iconOnly": {
           "type": "boolean",
           "default": false,
-          "description": "Show icons only (every option must have one); labels become accessible names and Tooltips."
+          "description": "Show icons only (every option must have one); labels become accessible names and Tooltips. An option without `icon` warns in development (once) and that segment shows its label as text instead, so it never renders empty."
         },
         "size": {
           "type": "enum",
@@ -22217,18 +22317,20 @@
         },
         "segmentSelectedBackground": {
           "token": "color.background",
-          "part": "segment",
-          "description": "The raised pill under the selected segment.",
+          "part": "indicator",
+          "description": "The raised pill under the selected segment — drawn on the `indicator` part, never on the segment itself.",
           "locked": true
         },
         "segmentShadow": {
           "token": "shadow.raised",
-          "part": "segment",
+          "part": "indicator",
+          "description": "The pill's shadow.",
           "locked": false
         },
         "segmentRadius": {
           "token": "radius.sm",
-          "part": "segment",
+          "part": "indicator",
+          "description": "The pill's corners; the segment's focus ring uses the same radius.",
           "locked": false
         },
         "segmentPaddingInline": {
@@ -22239,66 +22341,78 @@
         "segmentPaddingBlock": {
           "token": "space.1",
           "part": "segment",
+          "description": "Vertical padding at size md.",
           "locked": false
         },
         "segmentGap": {
           "token": "layout.gap.tight",
           "part": "segment",
-          "description": "Between icon and label inside a segment.",
+          "description": "Between icon and label inside a segment; no effect with `iconOnly`, where a segment has one child.",
           "locked": false
         },
         "segmentSpacing": {
           "token": "space.0",
-          "part": "segment",
-          "description": "Between adjacent segments: none — the pill slides under abutting segments.",
+          "part": "group",
+          "description": "Between adjacent segments, applied as the group's gap (never a segment margin): none — the pill slides under abutting segments.",
           "locked": false
         },
         "selectedWeight": {
           "token": "font.weight.semibold",
+          "part": "segment",
           "description": "The selected segment's label; unselected use fontWeight.",
           "locked": false
         },
         "paddingBlockSm": {
           "token": "space.1",
-          "description": "Vertical padding at size sm; md uses paddingBlock.",
+          "part": "segment",
+          "description": "Vertical padding at size sm; md uses segmentPaddingBlock. The two are the same token on purpose, so `size` changes the height only through fontSize and its line box — and on React Native, where every segment reaches size.target.comfortable, not visibly at all.",
           "locked": false
         },
         "fontFamily": {
           "token": "font.family.body",
+          "part": "segment",
           "locked": false
         },
         "fontSize": {
           "token": "font.size.{size}",
+          "part": "segment",
           "locked": false
         },
         "fontWeight": {
           "token": "font.weight.medium",
+          "part": "segment",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "part": "segment",
           "locked": false
         },
         "minTarget": {
           "token": "size.target.min",
+          "part": "segment",
           "description": "Each segment's minimum. React Native is touch, so the group height there is size.target.comfortable and every segment reaches 44px; web and Lit keep this floor, because no CSS query tells a touch screen from a hybrid laptop and guessing would shrink or grow the control for the wrong people.",
           "locked": true
         },
         "focusRing": {
           "token": "color.border.focus",
+          "part": "segment",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "part": "segment",
           "locked": true
         },
         "transition": {
           "token": "motion.duration.fast",
+          "part": "indicator",
           "description": "Pill movement; instant under reduced motion.",
           "locked": false
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
+          "part": "segment",
           "locked": false
         }
       },
@@ -22328,12 +22442,6 @@
           }
         ]
       },
-      "form": {
-        "role": "field",
-        "value": "value",
-        "valueType": "string",
-        "discovery": "context"
-      },
       "platforms": {
         "web": {
           "element": "div",
@@ -22344,7 +22452,7 @@
             "aria-checked",
             "tabindex"
           ],
-          "notes": "A <div role=\"radiogroup\" aria-label> of <button role=\"radio\" aria-checked tabindex={0|-1}> — buttons rather than native radios because the control is not a form field and has no name/value to submit. Roving tabindex; arrows move AND select (radio semantics). The selected pill is an absolutely positioned element animated between segments."
+          "notes": "A <div role=\"radiogroup\" aria-label> of <button role=\"radio\" aria-checked tabindex={0|-1}> — buttons rather than native radios because the control is not a form field and has no name/value to submit. Roving tabindex; arrows move AND select (radio semantics). The selected pill is an absolutely positioned `aria-hidden` element animated between segments. No FormContext registration and no `data-ds-field`. `iconOnly` segments carry `aria-label` = the option label themselves and are wrapped in Tooltip with `content` = the label, `describes: false`, and default placement and delay (Tooltip's warm window already makes moving along the control instant)."
         },
         "lit": {
           "tag": "ds-segmented-control",
@@ -22354,7 +22462,7 @@
             "fill",
             "icon-only"
           ],
-          "notes": "`options` is a property; composed `change` with detail { value }. Not form-associated by design."
+          "notes": "`options` is a property; composed `change` with detail { value }. Not form-associated by design, and no `data-ds-field`. The pill is `aria-hidden`. `iconOnly` segments carry `aria-label` = the option label (the Tooltip's aria-labelledby cannot cross the shadow root) inside `<ds-tooltip no-describes>` with `content` = the label and default placement and delay."
         },
         "rn": {
           "element": "View",
@@ -22363,7 +22471,7 @@
             "accessibilityRole=radio",
             "accessibilityState"
           ],
-          "notes": "A View row of Pressables with accessibilityRole=\"radio\" and accessibilityState={{ checked, disabled }}; the pill is an Animated.View. Each segment is its own accessibility stop on native. iOS's UISegmentedControl look is approximated with the tokens rather than used, so the theme applies."
+          "notes": "A View row of Pressables with accessibilityRole=\"radio\" and accessibilityState={{ checked, disabled }}; the pill is an Animated.View hidden from assistive technology (accessibilityElementsHidden, importantForAccessibility=\"no-hide-descendants\"), as Tabs hides its indicator. Not registered with FormContext. Each segment is its own accessibility stop on native: iOS and Android deliver no key events to a View, so the keyboard table applies on react-native-web only (onKeyDown on the group, roving `focusable`), and the arrow scenarios are web and Lit only. No Tooltip part on React Native: an `iconOnly` segment carries its label as `accessibilityLabel` with no `accessibilityHint` (it would repeat the name) and no long-press bubble, because a press already selects. iOS's UISegmentedControl look is approximated with the tokens rather than used, so the theme applies."
         },
         "swiftui": {
           "element": "HStack",
@@ -22382,6 +22490,7 @@
       "behavior": [
         {
           "name": "click-selects-a-segment",
+          "description": "The click lands on the first segment (List), which is not the selected one.",
           "given": {
             "options": [
               {
@@ -22414,7 +22523,7 @@
         },
         {
           "name": "arrow-moves-and-selects",
-          "description": "Arrows move focus AND selection (radio semantics), per the keyboard table's `selects`.",
+          "description": "Arrows move focus AND selection (radio semantics), per the keyboard table's `selects`. Focus starts on the selected segment (the tab stop).",
           "given": {
             "options": [
               {
@@ -22450,7 +22559,7 @@
         },
         {
           "name": "arrow-wraps-from-the-last-segment",
-          "description": "From the last segment ArrowRight wraps to the first, and selection follows.",
+          "description": "From the last segment ArrowRight wraps to the first, and selection follows. Focus starts on the selected segment (the tab stop).",
           "given": {
             "options": [
               {
@@ -22479,7 +22588,7 @@
         },
         {
           "name": "disabled-segment-is-not-selectable",
-          "description": "Arrow movement skips disabled segments, and a press on one selects nothing.",
+          "description": "A press on a disabled segment selects nothing: the click lands on the first segment (List), which is the disabled one. Arrow skipping is covered by arrow-skips-disabled-segments.",
           "given": {
             "options": [
               {
@@ -22502,6 +22611,47 @@
               "event": "onChange",
               "fired": false
             }
+          ]
+        },
+        {
+          "name": "arrow-skips-disabled-segments",
+          "description": "From the selected first segment ArrowRight passes over the disabled middle one and selects the third.",
+          "given": {
+            "options": [
+              {
+                "value": "list",
+                "label": "List"
+              },
+              {
+                "value": "grid",
+                "label": "Grid",
+                "disabled": true
+              },
+              {
+                "value": "table",
+                "label": "Table"
+              }
+            ],
+            "defaultValue": "list"
+          },
+          "when": {
+            "key": "ArrowRight"
+          },
+          "then": [
+            {
+              "event": "onChange"
+            },
+            {
+              "event": "onChange",
+              "with": "table",
+              "platforms": [
+                "lit"
+              ]
+            }
+          ],
+          "platforms": [
+            "web",
+            "lit"
           ]
         }
       ],
@@ -22618,10 +22768,10 @@
       "Overview": "A segmented control switches a mode: list or grid, day or week, metric or imperial. Exactly one segment is always selected, choosing takes effect at once, and there is nothing to submit — which is what separates it from a RadioGroup in a form, whose semantics it borrows.",
       "When to use": "Use it for two to five short, parallel options that change what a region shows or how a tool behaves, where the user switches often and sees the effect immediately. Use `iconOnly` in toolbars where the icons are unambiguous (list/grid) and add Tooltips. Pair it with a visible Text label when the group's purpose is not obvious.",
       "When not to use": "Do not use it to pick a value that is submitted later (RadioGroup) or that has consequences worth a confirmation. Do not use it for more than five options or long labels; use Tabs when the options are views of content, or Select. Do not use it as tabs: a segmented control does not own panels. Do not leave it with no selection.",
-      "Behavior": "Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End do the same to the ends. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only.",
+      "Behavior": "Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End do the same to the ends. In right-to-left writing ArrowLeft is \"next\" and ArrowRight \"previous\" (ArrowDown and ArrowUp are unchanged), as in Tabs. Under a controlled `value` the arrow still moves focus and fires `onChange`; the checked state and the pill stay where `value` says until the parent changes it. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only. It is not a form field: there is no `name`, no `form` block, and it neither registers with a Form nor submits a value — use RadioGroup inside a Form.",
       "Content guidelines": "Labels are single words or short pairs in sentence case (\"List\", \"Grid\", \"This week\"). Do not use \"On/Off\" — that is a Switch. With `iconOnly`, the label is what a screen reader says and what the Tooltip shows, so it names the mode (\"Grid view\"), not the icon.",
       "Accessibility": "Role `radiogroup` with a name and `radio` segments with `aria-checked` (WCAG 4.1.2; APG radio group), so assistive technology reports \"3 of 3, selected\". One tab stop with arrow movement. Selection is shown by the raised pill, the stronger and heavier text, and the checked state — not color alone (1.4.1). Icon-only segments carry their label as the accessible name and expose it visually through a Tooltip (1.1.1). The pill itself is deliberately low-contrast against the group (a page-colored surface with a soft shadow); WCAG 1.4.11 does not require it because the selected state is identified by the text change and the checked state, which is why the text pair on the pill is the one the build checks. Reduced motion stops the pill animation.",
-      "Platform notes": "### Web\n`<div role=\"radiogroup\" aria-label>` containing `<button type=\"button\" role=\"radio\" aria-checked tabindex>` per option with `<Icon>` and label; an absolutely positioned pill `<span aria-hidden>` sized and translated from the selected segment's offset with `transition`. Keydown on the group implements the keyboard table. `iconOnly` wraps each segment in `Tooltip` with `describes: false`.\n\n### Lit\n`<ds-segmented-control label=\"View mode\" .options=${…} value=\"grid\">`; roving tabindex in the shadow root; composed `change`.\n\n### React Native\n`View` with `accessibilityRole=\"radiogroup\"` and `accessibilityLabel`, `flexDirection: 'row'`, background and padding from tokens; `Pressable accessibilityRole=\"radio\" accessibilityState={{ checked }}` per option; pill as an `Animated.View` positioned from `onLayout` measurements. `iconOnly` sets `accessibilityLabel` to the option label.",
+      "Platform notes": "### Web\n`<div role=\"radiogroup\" aria-label>` containing `<button type=\"button\" role=\"radio\" aria-checked tabindex>` per option with `<Icon>` and label; an absolutely positioned pill `<span aria-hidden>` sized and translated from the selected segment's offset with `transition`. Keydown on the group implements the keyboard table. `iconOnly` gives each segment `aria-label` = the option label and wraps it in `Tooltip` with `content` = the label and `describes: false`.\n\n### Lit\n`<ds-segmented-control label=\"View mode\" .options=${…} value=\"grid\">`; roving tabindex in the shadow root; composed `change`.\n\n### React Native\n`View` with `accessibilityRole=\"radiogroup\"` and `accessibilityLabel`, `flexDirection: 'row'`, background and padding from tokens; `Pressable accessibilityRole=\"radio\" accessibilityState={{ checked }}` per option; pill as an `Animated.View` positioned from `onLayout` measurements. `iconOnly` sets `accessibilityLabel` to the option label.",
       "Related": "RadioGroup, Tabs, Switch, Tooltip, Icon."
     },
     "extensions": [],
@@ -22648,15 +22798,85 @@
         "errorMessage"
       ],
       "composition": {
-        "label": "Text",
-        "description": "Text",
-        "chevron": "Icon",
+        "label": {
+          "component": "Text",
+          "props": {
+            "weight": "medium",
+            "element": "span"
+          },
+          "forwards": {
+            "labelWeight": "fontWeight",
+            "fontSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
+        "description": {
+          "component": "Text",
+          "props": {
+            "tone": "muted",
+            "size": "sm",
+            "element": "span"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
+        "value": {
+          "component": "Text",
+          "props": {
+            "element": "span"
+          },
+          "forwards": {
+            "fontSize": "fontSize",
+            "fontWeight": "fontWeight",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
+        "chevron": {
+          "component": "Icon",
+          "props": {
+            "name": "chevron-down",
+            "size": "sm"
+          },
+          "forwards": {
+            "chevron": "color"
+          }
+        },
+        "errorMessage": {
+          "component": "Text",
+          "props": {
+            "tone": "danger",
+            "size": "sm",
+            "element": "span"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
         "listbox": {
           "component": "Listbox",
           "props": {
             "options": {
               "from": "options"
-            }
+            },
+            "multiple": {
+              "from": "multiple"
+            },
+            "value": {
+              "from": "value"
+            },
+            "embedded": true,
+            "selectionFollowsFocus": false
+          },
+          "forwards": {
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
           }
         }
       },
@@ -22675,7 +22895,7 @@
         "options": {
           "type": "array",
           "required": true,
-          "shape": "ListboxOption[] (flat or grouped, as Listbox)",
+          "shape": "ListboxItem[] (options and one level of groups, as Listbox)",
           "description": "The options, passed through to the Listbox."
         },
         "value": {
@@ -22874,6 +23094,7 @@
         "triggerBorderFocus": {
           "token": "color.border.focus",
           "part": "trigger",
+          "description": "The border color while the trigger is keyboard-focused (:focus-visible). When the field is both invalid and focused the danger color stays and only the width changes (focusRingWidth), as Input, so the error is never hidden by focus.",
           "locked": true
         },
         "triggerBorderInvalid": {
@@ -22914,10 +23135,13 @@
         "valueColor": {
           "token": "color.foreground",
           "part": "value",
+          "description": "Realised by the composed value Text's `default` tone while an option is selected.",
           "locked": true
         },
         "placeholderColor": {
           "token": "color.foreground.muted",
+          "part": "value",
+          "description": "The value Text while it shows the placeholder, realised by its `muted` tone.",
           "locked": true
         },
         "chevron": {
@@ -22927,25 +23151,30 @@
         },
         "partGap": {
           "token": "space.1",
-          "description": "Between label, description, trigger and error.",
+          "description": "Between label, description, trigger and error, on the field group (the root wrapper, not an anatomy part — as Input).",
           "locked": false
         },
         "labelWeight": {
           "token": "font.weight.medium",
           "part": "label",
+          "description": "Reaches the label only through the composed Text's `overrides` (fontWeight); no --ds-select-* hook, since a hook could not reach the child without restyling it.",
           "locked": false
         },
         "helperSize": {
           "token": "font.size.sm",
+          "description": "Description and error text size, forwarded into the composed Text's `overrides` (fontSize); no --ds-select-* hook, as for labelWeight.",
           "locked": false
         },
         "descriptionText": {
           "token": "color.foreground.muted",
           "part": "description",
+          "description": "Realised by the composed Text's `muted` tone.",
           "locked": true
         },
         "errorText": {
           "token": "color.foreground.danger",
+          "part": "errorMessage",
+          "description": "Realised by the composed Text's `danger` tone.",
           "locked": true
         },
         "popupSurface": {
@@ -22955,6 +23184,11 @@
         },
         "popupBorder": {
           "token": "color.border",
+          "part": "popup",
+          "locked": false
+        },
+        "popupBorderWidth": {
+          "token": "border.width.thin",
           "part": "popup",
           "locked": false
         },
@@ -22971,50 +23205,61 @@
         "popupOffset": {
           "token": "space.1",
           "part": "popup",
+          "description": "The gap between trigger and popup, on the side the popup opens (below, or above when flipped).",
           "locked": false
         },
         "layer": {
           "token": "layer.dropdown",
+          "part": "popup",
           "locked": false
         },
         "fontFamily": {
           "token": "font.family.body",
+          "description": "Label, value and helper Text, and forwarded into the composed Listbox's own fontFamily override.",
           "locked": false
         },
         "fontSize": {
           "token": "font.size.{size}",
+          "description": "The value text and the label, so both follow `size`; description and error use helperSize. Not forwarded to the Listbox: the popup does not follow `size`, so options keep Listbox's own fontSize.",
           "locked": false
         },
         "fontWeight": {
           "token": "font.weight.regular",
-          "description": "Weight of the trigger and option text. It exists as an override seam for composites that set their own header type — DatePicker forwards its monthTitleWeight into it.",
+          "part": "value",
+          "description": "Weight of the trigger's value text only. Options keep Listbox's own weights (optionSelectedWeight), since Listbox has no plain option-weight binding to forward into. It exists as an override seam for composites that set their own header type — DatePicker forwards its monthTitleWeight into it.",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "description": "Label, value and helper Text, and forwarded into the composed Listbox's own lineHeight override.",
           "locked": false
         },
         "minTarget": {
           "token": "size.target.comfortable",
+          "part": "trigger",
           "locked": true
         },
         "minTargetSm": {
           "token": "size.target.min",
+          "part": "trigger",
           "description": "The trigger height floor at size sm. The popup is unchanged.",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
-          "description": "Replaces the border width when focused; padding shrinks by the difference.",
+          "part": "trigger",
+          "description": "Replaces triggerBorderWidth while the trigger is keyboard-focused (the border is the focus ring — no outline). Block and inline padding shrink by (focusRingWidth − the resolved triggerBorderWidth), clamped at zero, so the trigger does not shift.",
           "locked": true
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
+          "description": "Applied to the whole field group (label, description, trigger, error), as Input.",
           "locked": false
         },
         "enter": {
           "token": "motion.duration.fast",
-          "description": "Popup fade; instant under reduced motion.",
+          "part": "popup",
+          "description": "Popup opacity fade with motion.easing.standard — no slide, no chevron rotation, no trigger border transition. Instant under reduced motion.",
           "locked": false
         }
       },
@@ -23097,12 +23342,13 @@
             "aria-haspopup=listbox",
             "aria-expanded",
             "aria-controls",
+            "aria-activedescendant",
             "aria-labelledby",
             "aria-describedby",
             "aria-invalid",
             "aria-required"
           ],
-          "notes": "The APG select-only combobox: the trigger is a <button role=\"combobox\" aria-haspopup=\"listbox\" aria-expanded aria-controls> showing the value; the popup is a portal with the Listbox, positioned below (flipping above) the trigger at least as wide as it, on layer.dropdown. Keys on the trigger are forwarded to the Listbox's handler while open. A hidden <input name> carries the value(s) for native form submission. `native: always` renders <select> (and <select multiple>) with the same label/description/error wiring and no popup, and is the one place the system uses the real `disabled` attribute rather than aria-disabled: that mode exists for forms that work without JavaScript, where aria alone would not stop interaction. `container?: HTMLElement` (default document.body) is the portal target — a platform prop, not a schema prop."
+          "notes": "The APG select-only combobox: the trigger is a <button role=\"combobox\" aria-haspopup=\"listbox\" aria-expanded aria-controls> showing the value; the popup is a portal with the Listbox, positioned below (flipping above when there is no room below) the trigger at least as wide as it, on layer.dropdown. aria-labelledby is the label id alone — the value is the button's own text content, so it is not repeated in the name. aria-controls and aria-activedescendant are present only while open (the Listbox is unmounted while closed); aria-activedescendant is the active option's id in Listbox's option id format (`<listboxId>-option-<value>`), tracked through onActiveChange. Keys on the trigger are forwarded while open by replaying the KeyboardEvent on the Listbox's list element and copying its defaultPrevented back to the original event. Listbox applies initialActiveValue only when its list receives focus, and focus never leaves the trigger, so on open Select dispatches a `focusin` on the list to make the selected (or first) option active. A hidden <input name> per selected value carries the value(s) for native form submission — none when nothing is selected or when disabled. `native: always` renders <select> (and <select multiple>) with the same label/description/error wiring and no popup, and is the one place the system uses the real `disabled` attribute rather than aria-disabled: that mode exists for forms that work without JavaScript, where aria alone would not stop interaction. In that mode a single select gets a first disabled <option value=\"\"> showing the placeholder, and the chevron is drawn for single only (<select multiple> is a list box with no dropdown). `container?: HTMLElement` (default document.body) is the portal target — a platform prop, not a schema prop."
         },
         "lit": {
           "tag": "ds-select",
@@ -23114,7 +23360,7 @@
             "invalid",
             "native"
           ],
-          "notes": "Form-associated with setFormValue (FormData for multiple). Composes <ds-listbox> inside its shadow root so aria-activedescendant works; the popup uses the Popover API when available. Composed `change` and `open-change`. Implements the DsFormField interface. aria-activedescendant cannot reference an option inside the composed <ds-listbox>'s shadow root, so the trigger exposes the active option's text through aria-describedby on a live element instead, and aria-controls points at the popup wrapper. ds-form collects ds-select, ds-listbox and ds-combobox like other fields; DsFormField.currentValue is `string | boolean | string[] | null`. The composed ds-listbox is given no `name`, so it never associates with a form of its own. `labelWeight` and `helperSize` are forwarded into the composed ds-text's own `overrides` property as token references, not written as CSS on the child."
+          "notes": "Form-associated with setFormValue (FormData for multiple). Composes <ds-listbox> inside its shadow root so aria-activedescendant works; the popup uses the Popover API when available. Composed `change` and `open-change`. Implements the DsFormField interface. aria-activedescendant cannot reference an option inside the composed <ds-listbox>'s shadow root, so the trigger exposes the active option's text through aria-describedby on a live element instead: one visually hidden span holding the active option's label, referenced by the trigger's aria-describedby and marked aria-live=\"polite\". aria-controls points at the popup wrapper. Keys are forwarded to the composed ds-listbox through its `handleKey(event)` method, and its public `activeValue` is set to the selected (or first) option on open. `native: always` renders a native <select> inside the shadow root that still submits through setFormValue — a custom element cannot work without JavaScript, so on Lit the mode only swaps the picker UI; the value part has no element there, and the chevron is drawn for single only. setFormValue receives a string for single, a FormData with one entry per value for multiple, and null when nothing is selected or disabled. ds-form collects ds-select, ds-listbox and ds-combobox like other fields; DsFormField.currentValue is `string | boolean | string[] | null`. The composed ds-listbox is given no `name`, so it never associates with a form of its own. `labelWeight` and `helperSize` are forwarded into the composed ds-text's own `overrides` property as token references, not written as CSS on the child."
         },
         "rn": {
           "element": "Pressable",
@@ -23125,7 +23371,7 @@
             "accessibilityState",
             "accessibilityValue"
           ],
-          "notes": "`native: auto` opens a BottomSheet containing the Listbox on phones (the system's own picker, not the OS wheel — consistent theming, multi-select and descriptions work, and the sheet is the platform idiom); tablets and react-native-web use the popup. `native: always` means the same thing here as `auto`: there is no OS picker to force without a dependency the package does not take, so only `never` differs. accessibilityValue.text is the selected label(s). No hidden input; Form registration as Input. Focus returns to the trigger by hand — FocusScope's restore only recaptures a TextInput — and of the keyboard model only Escape, outside-tap and Enter-as-press exist, since Pressable sees no keys."
+          "notes": "`native: auto` opens a BottomSheet containing the Listbox on phones (the system's own picker, not the OS wheel — consistent theming, multi-select and descriptions work, and the sheet is the platform idiom); tablets and react-native-web use the popup. `native: always` means the same thing here as `auto`: there is no OS picker to force without a dependency the package does not take, so only `never` differs. A window width at most layout.maxWidth.prose is a phone (BottomSheet); wider is a tablet (popup). accessibilityLabel is the visible label text, including copy.requiredIndicator when required; accessibilityValue.text is the selected label(s) (or copy.selectedCount), and copy.placeholder when nothing is selected. No hidden input; Form registration as Input, with getValue returning a string for single and a string[] for multiple. Focus returns to the trigger by hand — FocusScope's restore only recaptures a TextInput — and of the keyboard model only Escape (the Modal/BottomSheet onRequestClose: Android back, which keeps the value and restores focus), outside-tap and Enter-as-press exist, since Pressable sees no keys; Tab (commit and close) has no native form, and the Enter and Escape behavior scenarios are web and Lit only because a native test cannot send a key. testIDs: the root View is `Select`, the trigger `Select.trigger`, the popup `Select.popup`, the scrim `Select.scrim`; label, description, value and errorMessage are the composed Text and chevron the composed Icon with `testID=\"Select.<part>\"` passed to it, as Input."
         },
         "swiftui": {
           "element": "Button",
@@ -23510,10 +23756,10 @@
       "Overview": "A select is the field for \"one of these\" (or \"any of these\") when the list is longer than a RadioGroup should show and typing is not the natural way in. It looks like an Input, opens a Listbox, and returns to being a field. On phones it becomes a sheet, because that is what a thumb expects.",
       "When to use": "Use a Select for a form field with about seven to fifty options that people recognise on sight — country, role, status, time zone from a short list, a category. Use `multiple` for tags or memberships when a set of Checkboxes would be too long. Use `native: always` on web for forms that must work without JavaScript. Use Combobox instead when the list is long enough that typing to filter is faster than scrolling, or when free text is allowed.",
       "When not to use": "Do not use a Select for two to six options; use a RadioGroup so every option is visible. Do not use it for actions (Menu), for switching modes (SegmentedControl), or for on/off (Switch). Do not put a Select inside a Menu or a Tooltip.",
-      "Behavior": "The trigger shows the selected option's label (or the count / labels for `multiple`, or the placeholder). Activating it, or pressing Enter, Space or an arrow, opens the popup with the Listbox and the selected option active; the Listbox's keyboard model applies while focus visually stays on the trigger. Enter commits and closes (single) or toggles (multiple); Escape closes without changing the value; Tab commits and moves on; clicking outside closes. On close, focus returns to the trigger and `onChange` has fired if the value changed. Validation, `required`, `disabled` and errors work exactly as Input; the Form collects the value or array by `name`. The composed Listbox is `embedded`, receives `selectionFollowsFocus: false` (arrows move the active option; Enter commits) and `defaultActiveValue` set to the current selection so the popup opens with it active. With `multiple` and more than two selections the trigger shows `copy.selectedCount`; two or fewer are joined with a comma and a space. The popup's surface, border, radius and shadow are the popup wrapper's bindings; the Listbox draws none. The phone/tablet switch uses `layout.maxWidth.prose`, and the phone sheet's footer button is `copy.done`. Space commits in the open popup as well as opening it from the trigger: the popup is Listbox's own keyboard model, and this component does not suppress a key that model already handles. The composed Listbox is given no `name`, so it never registers as a field of its own — Select is the field.",
+      "Behavior": "The trigger shows the selected option's label (or the count / labels for `multiple`, or the placeholder). Activating it, or pressing Enter, Space or an arrow, opens the popup with the Listbox and the selected option active; the Listbox's keyboard model applies while focus visually stays on the trigger. Enter commits and closes (single) or toggles (multiple); Escape closes without changing the value; Tab commits and moves on; clicking outside closes. On close, focus returns to the trigger and `onChange` has fired if the value changed. Validation, `required`, `disabled` and errors work exactly as Input; the Form collects the value or array by `name`. The composed Listbox is `embedded`, receives `options`, `multiple`, `value`, `selectionFollowsFocus: false` (arrows move the active option; Enter commits), `initialActiveValue` set to the current selection so the popup opens with it active, `labelledBy` the label's id (web, Lit), and Select's own `onChange`/`onActiveChange` handlers. The embedded list is never a tab stop — focus stays on the trigger — so Tab leaves the Select even while a controlled `open` keeps the popup shown until the prop changes; Tab fires `onChange` (single, if the active option differs) and `onOpenChange(false)` and never prevents the default focus move. With `multiple` and more than two selections the trigger shows `copy.selectedCount` — one string with the count formatted for the locale and no plural variants, since it only ever shows three or more; two or fewer are joined with a comma and a space. The popup's surface, border, radius and shadow are the popup wrapper's bindings; the Listbox draws none. The phone/tablet switch uses `layout.maxWidth.prose` (at most is a phone), and the phone sheet's footer button is `copy.done` — only the native phone sheet renders it; web and Lit declare the copy key and never show it. Space commits in the open popup as well as opening it from the trigger: the popup is Listbox's own keyboard model, and this component does not suppress a key that model already handles. For a single select Space commits and closes, like Enter or a click on an option; with `multiple` it toggles and stays open. Re-picking the already-selected option (Enter, Space or click) closes a single select without firing `onChange`, since the value did not change. Clicking outside (pointerdown outside the trigger and popup) or moving focus outside closes without changing the value. Clicking the label focuses the trigger and does not open the popup. The composed Listbox is given no `name`, so it never registers as a field of its own — Select is the field.\n\nThe Form value is a string for a single select and a string[] with `multiple` (`form.valueType` names the wider shape); an empty single select submits nothing and an empty multiple submits no entries. The error region (`role=\"alert\"`, the composed danger Text) shows `error` when set, and `copy.invalid` when `invalid` is set without `error`, as Input.",
       "Content guidelines": "The label names the field (\"Country\"); the placeholder is `copy.placeholder` unless a more specific prompt helps (\"Choose a role\"). Options follow Listbox's rules. With `multiple`, the trigger shows up to two labels joined by commas, then `copy.selectedCount`.",
       "Accessibility": "The trigger is a `combobox` (select-only pattern) with `aria-haspopup=\"listbox\"`, `aria-expanded`, its label association and description/error links, and the popup is a `listbox` (WCAG 4.1.2; APG select-only combobox). The full Listbox keyboard model applies; Escape closes and focus is restored (2.1.2, 2.4.3). Required and invalid are in text and attributes, not color alone (1.4.1, 3.3.1). The trigger meets 44px (2.5.8) and its border 3:1 (1.4.11). On phones the sheet is modal with the same guarantees as BottomSheet.",
-      "Platform notes": "### Web\nRender the label (`<label for>`), description, `<button type=\"button\" role=\"combobox\" id aria-haspopup=\"listbox\" aria-expanded aria-controls={listboxId} aria-labelledby={labelId + valueId} aria-describedby aria-invalid aria-required>` containing the value span and `<Icon name=\"chevron-down\">`, the error region, and a hidden `<input name>` per selected value. The popup is a portal (`position: fixed`, from the trigger rect, flip on overflow, `min-inline-size` = trigger width, `layer.dropdown`) containing `<Listbox>` with `labelledBy={labelId}`; forward keydown from the trigger to the Listbox's handler while open; close on `pointerdown` outside and on `focusout` to outside. `native: always`: `<select>`/`<select multiple>` with the same wrapper and `appearance: none` styling plus the chevron.\n\n### Lit\n`<ds-select label=\"Country\" name=\"country\" .options=${…}>`; form-associated (`DsFormField`); `<ds-listbox>` in the shadow root; popup via `popover=\"manual\"` when available; composed `change`, `open-change`.\n\n### React Native\n`Pressable` with `accessibilityRole=\"combobox\"`, `accessibilityLabel={label}`, `accessibilityHint={description}`, `accessibilityState={{ expanded, disabled }}`, `accessibilityValue={{ text }}`; opens `BottomSheet` (phones) or a positioned popup `Modal` (tablets/web) containing `Listbox`; the sheet's footer has a Done button for `multiple`. Form registration as Input.",
+      "Platform notes": "### Web\nRender the label (a native `<label for>` wrapping the label Text, on web and Lit; its text, with `copy.requiredIndicator` when required, is the accessible name), description, `<button type=\"button\" role=\"combobox\" id aria-haspopup=\"listbox\" aria-expanded aria-controls={listboxId} aria-activedescendant aria-labelledby={labelId} aria-describedby aria-invalid aria-required>` containing the value Text and `<Icon name=\"chevron-down\" size=\"sm\">`, the error region, and a hidden `<input name>` per selected value. The popup is a portal (`position: fixed`, from the trigger rect, flip on overflow, `min-inline-size` = trigger width, `layer.dropdown`) containing `<Listbox>` with `labelledBy={labelId}`; forward keydown from the trigger to the Listbox's handler while open; close on `pointerdown` outside and on `focusout` to outside. `native: always`: `<select>`/`<select multiple>` with the same wrapper and `appearance: none` styling plus the chevron.\n\n### Lit\n`<ds-select label=\"Country\" name=\"country\" .options=${…}>`; form-associated (`DsFormField`); `<ds-listbox>` in the shadow root; popup via `popover=\"manual\"` when available; composed `change`, `open-change`.\n\n### React Native\n`Pressable` with `accessibilityRole=\"combobox\"`, `accessibilityLabel={label}`, `accessibilityHint={description}`, `accessibilityState={{ expanded, disabled }}`, `accessibilityValue={{ text }}`; opens `BottomSheet` (phones) or a positioned popup `Modal` (tablets/web) containing `Listbox`; the sheet's footer has a Done button for `multiple`. Form registration as Input.",
       "Related": "Listbox, Combobox, RadioGroup, Input, BottomSheet."
     },
     "extensions": [],
@@ -28990,19 +29236,24 @@
         "panel"
       ],
       "composition": {
-        "tabIcon": "Icon"
+        "tabIcon": {
+          "component": "Icon",
+          "props": {
+            "size": "md"
+          }
+        }
       },
       "props": {
         "tabs": {
           "type": "array",
           "required": true,
-          "shape": "{ id: string; label: string; icon?: IconName; disabled?: boolean; badge?: string }[]",
-          "description": "The tabs in order. `badge` is a short count or status shown after the label (\"3\", \"New\")."
+          "shape": "{ id: string; label: string; icon?: IconName | undefined; disabled?: boolean | undefined; badge?: string | undefined }[]",
+          "description": "The tabs in order. `badge` is a short count or status shown after the label (\"3\", \"New\"). The icon is an Icon at `size: md` (the label's size) in the tab's current foreground color (currentColor on web/Lit, the Icon `color` prop on RN). Optional fields also accept an explicit `undefined`; the exported item type is `TabsItem`."
         },
         "children": {
           "type": "content",
           "required": true,
-          "description": "One panel per tab, in the same order, each wrapped in the exported `TabPanel` (or `<ds-tab-panel>`) with a matching `id`. Only the selected panel is rendered unless `keepMounted`."
+          "description": "One panel per tab, in the same order, each wrapped in the exported `TabPanel` (or `<ds-tab-panel>`) with a matching `id`. Only the selected panel is rendered unless `keepMounted`. Examples describe children in words; stories and tests build them from `args.tabs` (one TabPanel per entry, id = the tab id), so a scenario that replaces `tabs` also replaces the panels and has no orphans."
         },
         "label": {
           "type": "string",
@@ -29046,12 +29297,12 @@
             "fill"
           ],
           "default": "start",
-          "description": "`start` packs tabs at the start; `fill` stretches them across the width (phones, two to four tabs)."
+          "description": "`start` packs tabs at the start; `fill` stretches them across the width (phones, two to four tabs). Horizontal only: vertical tabs always span the list's inline size, so `fill` has no effect when vertical."
         },
         "keepMounted": {
           "type": "boolean",
           "default": false,
-          "description": "Keep unselected panels in the tree (hidden) so their state survives switching."
+          "description": "Keep unselected panels in the tree (hidden) so their state survives switching. No effect on Lit, where panels are the consumer's light-DOM children and are always kept (hidden); the property exists there for parity and is not reflected."
         }
       },
       "events": {
@@ -29097,7 +29348,7 @@
           "keys": [
             "ArrowLeft"
           ],
-          "action": "Moves to the previous tab, wrapping.",
+          "action": "Moves to the previous tab, wrapping; selects it under automatic activation.",
           "when": "horizontal",
           "from": "last",
           "expect": "focus-prev"
@@ -29118,7 +29369,7 @@
           "keys": [
             "ArrowUp"
           ],
-          "action": "Moves to the previous tab, wrapping.",
+          "action": "Moves to the previous tab, wrapping; selects it under automatic activation.",
           "when": "vertical",
           "from": "last",
           "given": {
@@ -29139,7 +29390,7 @@
           "keys": [
             "Home"
           ],
-          "action": "First tab.",
+          "action": "First tab; selects it under automatic activation.",
           "from": "last",
           "expect": "focus-first"
         },
@@ -29147,7 +29398,7 @@
           "keys": [
             "End"
           ],
-          "action": "Last tab.",
+          "action": "Last tab; selects it under automatic activation.",
           "from": "first",
           "expect": "focus-last"
         },
@@ -29197,6 +29448,7 @@
         },
         "listGap": {
           "token": "layout.gap.none",
+          "part": "tablist",
           "description": "Tabs touch; the indicator separates them.",
           "locked": false
         },
@@ -29213,72 +29465,93 @@
         },
         "listBorder": {
           "token": "color.border",
-          "description": "The rule under the whole tab list.",
+          "part": "tablist",
+          "description": "The rule under the whole tab list (horizontal), or along its inline-end edge (vertical).",
           "locked": false
         },
         "listBorderWidth": {
           "token": "border.width.thin",
+          "part": "tablist",
           "locked": false
         },
         "panelGap": {
           "token": "layout.gap.loose",
           "part": "panel",
-          "description": "Between the tab list and the panel.",
+          "description": "Between the tab list and the panel. Applied as the `gap` of the root flex layout that holds the list and the panels (the host on Lit), not as a margin on each panel.",
           "locked": false
         },
         "badgeColor": {
           "token": "color.foreground.muted",
+          "part": "tabBadge",
           "locked": true
         },
         "badgeSize": {
           "token": "font.size.xs",
+          "part": "tabBadge",
+          "description": "The badge's font size; its line height is the same `lineHeight` multiplier as the label, applied to this size.",
           "locked": false
         },
         "fontFamily": {
           "token": "font.family.body",
+          "part": "tab",
           "locked": false
         },
         "fontSize": {
           "token": "font.size.md",
+          "part": "tab",
           "locked": false
         },
         "fontWeight": {
           "token": "font.weight.medium",
+          "part": "tab",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "part": "tab",
           "locked": false
         },
         "radius": {
           "token": "radius.sm",
+          "part": "tab",
           "description": "On the tab's hover background and focus ring.",
           "locked": false
         },
         "minTarget": {
           "token": "size.target.comfortable",
+          "part": "tab",
+          "description": "Minimum block size and minimum inline size of every tab (both axes).",
           "locked": true
         },
         "focusRing": {
           "token": "color.border.focus",
+          "part": "tab",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "part": "tab",
           "locked": true
         },
         "transition": {
           "token": "motion.duration.fast",
+          "part": "indicator",
           "description": "Indicator movement, with motion.easing.standard; instant under reduced motion.",
           "locked": false
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
+          "part": "tab",
           "locked": false
         }
       },
       "copy": {
         "position": {
+          "description": "Announced position of a tab, used only where the platform does not expose set position for tabs: SwiftUI `.accessibilityValue` and React Native `accessibilityValue={{ text }}` on each tab. Web and Lit do not render it (role=\"tab\" already exposes position and set size; web may set aria-posinset/aria-setsize).",
+          "platforms": [
+            "rn",
+            "swiftui"
+          ],
           "text": "{index} of {total}",
           "params": {
             "index": {
@@ -29343,7 +29616,7 @@
             "role=tabpanel",
             "aria-labelledby"
           ],
-          "notes": "<div role=\"tablist\" aria-label> of <button role=\"tab\" aria-selected aria-controls tabindex={0|-1}>; panels are <div role=\"tabpanel\" aria-labelledby tabindex=\"0\"> (focusable so Tab from the list lands on the panel content region). The indicator is a pseudo-element or an absolutely positioned bar animated between tabs. The tab list scrolls horizontally with overflow when tabs exceed the width, with the selected tab scrolled into view."
+          "notes": "<div role=\"tablist\" aria-label> of <button role=\"tab\" aria-selected aria-controls tabindex={0|-1}>; panels are <div role=\"tabpanel\" aria-labelledby tabindex=\"0\"> (focusable so Tab from the list lands on the panel content region). `aria-controls` is set only while the tab's panel is mounted (with `keepMounted: false` an unselected panel is not in the DOM, so there is no id to point at). The React panel's DOM id is its `id` prefixed with a `useId` base (and tab ids use the same base), so two Tabs on a page cannot collide; the `id` prop is only the match key. The indicator is a pseudo-element or an absolutely positioned bar animated between tabs. The tab list scrolls along its orientation with overflow when tabs exceed its size, and the selected tab is kept in view by setting the list's own `scrollLeft`/`scrollTop` — never `scrollIntoView`, which also scrolls the page (including on first render). The panel sets no font or color of its own; its content brings its own Text."
         },
         "lit": {
           "tag": "ds-tabs",
@@ -29353,7 +29626,7 @@
             "activation",
             "fit"
           ],
-          "notes": "`tabs` is a property. Panels are slotted <ds-tab-panel id> light-DOM elements; ds-tabs sets hidden/aria-labelledby on them from slotchange and renders the tab list in its shadow root. Panels are never moved, detached or re-appended: `keepMounted: false` is expressed only by toggling the `hidden` attribute on the slotted panel, so there is no detached-panel map. A slotchange handler must never call appendChild, insertBefore or remove on its own slotted children - re-inserting a node that is already a child re-fires slotchange and spins the renderer until the tab is killed. `change` is a composed CustomEvent with detail { value }. Roving tabindex over shadow tabs."
+          "notes": "`tabs` is a property. Panels are slotted <ds-tab-panel id> light-DOM elements; ds-tabs sets `hidden`, `role=\"tabpanel\"` and `aria-label` = the tab's label on them from slotchange (not `aria-labelledby`: an IDREF cannot cross the shadow boundary, and element reflection cannot point from light DOM into a descendant shadow root) and renders the tab list in its shadow root. Panels are never moved, detached or re-appended: `keepMounted: false` is expressed only by toggling the `hidden` attribute on the slotted panel, so there is no detached-panel map. A slotchange handler must never call appendChild, insertBefore or remove on its own slotted children - re-inserting a node that is already a child re-fires slotchange and spins the renderer until the tab is killed. `change` is a composed CustomEvent with detail { value }. Roving tabindex over shadow tabs. A shadow tab points at its light-DOM panel with `ariaControlsElements = [panel]` (element reflection toward the host's tree is allowed); where element reflection is unsupported no `aria-controls` is set. Panels arrive by slotchange after first render, so a tab without a panel is still rendered (see Behavior). `keepMounted` is a no-op here."
         },
         "rn": {
           "element": "View",
@@ -29362,7 +29635,7 @@
             "accessibilityRole=tab",
             "accessibilityState"
           ],
-          "notes": "A horizontal ScrollView (or View with fill) of Pressables with accessibilityRole=\"tab\" and accessibilityState={{ selected }}; panels are Views. Arrow keys apply with a hardware keyboard only; each tab is its own accessibility stop, as on native. Indicator animated with Animated."
+          "notes": "A horizontal ScrollView (or View with fill) of Pressables with accessibilityRole=\"tab\" and accessibilityState={{ selected, disabled }}; a vertical list with `fit: start` is a vertical ScrollView with the selected tab kept in view. Panels are Views, each with `accessibilityLabel` = its tab's label (there is no aria-labelledby). The tablist View carries accessibilityRole=\"tablist\", accessibilityLabel = `label` and testID `Tabs.tablist`, but is not `accessible` (that would merge the tabs into one stop on iOS), so tests find it by testID and assert role and name rather than getByRole. iOS and Android deliver no key events to View/Pressable: the keyboard table and the roving tab stop are react-native-web only (onKeyDown on the list, `focusable` only on the selected tab); on native every enabled tab is its own accessibility stop, a press always selects, and `activation` has no effect (`manual` means nothing beyond press-to-select). A disabled tab uses accessibilityState.disabled and ignores presses rather than the Pressable `disabled` prop; it is non-focusable on react-native-web only. Each tab has `accessibilityValue={{ text: copy.position }}`. Indicator animated with Animated."
         },
         "swiftui": {
           "element": "VStack",
@@ -29382,7 +29655,7 @@
       "behavior": [
         {
           "name": "click-selects-a-tab",
-          "description": "Clicking a tab that is not the selected one changes the selection and reports the new id.",
+          "description": "Clicking a tab that is not the selected one changes the selection and reports the new id. `click: tab` is the first tab (overview), which is not selected here.",
           "given": {
             "defaultValue": "activity"
           },
@@ -29397,7 +29670,7 @@
         },
         {
           "name": "clicking-the-selected-tab-changes-nothing",
-          "description": "onChange fires when the selected tab changes; re-pressing the current tab is not a change.",
+          "description": "onChange fires when the selected tab changes; re-pressing the current tab is not a change. `click: tab` is the first tab (overview), the selected one.",
           "given": {
             "defaultValue": "overview"
           },
@@ -29430,7 +29703,7 @@
         },
         {
           "name": "arrow-selects-under-automatic-activation",
-          "description": "automatic selects a tab as arrow keys move to it (keyboard rule, ArrowRight).",
+          "description": "automatic selects a tab as arrow keys move to it (keyboard rule, ArrowRight). Focus starts on the first tab, the selected one; the key moves to the second.",
           "given": {
             "activation": "automatic"
           },
@@ -29449,7 +29722,7 @@
         },
         {
           "name": "manual-activation-does-not-select-on-arrow",
-          "description": "manual moves focus only and selects on Enter/Space.",
+          "description": "manual moves focus only and selects on Enter/Space. Focus starts on the first tab, the selected one; the key moves to the second.",
           "given": {
             "activation": "manual"
           },
@@ -29469,7 +29742,7 @@
         },
         {
           "name": "a-disabled-tab-cannot-be-selected",
-          "description": "A tab marked disabled in the tabs array is visible but selects nothing when pressed.",
+          "description": "A tab marked disabled in the tabs array is visible but selects nothing when pressed. `click: tab` is the first tab (overview, disabled); the panels are built from these two tabs.",
           "given": {
             "tabs": [
               {
@@ -29675,10 +29948,10 @@
       "Overview": "Tabs let one region of a screen show one of several views. The tab list is a single stop in the tab order — arrow keys move between tabs — and the selected panel follows immediately. They are for views of equal standing that the user switches between often; not for steps, and not for navigation between pages.",
       "When to use": "Use Tabs to split a region's content into two to about seven views that are alternatives of each other: the sections of a settings page, \"Overview / Activity / Files\" on a record, code and preview. Use `manual` activation when a panel is expensive to show. Use `vertical` when there are many tabs and horizontal room is short. Use `fill` on phones for two to four tabs.",
       "When not to use": "Do not use Tabs for navigation to different pages — that is a nav Landmark of Links, styled as tabs if you like, but with real links so the URL changes. Do not use them for a sequence (Stepper, planned) or a comparison where the user needs to see several panels at once (put them side by side or in an Accordion). Do not put a tab list inside a Card header for one or two tabs; a SegmentedControl is lighter.",
-      "Behavior": "The selected tab is the list's single tab stop. Arrow keys along the orientation move focus between enabled tabs and wrap; with `automatic` activation the moved-to tab is selected and its panel shown, with `manual` the user presses Enter or Space. Home and End jump. Tab from a tab moves into the selected panel. Disabled tabs are visible, announced disabled and skipped. Only the selected panel is rendered unless `keepMounted`, in which case unselected panels are hidden. The indicator animates to the selected tab. When tabs overflow horizontally, the list scrolls and the selected tab is kept in view. Disabled tabs are `aria-disabled`, skipped by the arrow keys and not tab stops (a disabled tab has nothing to reach); they remain visible and readable. `fit: fill` stretches tabs along the orientation axis in both orientations. Badges are read as part of the tab's name (\"Inbox, 3\"). A tab without a matching panel, or a panel without a tab, is a development warning and is not rendered — on Lit an orphan panel is a consumer's own light-DOM child that cannot be refused, so \"not rendered\" there means forced `hidden`. On Lit, panels are light-DOM children, so `keepMounted: false` hides inactive panels with the `hidden` attribute rather than removing them.",
+      "Behavior": "The selected tab is the list's single tab stop. Arrow keys along the orientation move focus between enabled tabs and wrap; with `automatic` activation the moved-to tab is selected and its panel shown, with `manual` the user presses Enter or Space. Home and End jump. Tab from a tab moves into the selected panel. Disabled tabs are visible, announced disabled and skipped. Only the selected panel is rendered unless `keepMounted`, in which case unselected panels are hidden. The indicator animates to the selected tab. When tabs overflow horizontally, the list scrolls and the selected tab is kept in view. Disabled tabs are `aria-disabled`, skipped by the arrow keys and not tab stops (a disabled tab has nothing to reach); they remain visible and readable. Under `automatic` activation every focus move selects — ArrowLeft/Right/Up/Down, Home and End alike. `fit: fill` stretches horizontal tabs across the list; vertical tabs always span the list's width, so `fill` changes nothing there. Badges are read as part of the tab's name: the name is the tab's content, the label then the badge separated by a plain space (\"Inbox 3\"), with no punctuation or extra copy. A tab without a matching panel is still rendered (its panel region is empty) and is a development warning — on Lit panels arrive by slotchange after first render, so filtering tabs would flicker and reorder focus. A panel without a tab is a development warning and is not shown (on Lit, where the orphan is the consumer's own light-DOM child, it is forced `hidden`). The Keyboard story uses `activation: manual` with three enabled tabs and takes `orientation` from its args, so every rule in the keyboard table runs against it. On Lit, panels are light-DOM children, so `keepMounted: false` hides inactive panels with the `hidden` attribute rather than removing them.",
       "Content guidelines": "Tab labels are one or two words, sentence case, nouns (\"Activity\", \"Members\"), never verbs. Badges are short counts or a single status word. The tab list `label` names what the tabs divide (\"Project sections\"). Order tabs by frequency of use, not alphabetically, and never reorder them at runtime.",
       "Accessibility": "Role `tablist` with a name, `tab`s with `aria-selected` and `aria-controls`, panels with `tabpanel` and `aria-labelledby` (WCAG 4.1.2; APG tabs). One tab stop with arrow movement (roving-tabindex, arrow-navigation), so a screen full of tabs is not a screen full of stops. Selection is conveyed by `aria-selected`, the indicator and the stronger text color — not color alone (1.4.1). Panels are focusable so keyboard users land in the content. Targets meet 44px; the indicator meets 3:1 on the page (1.4.11). The indicator animation respects reduced motion.",
-      "Platform notes": "### Web\nRender `<div role=\"tablist\" aria-label aria-orientation>` of `<button role=\"tab\" id aria-selected aria-controls tabindex>`, with the indicator as an absolutely positioned bar whose `inset-inline-start` and `inline-size` update from the selected tab's offset (transitioned with `transition`). Panels: `<div role=\"tabpanel\" id aria-labelledby tabindex=\"0\" hidden>`. Keydown on the list implements the keyboard table for the orientation. `overflow-x: auto; scrollbar-width: none` on the list with `scrollIntoView({ inline: 'nearest' })` on selection. Export `TabPanel` as the wrapper for children.\n\n### Lit\n`<ds-tabs label=\"Project sections\" .tabs=${tabs}><ds-tab-panel id=\"overview\">…</ds-tab-panel>…</ds-tabs>`. Tab list in the shadow root; panels are light-DOM `<ds-tab-panel>` elements that ds-tabs manages (`hidden`, `role=\"tabpanel\"`, `aria-labelledby` pointing at a shadow tab requires the tab id to be exposed — set `aria-labelledby` to a light-DOM proxy text or use `aria-label={tab label}` on the panel instead, since IDREFs do not cross shadow boundaries). Composed `change`.\n\n### React Native\n`ScrollView horizontal` (or a `View` with `flexDirection: 'row'` for `fill`) of `Pressable accessibilityRole=\"tab\" accessibilityState={{ selected, disabled }}`; the indicator is an `Animated.View` positioned from the measured tab layout; panels are `View`s rendered when selected. Vertical: a column of tabs beside the panel. Arrow keys through `onKeyDown` are web-only (react-native-web); on native every tab is an accessibility stop.",
+      "Platform notes": "### Web\nRender `<div role=\"tablist\" aria-label aria-orientation>` of `<button role=\"tab\" id aria-selected aria-controls tabindex>`, with the indicator as an absolutely positioned bar whose `inset-inline-start` and `inline-size` update from the selected tab's offset (transitioned with `transition`). Panels: `<div role=\"tabpanel\" id aria-labelledby tabindex=\"0\" hidden>`. Keydown on the list implements the keyboard table for the orientation. `overflow-x: auto; scrollbar-width: none` on the list (`overflow-y` when vertical), keeping the selected tab in view by setting the list's own `scrollLeft`/`scrollTop` on selection — not `scrollIntoView`, which scrolls the page too. Export `TabPanel` as the wrapper for children.\n\n### Lit\n`<ds-tabs label=\"Project sections\" .tabs=${tabs}><ds-tab-panel id=\"overview\">…</ds-tab-panel>…</ds-tabs>`. Tab list in the shadow root; panels are light-DOM `<ds-tab-panel>` elements that ds-tabs manages (`hidden`, `role=\"tabpanel\"`, and `aria-label` set to the tab's label — never `aria-labelledby`, since IDREFs do not cross shadow boundaries). Tabs reach their panels through `ariaControlsElements`, omitted where unsupported. Composed `change`.\n\n### React Native\n`ScrollView horizontal` (or a `View` with `flexDirection: 'row'` for `fill`) of `Pressable accessibilityRole=\"tab\" accessibilityState={{ selected, disabled }}`; the indicator is an `Animated.View` positioned from the measured tab layout; panels are `View`s rendered when selected. Vertical: a vertical `ScrollView` of tabs beside the panel. Arrow keys through `onKeyDown` and the single roving stop are web-only (react-native-web); on iOS and Android every enabled tab is an accessibility stop, a press always selects, and `activation` has no effect.",
       "Related": "SegmentedControl, Accordion, Disclosure, Link, Stepper (planned)."
     },
     "extensions": [],

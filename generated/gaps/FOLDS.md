@@ -990,3 +990,161 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-16 SidePanel web: hideHeading do not render vs keep for AT → visually hidden clip so aria-labelledby resolves
 2026-09-16 SidePanel web: no List component; Form requires actions → Stack of Links / Stack of filter Checkboxes
 2026-09-16 SidePanel web: safe-area edge unspecified → inset on the physical edge touched, flipped under rtl
+2026-09-16 Accordion web,lit,rn: event firing order not declared → onChange before onOpenChange (timing); toggled section first, then one exclusive close per section in item order
+2026-09-16 Accordion web,lit,rn: Disclosure's `controlled` onToggle echo unspecified → Accordion ignores it and computes exclusive/controlled itself
+2026-09-16 Accordion web,lit,rn: no pointer→trigger reason mapping → Disclosure `pointer` becomes `trigger`, `keyboard` stays `keyboard`
+2026-09-16 Accordion web,lit,rn: font/padding bindings had no Disclosure forwards → composition.item forwards triggerPaddingBlock, fontFamily→triggerFontFamily, triggerFontSize, triggerFontWeight
+2026-09-16 Accordion web,lit,rn: divider/dividerWidth had no target → forwarded to each Divider's `color`/`thickness` override
+2026-09-16 Accordion web,lit,rn: itemGap placement and gap next to dividers → itemGap is the `list` part's gap; falling between item and Divider is intended
+2026-09-16 Accordion web,lit,rn: 44px target claim vs locked minTarget → Accessibility says 24px via Disclosure's minTarget; Accordion adds no target/focus rule
+2026-09-16 Accordion web,lit: trigger hit area ends at summary text → stated as today's behavior; full-width trigger needs a Disclosure prop
+2026-09-16 Accordion web: `list` part had no element → root div carries data-part="list"
+2026-09-16 Accordion lit: `list` part had no element → shadow flex container carries data-part and part="list"
+2026-09-16 Accordion lit: dividers can't be light-DOM siblings of items → one manual slot per disclosure, ds-divider between slots in the shadow root
+2026-09-16 Accordion lit: forwarded overrides to slotted disclosures → set as --ds-disclosure-* hooks valued from the accordion's own hooks
+2026-09-16 Accordion lit: slotted disclosure `toggle` reaching the page → left alone for slotted; stopped for disclosures rendered from `items`
+2026-09-16 Accordion lit: unslotted children and later slot changes → not rendered; only child add/remove is observed
+2026-09-16 Accordion web,lit: how long just-emitted controlled set counts → compared with the next value change only, then cleared
+2026-09-16 Accordion web,lit: arrows from a focused disabled trigger → work; arrows/Home/End never land on a disabled trigger
+2026-09-16 Accordion lit: turning exclusive on with several open → trimmed to the first open id, no event
+2026-09-16 Accordion web: AccordionItem disabled breaks exactOptionalPropertyTypes → field is `disabled?: boolean | undefined`
+2026-09-16 Accordion web,lit,rn: click scenario didn't name the trigger → first trigger, nothing open; expects onChange([firstId]) then onOpenChange(firstId, true, trigger)
+2026-09-16 Accordion rn: exclusive scenario couldn't observe closing → given free/pro with defaultValue pro; clicking free expects the exclusive close of pro
+2026-09-16 Accordion rn: headingLevel has no native level → sets header role only; heading-level scenarios render the same tree
+2026-09-16 Accordion rn: react-native-web arrow-key note ambiguous → no web-only key handler; arrows do nothing on react-native-web
+2026-09-16 Tabs rn: no key events on iOS/Android → keyboard and roving stop are react-native-web only; native press always selects, activation has no effect
+2026-09-16 Tabs rn: roving stop and disabled tabs without Pressable disabled → focusable only on selected tab (rn-web); disabled uses accessibilityState and ignores presses
+2026-09-16 Tabs web,lit,rn: example children prose can't be an arg → stories/tests build one TabPanel per args.tabs entry
+2026-09-16 Tabs rn: has-accessible-name can't find non-accessible tablist → tablist has role, label, testID Tabs.tablist, not accessible; tests use testID
+2026-09-16 Tabs web,lit,rn: click scenario doesn't name the tab → first tab; key scenarios start focused on first tab
+2026-09-16 Tabs web,lit,rn: copy.position has no use off SwiftUI → platforms [rn, swiftui]; RN accessibilityValue text; web/Lit don't render it
+2026-09-16 Tabs rn: no panel-to-tab link → panel View accessibilityLabel = its tab's label
+2026-09-16 Tabs lit: aria-labelledby can't cross shadow root → panels get aria-label = tab label
+2026-09-16 Tabs lit: aria-controls IDREF can't reach light-DOM panel → ariaControlsElements = [panel], nothing where unsupported
+2026-09-16 Tabs web: aria-controls pointing at unmounted panel → set only while the panel is mounted
+2026-09-16 Tabs rn: badgeSize has no line height → badge uses the label's lineHeight multiplier on its own size
+2026-09-16 Tabs rn,lit: many bindings had no part → list* on tablist, badge* on tabBadge, font/radius/minTarget/focus/disabled on tab, transition on indicator
+2026-09-16 Tabs rn: tab icon size unspecified → composition tabIcon Icon size md in the tab's foreground color
+2026-09-16 Tabs web,rn: overflow only described horizontally → vertical fit start list scrolls vertically, keeps selected tab in view
+2026-09-16 Tabs web,rn: optional tabs fields reject explicit undefined → shape fields `?: T | undefined`; exported type TabsItem
+2026-09-16 Tabs lit: keepMounted has no effect → no effect on Lit (panels kept hidden), kept for parity, not reflected
+2026-09-16 Tabs web,lit,rn: tab without panel not rendered flickers → tab still renders with dev warning; orphan panel warns and is hidden
+2026-09-16 Tabs web,lit,rn: automatic activation only on forward arrows → every move selects (all arrows, Home, End)
+2026-09-16 Tabs web,lit: badge name separator unspecified → label then badge with a plain space ("Inbox 3")
+2026-09-16 Tabs lit: panelGap part panel but host gap → gap of the root flex layout, not a panel margin
+2026-09-16 Tabs lit: minTarget axis unspecified → minimum block and inline size of every tab
+2026-09-16 Tabs lit: Keyboard story activation unspecified → activation manual, three enabled tabs, orientation from args
+2026-09-16 Tabs web: scrollIntoView scrolls the page → set the list's own scrollLeft/scrollTop
+2026-09-16 Tabs web: raw panel ids can collide → DOM id is `id` prefixed with a shared useId base
+2026-09-16 Tabs web: no binding for panel text styles → panel sets no font or color; content brings its own Text
+2026-09-16 Tabs web,rn: fit fill has no effect vertically → fill is horizontal only; vertical tabs span list width
+2026-09-16 SegmentedControl web,lit,rn: form block without name, notes disagree → form block removed; not a form field, use RadioGroup in a Form
+2026-09-16 SegmentedControl web,lit,rn: pill bindings named part segment → selected background, shadow, radius, transition are part indicator
+2026-09-16 SegmentedControl web,lit: segmentSpacing is sibling spacing → part group, applied as the group's gap
+2026-09-16 SegmentedControl web,lit: several bindings had no part → selectedWeight, padding, font, minTarget, focus, disabledOpacity are part segment
+2026-09-16 SegmentedControl web,lit,rn: paddingBlockSm refers to missing paddingBlock → md uses segmentPaddingBlock, same token by design
+2026-09-16 SegmentedControl rn: segmentGap does nothing with iconOnly → binding description says so
+2026-09-16 SegmentedControl web,lit,rn: pill hiding from AT unstated → aria-hidden on web/Lit; accessibilityElementsHidden/importantForAccessibility on RN
+2026-09-16 SegmentedControl web,lit: Tooltip props and icon-only name unclear → aria-label = option label; Tooltip content label, describes false, defaults
+2026-09-16 SegmentedControl rn: tooltip part on RN unstated → no Tooltip; label becomes accessibilityLabel, no long-press bubble
+2026-09-16 SegmentedControl rn: no native key events → keyboard table react-native-web only; arrow scenarios web and Lit only
+2026-09-16 SegmentedControl web,lit,rn: no RTL arrow rule → ArrowLeft next, ArrowRight previous in RTL, as Tabs
+2026-09-16 SegmentedControl web,lit,rn: value naming disabled or missing option → kept as given; unknown checks nothing; tab stop first enabled
+2026-09-16 SegmentedControl lit: controlled parent rejects change → focus moves, onChange fires, checked state waits for value
+2026-09-16 SegmentedControl web,lit,rn: iconOnly option without icon → dev warning once, label shown as text
+2026-09-16 SegmentedControl rn: two-to-five count not enforced → guidance only, any count renders, no warning
+2026-09-16 SegmentedControl lit: required label has no default → defaults to empty string with a dev warning
+2026-09-16 SegmentedControl web: click scenario doesn't name the segment → first segment (the disabled one in the disabled scenario)
+2026-09-16 SegmentedControl web,lit: arrow scenarios' starting focus → starts on the selected segment
+2026-09-16 SegmentedControl lit: disabled skipping had no scenario → added arrow-skips-disabled-segments (web, lit)
+2026-09-16 Listbox rn: ListboxOption named leaf and union → exports ListboxOption, ListboxGroup, ListboxItem on every platform; groups don't nest
+2026-09-16 Listbox web,lit,rn: check-mark description contradicted itself → check only with multiple, slot always reserved; single uses optionSelectedWeight, no fill
+2026-09-16 Listbox web,rn: invalid had no visual binding → borderInvalid (color.border.danger) when not embedded; error message precedence stated
+2026-09-16 Listbox lit: clearing error vs explicit invalid → invalid while invalid true or error non-empty; clearing error never clears invalid
+2026-09-16 Listbox rn: group part has no native wrapper → groups flattened into FlatList rows; only the group label row (Listbox.groupLabel)
+2026-09-16 Listbox web,lit,rn: valueType string[] vs single-select string → single submits string, multiple array, nothing selected no key
+2026-09-16 Listbox rn: accessible list hides empty Text → list not accessible; empty/loading Text is its own stop
+2026-09-16 Listbox rn,lit: selectedCount no plural and no home → one form; native accessibilityValue, web/Lit export only
+2026-09-16 Listbox rn: onActiveChange had no fires list → fires [user]: key, hover, focus; null on blur; never on mount
+2026-09-16 Listbox rn: disabled vs Pressable disabled → accessibilityState.disabled plus press guard, never Pressable disabled
+2026-09-16 Listbox web,lit,rn: focus ring changing row height → never changes layout: outline on web/Lit, reserved transparent border on RN
+2026-09-16 Listbox lit: labelledBy id can't cross shadow root → Lit uses label as aria-label, never labelledBy
+2026-09-16 Listbox web: copy {label} unknown with labelledBy → label is always the {label} in copy
+2026-09-16 Listbox web,lit,rn: maxVisible measured vs formula → always computed from tokens, never measured; formula stated
+2026-09-16 Listbox web,lit: errorMessage has no composition or home → Text sm danger; partGap and errorText bindings; root wrapper; danger AA contrast pair
+2026-09-16 Listbox web,lit: fully disabled list styling → stays focusable with aria-disabled, input inert, disabledOpacity once
+2026-09-16 Listbox web,lit: keys before any option is active → Down/PageDown first enabled, Up/PageUp last; Space/Enter act on starting option
+2026-09-16 Listbox web,lit: typeahead reset has no token → typeaheadReset binding on motion.duration.loop (as Menu)
+2026-09-16 Listbox lit: PageUp/PageDown and selectionFollowsFocus → follow it like the arrows
+2026-09-16 Listbox web: PageUp/PageDown with maxVisible all → jump to first/last enabled; otherwise move by row count, clamped
+2026-09-16 Listbox web,lit: Shift+Arrow removal and Ctrl+A clear scope → Shift+Arrow only adds; Ctrl+A toggle-off spares disabled selected options
+2026-09-16 Listbox web,lit: data-ds-field only with name → root always carries it; without name nothing submits
+2026-09-16 Listbox web: optionGap between rows → only inside a row; no gap between rows
+2026-09-16 Listbox web: emptyColor has no part → emptyState part, Text tone muted
+2026-09-16 Select web,lit,rn: valueType string[] but single submits string → string for single, string[] with multiple, empty submits nothing
+2026-09-16 Select rn: Tab rule has no native form → rn notes say Pressable sees no keys
+2026-09-16 Select web,lit,rn: fontWeight can't reach options → part value, trigger value text only
+2026-09-16 Select web,lit,rn: fontSize/size forwarded to popup? → value and label only; fontFamily and lineHeight forwarded to Listbox
+2026-09-16 Select web,lit,rn: many bindings had no part → parts assigned (value, errorMessage, popup, trigger, field group)
+2026-09-16 Select web,lit,rn: focusRingWidth with overridden border; focus vs invalid → padding shrinks by the difference; danger color stays when focused
+2026-09-16 Select lit,rn: popup border width no binding → popupBorderWidth border.width.thin, part popup
+2026-09-16 Select web,lit,rn: chevron/label/description/error composition props unspecified → Icon chevron-down sm; Text medium/muted sm/danger sm with forwards
+2026-09-16 Select lit: labelWeight/helperSize hooks do nothing → reached only through child Text overrides, no hook
+2026-09-16 Select rn: phone width comparison direction → width at most layout.maxWidth.prose is a phone (BottomSheet)
+2026-09-16 Select web,lit,rn: selectedCount has no plural forms → one string, locale-formatted count
+2026-09-16 Select web,lit,rn: required indicator in accessible name → yes, the visible label including requiredIndicator
+2026-09-16 Select rn: accessibilityValue with nothing selected → copy.placeholder
+2026-09-16 Select rn: parts have no testIDs → testID Select.<part> passed to composed Text/Icon
+2026-09-16 Select rn: no Escape test → Escape is onRequestClose (Android back); Enter/Escape scenarios web and Lit only
+2026-09-16 Select web,lit: listbox composition passes only options → also multiple, value, embedded true, selectionFollowsFocus false, initialActiveValue, labelledBy, events
+2026-09-16 Select web: prose said defaultActiveValue → initialActiveValue; web dispatches focusin on open, Lit sets activeValue
+2026-09-16 Select web: aria-activedescendant missing from trigger → added, <listboxId>-option-<value>, only while open
+2026-09-16 Select web,lit: no key forwarding mechanism → web replays the KeyboardEvent on the list; Lit calls handleKey
+2026-09-16 Select web,lit: label element and label click → native label for wraps Text; click focuses trigger, doesn't open
+2026-09-16 Select web,lit: errorMessage content without error → role=alert danger Text with error else copy.invalid
+2026-09-16 Select web,lit: Space in single select → commits and closes; multiple toggles and stays open
+2026-09-16 Select web,lit: re-picking current option → closes without onChange
+2026-09-16 Select lit: Tab with controlled open → list never a tab stop; Tab reports close, never blocks focus move
+2026-09-16 Select web,lit: native always without JS, chevron, placeholder → Lit native select submits via setFormValue; chevron single only; web disabled empty placeholder option
+2026-09-16 Select web,lit: labelledby label+value repeats value → aria-labelledby is the label id alone
+2026-09-16 Select lit: live active-option element details → one visually hidden polite span via aria-describedby
+2026-09-16 Select web,lit: outside dismiss and placement → pointerdown or focus outside closes without change; below, flips above
+2026-09-16 Select web,lit: enter easing and extra transitions → opacity fade only, easing standard, no slide or rotation
+2026-09-16 Select web: copy.done unused on web → only the native phone sheet renders it
+2026-09-16 Select web,lit,rn: options typed ListboxOption[] → ListboxItem[] (options and one level of groups)
+2026-09-16 Combobox rn: multiple value vs string|boolean form handle → values joined with `,` (comma always commits)
+2026-09-16 Combobox rn: copy.activeOption has nothing to read on touch → not announced on native
+2026-09-16 Combobox rn: filter none type-ahead → typing only opens the list on native
+2026-09-16 Combobox rn: no toggle Button on phones → toggleButton is the chevron Icon in the summary Pressable, hidden from AT
+2026-09-16 Combobox rn: phone breakpoint not given → width <= layout.maxWidth.prose (BottomSheet breakpoint)
+2026-09-16 Combobox rn: Button has no testID for parts → wrapper Views carry chipRemove/clearButton testIDs
+2026-09-16 Combobox rn: single-select Done button → copy.done Button in the sheet footer in both modes
+2026-09-16 Combobox rn: no visually-hidden status primitive → visible small muted Text; live region Android, announceForAccessibility iOS
+2026-09-16 Combobox rn: Backspace/comma not in rn keyboard model → TextInput still handles both
+2026-09-16 Combobox web,lit,rn: Enter/comma with text matching an option → commits the option's value; rn Enter without allowCustom commits nothing
+2026-09-16 Combobox web,lit,rn: Escape when closed → clears text only; clear button empties value
+2026-09-16 Combobox web,lit,rn: focus border vs fieldBorderWidth → focusRingWidth replaces it while focused, padding shrinks by the difference
+2026-09-16 Combobox web,lit,rn: loading with stale options → Listbox gets options [] + loading; add-custom row hidden
+2026-09-16 Combobox web,lit,rn: Default story args unspecified → fruit-picker example; apple is its Apple option
+2026-09-16 Combobox web,lit,rn: options typed ListboxOption[] → ListboxItem[]
+2026-09-16 Combobox lit: activedescendant can't reach shadow options → polite live span via aria-describedby, as ds-select
+2026-09-16 Combobox web,lit: active option on open → typing none; toggle/click/ArrowDown selected else first; ArrowUp selected else last; Alt+ArrowDown selected else none
+2026-09-16 Combobox web,lit: onInputChange says only keystroke → every user-caused text change, not controlled rewrites
+2026-09-16 Combobox lit: open reflects only controlled prop → open attribute mirrors effective state
+2026-09-16 Combobox lit: negated clearable attribute unnamed → reflected as `no-clear`
+2026-09-16 Combobox web,lit: PageUp/PageDown and type-ahead forwarding → only keyboard-table keys forwarded; typing stays in input
+2026-09-16 Combobox web,lit: focus-visible vs focus-within field ring → `:has(input:focus-visible)`
+2026-09-16 Combobox web,lit: popup border width and part-less bindings → popupBorderWidth added; descriptions name each binding's target
+2026-09-16 Combobox web,lit: enter binding has no target → popup opacity fade and field border-color transition
+2026-09-16 Combobox web,lit: Tab in multiple mode → Tab never commits
+2026-09-16 Combobox web,lit: pressing already-selected option in single → no onChange; restores label and closes
+2026-09-16 Combobox lit: statusDebounce under reduced motion → not motion; never zeroed by reduced motion
+2026-09-16 Combobox lit: plural locale without locale prop → nearest lang ancestor, else runtime default
+2026-09-16 Combobox web,lit: required indicator in accessible name → rendered inside the label, part of the name
+2026-09-16 Combobox web: ref on root vs input → Ref<HTMLInputElement> on input; data-ds on wrapper
+2026-09-16 Combobox web: forwarding to nonexistent useListbox hook → remounts Listbox with initialActiveValue, re-dispatches arrow keydowns
+2026-09-16 Combobox web,lit: Button owns its data-part → part wrappers around Buttons; scenario clicks press the inner Button
+2026-09-16 Combobox web: copy.done/activeOption unused on web → not rendered on web
+2026-09-16 Combobox web: toggle button tab order → toggle tabIndex -1; clear and chip-remove stay tabbable
+2026-09-16 Combobox web,lit,rn: comma commit in single mode → same as Enter
+2026-09-16 Combobox web,lit,rn: count 0 with add-custom row → count excludes that row, announces copy.empty

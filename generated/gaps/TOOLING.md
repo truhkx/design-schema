@@ -51,3 +51,8 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - RN: resolveToken has no typed result for composite tokens (shadow), so generated code casts; Jest has no key event for the native Escape path (Menu, rn).
 - Browser tests: Playwright won't click an aria-disabled element, so `a-disabled-item-does-nothing` needs a forced click (Menu, lit).
 - TS: under exactOptionalPropertyTypes the `items` shape needs `| undefined` on optional fields for callers passing `icon: undefined` (Menu, web).
+- TS: the same `| undefined` widening recurs for SegmentedControl `options`; the generator template should widen optional shape fields instead of each doc (SegmentedControl, web).
+- Prompt assembly: the Keyboard section lists only the arrow rules while the schema keyboard block also has wrap, Home and End (SegmentedControl, web/lit).
+- RN conventions summary shows `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but theme.ts is `toLineHeight(fontSize, multiplier)` (Listbox, rn).
+- Keyboard story gate: unclear whether options reached via aria-activedescendant count toward the "three focusable children" (Select, web).
+- `copy.position` in tabs.md is the first copy entry to use `description`/`platforms`; confirm consumers honor them (Tabs; all).

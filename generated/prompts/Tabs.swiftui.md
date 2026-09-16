@@ -65,21 +65,30 @@ component:
   - indicator
   - panel
   composition:
-    tabIcon: Icon
+    tabIcon:
+      component: Icon
+      props:
+        size: md
   props:
     tabs:
       type: array
       required: true
-      shape: '{ id: string; label: string; icon?: IconName; disabled?: boolean; badge?:
-        string }[]'
-      description: The tabs in order. `badge` is a short count or status shown after
-        the label ("3", "New").
+      shape: '{ id: string; label: string; icon?: IconName | undefined; disabled?:
+        boolean | undefined; badge?: string | undefined }[]'
+      description: 'The tabs in order. `badge` is a short count or status shown after
+        the label ("3", "New"). The icon is an Icon at `size: md` (the label''s size)
+        in the tab''s current foreground color (currentColor on web/Lit, the Icon
+        `color` prop on RN). Optional fields also accept an explicit `undefined`;
+        the exported item type is `TabsItem`.'
     children:
       type: content
       required: true
       description: One panel per tab, in the same order, each wrapped in the exported
         `TabPanel` (or `<ds-tab-panel>`) with a matching `id`. Only the selected panel
-        is rendered unless `keepMounted`.
+        is rendered unless `keepMounted`. Examples describe children in words; stories
+        and tests build them from `args.tabs` (one TabPanel per entry, id = the tab
+        id), so a scenario that replaces `tabs` also replaces the panels and has no
+        orphans.
     label:
       type: string
       required: true
@@ -117,12 +126,15 @@ component:
       - fill
       default: start
       description: '`start` packs tabs at the start; `fill` stretches them across
-        the width (phones, two to four tabs).'
+        the width (phones, two to four tabs). Horizontal only: vertical tabs always
+        span the list''s inline size, so `fill` has no effect when vertical.'
     keepMounted:
       type: boolean
       default: false
       description: Keep unselected panels in the tree (hidden) so their state survives
-        switching.
+        switching. No effect on Lit, where panels are the consumer's light-DOM children
+        and are always kept (hidden); the property exists there for parity and is
+        not reflected.
   events:
     onChange:
       description: Fired when the selected tab changes, with the new id.
@@ -152,7 +164,7 @@ component:
     expect: focus-next
   - keys:
     - ArrowLeft
-    action: Moves to the previous tab, wrapping.
+    action: Moves to the previous tab, wrapping; selects it under automatic activation.
     when: horizontal
     from: last
     expect: focus-prev
@@ -166,7 +178,7 @@ component:
     expect: focus-next
   - keys:
     - ArrowUp
-    action: Moves to the previous tab, wrapping.
+    action: Moves to the previous tab, wrapping; selects it under automatic activation.
     when: vertical
     from: last
     given:
@@ -180,12 +192,12 @@ component:
     expect: focus-wraps-to-first
   - keys:
     - Home
-    action: First tab.
+    action: First tab; selects it under automatic activation.
     from: last
     expect: focus-first
   - keys:
     - End
-    action: Last tab.
+    action: Last tab; selects it under automatic activation.
     from: first
     expect: focus-last
   - keys:
@@ -224,6 +236,7 @@ component:
       locked: false
     listGap:
       token: layout.gap.none
+      part: tablist
       description: Tabs touch; the indicator separates them.
       locked: false
     indicator:
@@ -240,57 +253,84 @@ component:
       locked: true
     listBorder:
       token: color.border
-      description: The rule under the whole tab list.
+      part: tablist
+      description: The rule under the whole tab list (horizontal), or along its inline-end
+        edge (vertical).
       locked: false
     listBorderWidth:
       token: border.width.thin
+      part: tablist
       locked: false
     panelGap:
       token: layout.gap.loose
       part: panel
-      description: Between the tab list and the panel.
+      description: Between the tab list and the panel. Applied as the `gap` of the
+        root flex layout that holds the list and the panels (the host on Lit), not
+        as a margin on each panel.
       locked: false
     badgeColor:
       token: color.foreground.muted
+      part: tabBadge
       locked: true
     badgeSize:
       token: font.size.xs
+      part: tabBadge
+      description: The badge's font size; its line height is the same `lineHeight`
+        multiplier as the label, applied to this size.
       locked: false
     fontFamily:
       token: font.family.body
+      part: tab
       locked: false
     fontSize:
       token: font.size.md
+      part: tab
       locked: false
     fontWeight:
       token: font.weight.medium
+      part: tab
       locked: false
     lineHeight:
       token: font.lineHeight.normal
+      part: tab
       locked: false
     radius:
       token: radius.sm
+      part: tab
       description: On the tab's hover background and focus ring.
       locked: false
     minTarget:
       token: size.target.comfortable
+      part: tab
+      description: Minimum block size and minimum inline size of every tab (both axes).
       locked: true
     focusRing:
       token: color.border.focus
+      part: tab
       locked: true
     focusRingWidth:
       token: border.width.focus
+      part: tab
       locked: true
     transition:
       token: motion.duration.fast
+      part: indicator
       description: Indicator movement, with motion.easing.standard; instant under
         reduced motion.
       locked: false
     disabledOpacity:
       token: opacity.disabled
+      part: tab
       locked: false
   copy:
     position:
+      description: 'Announced position of a tab, used only where the platform does
+        not expose set position for tabs: SwiftUI `.accessibilityValue` and React
+        Native `accessibilityValue={{ text }}` on each tab. Web and Lit do not render
+        it (role="tab" already exposes position and set size; web may set aria-posinset/aria-setsize).'
+      platforms:
+      - rn
+      - swiftui
       text: '{index} of {total}'
       params:
         index:
@@ -338,12 +378,19 @@ component:
       - tabindex
       - role=tabpanel
       - aria-labelledby
-      notes: <div role="tablist" aria-label> of <button role="tab" aria-selected aria-controls
-        tabindex={0|-1}>; panels are <div role="tabpanel" aria-labelledby tabindex="0">
-        (focusable so Tab from the list lands on the panel content region). The indicator
-        is a pseudo-element or an absolutely positioned bar animated between tabs.
-        The tab list scrolls horizontally with overflow when tabs exceed the width,
-        with the selected tab scrolled into view.
+      notes: '<div role="tablist" aria-label> of <button role="tab" aria-selected
+        aria-controls tabindex={0|-1}>; panels are <div role="tabpanel" aria-labelledby
+        tabindex="0"> (focusable so Tab from the list lands on the panel content region).
+        `aria-controls` is set only while the tab''s panel is mounted (with `keepMounted:
+        false` an unselected panel is not in the DOM, so there is no id to point at).
+        The React panel''s DOM id is its `id` prefixed with a `useId` base (and tab
+        ids use the same base), so two Tabs on a page cannot collide; the `id` prop
+        is only the match key. The indicator is a pseudo-element or an absolutely
+        positioned bar animated between tabs. The tab list scrolls along its orientation
+        with overflow when tabs exceed its size, and the selected tab is kept in view
+        by setting the list''s own `scrollLeft`/`scrollTop` — never `scrollIntoView`,
+        which also scrolls the page (including on first render). The panel sets no
+        font or color of its own; its content brings its own Text.'
     lit:
       tag: ds-tabs
       reflect:
@@ -352,24 +399,42 @@ component:
       - activation
       - fit
       notes: '`tabs` is a property. Panels are slotted <ds-tab-panel id> light-DOM
-        elements; ds-tabs sets hidden/aria-labelledby on them from slotchange and
-        renders the tab list in its shadow root. Panels are never moved, detached
-        or re-appended: `keepMounted: false` is expressed only by toggling the `hidden`
-        attribute on the slotted panel, so there is no detached-panel map. A slotchange
-        handler must never call appendChild, insertBefore or remove on its own slotted
-        children - re-inserting a node that is already a child re-fires slotchange
-        and spins the renderer until the tab is killed. `change` is a composed CustomEvent
-        with detail { value }. Roving tabindex over shadow tabs.'
+        elements; ds-tabs sets `hidden`, `role="tabpanel"` and `aria-label` = the
+        tab''s label on them from slotchange (not `aria-labelledby`: an IDREF cannot
+        cross the shadow boundary, and element reflection cannot point from light
+        DOM into a descendant shadow root) and renders the tab list in its shadow
+        root. Panels are never moved, detached or re-appended: `keepMounted: false`
+        is expressed only by toggling the `hidden` attribute on the slotted panel,
+        so there is no detached-panel map. A slotchange handler must never call appendChild,
+        insertBefore or remove on its own slotted children - re-inserting a node that
+        is already a child re-fires slotchange and spins the renderer until the tab
+        is killed. `change` is a composed CustomEvent with detail { value }. Roving
+        tabindex over shadow tabs. A shadow tab points at its light-DOM panel with
+        `ariaControlsElements = [panel]` (element reflection toward the host''s tree
+        is allowed); where element reflection is unsupported no `aria-controls` is
+        set. Panels arrive by slotchange after first render, so a tab without a panel
+        is still rendered (see Behavior). `keepMounted` is a no-op here.'
     rn:
       element: View
       props:
       - accessibilityRole=tablist
       - accessibilityRole=tab
       - accessibilityState
-      notes: A horizontal ScrollView (or View with fill) of Pressables with accessibilityRole="tab"
-        and accessibilityState={{ selected }}; panels are Views. Arrow keys apply
-        with a hardware keyboard only; each tab is its own accessibility stop, as
-        on native. Indicator animated with Animated.
+      notes: 'A horizontal ScrollView (or View with fill) of Pressables with accessibilityRole="tab"
+        and accessibilityState={{ selected, disabled }}; a vertical list with `fit:
+        start` is a vertical ScrollView with the selected tab kept in view. Panels
+        are Views, each with `accessibilityLabel` = its tab''s label (there is no
+        aria-labelledby). The tablist View carries accessibilityRole="tablist", accessibilityLabel
+        = `label` and testID `Tabs.tablist`, but is not `accessible` (that would merge
+        the tabs into one stop on iOS), so tests find it by testID and assert role
+        and name rather than getByRole. iOS and Android deliver no key events to View/Pressable:
+        the keyboard table and the roving tab stop are react-native-web only (onKeyDown
+        on the list, `focusable` only on the selected tab); on native every enabled
+        tab is its own accessibility stop, a press always selects, and `activation`
+        has no effect (`manual` means nothing beyond press-to-select). A disabled
+        tab uses accessibilityState.disabled and ignores presses rather than the Pressable
+        `disabled` prop; it is non-focusable on react-native-web only. Each tab has
+        `accessibilityValue={{ text: copy.position }}`. Indicator animated with Animated.'
     swiftui:
       element: VStack
       props:
@@ -392,8 +457,9 @@ component:
         the tokens with the `transition` animation.'
   behavior:
   - name: click-selects-a-tab
-    description: Clicking a tab that is not the selected one changes the selection
-      and reports the new id.
+    description: 'Clicking a tab that is not the selected one changes the selection
+      and reports the new id. `click: tab` is the first tab (overview), which is not
+      selected here.'
     given:
       defaultValue: activity
     when:
@@ -401,8 +467,9 @@ component:
     then:
     - event: onChange
   - name: clicking-the-selected-tab-changes-nothing
-    description: onChange fires when the selected tab changes; re-pressing the current
-      tab is not a change.
+    description: 'onChange fires when the selected tab changes; re-pressing the current
+      tab is not a change. `click: tab` is the first tab (overview), the selected
+      one.'
     given:
       defaultValue: overview
     when:
@@ -423,7 +490,8 @@ component:
     - web
   - name: arrow-selects-under-automatic-activation
     description: automatic selects a tab as arrow keys move to it (keyboard rule,
-      ArrowRight).
+      ArrowRight). Focus starts on the first tab, the selected one; the key moves
+      to the second.
     given:
       activation: automatic
     when:
@@ -434,7 +502,8 @@ component:
     - web
     - lit
   - name: manual-activation-does-not-select-on-arrow
-    description: manual moves focus only and selects on Enter/Space.
+    description: manual moves focus only and selects on Enter/Space. Focus starts
+      on the first tab, the selected one; the key moves to the second.
     given:
       activation: manual
     when:
@@ -446,8 +515,9 @@ component:
     - web
     - lit
   - name: a-disabled-tab-cannot-be-selected
-    description: A tab marked disabled in the tabs array is visible but selects nothing
-      when pressed.
+    description: 'A tab marked disabled in the tabs array is visible but selects nothing
+      when pressed. `click: tab` is the first tab (overview, disabled); the panels
+      are built from these two tabs.'
     given:
       tabs:
       - id: overview
@@ -523,6 +593,16 @@ component:
 
 - `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `onChange`)
 
+## Parts and slots
+
+- `tablist`: element
+- `tab`: element
+- `tabLabel`: element
+- `tabIcon`: component `Icon`; props `size` = "md"
+- `tabBadge`: element
+- `indicator`: element
+- `panel`: element
+
 ## Style bindings
 
 - `tabColor`: token `color.foreground.muted`; part `tab`; locked
@@ -531,14 +611,29 @@ component:
 - `tabPaddingBlock`: token `space.sm`; part `tab`
 - `tabPaddingInline`: token `space.md`; part `tab`
 - `tabGap`: token `layout.gap.tight`; part `tab`
+- `listGap`: token `layout.gap.none`; part `tablist`
 - `indicator`: token `color.control.selectedBackground`; part `indicator`; locked
 - `indicatorThickness`: token `border.width.focus`; part `indicator`; locked
+- `listBorder`: token `color.border`; part `tablist`
+- `listBorderWidth`: token `border.width.thin`; part `tablist`
 - `panelGap`: token `layout.gap.loose`; part `panel`
+- `badgeColor`: token `color.foreground.muted`; part `tabBadge`; locked
+- `badgeSize`: token `font.size.xs`; part `tabBadge`
+- `fontFamily`: token `font.family.body`; part `tab`
+- `fontSize`: token `font.size.md`; part `tab`
+- `fontWeight`: token `font.weight.medium`; part `tab`
+- `lineHeight`: token `font.lineHeight.normal`; part `tab`
+- `radius`: token `radius.sm`; part `tab`
+- `minTarget`: token `size.target.comfortable`; part `tab`; locked
+- `focusRing`: token `color.border.focus`; part `tab`; locked
+- `focusRingWidth`: token `border.width.focus`; part `tab`; locked
+- `transition`: token `motion.duration.fast`; part `indicator`
+- `disabledOpacity`: token `opacity.disabled`; part `tab`
 
 ## Keyboard
 
 - `ArrowDown` (Moves to the next tab, wrapping; selects it under automatic activation.): expect focus-next; given `orientation: "vertical"`
-- `ArrowUp` (Moves to the previous tab, wrapping.): expect focus-prev; given `orientation: "vertical"`
+- `ArrowUp` (Moves to the previous tab, wrapping; selects it under automatic activation.): expect focus-prev; given `orientation: "vertical"`
 
 ## Copy
 
@@ -599,7 +694,7 @@ Do not use Tabs for navigation to different pages — that is a nav Landmark of 
 
 ## Behavior
 
-The selected tab is the list's single tab stop. Arrow keys along the orientation move focus between enabled tabs and wrap; with `automatic` activation the moved-to tab is selected and its panel shown, with `manual` the user presses Enter or Space. Home and End jump. Tab from a tab moves into the selected panel. Disabled tabs are visible, announced disabled and skipped. Only the selected panel is rendered unless `keepMounted`, in which case unselected panels are hidden. The indicator animates to the selected tab. When tabs overflow horizontally, the list scrolls and the selected tab is kept in view. Disabled tabs are `aria-disabled`, skipped by the arrow keys and not tab stops (a disabled tab has nothing to reach); they remain visible and readable. `fit: fill` stretches tabs along the orientation axis in both orientations. Badges are read as part of the tab's name ("Inbox, 3"). A tab without a matching panel, or a panel without a tab, is a development warning and is not rendered — on Lit an orphan panel is a consumer's own light-DOM child that cannot be refused, so "not rendered" there means forced `hidden`. On Lit, panels are light-DOM children, so `keepMounted: false` hides inactive panels with the `hidden` attribute rather than removing them.
+The selected tab is the list's single tab stop. Arrow keys along the orientation move focus between enabled tabs and wrap; with `automatic` activation the moved-to tab is selected and its panel shown, with `manual` the user presses Enter or Space. Home and End jump. Tab from a tab moves into the selected panel. Disabled tabs are visible, announced disabled and skipped. Only the selected panel is rendered unless `keepMounted`, in which case unselected panels are hidden. The indicator animates to the selected tab. When tabs overflow horizontally, the list scrolls and the selected tab is kept in view. Disabled tabs are `aria-disabled`, skipped by the arrow keys and not tab stops (a disabled tab has nothing to reach); they remain visible and readable. Under `automatic` activation every focus move selects — ArrowLeft/Right/Up/Down, Home and End alike. `fit: fill` stretches horizontal tabs across the list; vertical tabs always span the list's width, so `fill` changes nothing there. Badges are read as part of the tab's name: the name is the tab's content, the label then the badge separated by a plain space ("Inbox 3"), with no punctuation or extra copy. A tab without a matching panel is still rendered (its panel region is empty) and is a development warning — on Lit panels arrive by slotchange after first render, so filtering tabs would flicker and reorder focus. A panel without a tab is a development warning and is not shown (on Lit, where the orphan is the consumer's own light-DOM child, it is forced `hidden`). The Keyboard story uses `activation: manual` with three enabled tabs and takes `orientation` from its args, so every rule in the keyboard table runs against it. On Lit, panels are light-DOM children, so `keepMounted: false` hides inactive panels with the `hidden` attribute rather than removing them.
 
 ## Content guidelines
 
@@ -612,13 +707,13 @@ Role `tablist` with a name, `tab`s with `aria-selected` and `aria-controls`, pan
 ## Platform notes
 
 ### Web
-Render `<div role="tablist" aria-label aria-orientation>` of `<button role="tab" id aria-selected aria-controls tabindex>`, with the indicator as an absolutely positioned bar whose `inset-inline-start` and `inline-size` update from the selected tab's offset (transitioned with `transition`). Panels: `<div role="tabpanel" id aria-labelledby tabindex="0" hidden>`. Keydown on the list implements the keyboard table for the orientation. `overflow-x: auto; scrollbar-width: none` on the list with `scrollIntoView({ inline: 'nearest' })` on selection. Export `TabPanel` as the wrapper for children.
+Render `<div role="tablist" aria-label aria-orientation>` of `<button role="tab" id aria-selected aria-controls tabindex>`, with the indicator as an absolutely positioned bar whose `inset-inline-start` and `inline-size` update from the selected tab's offset (transitioned with `transition`). Panels: `<div role="tabpanel" id aria-labelledby tabindex="0" hidden>`. Keydown on the list implements the keyboard table for the orientation. `overflow-x: auto; scrollbar-width: none` on the list (`overflow-y` when vertical), keeping the selected tab in view by setting the list's own `scrollLeft`/`scrollTop` on selection — not `scrollIntoView`, which scrolls the page too. Export `TabPanel` as the wrapper for children.
 
 ### Lit
-`<ds-tabs label="Project sections" .tabs=${tabs}><ds-tab-panel id="overview">…</ds-tab-panel>…</ds-tabs>`. Tab list in the shadow root; panels are light-DOM `<ds-tab-panel>` elements that ds-tabs manages (`hidden`, `role="tabpanel"`, `aria-labelledby` pointing at a shadow tab requires the tab id to be exposed — set `aria-labelledby` to a light-DOM proxy text or use `aria-label={tab label}` on the panel instead, since IDREFs do not cross shadow boundaries). Composed `change`.
+`<ds-tabs label="Project sections" .tabs=${tabs}><ds-tab-panel id="overview">…</ds-tab-panel>…</ds-tabs>`. Tab list in the shadow root; panels are light-DOM `<ds-tab-panel>` elements that ds-tabs manages (`hidden`, `role="tabpanel"`, and `aria-label` set to the tab's label — never `aria-labelledby`, since IDREFs do not cross shadow boundaries). Tabs reach their panels through `ariaControlsElements`, omitted where unsupported. Composed `change`.
 
 ### React Native
-`ScrollView horizontal` (or a `View` with `flexDirection: 'row'` for `fill`) of `Pressable accessibilityRole="tab" accessibilityState={{ selected, disabled }}`; the indicator is an `Animated.View` positioned from the measured tab layout; panels are `View`s rendered when selected. Vertical: a column of tabs beside the panel. Arrow keys through `onKeyDown` are web-only (react-native-web); on native every tab is an accessibility stop.
+`ScrollView horizontal` (or a `View` with `flexDirection: 'row'` for `fill`) of `Pressable accessibilityRole="tab" accessibilityState={{ selected, disabled }}`; the indicator is an `Animated.View` positioned from the measured tab layout; panels are `View`s rendered when selected. Vertical: a vertical `ScrollView` of tabs beside the panel. Arrow keys through `onKeyDown` and the single roving stop are web-only (react-native-web); on iOS and Android every enabled tab is an accessibility stop, a press always selects, and `activation` has no effect.
 
 ## Related
 
@@ -630,8 +725,9 @@ One test per scenario, in this order.
 
 ```yaml
 - name: click-selects-a-tab
-  description: Clicking a tab that is not the selected one changes the selection and
-    reports the new id.
+  description: 'Clicking a tab that is not the selected one changes the selection
+    and reports the new id. `click: tab` is the first tab (overview), which is not
+    selected here.'
   given:
     defaultValue: activity
   when:
@@ -639,8 +735,8 @@ One test per scenario, in this order.
   then:
   - event: onChange
 - name: clicking-the-selected-tab-changes-nothing
-  description: onChange fires when the selected tab changes; re-pressing the current
-    tab is not a change.
+  description: 'onChange fires when the selected tab changes; re-pressing the current
+    tab is not a change. `click: tab` is the first tab (overview), the selected one.'
   given:
     defaultValue: overview
   when:
@@ -649,8 +745,9 @@ One test per scenario, in this order.
   - event: onChange
     fired: false
 - name: a-disabled-tab-cannot-be-selected
-  description: A tab marked disabled in the tabs array is visible but selects nothing
-    when pressed.
+  description: 'A tab marked disabled in the tabs array is visible but selects nothing
+    when pressed. `click: tab` is the first tab (overview, disabled); the panels are
+    built from these two tabs.'
   given:
     tabs:
     - id: overview

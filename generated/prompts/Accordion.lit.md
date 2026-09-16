@@ -63,16 +63,26 @@ component:
   - triggerIcon
   - panel
   composition:
-    item: Disclosure
+    item:
+      component: Disclosure
+      forwards:
+        triggerPaddingBlock: triggerPaddingBlock
+        fontFamily: triggerFontFamily
+        triggerFontSize: triggerFontSize
+        triggerFontWeight: triggerFontWeight
   props:
     items:
       type: array
       required: true
       shape: '{ id: string; summary: string; content: ReactNode; disabled?: boolean
         }[]'
-      description: The sections in order. `content` is the panel body; on Lit it is
-        dropped from the item type and the body is a light-DOM child slotted by the
-        item id (`<div slot="faq-1">`).
+      description: 'The sections in order. `content` is the panel body; on Lit it
+        is dropped from the item type and the body is a light-DOM child slotted by
+        the item id (`<div slot="faq-1">`); light-DOM children that are neither a
+        `<ds-disclosure>` nor slotted by an item id are not rendered, and only child
+        additions and removals are observed (changing an existing child''s `slot`
+        attribute later is not). The optional field follows the package convention
+        for optional properties (`disabled?: boolean | undefined`).'
     headingLevel:
       type: enum
       values:
@@ -88,7 +98,9 @@ component:
       type: boolean
       default: false
       description: 'Opening one section closes the others. Off by default: users usually
-        want to compare, and forced-closing is a common frustration.'
+        want to compare, and forced-closing is a common frustration. Turning it on
+        while several sections are open trims the open set to the first open id without
+        firing any event (the same as several ids in `value`/`defaultValue`).'
     value:
       type: union
       description: Controlled open ids. A bare `string` is accepted as shorthand for
@@ -126,6 +138,10 @@ component:
         description: The ids of every open section.
       fires:
       - user
+      timing:
+        phase: after-change
+        before:
+        - onOpenChange
     onOpenChange:
       description: 'Fired per section as it opens or closes, with `{ id, open, reason
         }` (`reason`: `trigger`, `keyboard`, `exclusive` when another section closed
@@ -152,17 +168,23 @@ component:
         - exclusive
         - controlled
       reasons:
-        trigger: the section trigger was activated by pointer
+        trigger: the section trigger was activated by pointer — Disclosure's `pointer`
+          reason maps to `trigger`
         keyboard: the section was toggled from the keyboard — web and Lit pass through
           the activation method Disclosure reports on its own toggle, so the two reasons
           must not be collapsed there; React Native has no such signal and reports
           `trigger` for every activation
         exclusive: another section opened and closed this one
-        controlled: the `value` prop changed to a set the accordion did not itself
-          just emit
+        controlled: 'the `value` prop changed to a set the accordion did not itself
+          just emit. The accordion computes `exclusive` and `controlled` itself: a
+          Disclosure `onToggle` with reason `controlled` is the echo of the accordion
+          setting that Disclosure''s `open`, and is ignored, so nothing is reported
+          twice'
       fires:
       - user
       - controlled
+      timing:
+        phase: after-change
   keyboard:
   - keys:
     - Enter
@@ -204,20 +226,29 @@ component:
   styles:
     divider:
       token: color.border
+      description: Passed to each composed Divider as its `color` override; Accordion
+        writes no divider rule of its own.
       locked: false
     dividerWidth:
       token: border.width.thin
+      description: Passed to each composed Divider as its `thickness` override.
       locked: false
     itemGap:
       token: layout.gap.none
-      part: item
-      description: Items touch; the divider separates them.
+      part: list
+      description: 'Items touch; the divider separates them. Applied as the gap of
+        the `list` container (flex `gap` on web and Lit, the `gap` style on React
+        Native), never on the Disclosure itself, so when `divided` the gap also falls
+        between each item and its Divider — intended: the divider sits centred in
+        the space between items.'
       locked: false
     triggerPaddingBlock:
       token: space.md
       part: trigger
       description: Roomier than a lone Disclosure, since accordion triggers are section
-        headings.
+        headings. Forwarded to Disclosure's `triggerPaddingBlock`, like `fontFamily`,
+        `triggerFontSize` and `triggerFontWeight` (see `composition`); the accordion
+        does not style the trigger itself.
       locked: false
     fontFamily:
       token: font.family.body
@@ -232,14 +263,19 @@ component:
       locked: false
     minTarget:
       token: size.target.min
-      description: The composed Disclosure's own minimum; the accordion's triggerPaddingBlock
-        override raises the row to the comfortable size.
+      description: The composed Disclosure's own minimum, applied by Disclosure; Accordion
+        adds no rule for it (nor for `focusRing`/`focusRingWidth`). The `triggerPaddingBlock`
+        forward makes the row roomier but does not guarantee a 44px target.
       locked: true
     focusRing:
       token: color.border.focus
+      description: Applied by the composed Disclosure's trigger; Accordion adds no
+        rule.
       locked: true
     focusRingWidth:
       token: border.width.focus
+      description: Applied by the composed Disclosure's trigger; Accordion adds no
+        rule.
       locked: true
   a11y:
     role: none
@@ -264,6 +300,10 @@ component:
         overrides; Accordion adds the arrow-key handler on the container (keydown
         from a trigger moves focus among triggers) and the exclusive logic. Every
         trigger stays a tab stop — no roving tabindex — per the APG accordion pattern.
+        The root <div> is the `list` part (`data-part="list"`). Each trigger is Disclosure's
+        own inline trigger, so its hit area ends at the summary rather than spanning
+        the row; Accordion does not stretch it (a full-width trigger needs a Disclosure
+        prop).
     lit:
       tag: ds-accordion
       reflect:
@@ -271,19 +311,36 @@ component:
       - prop: divided
         attribute: no-divided
       - heading-level
-      notes: Light-DOM <ds-disclosure> children are the items (slot), so their content
+      notes: 'Light-DOM <ds-disclosure> children are the items (slot), so their content
         stays in the document; ds-accordion sets heading-level and keep-mounted on
         them, listens for their `toggle` to enforce exclusive, and handles arrow keys
         via keydown bubbling from the slotted triggers. `items` as a property is also
-        accepted and renders <ds-disclosure> elements itself.
+        accepted and renders <ds-disclosure> elements itself. The shadow root''s flex
+        container is the `list` part (`data-part="list"` and `part="list"`). Light-DOM
+        disclosures are assigned manually, one slot per disclosure, with <ds-divider>
+        rendered between the slots in the shadow root, so on Lit the Dividers are
+        not light-DOM siblings of the items (address an item as `ds-accordion > ds-disclosure`).
+        Forwarded bindings reach each Disclosure as its `--ds-disclosure-*` hook set
+        from the accordion''s own hook (`--ds-disclosure-trigger-padding-block: var(--ds-accordion-trigger-padding-block)`),
+        so a consumer''s CSS override of the accordion hook still arrives; the Dividers
+        get `--ds-divider-color`/`--ds-divider-thickness` the same way. A slotted
+        disclosure''s composed `toggle` is left to reach the page (the consumer owns
+        those elements); the `toggle` of disclosures rendered from `items` is stopped
+        at the accordion, which reports `change`/`open-change` instead. The trigger
+        hit area ends at the summary, as on web.'
     rn:
       element: View
       props: []
-      notes: A View of Disclosures with dividers; exclusive logic and headingLevel
+      notes: 'A View of Disclosures with dividers; exclusive logic and headingLevel
         passed through. Native has no key events on Pressable, so ArrowUp/Down/Home/End
         are not implemented and `reason` is never `keyboard`; every trigger is an
         ordinary accessibility focus stop reached by swipe, which is the native equivalent
-        of the arrow shortcut. Arrow keys apply only with a hardware keyboard on react-native-web.
+        of the arrow shortcut. No web-only key handler is added either, so arrow keys
+        do nothing on react-native-web too. Native has no heading levels: `headingLevel`
+        only gives each Disclosure summary `accessibilityRole="header"`, so every
+        heading-level scenario renders the same tree and RN tests check the header
+        role, not a level. The `list` part is the root View, and `itemGap` is its
+        `gap` style.'
     swiftui:
       element: VStack
       props:
@@ -302,7 +359,8 @@ component:
   behavior:
   - name: click-on-a-trigger-reports-the-open-set
     description: onChange carries the open ids; onOpenChange reports the one section
-      whose state changed.
+      whose state changed. With nothing open, clicking the first trigger fires onChange([firstId])
+      and then onOpenChange(firstId, true, trigger).
     when:
       click: trigger
     then:
@@ -316,9 +374,19 @@ component:
       - lit
   - name: exclusive-still-reports-both-events
     description: With exclusive, opening one section closes the others; the set-level
-      onChange and the per-section onOpenChange both still fire.
+      onChange and the per-section onOpenChange both still fire. With `pro` open,
+      clicking the first trigger (`free`) fires onChange([free]), then onOpenChange(free,
+      true, trigger), then onOpenChange(pro, false, exclusive).
     given:
       exclusive: true
+      defaultValue: pro
+      items:
+      - id: free
+        summary: Free
+        content: One project and community support.
+      - id: pro
+        summary: Pro
+        content: Unlimited projects and email support.
     when:
       click: trigger
     then:
@@ -378,18 +446,28 @@ component:
 - `onChange`: emit `change`
   - payload, the keys of `CustomEvent.detail`: `openIds: string[]`
   - fires on: user
+  - timing: after-change, fired before `open-change`
 - `onOpenChange`: emit `open-change`
   - payload, the keys of `CustomEvent.detail`: `id: string`, `open: boolean`, `reason: 'trigger' | 'keyboard' | 'exclusive' | 'controlled'`
-  - reasons: `trigger` (the section trigger was activated by pointer); `keyboard` (the section was toggled from the keyboard — web and Lit pass through the activation method Disclosure reports on its own toggle, so the two reasons must not be collapsed there; React Native has no such signal and reports `trigger` for every activation); `exclusive` (another section opened and closed this one); `controlled` (the `value` prop changed to a set the accordion did not itself just emit)
+  - reasons: `trigger` (the section trigger was activated by pointer — Disclosure's `pointer` reason maps to `trigger`); `keyboard` (the section was toggled from the keyboard — web and Lit pass through the activation method Disclosure reports on its own toggle, so the two reasons must not be collapsed there; React Native has no such signal and reports `trigger` for every activation); `exclusive` (another section opened and closed this one); `controlled` (the `value` prop changed to a set the accordion did not itself just emit. The accordion computes `exclusive` and `controlled` itself: a Disclosure `onToggle` with reason `controlled` is the echo of the accordion setting that Disclosure's `open`, and is ignored, so nothing is reported twice)
   - fires on: user, controlled
+  - timing: after-change
 
 ## Controlled state
 
 - `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `change`)
 
+## Parts and slots
+
+- `list`: element
+- `item`: component `Disclosure`; forwards `triggerPaddingBlock` → `overrides.triggerPaddingBlock`, `fontFamily` → `overrides.triggerFontFamily`, `triggerFontSize` → `overrides.triggerFontSize`, `triggerFontWeight` → `overrides.triggerFontWeight`
+- `trigger`: element
+- `triggerIcon`: element
+- `panel`: element
+
 ## Style bindings
 
-- `itemGap`: token `layout.gap.none`; part `item`
+- `itemGap`: token `layout.gap.none`; part `list`
 - `triggerPaddingBlock`: token `space.md`; part `trigger`
 - `triggerFontSize`: token `font.size.md`; part `trigger`
 - `triggerFontWeight`: token `font.weight.medium`; part `trigger`
@@ -419,7 +497,8 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
 ```yaml
 - name: click-on-a-trigger-reports-the-open-set
   description: onChange carries the open ids; onOpenChange reports the one section
-    whose state changed.
+    whose state changed. With nothing open, clicking the first trigger fires onChange([firstId])
+    and then onOpenChange(firstId, true, trigger).
   when:
     click: trigger
   then:
@@ -430,9 +509,19 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     'on': trigger
 - name: exclusive-still-reports-both-events
   description: With exclusive, opening one section closes the others; the set-level
-    onChange and the per-section onOpenChange both still fire.
+    onChange and the per-section onOpenChange both still fire. With `pro` open, clicking
+    the first trigger (`free`) fires onChange([free]), then onOpenChange(free, true,
+    trigger), then onOpenChange(pro, false, exclusive).
   given:
     exclusive: true
+    defaultValue: pro
+    items:
+    - id: free
+      summary: Free
+      content: One project and community support.
+    - id: pro
+      summary: Pro
+      content: Unlimited projects and email support.
   when:
     click: trigger
   then:
@@ -483,11 +572,22 @@ reflect:
 - prop: divided
   attribute: no-divided
 - heading-level
-notes: Light-DOM <ds-disclosure> children are the items (slot), so their content stays
-  in the document; ds-accordion sets heading-level and keep-mounted on them, listens
-  for their `toggle` to enforce exclusive, and handles arrow keys via keydown bubbling
-  from the slotted triggers. `items` as a property is also accepted and renders <ds-disclosure>
-  elements itself.
+notes: 'Light-DOM <ds-disclosure> children are the items (slot), so their content
+  stays in the document; ds-accordion sets heading-level and keep-mounted on them,
+  listens for their `toggle` to enforce exclusive, and handles arrow keys via keydown
+  bubbling from the slotted triggers. `items` as a property is also accepted and renders
+  <ds-disclosure> elements itself. The shadow root''s flex container is the `list`
+  part (`data-part="list"` and `part="list"`). Light-DOM disclosures are assigned
+  manually, one slot per disclosure, with <ds-divider> rendered between the slots
+  in the shadow root, so on Lit the Dividers are not light-DOM siblings of the items
+  (address an item as `ds-accordion > ds-disclosure`). Forwarded bindings reach each
+  Disclosure as its `--ds-disclosure-*` hook set from the accordion''s own hook (`--ds-disclosure-trigger-padding-block:
+  var(--ds-accordion-trigger-padding-block)`), so a consumer''s CSS override of the
+  accordion hook still arrives; the Dividers get `--ds-divider-color`/`--ds-divider-thickness`
+  the same way. A slotted disclosure''s composed `toggle` is left to reach the page
+  (the consumer owns those elements); the `toggle` of disclosures rendered from `items`
+  is stopped at the accordion, which reports `change`/`open-change` instead. The trigger
+  hit area ends at the summary, as on web.'
 ```
 
 ## Guidance
@@ -506,7 +606,7 @@ Do not use an Accordion for content most users need — show it. Do not use it a
 
 ## Behavior
 
-Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows. `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)`, so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute). The `item` part is the composed Disclosure root itself — Accordion does not add a `data-part="item"` hook and must not wrap items in an extra element to carry one, since Dividers are direct siblings of the items; address an item as `[data-ds="Accordion"] > [data-ds="Disclosure"]`. The `trigger`, `triggerIcon` and `panel` parts are tagged by Disclosure. Nothing open is `[]` or `''`, never `undefined`. `reason: 'controlled'` is reported when `value` arrives holding a set the accordion did not itself just emit; a controlled parent that answers a trigger with some other set therefore sees `controlled`, which is the intended reading.
+Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows: arrow keys, Home and End never land on a disabled trigger, but they still work when focus starts on one (it remains a tab stop). `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)` — `pointer` becomes `trigger`, `keyboard` stays `keyboard`, and Disclosure's `controlled` (the echo of the accordion setting `open`) is ignored — so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). One toggle fires, in order: `onChange` with the new set, then `onOpenChange` for the toggled section, then one `onOpenChange(id, false, 'exclusive')` per section `exclusive` closed, in item order. With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute). The `item` part is the composed Disclosure root itself — Accordion does not add a `data-part="item"` hook and must not wrap items in an extra element to carry one, since Dividers are direct siblings of the items (on web and React Native; on Lit they sit between per-item slots in the shadow root, see its notes); address an item as `[data-ds="Accordion"] > [data-ds="Disclosure"]`. The `trigger`, `triggerIcon` and `panel` parts are tagged by Disclosure. Nothing open is `[]` or `''`, never `undefined`. `reason: 'controlled'` is reported when `value` arrives holding a set the accordion did not itself just emit; a controlled parent that answers a trigger with some other set therefore sees `controlled`, which is the intended reading. The just-emitted set is compared only with the next `value` change and then cleared, as Disclosure does for `open`: a parent that ignores `onChange` leaves it pending until `value` next changes.
 
 ## Content guidelines
 
@@ -514,15 +614,15 @@ Summaries are section titles — noun phrases or questions in sentence case, par
 
 ## Accessibility
 
-Each trigger is a button inside a heading of the given level with `aria-expanded` and `aria-controls` (WCAG 4.1.2, 2.4.6; APG accordion), so the accordion reads as a list of headings in the rotor. Arrow keys are a convenience, not a replacement for Tab: every trigger is in the tab order so no panel content is stranded (2.1.1). Expanded state is visible (chevron) and announced. Targets meet 44px in the accordion form.
+Each trigger is a button inside a heading of the given level with `aria-expanded` and `aria-controls` (WCAG 4.1.2, 2.4.6; APG accordion), so the accordion reads as a list of headings in the rotor. Arrow keys are a convenience, not a replacement for Tab: every trigger is in the tab order so no panel content is stranded (2.1.1). Expanded state is visible (chevron) and announced. Targets meet the 24px minimum through Disclosure's `minTarget`; the accordion's `space.md` block padding makes rows roomier but does not guarantee 44px, and the hit area ends at the summary text rather than spanning the row.
 
 ## Platform notes
 
 ### Web
-Render `<div data-ds="Accordion">` containing a `Disclosure` per item with `headingLevel`, `keepMounted`, `open` controlled by the accordion's state, and `overrides={{ triggerPaddingBlock: 'space.md' }}`; a `Divider` between items when `divided`. Keydown on the container: when the event target is one of the triggers, handle ArrowUp/Down/Home/End by focusing the sibling trigger. `exclusive` maps each `onToggle` to the new open set.
+Render `<div data-ds="Accordion">` containing a `Disclosure` per item with `headingLevel`, `keepMounted`, `open` controlled by the accordion's state, and `overrides` carrying the forwarded `triggerPaddingBlock`, `triggerFontFamily` (from `fontFamily`), `triggerFontSize` and `triggerFontWeight`; a `Divider` between items when `divided`, with `overrides` `color` (from `divider`) and `thickness` (from `dividerWidth`). Keydown on the container: when the event target is one of the triggers, handle ArrowUp/Down/Home/End by focusing the sibling trigger. `exclusive` maps each `onToggle` to the new open set.
 
 ### Lit
-`<ds-accordion exclusive heading-level="3"><ds-disclosure summary="…">…</ds-disclosure>…</ds-accordion>`. On `slotchange`, set `heading-level`, `keep-mounted` and the padding override on each slotted `ds-disclosure`; listen for their composed `toggle` to enforce `exclusive` and dispatch `change`; handle arrow keys from bubbling keydown whose composed path includes a slotted trigger.
+`<ds-accordion exclusive heading-level="3"><ds-disclosure summary="…">…</ds-disclosure>…</ds-accordion>`. On `slotchange`, set `heading-level` and `keep-mounted` on each slotted `ds-disclosure` (the forwarded bindings arrive as hooks, see the notes); listen for their composed `toggle` to enforce `exclusive` and dispatch `change`; handle arrow keys from bubbling keydown whose composed path includes a slotted trigger.
 
 ### React Native
 `View` of `Disclosure`s with `Divider`s; the accordion owns the open set and passes `open`/`onToggle` to each. No arrow keys on native.

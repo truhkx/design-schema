@@ -72,13 +72,16 @@ component:
       required: true
       description: Accessible name of the control ("View mode"). Not shown; put a
         visible Text label beside it when the meaning is not obvious from context.
+        Lit, where an attribute can be absent, defaults the property to an empty string
+        and warns in development when it is empty.
     options:
       type: array
       required: true
       shape: '{ value: string; label: string; icon?: IconName; disabled?: boolean
         }[]'
-      description: Two to five options. Labels are one word; with `iconOnly` the label
-        becomes the accessible name.
+      description: 'Two to five options (guidance, not enforced: any count renders,
+        with no warning). Labels are one word; with `iconOnly` the label becomes the
+        accessible name.'
     value:
       type: string
       description: Controlled selected value. Omit for uncontrolled.
@@ -87,13 +90,18 @@ component:
         default: defaultValue
     defaultValue:
       type: string
-      description: Initially selected value. Defaults to the first enabled option
-        — a segmented control always has a selection.
+      description: 'Initially selected value. Defaults to the first enabled option
+        — a segmented control always has a selection. A `value` or `defaultValue`
+        is taken as given, never corrected: one naming a disabled option keeps that
+        segment checked with the pill under it (arrows still skip it); one matching
+        no option checks nothing and draws no pill. In both cases the tab stop is
+        the first enabled segment, and arrows move from there.'
     iconOnly:
       type: boolean
       default: false
       description: Show icons only (every option must have one); labels become accessible
-        names and Tooltips.
+        names and Tooltips. An option without `icon` warns in development (once) and
+        that segment shows its label as text instead, so it never renders empty.
     size:
       type: enum
       enumRef: size
@@ -179,16 +187,19 @@ component:
       locked: true
     segmentSelectedBackground:
       token: color.background
-      part: segment
-      description: The raised pill under the selected segment.
+      part: indicator
+      description: The raised pill under the selected segment — drawn on the `indicator`
+        part, never on the segment itself.
       locked: true
     segmentShadow:
       token: shadow.raised
-      part: segment
+      part: indicator
+      description: The pill's shadow.
       locked: false
     segmentRadius:
       token: radius.sm
-      part: segment
+      part: indicator
+      description: The pill's corners; the segment's focus ring uses the same radius.
       locked: false
     segmentPaddingInline:
       token: space.md
@@ -197,40 +208,52 @@ component:
     segmentPaddingBlock:
       token: space.1
       part: segment
+      description: Vertical padding at size md.
       locked: false
     segmentGap:
       token: layout.gap.tight
       part: segment
-      description: Between icon and label inside a segment.
+      description: Between icon and label inside a segment; no effect with `iconOnly`,
+        where a segment has one child.
       locked: false
     segmentSpacing:
       token: space.0
-      part: segment
-      description: 'Between adjacent segments: none — the pill slides under abutting
-        segments.'
+      part: group
+      description: 'Between adjacent segments, applied as the group''s gap (never
+        a segment margin): none — the pill slides under abutting segments.'
       locked: false
     selectedWeight:
       token: font.weight.semibold
+      part: segment
       description: The selected segment's label; unselected use fontWeight.
       locked: false
     paddingBlockSm:
       token: space.1
-      description: Vertical padding at size sm; md uses paddingBlock.
+      part: segment
+      description: Vertical padding at size sm; md uses segmentPaddingBlock. The two
+        are the same token on purpose, so `size` changes the height only through fontSize
+        and its line box — and on React Native, where every segment reaches size.target.comfortable,
+        not visibly at all.
       locked: false
     fontFamily:
       token: font.family.body
+      part: segment
       locked: false
     fontSize:
       token: font.size.{size}
+      part: segment
       locked: false
     fontWeight:
       token: font.weight.medium
+      part: segment
       locked: false
     lineHeight:
       token: font.lineHeight.normal
+      part: segment
       locked: false
     minTarget:
       token: size.target.min
+      part: segment
       description: Each segment's minimum. React Native is touch, so the group height
         there is size.target.comfortable and every segment reaches 44px; web and Lit
         keep this floor, because no CSS query tells a touch screen from a hybrid laptop
@@ -238,16 +261,20 @@ component:
       locked: true
     focusRing:
       token: color.border.focus
+      part: segment
       locked: true
     focusRingWidth:
       token: border.width.focus
+      part: segment
       locked: true
     transition:
       token: motion.duration.fast
+      part: indicator
       description: Pill movement; instant under reduced motion.
       locked: false
     disabledOpacity:
       token: opacity.disabled
+      part: segment
       locked: false
   a11y:
     role: radiogroup
@@ -268,11 +295,6 @@ component:
     - foreground: color.foreground.strong
       background: color.background
       level: AA
-  form:
-    role: field
-    value: value
-    valueType: string
-    discovery: context
   platforms:
     web:
       element: div
@@ -282,11 +304,15 @@ component:
       - role=radio
       - aria-checked
       - tabindex
-      notes: A <div role="radiogroup" aria-label> of <button role="radio" aria-checked
+      notes: 'A <div role="radiogroup" aria-label> of <button role="radio" aria-checked
         tabindex={0|-1}> — buttons rather than native radios because the control is
         not a form field and has no name/value to submit. Roving tabindex; arrows
         move AND select (radio semantics). The selected pill is an absolutely positioned
-        element animated between segments.
+        `aria-hidden` element animated between segments. No FormContext registration
+        and no `data-ds-field`. `iconOnly` segments carry `aria-label` = the option
+        label themselves and are wrapped in Tooltip with `content` = the label, `describes:
+        false`, and default placement and delay (Tooltip''s warm window already makes
+        moving along the control instant).'
     lit:
       tag: ds-segmented-control
       reflect:
@@ -295,17 +321,27 @@ component:
       - fill
       - icon-only
       notes: '`options` is a property; composed `change` with detail { value }. Not
-        form-associated by design.'
+        form-associated by design, and no `data-ds-field`. The pill is `aria-hidden`.
+        `iconOnly` segments carry `aria-label` = the option label (the Tooltip''s
+        aria-labelledby cannot cross the shadow root) inside `<ds-tooltip no-describes>`
+        with `content` = the label and default placement and delay.'
     rn:
       element: View
       props:
       - accessibilityRole=radiogroup
       - accessibilityRole=radio
       - accessibilityState
-      notes: A View row of Pressables with accessibilityRole="radio" and accessibilityState={{
-        checked, disabled }}; the pill is an Animated.View. Each segment is its own
-        accessibility stop on native. iOS's UISegmentedControl look is approximated
-        with the tokens rather than used, so the theme applies.
+      notes: 'A View row of Pressables with accessibilityRole="radio" and accessibilityState={{
+        checked, disabled }}; the pill is an Animated.View hidden from assistive technology
+        (accessibilityElementsHidden, importantForAccessibility="no-hide-descendants"),
+        as Tabs hides its indicator. Not registered with FormContext. Each segment
+        is its own accessibility stop on native: iOS and Android deliver no key events
+        to a View, so the keyboard table applies on react-native-web only (onKeyDown
+        on the group, roving `focusable`), and the arrow scenarios are web and Lit
+        only. No Tooltip part on React Native: an `iconOnly` segment carries its label
+        as `accessibilityLabel` with no `accessibilityHint` (it would repeat the name)
+        and no long-press bubble, because a press already selects. iOS''s UISegmentedControl
+        look is approximated with the tokens rather than used, so the theme applies.'
     swiftui:
       element: HStack
       props:
@@ -324,6 +360,8 @@ component:
         carry their label as the accessibility label.
   behavior:
   - name: click-selects-a-segment
+    description: The click lands on the first segment (List), which is not the selected
+      one.
     given:
       options:
       - value: list
@@ -342,7 +380,7 @@ component:
       - rn
   - name: arrow-moves-and-selects
     description: Arrows move focus AND selection (radio semantics), per the keyboard
-      table's `selects`.
+      table's `selects`. Focus starts on the selected segment (the tab stop).
     given:
       options:
       - value: list
@@ -363,7 +401,7 @@ component:
     - lit
   - name: arrow-wraps-from-the-last-segment
     description: From the last segment ArrowRight wraps to the first, and selection
-      follows.
+      follows. Focus starts on the selected segment (the tab stop).
     given:
       options:
       - value: list
@@ -379,8 +417,9 @@ component:
     - web
     - lit
   - name: disabled-segment-is-not-selectable
-    description: Arrow movement skips disabled segments, and a press on one selects
-      nothing.
+    description: 'A press on a disabled segment selects nothing: the click lands on
+      the first segment (List), which is the disabled one. Arrow skipping is covered
+      by arrow-skips-disabled-segments.'
     given:
       options:
       - value: list
@@ -394,6 +433,30 @@ component:
     then:
     - event: onChange
       fired: false
+  - name: arrow-skips-disabled-segments
+    description: From the selected first segment ArrowRight passes over the disabled
+      middle one and selects the third.
+    given:
+      options:
+      - value: list
+        label: List
+      - value: grid
+        label: Grid
+        disabled: true
+      - value: table
+        label: Table
+      defaultValue: list
+    when:
+      key: ArrowRight
+    then:
+    - event: onChange
+    - event: onChange
+      with: table
+      platforms:
+      - lit
+    platforms:
+    - web
+    - lit
   examples:
   - name: view-mode
     description: The two-option list/grid switch a content region is viewed through.
@@ -452,28 +515,29 @@ component:
 - `groupRadius`: token `radius.md`; part `group`
 - `segmentColor`: token `color.foreground.muted`; part `segment`; locked
 - `segmentSelectedColor`: token `color.foreground.strong`; part `segment`; locked
-- `segmentSelectedBackground`: token `color.background`; part `segment`; locked
-- `segmentShadow`: token `shadow.raised`; part `segment`
-- `segmentRadius`: token `radius.sm`; part `segment`
+- `segmentSelectedBackground`: token `color.background`; part `indicator`; locked
+- `segmentShadow`: token `shadow.raised`; part `indicator`
+- `segmentRadius`: token `radius.sm`; part `indicator`
 - `segmentPaddingInline`: token `space.md`; part `segment`
 - `segmentPaddingBlock`: token `space.1`; part `segment`
 - `segmentGap`: token `layout.gap.tight`; part `segment`
-- `segmentSpacing`: token `space.0`; part `segment`
+- `segmentSpacing`: token `space.0`; part `group`
+- `selectedWeight`: token `font.weight.semibold`; part `segment`
+- `paddingBlockSm`: token `space.1`; part `segment`
+- `fontFamily`: token `font.family.body`; part `segment`
+- `fontSize`: token `font.size.{size}`; part `segment`
+- `fontWeight`: token `font.weight.medium`; part `segment`
+- `lineHeight`: token `font.lineHeight.normal`; part `segment`
+- `minTarget`: token `size.target.min`; part `segment`; locked
+- `focusRing`: token `color.border.focus`; part `segment`; locked
+- `focusRingWidth`: token `border.width.focus`; part `segment`; locked
+- `transition`: token `motion.duration.fast`; part `indicator`
+- `disabledOpacity`: token `opacity.disabled`; part `segment`
 
 ## Keyboard
 
 - `ArrowRight`, `ArrowDown` (Moves to and selects the next enabled segment, wrapping.): expect focus-next, then selects
 - `ArrowLeft`, `ArrowUp` (Moves to and selects the previous enabled segment, wrapping.): expect focus-prev, then selects
-
-## Form and overlay
-
-```yaml
-form:
-  role: field
-  value: value
-  valueType: string
-  discovery: context
-```
 
 ## Constants and examples
 
@@ -492,12 +556,14 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `groupPadding`, `groupRadius`, `segmentShadow`, `segmentRadius`, `segmentPaddingInline`, `segmentPaddingBlock`, `segmentGap`, `segmentSpacing`, `selectedWeight`, `paddingBlockSm`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `transition`, `disabledOpacity`
 Locked (accessibility-bearing, never overridable): `groupBackground`, `segmentColor`, `segmentSelectedColor`, `segmentSelectedBackground`, `minTarget`, `focusRing`, `focusRingWidth`
 
-## Behavior scenarios (8)
+## Behavior scenarios (9)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
 - name: click-selects-a-segment
+  description: The click lands on the first segment (List), which is not the selected
+    one.
   given:
     options:
     - value: list
@@ -513,7 +579,7 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     with: list
 - name: arrow-moves-and-selects
   description: Arrows move focus AND selection (radio semantics), per the keyboard
-    table's `selects`.
+    table's `selects`. Focus starts on the selected segment (the tab stop).
   given:
     options:
     - value: list
@@ -532,7 +598,7 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
   - lit
 - name: arrow-wraps-from-the-last-segment
   description: From the last segment ArrowRight wraps to the first, and selection
-    follows.
+    follows. Focus starts on the selected segment (the tab stop).
   given:
     options:
     - value: list
@@ -548,8 +614,9 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
   - web
   - lit
 - name: disabled-segment-is-not-selectable
-  description: Arrow movement skips disabled segments, and a press on one selects
-    nothing.
+  description: 'A press on a disabled segment selects nothing: the click lands on
+    the first segment (List), which is the disabled one. Arrow skipping is covered
+    by arrow-skips-disabled-segments.'
   given:
     options:
     - value: list
@@ -563,6 +630,28 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
   then:
   - event: onChange
     fired: false
+- name: arrow-skips-disabled-segments
+  description: From the selected first segment ArrowRight passes over the disabled
+    middle one and selects the third.
+  given:
+    options:
+    - value: list
+      label: List
+    - value: grid
+      label: Grid
+      disabled: true
+    - value: table
+      label: Table
+    defaultValue: list
+  when:
+    key: ArrowRight
+  then:
+  - event: onChange
+  - event: onChange
+    with: table
+  platforms:
+  - web
+  - lit
 - name: renders
   then:
   - renders: true
@@ -595,7 +684,10 @@ reflect:
 - fill
 - icon-only
 notes: '`options` is a property; composed `change` with detail { value }. Not form-associated
-  by design.'
+  by design, and no `data-ds-field`. The pill is `aria-hidden`. `iconOnly` segments
+  carry `aria-label` = the option label (the Tooltip''s aria-labelledby cannot cross
+  the shadow root) inside `<ds-tooltip no-describes>` with `content` = the label and
+  default placement and delay.'
 ```
 
 ## Guidance
@@ -614,7 +706,7 @@ Do not use it to pick a value that is submitted later (RadioGroup) or that has c
 
 ## Behavior
 
-Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End do the same to the ends. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only.
+Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End do the same to the ends. In right-to-left writing ArrowLeft is "next" and ArrowRight "previous" (ArrowDown and ArrowUp are unchanged), as in Tabs. Under a controlled `value` the arrow still moves focus and fires `onChange`; the checked state and the pill stay where `value` says until the parent changes it. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only. It is not a form field: there is no `name`, no `form` block, and it neither registers with a Form nor submits a value — use RadioGroup inside a Form.
 
 ## Content guidelines
 
@@ -627,7 +719,7 @@ Role `radiogroup` with a name and `radio` segments with `aria-checked` (WCAG 4.1
 ## Platform notes
 
 ### Web
-`<div role="radiogroup" aria-label>` containing `<button type="button" role="radio" aria-checked tabindex>` per option with `<Icon>` and label; an absolutely positioned pill `<span aria-hidden>` sized and translated from the selected segment's offset with `transition`. Keydown on the group implements the keyboard table. `iconOnly` wraps each segment in `Tooltip` with `describes: false`.
+`<div role="radiogroup" aria-label>` containing `<button type="button" role="radio" aria-checked tabindex>` per option with `<Icon>` and label; an absolutely positioned pill `<span aria-hidden>` sized and translated from the selected segment's offset with `transition`. Keydown on the group implements the keyboard table. `iconOnly` gives each segment `aria-label` = the option label and wraps it in `Tooltip` with `content` = the label and `describes: false`.
 
 ### Lit
 `<ds-segmented-control label="View mode" .options=${…} value="grid">`; roving tabindex in the shadow root; composed `change`.

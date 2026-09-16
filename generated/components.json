@@ -5456,23 +5456,30 @@
         "prevButton": {
           "component": "Button",
           "props": {
-            "variant": "secondary"
+            "variant": "secondary",
+            "iconOnly": true
           }
         },
         "nextButton": {
           "component": "Button",
           "props": {
-            "variant": "secondary"
+            "variant": "secondary",
+            "iconOnly": true
           }
         },
-        "playButton": "Button"
+        "playButton": {
+          "component": "Button",
+          "props": {
+            "variant": "secondary"
+          }
+        }
       },
       "props": {
         "label": {
           "type": "string",
           "required": true,
           "description": "What the carousel shows (\"Featured products\", \"Customer stories\").",
-          "a11y": "aria-label on the region; each slide is named \"{n} of {total}\" plus its own heading."
+          "a11y": "aria-label on the region; each slide is named `copy.slideLabel` (\"2 of 4\") alone — its heading is read as content, never joined into the name."
         },
         "children": {
           "type": "content",
@@ -5482,7 +5489,7 @@
         "perView": {
           "type": "integer",
           "default": 1,
-          "description": "How many slides are visible at once at the widest layout; fewer are shown as the viewport narrows (one below the prose width)."
+          "description": "How many slides are visible at once at the widest layout. The page size is `perView` while the viewport's own width is above `layout.maxWidth.prose` and 1 at or below it, measured on the viewport (ResizeObserver on web and Lit, onLayout on React Native); `perView` applies until the first measurement."
         },
         "loop": {
           "type": "boolean",
@@ -5497,7 +5504,7 @@
         "interval": {
           "type": "number",
           "default": 6000,
-          "description": "Milliseconds between automatic advances; values below 5000 are raised to 5000 on every platform (with a development warning)."
+          "description": "Milliseconds between automatic advances; values below 5000 are raised to 5000 in every build on every platform, with a development warning once per instance and only while `autoplay` is on."
         },
         "picker": {
           "type": "enum",
@@ -5521,7 +5528,7 @@
       },
       "events": {
         "onChange": {
-          "description": "Fired when the current slide changes, with the new index and the reason (`next`, `prev`, `picker`, `swipe`, `autoplay`).",
+          "description": "Fired when the current slide changes, with the new index and the reason (`next`, `prev`, `picker`, `swipe`, `autoplay`). The programmatic cases are autoplay and a swipe settling; a change of a controlled `activeIndex` never fires it. A scroll counts as `swipe` only when the user started it (web and Lit: after pointerdown, touchstart or wheel on the viewport; React Native: between onScrollBeginDrag and onMomentumScrollEnd) — a scroll started by an arrow, the picker or autoplay reports its own reason once.",
           "platforms": {
             "web": "onChange",
             "lit": "change",
@@ -5572,7 +5579,7 @@
           "keys": [
             "ArrowRight"
           ],
-          "action": "Next slide.",
+          "action": "Next slide (one slide, not one page): focus and selection move together with reason `picker`, wrapping at the ends as Tabs does whatever `loop` says. Dots and tabs both use a roving tabindex, so the picker is one tab stop.",
           "when": "focus on picker or in a tabs picker",
           "from": "inside",
           "expect": "manual"
@@ -5581,7 +5588,7 @@
           "keys": [
             "ArrowLeft"
           ],
-          "action": "Previous slide.",
+          "action": "Previous slide, wrapping the same way.",
           "when": "focus on picker",
           "from": "inside",
           "expect": "manual"
@@ -5619,11 +5626,17 @@
         "slideGap": {
           "token": "layout.gap.normal",
           "part": "slide",
+          "description": "Applied as the track's gap, never a slide margin (on Lit the slides are slotted, so only the track can carry it).",
           "locked": false
         },
         "controlOffset": {
           "token": "space.2",
-          "description": "Distance of the arrow buttons from the viewport edge when overlaid.",
+          "description": "Distance of the arrow buttons from the viewport edge when overlaid: the inline inset of each controlSurface from the viewport's inline edge.",
+          "locked": false
+        },
+        "controlRadius": {
+          "token": "radius.full",
+          "description": "The controlSurface wrapper's corner radius.",
           "locked": false
         },
         "controlBackground": {
@@ -5644,7 +5657,7 @@
         "pickerOffset": {
           "token": "space.3",
           "part": "picker",
-          "description": "Between the viewport and the picker row.",
+          "description": "Between the viewport and the picker row below it, and between the play/pause row above it and the viewport; a gap between rows, not a margin.",
           "locked": false
         },
         "dot": {
@@ -5669,13 +5682,57 @@
           "description": "Applied to the viewport so slide edges match the theme.",
           "locked": false
         },
+        "tabColor": {
+          "token": "color.foreground.muted",
+          "part": "pickerItem",
+          "description": "Text of an unselected tab in a `tabs` picker.",
+          "locked": true
+        },
+        "tabSelectedColor": {
+          "token": "color.foreground.strong",
+          "part": "pickerItem",
+          "locked": true
+        },
+        "tabFontSize": {
+          "token": "font.size.sm",
+          "part": "pickerItem",
+          "locked": false
+        },
+        "tabFontWeight": {
+          "token": "font.weight.medium",
+          "part": "pickerItem",
+          "description": "The same weight selected or not, so selection never shifts the row.",
+          "locked": false
+        },
+        "tabPaddingBlock": {
+          "token": "space.sm",
+          "part": "pickerItem",
+          "locked": false
+        },
+        "tabPaddingInline": {
+          "token": "space.md",
+          "part": "pickerItem",
+          "locked": false
+        },
+        "tabIndicatorThickness": {
+          "token": "border.width.focus",
+          "part": "pickerItem",
+          "description": "The selected tab's underline, drawn in `dotActive` inside the tab's box (an inset, so it takes no layout).",
+          "locked": true
+        },
+        "fontFamily": {
+          "token": "font.family.body",
+          "part": "pickerItem",
+          "locked": false
+        },
         "transition": {
           "token": "motion.duration.base",
-          "description": "Dot and tab state changes; slide movement is the browser's scroll-snap timing (instant under reduced motion).",
+          "description": "Dot background and tab text colour changes, with motion.easing.standard (weights never change, so nothing else animates); slide movement is the browser's scroll-snap timing (instant under reduced motion).",
           "locked": false
         },
         "minTarget": {
           "token": "size.target.comfortable",
+          "description": "The hit area of each arrow's controlSurface and the minimum block size of each tab; dots use `dotTarget`.",
           "locked": true
         },
         "focusRing": {
@@ -5712,6 +5769,7 @@
             }
           }
         },
+        "pickerLabel": "Choose a slide",
         "goTo": {
           "text": "Go to slide {n}",
           "params": {
@@ -5767,6 +5825,16 @@
             "background": "color.background",
             "level": "AA",
             "nonText": true
+          },
+          {
+            "foreground": "color.foreground.muted",
+            "background": "color.background",
+            "level": "AA"
+          },
+          {
+            "foreground": "color.foreground.strong",
+            "background": "color.background",
+            "level": "AA"
           }
         ]
       },
@@ -5782,7 +5850,7 @@
             "aria-hidden",
             "inert"
           ],
-          "notes": "A <section aria-roledescription=\"carousel\" aria-label>; the viewport is a scroll-snap container (overflow-x auto, scroll-snap-type x mandatory, scrollbar hidden) so swipe and trackpad work natively; the arrows scroll by one slide with scrollIntoView (behavior from reduced motion). Each slide is <div role=\"group\" aria-roledescription=\"slide\" aria-label=\"{n} of {total}\">; off-screen slides get `inert` so their links are not tab stops. The track has aria-live=\"polite\" while autoplay is paused and \"off\" while rotating (the APG rule: do not announce automatic changes). Picker `dots`: buttons with aria-label from copy.goTo and aria-current on the active; `tabs`: a Tabs-style tablist controlling the slides as tabpanels. Autoplay uses a timer cleared on pointerenter/focusin/touchstart and by the pause button; the pause button appears first in tab order whenever autoplay is on."
+          "notes": "A <section aria-roledescription=\"carousel\" aria-label>; the viewport is a scroll-snap container (overflow-x auto, scroll-snap-type x mandatory, scrollbar hidden) so swipe and trackpad work natively; moves scroll the viewport itself with scrollTo/scrollBy (RTL-aware), never scrollIntoView, which would also scroll the page — behavior `instant` under reduced motion and for the first positioning, `smooth` otherwise. Each slide is <div role=\"group\" aria-roledescription=\"slide\" aria-label=\"{n} of {total}\"> (role=\"tabpanel\" with the same roledescription when picker is `tabs`); slides outside the visible page get both `inert` and aria-hidden=\"true\". Only the visually hidden liveRegion part carries aria-live: \"off\" while rotating, \"polite\" otherwise (the APG rule: do not announce automatic changes); the track has none, since a live track would read out slide content. Picker `dots`: buttons with aria-label from copy.goTo and aria-current=\"true\" on every slide of the current page; `tabs`: a Tabs-style tablist controlling the slides as tabpanels, aria-selected on the current slide's tab only; either picker is named by copy.pickerLabel. Hover, focus and touch pause autoplay only while they last (pointerenter from touch is not hover; touch ends on touchend/touchcancel); the pause button stops it; pressing play clears those pauses, so rotation resumes at once."
         },
         "lit": {
           "tag": "ds-carousel",
@@ -5797,7 +5865,7 @@
             },
             "active-index"
           ],
-          "notes": "Slotted <ds-carousel-slide> children; scroll-snap viewport in the shadow root with the slot inside a track; IntersectionObserver on slotted slides determines the active index and sets `inert` on the others. Composed `change`."
+          "notes": "Slotted <ds-carousel-slide> children; scroll-snap viewport in the shadow root with the slot inside a track; IntersectionObserver on slotted slides determines the active index and sets `inert` on the others; each slotted slide gets data-part=\"slide\". The picker is placed below the viewport by a CSS grid while coming before it in shadow DOM order. `<ds-carousel-slide>` takes a plain `label` attribute. Composed `change`."
         },
         "rn": {
           "element": "FlatList",
@@ -5809,7 +5877,7 @@
             "accessibilityRole=adjustable",
             "accessibilityActions"
           ],
-          "notes": "A horizontal FlatList with pagingEnabled (perView 1) or snapToInterval (more) and onViewableItemsChanged for the index. The region View has accessibilityRole=\"adjustable\" with increment/decrement accessibility actions mapped to next/previous (VoiceOver swipe up/down), so the swipe gesture has an alternative. Slides not visible have accessibilityElementsHidden. Autoplay uses setInterval cleared on any touch and never started under reduced motion. Announcements via AccessibilityInfo.announceForAccessibility when the change came from the user."
+          "notes": "A horizontal FlatList with pagingEnabled (perView 1) or snapToInterval (more) and onViewableItemsChanged for the index (honoured only during a user drag). Each visible slide View is the accessible element with accessibilityRole=\"adjustable\" and increment/decrement accessibility actions mapped to next/previous, labelled copy.next and copy.previous (VoiceOver swipe up/down), so the swipe gesture has an alternative that VoiceOver can reach — a non-accessible region View would not be an element on iOS. Slides not visible have accessibilityElementsHidden. Autoplay uses setInterval, never started under reduced motion, paused while a touch lasts (onTouchStart until onTouchEnd/onTouchCancel) and while an arrow, the play button or a picker item has focus (Button forwards onFocus/onBlur); only the pause button, or reaching the end without loop, stops it. The liveRegion View has accessibilityLiveRegion \"none\" while rotating and \"polite\" otherwise, and user-initiated changes also call AccessibilityInfo.announceForAccessibility on iOS."
         },
         "swiftui": {
           "element": "ScrollView",
@@ -5825,7 +5893,7 @@
             "TimelineView",
             ".accessibilityAddTraits=updatesFrequently"
           ],
-          "notes": "A horizontal `ScrollView` with `LazyHStack` and `.scrollTargetBehavior(.paging)` (`.viewAligned` when `perView` > 1) and `.scrollPosition` bound to the active index; slides are `.accessibilityElement(children: .contain)` labelled `copy.slideLabel` + heading, off-screen slides `.accessibilityHidden`. The region is one element with `.accessibilityAdjustableAction` mapped to next/previous (VoiceOver swipe up/down), which is the swipe alternative, plus the visible prev/next `Button`s and the picker (dots or tabs) as documented. Autoplay is a `TimelineView` timer stopped on any touch, VoiceOver focus or the pause `Button`, never started under reduced motion; user-initiated changes are announced."
+          "notes": "A horizontal `ScrollView` with `LazyHStack` and `.scrollTargetBehavior(.paging)` (`.viewAligned` when `perView` > 1) and `.scrollPosition` bound to the active index; slides are `.accessibilityElement(children: .contain)` labelled `copy.slideLabel`, off-screen slides `.accessibilityHidden`. The region is one element with `.accessibilityAdjustableAction` mapped to next/previous (VoiceOver swipe up/down), which is the swipe alternative, plus the visible prev/next `Button`s and the picker (dots or tabs) as documented. Autoplay is a `TimelineView` timer stopped on any touch, VoiceOver focus or the pause `Button`, never started under reduced motion; user-initiated changes are announced."
         }
       },
       "behavior": [
@@ -5904,7 +5972,7 @@
           "description": "The default carousel of image slides chosen with dots.",
           "given": {
             "label": "Featured products",
-            "children": "Four CarouselSlide children, each a product Card"
+            "children": "Four CarouselSlide children labelled Product 1 to Product 4, each a Card whose heading repeats the label"
           }
         },
         {
@@ -5913,7 +5981,7 @@
           "given": {
             "label": "Plans",
             "picker": "tabs",
-            "children": "Three CarouselSlide children: Starter, Team and Enterprise"
+            "children": "Three CarouselSlide children labelled Starter, Team and Enterprise, each a Card whose heading repeats the label"
           }
         },
         {
@@ -5924,7 +5992,7 @@
             "autoplay": true,
             "interval": 8000,
             "loop": true,
-            "children": "Three CarouselSlide children, each a photograph"
+            "children": "Three CarouselSlide children labelled Story 1 to Story 3, each a Card whose heading repeats the label, standing in for a photograph (the package has no image component)"
           }
         },
         {
@@ -5934,7 +6002,7 @@
             "label": "Gallery",
             "perView": 3,
             "picker": "none",
-            "children": "Six CarouselSlide children, each an image"
+            "children": "Six CarouselSlide children labelled Image 1 to Image 6, each a Card whose heading repeats the label, standing in for an image (the package has no image component)"
           }
         }
       ]
@@ -5999,10 +6067,10 @@
       "Overview": "A carousel shows several things in the space of one and lets the user page through them. It earns its place only when every slide is worth seeing and the controls make it obvious there is more; an auto-rotating banner that nobody clicks is the failure mode this component is designed to avoid.",
       "When to use": "Use a Carousel for a small set (three to eight) of peer items too rich to show as a grid — featured products with images, testimonials, a gallery — where paging is a reasonable way to see them all. Use `picker: tabs` when slides have meaningful names (\"Plans\", \"Pricing\"); `dots` for images. Leave `autoplay` off unless the content is ambient (a hero of photographs) and even then keep the pause control visible.",
       "When not to use": "Do not use a Carousel to hide important content behind slide two; if users must see it, lay it out. Do not use it for a list that can grow past ten items (a scrolling row of Cards with no controls, or a grid) or for step-by-step content (Stepper). Do not autoplay anything with text people need to read.",
-      "Behavior": "Previous and Next move one page — `perView` slides — disabled at the ends unless `loop`. The picker jumps directly. Swipe on touch and horizontal scroll on trackpads work through scroll-snap, and the active index follows what is visible. `autoplay` advances every `interval`, pauses on hover, focus or touch, and stops for good when the user presses pause; it never starts under reduced motion. `onChange` reports each change with its reason so analytics can distinguish user paging from rotation. Hidden slides are inert: their links and buttons are not in the tab order and not announced. Hover, focus and touch pause rotation only while they last; the pause button stops it until play is pressed. Without `loop`, autoplay stops at the last slide and does not wrap: the ambient case that wants continuous rotation sets `loop`. `CarouselSlide` takes a `label` (its name in the picker and the announcement) on every platform — it is a plain string, not read from the slide's rendered content, and the slide repeats it visibly in its own heading. Picker items are Carousel's own buttons on every platform, not the Button component, because the dot and tab tokens are Carousel's own and no Button variant carries them. Below `layout.maxWidth.prose` `perView` collapses to one; a container query cannot read a custom property, so that one breakpoint is duplicated as a literal in CSS, as Table already does for `hideBelow`. Under reduced motion the play/pause control is not rendered, since rotation can never start.",
-      "Content guidelines": "Slides are parallel: same shape, same heading level, same amount of text. Each slide sets `label` — its name in the picker and the announcement — and shows that same wording as its own visible heading. Keep an obvious hint that there is more (the next slide peeking, the arrows, the dots) — a carousel that looks like a single image gets treated as one.",
+      "Behavior": "Previous and Next move one page — `perView` slides — disabled at the ends unless `loop`. The picker jumps directly. Swipe on touch and horizontal scroll on trackpads work through scroll-snap, and the active index follows what is visible. `autoplay` advances every `interval`, pauses on hover, focus or touch, and stops for good when the user presses pause; it never starts under reduced motion. `onChange` reports each change with its reason so analytics can distinguish user paging from rotation. Hidden slides are inert: their links and buttons are not in the tab order and not announced. Hover, focus and touch pause rotation only while they last; the pause button stops it until play is pressed. Without `loop`, autoplay stops at the last slide and does not wrap: the ambient case that wants continuous rotation sets `loop`. Paging, with `page` the current page size (see `perView`): the current index is the first visible slide; Next goes to `min(current + page, total − page)` and Previous to `max(current − page, 0)`; with `loop`, Next from `total − page` goes to 0 and Previous from 0 to `total − page`; both arrows are disabled when `total ≤ page`. A picker choice past `total − page` scrolls as far as it can and the index becomes `total − page` (that is what onChange reports), and a dots picker marks every slide on the current page as current. Reaching the last slide without `loop` counts as stopped: the control shows `copy.play` and announcements return; pressing play there restarts rotation from the first slide. A controlled carousel whose parent keeps `activeIndex` after a swipe scrolls back to `activeIndex`. The play/pause control sits in its own row above the viewport at the inline start; order is play/pause, previous, next, picker, then the slides (the picker is placed below the viewport by layout, not by order). `CarouselSlide` (`label: string`, required, and `children`), exported alongside Carousel, takes a `label` (its name in the tabs picker) on every platform — a missing one falls back to `copy.goTo` as the tab text with a development warning — it is a plain string, not read from the slide's rendered content, and the slide repeats it visibly in its own heading. Picker items are Carousel's own buttons on every platform, not the Button component, because the dot and tab tokens are Carousel's own and no Button variant carries them. Below `layout.maxWidth.prose` `perView` collapses to one; a container query cannot read a custom property, so that one breakpoint is duplicated as a literal in CSS, as Table already does for `hideBelow`. Under reduced motion the play/pause control is not rendered, since rotation can never start. Button writes its own part hook, so prevButton, nextButton and playButton each sit in a wrapper carrying the part (web: a `span` with `data-part` that passes a click through to its Button; React Native: a `View` with testID `Carousel.<part>`); for the arrows that wrapper is inside the controlSurface wrapper.",
+      "Content guidelines": "Slides are parallel: same shape, same heading level, same amount of text. Each slide sets `label` — its name in the tabs picker — and shows that same wording as its own visible heading. Keep an obvious hint that there is more (the next slide peeking, the arrows, the dots) — a carousel that looks like a single image gets treated as one.",
       "Accessibility": "The container is a `region` named for its content with `aria-roledescription=\"carousel\"`, and each slide a `group` with `aria-roledescription=\"slide\"` and a positional name (WCAG 1.3.1, 4.1.2; APG carousel). Controls come before the slides in tab order and include play/pause whenever rotation is possible (2.2.2). Rotation stops on hover and focus and under reduced motion (2.3.3), and changes made by the user are announced while automatic ones are not (4.1.3). Swiping has the arrow buttons and, on native, the adjustable actions as alternatives (2.5.1). The picker conveys the current slide by state, not color alone, and dots have 24px targets despite their size.",
-      "Platform notes": "### Web\nRender `<section role=\"region\" aria-roledescription=\"carousel\" aria-label data-ds=\"Carousel\">` with, in order: the play/pause `Button` (when `autoplay`) — the icon set has no play or pause glyph, so this one is a text-labelled `secondary` Button carrying `copy.play`/`copy.pause`, not `iconOnly` like the arrows — the previous and next `Button`s (`secondary`, `iconOnly`, chevron Icons), each inside its own `controlSurface` element carrying `data-part=\"controlSurface\"` with `controlBackground`, `controlShadow` and a full radius, so the arrows read over an image without the Button being restyled, the viewport `<div>` (`overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none`) containing the track and `CarouselSlide`s (`role=\"group\" aria-roledescription=\"slide\" aria-label`, `scroll-snap-align: start`, `inert` when not visible), and the picker (`dots`: `<div role=\"group\">` of Carousel's own `<button>`s with `aria-label` from `copy.goTo` and `aria-current`; `tabs`: `role=\"tablist\"` of `role=\"tab\"` buttons with `aria-selected` and `aria-controls` to the slides, arrow keys per Tabs). An `IntersectionObserver` at threshold 0.6 sets the active index. `scrollIntoView({ behavior: reducedMotion ? 'instant' : 'smooth', inline: 'start' })` for programmatic moves. A visually-hidden `aria-live=\"polite\"` region receives `copy.announce` on user-initiated changes.\n\n### Lit\n`<ds-carousel label=\"Featured\" picker=\"tabs\"><ds-carousel-slide label=\"…\">…</ds-carousel-slide></ds-carousel>`; scroll-snap viewport with the slot inside; IntersectionObserver on assigned elements; composed `change`. A tabs picker sits in the shadow root while the slides are slotted, so its `aria-controls` idref cannot resolve; each tab is instead named by the slide label and the pairing is conveyed by `aria-selected` and the announcement, as `ds-tabs` already does.\n\n### React Native\n`FlatList` horizontal with `pagingEnabled`/`snapToInterval`, `showsHorizontalScrollIndicator={false}`, `onViewableItemsChanged` with `viewabilityConfig { itemVisiblePercentThreshold: 60 }`; slides as `View accessible accessibilityLabel={copy.slideLabel + label}`; the arrows are system `Button`s inside their `controlSurface` wrapper View and the picker items are Carousel's own Pressables; region `View accessibilityRole=\"adjustable\"` with increment/decrement `accessibilityActions`, and without `accessible` on that region, so the controls inside stay individually reachable. `snap: false` turns off `pagingEnabled`/`snapToInterval` only — the track still scrolls freely. Autoplay: `setInterval` guarded by `useReducedMotion()`, cleared in `onTouchStart` and `onScrollBeginDrag`. There is no hover on native, and the composed arrow and play Buttons expose no focus callback, so focus does not pause rotation here; touch and the pause button are the two mechanisms, which satisfies the pause requirement.",
+      "Platform notes": "### Web\nRender `<section role=\"region\" aria-roledescription=\"carousel\" aria-label data-ds=\"Carousel\">` with, in order: the play/pause `Button` (when `autoplay`) — the icon set has no play or pause glyph, so this one is a text-labelled `secondary` Button carrying `copy.play`/`copy.pause`, not `iconOnly` like the arrows — the previous and next `Button`s (`secondary`, `iconOnly`, chevron Icons), each inside its own `controlSurface` element carrying `data-part=\"controlSurface\"` with `controlBackground`, `controlShadow` and `controlRadius`, so the arrows read over an image without the Button being restyled, the picker (placed below the viewport by a CSS grid, described below), the viewport `<div>` (`overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none`) containing the track and `CarouselSlide`s (`role=\"group\" aria-roledescription=\"slide\" aria-label`, `scroll-snap-align: start`, `inert` when not visible). The picker is `dots`: `<div role=\"group\">` of Carousel's own `<button>`s with `aria-label` from `copy.goTo` and `aria-current`; `tabs`: `role=\"tablist\"` of `role=\"tab\"` buttons with `aria-selected` and `aria-controls` to the slides, arrow keys per Tabs. An `IntersectionObserver` at threshold 0.6 sets the active index. Programmatic moves scroll the viewport element directly (see the platform notes), not `scrollIntoView`. The visually-hidden liveRegion receives `copy.announce` on user-initiated changes.\n\n### Lit\n`<ds-carousel label=\"Featured\" picker=\"tabs\"><ds-carousel-slide label=\"…\">…</ds-carousel-slide></ds-carousel>`; scroll-snap viewport with the slot inside; IntersectionObserver on assigned elements; composed `change`. A tabs picker sits in the shadow root while the slides are slotted, so its `aria-controls` idref cannot resolve; each tab is instead named by the slide label and the pairing is conveyed by `aria-selected` and the announcement, as `ds-tabs` already does.\n\n### React Native\n`FlatList` horizontal with `pagingEnabled`/`snapToInterval`, `showsHorizontalScrollIndicator={false}`, `onViewableItemsChanged` with `viewabilityConfig { itemVisiblePercentThreshold: 60 }`; slides as `View accessible accessibilityLabel={copy.slideLabel}`; the arrows are system `Button`s inside their `controlSurface` wrapper View and the picker items are Carousel's own Pressables; the adjustable role and increment/decrement `accessibilityActions` sit on each visible slide, not on the region, which stays a plain View so the controls stay individually reachable. `snap: false` turns off `pagingEnabled`/`snapToInterval` only — the track still scrolls freely. Autoplay: `setInterval` guarded by `useReducedMotion()`, paused while a touch or a control's focus lasts. There is no hover on native. Native accessibility order follows the view tree, so the order is play/pause, previous, next, the slides, then the picker. The tabs picker is Carousel's own Pressables with a `Text` label styled from the `tab*` bindings.",
       "Related": "Tabs, Card, Stepper, Button."
     },
     "extensions": [],
@@ -22921,7 +22989,7 @@
       "Overview": "A segmented control switches a mode: list or grid, day or week, metric or imperial. Exactly one segment is always selected, choosing takes effect at once, and there is nothing to submit — which is what separates it from a RadioGroup in a form, whose semantics it borrows.",
       "When to use": "Use it for two to five short, parallel options that change what a region shows or how a tool behaves, where the user switches often and sees the effect immediately. Use `iconOnly` in toolbars where the icons are unambiguous (list/grid) and add Tooltips. Pair it with a visible Text label when the group's purpose is not obvious.",
       "When not to use": "Do not use it to pick a value that is submitted later (RadioGroup) or that has consequences worth a confirmation. Do not use it for more than five options or long labels; use Tabs when the options are views of content, or Select. Do not use it as tabs: a segmented control does not own panels. Do not leave it with no selection.",
-      "Behavior": "Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End do the same to the ends. In right-to-left writing ArrowLeft is \"next\" and ArrowRight \"previous\" (ArrowDown and ArrowUp are unchanged), as in Tabs. Under a controlled `value` the arrow still moves focus and fires `onChange`; the checked state and the pill stay where `value` says until the parent changes it. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only. It is not a form field: there is no `name`, no `form` block, and it neither registers with a Form nor submits a value — use RadioGroup inside a Form.",
+      "Behavior": "Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End do the same to the ends. In right-to-left writing ArrowLeft is \"next\" and ArrowRight \"previous\" (ArrowDown and ArrowUp are unchanged), as in Tabs. Under a controlled `value` the arrow still moves focus and fires `onChange`; the checked state and the pill stay where `value` says until the parent changes it. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only. It is not a form field: there is no `name`, no `form` block, and it neither registers with a Form nor submits a value — use RadioGroup inside a Form. Inside a Toolbar (a `role=\"toolbar\"` ancestor; on Lit found through `composedPath`/host ancestors across shadow roots, on React Native not applicable) the arrows do not wrap: an arrow pointing out of the first or last enabled segment, and Home and End, are left unhandled (no `preventDefault`), so the toolbar moves focus to the neighbouring control. Outside a toolbar the keyboard table applies unchanged.",
       "Content guidelines": "Labels are single words or short pairs in sentence case (\"List\", \"Grid\", \"This week\"). Do not use \"On/Off\" — that is a Switch. With `iconOnly`, the label is what a screen reader says and what the Tooltip shows, so it names the mode (\"Grid view\"), not the icon.",
       "Accessibility": "Role `radiogroup` with a name and `radio` segments with `aria-checked` (WCAG 4.1.2; APG radio group), so assistive technology reports \"3 of 3, selected\". One tab stop with arrow movement. Selection is shown by the raised pill, the stronger and heavier text, and the checked state — not color alone (1.4.1). Icon-only segments carry their label as the accessible name and expose it visually through a Tooltip (1.1.1). The pill itself is deliberately low-contrast against the group (a page-colored surface with a soft shadow); WCAG 1.4.11 does not require it because the selected state is identified by the text change and the checked state, which is why the text pair on the pill is the one the build checks. Reduced motion stops the pill animation.",
       "Platform notes": "### Web\n`<div role=\"radiogroup\" aria-label>` containing `<button type=\"button\" role=\"radio\" aria-checked tabindex>` per option with `<Icon>` and label; an absolutely positioned pill `<span aria-hidden>` sized and translated from the selected segment's offset with `transition`. Keydown on the group implements the keyboard table. `iconOnly` gives each segment `aria-label` = the option label and wraps it in `Tooltip` with `content` = the label and `describes: false`.\n\n### Lit\n`<ds-segmented-control label=\"View mode\" .options=${…} value=\"grid\">`; roving tabindex in the shadow root; composed `change`.\n\n### React Native\n`View` with `accessibilityRole=\"radiogroup\"` and `accessibilityLabel`, `flexDirection: 'row'`, background and padding from tokens; `Pressable accessibilityRole=\"radio\" accessibilityState={{ checked }}` per option; pill as an `Animated.View` positioned from `onLayout` measurements. `iconOnly` sets `accessibilityLabel` to the option label.",
@@ -28467,8 +28535,25 @@
         "footer"
       ],
       "composition": {
-        "caption": "Heading",
-        "sortButton": "Button",
+        "caption": {
+          "component": "Heading",
+          "forwards": {
+            "captionSize": "fontSize",
+            "captionWeight": "fontWeight",
+            "captionGap": "marginBlockEnd"
+          }
+        },
+        "sortButton": {
+          "component": "Button",
+          "props": {
+            "variant": "ghost",
+            "size": "sm"
+          },
+          "forwards": {
+            "headerWeight": "fontWeight",
+            "cellGap": "iconGap"
+          }
+        },
         "selectCell": "Checkbox",
         "selectAllCell": "Checkbox",
         "emptyState": "Text"
@@ -28492,7 +28577,7 @@
         },
         "footer": {
           "type": "content",
-          "description": "Content below the table: a row count, pagination, a total. Rendered in the `footer` part with the table's font."
+          "description": "Content below the table: a row count, pagination, a total. Rendered in the `footer` part with the table's font: a string footer renders in Text with the `fontFamily`/`fontSize`/`lineHeight` bindings; other content brings its own typography (React Native has no cascade)."
         },
         "hideCaption": {
           "type": "boolean",
@@ -28503,7 +28588,7 @@
           "type": "array",
           "required": true,
           "shape": "{ key: string; header: string; abbr?: string; align?: \"start\" | \"end\" | \"center\"; sortable?: boolean; width?: \"auto\" | \"min\" | \"fill\"; isRowHeader?: boolean; hideBelow?: \"prose\" | \"content\"; render?: (row: Row) => ReactNode }[]",
-          "description": "Column definitions in display order. `header` is the visible heading; `align: end` for numbers; `sortable` adds the sort button; exactly one column may be `isRowHeader` (its cells become row headers, and it is the row's name when stacked); `hideBelow` drops a column below a layout width; `render` formats the cell (a Text, Link, Meter, or Button — never raw HTML)."
+          "description": "Column definitions in display order. `header` is the visible heading; `align: end` for numbers; `sortable` adds the sort button; exactly one column may be `isRowHeader` (its cells become row headers, and it is the row's name when stacked); `hideBelow` drops a column below a layout width in `responsive: stack` only (scrolling tables keep every column); `width: min` shrinks to content without wrapping (web: `inline-size: 1%` plus nowrap), `fill` takes the remaining width; `render` formats the cell (a Text, Link, Meter, or Button — never raw HTML)."
         },
         "data": {
           "type": "array",
@@ -28556,12 +28641,12 @@
             "scroll"
           ],
           "default": "stack",
-          "description": "Below `layout.maxWidth.prose`: `stack` turns each row into a block with the column header repeated as a label before each value (content tables — orders, people); `scroll` keeps the columns and scrolls horizontally inside a labelled region with the row-header column sticky (data tables where columns are the point). Roles are explicit on every element so both keep table semantics."
+          "description": "Below `layout.maxWidth.prose`: `stack` turns each row into a block with the column header repeated as a label before each value (content tables — orders, people); `scroll` keeps the columns and scrolls horizontally inside a labelled region with the row-header column sticky (data tables where columns are the point). Roles are explicit on every element so both keep table semantics. \"Below\" compares the table's own measured width (a container query on web and Lit, onLayout on React Native) with the token; `scroll` keeps the columns at every width on every platform, phones included."
         },
         "stickyHeader": {
           "type": "boolean",
           "default": true,
-          "description": "The header row stays visible while the body scrolls (the page, or `maxHeight`)."
+          "description": "The header row stays visible while the body scrolls (the page, or `maxHeight`). In `responsive: scroll` the scroll region is the sticky container, so the header sticks only with `maxHeight: viewport`; against the page scroll it has no effect there."
         },
         "maxHeight": {
           "type": "enum",
@@ -28570,7 +28655,7 @@
             "viewport"
           ],
           "default": "none",
-          "description": "`viewport` caps the table at the viewport height minus the section rhythm and scrolls the body; `none` lets the page scroll."
+          "description": "`viewport` caps the table at the viewport height minus two `layout.gap.section` and scrolls a frame around the table (the scroll region itself in `responsive: scroll`), which is also the root of the header-shadow observer; `none` lets the page scroll."
         },
         "density": {
           "type": "enum",
@@ -28593,7 +28678,7 @@
         "loading": {
           "type": "boolean",
           "default": false,
-          "description": "Data is being fetched: the body shows `copy.loading` and aria-busy is set. Existing rows stay visible while re-sorting."
+          "description": "Data is being fetched: aria-busy is set on the table element (web and Lit: the `<table role=\"table\">`; React Native: accessibilityState busy on the list) and `copy.loading` shows — with no rows, in the emptyState in place of `emptyMessage`; with rows, as muted Text in a polite live region below the table and above the footer. Existing rows stay visible while re-sorting."
         },
         "rowActions": {
           "type": "function",
@@ -28650,7 +28735,7 @@
           ]
         },
         "onRowPress": {
-          "description": "Fired when a row is activated, with its id. Only when the row has no other interactive content; the row header cell becomes a Button and the row is styled interactive. Prefer a Link in the row header for navigation.",
+          "description": "Fired when a row is activated, with its id. Only when the row has no other interactive content; the row header cell becomes a Button and the row is styled interactive. On web and Lit a pointer click anywhere on the row outside a control also fires it; keyboard and assistive technology use the Button. Lit cannot see whether anyone listens, so rows are interactive only when the host has the `pressable-rows` attribute. Prefer a Link in the row header for navigation.",
           "platforms": {
             "web": "onRowPress",
             "lit": "row-press",
@@ -28771,7 +28856,7 @@
         "rowSelectedBorder": {
           "token": "color.control.selectedBackground",
           "part": "row",
-          "description": "A start-edge bar on selected rows, so selection is not color-fill alone.",
+          "description": "A start-edge bar on selected rows, so selection is not color-fill alone. It never shifts content: web and Lit draw it as an inset box-shadow on the row's first cell (on the row itself when stacked), mirrored under RTL; React Native always reserves a start border of `rowSelectedBorderWidth`, coloured as the row background when unselected.",
           "locked": true
         },
         "rowSelectedBorderWidth": {
@@ -28835,6 +28920,11 @@
           "description": "Between label/value pairs inside a stacked row.",
           "locked": false
         },
+        "stackedBlockGap": {
+          "token": "layout.gap.tight",
+          "description": "Between stacked row blocks: the body's gap (web and Lit: the stacked tbody grid; React Native: the list's contentContainerStyle gap). Each block is outlined with `rowBorder`/`rowBorderWidth` on `stackedRowRadius`.",
+          "locked": false
+        },
         "stackedLabelColor": {
           "token": "color.foreground.muted",
           "part": "stackedLabel",
@@ -28861,7 +28951,7 @@
         },
         "scrollFade": {
           "token": "space.6",
-          "description": "Edge fade width on the scroll region.",
+          "description": "Edge fade width on the scroll region; an edge fades only while columns are hidden past it. React Native draws it with react-native-svg, as Toolbar does.",
           "locked": false
         },
         "fontFamily": {
@@ -28878,7 +28968,7 @@
         },
         "numericFont": {
           "token": "font.family.mono",
-          "description": "Columns with align end use tabular figures; where the body font lacks them, the mono family.",
+          "description": "Body cells of columns with align end always use this family plus tabular figures (`font-variant-numeric: tabular-nums` on web and Lit) — no platform can detect whether the body font has tabular figures, so there is no fallback test.",
           "locked": false
         },
         "minTarget": {
@@ -28895,7 +28985,7 @@
         },
         "transition": {
           "token": "motion.duration.fast",
-          "description": "Hover and sort-arrow changes; sorting itself is instant.",
+          "description": "The interactive row's hover background only; the sort arrow is a swapped Icon inside the Button and changes instantly, as does sorting itself.",
           "locked": false
         }
       },
@@ -29053,7 +29143,7 @@
             "abbr",
             "tabindex"
           ],
-          "notes": "Native <table><thead><tbody> with EVERY role stated explicitly (role=\"table\" on the table, \"rowgroup\" on thead/tbody, \"row\" on tr, \"columnheader\"/\"rowheader\"/\"cell\" on th/td) — browsers drop the implicit table roles as soon as CSS changes display on any of these elements, which the stacked layout and sticky positioning do. The caption is the composed Heading at `captionLevel`, rendered as a sibling above the <table> inside the container and referenced by aria-labelledby — not inside a <caption> element. With role=\"table\" stated, ARIA lets the table own only rows and rowgroups, so a heading inside <caption> is an invalid owned child and every instance fails the aria-required-children check; a labelled sibling is the same name to a screen reader and costs nothing. `hideCaption` visually hides that heading and keeps it as the name. Column headers: <th scope=\"col\" abbr>; the row-header column: <th scope=\"row\">. Sort: a Button (ghost, sm) inside the columnheader with aria-sort on the th and a visually-hidden live region announcing copy.sortedAnnouncement. Selection: Checkbox in the first cell, aria-selected on the tr, live region for copy.selectedCount. `responsive: stack` below the prose breakpoint: a container query switches tr/td to display block/grid, thead is visually hidden (not display none, so the columnheaders remain in the tree), and each td gets a ::before from a data-label attribute holding the header text — aria-hidden as text is already associated by the roles. `responsive: scroll`: the table sits in a <div role=\"region\" aria-labelledby={captionId} tabindex=\"0\"> with overflow-x auto, faded edges, and the row-header column position: sticky. Sticky header: thead th position: sticky top 0 with the shadow toggled by an IntersectionObserver sentinel. rowActions cell has a visually-hidden columnheader \"Actions\", and carries the same text as its data-label so the stacked layout labels the action row like every other cell. Rows are keyed by id; no virtualization in this component (that is DataGrid)."
+          "notes": "Native <table><thead><tbody> with EVERY role stated explicitly (role=\"table\" on the table, \"rowgroup\" on thead/tbody, \"row\" on tr, \"columnheader\"/\"rowheader\"/\"cell\" on th/td) — browsers drop the implicit table roles as soon as CSS changes display on any of these elements, which the stacked layout and sticky positioning do. The caption is the composed Heading at `captionLevel`, rendered as a sibling above the <table> inside the container and referenced by aria-labelledby — not inside a <caption> element. With role=\"table\" stated, ARIA lets the table own only rows and rowgroups, so a heading inside <caption> is an invalid owned child and every instance fails the aria-required-children check; a labelled sibling is the same name to a screen reader and costs nothing. `hideCaption` visually hides that heading and keeps it as the name. Column headers: <th scope=\"col\" abbr>; the row-header column: <th scope=\"row\">. Sort: a Button (ghost, sm) inside the columnheader with aria-sort on the th and a visually-hidden live region announcing copy.sortedAnnouncement. Selection: Checkbox in the first cell, aria-selected on the tr, live region for copy.selectedCount. `responsive: stack` below the prose breakpoint: a container query switches tr/td to display block/grid, plain column headers are visually hidden (not display none, so the columnheaders remain in the tree) while the select-all header and sortable headers stay visible as a wrapping row, so no focusable control is invisible; each td gets a ::before from a data-label attribute holding the header text, hidden from assistive technology with empty alternative text (`content: attr(data-label) / \"\"`, after a plain `content: attr(data-label)` fallback) as the text is already associated by the roles. The row header gets no data-label: it is the row's name. `responsive: scroll`: the table sits in a <div role=\"region\" aria-labelledby={captionId} tabindex=\"0\"> with overflow-x auto, faded edges, and the row-header column position: sticky. Sticky header: thead th position: sticky top 0 with the shadow toggled by an IntersectionObserver sentinel. rowActions cell has a visually-hidden columnheader \"Actions\", and carries the same text as its data-label so the stacked layout labels the action row like every other cell. With `selectable: single` the header's selection position is an empty <td role=\"cell\"> with no part (an empty columnheader would have no name). Button writes its own data-part, so the sortButton part has no hook of its own; it is the Button inside the columnHeader. `copy.rowCount` is chosen with Intl.PluralRules for `document.documentElement.lang`, falling back to the runtime default. Rows are keyed by id; no virtualization in this component (that is DataGrid)."
         },
         "lit": {
           "tag": "ds-table",
@@ -29070,7 +29160,7 @@
             "loading",
             "hide-caption"
           ],
-          "notes": "`columns` and `data` are properties; the whole <table> renders inside the shadow root from them (slotting <tr> elements across the shadow boundary breaks table semantics, so rows are never light DOM). Cell `render` functions return lit templates. Composed `sort-change`, `selection-change`, `row-press`. Container queries on :host."
+          "notes": "`columns` and `data` are properties; the whole <table> renders inside the shadow root from them (slotting <tr> elements across the shadow boundary breaks table semantics, so rows are never light DOM). Cell `render` functions return lit templates. Composed `sort-change`, `selection-change`, `row-press`; rows are pressable only with the `pressable-rows` attribute. `captionLevel` is the unreflected `caption-level` attribute. aria-busy and the accessible name are on the shadow <table role=\"table\">, not the host, which has no role. Container queries on :host."
         },
         "rn": {
           "element": "FlatList",
@@ -29079,7 +29169,7 @@
             "accessibilityLabel",
             "stickyHeaderIndices"
           ],
-          "notes": "No table element on native. Phones: always the stacked form — a FlatList (accessibilityRole=\"list\", accessibilityLabel from caption) whose rows are accessible Views with an accessibilityLabel that reads \"{header}: {value}\" for each visible column, the row header first, plus \"selected\" state; selection Checkbox and rowActions inside. Tablets and react-native-web: a header row View (accessibilityRole=\"header\" cells) and rows as horizontal Views with fixed column widths, `responsive: scroll` in a horizontal ScrollView with the row-header column rendered in a separate vertically-synced list. Sort buttons are system Buttons; announcements via AccessibilityInfo.announceForAccessibility."
+          "notes": "No table element on native. The layout follows `responsive` against the table's onLayout width (window width before the first layout), not the device type. Stacked (`stack` below layout.maxWidth.prose): a FlatList (accessibilityRole=\"list\", accessibilityLabel from caption, accessibilityHint from copy.rowCount) whose rows are accessible Views with an accessibilityLabel that reads \"{header}: {value}\" for each visible column, the row header first, plus \"selected\" state; selection Checkbox and rowActions inside; sort controls are a Toolbar of Buttons above the list, which carry no Table.sortButton testID (a wrapper View would not receive Toolbar's size). Otherwise, and for `scroll` at every width: a header row View (accessibilityRole=\"header\" cells) and rows as horizontal Views with fixed column widths, `scroll` in a horizontal ScrollView whose row-header cells are pinned by translating them with the horizontal scroll offset (Animated translateX; no second list), casting stickyColumnShadow once scrolled. Hover (rowHover) exists only for react-native-web pointers, through Pressable onHoverIn/onHoverOut. No hardware-keyboard arrow scrolling: ScrollView has no key events, so the scroll region scrolls by swipe only. copy.selectedCount and copy.sortedAnnouncement go to hidden polite live regions plus AccessibilityInfo.announceForAccessibility on iOS, when the shown state changes."
         },
         "swiftui": {
           "element": "Grid",
@@ -29567,10 +29657,10 @@
       "Overview": "A table is the honest way to show records that share fields: every row the same shape, every column a comparable thing. This component keeps that honesty on a phone — where most tables quietly turn into unreadable text — by choosing, per table, whether rows stack into labelled blocks or columns scroll, and by stating every role explicitly so neither layout costs a screen-reader user the structure.",
       "When to use": "Use a Table for a list of records with three or more comparable fields: orders, invoices, members, inventory, results. Use `stack` (the default) when each row is a thing a person reads — a person, an order — and `scroll` when the columns are what matters — figures across months, a comparison. Add `sortable` to columns people compare by; `selectable: multiple` when bulk actions exist (put them in a Toolbar above the table that appears with the selection count). Put the row's identity in the `isRowHeader` column, usually as a Link to its detail page.",
       "When not to use": "Do not use a Table for layout, for a list with one or two fields (a Stack of Cards or a plain list), or for key–value pairs about one thing (a description list). Do not use it when cells are edited in place or navigated with arrow keys — that is DataGrid, a different role with a different keyboard model. Do not put a Table inside a Card that is narrower than the content width; give it the Container.",
-      "Behavior": "The header row shows column names; sortable ones are Buttons whose activation cycles ascending → descending on that column (and starts ascending on another), announced through a live region, and shown by an arrow Icon plus `aria-sort`. With `selectable`, each row has a Checkbox named from its row header, and `multiple` adds select-all (indeterminate when some are selected); the count is announced. Rows are inert unless they contain interactive content or `onRowPress` is set, in which case the row header becomes the row's Button and hover/press styling applies to the row. Below the prose width the table follows `responsive`: stacked rows keep the column header as a small label before each value and hide `hideBelow` columns; scrolling tables keep every column, fade the edges, keep the row-header column sticky, and let the region be focused and scrolled by keyboard. `stickyHeader` keeps the header in view and casts a shadow only once the body has scrolled under it. Empty data shows `emptyMessage` in a single full-width cell; `loading` sets `aria-busy` and shows the loading text without removing existing rows. Sort buttons show the column header as their visible label and carry the sort phrase as `accessibleName`. `onRowPress` applies only when the row-header column has no custom `render` (a rendered Link would conflict); without an `isRowHeader` column it is a development warning and rows are inert. The selection Checkboxes use `hideLabel` with `copy.selectRow`. In `single` selection, pressing the selected row's checkbox again deselects it. `maxHeight: viewport` is the viewport height minus two `layout.gap.section`. Arrow keys in the scroll region scroll by `space.10`; the region is present whenever `responsive: scroll`, not only below the breakpoint. `copy.rowCount` describes the table and `copy.scrollHint` the scroll region (visually hidden, aria-describedby). On native `abbr` has no effect and `width: auto`/`min` both size to `space.20`.",
+      "Behavior": "The header row shows column names; sortable ones are Buttons whose activation cycles ascending → descending on that column (and starts ascending on another), announced through a live region, and shown by an arrow Icon plus `aria-sort`. With `selectable`, each row has a Checkbox named from its row header, and `multiple` adds select-all (indeterminate when some are selected); the count is announced. Rows are inert unless they contain interactive content or `onRowPress` is set, in which case the row header becomes the row's Button and hover/press styling applies to the row. Below the prose width the table follows `responsive`: stacked rows keep the column header as a small label before each value and hide `hideBelow` columns; scrolling tables keep every column, fade the edges, keep the row-header column sticky, and let the region be focused and scrolled by keyboard. `stickyHeader` keeps the header in view and casts a shadow only once the body has scrolled under it. Empty data shows `emptyMessage` in a single full-width cell; `loading` sets `aria-busy` and shows the loading text without removing existing rows. Sort buttons show the column header as their visible label and carry the sort phrase as `accessibleName`. `onRowPress` applies only when the row-header column has no custom `render` (a rendered Link would conflict); without an `isRowHeader` column it is a development warning and rows are inert. The selection Checkboxes use `hideLabel` with `copy.selectRow`. In `single` selection, pressing the selected row's checkbox again deselects it. `maxHeight: viewport` is the viewport height minus two `layout.gap.section`. Arrow keys in the scroll region scroll by `space.10`; the region is present whenever `responsive: scroll`, not only below the breakpoint. `copy.rowCount` describes the table and `copy.scrollHint` the scroll region (visually hidden, aria-describedby). On native `abbr` has no effect and `width: auto`/`min` both size to `space.20`. A sort button's `accessibleName` is the phrase for what pressing it will do: `copy.sortDescending` when its column is currently ascending, `copy.sortAscending` otherwise. The caption and sort button forwards pass Table's value (its default included, since `headerWeight` differs from Button's) into the child's own `overrides`. `copy.sortToolbarLabel` names React Native's stacked sort Toolbar and `copy.cellLabel` SwiftUI's stacked labels; web and Lit render neither. The actions column's visually hidden header is a `columnHeader` part like the others. Inside a Form, the selection Checkboxes are not form fields.",
       "Content guidelines": "Captions name the set, not the component (\"Open invoices\", not \"Invoices table\"). Column headers are one or two words, sentence case, with units in the header rather than in every cell (\"Amount (USD)\"); use `abbr` when a long header has a short spoken form. Numbers align end and share their decimals; dates use one format per column. The row-header column comes first (after the selection column) and holds the thing the row is about. Keep row actions to two visible plus a Menu; keep tables under about ten columns and use `hideBelow` for the least important ones.",
       "Accessibility": "The table is a `table` with explicit `rowgroup`, `row`, `columnheader`, `rowheader` and `cell` roles, a caption as its name, and `scope`/`abbr` on headers (WCAG 1.3.1, 4.1.2) — explicit because CSS that changes display strips the native roles, and both responsive modes change display. Sort state is exposed with `aria-sort` and announced (4.1.3); the sort control is a real Button with a name that says what it does (2.4.6). Row selection is exposed as `aria-selected` plus the checkbox state, and is shown by a start-edge bar as well as a fill (1.4.1). Stacked rows keep their header association through the roles and the repeated visible labels, so a screen-reader user hears \"Amount: $40\" either way. The scroll region is named by the caption and focusable, so keyboard users can reach columns off-screen (2.1.1, 1.4.10 — content is not lost, only scrolled). Hover styling is confined to interactive rows and never the only signal (`no-hover-only`).",
-      "Platform notes": "### Web\nRender `<div data-ds=\"Table\" class=\"ds-table--{responsive} ds-table--{density}\">` containing, for `scroll`, `<div role=\"region\" aria-labelledby={captionId} tabindex=\"0\">` with the fade masks; inside, `<table role=\"table\" aria-rowcount aria-colcount aria-busy>` with `<caption id>` (visually hidden when `hideCaption`), `<thead role=\"rowgroup\"><tr role=\"row\">` of `<th role=\"columnheader\" scope=\"col\" abbr aria-sort>` (the selection `th` holds the select-all `Checkbox`; sortable headers hold `Button variant=\"ghost\" size=\"sm\"` with the header text and an `Icon` chevron-up/down when sorted; the actions header text is visually hidden), and `<tbody role=\"rowgroup\">` of `<tr role=\"row\" aria-selected data-part=\"row\">` with `<th role=\"rowheader\" scope=\"row\">` for the row-header column and `<td role=\"cell\" data-label={header}>` otherwise. Container query at the prose width: `stack` sets `tr { display: grid; grid-template-columns: 1fr }` with `thead` visually hidden and `td::before { content: attr(data-label) }` styled from the `stackedLabel*` bindings, each row on `stackedRowRadius` with `stackedRowInset`; `scroll` leaves display alone and sets `position: sticky; inset-inline-start: 0` on the row-header cells. Sticky header: `thead th { position: sticky; inset-block-start: 0 }` with `headerShadow` toggled via a sentinel `IntersectionObserver`. Visually-hidden `aria-live=\"polite\"` region for sort and selection announcements. Uncontrolled sorting compares with `localeCompare` (`numeric: true`) for strings and `-` for numbers. The two breakpoint numbers come from the built token JSON, `literal-ok: breakpoint from layout.maxWidth.*`.\n\n### Lit\n`<ds-table caption=\"Open invoices\" .columns=${columns} .data=${rows} selectable=\"multiple\" responsive=\"scroll\"></ds-table>`; the table is built in the shadow root from the properties (never slotted rows); `render` returns lit templates; container queries on `:host`; composed events.\n\n### React Native\nPhones: `FlatList` (`accessibilityRole=\"list\"`, `accessibilityLabel={caption}`) rendering each row as a `View accessible` styled as a stacked block (`stackedRowInset`, `stackedRowGap`, `stackedRowRadius`) whose `accessibilityLabel` joins \"{header}: {value}\" for visible columns with the row header first and the selected state; the selection `Checkbox` and `rowActions` are separate accessible elements inside. Sort controls render as a `Toolbar` of `Button`s above the list (no header row on phones). Tablets / react-native-web: header `View` with `accessibilityRole=\"header\"` cells and rows of fixed-width cells; `responsive: scroll` wraps in a horizontal `ScrollView` with the row-header column in a synced vertical list. Row press uses `Pressable` with `accessibilityRole=\"button\"` when `onRowPress` is set.",
+      "Platform notes": "### Web\nRender `<div data-ds=\"Table\" class=\"ds-table--{responsive} ds-table--{density}\">` containing, for `scroll`, `<div role=\"region\" aria-labelledby={captionId} tabindex=\"0\">` with the fade masks; inside, `<table role=\"table\" aria-rowcount aria-colcount aria-busy>` with `<caption id>` (visually hidden when `hideCaption`), `<thead role=\"rowgroup\"><tr role=\"row\">` of `<th role=\"columnheader\" scope=\"col\" abbr aria-sort>` (the selection `th` holds the select-all `Checkbox`; sortable headers hold `Button variant=\"ghost\" size=\"sm\"` with the header text and an `Icon` chevron-up/down when sorted; the actions header text is visually hidden), and `<tbody role=\"rowgroup\">` of `<tr role=\"row\" aria-selected data-part=\"row\">` with `<th role=\"rowheader\" scope=\"row\">` for the row-header column and `<td role=\"cell\" data-label={header}>` otherwise. Container query at the prose width: `stack` sets `tr { display: grid; grid-template-columns: 1fr }` with `thead` visually hidden and `td::before { content: attr(data-label) }` styled from the `stackedLabel*` bindings, each row on `stackedRowRadius` with `stackedRowInset`; `scroll` leaves display alone and sets `position: sticky; inset-inline-start: 0` on the row-header cells. Sticky header: `thead th { position: sticky; inset-block-start: 0 }` with `headerShadow` toggled via a sentinel `IntersectionObserver`. Visually-hidden `aria-live=\"polite\"` region for sort and selection announcements. Uncontrolled sorting compares with `localeCompare` (`numeric: true`) for strings and `-` for numbers. The two breakpoint numbers come from the built token JSON, `literal-ok: breakpoint from layout.maxWidth.*`.\n\n### Lit\n`<ds-table caption=\"Open invoices\" .columns=${columns} .data=${rows} selectable=\"multiple\" responsive=\"scroll\"></ds-table>`; the table is built in the shadow root from the properties (never slotted rows); `render` returns lit templates; container queries on `:host`; composed events.\n\n### React Native\n`responsive: stack` below the prose width: `FlatList` (`accessibilityRole=\"list\"`, `accessibilityLabel={caption}`) rendering each row as a `View accessible` styled as a stacked block (`stackedRowInset`, `stackedRowGap`, `stackedRowRadius`) whose `accessibilityLabel` joins \"{header}: {value}\" for visible columns with the row header first and the selected state; the selection `Checkbox` and `rowActions` are separate accessible elements inside. Sort controls render as a `Toolbar` of `Button`s above the list (no header row on phones). `responsive: scroll` (any width) and `stack` above the prose width: header `View` with `accessibilityRole=\"header\"` cells and rows of fixed-width cells; `scroll` wraps in a horizontal `ScrollView` with the row-header cells pinned by translating them with the scroll offset. Row press uses `Pressable` with `accessibilityRole=\"button\"` when `onRowPress` is set.",
       "Related": "DataGrid, Card, Checkbox, Toolbar, Meter, Text, Link."
     },
     "extensions": [],
@@ -31467,7 +31557,7 @@
         "children": {
           "type": "content",
           "required": true,
-          "description": "Controls in order: Buttons (usually `ghost` or `secondary`, `iconOnly` for glyph tools), SegmentedControl, Select, Switch. Group related controls with `ToolbarGroup`; a Divider is drawn between groups."
+          "description": "Controls in order: Buttons (usually `ghost` or `secondary`, `iconOnly` for glyph tools), SegmentedControl, Select, Switch. Group related controls with `ToolbarGroup`; a Divider is drawn between two adjacent groups only (a bare control next to a group gets `itemGap`, no Divider). Consumers never place Dividers themselves."
         },
         "orientation": {
           "type": "enum",
@@ -31486,7 +31576,7 @@
             "scroll"
           ],
           "default": "menu",
-          "description": "What happens when controls do not fit: wrap onto more rows, collapse trailing controls into a \"More\" Menu (each collapsible control must provide `overflowLabel`), or scroll horizontally with the edges faded. Collapsing takes whole entries from the end — a group goes into the Menu as a group, never half of one — and the width budget reserves `size.target.min` for the More trigger before it is rendered. `menu` is for horizontal toolbars; a vertical one treats it as `scroll`, since a menu overflow assumes a fixed cross axis."
+          "description": "What happens when controls do not fit: wrap onto more rows, collapse trailing controls into a \"More\" Menu (each collapsible control must provide `overflowLabel`), or scroll horizontally with the edges faded. Collapsing takes whole entries from the end — a group goes into the Menu as a group, never half of one — and the width budget reserves `size.target.min` for the More trigger before it is rendered. `menu` is for horizontal toolbars; a vertical one treats it as `scroll`, since a menu overflow assumes a fixed cross axis. An entry collapses only if every control in it is a Button: walking from the end, an entry holding any other control is skipped and stays visible, even when a Button entry before it collapses. Web removes collapsed controls from the render; Lit, whose controls are the consumer's light DOM, sets `hidden` on them instead; both leave them out of the roving list."
         },
         "size": {
           "type": "enum",
@@ -31496,7 +31586,7 @@
             "md"
           ],
           "default": "md",
-          "description": "Default for child controls that have a `size` prop and do not set their own (applied by cloning direct children; a child's own `size` wins)."
+          "description": "Default for the child controls that have a `size` prop — Button, SegmentedControl, Select and Search, recognised by component identity (web and React Native: the element type is the package component; Lit: the tag name), never by probing for a prop — and do not set their own. Applied to direct children and to the children of each ToolbarGroup; a child's own `size` wins. On Lit a child counts as sized when it has a `size` attribute at the moment the toolbar discovers it. The overflow Menu's trigger takes no size (Menu has no `size` prop)."
         },
         "density": {
           "type": "enum",
@@ -31592,24 +31682,24 @@
           "values": {
             "compact": "layout.gap.tight"
           },
-          "description": "Between adjacent controls, inside a group and between ungrouped top-level controls alike.",
+          "description": "Between adjacent controls, inside a group and between ungrouped top-level controls alike. An override replaces the value at both densities.",
           "locked": false
         },
         "groupGap": {
           "token": "layout.gap.normal",
           "part": "group",
-          "description": "Either side of a separator, replacing itemGap there (not added to it).",
+          "description": "Either side of a separator, replacing itemGap there (not added to it). Every platform applies it the same way: the row's gap stays itemGap and the separator part gets inline padding (block padding when vertical) of `groupGap − itemGap`, clamped at 0, so an override smaller than itemGap has no effect.",
           "locked": false
         },
         "separatorLength": {
           "token": "space.5",
           "part": "separator",
-          "description": "The Divider between groups is shorter than the toolbar height.",
+          "description": "The Divider between groups is shorter than the toolbar height. Divider has no length binding, so this is the block size (inline size when vertical) of the separator wrapper element, which carries the part hook; the Divider inside it has `orientation` across the toolbar axis, `spacing: none`, and stretches to fill the wrapper.",
           "locked": false
         },
         "fadeWidth": {
           "token": "space.6",
-          "description": "Edge fade for `overflow: scroll`, a gradient from the toolbar background to transparent.",
+          "description": "Edge fade for `overflow: scroll`, a gradient from the toolbar background to transparent. Each edge fades only while content is hidden past it, re-checked on scroll and on size changes.",
           "locked": false
         },
         "focusRing": {
@@ -31661,7 +31751,7 @@
             "aria-label",
             "aria-orientation"
           ],
-          "notes": "A <div role=\"toolbar\" aria-label aria-orientation> managing a roving tabindex over its focusable descendants (query on mount and on a MutationObserver; SegmentedControl and RadioGroup count as one control and keep their own inner arrow keys — the toolbar hands the key to them when focus is inside). Overflow `menu`: a ResizeObserver measures children and moves trailing ones into a Menu whose items reuse each control's `overflowLabel`/`onPress`; the hidden controls are removed from the DOM, not just hidden, so the roving list stays correct. Overflow `scroll`: overflow-x auto with scrollbar hidden and masked edges."
+          "notes": "A <div role=\"toolbar\" aria-label aria-orientation> managing a roving tabindex over its focusable descendants (query on mount and on a MutationObserver; a SegmentedControl counts as one control and keeps its own inner arrow keys — the toolbar hands the key to it when focus is inside). Overflow `menu`: a ResizeObserver measures children and moves trailing ones into a Menu whose items reuse each control's `overflowLabel`/`onPress`; the hidden controls are removed from the DOM, not just hidden, so the roving list stays correct. A menu item calls the collapsed Button's `onClick` with no argument — Button's `onPress` contract has no payload, so a handler that reads the event is outside it. Overflow `scroll`: overflow-x auto with scrollbar hidden and masked edges."
         },
         "lit": {
           "tag": "ds-toolbar",
@@ -31671,7 +31761,7 @@
             "size",
             "density"
           ],
-          "notes": "Slotted light-DOM children; the roving tabindex walks assigned elements (and into their shadow roots via delegatesFocus). ToolbarGroup is <ds-toolbar-group>. Overflow menu items are built from slotted elements' `overflow-label` attribute and a click() on the original element."
+          "notes": "Slotted light-DOM children; the roving tabindex walks assigned elements (and into their shadow roots via delegatesFocus). ToolbarGroup is <ds-toolbar-group>. Overflow menu items are built from slotted elements' `overflow-label` attribute and a click() on the original element, which stays in the light DOM with `hidden` (and `data-ds-toolbar-collapsed`) while collapsed. `<ds-toolbar-group>` takes a plain `label` attribute (its aria-label)."
         },
         "rn": {
           "element": "View",
@@ -31679,7 +31769,7 @@
             "accessibilityRole=toolbar",
             "accessibilityLabel"
           ],
-          "notes": "A horizontal ScrollView (overflow defaults to `scroll` on native; `menu` also works and opens an ActionSheet on phones through Menu's own rule). accessibilityRole=\"toolbar\" on the container. No roving focus without a hardware keyboard; every control is reachable by swipe."
+          "notes": "The root is a `View` (accessibilityRole=\"toolbar\", accessibilityLabel, testID) wrapping a horizontal ScrollView for `scroll` and `menu`, or a wrapping row View for `wrap`. `menu` has no native form: it renders as `scroll`, and only an explicitly passed `overflow=\"menu\"` logs a development warning, once per process (the schema default renders as `scroll` silently); the overflowButton and overflowMenu parts have no element here, since children are opaque and nothing measures them. `ToolbarGroup` is a `View` (gap `itemGap`, accessibilityLabel from `label`), and Toolbar renders the separator between adjacent groups as on web. No roving focus, no arrow or Home/End handling (Pressable has no key events, react-native-web included); every control is its own accessibility stop, reached by swipe or by Tab with a hardware keyboard."
         },
         "swiftui": {
           "element": "HStack",
@@ -31708,7 +31798,8 @@
             }
           ],
           "platforms": [
-            "web"
+            "web",
+            "lit"
           ]
         },
         {
@@ -31724,12 +31815,13 @@
             }
           ],
           "platforms": [
-            "web"
+            "web",
+            "lit"
           ]
         },
         {
           "name": "the-toolbar-is-one-tab-stop",
-          "description": "A roving tabindex over the focusable descendants makes each control the focus target; the container itself never takes focus.",
+          "description": "A roving tabindex over the focusable descendants makes each control the focus target (exactly one control has tabindex 0); the container itself never takes focus.",
           "then": [
             {
               "focusable": false
@@ -31746,7 +31838,7 @@
           "description": "The default row of ghost formatting buttons, named by what it controls.",
           "given": {
             "label": "Formatting",
-            "children": "Bold, Italic and Underline buttons"
+            "children": "Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)"
           }
         },
         {
@@ -31754,7 +31846,7 @@
           "description": "A tool palette beside a canvas, where arrows move up and down.",
           "given": {
             "label": "Drawing tools",
-            "children": "Select, Draw and Erase buttons",
+            "children": "Three ghost text Buttons labelled Select, Draw and Erase",
             "orientation": "vertical"
           }
         },
@@ -31763,7 +31855,7 @@
           "description": "A dense table-action row at toolbar height that folds trailing buttons into a More menu.",
           "given": {
             "label": "Table actions",
-            "children": "Filter, Sort, Export and Delete buttons",
+            "children": "Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel",
             "overflow": "menu",
             "density": "compact",
             "size": "sm"
@@ -31774,7 +31866,7 @@
           "description": "A filter row that scrolls horizontally with faded edges instead of collapsing.",
           "given": {
             "label": "Filters",
-            "children": "A SegmentedControl and two Selects",
+            "children": "A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)",
             "overflow": "scroll"
           }
         }
@@ -31912,10 +32004,10 @@
       "Overview": "A toolbar keeps a set of related controls together so the keyboard treats them as one stop: Tab reaches the toolbar, arrows move within it, Tab leaves it. That is what makes an editor with thirty buttons usable without thirty Tab presses.",
       "When to use": "Use a Toolbar for controls that act on the same thing and are used together: text formatting, a table's row actions, a map's view switches, a data page's filter–sort–export row. Group by purpose with `ToolbarGroup` (drawn with a Divider between groups). Use `overflow: menu` for toolbars whose width the layout cannot guarantee; give every control an `overflowLabel` so it reads well as a menu item.",
       "When not to use": "Do not use a Toolbar for page navigation (Breadcrumb, Tabs, a `nav` Landmark) or for a form's submit row (Form's action row). Do not put a single control in a toolbar. Do not use it as a generic horizontal Stack because it looks tidy: the roving tabindex changes how Tab works, which surprises users when the controls are unrelated.",
-      "Behavior": "Focus enters on the control that last had focus (initially the first). Arrow keys move along the toolbar's axis, skipping disabled controls, without wrapping; Home and End jump to the ends. A control that has its own arrow-key model (SegmentedControl, RadioGroup) keeps it: the toolbar only takes arrows when focus is on the control's edge and the arrow points out. When the toolbar is narrower than its content, `overflow` decides: wrap, move trailing controls into a \"More\" Menu (kept in their original order, groups become Menu groups), or scroll with faded edges. `ToolbarGroup` is part of Toolbar's API (`label` for the group's accessible name, `children`); a Divider is drawn between groups. Only Buttons collapse into the overflow Menu, using their `overflowLabel`; SegmentedControl, Select and Switch never collapse — the toolbar measures them as fixed and collapses Buttons from the end first. A control with its own arrow-key model handles the key first; the toolbar acts only when the control did not (`defaultPrevented`). On native the fade is drawn with react-native-svg; `overflow: menu` renders as `scroll` with a development warning, since children are opaque there and nothing measures them — the overflowButton and overflowMenu parts have no element on that platform, and grouping is a Divider between clusters rather than a ToolbarGroup element. `focusRing` and `focusRingWidth` are locked but Toolbar applies them nowhere: every focusable thing in it is a composed child drawing its own ring, and the hooks exist only as the consumer's own-CSS escape hatch.",
+      "Behavior": "Focus enters on the control that last had focus (initially the first). Arrow keys move along the toolbar's axis, skipping disabled controls, without wrapping; Home and End jump to the ends. A control that has its own arrow-key model (SegmentedControl) keeps it: inside a toolbar it stops wrapping and leaves an arrow pointing out of its edge, and Home and End, unhandled, so the toolbar moves on (SegmentedControl's own doc states this). A text-entry control (an input, a textarea, Search) keeps ArrowLeft, ArrowRight, Home and End for its caret — the toolbar never takes them from it, so put such a control last. When the toolbar is narrower than its content, `overflow` decides: wrap, move trailing controls into a \"More\" Menu (kept in their original order, groups become Menu groups), or scroll with faded edges. `ToolbarGroup` is part of Toolbar's API on every platform: an optional `label` (a string: the `role=\"group\"` accessible name, and the Menu group heading when the group collapses) and `children`; a Divider is drawn between two adjacent groups. A collapsed group without a `label` becomes plain Menu items set off from earlier items by a Menu separator. Only Buttons collapse into the overflow Menu, using their `overflowLabel`, falling back to the Button's `label` and then its text content, with a development warning once per control when `overflowLabel` is missing; SegmentedControl, Select and Switch never collapse — the toolbar measures them as fixed and collapses Buttons from the end first. A control with its own arrow-key model handles the key first; the toolbar acts only when the control did not (`defaultPrevented`). The overflowButton part is the overflow Menu's own trigger (`iconOnly`, `triggerVariant: ghost`, `triggerIcon: ellipsis`, `label` from `copy.more`): Menu renders that Button itself, so Toolbar puts no part hook on it and only the Menu carries the overflowMenu hook. On native the fade is drawn with react-native-svg; `overflow: menu` renders as `scroll` (see the React Native notes), since children are opaque there and nothing measures them — the overflowButton and overflowMenu parts have no element on that platform. ToolbarGroup is a real element on every platform, native included. `focusRing` and `focusRingWidth` are locked but Toolbar applies them nowhere: every focusable thing in it is a composed child drawing its own ring, and the hooks exist only as the consumer's own-CSS escape hatch.",
       "Content guidelines": "Icon-only buttons need a Tooltip and an `overflowLabel`; the two should be the same words (\"Bold\", \"Align left\"). Put the most-used controls first, the destructive ones last and in their own group. A toolbar's `label` names what it controls, not \"toolbar\".",
       "Accessibility": "The container is a `toolbar` with an accessible name and orientation (WCAG 4.1.2; APG toolbar), using a roving tabindex so it is a single tab stop (2.4.3) with arrow-key movement (2.1.1). Controls keep their own roles and names, so the Menu that overflow produces has the same names. Focus is visible on each control (2.4.7), targets meet 24px, and a scrolling toolbar remains keyboard-reachable because focusing a control scrolls it into view.",
-      "Platform notes": "### Web\nRender `<div role=\"toolbar\" aria-label aria-orientation data-ds=\"Toolbar\">`; children in `ToolbarGroup` (`<div role=\"group\">`) separated by `Divider orientation=\"vertical\"` with its length from `separatorLength`. Roving tabindex: keep an index into the focusable list (`button, [role=radio][aria-checked=true], select, input, [tabindex]` that are not disabled), set `tabIndex 0` on the current and `-1` on the rest, update on `focusin`. Keydown per the table, respecting `orientation`. Overflow `menu`: a `ResizeObserver` on the container, measure children offsets, move those past the limit into state rendered by `Menu` (trigger a `Button ghost iconOnly` \"More\" with the ellipsis Icon); `scroll`: `overflow-x: auto; scrollbar-width: none` plus `mask-image` linear gradients of `fadeWidth`.\n\n### Lit\n`<ds-toolbar label=\"Formatting\"><ds-toolbar-group><ds-button …></ds-toolbar-group>…</ds-toolbar>`; the roving list is rebuilt on `slotchange`; keys handled on the host from bubbling keydown, using `composedPath()` to find the control.\n\n### React Native\nHorizontal `ScrollView` with `contentContainerStyle` gap from `itemGap`, `accessibilityRole=\"toolbar\"`; groups are `View`s separated by `Divider`. Overflow `menu` uses `Menu` (ActionSheet on phones). Arrow handling applies on react-native-web only.",
+      "Platform notes": "### Web\nRender `<div role=\"toolbar\" aria-label aria-orientation data-ds=\"Toolbar\">`; children in `ToolbarGroup` (`<div role=\"group\">`) separated by `Divider orientation=\"vertical\"` with its length from `separatorLength`. Roving tabindex: keep an index into the focusable list (`button`, `select`, `textarea`, `input` other than hidden and unchecked radio inputs, `[role=radio][aria-checked=true]`, and `[tabindex]` on non-native elements only — so a control the toolbar set to -1 stays in the list — none of them disabled), set `tabIndex 0` on the current and `-1` on the rest, update on `focusin`. Keydown per the table, respecting `orientation`. Overflow `menu`: a `ResizeObserver` on the container, measure children offsets, move those past the limit into state rendered by `Menu` (trigger a `Button ghost iconOnly` \"More\" with the ellipsis Icon); `scroll`: `overflow-x: auto; scrollbar-width: none` plus `mask-image` linear gradients of `fadeWidth`.\n\n### Lit\n`<ds-toolbar label=\"Formatting\"><ds-toolbar-group><ds-button …></ds-toolbar-group>…</ds-toolbar>`; the roving list is rebuilt on `slotchange`; keys handled on the host from bubbling keydown, using `composedPath()` to find the control.\n\n### React Native\nA root `View` with `accessibilityRole=\"toolbar\"` wrapping a horizontal `ScrollView` (`contentContainerStyle` gap from `itemGap`); groups are `ToolbarGroup` `View`s with the separator between adjacent ones. Overflow `menu` renders as `scroll` (explicit `menu` warns once in development). No arrow handling on native or react-native-web.",
       "Related": "Button, Menu, SegmentedControl, Divider, Tooltip."
     },
     "extensions": [],

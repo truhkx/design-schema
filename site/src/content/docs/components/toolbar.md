@@ -20,7 +20,7 @@ component:
     children:
       type: content
       required: true
-      description: 'Controls in order: Buttons (usually `ghost` or `secondary`, `iconOnly` for glyph tools), SegmentedControl, Select, Switch. Group related controls with `ToolbarGroup`; a Divider is drawn between groups.'
+      description: 'Controls in order: Buttons (usually `ghost` or `secondary`, `iconOnly` for glyph tools), SegmentedControl, Select, Switch. Group related controls with `ToolbarGroup`; a Divider is drawn between two adjacent groups only (a bare control next to a group gets `itemGap`, no Divider). Consumers never place Dividers themselves.'
     orientation:
       type: enum
       values: [horizontal, vertical]
@@ -30,13 +30,13 @@ component:
       type: enum
       values: [wrap, menu, scroll]
       default: menu
-      description: 'What happens when controls do not fit: wrap onto more rows, collapse trailing controls into a "More" Menu (each collapsible control must provide `overflowLabel`), or scroll horizontally with the edges faded. Collapsing takes whole entries from the end — a group goes into the Menu as a group, never half of one — and the width budget reserves `size.target.min` for the More trigger before it is rendered. `menu` is for horizontal toolbars; a vertical one treats it as `scroll`, since a menu overflow assumes a fixed cross axis.'
+      description: 'What happens when controls do not fit: wrap onto more rows, collapse trailing controls into a "More" Menu (each collapsible control must provide `overflowLabel`), or scroll horizontally with the edges faded. Collapsing takes whole entries from the end — a group goes into the Menu as a group, never half of one — and the width budget reserves `size.target.min` for the More trigger before it is rendered. `menu` is for horizontal toolbars; a vertical one treats it as `scroll`, since a menu overflow assumes a fixed cross axis. An entry collapses only if every control in it is a Button: walking from the end, an entry holding any other control is skipped and stays visible, even when a Button entry before it collapses. Web removes collapsed controls from the render; Lit, whose controls are the consumer''s light DOM, sets `hidden` on them instead; both leave them out of the roving list.'
     size:
       type: enum
       enumRef: size
       values: [sm, md]
       default: md
-      description: 'Default for child controls that have a `size` prop and do not set their own (applied by cloning direct children; a child''s own `size` wins).'
+      description: 'Default for the child controls that have a `size` prop — Button, SegmentedControl, Select and Search, recognised by component identity (web and React Native: the element type is the package component; Lit: the tag name), never by probing for a prop — and do not set their own. Applied to direct children and to the children of each ToolbarGroup; a child''s own `size` wins. On Lit a child counts as sized when it has a `size` attribute at the moment the toolbar discovers it. The overflow Menu''s trigger takes no size (Menu has no `size` prop).'
     density:
       type: enum
       values: [compact, comfortable]
@@ -57,10 +57,10 @@ component:
     radius: { token: radius.md }
     paddingInline: { token: space.2 }
     paddingBlock: { token: space.1 }
-    itemGap: { token: layout.gap.normal, by: density, values: { compact: layout.gap.tight }, description: 'Between adjacent controls, inside a group and between ungrouped top-level controls alike.' }
-    groupGap: { token: layout.gap.normal, part: group, description: 'Either side of a separator, replacing itemGap there (not added to it).' }
-    separatorLength: { token: space.5, part: separator, description: 'The Divider between groups is shorter than the toolbar height.' }
-    fadeWidth: { token: space.6, description: 'Edge fade for `overflow: scroll`, a gradient from the toolbar background to transparent.' }
+    itemGap: { token: layout.gap.normal, by: density, values: { compact: layout.gap.tight }, description: 'Between adjacent controls, inside a group and between ungrouped top-level controls alike. An override replaces the value at both densities.' }
+    groupGap: { token: layout.gap.normal, part: group, description: 'Either side of a separator, replacing itemGap there (not added to it). Every platform applies it the same way: the row''s gap stays itemGap and the separator part gets inline padding (block padding when vertical) of `groupGap − itemGap`, clamped at 0, so an override smaller than itemGap has no effect.' }
+    separatorLength: { token: space.5, part: separator, description: 'The Divider between groups is shorter than the toolbar height. Divider has no length binding, so this is the block size (inline size when vertical) of the separator wrapper element, which carries the part hook; the Divider inside it has `orientation` across the toolbar axis, `spacing: none`, and stretches to fill the wrapper.' }
+    fadeWidth: { token: space.6, description: 'Edge fade for `overflow: scroll`, a gradient from the toolbar background to transparent. Each edge fades only while content is hidden past it, re-checked on scroll and on size changes.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
   copy:
@@ -76,15 +76,15 @@ component:
     web:
       element: div
       attributes: [role=toolbar, aria-label, aria-orientation]
-      notes: 'A <div role="toolbar" aria-label aria-orientation> managing a roving tabindex over its focusable descendants (query on mount and on a MutationObserver; SegmentedControl and RadioGroup count as one control and keep their own inner arrow keys — the toolbar hands the key to them when focus is inside). Overflow `menu`: a ResizeObserver measures children and moves trailing ones into a Menu whose items reuse each control''s `overflowLabel`/`onPress`; the hidden controls are removed from the DOM, not just hidden, so the roving list stays correct. Overflow `scroll`: overflow-x auto with scrollbar hidden and masked edges.'
+      notes: 'A <div role="toolbar" aria-label aria-orientation> managing a roving tabindex over its focusable descendants (query on mount and on a MutationObserver; a SegmentedControl counts as one control and keeps its own inner arrow keys — the toolbar hands the key to it when focus is inside). Overflow `menu`: a ResizeObserver measures children and moves trailing ones into a Menu whose items reuse each control''s `overflowLabel`/`onPress`; the hidden controls are removed from the DOM, not just hidden, so the roving list stays correct. A menu item calls the collapsed Button''s `onClick` with no argument — Button''s `onPress` contract has no payload, so a handler that reads the event is outside it. Overflow `scroll`: overflow-x auto with scrollbar hidden and masked edges.'
     lit:
       tag: ds-toolbar
       reflect: [orientation, overflow, size, density]
-      notes: 'Slotted light-DOM children; the roving tabindex walks assigned elements (and into their shadow roots via delegatesFocus). ToolbarGroup is <ds-toolbar-group>. Overflow menu items are built from slotted elements'' `overflow-label` attribute and a click() on the original element.'
+      notes: 'Slotted light-DOM children; the roving tabindex walks assigned elements (and into their shadow roots via delegatesFocus). ToolbarGroup is <ds-toolbar-group>. Overflow menu items are built from slotted elements'' `overflow-label` attribute and a click() on the original element, which stays in the light DOM with `hidden` (and `data-ds-toolbar-collapsed`) while collapsed. `<ds-toolbar-group>` takes a plain `label` attribute (its aria-label).'
     rn:
       element: View
       props: [accessibilityRole=toolbar, accessibilityLabel]
-      notes: 'A horizontal ScrollView (overflow defaults to `scroll` on native; `menu` also works and opens an ActionSheet on phones through Menu''s own rule). accessibilityRole="toolbar" on the container. No roving focus without a hardware keyboard; every control is reachable by swipe.'
+      notes: 'The root is a `View` (accessibilityRole="toolbar", accessibilityLabel, testID) wrapping a horizontal ScrollView for `scroll` and `menu`, or a wrapping row View for `wrap`. `menu` has no native form: it renders as `scroll`, and only an explicitly passed `overflow="menu"` logs a development warning, once per process (the schema default renders as `scroll` silently); the overflowButton and overflowMenu parts have no element here, since children are opaque and nothing measures them. `ToolbarGroup` is a `View` (gap `itemGap`, accessibilityLabel from `label`), and Toolbar renders the separator between adjacent groups as on web. No roving focus, no arrow or Home/End handling (Pressable has no key events, react-native-web included); every control is its own accessibility stop, reached by swipe or by Tab with a hardware keyboard.'
     swiftui:
       element: HStack
       props: [.accessibilityElement=contain, .accessibilityLabel, .focusSection, .onMoveCommand, '@FocusState', ViewThatFits, Menu, Divider, ScrollView]
@@ -96,31 +96,31 @@ component:
       description: The toolbar reports the axis its arrow keys move along.
       then:
         - { attribute: aria-orientation, is: horizontal }
-      platforms: [web]
+      platforms: [web, lit]
     - name: vertical-toolbar-reports-its-orientation
       description: A vertical toolbar sits beside a canvas and swaps its arrow axis, which aria-orientation announces.
       given: { orientation: vertical }
       then:
         - { attribute: aria-orientation, is: vertical }
-      platforms: [web]
+      platforms: [web, lit]
     - name: the-toolbar-is-one-tab-stop
-      description: A roving tabindex over the focusable descendants makes each control the focus target; the container itself never takes focus.
+      description: A roving tabindex over the focusable descendants makes each control the focus target (exactly one control has tabindex 0); the container itself never takes focus.
       then:
         - { focusable: false }
       platforms: [web]
   examples:
     - name: formatting-toolbar
       description: The default row of ghost formatting buttons, named by what it controls.
-      given: { label: Formatting, children: 'Bold, Italic and Underline buttons' }
+      given: { label: Formatting, children: 'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)' }
     - name: vertical-tool-palette
       description: A tool palette beside a canvas, where arrows move up and down.
-      given: { label: Drawing tools, children: 'Select, Draw and Erase buttons', orientation: vertical }
+      given: { label: Drawing tools, children: 'Three ghost text Buttons labelled Select, Draw and Erase', orientation: vertical }
     - name: compact-actions-with-overflow
       description: A dense table-action row at toolbar height that folds trailing buttons into a More menu.
-      given: { label: Table actions, children: 'Filter, Sort, Export and Delete buttons', overflow: menu, density: compact, size: sm }
+      given: { label: Table actions, children: 'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel', overflow: menu, density: compact, size: sm }
     - name: scrolling-filter-row
       description: A filter row that scrolls horizontally with faded edges instead of collapsing.
-      given: { label: Filters, children: 'A SegmentedControl and two Selects', overflow: scroll }
+      given: { label: Filters, children: 'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)', overflow: scroll }
 ---
 
 A toolbar keeps a set of related controls together so the keyboard treats them as one stop: Tab reaches the toolbar, arrows move within it, Tab leaves it. That is what makes an editor with thirty buttons usable without thirty Tab presses.
@@ -135,7 +135,7 @@ Do not use a Toolbar for page navigation (Breadcrumb, Tabs, a `nav` Landmark) or
 
 ## Behavior
 
-Focus enters on the control that last had focus (initially the first). Arrow keys move along the toolbar's axis, skipping disabled controls, without wrapping; Home and End jump to the ends. A control that has its own arrow-key model (SegmentedControl, RadioGroup) keeps it: the toolbar only takes arrows when focus is on the control's edge and the arrow points out. When the toolbar is narrower than its content, `overflow` decides: wrap, move trailing controls into a "More" Menu (kept in their original order, groups become Menu groups), or scroll with faded edges. `ToolbarGroup` is part of Toolbar's API (`label` for the group's accessible name, `children`); a Divider is drawn between groups. Only Buttons collapse into the overflow Menu, using their `overflowLabel`; SegmentedControl, Select and Switch never collapse — the toolbar measures them as fixed and collapses Buttons from the end first. A control with its own arrow-key model handles the key first; the toolbar acts only when the control did not (`defaultPrevented`). On native the fade is drawn with react-native-svg; `overflow: menu` renders as `scroll` with a development warning, since children are opaque there and nothing measures them — the overflowButton and overflowMenu parts have no element on that platform, and grouping is a Divider between clusters rather than a ToolbarGroup element. `focusRing` and `focusRingWidth` are locked but Toolbar applies them nowhere: every focusable thing in it is a composed child drawing its own ring, and the hooks exist only as the consumer's own-CSS escape hatch.
+Focus enters on the control that last had focus (initially the first). Arrow keys move along the toolbar's axis, skipping disabled controls, without wrapping; Home and End jump to the ends. A control that has its own arrow-key model (SegmentedControl) keeps it: inside a toolbar it stops wrapping and leaves an arrow pointing out of its edge, and Home and End, unhandled, so the toolbar moves on (SegmentedControl's own doc states this). A text-entry control (an input, a textarea, Search) keeps ArrowLeft, ArrowRight, Home and End for its caret — the toolbar never takes them from it, so put such a control last. When the toolbar is narrower than its content, `overflow` decides: wrap, move trailing controls into a "More" Menu (kept in their original order, groups become Menu groups), or scroll with faded edges. `ToolbarGroup` is part of Toolbar's API on every platform: an optional `label` (a string: the `role="group"` accessible name, and the Menu group heading when the group collapses) and `children`; a Divider is drawn between two adjacent groups. A collapsed group without a `label` becomes plain Menu items set off from earlier items by a Menu separator. Only Buttons collapse into the overflow Menu, using their `overflowLabel`, falling back to the Button's `label` and then its text content, with a development warning once per control when `overflowLabel` is missing; SegmentedControl, Select and Switch never collapse — the toolbar measures them as fixed and collapses Buttons from the end first. A control with its own arrow-key model handles the key first; the toolbar acts only when the control did not (`defaultPrevented`). The overflowButton part is the overflow Menu's own trigger (`iconOnly`, `triggerVariant: ghost`, `triggerIcon: ellipsis`, `label` from `copy.more`): Menu renders that Button itself, so Toolbar puts no part hook on it and only the Menu carries the overflowMenu hook. On native the fade is drawn with react-native-svg; `overflow: menu` renders as `scroll` (see the React Native notes), since children are opaque there and nothing measures them — the overflowButton and overflowMenu parts have no element on that platform. ToolbarGroup is a real element on every platform, native included. `focusRing` and `focusRingWidth` are locked but Toolbar applies them nowhere: every focusable thing in it is a composed child drawing its own ring, and the hooks exist only as the consumer's own-CSS escape hatch.
 
 ## Content guidelines
 
@@ -148,13 +148,13 @@ The container is a `toolbar` with an accessible name and orientation (WCAG 4.1.2
 ## Platform notes
 
 ### Web
-Render `<div role="toolbar" aria-label aria-orientation data-ds="Toolbar">`; children in `ToolbarGroup` (`<div role="group">`) separated by `Divider orientation="vertical"` with its length from `separatorLength`. Roving tabindex: keep an index into the focusable list (`button, [role=radio][aria-checked=true], select, input, [tabindex]` that are not disabled), set `tabIndex 0` on the current and `-1` on the rest, update on `focusin`. Keydown per the table, respecting `orientation`. Overflow `menu`: a `ResizeObserver` on the container, measure children offsets, move those past the limit into state rendered by `Menu` (trigger a `Button ghost iconOnly` "More" with the ellipsis Icon); `scroll`: `overflow-x: auto; scrollbar-width: none` plus `mask-image` linear gradients of `fadeWidth`.
+Render `<div role="toolbar" aria-label aria-orientation data-ds="Toolbar">`; children in `ToolbarGroup` (`<div role="group">`) separated by `Divider orientation="vertical"` with its length from `separatorLength`. Roving tabindex: keep an index into the focusable list (`button`, `select`, `textarea`, `input` other than hidden and unchecked radio inputs, `[role=radio][aria-checked=true]`, and `[tabindex]` on non-native elements only — so a control the toolbar set to -1 stays in the list — none of them disabled), set `tabIndex 0` on the current and `-1` on the rest, update on `focusin`. Keydown per the table, respecting `orientation`. Overflow `menu`: a `ResizeObserver` on the container, measure children offsets, move those past the limit into state rendered by `Menu` (trigger a `Button ghost iconOnly` "More" with the ellipsis Icon); `scroll`: `overflow-x: auto; scrollbar-width: none` plus `mask-image` linear gradients of `fadeWidth`.
 
 ### Lit
 `<ds-toolbar label="Formatting"><ds-toolbar-group><ds-button …></ds-toolbar-group>…</ds-toolbar>`; the roving list is rebuilt on `slotchange`; keys handled on the host from bubbling keydown, using `composedPath()` to find the control.
 
 ### React Native
-Horizontal `ScrollView` with `contentContainerStyle` gap from `itemGap`, `accessibilityRole="toolbar"`; groups are `View`s separated by `Divider`. Overflow `menu` uses `Menu` (ActionSheet on phones). Arrow handling applies on react-native-web only.
+A root `View` with `accessibilityRole="toolbar"` wrapping a horizontal `ScrollView` (`contentContainerStyle` gap from `itemGap`); groups are `ToolbarGroup` `View`s with the separator between adjacent ones. Overflow `menu` renders as `scroll` (explicit `menu` warns once in development). No arrow handling on native or react-native-web.
 
 ## Related
 

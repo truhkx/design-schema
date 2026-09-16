@@ -70,3 +70,6 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - `has-accessible-name` is skipped when a11y.role is `none`; it can't target a child input (DatePicker, lit).
 - rn scenarios press Buttons by copy label and `click: day` resolves to the 18th cell because no cell is named (DatePicker, rn).
 - All DatePicker grid keyboard rules are `expect: manual`, so no generated test covers them (DatePicker, web).
+- Keyboard story has no `given` to follow, so the generator invents autoplay and slide content for it (Carousel, rn).
+- Example stories must render exactly their given, but meta.args (caption/columns/data) still merge in (Table, rn).
+- Array `shape` strings are used verbatim (`abbr?: string`), which under exactOptionalPropertyTypes forbids an explicit undefined where the props convention adds `| undefined` (Table, rn).

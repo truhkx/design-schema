@@ -1306,3 +1306,93 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-16 DatePicker lit: what carries name and aria-invalid → the input(s)
 2026-09-16 DatePicker lit: Popover first-focus and re-measure → DatePicker focuses day after open, requests reposition
 2026-09-16 DatePicker lit: hideLabel binding → visually-hidden clip, none needed
+2026-09-16 Toolbar rn: notes said menu works natively, Guidance said scroll → menu renders as scroll; overflow parts have no native element
+2026-09-16 Toolbar rn: schema default menu vs native default scroll → default renders scroll silently; only explicit menu warns once
+2026-09-16 Toolbar rn: element View vs notes' horizontal ScrollView → root View wraps ScrollView (scroll/menu) or wrapping View (wrap)
+2026-09-16 Toolbar rn: who renders native Divider between clusters → ToolbarGroup View on native; Toolbar renders separators, consumers never do
+2026-09-16 Toolbar rn: groupGap has no gap-only form → separator padding groupGap − itemGap, clamped at 0, every platform
+2026-09-16 Toolbar rn: itemGap override vs density unstated → an override replaces the value at both densities
+2026-09-16 Toolbar rn,web,lit: can't tell which children have a size prop → Button/SegmentedControl/Select/Search by identity, direct and ToolbarGroup children
+2026-09-16 Toolbar rn,lit: fade shows even with nothing scrolled past → each edge fades only while content is hidden past it
+2026-09-16 Toolbar rn: arrow keys on react-native-web without a mechanism → no arrow handling on native or react-native-web; Tab/swipe
+2026-09-16 Toolbar rn,lit,web: example children are prose → concrete ghost text Buttons, SegmentedControl and named Selects with options
+2026-09-16 Toolbar rn,lit: focusRing locked but applied nowhere → NOISE, Guidance already says so
+2026-09-16 Toolbar lit: removing consumer light DOM on collapse → Lit sets hidden plus data-ds-toolbar-collapsed; web removes from render
+2026-09-16 Toolbar lit: whole entries from end vs only Buttons collapse → entry collapses only if all Buttons; others skipped and stay
+2026-09-16 Toolbar lit,web: ToolbarGroup has no stated props → optional label: group name and Menu group heading; unlabelled uses separator
+2026-09-16 Toolbar lit: Divider between group and bare control? → only between two adjacent ToolbarGroups
+2026-09-16 Toolbar lit,web: separator length and negative spacing → separator wrapper block size; Divider spacing none, stretches; clamp at 0
+2026-09-16 Toolbar lit,web: overflowButton part is inside Menu's own trigger → Menu trigger props named; no Toolbar hook on it
+2026-09-16 Toolbar lit,web: SegmentedControl always prevents arrows, focus trapped → in a toolbar it stops wrapping, leaves edge arrows/Home/End (segmentedcontrol.md)
+2026-09-16 Toolbar lit: arrows/Home/End in text-entry controls → toolbar never takes them from inputs; put such controls last
+2026-09-16 Toolbar lit,web: overflowLabel missing has no fallback → falls back to label then text, dev warning once per control
+2026-09-16 Toolbar lit: reflected default size indistinguishable from authored → sized means a size attribute when discovered
+2026-09-16 Toolbar lit: orientation scenarios web-only though Lit sets aria-orientation → both orientation scenarios run on web and lit
+2026-09-16 Toolbar web: menu item calls onClick without an event → stated: onPress has no payload, handlers reading events are outside contract
+2026-09-16 Toolbar web: roving selector drops tabindex -1 and native radios → narrowed selector written into web notes
+2026-09-16 Toolbar web: one-tab-stop test checks one tabindex 0 → scenario description says exactly one control has tabindex 0
+2026-09-16 Carousel rn: notes say Button has no focus callback → rn Button forwards onFocus/onBlur; focus pauses while it lasts
+2026-09-16 Carousel rn: autoplay cleared on touch vs paused while touching → touch pauses while it lasts; only pause button or end stops
+2026-09-16 Carousel rn: non-accessible adjustable region unreachable on iOS → adjustable role and actions move to each visible slide
+2026-09-16 Carousel rn: increment/decrement action labels not in copy → copy.next and copy.previous
+2026-09-16 Carousel rn,web,lit: paging near the end and loop with perView → min/max page formulas, loop wraps last page start, arrows disabled total ≤ page
+2026-09-16 Carousel rn,lit: which dots are current with perView > 1, picker past end → every slide on the page; picker index clamps to total − page
+2026-09-16 Carousel rn,lit: tab order play/prev/next/picker vs layout → web/Lit DOM order with grid; RN tree order play, prev, next, slides, picker
+2026-09-16 Carousel rn,lit,web: tabs picker has no tokens → new tab* bindings (muted/strong, sm, medium, space.sm/md, focus-width underline) + contrast pairs
+2026-09-16 Carousel rn: tab weight can't animate → weight constant; transition covers dot background and tab colour
+2026-09-16 Carousel rn,lit: controlSurface radius only in prose → new controlRadius binding radius.full
+2026-09-16 Carousel rn,lit: controlOffset has no part; play button position → inline inset of controlSurface; play row above viewport at pickerOffset
+2026-09-16 Carousel rn,web: composed Buttons can't carry part hooks → wrapper span/View per part; arrows' wrapper inside controlSurface
+2026-09-16 Carousel rn,web,lit: how the visible count is measured → page is perView above viewport width layout.maxWidth.prose, else 1
+2026-09-16 Carousel rn: programmatic scrolls misreported as swipe → swipe only for user-started scrolls, per platform signal
+2026-09-16 Carousel rn,web: interval warning repetition and condition → once per instance, only while autoplay is on, raised in every build
+2026-09-16 Carousel rn,lit,web: aria-live on track vs separate liveRegion → only liveRegion is live (off rotating, polite otherwise); RN too
+2026-09-16 Carousel rn,lit,web: example slides call for photos and images → Cards with headings as labelled stand-ins
+2026-09-16 Carousel lit: composition lists too few Button props → arrows iconOnly secondary; play secondary, not default variant
+2026-09-16 Carousel lit: slide name joiner for n of total plus heading → name is copy.slideLabel alone; heading read as content
+2026-09-16 Carousel lit,web: CarouselSlide has no schema → label: string required plus children; missing label falls back to goTo with warning
+2026-09-16 Carousel lit,web: picker arrows wrap or respect loop? → wrap as Tabs, one slide, reason picker, roving tabindex for dots and tabs
+2026-09-16 Carousel lit: autoplay end state without loop → counts as stopped; play restarts from the first slide
+2026-09-16 Carousel lit: slideGap on slotted slides → the track's gap; slotted slides get data-part=slide
+2026-09-16 Carousel lit: pickerOffset application → a gap between rows, not a margin
+2026-09-16 Carousel lit: controlled activeIndex kept after swipe → scrolls back to activeIndex
+2026-09-16 Carousel lit: picker accessible name unspecified → new copy.pickerLabel "Choose a slide" on dots group and tablist
+2026-09-16 Carousel web: scrollIntoView scrolls the page → scroll the viewport directly, instant under reduced motion and first positioning
+2026-09-16 Carousel web: tabs picker slides tabpanel vs group → tabpanel with roledescription slide when picker is tabs
+2026-09-16 Carousel web: onChange programmatic ambiguous → autoplay and swipe only; controlled activeIndex change never fires
+2026-09-16 Carousel web: does play override the focus it caused → play clears hover/focus/touch pauses; touch pointerenter is not hover
+2026-09-16 Carousel web: minTarget names no part → arrow controlSurface hit area and tab minimum block size
+2026-09-16 Carousel web: aria-hidden and inert both listed → both set on slides outside the visible page
+2026-09-16 Carousel rn: Keyboard story has no given → TOOLING
+2026-09-16 Table rn: phones always stacked vs responsive scroll → responsive wins on every width; stack below prose only
+2026-09-16 Table rn,web: phone vs tablet and hideBelow in scroll → measured table width vs prose; hideBelow applies in stack only
+2026-09-16 Table rn: synced row-header list drifts → row-header cells translated by scroll offset, no second list
+2026-09-16 Table rn: scrollFade needs a gradient → react-native-svg as Toolbar; edges fade only with hidden columns
+2026-09-16 Table rn: arrow-key scrolling has no native hook → stated limit: scroll region scrolls by swipe only
+2026-09-16 Table rn,lit: no binding between stacked row blocks → new stackedBlockGap layout.gap.tight; blocks outlined with rowBorder
+2026-09-16 Table rn,lit,web: selected bar drawing and layout shift → inset shadow on first cell (web/Lit); RN reserves border always
+2026-09-16 Table rn,lit,web: sort-arrow transition impossible → transition covers hover background only; arrow swaps instantly
+2026-09-16 Table rn: which sort phrase is the accessibleName → the phrase for what the press will do
+2026-09-16 Table rn,web: forwards give no default; cellGap to iconGap → composition forwards to Heading and Button, Table value always passed
+2026-09-16 Table rn: footer typography without cascade → string footer in Text with table font bindings; other content own
+2026-09-16 Table rn,lit,web: loading text placement with and without rows → emptyState without rows; muted live Text below table with rows
+2026-09-16 Table rn,web: rowCount placement and locale, announcements on native → RN accessibilityHint; web document lang; RN live regions plus iOS announce
+2026-09-16 Table rn: stacked Toolbar sort Buttons lack testID → stated: no Table.sortButton testID there
+2026-09-16 Table rn: shape strings verbatim vs exactOptionalPropertyTypes → TOOLING
+2026-09-16 Table rn: meta.args leak into example stories → TOOLING
+2026-09-16 Table lit: onRowPress opt-in can't see listeners → Lit rows pressable only with pressable-rows attribute
+2026-09-16 Table lit: captionLevel attribute name → unreflected caption-level
+2026-09-16 Table lit,web: single selection header cell → empty td role=cell with no part
+2026-09-16 Table lit,web: numericFont fallback undetectable → always mono family plus tabular-nums on end-aligned body cells
+2026-09-16 Table lit,web: stickyHeader inside scroll region → sticks only with maxHeight viewport; otherwise no effect in scroll
+2026-09-16 Table lit: width min/fill sizing rule → min 1% nowrap, fill takes remaining width
+2026-09-16 Table lit,web: sortToolbarLabel and cellLabel unused on web/Lit → stated as RN and SwiftUI only
+2026-09-16 Table lit: aria-busy target in shadow root → the shadow table element, which also carries the name
+2026-09-16 Table web: sortButton can't carry data-part → no own hook; the Button inside columnHeader
+2026-09-16 Table web: visually hidden thead hides focusable controls in stack → select-all and sortable headers stay visible as a wrapping row
+2026-09-16 Table web: maxHeight viewport scroll element → frame around table (scroll region in scroll mode), observer root
+2026-09-16 Table web: ::before label can't be aria-hidden → content alt text empty with plain fallback
+2026-09-16 Table web: row header label in stack mode → no data-label; it is the row's name
+2026-09-16 Table web: onRowPress by pointer outside the Button → click anywhere outside a control fires it on web and Lit
+2026-09-16 Table web: actions header part → columnHeader part like the others
+2026-09-16 Table web: Checkbox registers with Form inside a table → doc says not form fields; Checkbox opt-out to CODE

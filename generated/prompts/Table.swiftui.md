@@ -75,8 +75,20 @@ component:
   - emptyState
   - footer
   composition:
-    caption: Heading
-    sortButton: Button
+    caption:
+      component: Heading
+      forwards:
+        captionSize: fontSize
+        captionWeight: fontWeight
+        captionGap: marginBlockEnd
+    sortButton:
+      component: Button
+      props:
+        variant: ghost
+        size: sm
+      forwards:
+        headerWeight: fontWeight
+        cellGap: iconGap
     selectCell: Checkbox
     selectAllCell: Checkbox
     emptyState: Text
@@ -100,7 +112,9 @@ component:
     footer:
       type: content
       description: 'Content below the table: a row count, pagination, a total. Rendered
-        in the `footer` part with the table''s font.'
+        in the `footer` part with the table''s font: a string footer renders in Text
+        with the `fontFamily`/`fontSize`/`lineHeight` bindings; other content brings
+        its own typography (React Native has no cascade).'
     hideCaption:
       type: boolean
       default: false
@@ -115,8 +129,11 @@ component:
       description: 'Column definitions in display order. `header` is the visible heading;
         `align: end` for numbers; `sortable` adds the sort button; exactly one column
         may be `isRowHeader` (its cells become row headers, and it is the row''s name
-        when stacked); `hideBelow` drops a column below a layout width; `render` formats
-        the cell (a Text, Link, Meter, or Button — never raw HTML).'
+        when stacked); `hideBelow` drops a column below a layout width in `responsive:
+        stack` only (scrolling tables keep every column); `width: min` shrinks to
+        content without wrapping (web: `inline-size: 1%` plus nowrap), `fill` takes
+        the remaining width; `render` formats the cell (a Text, Link, Meter, or Button
+        — never raw HTML).'
     data:
       type: array
       required: true
@@ -166,20 +183,27 @@ component:
         with the column header repeated as a label before each value (content tables
         — orders, people); `scroll` keeps the columns and scrolls horizontally inside
         a labelled region with the row-header column sticky (data tables where columns
-        are the point). Roles are explicit on every element so both keep table semantics.'
+        are the point). Roles are explicit on every element so both keep table semantics.
+        "Below" compares the table''s own measured width (a container query on web
+        and Lit, onLayout on React Native) with the token; `scroll` keeps the columns
+        at every width on every platform, phones included.'
     stickyHeader:
       type: boolean
       default: true
-      description: The header row stays visible while the body scrolls (the page,
-        or `maxHeight`).
+      description: 'The header row stays visible while the body scrolls (the page,
+        or `maxHeight`). In `responsive: scroll` the scroll region is the sticky container,
+        so the header sticks only with `maxHeight: viewport`; against the page scroll
+        it has no effect there.'
     maxHeight:
       type: enum
       values:
       - none
       - viewport
       default: none
-      description: '`viewport` caps the table at the viewport height minus the section
-        rhythm and scrolls the body; `none` lets the page scroll.'
+      description: '`viewport` caps the table at the viewport height minus two `layout.gap.section`
+        and scrolls a frame around the table (the scroll region itself in `responsive:
+        scroll`), which is also the root of the header-shadow observer; `none` lets
+        the page scroll.'
     density:
       type: enum
       values:
@@ -198,8 +222,11 @@ component:
     loading:
       type: boolean
       default: false
-      description: 'Data is being fetched: the body shows `copy.loading` and aria-busy
-        is set. Existing rows stay visible while re-sorting.'
+      description: 'Data is being fetched: aria-busy is set on the table element (web
+        and Lit: the `<table role="table">`; React Native: accessibilityState busy
+        on the list) and `copy.loading` shows — with no rows, in the emptyState in
+        place of `emptyMessage`; with rows, as muted Text in a polite live region
+        below the table and above the footer. Existing rows stay visible while re-sorting.'
     rowActions:
       type: function
       shape: '(row: Row) => ReactNode'
@@ -244,7 +271,11 @@ component:
     onRowPress:
       description: Fired when a row is activated, with its id. Only when the row has
         no other interactive content; the row header cell becomes a Button and the
-        row is styled interactive. Prefer a Link in the row header for navigation.
+        row is styled interactive. On web and Lit a pointer click anywhere on the
+        row outside a control also fires it; keyboard and assistive technology use
+        the Button. Lit cannot see whether anyone listens, so rows are interactive
+        only when the host has the `pressable-rows` attribute. Prefer a Link in the
+        row header for navigation.
       platforms:
         web: onRowPress
         lit: row-press
@@ -342,8 +373,11 @@ component:
     rowSelectedBorder:
       token: color.control.selectedBackground
       part: row
-      description: A start-edge bar on selected rows, so selection is not color-fill
-        alone.
+      description: 'A start-edge bar on selected rows, so selection is not color-fill
+        alone. It never shifts content: web and Lit draw it as an inset box-shadow
+        on the row''s first cell (on the row itself when stacked), mirrored under
+        RTL; React Native always reserves a start border of `rowSelectedBorderWidth`,
+        coloured as the row background when unselected.'
       locked: true
     rowSelectedBorderWidth:
       token: border.width.focus
@@ -396,6 +430,12 @@ component:
       token: layout.gap.tight
       description: Between label/value pairs inside a stacked row.
       locked: false
+    stackedBlockGap:
+      token: layout.gap.tight
+      description: 'Between stacked row blocks: the body''s gap (web and Lit: the
+        stacked tbody grid; React Native: the list''s contentContainerStyle gap).
+        Each block is outlined with `rowBorder`/`rowBorderWidth` on `stackedRowRadius`.'
+      locked: false
     stackedLabelColor:
       token: color.foreground.muted
       part: stackedLabel
@@ -418,7 +458,9 @@ component:
       locked: false
     scrollFade:
       token: space.6
-      description: Edge fade width on the scroll region.
+      description: Edge fade width on the scroll region; an edge fades only while
+        columns are hidden past it. React Native draws it with react-native-svg, as
+        Toolbar does.
       locked: false
     fontFamily:
       token: font.family.body
@@ -431,8 +473,10 @@ component:
       locked: false
     numericFont:
       token: font.family.mono
-      description: Columns with align end use tabular figures; where the body font
-        lacks them, the mono family.
+      description: 'Body cells of columns with align end always use this family plus
+        tabular figures (`font-variant-numeric: tabular-nums` on web and Lit) — no
+        platform can detect whether the body font has tabular figures, so there is
+        no fallback test.'
       locked: false
     minTarget:
       token: size.target.min
@@ -445,7 +489,8 @@ component:
       locked: true
     transition:
       token: motion.duration.fast
-      description: Hover and sort-arrow changes; sorting itself is instant.
+      description: The interactive row's hover background only; the sort arrow is
+        a swapped Icon inside the Button and changes instantly, as does sorting itself.
       locked: false
   copy:
     sortToolbarLabel: Sort {caption}
@@ -575,16 +620,26 @@ component:
         live region announcing copy.sortedAnnouncement. Selection: Checkbox in the
         first cell, aria-selected on the tr, live region for copy.selectedCount. `responsive:
         stack` below the prose breakpoint: a container query switches tr/td to display
-        block/grid, thead is visually hidden (not display none, so the columnheaders
-        remain in the tree), and each td gets a ::before from a data-label attribute
-        holding the header text — aria-hidden as text is already associated by the
-        roles. `responsive: scroll`: the table sits in a <div role="region" aria-labelledby={captionId}
-        tabindex="0"> with overflow-x auto, faded edges, and the row-header column
-        position: sticky. Sticky header: thead th position: sticky top 0 with the
-        shadow toggled by an IntersectionObserver sentinel. rowActions cell has a
-        visually-hidden columnheader "Actions", and carries the same text as its data-label
-        so the stacked layout labels the action row like every other cell. Rows are
-        keyed by id; no virtualization in this component (that is DataGrid).'
+        block/grid, plain column headers are visually hidden (not display none, so
+        the columnheaders remain in the tree) while the select-all header and sortable
+        headers stay visible as a wrapping row, so no focusable control is invisible;
+        each td gets a ::before from a data-label attribute holding the header text,
+        hidden from assistive technology with empty alternative text (`content: attr(data-label)
+        / ""`, after a plain `content: attr(data-label)` fallback) as the text is
+        already associated by the roles. The row header gets no data-label: it is
+        the row''s name. `responsive: scroll`: the table sits in a <div role="region"
+        aria-labelledby={captionId} tabindex="0"> with overflow-x auto, faded edges,
+        and the row-header column position: sticky. Sticky header: thead th position:
+        sticky top 0 with the shadow toggled by an IntersectionObserver sentinel.
+        rowActions cell has a visually-hidden columnheader "Actions", and carries
+        the same text as its data-label so the stacked layout labels the action row
+        like every other cell. With `selectable: single` the header''s selection position
+        is an empty <td role="cell"> with no part (an empty columnheader would have
+        no name). Button writes its own data-part, so the sortButton part has no hook
+        of its own; it is the Button inside the columnHeader. `copy.rowCount` is chosen
+        with Intl.PluralRules for `document.documentElement.lang`, falling back to
+        the runtime default. Rows are keyed by id; no virtualization in this component
+        (that is DataGrid).'
     lit:
       tag: ds-table
       reflect:
@@ -600,7 +655,10 @@ component:
       notes: '`columns` and `data` are properties; the whole <table> renders inside
         the shadow root from them (slotting <tr> elements across the shadow boundary
         breaks table semantics, so rows are never light DOM). Cell `render` functions
-        return lit templates. Composed `sort-change`, `selection-change`, `row-press`.
+        return lit templates. Composed `sort-change`, `selection-change`, `row-press`;
+        rows are pressable only with the `pressable-rows` attribute. `captionLevel`
+        is the unreflected `caption-level` attribute. aria-busy and the accessible
+        name are on the shadow <table role="table">, not the host, which has no role.
         Container queries on :host.'
     rn:
       element: FlatList
@@ -608,15 +666,24 @@ component:
       - accessibilityRole=list
       - accessibilityLabel
       - stickyHeaderIndices
-      notes: 'No table element on native. Phones: always the stacked form — a FlatList
-        (accessibilityRole="list", accessibilityLabel from caption) whose rows are
-        accessible Views with an accessibilityLabel that reads "{header}: {value}"
-        for each visible column, the row header first, plus "selected" state; selection
-        Checkbox and rowActions inside. Tablets and react-native-web: a header row
-        View (accessibilityRole="header" cells) and rows as horizontal Views with
-        fixed column widths, `responsive: scroll` in a horizontal ScrollView with
-        the row-header column rendered in a separate vertically-synced list. Sort
-        buttons are system Buttons; announcements via AccessibilityInfo.announceForAccessibility.'
+      notes: 'No table element on native. The layout follows `responsive` against
+        the table''s onLayout width (window width before the first layout), not the
+        device type. Stacked (`stack` below layout.maxWidth.prose): a FlatList (accessibilityRole="list",
+        accessibilityLabel from caption, accessibilityHint from copy.rowCount) whose
+        rows are accessible Views with an accessibilityLabel that reads "{header}:
+        {value}" for each visible column, the row header first, plus "selected" state;
+        selection Checkbox and rowActions inside; sort controls are a Toolbar of Buttons
+        above the list, which carry no Table.sortButton testID (a wrapper View would
+        not receive Toolbar''s size). Otherwise, and for `scroll` at every width:
+        a header row View (accessibilityRole="header" cells) and rows as horizontal
+        Views with fixed column widths, `scroll` in a horizontal ScrollView whose
+        row-header cells are pinned by translating them with the horizontal scroll
+        offset (Animated translateX; no second list), casting stickyColumnShadow once
+        scrolled. Hover (rowHover) exists only for react-native-web pointers, through
+        Pressable onHoverIn/onHoverOut. No hardware-keyboard arrow scrolling: ScrollView
+        has no key events, so the scroll region scrolls by swipe only. copy.selectedCount
+        and copy.sortedAnnouncement go to hidden polite live regions plus AccessibilityInfo.announceForAccessibility
+        on iOS, when the shown state changes.'
     swiftui:
       element: Grid
       props:
@@ -835,6 +902,26 @@ component:
 - `sort` is controlled when given, uncontrolled from `defaultSort` when omitted; changes reported by `onSortChange` (emit `onSortChange`)
 - `selected` is controlled when given, uncontrolled from `defaultSelected` when omitted; changes reported by `onSelectionChange` (emit `onSelectionChange`)
 
+## Parts and slots
+
+- `container`: element
+- `scrollRegion`: element
+- `table`: element
+- `caption`: component `Heading`; forwards `captionSize` → `overrides.fontSize`, `captionWeight` → `overrides.fontWeight`, `captionGap` → `overrides.marginBlockEnd`
+- `header`: element
+- `headerRow`: element
+- `columnHeader`: element
+- `sortButton`: component `Button`; props `variant` = "ghost", `size` = "sm"; forwards `headerWeight` → `overrides.fontWeight`, `cellGap` → `overrides.iconGap`
+- `body`: element
+- `row`: element
+- `rowHeader`: element
+- `cell`: element
+- `selectCell`: component `Checkbox`
+- `selectAllCell`: component `Checkbox`
+- `stackedLabel`: element
+- `emptyState`: component `Text`
+- `footer`: element
+
 ## Style bindings
 
 - `headerSurface`: token `color.background.subtle`; part `header`; locked
@@ -896,7 +983,7 @@ The component accepts `overrides: [Binding: TokenRef] = [:]` where `Binding` is 
 
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
-Overridable: `headerWeight`, `headerSize`, `headerBorder`, `headerBorderWidth`, `headerShadow`, `rowBorder`, `rowBorderWidth`, `rowHover`, `cellPaddingInline`, `cellPaddingBlock`, `cellGap`, `captionSize`, `captionWeight`, `captionGap`, `stackedRowInset`, `stackedRowGap`, `stackedLabelSize`, `stackedLabelWeight`, `stackedRowRadius`, `stickyColumnShadow`, `scrollFade`, `fontFamily`, `fontSize`, `lineHeight`, `numericFont`, `transition`
+Overridable: `headerWeight`, `headerSize`, `headerBorder`, `headerBorderWidth`, `headerShadow`, `rowBorder`, `rowBorderWidth`, `rowHover`, `cellPaddingInline`, `cellPaddingBlock`, `cellGap`, `captionSize`, `captionWeight`, `captionGap`, `stackedRowInset`, `stackedRowGap`, `stackedBlockGap`, `stackedLabelSize`, `stackedLabelWeight`, `stackedRowRadius`, `stickyColumnShadow`, `scrollFade`, `fontFamily`, `fontSize`, `lineHeight`, `numericFont`, `transition`
 Locked (accessibility-bearing, never overridable): `surface`, `headerSurface`, `headerColor`, `rowStripe`, `rowSelected`, `rowSelectedBorder`, `rowSelectedBorderWidth`, `cellColor`, `cellMutedColor`, `stackedLabelColor`, `minTarget`, `focusRing`, `focusRingWidth`
 
 ## Platform notes (swiftui)
@@ -941,7 +1028,7 @@ Do not use a Table for layout, for a list with one or two fields (a Stack of Car
 
 ## Behavior
 
-The header row shows column names; sortable ones are Buttons whose activation cycles ascending → descending on that column (and starts ascending on another), announced through a live region, and shown by an arrow Icon plus `aria-sort`. With `selectable`, each row has a Checkbox named from its row header, and `multiple` adds select-all (indeterminate when some are selected); the count is announced. Rows are inert unless they contain interactive content or `onRowPress` is set, in which case the row header becomes the row's Button and hover/press styling applies to the row. Below the prose width the table follows `responsive`: stacked rows keep the column header as a small label before each value and hide `hideBelow` columns; scrolling tables keep every column, fade the edges, keep the row-header column sticky, and let the region be focused and scrolled by keyboard. `stickyHeader` keeps the header in view and casts a shadow only once the body has scrolled under it. Empty data shows `emptyMessage` in a single full-width cell; `loading` sets `aria-busy` and shows the loading text without removing existing rows. Sort buttons show the column header as their visible label and carry the sort phrase as `accessibleName`. `onRowPress` applies only when the row-header column has no custom `render` (a rendered Link would conflict); without an `isRowHeader` column it is a development warning and rows are inert. The selection Checkboxes use `hideLabel` with `copy.selectRow`. In `single` selection, pressing the selected row's checkbox again deselects it. `maxHeight: viewport` is the viewport height minus two `layout.gap.section`. Arrow keys in the scroll region scroll by `space.10`; the region is present whenever `responsive: scroll`, not only below the breakpoint. `copy.rowCount` describes the table and `copy.scrollHint` the scroll region (visually hidden, aria-describedby). On native `abbr` has no effect and `width: auto`/`min` both size to `space.20`.
+The header row shows column names; sortable ones are Buttons whose activation cycles ascending → descending on that column (and starts ascending on another), announced through a live region, and shown by an arrow Icon plus `aria-sort`. With `selectable`, each row has a Checkbox named from its row header, and `multiple` adds select-all (indeterminate when some are selected); the count is announced. Rows are inert unless they contain interactive content or `onRowPress` is set, in which case the row header becomes the row's Button and hover/press styling applies to the row. Below the prose width the table follows `responsive`: stacked rows keep the column header as a small label before each value and hide `hideBelow` columns; scrolling tables keep every column, fade the edges, keep the row-header column sticky, and let the region be focused and scrolled by keyboard. `stickyHeader` keeps the header in view and casts a shadow only once the body has scrolled under it. Empty data shows `emptyMessage` in a single full-width cell; `loading` sets `aria-busy` and shows the loading text without removing existing rows. Sort buttons show the column header as their visible label and carry the sort phrase as `accessibleName`. `onRowPress` applies only when the row-header column has no custom `render` (a rendered Link would conflict); without an `isRowHeader` column it is a development warning and rows are inert. The selection Checkboxes use `hideLabel` with `copy.selectRow`. In `single` selection, pressing the selected row's checkbox again deselects it. `maxHeight: viewport` is the viewport height minus two `layout.gap.section`. Arrow keys in the scroll region scroll by `space.10`; the region is present whenever `responsive: scroll`, not only below the breakpoint. `copy.rowCount` describes the table and `copy.scrollHint` the scroll region (visually hidden, aria-describedby). On native `abbr` has no effect and `width: auto`/`min` both size to `space.20`. A sort button's `accessibleName` is the phrase for what pressing it will do: `copy.sortDescending` when its column is currently ascending, `copy.sortAscending` otherwise. The caption and sort button forwards pass Table's value (its default included, since `headerWeight` differs from Button's) into the child's own `overrides`. `copy.sortToolbarLabel` names React Native's stacked sort Toolbar and `copy.cellLabel` SwiftUI's stacked labels; web and Lit render neither. The actions column's visually hidden header is a `columnHeader` part like the others. Inside a Form, the selection Checkboxes are not form fields.
 
 ## Content guidelines
 
@@ -960,7 +1047,7 @@ Render `<div data-ds="Table" class="ds-table--{responsive} ds-table--{density}">
 `<ds-table caption="Open invoices" .columns=${columns} .data=${rows} selectable="multiple" responsive="scroll"></ds-table>`; the table is built in the shadow root from the properties (never slotted rows); `render` returns lit templates; container queries on `:host`; composed events.
 
 ### React Native
-Phones: `FlatList` (`accessibilityRole="list"`, `accessibilityLabel={caption}`) rendering each row as a `View accessible` styled as a stacked block (`stackedRowInset`, `stackedRowGap`, `stackedRowRadius`) whose `accessibilityLabel` joins "{header}: {value}" for visible columns with the row header first and the selected state; the selection `Checkbox` and `rowActions` are separate accessible elements inside. Sort controls render as a `Toolbar` of `Button`s above the list (no header row on phones). Tablets / react-native-web: header `View` with `accessibilityRole="header"` cells and rows of fixed-width cells; `responsive: scroll` wraps in a horizontal `ScrollView` with the row-header column in a synced vertical list. Row press uses `Pressable` with `accessibilityRole="button"` when `onRowPress` is set.
+`responsive: stack` below the prose width: `FlatList` (`accessibilityRole="list"`, `accessibilityLabel={caption}`) rendering each row as a `View accessible` styled as a stacked block (`stackedRowInset`, `stackedRowGap`, `stackedRowRadius`) whose `accessibilityLabel` joins "{header}: {value}" for visible columns with the row header first and the selected state; the selection `Checkbox` and `rowActions` are separate accessible elements inside. Sort controls render as a `Toolbar` of `Button`s above the list (no header row on phones). `responsive: scroll` (any width) and `stack` above the prose width: header `View` with `accessibilityRole="header"` cells and rows of fixed-width cells; `scroll` wraps in a horizontal `ScrollView` with the row-header cells pinned by translating them with the scroll offset. Row press uses `Pressable` with `accessibilityRole="button"` when `onRowPress` is set.
 
 ## Related
 

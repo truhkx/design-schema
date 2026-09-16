@@ -49,3 +49,4 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 - Select (lit): warns without `name` and always sets data-ds-field, even for internal controls in a shadow root (found in DatePicker, lit).
 - Popover (lit): always focuses its first focusable with no initial-focus element, and doesn't re-measure when slotted content lays out after opening (found in DatePicker, lit).
 - Form (lit): one host carries one `data-ds-field`; a range field needs a way to register `name-end` as a second field (found in DatePicker, lit).
+- Checkbox (web): always sets data-ds-field and registers with FormContext, so Table's selection Checkboxes inside a Form are collected as fields; table.md now says they are not form fields, and Checkbox needs an opt-out (found in Table, web).

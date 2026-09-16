@@ -52,3 +52,4 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 - Checkbox (web): always sets data-ds-field and registers with FormContext, so Table's selection Checkboxes inside a Form are collected as fields; table.md now says they are not form fields, and Checkbox needs an opt-out (found in Table, web).
 - TreeGrid.tsx (rn): `onColumnResize` is still object-shaped and imports DataGridColumnResize, while DataGrid's is positional `(column, width)`; align it and drop the export (found in DataGrid, rn).
 - Link.tsx (react): the comment says it accepts className "because Tree passes one"; the regenerated Tree no longer does (found in Tree, web).
+- Card.tsx (react): writes `data-part="surface"` after spreading rest props, so a composing Feed cannot put its `article` part on the Card and needs a wrapper (found in Feed, web).

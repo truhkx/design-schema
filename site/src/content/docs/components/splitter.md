@@ -19,15 +19,15 @@ component:
       type: enum
       values: [horizontal, vertical]
       default: horizontal
-      description: '`horizontal` places panes side by side (the separator is vertical); `vertical` stacks them.'
+      description: '`horizontal` places panes side by side (the separator is vertical); `vertical` stacks them. The splitter fills its parent (block-size 100%), so a vertical splitter needs a parent with a definite height.'
     primary:
       type: content
       required: true
-      description: The first pane (start or top). Its size is what the separator controls and reports.
+      description: 'The first pane (start or top). Its size is what the separator controls and reports. On React Native the component wraps string or number content in the package `Text` (as Disclosure does); on Lit this is the `primary` slot.'
     secondary:
       type: content
       required: true
-      description: The second pane, which takes the remaining space.
+      description: 'The second pane, which takes the remaining space. Strings are wrapped in `Text` on React Native, as `primary`; on Lit this is the `secondary` slot.'
     size:
       type: number
       description: Controlled size of the primary pane as a percentage of the container (0–100).
@@ -41,7 +41,7 @@ component:
     minSize:
       type: number
       default: 10
-      description: 'Smallest primary size, percent. With `collapsible`, dragging or stepping below it collapses the pane instead of clamping; otherwise it is the hard floor.'
+      description: 'Smallest primary size, percent. With `collapsible`, dragging or stepping below it collapses the pane instead of clamping; otherwise it is the hard floor. An arrow step that would cross it from above clamps to `minSize` first, and the next shrink step from `minSize` collapses; Home sets `minSize` and never collapses. A collapse fires only onCollapseChange, no size events.'
     maxSize:
       type: number
       default: 90
@@ -56,7 +56,7 @@ component:
       description: 'The primary pane can collapse to nothing: drag past the minimum, press Enter on the separator, or use the collapse button. Enter again restores the last size.'
     collapsed:
       type: boolean
-      description: Controlled collapsed state.
+      description: 'Controlled collapsed state. Ignored unless `collapsible`. On Lit the property is `boolean | undefined` reflected when true: a controlled `false` is set as a property, and an absent attribute means uncontrolled.'
       controls:
         event: onCollapseChange
         default: defaultCollapsed
@@ -74,13 +74,13 @@ component:
       description: 'Below this width of the splitter''s own box (a container query, not the viewport, so nested splitters work) a horizontal splitter stacks its panes and the separator is not rendered. A vertical splitter never stacks. All three values apply on every platform (`content` = layout.maxWidth.content, `never` = no stacking).'
   events:
     onSizeChange:
-      description: Fired continuously while dragging and on each key press, with the primary size in percent.
+      description: 'Fired continuously while dragging and on each key press that changes the size, with the primary size in percent (unrounded). A key press at a bound (End at `maxSize`, Home at `minSize`) fires nothing.'
       platforms: { web: onSizeChange, lit: size-change, rn: onSizeChange, swiftui: onSizeChange }
       payload:
         - { name: size, type: number, description: The primary pane size in percent. }
       fires: [user]
     onSizeChangeEnd:
-      description: 'Fired with the final size once when a drag ends and after each key press (a key press is a complete interaction), so a caller can persist on it.'
+      description: 'Fired with the final size once when a drag ends and after each key press that changed the size (a key press is a complete interaction), so a caller can persist on it. A drag always fires it once on release; if the drag collapsed the pane, the rest of that gesture is ignored and it carries the last expanded size, since a collapsed pane keeps its size for restoring.'
       platforms: { web: onSizeChangeEnd, lit: size-change-end, rn: onSizeChangeEnd, swiftui: onSizeChangeEnd }
       payload:
         - { name: size, type: number, description: The final primary pane size in percent. }
@@ -94,33 +94,36 @@ component:
       fires: [user]
   keyboard:
     - { keys: [Tab], action: 'The separator is a tab stop between the two panes'' content.', from: any, expect: manual }
-    - { keys: [ArrowRight, ArrowDown], action: 'Grows the primary pane by `step` (ArrowDown when vertical; ArrowRight when horizontal).', from: first, expect: manual }
+    - { keys: [ArrowRight, ArrowDown], action: 'Grows the primary pane by `step` (ArrowDown when vertical; ArrowRight when horizontal). In RTL a horizontal splitter swaps ArrowLeft and ArrowRight, so the separator moves the way the arrow points, as dragging does.', from: first, expect: manual }
     - { keys: [ArrowLeft, ArrowUp], action: Shrinks the primary pane by `step`., from: first, expect: manual }
     - { keys: [Home], action: Sets the primary pane to `minSize`., from: first, expect: manual }
     - { keys: [End], action: Sets the primary pane to `maxSize`., from: first, expect: manual }
     - { keys: [Enter], action: 'Collapses the primary pane, or restores it to its previous size. While collapsed, arrows, Home, End and pointer drag do nothing; only Enter or the collapse button restores.', when: collapsible, from: first, expect: manual }
-    - { keys: [F6], action: 'Cycles focus primary pane → separator → secondary pane → primary pane (wrapping), landing on the region''s first focusable descendant or, when it has none, on the pane wrapper itself (tabindex -1). The APG convenience for cycling panes; not available on native.', from: any, expect: manual, platforms: [web, lit] }
+    - { keys: [F6], action: 'Cycles focus primary pane → separator → secondary pane → primary pane (wrapping), landing on the region''s first focusable descendant or, when it has none, on the pane wrapper itself (tabindex -1). A collapsed (inert) primary pane is skipped; while stacked there is no separator and the cycle is primary → secondary. The collapse Button belongs to the separator zone (F6 lands on the separator). Shift+F6 is not handled. The APG convenience for cycling panes; not available on native.', from: any, expect: manual, platforms: [web, lit] }
   styles:
     separatorSize: { token: space.1, part: separator, description: 'The visible line. The grab area is wider: `handleSize` centered on it.' }
     separatorColor: { token: color.border, part: separator }
     separatorHover: { token: color.border.strong, part: separator, state: hover, description: 'Pointer hover; unused on native.' }
-    separatorActive: { token: color.control.selectedBackground, part: separator, state: dragging, description: 'While dragging or focused.' }
+    separatorActive: { token: color.control.selectedBackground, part: separator, state: dragging, description: 'While dragging or focused (:focus-visible). The dragging state is a `ds-splitter--dragging` root class on web and a `data-dragging` attribute on the Lit separator. On native the separator has no focus events, so it applies only while dragging.' }
     handleSize: { token: space.3, part: handle, description: 'Pointer grab area, centered on the separator and overlapping both panes so the panes'' content keeps the full width. The effective hit area is max(handleSize, minTarget), so the locked floor cannot be overridden away.' }
     grip: { token: color.border.strong, description: 'A short centered grip mark on the separator, so the divider reads as draggable: a rounded bar of gripLength along the separator and separatorSize across it.' }
     gripLength: { token: space.6 }
-    collapseButtonOffset: { token: space.2, part: collapseButton, description: 'Distance of the collapse Button from the separator''s start edge along the separator (top of a vertical separator, inline-start of a horizontal one); the button is centered across the separator and overlaps both panes.' }
-    paneMinTarget: { token: size.target.comfortable, description: 'A pane never shrinks below this on the drag axis before collapsing, so its scrollbar and content stay usable: a CSS minmax() floor on both grid tracks beneath the percent clamp (a very narrow container can therefore show the pane wider than its percent). Dropped for the primary track while collapsed so collapse reaches zero.' }
+    gripRadius: { token: radius.full, description: 'Rounds the grip bar''s ends.' }
+    collapseButtonOffset: { token: space.2, part: collapseButton, description: 'Distance of the collapse Button from the separator''s start edge along the separator (top of a vertical separator, inline-start of a horizontal one); the button is centered across the separator and overlaps both panes. While collapsed the primary pane has no size, so the button aligns to the secondary pane''s start edge instead of hanging outside the container.' }
+    paneMinTarget: { token: size.target.comfortable, description: 'A pane never shrinks below this on the drag axis before collapsing, so its scrollbar and content stay usable: a CSS minmax() floor on both grid tracks beneath the percent clamp (a very narrow container can therefore show the pane wider than its percent). Dropped for the primary track while collapsed so collapse reaches zero. On native it is minWidth (or minHeight when vertical) on both panes, dropped for the primary pane while collapsed.' }
     minTarget: { token: size.target.min, description: 'Separator hit area along the drag axis.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
-    transition: { token: motion.duration.fast, description: 'Collapse and restore, and the separator color; dragging itself has no transition. The pane size is a custom property driving a grid track, which only animates where `@property` registration is reliable — where it is not, collapse and restore are instant and only the separator colour transitions.' }
+    transition: { token: motion.duration.fast, description: 'Collapse and restore, and the separator color; dragging itself has no transition. The pane size is a custom property driving a grid track, which only animates where `@property` registration is reliable — where it is not, collapse and restore are instant and only the separator colour transitions. Only a change of the collapsed state animates; key steps and drags resize instantly. Web and Lit register the same property the same way (`--ds-splitter-primary-size`, syntax `<percentage>`, not inherited): Lit calls CSS.registerProperty at module load in try/catch because @property does not apply inside shadow roots. On native, collapse and restore animate and the separator colour switches instantly.' }
   copy:
     collapse: 'Collapse {label}'
     expand: 'Expand {label}'
+    setMinimum: 'Minimum {label}'
+    setMaximum: 'Maximum {label}'
     sizeText:
       text: '{percent}%'
       params:
-        percent: { type: number, description: The primary pane's size as a percentage of the container. }
+        percent: { type: number, description: 'The primary pane''s size as a percentage of the container, rounded to a whole number (as is aria-valuenow); 0 while collapsed, with aria-valuemin 0 so the value stays in range.' }
   a11y:
     role: separator
     requires: [accessible-name, keyboard-operable, arrow-navigation, focus-visible, contrast-aa, target-24px, gesture-alternative, reduced-motion]
@@ -131,15 +134,15 @@ component:
     web:
       element: div
       attributes: [role=separator, tabindex=0, aria-orientation, aria-valuenow, aria-valuemin, aria-valuemax, aria-valuetext, aria-label, aria-controls]
-      notes: 'A container with CSS grid (grid-template-columns: var(--ds-splitter-primary-size) auto 1fr, or rows when vertical) whose primary size is a custom property in percent; the separator is <div role="separator" tabindex="0" aria-orientation aria-valuenow aria-valuemin aria-valuemax aria-valuetext aria-label aria-controls={primaryId}> (aria-orientation is the separator''s own: vertical for a horizontal splitter). Pointer Events with setPointerCapture on the separator; the grab area is a wider ::before. A resizable separator is a focusable widget per ARIA (a static separator would not have tabindex). Collapse: the primary pane gets inert and inline-size 0; the collapse Button (ghost, sm, iconOnly, chevron Icon) sits on the separator. Below the stackBelow width a container query switches to a single column, the separator is not rendered, and both panes render in full. persistKey reads/writes localStorage inside try/catch.'
+      notes: 'A container with CSS grid (grid-template-columns: minmax(paneMinTarget, var(--ds-splitter-primary-size)) var(--ds-splitter-separator-size) minmax(paneMinTarget, 1fr), or rows when vertical) whose primary size is a custom property in percent; the separator is <div role="separator" tabindex="0" aria-orientation aria-valuenow aria-valuemin aria-valuemax aria-valuetext aria-label aria-controls={primaryId}> (aria-orientation is the separator''s own: vertical for a horizontal splitter). Pointer Events with setPointerCapture on the separator; the grab area is a wider ::before. A resizable separator is a focusable widget per ARIA (a static separator would not have tabindex). Collapse: the primary pane gets inert and inline-size 0; the collapse Button (ghost, sm, iconOnly, aria-expanded={!collapsed}, aria-controls={primaryId}) is positioned over the separator line. role=separator has presentational children, so the Button is not inside it: the middle grid item is a Splitter-owned track wrapper holding the separator and, as its sibling, a span[data-part=collapseButton] wrapper around the Button (Button writes its own data-part). The Button''s Icon is chevron-left/chevron-right when horizontal and chevron-up/chevron-down when vertical, pointing toward the primary pane while expanded and away from it while collapsed (mirrored in RTL), in the Button''s own ghost foreground; it follows the separator in tab order. Below the stackBelow width a container query switches to a single column, the separator is not rendered, and both panes render in full. persistKey reads/writes localStorage inside try/catch.'
     lit:
       tag: ds-splitter
       reflect: [orientation, collapsible, collapsed, stack-below]
-      notes: 'Slots `primary` and `secondary`; the separator lives in the shadow root and controls the slotted primary via a host custom property. Composed events. Container query on :host.'
+      notes: 'Slots `primary` and `secondary`; the separator lives in the shadow root and controls the slotted primary via a host custom property. Composed events. Stacking uses a ResizeObserver on the host with the breakpoint read from the loaded --layout-max-width-* custom property, as web (@container cannot read custom properties; no literal breakpoints). The F6 pane wrapper takes tabindex=-1 only while focused that way and drops it on blur, so it never becomes the delegatesFocus target. Parts, the collapse Button wrapper and its Icon follow the web notes. Example string values for `primary`/`secondary` render as slotted text in stories.'
     rn:
       element: View
       props: [accessibilityRole=adjustable, accessibilityLabel, accessibilityValue, accessibilityActions]
-      notes: 'Tablets and react-native-web only; below the stackBelow width the panes always stack and the separator is not rendered. The separator is a plain View with a PanResponder (as Slider''s thumb — panHandlers on a Pressable fight its own responder), so it cannot show a keyboard focus ring itself (a known platform limit; the composed collapse Button has full focus treatment). accessibilityRole="adjustable", accessibilityValue={{ min, max, now, text }}, accessibilityActions increment/decrement (step), setMinimum/setMaximum (Home/End) and activate (Enter: collapse/restore) — the gesture alternative. F6 has no native equivalent. persistKey is a module-level memory map.'
+      notes: 'Tablets and react-native-web only; below the stackBelow width the panes always stack and the separator is not rendered. The separator is a plain View with a PanResponder (as Slider''s thumb — panHandlers on a Pressable fight its own responder), so it cannot show a keyboard focus ring itself (a known platform limit; the composed collapse Button has full focus treatment). accessibilityRole="adjustable", accessibilityValue={{ min, max, now, text }}, accessibilityActions increment/decrement (step; the system names them), setMinimum/setMaximum (Home/End; labelled copy.setMinimum/copy.setMaximum) and activate (Enter: collapse/restore; labelled copy.collapse/copy.expand) — the gesture alternative. RN View has no typed key handler, so hardware arrows, Home, End and Enter do nothing, including on react-native-web; the accessibility actions and the collapse Button are the keyboard and screen-reader route. F6 has no native equivalent. stackBelow is measured with onLayout on the splitter''s own width (all three values); before the first layout it renders side by side. hitSlop is ignored by react-native-web, so the handle part is an absolutely positioned child View overflowing the separator by max(handleSize, minTarget). The collapse Button is a positioned sibling of the separator placed from its measured position, not a child (Android drops touches outside a parent''s bounds). persistKey is a module-level memory map.'
     swiftui:
       element: HStack
       props: [HStack, VStack, GeometryReader, DragGesture, .accessibilityAdjustableAction, .accessibilityValue, .accessibilityAction, .focusable, .onMoveCommand, .onKeyPress, ViewThatFits, Button, UserDefaults]
@@ -148,35 +151,35 @@ component:
     # Authored scenarios; the parser adds renders/enum/accessible-name ones from the schema.
     - name: arrow-grows-the-primary-pane
       description: ArrowRight grows the primary pane by step on a horizontal splitter, and a key press is a complete interaction, so the end event fires too.
-      given: { defaultSize: 50 }
+      given: { defaultSize: 50, stackBelow: never }
       when: { key: ArrowRight }
       then:
         - { event: onSizeChange }
         - { event: onSizeChangeEnd }
       platforms: [web, lit]
     - name: arrow-shrinks-the-primary-pane
-      given: { defaultSize: 50 }
+      given: { defaultSize: 50, stackBelow: never }
       when: { key: ArrowLeft }
       then:
         - { event: onSizeChange }
         - { event: onSizeChangeEnd }
       platforms: [web, lit]
     - name: home-sets-the-primary-pane-to-its-minimum
-      given: { defaultSize: 50, minSize: 20 }
+      given: { defaultSize: 50, minSize: 20, stackBelow: never }
       when: { key: Home }
       then:
         - { event: onSizeChange }
         - { event: onSizeChange, with: 20, platforms: [lit] }
       platforms: [web, lit]
     - name: end-sets-the-primary-pane-to-its-maximum
-      given: { defaultSize: 50, maxSize: 80 }
+      given: { defaultSize: 50, maxSize: 80, stackBelow: never }
       when: { key: End }
       then:
         - { event: onSizeChange }
         - { event: onSizeChange, with: 80, platforms: [lit] }
       platforms: [web, lit]
     - name: enter-collapses-a-collapsible-pane
-      given: { collapsible: true, defaultSize: 40 }
+      given: { collapsible: true, defaultSize: 40, stackBelow: never }
       when: { key: Enter }
       then:
         - { event: onCollapseChange }
@@ -184,26 +187,27 @@ component:
       platforms: [web, lit]
     - name: enter-does-nothing-when-the-pane-cannot-collapse
       description: Collapsing is what `collapsible` turns on; without it Enter on the separator has nothing to do.
+      given: { stackBelow: never }
       when: { key: Enter }
       then:
         - { event: onCollapseChange, fired: false }
       platforms: [web, lit]
     - name: the-collapse-button-collapses-the-pane
       description: Drag past the minimum, Enter, or the collapse button - the three ways the doc gives to collapse the primary pane.
-      given: { collapsible: true, defaultSize: 40 }
+      given: { collapsible: true, defaultSize: 40, stackBelow: never }
       when: { click: collapseButton }
       then:
         - { event: onCollapseChange }
     - name: a-collapsed-pane-ignores-the-arrow-keys
       description: While collapsed, arrows, Home, End and pointer drag do nothing; only Enter or the collapse button restores.
-      given: { collapsible: true, defaultCollapsed: true }
+      given: { collapsible: true, defaultCollapsed: true, stackBelow: never }
       when: { key: ArrowRight }
       then:
         - { event: onSizeChange, fired: false }
       platforms: [web, lit]
     - name: the-separator-reports-its-size-and-bounds
       description: A resizable separator carries valuenow/min/max so a keyboard user hears the percentage.
-      given: { defaultSize: 40, minSize: 15, maxSize: 85 }
+      given: { defaultSize: 40, minSize: 15, maxSize: 85, stackBelow: never }
       then:
         - { attribute: aria-valuenow, is: '40' }
         - { attribute: aria-valuemin, is: '15' }
@@ -211,6 +215,7 @@ component:
       platforms: [web]
     - name: the-separator-is-a-focusable-widget
       description: A resizable separator is a focusable widget per ARIA; a static one would not be in the tab order.
+      given: { stackBelow: never }
       then:
         - { focusable: true }
       platforms: [web]
@@ -241,7 +246,7 @@ Do not use a Splitter on phone-width layouts — it stacks below `stackBelow`, a
 
 ## Behavior
 
-Dragging the separator resizes the primary pane within `minSize`–`maxSize`; arrow keys move it by `step`, Home/End to the bounds. With `collapsible`, dragging past `minSize`, Enter, or the collapse button collapses the primary pane to nothing (its content becomes inert) and Enter or the button restores the previous size; while collapsed the separator ignores drag and every key but Enter. `collapsed` is controlled or starts from `defaultCollapsed`. `onSizeChange` fires continuously, `onSizeChangeEnd` once per drag or key press. F6 cycles primary → separator → secondary and wraps, landing on the first focusable element in the target region or, when it has none, on the region wrapper itself, which takes `tabindex="-1"` for the purpose. Below `stackBelow` (measured on the splitter's own width with a ResizeObserver, the breakpoint read from the built token JSON, `literal-ok`) a horizontal splitter stacks its panes in source order at full width and does not render the separator; a vertical one never stacks. With `persistKey` the last size and collapsed state are restored on mount.
+Dragging the separator resizes the primary pane within `minSize`–`maxSize`; arrow keys move it by `step`, Home/End to the bounds. With `collapsible`, dragging past `minSize`, Enter, or the collapse button collapses the primary pane to nothing (its content becomes inert) and Enter or the button restores the previous size; while collapsed the separator ignores drag and every key but Enter. `collapsed` is controlled or starts from `defaultCollapsed`. `onSizeChange` fires continuously, `onSizeChangeEnd` once per drag or key press. F6 cycles primary → separator → secondary and wraps, landing on the first focusable element in the target region or, when it has none, on the region wrapper itself, which takes `tabindex="-1"` for the purpose. Below `stackBelow` (measured on the splitter's own width with a ResizeObserver, the breakpoint read from the loaded `--layout-max-width-*` custom property in px, rem or em; with no tokens loaded, or no ResizeObserver, it never stacks) a horizontal splitter stacks its panes in source order at full width and does not render the separator; a vertical one never stacks. With `persistKey` the last size and collapsed state are restored on mount.
 
 ## Content guidelines
 
@@ -260,7 +265,7 @@ Render `<div data-ds="Splitter" class="ds-splitter--{orientation}" style="--ds-s
 `<ds-splitter label="Sidebar width" collapsible persist-key="app-sidebar"><nav slot="primary">…</nav><main slot="secondary">…</main></ds-splitter>`; shadow separator; host custom property; composed events.
 
 ### React Native
-`View` row (or column) with the primary `View` at `flexBasis` percent, the separator `View` (`PanResponder`, `accessibilityRole="adjustable"`, `accessibilityValue`, `accessibilityActions` increment/decrement with `onAccessibilityAction`), and the secondary `View` at `flex: 1`. Stack below the prose width. `persistKey` via AsyncStorage when the package is present.
+`View` row (or column) with the primary `View` at `flexBasis` percent, the separator `View` (`PanResponder`, `accessibilityRole="adjustable"`, `accessibilityValue`, `accessibilityActions` increment/decrement with `onAccessibilityAction`), and the secondary `View` at `flex: 1`. Stack below the `stackBelow` width (all three values, measured with `onLayout`). `persistKey` is a module-level memory map; no storage dependency.
 
 ## Related
 

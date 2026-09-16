@@ -1,6 +1,6 @@
-# Gap digest — phase Grids
+# Gap digest — phase Streams
 
-Generated 2026-09-16T12:31 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-16T13:03 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -2021,6 +2021,58 @@ Doc: `site/src/content/docs/components/folds.md`
 ## Feed
 
 Doc: `site/src/content/docs/components/feed.md`
+
+### 2026-09-16 13:03 — rn round 1
+
+- **DOC** Feed: the Guidance's React Native section says items are `Card`s with `accessible` and a composed `accessibilityLabel`, but platforms.rn.notes says Cards stay un-collapsed (no `accessible`) so the action Buttons and Links stay focusable; I followed the platform notes (the Declared contracts section says sections win) and the Guidance paragraph should be corrected. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the examples and scenarios give `content` as a plain string, but React Native crashes on a bare string outside `Text`; Feed wraps string/number content in the package `Text`. The schema should say whether `content` strings are wrapped or must be nodes. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: no binding covers the space between the timestamp and the content in articleBody; I used `Stack gap="tight"` (the web Guidance's value for the actions row). Add an `articleBodyGap` binding or name the gap. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: emptyState has no inset or size binding (unlike endMessage and loadingIndicator); I rendered it as a muted `Text` with no padding. The schema should declare its inset, size and tone. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the schema doesn't say whether `fontFamily` reaches the composed children; I passed it to every Text (timestamp, end message, empty state, hidden unread/position runs, string content) and to the new-items Button's `fontFamily` override, but not to Card's heading, because Card has no fontFamily binding. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `articleInset` is 'passed to each Card as its inset', but Card's `inset` is an enum (sm/md/lg) and a TokenRef can't map onto it; the default uses `inset="md"` and an override goes to Card's `paddingBlock` and `paddingInline`. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the relative-time thresholds don't say whether to round or floor, or what a future timestamp shows; I floor and clamp future times to `justNow`, and the absolute date uses `Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })` because the date style isn't given. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `onItemVisible` 'when it has been substantially visible for a moment' doesn't say whether it fires again when the item scrolls out and back; I fire on each transition to viewable (from `changed`), so the caller must be idempotent. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `onLoadMore` 'once on mount' when empty doesn't say what happens if the caller later clears `items` to empty while `hasMore` stays true; I don't fire again, and the list's own `onEndReached` is ignored while items are empty, so that feed stalls until it gets new props. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: platforms.rn.props names `accessibilityRole=list` and the web feed is `aria-busy`; I set `accessibilityState.busy` from `loading`. The loading-marks-the-feed-busy scenario is web-only, so nothing tests busy on native. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the convention puts `testID="Feed"` on the root, while the anatomy's `container` is the feed list itself; the outer View (holding the new-items button and the list) carries `Feed` and the FlatList carries `Feed.container`. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the `Keyboard` story rule (open with its trigger and at least three focusable children) doesn't fit a feed, which has no open state; the story shows the new-items button plus the default items' Reply button and Open ticket link. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `newItemsOffset` is 'padding-block-start of the sticky new-items row', but React Native has no sticky header outside the list; the button sits above the FlatList (per the platform notes) with `paddingTop`, so it never scrolls away. The schema doesn't say whether it should be inside the list as a sticky header instead. → `site/src/content/docs/components/feed.md`
+
+### 2026-09-16 13:01 — lit round 1
+
+- **DOC** Feed: the doc's own behavior list has 6 scenarios, but the 10 scenarios for this platform leave out `loading-marks-the-feed-busy` (it is marked web-only, and Lit also runs on the web). I wrote only the 10 given; the host still gets aria-busy="true" while loading. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the doc says articles have aria-labelledby, but Lit's Card names itself with aria-label because ids don't work across shadow roots. I let Card set the name and added no aria-labelledby. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `unreadBorder` has no `part`, and drawing the bar on the Card would restyle a child. I draw it on a wrapper row Feed owns around each card. The doc should name the part that carries the bar (or give Card an accent-edge option). → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `endMessageInset` is on part endMessage, which is composed as Text, and Text has no padding. The padding is on a wrapper row, and data-part=endMessage is on the ds-text inside it. `loadingInset` has no part, so it goes on the loadingIndicator wrapper. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `timestampColor` and `endMessageColor` are locked colours on composed Text. I used Text tone="muted" instead of setting the colour, and passed `timestampSize`/`endMessageSize`/`fontFamily` through Text's --ds-text-font-size/--ds-text-font-family hooks. The doc doesn't say whether these bindings belong to Feed or to Text's props. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `articleInset` is 'passed to each Card as its inset', but Card's inset is a sm/md/lg choice and can't take any token. I set inset="md" and pass overrides through Card's --ds-card-padding-block/inline hooks. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: articleBody has no gap binding, so the space between the timestamp and the content isn't specified. I used ds-stack gap="tight". The doc also doesn't say where the hidden `unread` and `position` text goes; I put both at the start of articleBody. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the doc doesn't say what to show with no items, `hasMore` true and not `loading` (the moment right after the first load-more). I show copy.empty. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: it isn't clear whether Ctrl+End with `hasMore` should fire load-more again while `loading`, or how often load-more may fire while the last article stays in view. I fire on every Ctrl+End, and the observer fires once until `items`, `hasMore` or `loading` changes. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `onItemVisible` doesn't say whether it fires again when an item scrolls back into view. I fire once per id per element. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the doc names no date/time style for the absolute time. I used Intl.DateTimeFormat dateStyle 'medium' for dates older than a week and dateStyle 'medium' + timeStyle 'short' for the title. Relative times don't refresh as time passes (not specified). An unparseable timestamp is shown as the raw string. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the doc doesn't say whether the PageUp/PageDown/Ctrl commands should work from the new-items button, or where focus goes after show-new if `items` never changes. The commands only act from inside an article, and focus moves to the first article on the next `items` update after a press. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `label` is required but has no default. I warn in development when it is empty. → `site/src/content/docs/components/feed.md`
+
+### 2026-09-16 12:57 — web round 1
+
+- **DOC** Feed: Card writes its own data-part="surface" after spreading rest props, so `data-part="article"` cannot sit on the article; it is on a Feed-owned wrapper div around each Card. The articleInset binding (part: article) is forwarded to Card's paddingBlock/paddingInline overrides, since Card's `inset` is an sm|md|lg enum rather than a token hook. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: Button also writes its own data-part, so `data-part="newItemsButton"` is on the sticky row that wraps the Button; a behavior test clicking the part must click the button inside it. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: Card has no unread prop and children must not be restyled, so the locked unreadBorder/unreadBorderWidth bar is a ::before on Feed's item wrapper, laid over the Card's start edge. The doc should say where the bar is drawn, or Card should grow a start-edge accent. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the visually-hidden "unread" and position runs are plain <span>s with Feed's clip class. The web notes ask for a visually-hidden Text, but Text has no visually-hidden option. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the doc gives no position for the "unread" word; it comes first in articleBody, then the timestamp, then the position run, then the content. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: `timestamp` is a composed Text, but Text only renders p|span, so a <time dateTime title> (carrying data-part="timestamp" and the aria-describedby id) sits inside a Text span with tone muted, size xs; timestampSize is forwarded to that Text's fontSize. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: onLoadMore's description says "End / Ctrl+End" but the keyboard table lists only Control+End; only Ctrl+End is implemented, per 'implement every key exactly as listed and nothing else'. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: when the empty state shows is underspecified with hasMore true and loading false (the moment before the first page is requested). copy.empty shows only when items are empty, not loading and hasMore is false, so an empty feed about to fetch stays blank rather than flashing 'Nothing here yet.' → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: emptyState has no style bindings (no inset, color or size), so it is a default Text with no padding; only fontFamily is forwarded to it. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the live-region requirement names no element. The new-items row is an always-rendered role=status (so the button's count is announced when it appears) with padding only while shown; the end message and loading indicator are not live, and aria-busy covers loading. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: fontFamily is both a root hook (--ds-feed-font-family, inherited by caller content) and forwarded to the composed Text (timestamp, end message, empty state) and Button overrides, since those set their own font family. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: onItemVisible fires once per item id per mount (the observer stops watching after it fires); the doc does not say whether an item that leaves and comes back should fire again. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: relative timestamps are computed at render and do not tick over time; the doc does not say whether 'just now' should refresh. Future timestamps are clamped to 'just now', and an unparseable timestamp renders as-is with no title. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the absolute date formats are not specified; the fallback after 7 days uses Intl.DateTimeFormat(undefined, {dateStyle: 'medium'}) and the title uses {dateStyle: 'medium', timeStyle: 'short'}. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the sticky new-items row needs a stacking layer the doc does not name; it uses var(--layer-raised) as DataGrid/TreeGrid do. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: after onShowNew, 'moves focus to the first new article' is implemented as focusing the new first Card once the first item's id changes, then scrollIntoView (smooth, or auto under reduced motion); the doc does not say what happens if the caller prepends nothing. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the Keyboard story's `given` args and URL are not declared for Feed, so Keyboard is Default plus newItemsCount: 2 (a new-items button plus two article Buttons and a Link as focusable children). → `site/src/content/docs/components/feed.md`
 
 ### 2026-09-10 20:08 — rn round 1
 
@@ -4052,6 +4104,61 @@ Doc: `site/src/content/docs/components/slider.md`
 
 Doc: `site/src/content/docs/components/splitter.md`
 
+### 2026-09-16 12:53 — rn round 1
+
+- **DOC** Splitter: the rn guidance says 'persistKey via AsyncStorage when the package is present', but the persistKey prop and the package rule forbid any storage dependency; chose the module-level memory map. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the rn guidance says 'Stack below the prose width' as if fixed, but the stackBelow prop says all three values apply on every platform; chose prose/content/never from layoutMaxWidthProse/layoutMaxWidthContent, measured with onLayout on the splitter's own width. Before the first layout (and in the Jest renderer) it renders side by side. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the spec doesn't say whether onSizeChangeEnd fires when a drag collapses the pane past minSize; chose to fire only onCollapseChange and ignore the rest of that drag, with no end event. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the minSize prop says 'stepping below it collapses', but the Home action sets minSize and doesn't collapse; chose: decrement below minSize collapses when collapsible, setMinimum clamps to minSize. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: separatorActive is described as 'while dragging or focused', but the rn separator is a plain View with no focus events; it applies only while dragging. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the transition binding covers the separator colour on web; on native the colour switches instantly (only collapse and restore animate). The spec doesn't say whether native should animate the colour. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the grip is a 'rounded bar', but no radius binding is given; used t.radiusFull. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the collapse Button's Icon names and colour are not specified; chose chevron-left/right (horizontal) and chevron-up/down (vertical) by collapsed state, coloured t.colorActionGhostForeground. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: 'centered across the separator and overlaps both panes' can't be done inside the thin separator View on Android (touches outside a parent's bounds are dropped); the Button is a positioned sibling placed from the measured separator position and Button size. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: handle size uses hitSlop on native, but react-native-web ignores hitSlop on View; added an absolutely positioned handle child that overflows the separator so the grab area works on web too. The spec doesn't say how RN should render the handle part. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: accessibilityActions increment/decrement/setMinimum/setMaximum have no copy for their labels; left them unlabelled (the system supplies names for increment/decrement) and labelled activate with copy.collapse/expand. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: keyboard rules say hardware Enter should activate on native, but the rn notes expose Enter, Home and End only as accessibility actions, and RN 0.87 View has no typed key handler; hardware arrow/Home/End/Enter keys on react-native-web do nothing. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: paneMinTarget on native is applied as minWidth/minHeight on both panes on the drag axis (dropped for the primary pane while collapsed); the CSS minmax() wording has no RN mapping stated. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: example stories pass plain strings as primary/secondary, which crash on native outside Text; the component wraps string/number pane content in Text (as Disclosure does). The spec doesn't say how content props should handle strings. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: copy.sizeText's percent param is not specified as rounded; passed the size value as-is (drag produces fractional percents, e.g. '37.4812%'). → `site/src/content/docs/components/splitter.md`
+
+### 2026-09-16 12:50 — lit round 1
+
+- **DOC** Splitter: `collapsed` is a controlled boolean on a platform where a boolean attribute cannot express false; chose `collapsed: boolean | undefined` (reflect true), so controlled `false` is only expressible as a property, and the attribute's absence means uncontrolled. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: 'While collapsed, … pointer drag do nothing' vs 'dragging past the minimum collapses' — the doc doesn't say whether a drag that collapsed the pane can bring it back in the same gesture; chose: a drag that starts while collapsed does nothing, but within the gesture that collapsed it, moving back above minSize restores it. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: minSize says stepping below it with `collapsible` collapses, but the keyboard table says ArrowLeft only 'shrinks by step' and Home 'sets to minSize'; chose: an arrow step below minSize collapses (fires collapse-change only, no size events), Home clamps to minSize without collapsing. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the doc doesn't say whether size-change/size-change-end fire when a key press doesn't change the size (arrow at a bound, Home at min); chose not to fire. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the doc doesn't say what size a collapsed pane reports; chose aria-valuenow/valuetext 0 while collapsed, events carry the expanded size, and size-change-end after a drag reports 0 if the drag collapsed the pane. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: F6 cycle when the primary pane is collapsed (inert, unfocusable) or stacked (no separator) isn't specified; chose to skip the unavailable zones, and Shift+F6 cycles in reverse (not listed; remove if the table means 'nothing else'). → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the collapse Button's focus position and F6 zone aren't specified; it sits between separator and secondary pane in tab order and counts as the separator zone for F6. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the 'pane wrapper itself (tabindex -1)' conflicts with delegatesFocus (a permanent tabindex=-1 wrapper becomes the host's focus delegate); chose to set tabindex=-1 only while F6 focuses the wrapper and remove it on blur. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: collapseButton icon names aren't specified (web notes say 'chevron Icon'); chose chevron-left/right (horizontal) and chevron-up/down (vertical) by collapsed state, ignoring RTL. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the collapse button 'overlaps both panes' but a collapsed primary has no width, so a centered button would hang outside the container; chose to align it to the start edge while collapsed. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the `transition` binding animates a grid track through a registered custom property, but @property rules don't work inside shadow roots; chose CSS.registerProperty('--ds-splitter-primary-size', '<percentage>') at module load in try/catch, and the transition applies only on the render that collapses or restores. The web package may register the same name with a different syntax; the first registration wins. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: stackBelow breakpoints (layout.maxWidth.prose 572, content 960) are duplicated as literal-ok constants because @container can't read custom properties; the guidance says 'read from the built token JSON', which the Lit package doesn't import anywhere. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: `separatorActive` state `dragging` has no reflected attribute in platforms.lit.reflect; chose a `data-dragging` attribute on the separator part, plus :focus-visible per its 'while dragging or focused' description. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the `primary` and `secondary` content props become the `primary`/`secondary` slots, so the examples' string `given` values are rendered as slotted text in stories; args `primary`/`secondary` exist only in stories. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: Lit behavior tests run in a real browser whose viewport is narrower than layout.maxWidth.prose, so every scenario without `stackBelow: never` would stack and render no separator; the test harness gives the element a 200vw inline size. Scenarios should state the width they assume (or set stackBelow: never). → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: web notes say grid-template-columns 'var(--ds-splitter-primary-size) auto 1fr', but separatorSize is 'the visible line'; chose var(--ds-splitter-separator-size) as the middle track, with paneMinTarget as a minmax() floor on both pane tracks. → `site/src/content/docs/components/splitter.md`
+
+### 2026-09-16 12:45 — web round 1
+
+- **DOC** Splitter: the web notes put the collapse Button on the separator, but role=separator has presentational children in ARIA 1.2, so a Button inside it is hidden from AT. Chose a wrapper grid item (ds-splitter__track) holding the separator and a sibling collapseButton wrapper positioned over the line. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: collapseButton is a composed Button, and Button writes its own data-part="container", so the part hook can't sit on the button. Used a span[data-part=collapseButton] wrapper that forwards clicks to the Button, as BottomSheet/Carousel do. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: 'stepping below it collapses instead of clamping' is ambiguous when size - step < minSize but size > minSize (e.g. 11 - 2 with min 10). Chose: clamp to minSize first; shrinking again from minSize collapses. Home sets minSize and never collapses. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: 'Enter again restores the last size' doesn't define the last size after a drag-collapse. Chose the last committed size before the pointer crossed minSize (the size state is never zeroed; collapse is a separate flag). The collapse itself fires onSizeChangeEnd with that size because the drag ends there. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: aria-valuenow/valuemin while collapsed aren't specified. Chose valuenow 0, valuemin 0 and valuetext '0%' so the value stays in range; valuemin goes back to minSize on restore. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the guidance says the stackBelow breakpoint is 'read from the built token JSON', but the React package has no theme-neutral JSON import (the exports are per theme) and theming is external. Read the loaded --layout-max-width-* custom property instead (px, rem or em), as SidePanel/BottomSheet do; without tokens, or without ResizeObserver, it never stacks. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: collapsed without collapsible (collapsed=true, collapsible=false) is undefined. Chose to ignore collapsed unless collapsible is true. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: whether onSizeChange/onSizeChangeEnd fire when a key press doesn't change the size (End at maxSize) isn't stated. Chose to fire neither; a drag always fires onSizeChangeEnd once on pointerup. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: in RTL the table still says ArrowRight grows a horizontal splitter even though the primary pane is on the right. Kept the keys as written; dragging does map the pointer mirrored in RTL. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: F6 lists only a forward cycle, so Shift+F6 does nothing. A collapsed (inert) primary pane is skipped, and when stacked the cycle is primary to secondary. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the transition binding covers collapse/restore but not keyboard steps. Chose to animate only when the collapsed state changes (a ds-splitter--animate modifier cleared by any key or drag resize), through @property --ds-splitter-primary-size. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the grip is 'a rounded bar' with no radius token named. Used radius.full; the bar is separatorSize wide, so any smaller radius would look the same. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the composition for collapseButton gives variant/size/iconOnly/chevron Icon but no state semantics (aria-expanded/aria-controls). Added none, so the only state cue is the Collapse/Expand label copy. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the separatorActive state is 'dragging' but the description says 'While dragging or focused'. Styled both :focus and the ds-splitter--dragging root modifier. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: a vertical splitter needs a definite height, which the doc doesn't mention. The stories use a non-focusable decorator frame sized to var(--layout-max-width-prose); the component itself fills its parent with block-size: 100%. → `site/src/content/docs/components/splitter.md`
+
 ### 2026-09-10 20:04 — rn round 1
 
 - **DOC** minSize's description references a `collapseThreshold` prop that isn't declared anywhere in the schema; treated `minSize` itself as the collapse trigger. → `site/src/content/docs/components/splitter.md`
@@ -5187,7 +5294,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 3264 · CODE: 92 · TOOLING: 2 · NOISE: 42
+DOC: 3353 · CODE: 92 · TOOLING: 2 · NOISE: 42
 
 ## Gates to fix
 

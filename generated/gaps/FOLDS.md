@@ -1499,3 +1499,63 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-16 Tree web: Heading-to-tree spacing → Heading's own marginBlockEnd
 2026-09-16 Tree web: icon and badge color forwards → Icon forwards iconColor to color; badge is Text tone muted (Text.color locked)
 2026-09-16 Tree web: RTL chevron and bar → both mirrored
+2026-09-16 Feed rn: RN prose says Cards accessible, notes say un-collapsed → prose now matches notes: un-collapsed Cards with hidden runs
+2026-09-16 Feed rn: string content crashes outside Text on native → items: component wraps string/number content in Text
+2026-09-16 Feed rn,lit: no gap between timestamp and content in articleBody → new articleBodyGap (layout.gap.tight) forwarded to Stack overrides.gap
+2026-09-16 Feed rn,web: emptyState has no inset, colour or size → new emptyStateInset/Color/Size mirroring the end message
+2026-09-16 Feed rn,web: does fontFamily reach composed children → forwarded to every Text and the Button; Card heading keeps its own
+2026-09-16 Feed all: articleInset token cannot map onto Card's inset enum → Card keeps inset md; forwarded to paddingBlock/paddingInline overrides
+2026-09-16 Feed all: relative-time rounding, future times and absolute date style → floor; future is justNow; dateStyle medium, title adds timeStyle short; no ticking; unparseable shown raw
+2026-09-16 Feed all: does onItemVisible fire again on re-entry → once per item id per mount
+2026-09-16 Feed rn: clearing items to empty with hasMore stalls load-more → hasMore: fires whenever items empty and not loading, including after clear
+2026-09-16 Feed lit: Ctrl+End and observer repeat rate while loading → at most once per items/hasMore/loading change; never while loading
+2026-09-16 Feed rn: busy state on native undeclared → rn props add accessibilityState.busy following loading
+2026-09-16 Feed lit: busy scenario excluded Lit though Lit is web → loading-marks-the-feed-busy platforms [web, lit]
+2026-09-16 Feed rn: testID for root vs container part → outer View Feed, FlatList Feed.container
+2026-09-16 Feed rn: newItemsOffset sticky row has no RN sticky → View above FlatList, never scrolls away
+2026-09-16 Feed lit: aria-labelledby cannot cross into Card's shadow root → Card labels itself with aria-label; Feed sets no aria-labelledby
+2026-09-16 Feed lit,web: unreadBorder has no part, Card must not be restyled → part article = Feed-owned wrapper drawing the bar, mirrored in RTL
+2026-09-16 Feed lit: endMessageInset on composed Text, loadingInset no part → insets on Feed-owned wrappers carrying the part; loadingInset part loadingIndicator
+2026-09-16 Feed lit: locked colours on composed Text owned by whom → Text tone muted plus size prop; size overrides forwarded to fontSize
+2026-09-16 Feed lit,web: empty state when hasMore true and not loading → copy.empty only when hasMore false; otherwise blank
+2026-09-16 Feed lit,web: order of hidden unread/position runs in articleBody → unread, timestamp, position, content
+2026-09-16 Feed lit: feed commands from new-items button; focus after show-new → commands only inside articles; focus moves when first id changes, else stays
+2026-09-16 Feed lit: label required with no default → empty label warns in development
+2026-09-16 Feed web: Card and Button overwrite data-part → article and newItemsButton parts on Feed-owned wrappers
+2026-09-16 Feed web: Text has no visually-hidden option → hidden runs are spans with Feed's visually-hidden class
+2026-09-16 Feed web: timestamp time element inside Text span → <time> carries data-part and describedby id inside Text muted xs
+2026-09-16 Feed web: onLoadMore says End / Ctrl+End, table only Ctrl+End → Ctrl+End only; plain End is not a feed command
+2026-09-16 Feed web: live region element unnamed → always-rendered role=status new-items row; RN liveRegion polite, iOS unannounced
+2026-09-16 Feed web: sticky new-items row stacking layer unnamed → new newItemsLayer binding on layer.raised
+2026-09-16 Splitter rn: prose says AsyncStorage, prop says no storage dependency → prose now module-level memory map
+2026-09-16 Splitter rn: prose says stack below prose as if fixed → all stackBelow values via onLayout; side by side before layout
+2026-09-16 Splitter rn,web,lit: size-change-end when a drag collapses the pane → fires on release with last expanded size; rest of gesture ignored
+2026-09-16 Splitter all: step below minSize collapses vs Home clamps → step clamps to minSize first, next step collapses; Home never collapses; collapse fires no size events
+2026-09-16 Splitter rn,lit,web: separatorActive while focused has no native focus → :focus-visible plus dragging class/data-dragging; native dragging only
+2026-09-16 Splitter rn,web: transition scope for colour and keyboard steps → only collapsed-state changes animate; native colour instant
+2026-09-16 Splitter rn,web: grip rounded bar has no radius binding → new gripRadius (radius.full)
+2026-09-16 Splitter all: collapse Button icons, colour and state semantics unspecified → chevrons toward primary when expanded, mirrored RTL; ghost foreground; aria-expanded/aria-controls
+2026-09-16 Splitter rn: collapse Button cannot overlap outside separator on Android → positioned sibling from measured separator position
+2026-09-16 Splitter rn: hitSlop ignored on react-native-web → handle is an absolutely positioned overflowing child View
+2026-09-16 Splitter rn: accessibilityActions setMinimum/setMaximum have no labels → new copy.setMinimum/setMaximum; activate uses collapse/expand
+2026-09-16 Splitter rn: hardware Enter/arrows on react-native-web do nothing → rn notes state it; accessibility actions and Button are the route
+2026-09-16 Splitter rn: paneMinTarget minmax wording has no RN mapping → minWidth/minHeight on both panes, dropped for collapsed primary
+2026-09-16 Splitter rn: string pane content crashes outside Text → primary/secondary: wrapped in Text on RN
+2026-09-16 Splitter rn: sizeText percent rounding unspecified → rounded whole number for sizeText and aria-valuenow; events unrounded
+2026-09-16 Splitter lit: controlled collapsed boolean attribute cannot express false → Lit collapsed is boolean|undefined reflected when true
+2026-09-16 Splitter lit,web: key press at a bound fires size events? → neither fires; a drag always fires end on release
+2026-09-16 Splitter lit,web: aria values while collapsed unspecified → valuenow 0, valuemin 0, sizeText 0
+2026-09-16 Splitter lit,web: F6 with collapsed or stacked panes, Shift+F6 → skip unavailable zones; stacked primary↔secondary; no Shift+F6
+2026-09-16 Splitter lit: collapse Button tab position and F6 zone → after separator in tab order; separator zone
+2026-09-16 Splitter lit: permanent tabindex=-1 wrapper breaks delegatesFocus → tabindex=-1 only while F6-focused, removed on blur
+2026-09-16 Splitter lit: collapse Button position while primary collapsed → aligns to secondary pane's start edge
+2026-09-16 Splitter lit: @property ignored in shadow roots → Lit CSS.registerProperty in try/catch, same name and syntax as web
+2026-09-16 Splitter lit,web: stackBelow breakpoint from token JSON unavailable → read loaded --layout-max-width-* property; never stacks without tokens
+2026-09-16 Splitter lit: string primary/secondary in stories → slotted text in stories
+2026-09-16 Splitter lit: narrow test viewport stacks and hides separator → separator scenarios given stackBelow: never
+2026-09-16 Splitter lit: separator track size and paneMinTarget in grid template → minmax(paneMinTarget, size) separatorSize minmax(paneMinTarget, 1fr)
+2026-09-16 Splitter web: Button inside role=separator is hidden from AT → track wrapper holds separator and sibling collapseButton wrapper
+2026-09-16 Splitter web: collapseButton data-part overwritten by Button → span wrapper carries the part
+2026-09-16 Splitter web: collapsed without collapsible → collapsed ignored unless collapsible
+2026-09-16 Splitter web: RTL arrow keys vs mirrored primary → ArrowLeft/ArrowRight swap in RTL
+2026-09-16 Splitter web: vertical splitter needs definite height → fills parent block-size 100%; parent needs definite height

@@ -1,6 +1,6 @@
-# Gap digest — phase Streams
+# Gap digest — phase final
 
-Generated 2026-09-16T13:03 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-16T13:15 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -3303,6 +3303,47 @@ Doc: `site/src/content/docs/components/numberinput.md`
 
 Doc: `site/src/content/docs/components/pattern.settingspage.md`
 
+### 2026-09-16 13:14 — rn round 1
+
+- **DOC** Toast: the spec says the provider owns the region and no region is authored in the page, but on React Native `toast()` does nothing (it warns and never resolves) unless a `ToastProvider` is mounted, and the package's `withTheme()` decorator does not mount one. I left the provider out of the page (adopters have one at their app root) and added it as a story decorator inside `withTheme()`, which goes beyond 'the package's withTheme() decorator' alone. The pattern doc should say where the provider comes from on native, or withTheme should mount one. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Card: the structure puts Text + Button (and Alert + Button) straight under Card, but RN Card's body View has no gap, so siblings would touch. I wrapped each body in `Stack gap=normal align=start`; the structure should name that Stack and its gap (the web page does the same thing). align=start keeps the Button from stretching to full width; the doc doesn't say whether actions in a Card body should stretch. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** TabPanel Notifications / Appearance / Account: each panel holds two sibling Fieldsets or Cards with no container named in the structure. I used `Stack gap=loose` to match the Profile form's field stack; the structure should name it. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Appearance: the behaviors say 'the page says so' (the controls are presentational) but give no copy or component. I used Fieldset `description` with 'A preview only: the app sets the color mode, and System means no override.' and 'A preview only: the theme has no density setting yet.', the same copy as the React page. The spec should fix the copy. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Form: the RN Form requires a `name`/`label` that the structure doesn't give. I set `name="profile"` and left out `label`, since there is only one form on the screen. Field `name`s (name, email, displayName, website, productUpdates, securityAlerts, tips, pushFrequency, density) are my choice; the structure gives none. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Cancel: 'resets the form to its saved values' could also mean clearing validation errors. RN Form has no reset API, so Cancel only restores the controlled Input values; any error message already showing stays until the next validation. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Checkbox / Switch / RadioGroup on the Notifications and Appearance tabs are outside any Form, so they are not saved or reset. The spec gives them no save path; I left them as local, uncontrolled or page-state controls. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** AlertDialog: the structure doesn't place it. It is a sibling after Container inside the main Landmark. Confirm only closes the dialog; the spec gives no follow-up (e.g. a Toast or navigation) for a confirmed delete, so none is faked. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Landmark main + ScrollView: the only primitive allowed is ScrollView around the page, so it wraps the Landmark rather than the reverse. On native the Landmark is inside the scroll content, not the scroll container. → `site/src/content/docs/components/pattern.settingspage.md`
+
+### 2026-09-16 13:12 — lit round 1
+
+- **DOC** Pattern.SettingsPage structure: the Notifications, Appearance and Account TabPanels each hold two siblings (Fieldset, Fieldset / Card, Card) with no Stack, but the Profile panel has an explicit `Stack gap=loose`. ds-tab-panel is display:block, so on Lit these siblings sit with no gap between them. I followed the structure exactly (no Stack). The doc should add `Stack gap=loose` to those three panels, or Tabs should own a gap between panel children. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Pattern.SettingsPage / Card: each Card's body is Text + Button with no Stack. Card lays out body children as flex column items with `partGap` (layout.gap.loose) and stretch alignment, so the Button probably fills the width and sits a loose gap below the Text. I followed the structure. The doc should say whether a Card body needs its own `Stack gap=normal align=start`, or whether Card should align body children to start. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Pattern.SettingsPage / Form: Form has no reset() and no reset event. Slotted ds-inputs are not associated with a native <form>, so formResetCallback never runs, and setting `value = undefined` does not clear an uncontrolled edit. To make Cancel 'reset to saved values' I made the four Inputs controlled (page state holds a saved copy and a draft). Form also keeps its internal `errors` after Cancel. The Form doc should define reset (a method or a `type=reset` Button). → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Pattern.SettingsPage / Input names: the structure gives no `name` on the Inputs, but Form keys values and errors by field name (empty names collide). I used name, email, displayName, website. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Pattern.SettingsPage / Form: the structure writes `Form onSubmit` with no `name` or `label`. Form's doc says a label is required only when a page has more than one form. There is one here, so I set neither; the form landmark is unnamed. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Pattern.SettingsPage Appearance: 'the page says so' (the controls drive nothing) has no visible copy in the structure. I said so only in a code comment. Add Fieldset `description` copy to the doc if it should be visible. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Pattern.SettingsPage initial values: no default is given for Frequency, Color mode or Layout density. Frequency is left unselected, Color mode starts at 'system' (no override), and Layout density starts at 'comfortable'. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Pattern.SettingsPage AlertDialog: the spec does not say what confirm does, so both confirm and cancel just close the dialog (no fake delete). AlertDialog is used but is not in the 'Components used' list. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Pattern.SettingsPage Checkbox/Switch: the structure gives no names for the Notifications controls. They are outside any Form, so I left them unnamed and uncontrolled, except the Switch, which is controlled so it can disable the RadioGroup. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Pattern.SettingsPage acceptance: Guidance asks for a story titled `Patterns/Settings`, but the output rules say `title: 'Patterns/SettingsPage'`. I kept 'Patterns/SettingsPage'. → `site/src/content/docs/components/pattern.settingspage.md`
+
+### 2026-09-16 13:10 — web round 1
+
+- **DOC** Form: no reset or cancel API. The Inputs are controlled by page state and Cancel sets them back to the saved values. Form's error state and its after-first-submit re-validation are internal, so after a failed submit, Cancel clears the values but the error messages stay. The Form doc needs a reset contract. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Form: the structure gives no `label`/`labelledBy`. I left both out (it is the only form, inside a labelled tab panel), so the form element is not a named landmark. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Toast: the structure says 'the provider owns the region', but React has no provider, only `ToastRegion` and a region that `toast()` creates on first call. I rely on that auto-created region and author none. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** TabPanel (Notifications, Appearance, Account): each panel holds two sibling Fieldsets or Cards with nothing spacing them, and margins are banned. I wrapped each panel in `Stack gap=loose`, matching the Profile form's Stack. The structure should say so. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Card: the children (Text + Button, Alert + Button) need spacing between them, and Card's `partGap` is between parts, not body children. I wrapped them in `Stack gap=normal align=start`. `start` keeps the Buttons from stretching to full width, but it also shrinks the Alert to its content width. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Appearance: 'the page says so' has no node in the structure. I used Fieldset `description` with copy I wrote myself: 'A preview only: the app sets the color mode, and System means no override.' and 'A preview only: the theme has no density setting yet.' The pattern doc should supply this copy verbatim. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Appearance: the structure gives no initial values for the controlled inputs. I chose `system` for Color mode (no override) and `comfortable` for Layout density. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** RadioGroup Frequency: no default value is given. I left it unselected, so the disabled group shows no selection. The doc should say whether it defaults to 'Immediately'. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Checkbox/RadioGroup/Input: `name` is required by the components but not in the structure. I chose name, email, displayName, website, productUpdates, securityAlerts, tips, pushFrequency, density. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Tabs: the structure names panels by label only. I used lowercase ids (profile, notifications, appearance, account). → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Button 'Request export' has no behavior in the spec. It renders with no handler. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** AlertDialog: `onConfirm` only closes the dialog (no business logic), same as Cancel/Escape. The spec doesn't say what confirming should do on a demo page. → `site/src/content/docs/components/pattern.settingspage.md`
+- **DOC** Guidance says the story is `Patterns/Settings`; Output says `Patterns/SettingsPage`. I followed Output. → `site/src/content/docs/components/pattern.settingspage.md`
+
 ### 2026-09-10 20:35 — rn round 1
 
 - **DOC** Appearance tab: SegmentedControl 'Color mode' and RadioGroup 'Layout density' are documented as changing the live theme mode/density, but the page rules forbid `useTheme()` and any theme/mode branching in the page itself, and RN's `ThemeProvider` exposes no mode setter through context (mode is only set by the prop from an ancestor, e.g. Storybook's `withTheme` decorator) — there is also no `density` concept anywhere in the `Theme`/`Tokens` type. Both controls are implemented as presentational, locally-stated controls with no actual effect; this is the page's biggest seam and needs either a theme-mode-setter API or a documented 'demo only' caveat. → `site/src/content/docs/components/pattern.settingspage.md`
@@ -5294,7 +5335,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 3353 · CODE: 92 · TOOLING: 2 · NOISE: 42
+DOC: 3385 · CODE: 92 · TOOLING: 2 · NOISE: 42
 
 ## Gates to fix
 

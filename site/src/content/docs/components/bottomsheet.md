@@ -66,7 +66,7 @@ component:
       fires: [user]
       timing: { phase: request }
     onDragDismiss:
-      description: The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag; provided so analytics can distinguish gestures.
+      description: The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag; provided so analytics can distinguish gestures. It carries no payload — the distance and velocity that triggered it are not part of the contract.
       gesture: true
       platforms: { web: onDragDismiss, lit: drag-dismiss, rn: onDragDismiss, swiftui: onDragDismiss }
       fires: [user]
@@ -89,7 +89,8 @@ component:
     maxWidth: { token: layout.maxWidth.prose, description: 'Read once from the theme (the breakpoint is not per-instance overridable). Above this viewport width the sheet renders as a centered Dialog of size md instead of rising from the edge.' }
     layer: { token: layer.sheet }
     enter: { token: motion.duration.base, description: 'Slide up from the bottom edge with the scrim fading; motion.easing.standard; instant under reduced motion.' }
-    exit: { token: motion.duration.fast, description: 'Slide down with motion.easing.exit; a drag dismiss continues at the drag velocity.' }
+    exit: { token: motion.duration.fast, description: 'Slide down with motion.easing.exit. A drag dismiss plays this same transition from wherever the finger left the sheet — there is no momentum or decay physics, so no platform needs a velocity-to-animation mapping.' }
+    minTarget: { token: size.target.comfortable, part: closeButton, description: 'Sheets are used one-handed, so the close Button is raised to the comfortable target; the Button keeps its own size variant and colors.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
   constants:
@@ -128,7 +129,7 @@ component:
     rn:
       element: Modal
       props: [visible, transparent, onRequestClose, statusBarTranslucent, accessibilityViewIsModal]
-      notes: 'Native Modal with an Animated.View surface translated from the bottom; PanResponder (or the platform gesture handler if the app already has it — not a new dependency) on the header for drag; onRequestClose → escape. Safe area via SafeAreaView / the bottom inset. On tablets above the maxWidth token, present as Dialog. This is the mobile-first overlay: on phones prefer it to Dialog for anything the thumb should reach.'
+      notes: 'Native Modal with an Animated.View surface translated from the bottom; PanResponder (or the platform gesture handler if the app already has it — not a new dependency) on the header for drag; onRequestClose → escape. Safe area via SafeAreaView / the bottom inset. On tablets above the maxWidth token, present as Dialog. This is the mobile-first overlay: on phones prefer it to Dialog for anything the thumb should reach. The surface carries the RN >= 0.74 `role="dialog"` prop alongside accessibilityViewIsModal, as Dialog does; the legacy accessibilityRole union has no dialog value. Scroll lock has no native meaning — a Modal has no page behind it to scroll — and is not implemented. With no `initialFocus` prop, focus on open is FocusScope''s `autoFocus="first"`, which on native lands on the scope wrapper rather than a real first control; that is FocusScope''s own documented limit and the screen reader reads the sheet from the top, which is the intended result anyway.'
     swiftui:
       element: sheet
       props: [.sheet, .presentationDetents, .presentationDragIndicator, .presentationBackgroundInteraction, .interactiveDismissDisabled, .presentationBackground, FocusScope, Button]
@@ -195,7 +196,7 @@ Do not use a BottomSheet as a menu (ActionSheet or Menu), as a persistent panel 
 
 ## Behavior
 
-Opening slides the sheet up and fades the scrim; focus moves to the first control or the title; the page behind is inert and its scroll locked. The body scrolls within the sheet; a downward drag on the header when the body is at its scroll top begins the dismiss gesture, and releasing past the threshold or with enough velocity fires `onDragDismiss` then `onClose('drag')` — otherwise the sheet springs back. Escape, the close button and a scrim tap request close as in Dialog. Above the `maxWidth` breakpoint the sheet presents as a centered Dialog of size md with the same props and events, so code does not branch on device. In the wide presentation the same props are forwarded to Dialog — `heading`, `hideHeading` (Dialog has it for this reason), `dismissible`, `footer` — and matching overrides (`inset`, `radius`, `partGap`, `footerGap`) are forwarded to Dialog''s `overrides`; sheet-only bindings (handle, edge radius, drag) are no-ops there. The always-present wrapper carries `data-ds="BottomSheet"` in both presentations. Crossing the breakpoint while open swaps presentation on the next render without an animated hand-off; focus and scroll lock are re-established by the new surface. Initial focus is FocusScope''s `first` (first control in the body, else the close button, else the heading); there is no `initialFocus` prop.
+Opening slides the sheet up and fades the scrim; focus moves to the first control or the title; the page behind is inert and its scroll locked. The body scrolls within the sheet; a downward drag on the header when the body is at its scroll top begins the dismiss gesture, and releasing past the threshold or with enough velocity fires `onDragDismiss` then `onClose('drag')` — otherwise the sheet springs back. Escape, the close button and a scrim tap request close as in Dialog. Above the `maxWidth` breakpoint the sheet presents as a centered Dialog of size md with the same props and events, so code does not branch on device. In the wide presentation the same props are forwarded to Dialog — `heading`, `hideHeading` (Dialog has it for this reason), `dismissible`, `footer` — and matching overrides (`inset`, `radius`, `partGap`, `footerGap`) are forwarded to Dialog's `overrides`; sheet-only bindings (handle, edge radius, drag) are no-ops there. The always-present wrapper carries `data-ds="BottomSheet"` in both presentations. Crossing the breakpoint while open swaps presentation on the next render without an animated hand-off; focus and scroll lock are re-established by the new surface. Initial focus is FocusScope's `first` (first control in the body, else the close button, else the heading, which takes `tabindex="-1"` for the purpose); there is no `initialFocus` prop.
 
 ## Content guidelines
 
@@ -208,13 +209,13 @@ Role `dialog`, `aria-modal`, named by the title even when visually hidden (WCAG 
 ## Platform notes
 
 ### Web
-Below the `maxWidth` breakpoint (a media query on the resolved token, `literal-ok`), render the native `<dialog>` with `position: fixed; inset-block-end: 0; inline-size: 100%; max-block-size: 90dvh` and top-only radius; `height` sets `block-size` for `half` (50dvh) and `full` (calc(100dvh - var(--layout-gutter))). Above it, render `<Dialog size="md">` with the same children. Pointer Events on the header: track `pointermove` deltaY, translate the surface, and on `pointerup` decide by distance (> 25% of sheet height) or velocity. Padding-bottom adds `env(safe-area-inset-bottom)`.
+Below the `maxWidth` breakpoint (a media query on the resolved token, `literal-ok`), render the native `<dialog>` with `position: fixed; inset-block-end: 0; inline-size: 100%` and top-only radius; `height: content` adds `max-block-size: 90dvh`, and the cap belongs to that value alone — `half` (50dvh) and `full` (calc(100dvh - var(--layout-gutter))) set `block-size` outright and must not be clamped by it, or `full` would stop short of near-full-screen. Above it, render `<Dialog size="md">` with the same children. Pointer Events on the header: track `pointermove` deltaY, translate the surface, and on `pointerup` decide by distance (> 25% of sheet height) or velocity. Padding-bottom adds `env(safe-area-inset-bottom)`.
 
 ### Lit
 `<ds-bottom-sheet open heading="Filters" height="half">`; shadow `<dialog>`; `matchMedia` decides presentation and re-renders on change; drag handling as web. Composes `<ds-heading>`, `<ds-button>`, `<ds-icon>`, `<ds-box>`, `<ds-stack>`, and `<ds-dialog>` for the wide presentation.
 
 ### React Native
-`Modal` with `transparent`; surface is an `Animated.View` anchored to the bottom with `translateY` driven by a `PanResponder` on the header; `height` sets the surface height as a fraction of `useWindowDimensions().height`; body in a `ScrollView` whose `scrollY` at 0 hands the gesture to the pan responder. Bottom padding includes the safe-area inset. On tablets wider than the `maxWidth` token, render `Dialog`. `onRequestClose` → `onClose('escape')`.
+`Modal` with `transparent`; surface is an `Animated.View` anchored to the bottom with `translateY` driven by a `PanResponder` on the header; `height` sets the surface height as a fraction of `useWindowDimensions().height`; the body is a `ScrollView` that never starts the gesture — the PanResponder is attached to the header and handle only, so no responder arbitration between the two is needed. Bottom padding includes the safe-area inset. On tablets wider than the `maxWidth` token, render `Dialog`. `onRequestClose` → `onClose('escape')`.
 
 ## Related
 

@@ -172,6 +172,7 @@ component:
       attributes:
       - aria-describedby
       - aria-disabled
+      - aria-invalid
       notes: A native <fieldset> with a <legend>. No border and no padding (the browser
         defaults are reset); the group is structure, not a box — wrap it in a Box
         or Card for a surface. `disabled` uses aria-disabled on the fieldset plus
@@ -187,9 +188,13 @@ component:
       - gap
       notes: Shadow root with a <fieldset><legend> and a default slot for the fields,
         which stay in the light DOM so ds-form still collects them. The group error
-        is rendered in the shadow root. `disabled` is propagated to slotted ds-* fields
-        via their `disabled` property on slotchange and reverted when cleared (remembering
-        which it set), the same way ds-form does.
+        is rendered in the shadow root, and the <fieldset> carries aria-invalid="true"
+        with it, as on web. The legend and description render their text through <ds-text>
+        inside the native <legend>/<p>, so legendSize, legendWeight and helperSize
+        reach it as Text overrides rather than as Fieldset's own rules. `disabled`
+        is propagated to slotted ds-* fields via their `disabled` property on slotchange
+        and reverted when cleared (remembering which it set), the same way ds-form
+        does.
     rn:
       element: View
       props:
@@ -341,7 +346,7 @@ Do not wrap a whole form in a Fieldset; the Form's `label` names the form. Do no
 
 ## Behavior
 
-Renders the legend, optional description, the fields in a Stack with `gap`, and an optional error. `disabled` disables every field inside while keeping them visible and focusable per each field's own rule. Inside a Form, the group itself is not a field; its children register individually, and the group `error` is set by the consumer from `onInvalid` or its own cross-field check. The `requiredIndicator` is appended to the legend when every field inside is required, so the indicator is not repeated on each. The required indicator is derived: it appears when every direct child field has `required` (fields wrapped in a consumer's own container are not inspected — put fields directly inside the Fieldset). `disabled` and the legend reach the fields through `FieldsetContext`, which Input, Checkbox, Switch and RadioGroup read: they render disabled, and on native prefix their accessibility label with the legend; until a field reads the context, Fieldset also clones direct children with `disabled`. On React Native the group uses the `role="group"` prop (RN ≥ 0.74), not the legacy accessibilityRole.
+Renders the legend, optional description, the fields in a Stack with `gap`, and an optional error. `disabled` disables every field inside while keeping them visible and focusable per each field's own rule. Inside a Form, the group itself is not a field; its children register individually, and the group `error` is set by the consumer from `onInvalid` or its own cross-field check. The `requiredIndicator` is appended to the legend when every field inside is required, so the indicator is not repeated on each. The required indicator is derived: it appears when every direct child field has `required` (fields wrapped in a consumer's own container are not inspected — put fields directly inside the Fieldset). `disabled` and the legend reach the fields through `FieldsetContext`, which Input, Checkbox, Switch and RadioGroup read: they render disabled, and on native prefix their accessibility label with the legend; until a field reads the context, Fieldset also clones direct children with `disabled` — a direct child that is not a field (a plain wrapper, a piece of text) takes the cloned prop and ignores it, which is the intended no-op rather than an error. On React Native the group uses the `role="group"` prop (RN ≥ 0.74), not the legacy accessibilityRole.
 
 ## Content guidelines
 

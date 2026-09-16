@@ -84,8 +84,9 @@ component:
       - md
       - lg
       - xl
-      description: Vertical padding, overriding `inset` on that axis. Defaults to
-        `inset`.
+      description: 'Vertical padding, overriding `inset` on that axis. It has no default:
+        unset means `inset` applies, which keeps an explicit `none` distinct from
+        an absent value.'
     insetInline:
       type: enum
       values:
@@ -94,8 +95,8 @@ component:
       - md
       - lg
       - xl
-      description: Horizontal padding, overriding `inset` on that axis. Defaults to
-        `inset`.
+      description: Horizontal padding, overriding `inset` on that axis. Unset means
+        `inset` applies, as with insetBlock.
     surface:
       type: enum
       values:
@@ -133,30 +134,43 @@ component:
       - nav
       default: div
       description: Element to render. Sectioning elements only when the box is a semantic
-        region; prefer Landmark for page regions.
+        region; prefer Landmark for page regions. There is no native counterpart,
+        so a screen that ports to React Native uses Landmark for the region instead
+        of this prop.
       platforms:
       - web
       - lit
   styles:
     paddingBlock:
       token: layout.inset.{inset}
+      description: 'An override applies at every value including `none`: `layout.inset.none`
+        is a real token (a zero), not an absent part, so padding is not one of the
+        bindings presence gates.'
       locked: false
     paddingInline:
       token: layout.inset.{inset}
       locked: false
     background:
       token: color.background.{surface}
-      description: '`none` renders transparent; the token binding covers the other
-        three values.'
+      description: '`none` renders the literal transparent, not a token; the token
+        binding covers the other three values. Interpolated bindings like this one
+        are locked — they keep their `--ds-box-*` hook, which is the consumer''s own-CSS
+        escape hatch, but they are not members of the overrides type.'
       locked: true
     border:
       token: color.border
+      description: 'The border colour. It shares a name with the `border` boolean,
+        which decides presence: an override recolours the border and never brings
+        one into existence.'
       locked: false
     borderWidth:
       token: border.width.thin
       locked: false
     radius:
       token: radius.{radius}
+      description: '`radius: none` resolves `radius.none` and is written out, rather
+        than leaving the property unset — every binding is applied explicitly, with
+        no cascade.'
       locked: false
   a11y:
     role: none
@@ -187,7 +201,12 @@ component:
       attributes: []
       notes: 'A plain element with classes for each enum value; `surface: none` sets
         no background. insetBlock/insetInline modifiers win over inset. No margin,
-        ever.'
+        ever. The root is the `surface` part and carries `data-part="surface"`, written
+        before `...rest` so a composing parent can relabel it (Popover and BottomSheet
+        pass `data-part="body"`). Box is the one primitive that merges a consumer
+        `className` and `style` onto the root instead of dropping them, as Text does,
+        because those same composites give it a layout-only class. Props are typed
+        against `div` for every `element` value; Box is not polymorphic.'
     lit:
       tag: ds-box
       reflect:
@@ -198,15 +217,24 @@ component:
       - border
       - radius
       notes: 'The host is the box (`:host { display: block }`) with a default slot,
-        so children stay in the light DOM. `element` swaps nothing in the shadow root
+        so children stay in the light DOM. The host is also the `surface` part: it
+        carries `data-part="surface"` alongside `data-ds`, and there is no `::part`,
+        since `:host` cannot take one. `element` swaps nothing in the shadow root
         — the host is the element, so `element` is accepted for API parity and sets
-        `role` via ElementInternals only for sectioning values (article, aside, header,
-        footer, main, nav map to their implicit roles; div and section set none).'
+        `role` via ElementInternals only where the implicit role does not depend on
+        ancestry: article, aside → complementary, main, nav → navigation. `div`, `section`,
+        `header` and `footer` set no role, because a native `<header>` or `<footer>`
+        is only a banner or contentinfo outside sectioning content and the element
+        cannot see where it sits; a page-level banner is Landmark.'
     rn:
       element: View
       props: []
-      notes: View with paddingVertical/paddingHorizontal, backgroundColor, borderWidth/borderColor,
-        borderRadius from the token object. `element` does not apply.
+      notes: 'View with paddingVertical/paddingHorizontal, backgroundColor, borderWidth/borderColor,
+        borderRadius from the token object. `element` does not apply — use Landmark
+        for a region. The root view is both the component and its only part, so it
+        carries `testID="Box"` and there is no `Box.surface`: when a component''s
+        single anatomy part is the root, the root form wins. A string given as `children`
+        in an example is illustrative; native requires it inside a Text.'
     swiftui:
       element: VStack
       props:
@@ -452,8 +480,12 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
 ```yaml
 element: View
 props: []
-notes: View with paddingVertical/paddingHorizontal, backgroundColor, borderWidth/borderColor,
-  borderRadius from the token object. `element` does not apply.
+notes: "View with paddingVertical/paddingHorizontal, backgroundColor, borderWidth/borderColor,\
+  \ borderRadius from the token object. `element` does not apply \u2014 use Landmark\
+  \ for a region. The root view is both the component and its only part, so it carries\
+  \ `testID=\"Box\"` and there is no `Box.surface`: when a component's single anatomy\
+  \ part is the root, the root form wins. A string given as `children` in an example\
+  \ is illustrative; native requires it inside a Text."
 ```
 
 ## Guidance
@@ -472,7 +504,7 @@ Do not use a Box to add space between two components; put them in a Stack. Do no
 
 ## Behavior
 
-Box renders its children in a block with the requested padding, background, border and radius, and nothing else. It adds no role of its own (`a11y.role: none`); when `element` is `section`, `article`, `aside` or `nav`, the native element carries that semantics on web, and Lit sets the matching ElementInternals role. It never scrolls, never clips (`radius` does not imply `overflow: hidden`; a child that should be clipped clips itself), and never carries margin. `insetBlock` and `insetInline` override `inset` per axis. `surface: none` sets no background at all, so the parent's shows through.
+Box renders its children in a block with the requested padding, background, border and radius, and nothing else. It adds no role of its own (`a11y.role: none`); on web the native element carries whatever semantics it has, which for `section`, `header` and `footer` depends on naming and ancestry as it does in plain HTML, and Lit sets an ElementInternals role only for the values whose role is unconditional (see the platform note). It never scrolls, never clips (`radius` does not imply `overflow: hidden`; a child that should be clipped clips itself), and never carries margin. `insetBlock` and `insetInline` override `inset` per axis. `surface: none` sets no background at all, so the parent's shows through.
 
 ## Content guidelines
 
@@ -480,7 +512,7 @@ None; Box has no text of its own.
 
 ## Accessibility
 
-Box is invisible to assistive technology unless `element` gives it a sectioning role, in which case Landmark is usually the right component instead. Text on a `subtle` or `strong` surface must remain readable: the build checks body, muted and link foreground against both surfaces in both modes (WCAG 1.4.3), which is what makes "two levels deep" a safe rule rather than a hope. A border, when present, is decorative; nothing relies on it to identify content (1.4.11 does not apply).
+Box is invisible to assistive technology unless `element` gives it a sectioning role, in which case Landmark is usually the right component instead. Text on a `subtle` or `strong` surface must remain readable: the build checks body, muted and link foreground against both surfaces in both modes (WCAG 1.4.3), which is what makes "two levels deep" a safe rule rather than a hope. Box itself sets no foreground and establishes no colour context for its children, so these pairs are a guarantee about the tokens, not something the component implements or can enforce at runtime. A border, when present, is decorative; nothing relies on it to identify content (1.4.11 does not apply).
 
 ## Platform notes
 

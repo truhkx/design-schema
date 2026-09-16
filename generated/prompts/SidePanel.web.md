@@ -155,21 +155,28 @@ component:
       default: complementary
       description: 'The landmark the panel exposes (in persistent mode and as the
         region''s role when open): `navigation` for a menu of Links, `complementary`
-        for filters, a cart, a detail. On web this is the Landmark component''s `as`.'
+        for filters, a cart, a detail. On web this is the composed Landmark''s own
+        role, so `navigation` renders a real <nav>; a modal panel is a dialog, not
+        a landmark, and takes none of this. The name `role` is the doc''s; on Lit
+        the property and attribute are `landmark`, because a custom element inherits
+        `Element.role` and must not shadow it. React Native has no landmark roles
+        at all: the persistent sidebar carries the RN role prop and the overlay presentations
+        expose no region role, only their label.'
     modal:
       type: boolean
       default: false
       description: 'False (the default, the disclosure pattern): the panel is a disclosed
-        region — no scrim by default, the page stays live and in the tab order after
-        the panel, focus stays on the trigger when it opens, and Escape from inside
-        or a click outside closes it. True: the panel is a modal Dialog at the edge
-        — scrim, focus moved in and trapped, page inert and scroll-locked — for a
-        panel that must be finished or dismissed (a cart checkout, a required filter).'
+        region — the page stays live and in the tab order after the panel, focus stays
+        on the trigger when it opens, and Escape from inside or a click outside closes
+        it. True: the panel is a modal Dialog at the edge — scrim, focus moved in
+        and trapped, page inert and scroll-locked — for a panel that must be finished
+        or dismissed (a cart checkout, a required filter).'
     scrim:
       type: boolean
       default: true
-      description: Show the scrim in non-modal mode too (modal always has one). Off
-        for a panel that should feel like part of the page.
+      description: Show the scrim in non-modal mode too (modal always has one). It
+        defaults to true — this structured default is the one that counts — so turn
+        it off for a panel that should feel like part of the page.
     dismissible:
       type: boolean
       default: true
@@ -180,8 +187,13 @@ component:
     swipeable:
       type: boolean
       default: true
-      description: On touch, a swipe toward the edge dismisses; from the edge, a swipe
-        opens (native only). Purely additive.
+      description: 'On touch, a swipe toward the edge dismisses; from the edge, a
+        swipe opens (native only). Purely additive. Web and Lit accept the prop for
+        parity and wire no gesture: dragging a panel with a mouse is not an idiom
+        either platform has. On native the dismiss gesture lives on the header, excluding
+        the close button — there is no handle part here — and the edge-to-open swipe
+        needs a controlled `open`, since an uncontrolled panel exposes nothing to
+        open by hand.'
       a11y: A gesture is never the only way (WCAG 2.5.1); the trigger and close button
         always exist.
   events:
@@ -382,25 +394,30 @@ component:
       - aria-modal
       - inert
       notes: 'Non-modal (default, APG disclosure): the trigger Button gets aria-expanded
-        and aria-controls={panelId}; the panel is an <aside aria-labelledby> (or <nav>
-        when `as: nav`) rendered immediately after the trigger in DOM order so Tab
-        flows trigger → panel → page, with the `hidden` attribute when closed (after
-        the exit transition), position: fixed at the edge, full height, on layer.sheet,
-        with an optional scrim <div aria-hidden> that closes on click. Focus stays
-        on the trigger on open; Escape anywhere inside closes and refocuses the trigger;
-        a focusout to outside the panel and trigger does NOT close it (unlike Popover
-        — a navigation panel should survive a stray click) but a pointerdown on the
-        scrim or outside does when dismissible. Modal: the same content in the native
-        <dialog> via showModal() as Dialog and BottomSheet, inert page and scroll
-        lock through FocusScope''s modal contract, focus moved to the first control.
-        A Link followed inside the panel closes it with reason navigation (a client-side
-        router fires onOpenChange; a full navigation makes it moot). Persistent mode
-        above the chosen breakpoint (matchMedia on the token): render a plain <aside
-        role="complementary" aria-labelledby> (or <nav> when the body is navigation
-        — the caller passes `as: nav` through the Landmark component) in the page
-        grid beside the content, no dialog, no scrim, no trap, trigger hidden with
-        display none. The switch must not lose the panel''s content state (the same
-        children render in both). Safe-area padding via env(safe-area-inset-left/right).'
+        and aria-controls={panelId}; the panel is the composed Landmark at the `role`
+        the prop names — an <aside aria-labelledby>, or a <nav> for `navigation` —
+        rendered through a portal, so Tab from the trigger does not walk into it by
+        document order; the panel''s own Shift+Tab-from-first returns to the trigger
+        and Tab-from-last continues past it, the same seam Popover has, with the `hidden`
+        attribute when closed (after the exit transition), position: fixed at the
+        edge, full height, on layer.sheet, with an optional scrim <div aria-hidden>
+        that closes on click. Focus stays on the trigger on open; Escape anywhere
+        inside closes and refocuses the trigger; a focusout to outside the panel and
+        trigger does NOT close it (unlike Popover — a navigation panel should survive
+        a stray click) but a pointerdown on the scrim or outside does when dismissible.
+        Modal: the same content in the native <dialog> via showModal() as Dialog and
+        BottomSheet, inert page and scroll lock through FocusScope''s modal contract,
+        focus moved to the first control. A Link followed inside the panel closes
+        it with reason navigation (a client-side router fires onOpenChange; a full
+        navigation makes it moot). Persistent mode above the chosen breakpoint (matchMedia
+        on the token): render the same Landmark at the `role` the prop names in the
+        page grid beside the content, no dialog, no scrim, no trap, trigger hidden
+        with display none. The switch must not lose the panel''s content state (the
+        same children render in both). Safe-area padding via env(safe-area-inset-left/right).
+        `container?: HTMLElement` (default document.body) is the portal target — a
+        platform prop, not a schema prop. `trigger` is exactly one element, typed
+        as such, because it is cloned to carry aria-expanded, aria-controls and the
+        toggle.'
     lit:
       tag: ds-side-panel
       reflect:
@@ -769,25 +786,28 @@ attributes:
 - aria-modal
 - inert
 notes: "Non-modal (default, APG disclosure): the trigger Button gets aria-expanded\
-  \ and aria-controls={panelId}; the panel is an <aside aria-labelledby> (or <nav>\
-  \ when `as: nav`) rendered immediately after the trigger in DOM order so Tab flows\
-  \ trigger \u2192 panel \u2192 page, with the `hidden` attribute when closed (after\
-  \ the exit transition), position: fixed at the edge, full height, on layer.sheet,\
-  \ with an optional scrim <div aria-hidden> that closes on click. Focus stays on\
-  \ the trigger on open; Escape anywhere inside closes and refocuses the trigger;\
-  \ a focusout to outside the panel and trigger does NOT close it (unlike Popover\
-  \ \u2014 a navigation panel should survive a stray click) but a pointerdown on the\
-  \ scrim or outside does when dismissible. Modal: the same content in the native\
-  \ <dialog> via showModal() as Dialog and BottomSheet, inert page and scroll lock\
-  \ through FocusScope's modal contract, focus moved to the first control. A Link\
-  \ followed inside the panel closes it with reason navigation (a client-side router\
-  \ fires onOpenChange; a full navigation makes it moot). Persistent mode above the\
-  \ chosen breakpoint (matchMedia on the token): render a plain <aside role=\"complementary\"\
-  \ aria-labelledby> (or <nav> when the body is navigation \u2014 the caller passes\
-  \ `as: nav` through the Landmark component) in the page grid beside the content,\
-  \ no dialog, no scrim, no trap, trigger hidden with display none. The switch must\
-  \ not lose the panel's content state (the same children render in both). Safe-area\
-  \ padding via env(safe-area-inset-left/right)."
+  \ and aria-controls={panelId}; the panel is the composed Landmark at the `role`\
+  \ the prop names \u2014 an <aside aria-labelledby>, or a <nav> for `navigation`\
+  \ \u2014 rendered through a portal, so Tab from the trigger does not walk into it\
+  \ by document order; the panel's own Shift+Tab-from-first returns to the trigger\
+  \ and Tab-from-last continues past it, the same seam Popover has, with the `hidden`\
+  \ attribute when closed (after the exit transition), position: fixed at the edge,\
+  \ full height, on layer.sheet, with an optional scrim <div aria-hidden> that closes\
+  \ on click. Focus stays on the trigger on open; Escape anywhere inside closes and\
+  \ refocuses the trigger; a focusout to outside the panel and trigger does NOT close\
+  \ it (unlike Popover \u2014 a navigation panel should survive a stray click) but\
+  \ a pointerdown on the scrim or outside does when dismissible. Modal: the same content\
+  \ in the native <dialog> via showModal() as Dialog and BottomSheet, inert page and\
+  \ scroll lock through FocusScope's modal contract, focus moved to the first control.\
+  \ A Link followed inside the panel closes it with reason navigation (a client-side\
+  \ router fires onOpenChange; a full navigation makes it moot). Persistent mode above\
+  \ the chosen breakpoint (matchMedia on the token): render the same Landmark at the\
+  \ `role` the prop names in the page grid beside the content, no dialog, no scrim,\
+  \ no trap, trigger hidden with display none. The switch must not lose the panel's\
+  \ content state (the same children render in both). Safe-area padding via env(safe-area-inset-left/right).\
+  \ `container?: HTMLElement` (default document.body) is the portal target \u2014\
+  \ a platform prop, not a schema prop. `trigger` is exactly one element, typed as\
+  \ such, because it is cloned to carry aria-expanded, aria-controls and the toggle."
 ```
 
 ## Guidance

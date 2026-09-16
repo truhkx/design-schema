@@ -55,7 +55,7 @@ Landmark main
               Fieldset legend="Public profile"
                 Input label="Display name"
                 Input label="Website" type=url
-              Stack horizontal gap=tight justify=end   (Form's action row)
+              Stack horizontal gap=tight justify=end   (given to Form's `actions` prop or named slot, never as a trailing child)
                 Button variant=secondary "Cancel"
                 Button variant=primary type=submit "Save changes"
         TabPanel "Notifications"
@@ -75,15 +75,15 @@ Landmark main
           Card surface=subtle inset=lg heading="Export your data" headingLevel=2
             Text "Download everything we store about you as a ZIP."
             Button variant=secondary "Request export"
-          Card surface=subtle inset=lg heading="Delete account" headingLevel=2 tone=danger? (see seams)
+          Card surface=subtle inset=lg heading="Delete account" headingLevel=2
             Alert tone=warning "This cannot be undone."
             Button variant=danger "Delete account…"  → AlertDialog
-      Toast region (bottom-end)  "Changes saved" on successful submit
+      Toast "Changes saved" on successful submit   (raised with toast(), default tone; the provider owns the region and where it sits, so no region is authored here)
 ```
 
 ## Behaviors the page must show
 
-Saving the profile form validates on submit (the Form contract: required, then type), focuses the first invalid field, and on success shows a Toast "Changes saved" without moving focus. Cancel resets the form to its saved values and does nothing else. The Notifications tab's frequency RadioGroup is disabled while push is off — a real disabled-but-readable control, not hidden. The Appearance tab's color-mode control changes the theme mode live (this is the Storybook theme switcher, in product form) and the density control changes `density` on the theme. The Delete button opens an AlertDialog whose confirm is `danger` and whose cancel is the initial focus. Escape closes it. Switching tabs keeps each panel's unsaved state (Tabs with `keepMounted`).
+Saving the profile form validates on submit (the Form contract: required first; there is no built-in email or URL format check, so a format rule is the page's own business logic and this pattern does not add one), focuses the first invalid field — set `errorSummary={false}`, since the default focuses the summary instead — and on success shows a Toast "Changes saved" without moving focus. Cancel resets the form to its saved values and does nothing else; with no seed data the fields return to empty. The Notifications tab's frequency RadioGroup is disabled while push is off — a real disabled-but-readable control, not hidden. The Appearance tab's color-mode and density controls are presentational here: the page may not read the theme or branch on it, the mode is set by an ancestor, and there is no density in the theme at all — so both are real, controlled inputs that drive nothing, and the page says so. "System" is not a third mode the system has; it means no override. The Delete button opens an AlertDialog with `tone: danger`, heading "Delete your account?", description "This permanently deletes your account and everything in it. This cannot be undone." and confirm label "Delete account". Its initial focus is AlertDialog's own — Cancel on web and Lit, the heading on native, which has no way to focus a Button first. Escape closes it. Switching tabs keeps each panel's unsaved state (Tabs with `keepMounted`).
 
 ## Guidance
 
@@ -105,7 +105,7 @@ The page renders in calm-precise and warm-sleek, light and dark, and the differe
 
 These are the questions the dogfood answers; each becomes a doc change, not a page hack.
 
-Does `Stack gap=section` between the Heading and the Tabs read as one page, or as two? Does a Fieldset legend inside a TabPanel compete with the tab label? Is the Card heading at `level 2` too heavy beside a Fieldset legend at the same visual size — do we need a `size` on Fieldset's legend, or should Card's heading default smaller? The danger Card: is a `tone` on Card warranted (a red-bordered surface), or is the Alert inside enough? Does the Toast region overlap the Form's action row at phone width, and if so, does Toast need a "clear of the bottom action bar" rule? Does the disabled RadioGroup read as disabled at the theme's `opacity.disabled` in dark mode? Does the SegmentedControl look like a control or like Tabs when they sit on the same page — is the distinction visible without reading? Does `warm-sleek` change the page's rhythm at all, or only its colors — if only colors, the theme schema's `layout.rhythm` is not doing enough.
+Does `Stack gap=section` between the Heading and the Tabs read as one page, or as two? Does a Fieldset legend inside a TabPanel compete with the tab label? Is the Card heading at `level 2` too heavy beside a Fieldset legend at the same visual size — do we need a `size` on Fieldset's legend, or should Card's heading default smaller? The danger Card: is a `tone` on Card warranted (a red-bordered surface)? For now the answer is no — the Alert inside carries the signal and the Card stays plain. Does the Toast region overlap the Form's action row at phone width, and if so, does Toast need a "clear of the bottom action bar" rule? Does the disabled RadioGroup read as disabled at the theme's `opacity.disabled` in dark mode? Does the SegmentedControl look like a control or like Tabs when they sit on the same page — is the distinction visible without reading? Does `warm-sleek` change the page's rhythm at all, or only its colors — if only colors, the theme schema's `layout.rhythm` is not doing enough.
 
 ## Acceptance
 

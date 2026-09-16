@@ -370,10 +370,12 @@ component:
     - Escape
     - ' '
     - Control+a
-    - Shift+ArrowLeft
-    - Shift+ArrowRight
-    action: As DataGrid (Shift+Space extends the row selection; with selectChildren
-      each selected parent cascades).
+    - Shift+Space
+    action: As DataGrid. Shift+Space extends the row selection from the last plain-Space
+      anchor through the focused row, over the visible rows only — a range does not
+      cascade into descendants even with selectChildren, which is a per-row act. Shift
+      with the arrows keeps their own meaning here (column navigation, expand and
+      collapse) and never selects.
     from: inside
     expect: manual
   styles:
@@ -457,6 +459,7 @@ component:
     loading: Loading
     expandAll: Expand all
     collapseAll: Collapse all
+    empty: Nothing to show.
     sortAscending:
       text: Sort by {column}, ascending
       params:
@@ -530,7 +533,6 @@ component:
         column:
           type: string
           description: The column header text.
-    empty: Nothing to show.
     scrollHint: Scroll sideways to see more columns
   a11y:
     role: treegrid
@@ -924,6 +926,7 @@ component:
 - `loading`: "Loading"
 - `expandAll`: "Expand all"
 - `collapseAll`: "Collapse all"
+- `empty`: "Nothing to show."
 - `sortAscending`: "Sort by {column}, ascending"; params `column` (string)
 - `sortDescending`: "Sort by {column}, descending"; params `column` (string)
 - `sortedAnnouncement`: "Sorted by {column}, {direction}"; params `column` (string), `direction` (string)
@@ -935,7 +938,6 @@ component:
 - `rowCount`: "{count} rows"; params `count` (number); plural by `count`: one "{count} row", other "{count} rows"
 - `position`: "Row {row}, {column}"; params `row` (number), `column` (string)
 - `resize`: "Resize {column}"; params `column` (string)
-- `empty`: "Nothing to show."
 - `scrollHint`: "Scroll sideways to see more columns"
 
 ## Constants and examples
@@ -990,7 +992,7 @@ Do not use a TreeGrid for a hierarchy with one field per node — a navigation t
 
 ## Behavior
 
-Rows with children show a chevron in the row header; ArrowRight expands, ArrowLeft collapses or moves to the parent, `*` expands all siblings, Enter on the row header toggles. Expanded ids are controlled or uncontrolled; `onExpandChange` reports them. Lazy rows show a loading placeholder child until the caller supplies `children`. Sorting orders siblings within each parent and keeps the tree. Row selection with `selectChildren` cascades down and shows indeterminate parents. Vertical navigation moves through visible rows only; everything else — editing, cell selection, status bar, virtualization, pinned and resizable columns, sticky header, controlled and uncontrolled sort and selection — behaves as DataGrid, and the copy strings for those behaviors are TreeGrid's own (listed above, identical to DataGrid's) so each platform package is self-contained. Descendant, parent and sibling lookups are O(n) walks of `data`; only the visible-row list is optimized. `copy.level` and `copy.childCount` are used only in the native accessibilityLabel (web relies on aria-level/aria-setsize/aria-posinset); `copy.expandAll`/`copy.collapseAll` name the native root's expandAll/collapseAll accessibility actions and have no web control (`*` is the keyboard path).
+Rows with children show a chevron in the row header; ArrowRight expands, ArrowLeft collapses or moves to the parent, `*` expands all siblings, Enter on the row header toggles. Expanded ids are controlled or uncontrolled; `onExpandChange` reports them. Lazy rows show a loading placeholder child until the caller supplies `children`. Sorting orders siblings within each parent and keeps the tree. Row selection with `selectChildren` cascades down and shows indeterminate parents. Vertical navigation moves through visible rows only; everything else — editing, cell selection, status bar, virtualization, pinned and resizable columns, sticky header, controlled and uncontrolled sort and selection — behaves as DataGrid, and the copy strings for those behaviors are TreeGrid's own (listed above, identical to DataGrid's) so each platform package is self-contained. Descendant, parent and sibling lookups are O(n) walks of `data`; only the visible-row list is optimized. `copy.level` and `copy.childCount` are used only in the native accessibilityLabel (web relies on aria-level/aria-setsize/aria-posinset); `copy.expandAll`/`copy.collapseAll` name the native root's expandAll/collapseAll accessibility actions and have no web control (`*` is the keyboard path). `*` expands the focused row along with its siblings, not the siblings alone. `selectChildren` cascades a row's own id and its loaded descendants when that row's own checkbox is the one used; every other row derives its checked or indeterminate state by counting selected descendants, and a `lazy` subtree contributes nothing until it loads. A `lazy` row fires `onExpand` each time it opens from collapsed, not once ever — a caller that never fills in `children` is asked again. Guide lines are one continuous vertical segment per ancestor depth down every descendant row, not elbows that stop at a subtree's last child.
 
 ## Content guidelines
 

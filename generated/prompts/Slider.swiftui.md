@@ -102,11 +102,17 @@ component:
     required:
       type: boolean
       default: false
-      description: Must have a value other than the default to submit (`copy.required`).
+      description: 'Must have a value other than the default to submit (`copy.required`).
+        "The default" is `defaultValue` when set and otherwise what `value` itself
+        falls back to — `min`, or `[min, max]` for a range — so required and value
+        share one notion of it. The label takes no "(required)" suffix here: a slider
+        always shows a value, so the suffix would say nothing about what is missing.'
     invalid:
       type: boolean
       default: false
-      description: Marks the slider invalid (`copy.invalid` when no `error`).
+      description: 'Marks the slider invalid (`copy.invalid` when no `error`). There
+        is no invalid colour for the track: a slider has no text to recolour and no
+        border of its own, so the state is carried by aria-invalid and the error message.'
     value:
       type: union
       description: Controlled value; for a range, a two-number array.
@@ -412,6 +418,8 @@ component:
       - aria-describedby
       - aria-orientation
       - aria-disabled
+      - aria-invalid
+      - aria-required
       notes: Custom thumbs (<div role="slider" tabindex="0">) on a track rather than
         <input type="range">, because a range slider needs two thumbs on one track
         and the native element cannot be themed consistently. Pointer Events with
@@ -424,6 +432,9 @@ component:
       - range
       - disabled
       - show-value
+      - required
+      - invalid
+      - snap-to-marks
       notes: Form-associated (FormData with two entries for a range). Composed `change`
         (detail { value }) and `change-end`. Thumbs are shadow elements with role="slider".
     rn:
@@ -439,7 +450,12 @@ component:
         with accessibilityActions increment/decrement handled in onAccessibilityAction
         (VoiceOver swipe up/down, TalkBack volume keys), accessibilityValue={{ min,
         max, now, text }}. A range renders two adjustable elements. The drag gesture
-        is additive: the adjustable actions are the non-gesture path.'
+        is additive: the adjustable actions are the non-gesture path. PageUp, PageDown,
+        Home and End have no native gesture, so they are custom accessibilityActions
+        alongside increment and decrement; only those two get a direct swipe or volume-key
+        binding, and the rest live in the platform''s Actions menu. A pointer-driven
+        control has no blur, so `validate: blur` commits at the end of an interaction
+        (the drag release or the key-up), which is this field''s equivalent.'
     swiftui:
       element: ZStack
       props:

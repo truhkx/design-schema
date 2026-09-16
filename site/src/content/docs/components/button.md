@@ -20,7 +20,7 @@ component:
       type: enum
       values: [primary, secondary, ghost, danger]
       default: primary
-      description: Visual emphasis. One primary button per view.
+      description: 'Visual emphasis. One primary button per view. These four are the whole set: there is no `outline` variant, and a bordered low-fill emphasis would be a new value here with its own colour pair and its own contrast proof, never an alias for `secondary`.'
     size:
       type: enum
       enumRef: size
@@ -102,11 +102,11 @@ component:
     web:
       element: button
       attributes: [type, aria-disabled, aria-busy, aria-label]
-      notes: Use aria-disabled rather than the disabled attribute so the button remains discoverable by keyboard and screen readers.
+      notes: 'Use aria-disabled rather than the disabled attribute so the button remains discoverable by keyboard and screen readers. `expanded` is not a separate React prop here: the native `aria-expanded` arrives through `...rest`, which is how Menu, Popover, Disclosure, SidePanel, Combobox and Search already set it.'
     lit:
       tag: ds-button
       reflect: [variant, size, type, disabled, icon-only, loading, inverse]
-      notes: 'Wraps a native <button> in the shadow root with delegatesFocus so the host element is focusable. `press` is a composed CustomEvent. Icons are named slots `leading-icon` / `trailing-icon`. ds-button is NOT form-associated (a FACE with a reflected disabled attribute becomes truly disabled and unfocusable); `type=submit` is handled by ds-form listening for `press`, and by `closest(''form'')?.requestSubmit()` when placed directly in a native form.'
+      notes: 'Wraps a native <button> in the shadow root with delegatesFocus so the host element is focusable. `press` is a composed CustomEvent. Icons are named slots `leading-icon` / `trailing-icon`. ds-button is NOT form-associated (a FACE with a reflected disabled attribute becomes truly disabled and unfocusable); `type=submit` is handled by ds-form listening for `press`, and by `closest(''form'')?.requestSubmit()` when placed directly in a native form. `expanded` is a JS property only (`attribute: false`) and stays tri-state — undefined means the button discloses nothing, so no aria-expanded is set at all. A disclosing parent sets `.expanded=`; a raw `aria-expanded` attribute on the host does not reach the inner button.'
     rn:
       element: Pressable
       props: [accessibilityRole=button, accessibilityLabel, accessibilityState, hitSlop]
@@ -186,7 +186,7 @@ Use the `primary` variant for the single most important action in a view. Use `s
 
 ## When not to use
 
-Do not use a Button to **navigate** to another page or screen; use a Link (or a Link styled as a button) so the destination is exposed to assistive technology and works with open-in-new-tab. Do not use more than one `primary` button in the same region — if everything is emphasized, nothing is. Do not use `disabled` to communicate *why* an action is unavailable; prefer keeping the button enabled and explaining the problem on activation, or show the reason inline.
+Do not use a Button to **navigate** to another page or screen; use a Link, so the destination is exposed to assistive technology and works with open-in-new-tab. Button has no `href` and never renders an anchor. A navigation that wants a button's visual weight — a landing page's call to action — is today a plain Link: giving it that weight would be an appearance prop on Link's own schema, and it is never page CSS restating Button's fill, which would drift from the component at the first token change. Do not use more than one `primary` button in the same region — if everything is emphasized, nothing is. Do not use `disabled` to communicate *why* an action is unavailable; prefer keeping the button enabled and explaining the problem on activation, or show the reason inline.
 
 ## Behavior
 
@@ -209,8 +209,8 @@ Render a native `<button>` with `type` from the prop (default `button`, so a but
 The host element `<ds-button>` reflects `variant`, `size`, `disabled`, `icon-only` and `loading` as attributes so consumers can style states from outside the shadow root. The inner element is a real `<button>`; the shadow root is created with `delegatesFocus: true`. Activation dispatches a composed, bubbling `press` CustomEvent. Consumers can also listen to the native `click` that bubbles out of the shadow root.
 
 ### React Native
-Render a `Pressable` with `accessibilityRole="button"`, `accessibilityLabel={label}` and `accessibilityState={{ disabled, busy: loading }}`. There is no CSS cascade, so every style binding is applied explicitly from the token object. Because there is no hover on touch, `backgroundHover` is used for the pressed state. Icons passed as `leadingIcon`/`trailingIcon` are rendered as given: there is no cascade, so Button cannot recolor them, and callers color glyphs with the variant's foreground themselves until an Icon component exists. When the visual footprint is smaller than 44px, add `hitSlop` to reach the comfortable target size.
+Render a `Pressable` with `accessibilityRole="button"`, `accessibilityLabel={label}` and `accessibilityState={{ disabled, busy: loading }}`. There is no CSS cascade, so every style binding is applied explicitly from the token object. Because there is no hover on touch, `backgroundHover` is used for the pressed state. Icons passed as `leadingIcon`/`trailingIcon` are the system `Icon` and are rendered as given: there is no cascade, so Button cannot recolor them, and callers pass the variant's foreground to the Icon's own `overrides.color`. When the visual footprint is smaller than 44px, add `hitSlop` to reach the comfortable target size.
 
 ## Related
 
-Form, Link (planned), IconButton (planned), ButtonGroup (planned).
+Form, Link, Icon, Toolbar, ButtonGroup (planned).

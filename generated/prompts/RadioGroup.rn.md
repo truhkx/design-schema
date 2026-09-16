@@ -321,18 +321,23 @@ component:
     web:
       element: fieldset
       attributes:
+      - role=radiogroup
       - aria-describedby
       - aria-invalid
       - aria-required
-      notes: 'A <fieldset> with a <legend>, containing native <input type="radio"
-        name> elements styled with appearance: none. Native radios sharing a name
-        already implement roving tabindex and arrow-key movement; do not reimplement
-        it. A disabled option uses the real `disabled` attribute so native arrow movement
-        skips it (the one place the system prefers `disabled` over aria-disabled);
-        a disabled group uses aria-disabled on the fieldset and every radio plus preventDefault
-        guards, so it stays focusable but inert. Each radio has its own <label for>;
-        option descriptions are linked per radio with aria-describedby. The group
-        error is linked from the fieldset.'
+      notes: 'A <fieldset role="radiogroup"> with a <legend>, containing native <input
+        type="radio" name> elements styled with appearance: none. The role is set
+        explicitly: a fieldset''s implicit role is `group`, which is not what this
+        component declares. The radioIndicator part is a ::after pseudo-element with
+        no node of its own, so it carries no hook on any platform; shadow parts elsewhere
+        are the anatomy names in kebab-case (`radio-label`, `radio-description`, `error-message`).
+        Native radios sharing a name already implement roving tabindex and arrow-key
+        movement; do not reimplement it. A disabled option uses the real `disabled`
+        attribute so native arrow movement skips it (the one place the system prefers
+        `disabled` over aria-disabled); a disabled group uses aria-disabled on the
+        fieldset and every radio plus preventDefault guards, so it stays focusable
+        but inert. Each radio has its own <label for>; option descriptions are linked
+        per radio with aria-describedby. The group error is linked from the fieldset.'
     lit:
       tag: ds-radio-group
       reflect:
@@ -682,7 +687,7 @@ The group is exposed with role `radiogroup` (native `fieldset`/`legend` on web) 
 ## Platform notes
 
 ### Web
-Render `<fieldset>` with `<legend>` and, per option, `<input type="radio" name value id>` plus `<label for>`; style the input with `appearance: none` and draw the ring and dot with the control tokens. Native radios with a shared `name` provide roving tabindex and arrow movement, so do not add `tabindex` or key handlers. Link the group description and error to the `<fieldset>` with `aria-describedby`, and per-option descriptions to their radio. Per-option `disabled` is the native attribute; group `disabled` is `aria-disabled` on the fieldset and radios with `preventDefault()` guards. Option ids are `${groupId}-${value}`. A `<legend>` does not take part in the fieldset's flex gap, so `partGap` below it is a margin.
+Render `<fieldset role="radiogroup">` with `<legend>` and, per option, `<input type="radio" name value id>` plus `<label for>`; style the input with `appearance: none` and draw the ring and dot with the control tokens. Native radios with a shared `name` provide roving tabindex and arrow movement, so do not add `tabindex` or key handlers. Link the group description and error to the `<fieldset>` with `aria-describedby`, and per-option descriptions to their radio. Per-option `disabled` is the native attribute; group `disabled` is `aria-disabled` on the fieldset and radios with `preventDefault()` guards. Option ids are `${groupId}-${value}`. A `<legend>` does not take part in the fieldset's flex gap, so `partGap` below it is a margin.
 
 ### Lit
 `<ds-radio-group>` takes `options` as a property (`.options=${[...]}`) and renders the fieldset and radios inside its shadow root, where the shared `name` groups them natively. It is form-associated: `setFormValue(value)` on change, and `checkValidity()` / `reportValidity()` implement `required`. Re-dispatch a composed `change` CustomEvent with `detail: { value }`. Reflect `orientation`, `required`, `disabled` and `invalid`.

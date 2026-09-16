@@ -124,7 +124,7 @@ component:
     rowSelectedBorder: { token: color.control.selectedBackground, description: 'Start-edge bar on the selected node, as Table and DataGrid.' }
     rowSelectedBorderWidth: { token: border.width.focus }
     labelColor: { token: color.foreground, part: label }
-    labelSelectedWeight: { token: font.weight.medium, part: label, description: 'Forwarded to the label Text as `overrides.fontWeight` when selected.' }
+    labelSelectedWeight: { token: font.weight.medium, part: label, description: 'Forwarded to the label Text as `overrides.fontWeight` when selected. When a node has `href` its label is the composed link instead, which exposes no weight to receive it, so a selected navigation node is marked by the row rather than by heavier text.' }
     headingSize: { token: font.size.md, part: heading, description: 'The visible label Heading; forwarded as `overrides.fontSize`.' }
     iconColor: { token: color.foreground.muted, part: icon }
     badgeColor: { token: color.foreground.muted, part: badge }
@@ -184,7 +184,7 @@ component:
     rn:
       element: FlatList
       props: [accessibilityRole=list, accessibilityLabel]
-      notes: 'A FlatList over the flattened visible nodes; each row a Pressable with accessibilityRole="button" (or "link" for href), accessibilityState={{ expanded, selected, checked, disabled }}, accessibilityLabel "{label}, level {n}" and accessibilityActions expand/collapse. Multiple mode draws the checkbox glyph (checkbox* bindings, accessibilityState.checked) inside the same Pressable — not the Checkbox component — so the row stays one target and Enter-equivalent activation and href still work: a tap toggles selection, a long press activates. `selectOnFocus` is wired to the Pressable''s onFocus (hardware keyboard and assistive-technology focus). No arrow keys, no type-ahead; the expand chevron is a real target.'
+      notes: 'A FlatList over the flattened visible nodes; each row a Pressable with accessibilityRole="button" (or "link" for href), accessibilityState={{ expanded, selected, checked, disabled }}, accessibilityLabel "{label}, level {n}" and accessibilityActions expand/collapse. Multiple mode draws the checkbox glyph (checkbox* bindings, accessibilityState.checked) inside the same Pressable — not the Checkbox component — so the row stays one target and Enter-equivalent activation and href still work: a tap toggles selection, a long press activates. A screen reader''s activate gesture lands on the tap, which in that mode toggles selection, so the row also carries an `activate` accessibility action beside expand and collapse — otherwise there would be no non-gestural way to follow a node. `selectOnFocus` is wired to the Pressable''s onFocus (hardware keyboard and assistive-technology focus). No arrow keys, no type-ahead; the expand chevron is a real target.'
     swiftui:
       element: ScrollView
       props: [ScrollView, LazyVStack, Button, .accessibilityValue=expanded, .accessibilityAddTraits=isSelected, .accessibilityAction, .focusable, .onMoveCommand, .onKeyPress, '@FocusState', Link]

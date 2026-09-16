@@ -101,8 +101,9 @@ component:
         in a list share a level.
     headerActions:
       type: content
-      description: Controls at the end of the header row — a ghost icon-only Button,
-        a Link. At most two.
+      description: 'Controls at the end of the header row — a ghost icon-only Button,
+        a Link. At most two: a content guideline, not a runtime check, as with every
+        other soft content limit here.'
     footer:
       type: content
       description: The action row. Buttons in a row, primary first, following Form's
@@ -139,7 +140,9 @@ component:
       default: false
       description: The card root takes tabindex=-1 so a container (Feed) can move
         focus to it by script, and draws its own focus ring when focused that way.
-        Not a tab stop; not for making cards clickable (`interactive`).
+        Not a tab stop; not for making cards clickable (`interactive`). With `interactive`
+        also set, `interactive` wins and this is a no-op — the card already has a
+        target — and a development warning says so.
       a11y: Only scripted focus (PageUp/PageDown in a Feed) lands here; the ring is
         drawn on the card via :focus-visible.
   styles:
@@ -175,7 +178,10 @@ component:
       locked: false
     borderWidth:
       token: border.width.thin
-      description: Rendered only with surface default.
+      description: Rendered only with surface default. An interactive card always
+        reserves border.width.focus instead, transparent until focused, so the ring
+        appearing never shifts the layout; an override of this binding therefore only
+        changes non-interactive cards.
       locked: false
     radius:
       token: radius.lg
@@ -193,7 +199,9 @@ component:
       locked: true
     transition:
       token: motion.duration.fast
-      description: Interactive hover, with motion.easing.standard.
+      description: Interactive hover, with motion.easing.standard. Native has no continuous
+        hover to animate between — the pressed style swaps instantly — so the binding
+        exists there for API parity and has no runtime effect.
       locked: false
   a11y:
     role: none
@@ -223,20 +231,31 @@ component:
         stay overridable per instance). Interactive: the single child link/button
         gets a ::after pseudo-element covering the card (position: relative on the
         card), so the hit area grows without adding a focus stop; the focus ring is
-        drawn on the card via :focus-within.'
+        drawn on the card via :focus-within. Card reaches the child by cloning it
+        with an extra class — the one sanctioned exception to "never touch a child",
+        because the hit area is the card''s own geometry, and both Link and Button
+        merge a passed className by contract. The schema''s a11y.role is `none` because
+        a card without a heading has none; with a heading the element is an <article>
+        named by it, and that is the specific rule.'
     lit:
       tag: ds-card
       reflect:
       - inset
       - surface
       - interactive
+      - focusable
       - heading-level
       notes: 'Shadow root with named slots `header-actions` and `footer`, default
         slot for the body, and the heading rendered from the `heading` property as
-        a <ds-heading>. Composes ds-stack for the rows. The interactive hit-area trick
-        works across the shadow boundary only if the link is slotted: the host gets
-        position: relative and the slotted link is told (via a class the card adds
-        on slotchange) to extend; document it.'
+        a <ds-heading>. The rows are the card''s own flex rows, not ds-stack, so their
+        gaps stay overridable. The host is named with aria-label={heading} rather
+        than an idref, since ids do not cross the shadow root. The interactive hit-area
+        trick works across the shadow boundary only if the link is slotted: the host
+        gets position: relative and the slotted link is told (via a class the card
+        adds on slotchange) to extend. The rule for that class is the card''s own
+        to install — inject it once per root node (document head, or the nearest ancestor
+        shadow root) rather than expecting a global stylesheet. With no interactive
+        child, or more than one, the card stays non-interactive and warns in development.'
     rn:
       element: View
       props:
@@ -245,9 +264,14 @@ component:
       notes: 'View with padding/background/border/radius from tokens; header and footer
         are plain row Views styled from this component''s gap bindings, not Stack.
         Interactive: the card wraps its content in a Pressable that forwards onPress
-        to the single child Link/Button''s handler and takes accessibilityRole from
-        it; the child then renders with accessible={false} so there is one element
-        for assistive technology.'
+        to the single child Link/Button''s handler and takes accessibilityRole and
+        accessibilityLabel from it. That Pressable is the card''s single target and
+        single focus stop — "the card adds no second stop" means exactly one, not
+        zero, here. Button and Link do not forward an `accessible` prop, so the child
+        is neutralised by wrapping it in a View with pointerEvents="none", accessibilityElementsHidden
+        and importantForAccessibility="no". Only `children` is searched for that child:
+        a Button or Link in `headerActions` or `footer` keeps its own target and is
+        not collapsed.'
     swiftui:
       element: VStack
       props:
@@ -460,11 +484,16 @@ element: View
 props:
 - accessibilityRole
 - accessibilityLabel
-notes: 'View with padding/background/border/radius from tokens; header and footer
-  are plain row Views styled from this component''s gap bindings, not Stack. Interactive:
-  the card wraps its content in a Pressable that forwards onPress to the single child
-  Link/Button''s handler and takes accessibilityRole from it; the child then renders
-  with accessible={false} so there is one element for assistive technology.'
+notes: "View with padding/background/border/radius from tokens; header and footer\
+  \ are plain row Views styled from this component's gap bindings, not Stack. Interactive:\
+  \ the card wraps its content in a Pressable that forwards onPress to the single\
+  \ child Link/Button's handler and takes accessibilityRole and accessibilityLabel\
+  \ from it. That Pressable is the card's single target and single focus stop \u2014\
+  \ \"the card adds no second stop\" means exactly one, not zero, here. Button and\
+  \ Link do not forward an `accessible` prop, so the child is neutralised by wrapping\
+  \ it in a View with pointerEvents=\"none\", accessibilityElementsHidden and importantForAccessibility=\"\
+  no\". Only `children` is searched for that child: a Button or Link in `headerActions`\
+  \ or `footer` keeps its own target and is not collapsed."
 ```
 
 ## Guidance
@@ -499,7 +528,7 @@ A card with a heading is an `article` labelled by that heading, so screen-reader
 Render `<article aria-labelledby={headingId}>` (or `<div>` without a heading) with `ds-card` classes for `inset`, `surface` and `interactive`. Header: a flex row with `justify-content: space-between` and `gap` from `headerGap`, containing the Heading (level from `headingLevel`, `size: lg` so a card heading reads smaller than a page heading) and the actions in a row with `gap` from `actionsGap`. Footer: a flex row with `gap` from `footerGap`. The rows are Card's own markup, not Stack, so their gaps stay per-instance overridable. Interactive: `position: relative` on the card; the single link/button child receives a class that adds `::after { content: ''; position: absolute; inset: 0 }`; `:focus-within` draws the ring on the card.
 
 ### Lit
-`<ds-card heading="Plan" heading-level="3" inset="md">` with slots `header-actions`, default, and `footer`. Renders `<ds-heading size="lg">` internally (same size on every platform); header and footer rows are Card's own flex rows, not `<ds-stack>`. For `interactive`, on `slotchange` find the single `ds-link`/`ds-button` in the default slot, add the extending class to it (light DOM, so the consumer's stylesheet or a small global rule from the package applies the pseudo-element), and draw the ring on `:host(:focus-within)`.
+`<ds-card heading="Plan" heading-level="3" inset="md">` with slots `header-actions`, default, and `footer`. Renders `<ds-heading size="lg">` internally (same size on every platform); header and footer rows are Card's own flex rows, not `<ds-stack>`. For `interactive`, on `slotchange` find the single `ds-link`/`ds-button` in the default slot, add the extending class to it, and draw the ring on `:host(:focus-within)`. Because the class lands in the light DOM, the card injects the rule for it once into whichever root node the slotted element resolves in, rather than depending on a stylesheet it does not own. The selector matches a raw `a[href]` or `button` too, so a plain anchor gets the same hit area.
 
 ### React Native
 `View` with padding, background, border and radius from tokens; header and footer are plain row Views styled from Card's own gap bindings; the heading is the system `Heading` at `size: lg`. For `interactive`, wrap the content in a `Pressable` whose `onPress` calls the single child's handler and whose `accessibilityRole` and `accessibilityLabel` are copied from it; render the child with `accessible={false}` so it collapses into the Pressable.

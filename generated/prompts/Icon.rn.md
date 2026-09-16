@@ -111,12 +111,15 @@ component:
       default: false
       description: Size the glyph at 1em of the surrounding text and align it to the
         text baseline, ignoring `size`. For icons inside Text, Link and Button labels.
+        With no surrounding text to read — an inline icon that is not inside a Text
+        — the glyph falls back to font.size.md, so `inline` still ignores `size` in
+        that case.
     label:
       type: string
       description: Accessible name. When set (non-empty), the icon is meaningful and
         exposed as an image with this name; when omitted or empty, it is decorative
-        and hidden from assistive technology. Most icons sit next to text and should
-        have no label.
+        and hidden from assistive technology — an empty string is the decorative case,
+        not an authoring error. Most icons sit next to text and should have no label.
       a11y: 'With label: role=img + aria-label (accessibilityRole image + accessibilityLabel,
         importantForAccessibility auto). Without: aria-hidden / accessibilityElementsHidden
         + importantForAccessibility no.'
@@ -141,19 +144,30 @@ component:
       token: color.foreground
       description: 'The default is inherit (currentColor): glyphs take the text color,
         so a Button, Link or Alert colors them for free, and color.foreground is only
-        what inheritance resolves to at the root. `overrides.color` sets an explicit
-        color. On React Native, where there is no currentColor, the `color` prop (or
-        the parent Text''s TextStyleContext when inline) supplies it and color.foreground
-        is the fallback.'
+        what inheritance resolves to at the root. The CSS hook therefore defaults
+        to `currentColor`, not to the token — defaulting it to the token would break
+        that inheritance — and color.foreground is what it resolves to at the root.
+        `overrides.color` sets an explicit color. On React Native, where there is
+        no currentColor, the order is: the `color` prop, else the enclosing Text''s
+        TextStyleContext colour whenever the glyph is nested in a Text (nesting alone
+        is enough; `inline` governs only the size), else color.foreground.'
       locked: false
     strokeWidth:
       token: border.width.focus
       description: 'Stroke thickness of line glyphs (check, dash, chevrons, close,
         plus, minus, external, search, arrows, calendar, menu), in screen pixels at
         every size (vector-effect non-scaling-stroke), so glyphs stay legible at xs.
-        Filled glyphs (the four status shapes, ellipsis) have no stroke: each is one
-        evenodd path whose inner mark is a hole. All three platforms; on React Native
-        through react-native-svg.'
+        Filled glyphs have no stroke: each is one evenodd path whose inner mark is
+        a hole. All three platforms; on React Native through react-native-svg. The
+        binding is locked — it sits on a token that carries an accessibility guarantee
+        — so it is not a member of the overrides type, though the `--ds-icon-stroke-width`
+        hook still exists for a consumer''s own CSS. A composite that binds its own
+        indicator stroke to the same token (Checkbox''s `indicatorStroke`) is locked
+        for the same reason and forwards nothing: the two already resolve to one value.
+        react-native-svg honours `vector-effect` only under react-native-web, so web
+        passes the raw token with `vectorEffect="non-scaling-stroke"` and native passes
+        the token scaled into the 16-grid at the rendered size, which is what keeps
+        a native stroke from thickening at xl.'
       locked: true
   a11y:
     role: img
@@ -173,20 +187,27 @@ component:
         from the package index; no sprite, no icon font, no dependency). Root svg:
         fill none, stroke currentColor; filled glyphs set fill currentColor / stroke
         none on their own path. `focusable="false"` for old Edge. Decorative icons:
-        aria-hidden="true"; labelled: role="img" aria-label. An unknown `name` renders
-        an empty svg and warns in development.'
+        aria-hidden="true"; labelled: role="img" aria-label. The svg is both the root
+        and the `glyph` part, carrying `data-ds="Icon"` and `data-part="glyph"` on
+        the one element. An unknown `name` is unreachable from TypeScript but possible
+        from JavaScript: every platform renders an empty glyph and warns, on every
+        render, with no dedupe.'
     lit:
       tag: ds-icon
       reflect:
       - name
       - size
       - inline
-      notes: 'Renders the same <svg> in the shadow root with part="glyph"; the host
-        is display: inline-flex (inline-block with vertical-align when `inline`) and
-        :host([hidden]) { display: none }. No delegatesFocus — the icon is never focusable.
-        color inherits through the shadow root, so a ds-icon inside ds-button takes
-        the button foreground. The paths table lives in Icon.ts and is imported by
-        no one else — other components use <ds-icon name>, never the paths.'
+      notes: 'Renders the same <svg> in the shadow root carrying `part="glyph"` and
+        `data-part="glyph"`; the host is display: inline-flex with vertical-align:
+        middle and font-size: var(--ds-icon-size), and the <svg> is 1em, so the box
+        works as it does on web; :host([hidden]) { display: none }. The role and the
+        accessible name live on that <svg>, not on the host — this is the one primitive
+        whose semantics sit inside the shadow root, because the glyph is the image.
+        No delegatesFocus — the icon is never focusable. color inherits through the
+        shadow root, so a ds-icon inside ds-button takes the button foreground. The
+        paths table lives in Icon.ts and is imported by no one else — other components
+        use <ds-icon name>, never the paths.'
     rn:
       element: Svg
       props:
@@ -209,9 +230,16 @@ component:
         strokeWidth from border.width.focus scaled to the 16-grid at the rendered
         size (vectorEffect="non-scaling-stroke" where the platform honors it), filled
         glyphs with fill={color} stroke="none". `color` is an explicit prop (no currentColor
-        on native) defaulting to color.foreground, and inline icons read the parent
-        Text size through TextNestingContext. Decorative: accessibilityElementsHidden
-        + importantForAccessibility="no"; labelled: accessibilityRole="image" + accessibilityLabel.'
+        on native) defaulting to color.foreground, and a nested icon reads the enclosing
+        Text through `TextStyleContext` — the real export, which carries the resolved
+        fontSize, color and nesting flag; there is no boolean TextNestingContext.
+        An Svg inside an RN Text is centred by the text renderer with no baseline
+        control, so `inline` here matches size and colour only and the glyph sits
+        slightly higher than on web: a platform limit, not a bug. The root is react-native-svg''s
+        Svg, whose ref is a class instance rather than a view handle, so Icon exposes
+        no ref; it carries `testID="Icon"` and no separate part hook. Decorative:
+        accessibilityElementsHidden + importantForAccessibility="no"; labelled: accessibilityRole="image"
+        + accessibilityLabel and accessibilityElementsHidden false.'
     swiftui:
       element: Path
       props:
@@ -261,6 +289,10 @@ component:
       platforms:
       - web
       - lit
+    - attribute: accessibilityElementsHidden
+      is: false
+      platforms:
+      - rn
     - name: 'Warning: over quota'
   examples:
   - name: status-in-a-cell
@@ -318,6 +350,8 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     name: warning
     label: 'Warning: over quota'
   then:
+  - attribute: accessibilityElementsHidden
+    is: false
   - name: 'Warning: over quota'
 - name: renders
   then:
@@ -535,15 +569,22 @@ props:
 - accessibilityLabel
 - accessibilityElementsHidden
 - importantForAccessibility
-notes: 'react-native-svg is the one sanctioned native dependency (decision 2026-09-10):
-  the same 16-grid `paths` table as web renders through <Svg viewBox="0 0 16 16" width={size}
-  height={size} fill="none" stroke={color}> with <Path> children, strokeWidth from
-  border.width.focus scaled to the 16-grid at the rendered size (vectorEffect="non-scaling-stroke"
-  where the platform honors it), filled glyphs with fill={color} stroke="none". `color`
-  is an explicit prop (no currentColor on native) defaulting to color.foreground,
-  and inline icons read the parent Text size through TextNestingContext. Decorative:
-  accessibilityElementsHidden + importantForAccessibility="no"; labelled: accessibilityRole="image"
-  + accessibilityLabel.'
+notes: "react-native-svg is the one sanctioned native dependency (decision 2026-09-10):\
+  \ the same 16-grid `paths` table as web renders through <Svg viewBox=\"0 0 16 16\"\
+  \ width={size} height={size} fill=\"none\" stroke={color}> with <Path> children,\
+  \ strokeWidth from border.width.focus scaled to the 16-grid at the rendered size\
+  \ (vectorEffect=\"non-scaling-stroke\" where the platform honors it), filled glyphs\
+  \ with fill={color} stroke=\"none\". `color` is an explicit prop (no currentColor\
+  \ on native) defaulting to color.foreground, and a nested icon reads the enclosing\
+  \ Text through `TextStyleContext` \u2014 the real export, which carries the resolved\
+  \ fontSize, color and nesting flag; there is no boolean TextNestingContext. An Svg\
+  \ inside an RN Text is centred by the text renderer with no baseline control, so\
+  \ `inline` here matches size and colour only and the glyph sits slightly higher\
+  \ than on web: a platform limit, not a bug. The root is react-native-svg's Svg,\
+  \ whose ref is a class instance rather than a view handle, so Icon exposes no ref;\
+  \ it carries `testID=\"Icon\"` and no separate part hook. Decorative: accessibilityElementsHidden\
+  \ + importantForAccessibility=\"no\"; labelled: accessibilityRole=\"image\" + accessibilityLabel\
+  \ and accessibilityElementsHidden false."
 ```
 
 ## Guidance
@@ -566,7 +607,7 @@ An Icon renders a single glyph at the requested size and does nothing else: no i
 
 ## Content guidelines
 
-Glyph geometry on the 16×16 grid, for glyphs with no existing path to reuse: `play` is a filled triangle (4,2)→(14,8)→(4,14); `pause` is two filled 3×12 bars at x=3 and x=10 from y=2; `folder` is an outlined shape from (2,4) to (14,13) whose top edge steps up to y=2 between x=2 and x=7 (the tab), a line glyph; `file` is an outlined rectangle from (4,2) to (12,14) with the top-right corner cut by a diagonal from (9,2) to (12,5) and that corner folded (a line from (9,2) down to (9,5) across to (12,5)), a line glyph; `list` is three horizontal lines from x=5 to x=14 at y=4, 8, 12 with a dot at x=2 on each; `grid` is four 5×5 outlined squares at (2,2), (9,2), (2,9), (9,9); `menu` is three horizontal lines from x=2 to x=14 at y=4, 8 and 12 (a line glyph). `calendar` is an outlined rectangle from (2,3) to (14,14) with a header rule at y=6 and two hanger ticks at x=5 and x=11 from y=1 to y=4, drawn as a line glyph. Glyph names describe the shape or the universal meaning, not the use ("chevron-down", "close", "warning"), so the same icon can serve many components. `dash` is the short indeterminate mark (4–12 on the grid) used by Checkbox; `minus` is the full-width line (3–13) that pairs with `plus`. `danger` is an octagon with an ×; Alert's current exclamation octagon changes to it when Alert is regenerated to compose Icon. A `label`, when used, says what the icon means in context ("Warning: over quota"), not what it depicts ("triangle").
+`tools/icon-paths.json` is the only source for geometry and for whether a glyph is filled or stroked: every platform draws the `d` strings in it verbatim, and where this prose and the JSON disagree the JSON wins and the prose is what should be corrected. What the descriptions below are for is intent, not coordinates. The filled glyphs are the four status shapes, `ellipsis`, `play` and `pause`; everything else is a line glyph, including `list`, `grid`, `folder` and `file`. `list` draws its three rules and its three bullets in one unfilled path, the bullets as zero-length round-capped strokes, because a glyph is fill-or-stroke as a whole and a separate filled circle would need a second path. Glyph names describe the shape or the universal meaning, not the use ("chevron-down", "close", "warning"), so the same icon can serve many components. `dash` is the short indeterminate mark (4–12 on the grid) used by Checkbox; `minus` is the full-width line (3–13) that pairs with `plus`. `danger` is an octagon with an ×; Alert's current exclamation octagon changes to it when Alert is regenerated to compose Icon. A `label`, when used, says what the icon means in context ("Warning: over quota"), not what it depicts ("triangle").
 
 ## Accessibility
 

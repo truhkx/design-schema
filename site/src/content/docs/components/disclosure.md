@@ -42,7 +42,7 @@ component:
       description: 'When set, the trigger is wrapped in a heading of this level so the disclosure appears in the document outline — use for FAQ and accordion sections.'
   events:
     onToggle:
-      description: 'Fired after the state changes, with the new boolean `open` and a reason: `pointer`, `keyboard`, or `controlled` (Accordion relies on it).'
+      description: 'Fired after the state changes, with the new boolean `open` and a reason: `pointer`, `keyboard`, or `controlled` (Accordion relies on it). Web and Lit read the activation method from the native click (`event.detail === 0` means keyboard); Pressable reports nothing of the kind, so native always says `pointer` and Accordion derives its own reasons there.'
       platforms: { web: onToggle, lit: toggle, rn: onToggle, swiftui: onToggle }
       payload:
         - { name: open, type: boolean, description: The new state. }
@@ -94,7 +94,7 @@ component:
     rn:
       element: Pressable
       props: [accessibilityRole=button, accessibilityLabel, accessibilityState, accessibilityHint]
-      notes: 'Pressable trigger with accessibilityState={{ expanded: open, disabled }} and the panel conditionally rendered below. Screen readers read "expanded/collapsed" from the state; there is no aria-controls equivalent. `headingLevel` sets accessibilityRole="header" on the trigger text instead of a level.'
+      notes: 'Pressable trigger with accessibilityState={{ expanded: open, disabled }} and the panel conditionally rendered below. Screen readers read "expanded/collapsed" from the state; there is no aria-controls equivalent. `headingLevel` sets accessibilityRole="header" on the trigger text instead of a level. The chevron is the system Icon, mirrored to `chevron-left` under `I18nManager.isRTL` with the open rotation reversed to match, and its `overrides.size` receives the same token as `triggerFontSize` so the glyph tracks the trigger text. Native has no notion of focus within a subtree, so a panel that closes while something inside it held focus cannot hand focus back to the trigger; the screen reader falls to the next element, which is the trigger itself.'
     swiftui:
       element: VStack
       props: [Button, .accessibilityValue=expanded, Icon, withAnimation, .accessibilityAction]

@@ -87,10 +87,12 @@ component:
       component: Select
       forwards:
         monthTitleSize: fontSize
+        monthTitleWeight: fontWeight
     yearSelect:
       component: Select
       forwards:
         monthTitleSize: fontSize
+        monthTitleWeight: fontWeight
     todayButton: Button
     clearButton: Button
   props:
@@ -402,9 +404,7 @@ component:
       locked: false
     monthTitleWeight:
       token: font.weight.semibold
-      description: The weight of the month and year Select labels. Select has no weight
-        binding to receive it yet, so this is the value they are expected to render
-        at.
+      description: Forwarded to the month and year Selects as `overrides.fontWeight`.
       locked: false
     partGap:
       token: space.1
@@ -592,6 +592,8 @@ component:
       - disabled
       - show-week-numbers
       - locale
+      - size
+      - open
       notes: 'Form-associated: setFormValue with the ISO string (two entries for a
         range, name and name-end). Implements DsFormField. Calendar in a <ds-popover>
         in the shadow root; grid as above. Composed `change` and `open-change`.'
@@ -608,7 +610,16 @@ component:
         announced on change. Typing is supported in the TextInput with the locale
         pattern. The community datetimepicker is deliberately not used (decision 2026-09-10:
         react-native-svg is the only native dependency) because it cannot take tokens,
-        so the calendar stays the system''s own grid on every platform.'
+        so the calendar stays the system''s own grid on every platform. Native has
+        no grid or gridcell role and no key events on Pressable, so there is no roving
+        tabindex and no arrow, Page, Home or End handling: every day is its own focus
+        stop reached by swipe, and the prev/next month Buttons stand in for PageUp/PageDown.
+        `TextInputKeyPressEventData` carries no modifier flags, so Alt+ArrowDown is
+        indistinguishable from ArrowDown and both simply open the calendar. Focus
+        on open lands on the sheet''s first focusable element rather than the selected
+        day, and focus on close returns through BottomSheet''s own FocusScope, since
+        Button exposes no node handle to focus by hand. `calendarSurface` is the BottomSheet''s
+        own locked surface here, not a value this component forwards.'
     swiftui:
       element: TextField
       props:
@@ -755,8 +766,8 @@ component:
 - `header`: element
 - `prevMonthButton`: component `Button`
 - `nextMonthButton`: component `Button`
-- `monthSelect`: component `Select`; forwards `monthTitleSize` → `overrides.fontSize`
-- `yearSelect`: component `Select`; forwards `monthTitleSize` → `overrides.fontSize`
+- `monthSelect`: component `Select`; forwards `monthTitleSize` → `overrides.fontSize`, `monthTitleWeight` → `overrides.fontWeight`
+- `yearSelect`: component `Select`; forwards `monthTitleSize` → `overrides.fontSize`, `monthTitleWeight` → `overrides.fontWeight`
 - `grid`: element
 - `weekdayHeader`: element
 - `weekNumber`: element
@@ -891,7 +902,7 @@ Do not use it for a date-and-time (a DateTimePicker is planned; until then, pair
 
 ## Behavior
 
-Typing parses the locale pattern leniently (separators optional, two-digit years refused) and fires `onChange` once the date is complete and valid; the calendar, when open, follows the typed date. The calendar opens from its button or ArrowDown in the input on the selected month (or today's), with focus on the selected day (or today). Arrow keys move by day and week, PageUp/Down by month (with Shift, by year), Home/End to the week's ends; moving past the month's edge turns the page. Enter or click selects: for a single date it closes and returns focus to the calendar button; for a range the first pick sets the start (clearing any old range), the second sets the end and closes, and picking before the start restarts. Today and Clear act immediately. Escape closes without changes. Validation follows Input's precedence plus `tooEarly`, `tooLate` and `rangeOrder`. The month and year Selects are `hideLabel` and `size: sm`. The year Select spans the `min`/`max` years when given, else the current year − 100 to + 10. `onChange` fires only for a complete value (a date, or both ends of a range) and on Clear; a partial range or partial typed date changes nothing. In a range, Today acts like clicking today's cell and Clear wipes both ends; reopening focuses the start date's cell (the end's when opened from the end input). Validation order: `error`, `invalid`, `required`, unparseable (`copy.invalid`), `tooEarly`, `tooLate`, `rangeOrder`; the `{min}`/`{max}` placeholders are formatted with the locale, not ISO. A range registers two Form fields, `name` and `name-end`. The label is a native `<label for>`. The week-number column shows the ISO week of the row's first visible day.
+Typing parses the locale pattern leniently (separators optional, two-digit years refused) and fires `onChange` once the date is complete and valid; the calendar, when open, follows the typed date. The calendar opens from its button or ArrowDown in the input on the selected month (or today's), with focus on the selected day (or today). Arrow keys move by day and week, PageUp/Down by month (with Shift, by year), Home/End to the week's ends; moving past the month's edge turns the page. Enter or click selects: for a single date it closes and returns focus to the calendar button; for a range the first pick sets the start (clearing any old range), the second sets the end and closes, and picking before the start restarts. Today and Clear act immediately. Escape closes without changes. Validation follows Input's precedence plus `tooEarly`, `tooLate` and `rangeOrder`. The month and year Selects are `hideLabel` and `size: sm`. The year Select spans the `min`/`max` years when given, else the current year − 100 to + 10. `onChange` fires only for a complete value (a date, or both ends of a range) and on Clear; a partial range or partial typed date changes nothing. In a range, Today acts like clicking today's cell and Clear wipes both ends; reopening focuses the start date's cell (the end's when opened from the end input). Validation order: `error`, `required`, unparseable (`copy.invalid`), `tooEarly`, `tooLate`, `rangeOrder` — there is no `invalid` prop on this field, so nothing sits between `error` and `required`; the `{min}`/`{max}` placeholders are formatted with the locale, not ISO. A range registers two Form fields, `name` and `name-end`, and only `name` reports the combined message — `name-end` always validates clean, since one message must not be read twice. Typed text that parses to a real date commits even when it falls outside `min`/`max` or on an `isDateDisabled` day: the range bounds then surface as `tooEarly`/`tooLate`, and a disabled day typed directly is accepted, because the field has no message for it. The month and year Selects inside the calendar are internal controls, not fields: render them outside the enclosing form's field context so they never register with a Form. The label is a native `<label for>`. The week-number column shows the ISO week of the row's first visible day.
 
 ## Content guidelines
 

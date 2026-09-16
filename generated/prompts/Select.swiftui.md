@@ -332,6 +332,12 @@ component:
     fontSize:
       token: font.size.{size}
       locked: false
+    fontWeight:
+      token: font.weight.regular
+      description: Weight of the trigger and option text. It exists as an override
+        seam for composites that set their own header type — DatePicker forwards its
+        monthTitleWeight into it.
+      locked: false
     lineHeight:
       token: font.lineHeight.normal
       locked: false
@@ -426,7 +432,10 @@ component:
         forwarded to the Listbox''s handler while open. A hidden <input name> carries
         the value(s) for native form submission. `native: always` renders <select>
         (and <select multiple>) with the same label/description/error wiring and no
-        popup.'
+        popup, and is the one place the system uses the real `disabled` attribute
+        rather than aria-disabled: that mode exists for forms that work without JavaScript,
+        where aria alone would not stop interaction. `container?: HTMLElement` (default
+        document.body) is the portal target — a platform prop, not a schema prop.'
     lit:
       tag: ds-select
       reflect:
@@ -444,7 +453,10 @@ component:
         active option's text through aria-describedby on a live element instead, and
         aria-controls points at the popup wrapper. ds-form collects ds-select, ds-listbox
         and ds-combobox like other fields; DsFormField.currentValue is `string | boolean
-        | string[] | null`.
+        | string[] | null`. The composed ds-listbox is given no `name`, so it never
+        associates with a form of its own. `labelWeight` and `helperSize` are forwarded
+        into the composed ds-text's own `overrides` property as token references,
+        not written as CSS on the child.
     rn:
       element: Pressable
       props:
@@ -456,8 +468,13 @@ component:
       notes: '`native: auto` opens a BottomSheet containing the Listbox on phones
         (the system''s own picker, not the OS wheel — consistent theming, multi-select
         and descriptions work, and the sheet is the platform idiom); tablets and react-native-web
-        use the popup. accessibilityValue.text is the selected label(s). No hidden
-        input; Form registration as Input.'
+        use the popup. `native: always` means the same thing here as `auto`: there
+        is no OS picker to force without a dependency the package does not take, so
+        only `never` differs. accessibilityValue.text is the selected label(s). No
+        hidden input; Form registration as Input. Focus returns to the trigger by
+        hand — FocusScope''s restore only recaptures a TextInput — and of the keyboard
+        model only Escape, outside-tap and Enter-as-press exist, since Pressable sees
+        no keys.'
     swiftui:
       element: Button
       props:
@@ -713,7 +730,7 @@ The component accepts `overrides: [Binding: TokenRef] = [:]` where `Binding` is 
 
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
-Overridable: `triggerBorderInvalid`, `triggerBorderWidth`, `triggerRadius`, `triggerPaddingInline`, `triggerPaddingBlock`, `triggerGap`, `partGap`, `labelWeight`, `helperSize`, `popupSurface`, `popupBorder`, `popupShadow`, `popupRadius`, `popupOffset`, `layer`, `fontFamily`, `fontSize`, `lineHeight`, `disabledOpacity`, `enter`
+Overridable: `triggerBorderInvalid`, `triggerBorderWidth`, `triggerRadius`, `triggerPaddingInline`, `triggerPaddingBlock`, `triggerGap`, `partGap`, `labelWeight`, `helperSize`, `popupSurface`, `popupBorder`, `popupShadow`, `popupRadius`, `popupOffset`, `layer`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `disabledOpacity`, `enter`
 Locked (accessibility-bearing, never overridable): `triggerBackground`, `triggerBorder`, `triggerBorderFocus`, `valueColor`, `placeholderColor`, `chevron`, `descriptionText`, `errorText`, `minTarget`, `minTargetSm`, `focusRingWidth`
 
 ## Platform notes (swiftui)
@@ -755,7 +772,7 @@ Do not use a Select for two to six options; use a RadioGroup so every option is 
 
 ## Behavior
 
-The trigger shows the selected option's label (or the count / labels for `multiple`, or the placeholder). Activating it, or pressing Enter, Space or an arrow, opens the popup with the Listbox and the selected option active; the Listbox's keyboard model applies while focus visually stays on the trigger. Enter commits and closes (single) or toggles (multiple); Escape closes without changing the value; Tab commits and moves on; clicking outside closes. On close, focus returns to the trigger and `onChange` has fired if the value changed. Validation, `required`, `disabled` and errors work exactly as Input; the Form collects the value or array by `name`. The composed Listbox is `embedded`, receives `selectionFollowsFocus: false` (arrows move the active option; Enter commits) and `defaultActiveValue` set to the current selection so the popup opens with it active. With `multiple` and more than two selections the trigger shows `copy.selectedCount`; two or fewer are joined with a comma and a space. The popup's surface, border, radius and shadow are the popup wrapper's bindings; the Listbox draws none. The phone/tablet switch uses `layout.maxWidth.prose`, and the phone sheet's footer button is `copy.done`.
+The trigger shows the selected option's label (or the count / labels for `multiple`, or the placeholder). Activating it, or pressing Enter, Space or an arrow, opens the popup with the Listbox and the selected option active; the Listbox's keyboard model applies while focus visually stays on the trigger. Enter commits and closes (single) or toggles (multiple); Escape closes without changing the value; Tab commits and moves on; clicking outside closes. On close, focus returns to the trigger and `onChange` has fired if the value changed. Validation, `required`, `disabled` and errors work exactly as Input; the Form collects the value or array by `name`. The composed Listbox is `embedded`, receives `selectionFollowsFocus: false` (arrows move the active option; Enter commits) and `defaultActiveValue` set to the current selection so the popup opens with it active. With `multiple` and more than two selections the trigger shows `copy.selectedCount`; two or fewer are joined with a comma and a space. The popup's surface, border, radius and shadow are the popup wrapper's bindings; the Listbox draws none. The phone/tablet switch uses `layout.maxWidth.prose`, and the phone sheet's footer button is `copy.done`. Space commits in the open popup as well as opening it from the trigger: the popup is Listbox's own keyboard model, and this component does not suppress a key that model already handles. The composed Listbox is given no `name`, so it never registers as a field of its own — Select is the field.
 
 ## Content guidelines
 

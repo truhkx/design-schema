@@ -16,7 +16,7 @@ component:
       description: Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height.
     label:
       type: string
-      description: 'Optional text in the middle of a horizontal divider ("or", "Earlier today"). Turns the divider from decorative into a labelled separator (`semantic` is implied). Ignored on a vertical divider, with a development warning: a vertical line has no room for centered text.'
+      description: 'Optional text in the middle of a horizontal divider ("or", "Earlier today"). Turns the divider from decorative into a labelled separator (`semantic` is implied). Ignored on a vertical divider, with a development warning: a vertical line has no room for centered text. An ignored label implies nothing either — a vertical divider is semantic only when `semantic` says so.'
     semantic:
       type: boolean
       default: false
@@ -30,7 +30,7 @@ component:
   styles:
     color: { token: color.border }
     thickness: { token: border.width.thin }
-    spacing: { token: 'layout.gap.{spacing}' }
+    spacing: { token: 'layout.gap.{spacing}', description: '`spacing: none` is the off state, so an override of this binding does nothing until a spacing value is chosen — overrides change values, never presence.' }
     labelColor: { token: color.foreground.muted, part: label }
     labelSize: { token: font.size.sm, part: label, description: 'Passed to the composed Text as its `fontSize` override, along with `fontFamily`; Divider does not style the Text itself.' }
     labelGap: { token: layout.gap.normal, part: label, description: Gap between the label and the lines on each side. }
@@ -52,7 +52,7 @@ component:
     rn:
       element: View
       props: [accessibilityElementsHidden, importantForAccessibility, accessibilityRole]
-      notes: 'A View with height (or width) = border.width.thin and backgroundColor color.border. Decorative: accessibilityElementsHidden + importantForAccessibility="no". Semantic: there is no separator role on native; render the label (if any) as Text so it is read, otherwise the divider stays hidden — announcing "separator" has no native idiom.'
+      notes: 'A View with height (or width) = border.width.thin and backgroundColor color.border. Decorative: accessibilityElementsHidden + importantForAccessibility="no". Semantic: there is no separator role on native; render the label (if any) as Text so it is read, otherwise the divider stays hidden — announcing "separator" has no native idiom. `semantic: true` with no label therefore has no observable effect here, and warns in development so the author knows the boundary is silent on this platform.'
     swiftui:
       element: Rectangle
       props: [Rectangle, .frame=height-1, .accessibilityHidden, .accessibilityElement, .accessibilityLabel]

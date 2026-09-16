@@ -14,7 +14,7 @@ component:
       type: array
       required: true
       shape: '{ id: string; summary: string; content: ReactNode; disabled?: boolean }[]'
-      description: The sections in order. `content` is the panel body (a slot per item on Lit).
+      description: 'The sections in order. `content` is the panel body; on Lit it is dropped from the item type and the body is a light-DOM child slotted by the item id (`<div slot="faq-1">`).'
     headingLevel:
       type: enum
       values: ['2', '3', '4', '5', '6']
@@ -26,14 +26,14 @@ component:
       description: 'Opening one section closes the others. Off by default: users usually want to compare, and forced-closing is a common frustration.'
     value:
       type: union
-      description: 'Controlled open ids: always an array (zero or one entry when `exclusive`); `onChange` reports the same shape.'
+      description: 'Controlled open ids. A bare `string` is accepted as shorthand for a one-id array; an empty array or an empty string means nothing is open. Events always report an array, with zero or one entry when `exclusive`.'
       shape: 'string | string[]'
       controls:
         event: onChange
         default: defaultValue
     defaultValue:
       type: union
-      description: Initially open ids.
+      description: Initially open ids; the same shapes as `value`.
       shape: 'string | string[]'
     divided:
       type: boolean
@@ -45,7 +45,7 @@ component:
       description: Passed to every Disclosure; required when panels contain form fields.
   events:
     onChange:
-      description: Fired when the set of open sections changes, with the open ids.
+      description: 'Fired when the set of open sections changes, with the open ids — always an array, even under `exclusive`, where it carries zero or one entry.'
       platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
       payload:
         - { name: openIds, type: array, shape: 'string[]', description: The ids of every open section. }
@@ -59,9 +59,9 @@ component:
         - { name: reason, type: enum, values: [trigger, keyboard, exclusive, controlled] }
       reasons:
         trigger: the section trigger was activated by pointer
-        keyboard: the section was toggled from the keyboard
+        keyboard: 'the section was toggled from the keyboard — web and Lit pass through the activation method Disclosure reports on its own toggle, so the two reasons must not be collapsed there; React Native has no such signal and reports `trigger` for every activation'
         exclusive: another section opened and closed this one
-        controlled: the consumer changed the value prop
+        controlled: 'the `value` prop changed to a set the accordion did not itself just emit'
       fires: [user, controlled]
   keyboard:
     - { keys: [Enter, ' '], action: Toggles the focused section., from: first, expect: toggles }
@@ -99,7 +99,7 @@ component:
     rn:
       element: View
       props: []
-      notes: 'A View of Disclosures with dividers; exclusive logic and headingLevel passed through. Arrow keys apply only with a hardware keyboard on react-native-web.'
+      notes: 'A View of Disclosures with dividers; exclusive logic and headingLevel passed through. Native has no key events on Pressable, so ArrowUp/Down/Home/End are not implemented and `reason` is never `keyboard`; every trigger is an ordinary accessibility focus stop reached by swipe, which is the native equivalent of the arrow shortcut. Arrow keys apply only with a hardware keyboard on react-native-web.'
     swiftui:
       element: VStack
       props: [Disclosure, Heading, Button, .accessibilityValue=expanded, .focusSection, .onMoveCommand, '@FocusState']
@@ -163,7 +163,7 @@ Do not use an Accordion for content most users need — show it. Do not use it a
 
 ## Behavior
 
-Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows. `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)`, so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute); Accordion adds `data-part="item"` to each Disclosure root it renders.
+Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows. `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)`, so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute). The `item` part is the composed Disclosure root itself — Accordion does not add a `data-part="item"` hook and must not wrap items in an extra element to carry one, since Dividers are direct siblings of the items; address an item as `[data-ds="Accordion"] > [data-ds="Disclosure"]`. The `trigger`, `triggerIcon` and `panel` parts are tagged by Disclosure. Nothing open is `[]` or `''`, never `undefined`. `reason: 'controlled'` is reported when `value` arrives holding a set the accordion did not itself just emit; a controlled parent that answers a trigger with some other set therefore sees `controlled`, which is the intended reading.
 
 ## Content guidelines
 

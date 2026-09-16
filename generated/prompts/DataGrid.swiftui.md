@@ -435,7 +435,9 @@ component:
   - keys:
     - Delete
     - Backspace
-    action: Clears the value of editable cells in the selection.
+    action: 'Clears the value of editable cells in the selection: onCellChange fires
+      with `value: undefined`, the same shape the column model calls an omitted value,
+      not an empty string.'
     when: editable and selection
     from: inside
     expect: manual
@@ -831,11 +833,13 @@ component:
         inside the cell with its label visually hidden, size sm, `overrides` for inset
         zero; validate on commit, and an invalid cell keeps the editor open with the
         message in the status bar and aria-describedby. Range selection is drawn with
-        an absolutely positioned overlay, not per-cell styles. Column resize: a separator
-        (role="separator" aria-orientation="vertical" aria-valuenow) on the header
-        cell edge draggable with the pointer and adjustable with arrow keys. Copy
-        writes text/plain TSV to the clipboard. Live region announces sort, selection
-        counts, copy, and edit state.'
+        an absolutely positioned overlay, not per-cell styles. `container?: HTMLElement`
+        (default document.body) is the portal target for the composed Select and DatePicker
+        editors — a platform prop, not a schema prop. Column resize: a separator (role="separator"
+        aria-orientation="vertical" aria-valuenow) on the header cell edge draggable
+        with the pointer and adjustable with arrow keys. Copy writes text/plain TSV
+        to the clipboard. Live region announces sort, selection counts, copy, and
+        edit state.'
     lit:
       tag: ds-data-grid
       reflect:
@@ -879,9 +883,16 @@ component:
         accessibilityHint "double tap to edit"; editing opens the system control inline
         (or a BottomSheet on phones for select/date). Row selection via Checkbox cells;
         range selection is not offered on native (no keyboard model), and `selectable:
-        range` degrades to `row`. Arrow keys apply only on react-native-web. This
-        is the one component where a phone is a poor fit; the doc recommends Table
-        with `responsive: stack` for phone-first screens.'
+        range` degrades to `row`. Arrow keys apply only on react-native-web, and even
+        there they are not wired: core RN gives View and Pressable no key events,
+        so the whole cell-navigation model — arrows, Home/End, Page keys, Ctrl+A —
+        is replaced by touch, where tapping a cell selects or edits it, the select-all
+        checkbox stands in for Ctrl+A, and the header button sorts. `copy.position`
+        has no announcement here. FlatList also gives the set of body rows no wrapper
+        of its own, so the `body` rowgroup part has no element on native: the list
+        itself carries `role="rowgroup"` for the body and the header row carries its
+        own. This is the one component where a phone is a poor fit; the doc recommends
+        Table with `responsive: stack` for phone-first screens.'
     swiftui:
       element: ScrollView
       props:
@@ -1301,7 +1312,7 @@ Render `<div data-ds="DataGrid">` with the caption (`Heading` or visually hidden
 `<ds-data-grid caption="Price list" .columns=${columns} .data=${rows} editable selectable="range" height="viewport"></ds-data-grid>`; the grid is in the shadow root; `repeat` over the window; composed events; editors are `ds-input`, `ds-number-input`, `ds-select`, `ds-date-picker`, `ds-checkbox`.
 
 ### React Native
-`FlatList` with `getItemLayout` from `rowHeight`, inside a horizontal `ScrollView` shared with the header row; pinned columns in a second `FlatList` whose scroll offset is synced. Cells are `Pressable`s with `accessibilityLabel` "{column}: {value}"; editable cells open the system control inline (text, number, checkbox) or in a `BottomSheet` (select, date). `selectable: range` degrades to `row`. `onEndReached` drives `onRangeNeeded`.
+`FlatList` with `getItemLayout` from `rowHeight`, inside a horizontal `ScrollView` shared with the header row; pinned columns are not sticky here — native has no `position: sticky` and a second synced list would need a gesture dependency the package does not take — so they scroll with the rest and only cast `pinnedShadow`, as Table's row-header column does. Cells are `Pressable`s with `accessibilityLabel` "{column}: {value}"; editable cells open the system control inline (text, number, checkbox) or in a `BottomSheet` (select, date). `selectable: range` degrades to `row`. `onEndReached` drives `onRangeNeeded`.
 
 ## Related
 

@@ -559,24 +559,32 @@ component:
       - scope
       - abbr
       - tabindex
-      notes: 'Native <table><caption><thead><tbody> with EVERY role stated explicitly
-        (role="table" on the table, "rowgroup" on thead/tbody, "row" on tr, "columnheader"/"rowheader"/"cell"
+      notes: 'Native <table><thead><tbody> with EVERY role stated explicitly (role="table"
+        on the table, "rowgroup" on thead/tbody, "row" on tr, "columnheader"/"rowheader"/"cell"
         on th/td) — browsers drop the implicit table roles as soon as CSS changes
         display on any of these elements, which the stacked layout and sticky positioning
-        do. Column headers: <th scope="col" abbr>; the row-header column: <th scope="row">.
-        Sort: a Button (ghost, sm) inside the columnheader with aria-sort on the th
-        and a visually-hidden live region announcing copy.sortedAnnouncement. Selection:
-        Checkbox in the first cell, aria-selected on the tr, live region for copy.selectedCount.
-        `responsive: stack` below the prose breakpoint: a container query switches
-        tr/td to display block/grid, thead is visually hidden (not display none, so
-        the columnheaders remain in the tree), and each td gets a ::before from a
-        data-label attribute holding the header text — aria-hidden as text is already
-        associated by the roles. `responsive: scroll`: the table sits in a <div role="region"
-        aria-labelledby={captionId} tabindex="0"> with overflow-x auto, faded edges,
-        and the row-header column position: sticky. Sticky header: thead th position:
-        sticky top 0 with the shadow toggled by an IntersectionObserver sentinel.
-        rowActions cell has a visually-hidden columnheader "Actions". Rows are keyed
-        by id; no virtualization in this component (that is DataGrid).'
+        do. The caption is the composed Heading at `captionLevel`, rendered as a sibling
+        above the <table> inside the container and referenced by aria-labelledby —
+        not inside a <caption> element. With role="table" stated, ARIA lets the table
+        own only rows and rowgroups, so a heading inside <caption> is an invalid owned
+        child and every instance fails the aria-required-children check; a labelled
+        sibling is the same name to a screen reader and costs nothing. `hideCaption`
+        visually hides that heading and keeps it as the name. Column headers: <th
+        scope="col" abbr>; the row-header column: <th scope="row">. Sort: a Button
+        (ghost, sm) inside the columnheader with aria-sort on the th and a visually-hidden
+        live region announcing copy.sortedAnnouncement. Selection: Checkbox in the
+        first cell, aria-selected on the tr, live region for copy.selectedCount. `responsive:
+        stack` below the prose breakpoint: a container query switches tr/td to display
+        block/grid, thead is visually hidden (not display none, so the columnheaders
+        remain in the tree), and each td gets a ::before from a data-label attribute
+        holding the header text — aria-hidden as text is already associated by the
+        roles. `responsive: scroll`: the table sits in a <div role="region" aria-labelledby={captionId}
+        tabindex="0"> with overflow-x auto, faded edges, and the row-header column
+        position: sticky. Sticky header: thead th position: sticky top 0 with the
+        shadow toggled by an IntersectionObserver sentinel. rowActions cell has a
+        visually-hidden columnheader "Actions", and carries the same text as its data-label
+        so the stacked layout labels the action row like every other cell. Rows are
+        keyed by id; no virtualization in this component (that is DataGrid).'
     lit:
       tag: ds-table
       reflect:

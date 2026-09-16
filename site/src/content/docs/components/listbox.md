@@ -6,7 +6,7 @@ component:
   category: input
   status: review
   apg: listbox
-  anatomy: [list, group, groupLabel, option, optionLabel, optionDescription, optionIcon, optionCheck, emptyState]
+  anatomy: [list, group, groupLabel, option, optionLabel, optionDescription, optionIcon, optionCheck, emptyState, errorMessage]
   composition:
     optionIcon: Icon
     optionCheck: Icon
@@ -58,10 +58,10 @@ component:
     embedded:
       type: boolean
       default: false
-      description: 'The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; the list draws none of its own.'
+      description: 'The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; the list draws none of its own. It keeps its own `listPadding` — that is content spacing, not surface chrome — and an override of `border`, `borderWidth`, `surface` or `radius` is a no-op while it is set, since overrides change values, never presence.'
     initialActiveValue:
       type: string
-      description: The option that is active when the list first receives focus (Select opens with the selected option active). Defaults to the first selected, else the first enabled option.
+      description: 'The option that is active when the list first receives focus (Select opens with the selected option active). It wins when it names an enabled option; otherwise the first selected, else the first enabled.'
     loading:
       type: boolean
       default: false
@@ -80,7 +80,7 @@ component:
       type: enum
       values: ['5', '8', '12', 'all']
       default: '8'
-      description: Height in rows before the list scrolls; `all` never scrolls.
+      description: 'Height in rows before the list scrolls; `all` never scrolls. There is no row-height token, so the height is rows × the height measured from the first rendered row — an estimate that is a little off when that first row is a group label rather than an option.'
   events:
     onChange:
       description: Fired when the selection changes, with the new value (array when `multiple`).
@@ -166,12 +166,12 @@ component:
       notes: 'The list is ONE focusable element (tabindex=0) and moves an aria-activedescendant pointer between <div role="option"> children instead of moving DOM focus — this is the one composite in the system that uses activedescendant, because Combobox must keep focus in its input while the list is navigated. Standalone, DOM focus sits on the list and the active option is scrolled into view. Options carry aria-selected; groups are role=group with aria-labelledby. Hover sets the active option. Native <select multiple> is not used: it cannot be styled or grouped consistently and its keyboard model differs per browser.'
     lit:
       tag: ds-listbox
-      reflect: [multiple, disabled, required]
+      reflect: [multiple, disabled, required, invalid, embedded, loading, { prop: selectionFollowsFocus, attribute: no-selection-follows-focus }]
       notes: '`options` and `value` are properties. Form-associated: setFormValue with a FormData carrying one entry per selected value when `multiple`, so a native <form> gets the same shape as a <select multiple>. Composed `change` (detail { value }) and `active-change`. aria-activedescendant referencing shadow options works because list and options share the shadow root; Combobox composes ds-listbox inside its own shadow root for the same reason.'
     rn:
       element: FlatList
       props: [accessibilityRole=list, accessibilityState, accessibilityRole=menuitem]
-      notes: 'A FlatList (virtualised — long option lists are common) of Pressable rows with accessibilityRole="menuitem" (no listbox/option roles on native) and accessibilityState={{ selected, disabled }}; multiple: accessibilityState.checked. maxVisible → maxHeight = rows × row height measured from the first row. Each option is its own accessibility stop; typeahead and arrows apply with a hardware keyboard only.'
+      notes: 'A FlatList (virtualised — long option lists are common) of Pressable rows with accessibilityRole="menuitem" (no listbox/option roles on native) and accessibilityState={{ selected, disabled }}; multiple: accessibilityState.checked. Because there is no listbox role here, a test finds the list by its accessible label, never by role — the `listbox` in a11y.role is the web and Lit contract. maxVisible → maxHeight = rows × row height measured from the first row. Each option is its own accessibility stop; Pressable has no key events, so arrows, Home/End, Page keys, typeahead, Shift+Arrow and Ctrl+A have no native form at all, a tap is the selection, and `selectionFollowsFocus` is accepted for parity with no runtime effect. `initialActiveValue` only pre-highlights a row here, since there is no single tab stop to move.'
     swiftui:
       element: ScrollView
       props: [ScrollView, LazyVStack, Button, .accessibilityAddTraits=isSelected, .focusable, .onMoveCommand, .onKeyPress, '@FocusState', ScrollViewReader, .accessibilityElement=contain]

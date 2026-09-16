@@ -96,8 +96,12 @@ component:
       - scroll
       default: menu
       description: 'What happens when controls do not fit: wrap onto more rows, collapse
-        trailing controls into a "More" Menu (each control must provide `overflowLabel`),
-        or scroll horizontally with the edges faded.'
+        trailing controls into a "More" Menu (each collapsible control must provide
+        `overflowLabel`), or scroll horizontally with the edges faded. Collapsing
+        takes whole entries from the end — a group goes into the Menu as a group,
+        never half of one — and the width budget reserves `size.target.min` for the
+        More trigger before it is rendered. `menu` is for horizontal toolbars; a vertical
+        one treats it as `scroll`, since a menu overflow assumes a fixed cross axis.'
     size:
       type: enum
       enumRef: size
@@ -459,7 +463,7 @@ Do not use a Toolbar for page navigation (Breadcrumb, Tabs, a `nav` Landmark) or
 
 ## Behavior
 
-Focus enters on the control that last had focus (initially the first). Arrow keys move along the toolbar's axis, skipping disabled controls, without wrapping; Home and End jump to the ends. A control that has its own arrow-key model (SegmentedControl, RadioGroup) keeps it: the toolbar only takes arrows when focus is on the control's edge and the arrow points out. When the toolbar is narrower than its content, `overflow` decides: wrap, move trailing controls into a "More" Menu (kept in their original order, groups become Menu groups), or scroll with faded edges. `ToolbarGroup` is part of Toolbar's API (`label` for the group's accessible name, `children`); a Divider is drawn between groups. Only Buttons collapse into the overflow Menu, using their `overflowLabel`; SegmentedControl, Select and Switch never collapse — the toolbar measures them as fixed and collapses Buttons from the end first. A control with its own arrow-key model handles the key first; the toolbar acts only when the control did not (`defaultPrevented`). On native the fade is drawn with react-native-svg; `overflow: menu` renders as `scroll`.
+Focus enters on the control that last had focus (initially the first). Arrow keys move along the toolbar's axis, skipping disabled controls, without wrapping; Home and End jump to the ends. A control that has its own arrow-key model (SegmentedControl, RadioGroup) keeps it: the toolbar only takes arrows when focus is on the control's edge and the arrow points out. When the toolbar is narrower than its content, `overflow` decides: wrap, move trailing controls into a "More" Menu (kept in their original order, groups become Menu groups), or scroll with faded edges. `ToolbarGroup` is part of Toolbar's API (`label` for the group's accessible name, `children`); a Divider is drawn between groups. Only Buttons collapse into the overflow Menu, using their `overflowLabel`; SegmentedControl, Select and Switch never collapse — the toolbar measures them as fixed and collapses Buttons from the end first. A control with its own arrow-key model handles the key first; the toolbar acts only when the control did not (`defaultPrevented`). On native the fade is drawn with react-native-svg; `overflow: menu` renders as `scroll` with a development warning, since children are opaque there and nothing measures them — the overflowButton and overflowMenu parts have no element on that platform, and grouping is a Divider between clusters rather than a ToolbarGroup element. `focusRing` and `focusRingWidth` are locked but Toolbar applies them nowhere: every focusable thing in it is a composed child drawing its own ring, and the hooks exist only as the consumer's own-CSS escape hatch.
 
 ## Content guidelines
 

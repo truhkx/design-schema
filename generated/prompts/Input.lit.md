@@ -322,10 +322,15 @@ component:
       - disabled
       - invalid
       notes: 'Uses ElementInternals (formAssociated = true) so a native <form> that
-        directly contains ds-input sees its value and validity. Inside ds-form the
-        association is by `name` (see Form). `value` behaves like a native input:
-        undefined = uncontrolled; consumers control by rebinding `.value`. Exposes
-        `currentValue`, `form`, `validity`, `checkValidity()`, `reportValidity()`.'
+        directly contains ds-input sees its value and validity. A disabled field is
+        left out of setFormValue and out of validity, as a native disabled control
+        is, while staying focusable and read-only — the field is never given the native
+        disabled attribute. On web the native `<input size>` attribute (character
+        width) is dropped from the prop surface: this schema''s `size` enum is the
+        meaning that wins. Inside ds-form the association is by `name` (see Form).
+        `value` behaves like a native input: undefined = uncontrolled; consumers control
+        by rebinding `.value`. Exposes `currentValue`, `form`, `validity`, `checkValidity()`,
+        `reportValidity()`.'
     rn:
       element: TextInput
       props:
@@ -631,11 +636,15 @@ reflect:
 - required
 - disabled
 - invalid
-notes: 'Uses ElementInternals (formAssociated = true) so a native <form> that directly
-  contains ds-input sees its value and validity. Inside ds-form the association is
-  by `name` (see Form). `value` behaves like a native input: undefined = uncontrolled;
-  consumers control by rebinding `.value`. Exposes `currentValue`, `form`, `validity`,
-  `checkValidity()`, `reportValidity()`.'
+notes: "Uses ElementInternals (formAssociated = true) so a native <form> that directly\
+  \ contains ds-input sees its value and validity. A disabled field is left out of\
+  \ setFormValue and out of validity, as a native disabled control is, while staying\
+  \ focusable and read-only \u2014 the field is never given the native disabled attribute.\
+  \ On web the native `<input size>` attribute (character width) is dropped from the\
+  \ prop surface: this schema's `size` enum is the meaning that wins. Inside ds-form\
+  \ the association is by `name` (see Form). `value` behaves like a native input:\
+  \ undefined = uncontrolled; consumers control by rebinding `.value`. Exposes `currentValue`,\
+  \ `form`, `validity`, `checkValidity()`, `reportValidity()`."
 ```
 
 ## Guidance

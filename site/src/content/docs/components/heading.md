@@ -17,7 +17,7 @@ component:
       type: enum
       enumRef: size
       values: [4xl, 3xl, 2xl, xl, lg, md]
-      description: 'Visual size, independent of level. Defaults per level: 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md.'
+      description: 'Visual size, independent of level. There is no single default; the default is read from `level` by this exact map — 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md — and an explicit `size` always wins over it. The resolved default is never written back to the `size` attribute, so `[size]` selectors match only explicit sizes. Heading takes the large end of the shared size vocabulary; the exported type is its own, since Text takes the small end.'
     children:
       type: content
       required: true
@@ -26,14 +26,14 @@ component:
       type: enum
       values: [start, center, end]
       default: start
-      description: Horizontal text alignment.
+      description: 'Horizontal text alignment. It has no style binding on purpose — alignment is a layout choice, not a themed value — so it maps straight to the platform''s text-align. `start` and `end` are logical on web and Lit; React Native has no logical values and resolves them through I18nManager.isRTL at render, so a writing-direction change mid-session does not re-align an already-rendered heading, the same limit Text has.'
   styles:
     fontFamily: { token: font.family.heading }
     fontWeight: { token: font.weight.semibold }
     fontSize: { token: 'font.size.{size}' }
     lineHeight: { token: font.lineHeight.tight }
     color: { token: color.foreground.strong }
-    marginBlockEnd: { token: space.sm, description: 'Space below the heading (marginBottom on React Native — the one margin the system allows, because a heading owns the gap to its own first paragraph).' }
+    marginBlockEnd: { token: space.sm, description: 'Space below the heading (marginBottom on React Native — the one margin the system allows, because a heading owns the gap to its own first paragraph). It is unconditional: a container that owns its own rhythm turns it off with `overrides={{ marginBlockEnd: ''space.0'' }}`, as Table does.' }
   a11y:
     role: heading
     requires: [heading-hierarchy, contrast-aaa]
@@ -43,15 +43,15 @@ component:
     web:
       element: h1–h6
       attributes: []
-      notes: The element is chosen by `level`. Never use `role="heading"` on a div when a real heading element is available.
+      notes: 'The element is chosen by `level`. Never use `role="heading"` on a div when a real heading element is available. The root is the `text` part and carries `data-part="text"` beside `data-ds="Heading"` — on web and Lit one element takes both hooks. Heading does not compose Text: it owns its five typography bindings because Text cannot carry the header semantics, the heading sizes or a margin. `contrast-aaa` and `heading-hierarchy` have nothing to implement here — the first is a property of the locked token pair and the second is a property of the page; both are checked by the build, not by the component.'
     lit:
       tag: ds-heading
       reflect: [level, size, align]
-      notes: Renders the matching <h1>–<h6> inside the shadow root. Note that headings inside shadow roots are exposed to assistive technology normally, but some in-page outline tools do not see them.
+      notes: 'Renders the matching <h1>–<h6> inside the shadow root, carrying `part="text"` and `data-part="text"` — the anatomy name, not `heading`. Headings inside shadow roots are exposed to assistive technology normally; some in-page outline tools do not see them, and the component does nothing about that. `level` is required, but an element always renders: with the attribute absent it falls back to <h2> and warns once per element in development. Non-interactive, so no delegatesFocus and no focus styling.'
     rn:
       element: Text
       props: [accessibilityRole=header]
-      notes: iOS and Android have no heading levels. `level` maps only to typography; the header trait is set regardless of level. Document the outline in the screen's design instead.
+      notes: 'iOS and Android have no heading levels. `level` maps only to typography; the header trait is set regardless of level. Document the outline in the screen''s design instead. Heading renders the platform Text directly rather than composing the system Text, which carries no header role, no heading sizes and no margin. The root is both the component and its only part, so it carries `testID="Heading"` and there is no `Heading.text`: a part that is the root keeps the root hook.'
     swiftui:
       element: Text
       props: [.accessibilityAddTraits=isHeader, .accessibilityHeading, .font, .fontWeight]

@@ -165,7 +165,10 @@ component:
         escape: Escape pressed while open
         close-button: the close button was activated
         scrim: the scrim was clicked
-        action: a footer action asked to close
+        action: something inside the dialog asked to close — a footer action reusing
+          this same handler, or on Lit a slotted form submitted with method="dialog".
+          Dialog never raises it on its own; the three dismiss affordances have their
+          own reasons.
       fires:
       - user
       timing:
@@ -331,7 +334,13 @@ component:
         while open, compensating for scrollbar width via scrollbar-gutter. Focus restore
         to document.activeElement at open time. `container?: HTMLElement` (default
         document.body) is the portal target — a platform prop every portaled overlay
-        accepts, not a schema prop.'
+        accepts, not a schema prop. FocusScope has no autoFocus value for `title`
+        or `close`, so Dialog sets it to `none` and places initial focus itself while
+        FocusScope keeps ownership of capturing and restoring the opener. `initialFocus:
+        close` on a non-dismissible dialog has no close button to land on and falls
+        back to the first focusable in the body, then the heading. The heading takes
+        `tabindex="-1"` for `initialFocus: title` and keeps it when `hideHeading`
+        is set — a visually hidden heading is still a focus target and still announced.'
     lit:
       tag: ds-dialog
       reflect:
@@ -348,7 +357,10 @@ component:
         <ds-text>. The close button is a <ds-button variant="ghost" size="sm" icon-only>
         with <ds-icon name="close">. Accessible name: ids do not cross the shadow
         boundary, so the shadow <dialog> carries aria-label={heading} (and aria-description
-        from the description text) rather than aria-labelledby.'
+        from the description text) rather than aria-labelledby. The heading happens
+        to share the shadow root, so an idref would resolve — the literal text is
+        still used, so the name does not depend on where the heading is rendered,
+        as in AlertDialog.'
     rn:
       element: Modal
       props:
@@ -369,7 +381,14 @@ component:
         with the gutter as margin. The surface carries the RN >= 0.74 `role="dialog"`
         prop (as Landmark and Fieldset use `role`), alongside accessibilityViewIsModal;
         the legacy accessibilityRole union has no dialog value. Scroll lock has no
-        native meaning and is not implemented.'
+        native meaning and is not implemented. `accessibilityViewIsModal` goes on
+        the surface View, not on Modal, which does not accept it. testIDs are the
+        root plus scrim, header, body and footer; heading, description, closeButton
+        and focusScope are reached through their own roles and names and take none,
+        as in AlertDialog. Native has no descendant walker, so `initialFocus` calls
+        setAccessibilityFocus on the View wrapping the title, the close button or
+        the body, not on a literal first focusable descendant, and there is no visible
+        focus ring on those targets.'
     swiftui:
       element: sheet
       props:
@@ -491,7 +510,7 @@ component:
 
 - `onClose`: emit `onClose`
   - payload, positional, in this order: `reason: 'escape' | 'close-button' | 'scrim' | 'action'`
-  - reasons: `escape` (Escape pressed while open); `close-button` (the close button was activated); `scrim` (the scrim was clicked); `action` (a footer action asked to close)
+  - reasons: `escape` (Escape pressed while open); `close-button` (the close button was activated); `scrim` (the scrim was clicked); `action` (something inside the dialog asked to close — a footer action reusing this same handler, or on Lit a slotted form submitted with method="dialog". Dialog never raises it on its own; the three dismiss affordances have their own reasons.)
   - fires on: user
   - timing: request
 - `onOpened`: emit `onOpened`
@@ -691,7 +710,14 @@ notes: "A native <dialog> opened with showModal(), which gives the top layer, Es
   \ Body scroll locked with overflow: hidden on <html> while open, compensating for\
   \ scrollbar width via scrollbar-gutter. Focus restore to document.activeElement\
   \ at open time. `container?: HTMLElement` (default document.body) is the portal\
-  \ target \u2014 a platform prop every portaled overlay accepts, not a schema prop."
+  \ target \u2014 a platform prop every portaled overlay accepts, not a schema prop.\
+  \ FocusScope has no autoFocus value for `title` or `close`, so Dialog sets it to\
+  \ `none` and places initial focus itself while FocusScope keeps ownership of capturing\
+  \ and restoring the opener. `initialFocus: close` on a non-dismissible dialog has\
+  \ no close button to land on and falls back to the first focusable in the body,\
+  \ then the heading. The heading takes `tabindex=\"-1\"` for `initialFocus: title`\
+  \ and keeps it when `hideHeading` is set \u2014 a visually hidden heading is still\
+  \ a focus target and still announced."
 ```
 
 ## Guidance

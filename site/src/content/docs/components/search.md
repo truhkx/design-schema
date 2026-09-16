@@ -12,8 +12,7 @@ component:
     icon: Icon
     clearButton: Button
     submitButton: Button
-    suggestions: Listbox
-    landmark: Landmark
+    suggestions: { component: Listbox, props: { embedded: true } }
   props:
     label:
       type: string
@@ -46,7 +45,7 @@ component:
     suggestions:
       type: array
       shape: '{ value: string; label: string; description?: string }[]'
-      description: 'Suggestions for the current query, shown in a Listbox under the field; choosing one fills the query and submits. Provide them from `onChange` (debounced by the caller). With suggestions the field becomes a Combobox: same keys, `aria-activedescendant`.'
+      description: 'Suggestions for the current query, shown in a Listbox under the field; choosing one fills the query with the suggestion''s `label` — what the user just read — and submits. Provide them from `onChange` (debounced by the caller). Setting the prop at all is what turns the field into a combobox, including an explicitly empty array after a fetch that found nothing, which shows `copy.noSuggestions`; leaving it undefined keeps a plain search field. With suggestions the field becomes a Combobox: same keys, `aria-activedescendant`.'
     loading:
       type: boolean
       default: false
@@ -54,7 +53,7 @@ component:
     landmark:
       type: boolean
       default: true
-      description: Wrap in the `search` Landmark. Turn off when the Search sits inside another search landmark (a filter within a results page).
+      description: 'Give the field the `search` landmark. Turn off when the Search sits inside another search landmark (a filter within a results page). It is `role="search"` on Search''s own form element, not a composed Landmark wrapping it: the landmark is one attribute on an element this component already renders, and a wrapper would add a second element and take the root''s testability hook. With a single search landmark on the page it needs no name of its own beyond the field''s label.'
     size:
       type: enum
       enumRef: size
@@ -79,7 +78,7 @@ component:
         - { name: value, type: string, description: The submitted query. }
       fires: [user]
     onClear:
-      description: Fired when the clear button empties the field.
+      description: Fired when the field is emptied — by the clear button, or by the Escape that clears it when no suggestions are open. Either route reports.
       platforms: { web: onClear, lit: clear, rn: onClear, swiftui: onClear }
       fires: [user]
   keyboard:
@@ -141,7 +140,7 @@ component:
     web:
       element: form
       attributes: [role=search, type=search, enterkeyhint=search, autocomplete=off, aria-controls, aria-expanded, aria-activedescendant]
-      notes: 'A <form role="search"> (the Landmark) with a visually-hidden <label>, a decorative Icon "search", <input type="search" enterkeyhint="search" autocomplete="off"> with the browser''s own clear button suppressed (::-webkit-search-cancel-button { display: none }) in favor of the system Button (ghost, sm, iconOnly, "close" Icon), and a submit Button (ghost, iconOnly, "arrow-right" Icon; hidden when `action` is absent and the caller only wants Enter). With `suggestions` the input takes role="combobox" aria-autocomplete="list" and composes Listbox with aria-activedescendant exactly as Combobox does; a visually-hidden live region announces the count.'
+      notes: 'A <form role="search"> (the Landmark) with a visually-hidden <label>, a decorative Icon "search", <input type="search" enterkeyhint="search" autocomplete="off"> with the browser''s own clear button suppressed (::-webkit-search-cancel-button { display: none }) in favor of the system Button (ghost, sm, iconOnly, "close" Icon), and a submit Button (ghost, iconOnly, "arrow-right" Icon) — always rendered, on every platform, since Enter is not reachable from every on-screen keyboard and the Tab order names it. The glyph Icon is `size: sm` at `size: md` and `size: md` at `size: lg`, so it keeps its proportion to the text. With `suggestions` the input takes role="combobox" aria-autocomplete="list" and composes Listbox — `embedded`, so Search''s own popup bindings own the surface, border, radius and shadow — with aria-activedescendant exactly as Combobox does; a visually-hidden live region announces the count. ArrowUp from the first suggestion, or before any has been highlighted, clears the highlight and leaves focus in the input rather than wrapping to the last. While suggestions are loading, Search passes no options and `emptyMessage: copy.loading`, so the verbatim string is what shows.'
     lit:
       tag: ds-search
       reflect: [size, show-label, { prop: landmark, attribute: no-landmark }, disabled, loading]
@@ -149,7 +148,7 @@ component:
     rn:
       element: TextInput
       props: [returnKeyType=search, clearButtonMode=never, accessibilityRole=search, accessibilityLabel]
-      notes: 'TextInput with returnKeyType="search" and onSubmitEditing; the system clear Button rather than clearButtonMode so it matches across platforms; a search glyph Icon before the input. Suggestions render as a Listbox below the field in a View (no overlay: on a phone the list takes the space under the field). The container View has accessibilityRole="search".'
+      notes: 'TextInput with returnKeyType="search" and onSubmitEditing; the system clear Button rather than clearButtonMode so it matches across platforms; a search glyph Icon before the input. Suggestions render as a Listbox below the field in a View (no overlay: on a phone the list takes the space under the field), shown while the field has focus and `suggestions` is set, and closed on blur. The container View has accessibilityRole="search". `name` and `action` are a URL query key and a GET target — neither exists on native — so both are accepted for parity and do nothing, and `action` warns in development. Listbox rows are touch Pressables with no key events, so there is no arrow-key highlight: a tap chooses a suggestion and Enter always submits the typed query.'
     swiftui:
       element: TextField
       props: [TextField, .submitLabel=search, .keyboardType, .autocorrectionDisabled, Button, Listbox, .accessibilityElement=contain, .accessibilityAddTraits=isSearchField, AccessibilityNotification]

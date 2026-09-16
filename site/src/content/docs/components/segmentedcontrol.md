@@ -55,8 +55,8 @@ component:
     - { keys: [ArrowRight, ArrowDown], action: 'Moves to and selects the next enabled segment, wrapping.', from: first, expect: [focus-next, selects] }
     - { keys: [ArrowLeft, ArrowUp], action: 'Moves to and selects the previous enabled segment, wrapping.', from: last, expect: [focus-prev, selects] }
     - { keys: [ArrowRight], action: From the last segment wraps to the first., from: last, expect: focus-wraps-to-first }
-    - { keys: [Home], action: First segment., from: last, expect: focus-first }
-    - { keys: [End], action: Last segment., from: first, expect: focus-last }
+    - { keys: [Home], action: 'Moves to and selects the first enabled segment — this control always has a selection, so Home and End select as the arrows do.', from: last, expect: focus-first }
+    - { keys: [End], action: 'Moves to and selects the last enabled segment.', from: first, expect: focus-last }
   styles:
     groupBackground: { token: color.background.strong, part: group }
     groupPadding: { token: space.1, part: group }
@@ -76,7 +76,7 @@ component:
     fontSize: { token: 'font.size.{size}' }
     fontWeight: { token: font.weight.medium }
     lineHeight: { token: font.lineHeight.normal }
-    minTarget: { token: size.target.min, description: 'Each segment''s minimum; on touch platforms the group height is size.target.comfortable so every segment reaches 44px.' }
+    minTarget: { token: size.target.min, description: 'Each segment''s minimum. React Native is touch, so the group height there is size.target.comfortable and every segment reaches 44px; web and Lit keep this floor, because no CSS query tells a touch screen from a hybrid laptop and guessing would shrink or grow the control for the wrong people.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
     transition: { token: motion.duration.fast, description: Pill movement; instant under reduced motion. }
@@ -162,7 +162,7 @@ Do not use it to pick a value that is submitted later (RadioGroup) or that has c
 
 ## Behavior
 
-Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End jump. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only.
+Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End do the same to the ends. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only.
 
 ## Content guidelines
 

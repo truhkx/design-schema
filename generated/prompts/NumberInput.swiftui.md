@@ -315,6 +315,8 @@ component:
     required: '{label} is required.'
     invalid: '{label} must be a number.'
     outOfRange: '{label} must be between {min} and {max}.'
+    outOfRangeMin: '{label} must be {min} or more.'
+    outOfRangeMax: '{label} must be {max} or less.'
     currencyMissing: format "currency" needs a currency code.
     requiredIndicator: ' (required)'
   a11y:
@@ -398,12 +400,19 @@ component:
       - accessibilityLabel
       - accessibilityValue
       - accessibilityActions
-      notes: TextInput with keyboardType="decimal-pad" (numbers-and-punctuation on
+      notes: 'TextInput with keyboardType="decimal-pad" (numbers-and-punctuation on
         iOS for negatives), accessibilityRole="adjustable" with increment/decrement
         accessibility actions so VoiceOver/TalkBack can step without the buttons,
         accessibilityValue text from the formatted value. Formatting uses Intl.NumberFormat
-        (Hermes supports it). Steppers are system Buttons beside the input, accessibilityElementsHidden
-        since the adjustable actions cover them.
+        (Hermes supports it). Use numbers-and-punctuation on iOS when negatives are
+        possible — `min` absent or below zero — and decimal-pad otherwise. Steppers
+        are system Buttons beside the input, accessibilityElementsHidden since the
+        adjustable actions cover them; Button exposes only `onPress`, so they step
+        once per tap and do not repeat while held — the adjustable actions are the
+        way to step repeatedly here. An adjustable role and a directly typable field
+        are in tension on this platform: screen readers favour swipe-to-adjust and
+        may make double-tap-to-edit unreliable. That is the native trade, and the
+        role stays, because stepping without the buttons matters more.'
     swiftui:
       element: TextField
       props:
@@ -662,7 +671,7 @@ Do not use it for numbers that are really identifiers — phone numbers, postal 
 
 ## Behavior
 
-Typing accepts digits, a leading minus, and the locale's or a period decimal separator; other characters are ignored rather than rejected loudly. `onChange` fires with the parsed number as it becomes valid. On blur or Enter the value is rounded to `precision`, clamped to `min`/`max`, and re-formatted. ArrowUp/Down step; PageUp/Down step by ten; Home/End go to the bounds when defined. The steppers repeat while held and disable at the bounds. Empty is a valid state (undefined) unless `required`. Validation precedence is Input's, plus `copy.outOfRange` for a clamped value when the field is `required` and the user typed out of range (the field clamps and reports, rather than silently changing the number). `percent` stores the number as typed (25, not 0.25) and divides by 100 only for display. `format: currency` without `currency` is a development warning and falls back to USD. From an empty field, ArrowUp/increment goes to `min ?? 0` and ArrowDown/decrement to `max ?? 0`. `copy.outOfRange` is reported whenever a blur-time clamp changed what was typed, `required` or not. Hold-to-repeat timings are read from the resolved theme at pointerdown (`motion.duration.base` delay, `motion.duration.fast` interval), never hardcoded. The label is a native `<label for>` (web/Lit) styled from this component's label bindings, not a Text. The Form value is a number.
+Typing accepts digits, a leading minus, and the locale's or a period decimal separator; other characters are ignored rather than rejected loudly. `onChange` fires with the parsed number as it becomes valid. On blur or Enter the value is rounded to `precision`, clamped to `min`/`max`, and re-formatted. ArrowUp/Down step; PageUp/Down step by ten; Home/End go to the bounds when defined. The steppers repeat while held and disable at the bounds. Empty is a valid state (undefined) unless `required`. Validation precedence is Input's, plus an out-of-range message for a clamped value: the field clamps and reports, rather than silently changing the number. `percent` stores the number as typed (25, not 0.25) and divides by 100 only for display. `format: currency` without `currency` is a development warning and falls back to USD. From an empty field, ArrowUp/increment goes to `min ?? 0` and ArrowDown/decrement to `max ?? 0`. The out-of-range message is reported whenever a blur-time clamp changed what was typed, `required` or not: `copy.outOfRange` when both bounds are set, `copy.outOfRangeMin` or `copy.outOfRangeMax` when only one is — a clamp is never silent. `leadingText` is ignored under `format: currency`, which draws its own symbol, so a field never shows two. A `unit` string that Intl does not know falls back to plain decimal formatting with the unit shown as `trailingText` when none was given. NumberInput reads FieldsetContext as Input does, so a Fieldset's `disabled` and its legend prefix reach it too. Hold-to-repeat timings are read from the resolved theme at pointerdown (`motion.duration.base` delay, `motion.duration.fast` interval), never hardcoded. The label is a native `<label for>` (web/Lit) styled from this component's label bindings, not a Text. The Form value is a number.
 
 ## Content guidelines
 

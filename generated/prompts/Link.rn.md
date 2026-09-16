@@ -204,13 +204,19 @@ component:
         the link color (with `tone: inherit` it takes the parent Text''s color from
         TextStyleContext); it swaps color instantly on press while the label crossfades.
         Of the override bindings only `transition` has an effect on native (Text cannot
-        set underline thickness/offset). Activation calls `onPress(href)` when provided,
-        otherwise Linking.openURL(href). `external` always uses Linking. No hover
-        or visited state; the pressed state uses colorHover. On react-native-web this
-        becomes a real anchor. Forwards `accessibilityHint`, `accessibilityLabel`
-        (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`,
-        `onBlur` and `onLongPress` to the native element, so Tooltip can attach to
-        it.'
+        set underline thickness/offset). Activation calls `onPress(href)` first when
+        provided; for a non-external link that handler is the navigation and Linking
+        is only the fallback when there is none, while an `external` link then always
+        hands off to Linking.openURL(href) as well, because a consumer''s own router
+        cannot open the system browser. With `tone: inherit` and `external` there
+        is no currentColor to inherit from, so the mark falls back to Icon''s own
+        default colour. Icon''s inline mode renders at font.size.md rather than the
+        enclosing Text''s size, which is Icon''s own documented limit and can look
+        mis-sized inside a non-md Text. No hover or visited state; the pressed state
+        uses colorHover. On react-native-web this becomes a real anchor. Forwards
+        `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip),
+        `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur` and `onLongPress` to the native
+        element, so Tooltip can attach to it.'
     swiftui:
       element: Link
       props:
@@ -383,12 +389,17 @@ notes: 'Renders Text with accessibilityRole="link" so it is inline inside a pare
   (with `tone: inherit` it takes the parent Text''s color from TextStyleContext);
   it swaps color instantly on press while the label crossfades. Of the override bindings
   only `transition` has an effect on native (Text cannot set underline thickness/offset).
-  Activation calls `onPress(href)` when provided, otherwise Linking.openURL(href).
-  `external` always uses Linking. No hover or visited state; the pressed state uses
-  colorHover. On react-native-web this becomes a real anchor. Forwards `accessibilityHint`,
-  `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`,
-  `onFocus`, `onBlur` and `onLongPress` to the native element, so Tooltip can attach
-  to it.'
+  Activation calls `onPress(href)` first when provided; for a non-external link that
+  handler is the navigation and Linking is only the fallback when there is none, while
+  an `external` link then always hands off to Linking.openURL(href) as well, because
+  a consumer''s own router cannot open the system browser. With `tone: inherit` and
+  `external` there is no currentColor to inherit from, so the mark falls back to Icon''s
+  own default colour. Icon''s inline mode renders at font.size.md rather than the
+  enclosing Text''s size, which is Icon''s own documented limit and can look mis-sized
+  inside a non-md Text. No hover or visited state; the pressed state uses colorHover.
+  On react-native-web this becomes a real anchor. Forwards `accessibilityHint`, `accessibilityLabel`
+  (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur`
+  and `onLongPress` to the native element, so Tooltip can attach to it.'
 ```
 
 ## Guidance

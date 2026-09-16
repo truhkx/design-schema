@@ -86,8 +86,10 @@ component:
       - warning
       - danger
       default: info
-      description: What kind of message this is. Sets the colors and the icon, which
-        together convey the tone without relying on color.
+      description: 'What kind of message this is. Sets the colors and the icon, which
+        together convey the tone without relying on color. There is deliberately no
+        `neutral` tone: every value here says something about urgency, and a message
+        that says nothing about urgency is not an Alert.'
     heading:
       type: string
       description: A short bold first line for the message. Optional for one-line
@@ -191,6 +193,9 @@ component:
       locked: false
     fontSize:
       token: font.size.md
+      description: Body text. It reaches a string body directly; a body composed of
+        Text or Link children keeps its own sizing, since a composite never restyles
+        a child.
       locked: false
     lineHeight:
       token: font.lineHeight.normal
@@ -254,7 +259,9 @@ component:
         slot `heading`; body is the default slot. Accessible name: the host is named
         by aria-labelledby the heading when present, else by the body text (a status
         region is named by its content), via ElementInternals ariaLabelledByElements
-        where supported and aria-label with the text otherwise.'
+        where supported and aria-label with the text otherwise — ids never cross the
+        shadow root, so a literal aria-label is the fallback, not an idref. Shadow
+        parts carry the anatomy names in kebab-case (`dismiss-button`, not `dismiss`).'
     rn:
       element: View
       props:
@@ -267,7 +274,10 @@ component:
         on mount and again whenever heading or body change (a changed message is a
         new message). The label is heading + body when body is a string; otherwise
         heading only — a body that is not plain text should carry its own accessible
-        text. The dismiss button is the system Button.
+        text. The dismiss button is the system Button. Native cannot move focus to
+        an arbitrary element, so the focus-onward step the web and Lit builds perform
+        on dismiss is skipped here; the dismiss Button is inside the alert and its
+        own removal returns focus to the enclosing screen, which is the native equivalent.
     swiftui:
       element: HStack
       props:
@@ -425,7 +435,7 @@ Use an Alert for a message that relates to the current view and should stay visi
 
 ## When not to use
 
-Do not use an Alert for field-level validation; Input and the form controls render their own errors, and Form renders the summary. Do not use it for transient confirmations that need no action; use Toast (planned). Do not use it as a callout for general prose ("Tip: …") in documentation; that is a Note (planned) with no live semantics. Do not stack more than two alerts in a view; combine or prioritise.
+Do not use an Alert for field-level validation; Input and the form controls render their own errors, and Form renders the summary. Do not use it for transient confirmations that need no action; use Toast (planned). Do not use it as a callout for general prose ("Tip: …") in documentation; that is a Note (planned) with no live semantics. A toneless statement of fact — "this component is not generated yet" — is that same Note; until Note exists use `info` and accept that it reads as information, rather than reaching for a `neutral` tone Alert does not have. Do not stack more than two alerts in a view; combine or prioritise.
 
 ## Behavior
 
@@ -437,7 +447,7 @@ The heading says what happened in a few words ("Changes saved", "Payment failed"
 
 ## Accessibility
 
-The message is announced when it appears, politely for `status` and immediately for `alert` (WCAG 4.1.3 Status Messages), and it is never used to move focus (3.2.1). Tone is conveyed by the icon shape and the heading, not only by color (1.4.1). Heading, body, links, the dismiss button and icon meet contrast on the tinted background in both modes — 4.5:1 for text and 3:1 for the icon (1.4.3, 1.4.11); the build checks every tone. The region itself has no separate accessible name — a status or alert region is announced by its content, and naming it would be read twice. The dismiss button has an accessible name from `copy.dismissLabel`, visible focus, and a 24px target (2.4.7, 2.5.8). Only `danger` and blocking `warning` alerts use `live: alert`; interrupting for good news is a real cost to screen-reader users.
+The message is announced when it appears, politely for `status` and immediately for `alert` (WCAG 4.1.3 Status Messages), and it is never used to move focus (3.2.1). Tone is conveyed by the icon shape and the heading, not only by color (1.4.1). Heading, body, links, the dismiss button and icon meet contrast on the tinted background in both modes — 4.5:1 for text and 3:1 for the icon (1.4.3, 1.4.11); the build checks every tone. The region is named by its own content — `aria-labelledby` the heading when there is one, otherwise the body element (on native, `accessibilityLabel`) — so the alert has a name in the accessibility tree without inventing one that repeats the tone. The dismiss button has an accessible name from `copy.dismissLabel`, visible focus, and a 24px target (2.4.7, 2.5.8). Only `danger` and blocking `warning` alerts use `live: alert`; interrupting for good news is a real cost to screen-reader users.
 
 ## Platform notes
 

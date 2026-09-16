@@ -76,7 +76,8 @@ component:
       description: 'Optional text in the middle of a horizontal divider ("or", "Earlier
         today"). Turns the divider from decorative into a labelled separator (`semantic`
         is implied). Ignored on a vertical divider, with a development warning: a
-        vertical line has no room for centered text.'
+        vertical line has no room for centered text. An ignored label implies nothing
+        either — a vertical divider is semantic only when `semantic` says so.'
     semantic:
       type: boolean
       default: false
@@ -104,6 +105,9 @@ component:
       locked: false
     spacing:
       token: layout.gap.{spacing}
+      description: '`spacing: none` is the off state, so an override of this binding
+        does nothing until a spacing value is chosen — overrides change values, never
+        presence.'
       locked: false
     labelColor:
       token: color.foreground.muted
@@ -163,7 +167,9 @@ component:
         color.border. Decorative: accessibilityElementsHidden + importantForAccessibility="no".
         Semantic: there is no separator role on native; render the label (if any)
         as Text so it is read, otherwise the divider stays hidden — announcing "separator"
-        has no native idiom.'
+        has no native idiom. `semantic: true` with no label therefore has no observable
+        effect here, and warns in development so the author knows the boundary is
+        silent on this platform.'
     swiftui:
       element: Rectangle
       props:
@@ -334,7 +340,9 @@ notes: "A View with height (or width) = border.width.thin and backgroundColor co
   \ Decorative: accessibilityElementsHidden + importantForAccessibility=\"no\". Semantic:\
   \ there is no separator role on native; render the label (if any) as Text so it\
   \ is read, otherwise the divider stays hidden \u2014 announcing \"separator\" has\
-  \ no native idiom."
+  \ no native idiom. `semantic: true` with no label therefore has no observable effect\
+  \ here, and warns in development so the author knows the boundary is silent on this\
+  \ platform."
 ```
 
 ## Guidance

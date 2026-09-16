@@ -66,6 +66,7 @@ component:
   - optionIcon
   - optionCheck
   - emptyState
+  - errorMessage
   composition:
     optionIcon: Icon
     optionCheck: Icon
@@ -128,12 +129,15 @@ component:
       type: boolean
       default: false
       description: The list lives inside a popup (Select, Combobox) that owns the
-        border, surface and radius; the list draws none of its own.
+        border, surface and radius; the list draws none of its own. It keeps its own
+        `listPadding` — that is content spacing, not surface chrome — and an override
+        of `border`, `borderWidth`, `surface` or `radius` is a no-op while it is set,
+        since overrides change values, never presence.
     initialActiveValue:
       type: string
       description: The option that is active when the list first receives focus (Select
-        opens with the selected option active). Defaults to the first selected, else
-        the first enabled option.
+        opens with the selected option active). It wins when it names an enabled option;
+        otherwise the first selected, else the first enabled.
     loading:
       type: boolean
       default: false
@@ -159,7 +163,10 @@ component:
       - '12'
       - all
       default: '8'
-      description: Height in rows before the list scrolls; `all` never scrolls.
+      description: Height in rows before the list scrolls; `all` never scrolls. There
+        is no row-height token, so the height is rows × the height measured from the
+        first rendered row — an estimate that is a little off when that first row
+        is a group label rather than an option.
   events:
     onChange:
       description: Fired when the selection changes, with the new value (array when
@@ -440,6 +447,11 @@ component:
       - multiple
       - disabled
       - required
+      - invalid
+      - embedded
+      - loading
+      - prop: selectionFollowsFocus
+        attribute: no-selection-follows-focus
       notes: '`options` and `value` are properties. Form-associated: setFormValue
         with a FormData carrying one entry per selected value when `multiple`, so
         a native <form> gets the same shape as a <select multiple>. Composed `change`
@@ -455,9 +467,14 @@ component:
       notes: 'A FlatList (virtualised — long option lists are common) of Pressable
         rows with accessibilityRole="menuitem" (no listbox/option roles on native)
         and accessibilityState={{ selected, disabled }}; multiple: accessibilityState.checked.
+        Because there is no listbox role here, a test finds the list by its accessible
+        label, never by role — the `listbox` in a11y.role is the web and Lit contract.
         maxVisible → maxHeight = rows × row height measured from the first row. Each
-        option is its own accessibility stop; typeahead and arrows apply with a hardware
-        keyboard only.'
+        option is its own accessibility stop; Pressable has no key events, so arrows,
+        Home/End, Page keys, typeahead, Shift+Arrow and Ctrl+A have no native form
+        at all, a tap is the selection, and `selectionFollowsFocus` is accepted for
+        parity with no runtime effect. `initialActiveValue` only pre-highlights a
+        row here, since there is no single tab stop to move.'
     swiftui:
       element: ScrollView
       props:

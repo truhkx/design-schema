@@ -53,7 +53,7 @@ component:
     dismissible:
       type: boolean
       default: true
-      description: Show the close button. Escape and outside click work regardless (non-modal).
+      description: 'Show the close button. Escape and outside click work regardless (non-modal), so this is a visibility switch, not Dialog''s "must be answered" rule: with it false there is simply no close button.'
   events:
     onOpenChange:
       description: 'Fired when the popover opens or closes, with the new state and a reason: `trigger`, `escape`, `outside`, `close-button`, `tab-out`.'
@@ -112,7 +112,7 @@ component:
     web:
       element: div
       attributes: [role=dialog, aria-labelledby, aria-modal, aria-expanded, aria-controls]
-      notes: 'The trigger is cloned with aria-expanded and aria-controls. The panel is <div role="dialog" aria-labelledby={heading or trigger}> rendered through a portal with position: fixed from the trigger rect (flip and shift to stay within the viewport, repositioned on scroll/resize), on layer.dropdown, wrapped in FocusScope (trapped only when modal; autoFocus first). Non-modal: a document pointerdown outside panel+trigger closes; focusout to outside closes; Tab past the last element closes and lets focus continue. Modal: uses a native <dialog> with showModal() positioned at the trigger. Use the Popover API (popover="manual") where available for top-layer rendering. Non-modal popovers never lock page scroll and use only the pointerdown-outside listener for dismissal (Tab/Shift+Tab handlers own the keyboard exits; no focusout listener). The arrow, when shown, is centered on the panel edge, not on the trigger.'
+      notes: 'The trigger is cloned with aria-expanded and aria-controls. The panel is <div role="dialog" aria-labelledby={heading or trigger}> rendered through a portal with position: fixed from the trigger rect (flip and shift to stay within the viewport, repositioned on scroll/resize), on layer.dropdown, wrapped in FocusScope (trapped only when modal; autoFocus first). Non-modal: a document pointerdown outside panel+trigger closes; focusout to outside closes; Tab past the last element closes and lets focus continue. Modal: uses a native <dialog> with showModal() positioned at the trigger. Use the Popover API (popover="manual") where available for top-layer rendering. Non-modal popovers never lock page scroll and use only the pointerdown-outside listener for dismissal (Tab/Shift+Tab handlers own the keyboard exits; no focusout listener). The arrow, when shown, is centered on the panel edge, not on the trigger — exact for the four plain sides, an approximation for the four corner placements. All eight placements resolve `start` and `end` logically from the trigger''s computed direction, so a right-to-left page mirrors the corner placements too. The `trigger` is exactly one element, typed as such, because the component clones it to attach aria-expanded, aria-controls, the toggle handler and a ref.'
     lit:
       tag: ds-popover
       reflect: [open, placement, modal, show-arrow, { prop: dismissible, attribute: no-dismiss }, heading-level]
@@ -120,7 +120,7 @@ component:
     rn:
       element: Modal
       props: [visible, transparent, onRequestClose]
-      notes: 'Phones: a BottomSheet with height content (a floating panel over a phone page is hard to dismiss and easy to lose). Tablets and react-native-web: a transparent Modal with the panel positioned from measureInWindow() of the trigger and a backdrop Pressable that closes. modal=true adds a scrim.'
+      notes: 'Phones: a BottomSheet with height content (a floating panel over a phone page is hard to dismiss and easy to lose). Tablets and react-native-web: a transparent Modal with the panel positioned from measureInWindow() of the trigger and a backdrop Pressable that closes. modal=true adds a scrim. Modal intercepts every touch behind it, so `modal: false` cannot leave the page interactive here — it means only that tapping outside closes, and that is the native reading of non-modal. The trigger Button receives `expanded`, so the state is announced. Focus on open lands on the panel body wrapper: native has no descendant walker, so "the first control, else the heading" resolves to the one target there is. Pressable sees no key events, so Tab never leaves the panel by key and `onOpenChange` never fires with reason `tab-out` on this platform. The panel is measured once per open, so it does not follow a scrolling page.'
     swiftui:
       element: popover
       props: [.popover, attachmentAnchor, arrowEdge, .presentationCompactAdaptation, FocusScope, .onExitCommand]

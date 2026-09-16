@@ -74,7 +74,7 @@ component:
     controlBorderWidth: { token: border.width.thin, part: control }
     controlSelectedBackground: { token: color.control.selectedBackground, part: control, description: 'Checked and indeterminate fill; the border takes the same color.' }
     indicator: { token: color.control.selectedForeground, part: indicator, description: 'The check mark (`Icon name="check"`) and the mixed dash (`Icon name="dash"`) in this color, at `size: xs`, centered in the control. On web/Lit the Icon is inside the control element; the indicator has no separate DOM node to hook, so tests target the control.' }
-    indicatorStroke: { token: border.width.focus, part: indicator, description: 'Stroke thickness of the check mark and dash.' }
+    indicatorStroke: { token: border.width.focus, part: indicator, description: 'Stroke thickness of the check mark and dash. Locked, as Icon''s own strokeWidth is and on the same token, so the two already agree and nothing is forwarded into the composed Icon.' }
     pressedOverlay: { token: opacity.disabled, state: pressed, description: 'While pressed, the box shows controlSelectedBackground at this opacity.' }
     controlBorderInvalid: { token: color.border.danger, part: control }
     controlSize: { token: space.5, part: control }

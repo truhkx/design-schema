@@ -42,7 +42,7 @@ component:
     - { keys: [Escape], action: Hides the tooltip without moving focus., when: tooltip visible, from: trigger, expect: [closes, focus-unchanged] }
   styles:
     surface: { token: color.inverse.surface, description: 'Inverted: the tooltip is dark on light mode and light on dark mode, so it reads as a label, not a panel.' }
-    text: { token: color.inverse.foreground, part: text }
+    text: { token: color.inverse.foreground, part: text, description: 'Text''s `color` is locked and its tones have no inverse value, so the bubble re-scopes the foreground on its own container and composes Text unchanged — the mechanism Text''s own color binding names, not an override and not a restyle.' }
     radius: { token: radius.sm }
     paddingBlock: { token: space.1 }
     paddingInline: { token: space.2 }
@@ -60,6 +60,14 @@ component:
       description: 'Delay before a hovered trigger shows its tooltip, when `delay` is `default`.'
       token: motion.duration.base
       multiply: 3
+      unit: ms
+    warmWindow:
+      description: 'How long after one tooltip hides the next sibling still shows with no delay — the "warm" toolbar window.'
+      token: motion.duration.base
+      unit: ms
+    pointerGrace:
+      description: 'How long the tooltip stays while the pointer crosses the `offset` gap between the trigger and the bubble, so a hoverable tooltip can be reached (WCAG 1.4.13).'
+      token: motion.duration.fast
       unit: ms
   overlay:
     layer: tooltip
@@ -133,7 +141,7 @@ Do not put essential instructions, error messages or any content the user must r
 
 ## Behavior
 
-The tooltip shows after `delay` when the pointer rests on the trigger, or immediately when the trigger receives focus of any kind (keyboard-origin focus cannot be told apart reliably across composed triggers, and a focused control showing its tooltip is never wrong), positioned at `placement` (flipped at the viewport edge). It hides when the pointer leaves both trigger and tooltip, when focus leaves the trigger, or on Escape — which hides it without moving focus, so a user can dismiss a tooltip that covers something. Moving the pointer from one warm toolbar item to the next shows the next tooltip with no delay. The tooltip never takes focus and never blocks pointer events on anything but itself.
+The tooltip shows after `delay` when the pointer rests on the trigger, or immediately when the trigger receives focus of any kind (keyboard-origin focus cannot be told apart reliably across composed triggers, and a focused control showing its tooltip is never wrong), positioned at `placement` (flipped at the viewport edge). It hides when the pointer leaves both trigger and tooltip, when focus leaves the trigger, or on Escape — which hides it without moving focus, so a user can dismiss a tooltip that covers something. Moving the pointer from one warm toolbar item to the next shows the next tooltip with no delay. The tooltip never takes focus and never blocks pointer events on anything but itself. `start` and `end` are logical on every platform, resolved from the trigger's writing direction. The description lives in two nodes: a visually-hidden span carrying the id and `role="tooltip"`, always in the accessibility tree, and the positioned bubble, which is `aria-hidden` and only a visible copy — that is the only way "always announced" and "shown on hover" hold at once. Of the anatomy, only `text` takes a `data-part`: the trigger is the caller's own element, and the popup is the root, already found by `data-ds`. On native there is no viewport measurement, so top and bottom do not flip; Escape exists only under react-native-web, where a real browser does.
 
 ## Content guidelines
 

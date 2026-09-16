@@ -359,9 +359,13 @@ component:
         so prepending via onShowNew does not jump, and the new-items Button rendered
         above the list. Articles are Cards left un-collapsed (no `accessible` on the
         Card: collapsing would hide the action Buttons and Links from focus), with
-        visually-hidden Text runs for copy.unread and, when the total is known, copy.position
-        after the heading. There is no hardware-keyboard feed model on native (no
-        Page or Ctrl keys); screen readers use their own browse gestures. The absolute
+        visually-hidden Text runs for copy.unread and, when the total is known, copy.position.
+        Card takes a heading string and a footer slot with nothing between them, so
+        those runs sit before the Card rather than after the heading; the reading
+        order still puts them ahead of the body. Text and Card take no testID, so
+        the timestamp, articleBody and articleActions parts are wrapping Views that
+        carry theirs. There is no hardware-keyboard feed model on native (no Page
+        or Ctrl keys); screen readers use their own browse gestures. The absolute
         time is not exposed on native. onViewableItemsChanged with 50% for one second
         drives onItemVisible.'
     swiftui:

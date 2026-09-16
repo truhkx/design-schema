@@ -31,11 +31,11 @@ component:
       type: enum
       values: [none, completed, all]
       default: completed
-      description: 'Which steps are Buttons: none (display only), completed steps (the usual — you can go back, not skip ahead), or all (a settings-style flow where order does not matter).'
+      description: 'Which steps can be activated: none (display only), completed steps (the usual — you can go back, not skip ahead), or all (a settings-style flow where order does not matter). "Completed" means visited — any step before the current one by position, including one marked `error`, which is exactly the step a user most needs to return to. The control is the component''s own native button, not the Button component, whose single-label API cannot hold an indicator, a label and a description.'
     compact:
       type: boolean
       default: false
-      description: 'Show only the current step''s label and "Step 2 of 5"; the indicators stay. Automatic on narrow viewports for horizontal steppers.'
+      description: 'Show only the current step''s label and "Step 2 of 5"; the indicators stay. Horizontal only, set by hand or automatically below the prose width — a vertical stepper has the room, so the prop does nothing there. Hidden labels are clipped, not removed, so they stay reachable by a screen reader.'
   events:
     onStepSelect:
       description: Fired when a navigable step is chosen, with its id. The container changes `current`; the stepper never changes it itself.
@@ -49,6 +49,7 @@ component:
     - { keys: [Enter, ' '], action: Selects the focused step., from: first, expect: manual, native: true }
   styles:
     indicatorSize: { token: space.6, part: indicator }
+    indicatorColor: { token: color.foreground, part: indicator, description: 'The numeral on an upcoming or current step; the complete and error states have their own foregrounds.' }
     indicatorBackground: { token: color.control.background, part: indicator }
     indicatorBorder: { token: color.border.strong, part: indicator }
     indicatorBorderWidth: { token: border.width.focus, part: indicator }
@@ -247,7 +248,7 @@ Do not use a Stepper for two steps (a Button that says "Continue" is enough) or 
 
 ## Behavior
 
-Steps before `current` render complete (check), the current one is marked, later ones are upcoming. A step can be marked `error` explicitly (validation failed on a step the user left). Navigable steps are Buttons that fire `onStepSelect`; the container decides whether to move. Non-navigable steps are inert text. Below the prose width a horizontal stepper shows only the current label and "Step n of m" (`compact`), keeping the row of indicators so the count is still visible. A navigable step is its own native `<button>` (Pressable on native) owned by Stepper — not the Button component, whose single-label API cannot hold an indicator, label and description — with the accessible name from `copy.stepLabel` plus the status word set as `aria-label`. Label and description colors are passed to the composed Text as `tone`/overrides. `navigable: completed` means every step before the current one, including one marked `error`. `compact` applies to horizontal steppers only.
+Steps before `current` render complete (check), the current one is marked, later ones are upcoming. A step can be marked `error` explicitly (validation failed on a step the user left). Navigable steps are Buttons that fire `onStepSelect`; the container decides whether to move. Non-navigable steps are inert text. Below the prose width a horizontal stepper shows only the current label and "Step n of m" (`compact`), keeping the row of indicators so the count is still visible. A navigable step is its own native `<button>` (Pressable on native) owned by Stepper — not the Button component, whose single-label API cannot hold an indicator, label and description — with the accessible name from `copy.stepLabel` plus the status word set as `aria-label`. Label and description colors are passed to the composed Text as `tone`/overrides. `navigable: completed` means every step before the current one, including one marked `error`. `compact` applies to horizontal steppers only. On web and Lit the list is an `<ol>`, which already announces "item 2 of 5", so the control shows its plain label and adds only the status word as visually hidden text; native has no list ordinal, so there the accessibility label is `copy.stepLabel` plus that word. When a step carries `status: 'error'` and is also the one `current` names, the error wins for the indicator, its colour and the status word, while the selected state and the compact reveal still follow the id — the user is on that step, and it has a problem. `transition` times the connector's cross-fade between `connector` and `connectorComplete`; the indicator has four discrete states and switches between them at once, as every other multi-state indicator here does.
 
 ## Content guidelines
 

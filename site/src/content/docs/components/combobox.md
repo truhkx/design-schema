@@ -56,7 +56,7 @@ component:
     allowCustom:
       type: boolean
       default: false
-      description: 'Typed text that matches no option can be committed as a value (tags, emails). Enter or a separator (comma) commits it; the list shows `copy.addCustom` as the first row.'
+      description: 'Typed text that matches no option can be committed as a value (tags, emails). Enter or a comma commits it; the list shows `copy.addCustom` as a synthetic first row, suppressed when the trimmed text already matches an existing option by either its `value` or its `label`.'
     filter:
       type: enum
       values: [startsWith, contains, none, async]
@@ -170,6 +170,7 @@ component:
     addCustom: 'Add "{value}"'
     clearLabel: Clear
     toggleLabel: Show options
+    done: Done
     removeChip: 'Remove {label}'
     resultCount:
       plural:
@@ -209,12 +210,12 @@ component:
       notes: 'The APG editable combobox with list autocomplete: <input role="combobox" aria-autocomplete="list" aria-expanded aria-controls aria-activedescendant>; the popup is a portal with the Listbox; keydown on the input is forwarded to the Listbox handler so DOM focus never leaves the input. A visually hidden <div role="status" aria-live="polite"> announces copy.resultCount, loading and empty states after a short debounce. Chips are <span> with a ds Button (ghost, sm, iconOnly, close icon) labelled copy.removeChip; chips are not focus stops themselves. Hidden <input name> per value for native forms.'
     lit:
       tag: ds-combobox
-      reflect: [multiple, allow-custom, filter, required, disabled, invalid, loading]
+      reflect: [multiple, allow-custom, filter, required, disabled, invalid, loading, open]
       notes: 'Form-associated (FormData for multiple). <ds-listbox> lives in the same shadow root so aria-activedescendant resolves. Composed `change`, `input-change`, `open-change`. Popup via the Popover API when available.'
     rn:
       element: TextInput
       props: [accessibilityRole=combobox, accessibilityLabel, accessibilityHint, accessibilityState, accessibilityValue]
-      notes: 'On phones the popup is a BottomSheet with the TextInput at its top (keyboard-avoiding) and the Listbox below — typing on a phone with a floating list under the keyboard is unusable. Tablets and react-native-web use the anchored popup. Chips render before the input inside the field; each chip has a remove Button. Result counts are announced with announceForAccessibility. Form registration as Input.'
+      notes: 'On phones the popup is a BottomSheet with the TextInput at the top of its body (keyboard-avoiding) and the Listbox below — typing on a phone with a floating list under the keyboard is unusable. Tablets and react-native-web use the anchored popup. Chips render before the input inside the field; each chip has a remove Button. Result counts are announced with announceForAccessibility. Form registration as Input. Listbox rows are touch Pressables with no key events, so the whole keyboard model — ArrowDown/ArrowUp, Home/End, Alt+ArrowDown, Tab-without-committing — has no native equivalent: a tap is the commit, Enter through the TextInput commits typed custom text, Escape arrives only from a hardware keyboard, and blurring the field closes the list. Tapping is the accessible path, and every row is its own focus stop.'
     swiftui:
       element: TextField
       props: [TextField, Listbox, .popover, .accessibilityValue, .onKeyPress, .onMoveCommand, '@FocusState', .autocorrectionDisabled, AccessibilityNotification]
@@ -307,7 +308,7 @@ Typing filters `options` per `filter` and opens the list with no active option (
 
 ## Content guidelines
 
-The label names the field ("Assignees"); the placeholder shows an example or a verb ("Search people"). Option labels are unique and short; descriptions carry the disambiguation (email under a name). The custom-entry row uses `copy.addCustom` verbatim so users learn the pattern. Chips show the option label, truncated with an ellipsis past about twenty characters, never the value.
+The label names the field ("Assignees"); the placeholder shows an example or a verb ("Search people"). Option labels are unique and short; descriptions carry the disambiguation (email under a name). The custom-entry row uses `copy.addCustom` verbatim so users learn the pattern. Chips show the option label, never the value; keep labels to roughly twenty characters, since a chip truncates with an ellipsis once the row runs out of room rather than at a fixed character count.
 
 ## Accessibility
 
@@ -322,7 +323,7 @@ Render the label, the field wrapper (styled as Input's border and focus ring via
 `<ds-combobox label="Assignees" name="assignees" multiple .options=${…}>`; form-associated; `<ds-listbox>` in the shadow root; chips and buttons composed from `<ds-button>` and `<ds-icon>`; composed `change`, `input-change`, `open-change`.
 
 ### React Native
-Phones: the field is a `Pressable` summary (chips + placeholder) that opens a `BottomSheet height="full"` containing a `TextInput` (`accessibilityRole="combobox"`, autofocus) and the `Listbox`; committing closes the sheet (single) or updates chips in the sheet header (multiple) with a Done action in the footer. Tablets / react-native-web: `TextInput` in the field with an anchored popup `Modal`. Announce counts with `AccessibilityInfo.announceForAccessibility`. Form registration as Input.
+Phones: the field is a `Pressable` summary (chips + placeholder) that opens a `BottomSheet height="full"` containing a `TextInput` (`accessibilityRole="combobox"`, autofocus) and the `Listbox`; committing closes the sheet (single) or updates the chips (multiple), with a `copy.done` Button in the sheet footer. BottomSheet has no header slot, so the chips and the TextInput sit at the top of the sheet body, not above it. The closed summary shows its chips read-only — a chip remove button nested inside the summary's own Pressable would fight it for the touch — so removing and clearing happen in the open sheet. Tablets / react-native-web: `TextInput` in the field with an anchored popup `Modal` that deliberately does not trap focus, unlike Select's and Menu's, because the APG model keeps focus in the text input while the list is browsed. The loading row and the no-matches row both come through Listbox's single `emptyMessage` seam, carrying `copy.loading` or `copy.empty`; Listbox has no separate loading row. Announce counts with `AccessibilityInfo.announceForAccessibility`. Form registration as Input.
 
 ## Related
 

@@ -119,7 +119,10 @@ component:
       type: boolean
       default: false
       description: Blocks confirm while a precondition is unmet (a typed confirmation,
-        a loading state). Cancel always works.
+        a loading state). Cancel always works. Forwarded to the confirm Button's own
+        `disabled` — the Button decides what that means per platform (unfocusable
+        on web and Lit, focusable-but-inert on native); AlertDialog neither restyles
+        it nor substitutes `aria-disabled`.
   events:
     onConfirm:
       description: The user chose the confirming action. The consumer performs it
@@ -203,7 +206,8 @@ component:
       locked: false
     partGap:
       token: layout.gap.loose
-      description: Between the text block and the footer.
+      description: 'Between the icon-and-text row and the footer: the icon sits inline
+        with the text block, so this measures from that whole row.'
       locked: false
     textGap:
       token: layout.gap.tight
@@ -290,21 +294,30 @@ component:
       - aria-modal
       - aria-labelledby
       - aria-describedby
-      notes: The same native <dialog> mechanics as Dialog (showModal, cancel event,
+      notes: 'The same native <dialog> mechanics as Dialog (showModal, cancel event,
         portal, scroll lock, focus restore) with role="alertdialog" set explicitly.
         No close button; the scrim click is ignored. Initial focus on the cancel button.
-        Composes Dialog's internals rather than Dialog itself, because the footer
-        is fixed.
+        Composes Dialog''s internals rather than Dialog itself, because the footer
+        is fixed. `container?: HTMLElement` (default document.body) is the portal
+        target — a platform prop every portaled overlay accepts, not a schema prop.
+        The icon is decorative and `aria-hidden`: the tone is already carried by the
+        heading and description, so labelling it would only repeat them. Tab and Shift+Tab
+        wrap because FocusScope traps and wraps; AlertDialog adds no key handler of
+        its own for them.'
     lit:
       tag: ds-alert-dialog
       reflect:
       - open
       - tone
       notes: 'Same shadow <dialog> approach as ds-dialog with role="alertdialog".
-        Dispatches composed `confirm` and `cancel` (detail { reason }). No slots:
-        title, description and labels are properties, so the element is fully described
-        by attributes. The shadow <dialog> is named with aria-label={heading} and
-        described with aria-description, since ids do not cross the shadow boundary.'
+        Dispatches composed `confirm` (no detail) and `cancel` (detail { reason })
+        — only the cancel event has a reason. No slots: title, description and labels
+        are properties, so the element is fully described by attributes. The shadow
+        <dialog> is named with aria-label={heading} and described with aria-description.
+        An idref would resolve here, since the heading shares the shadow root, but
+        the package names every Lit overlay with the literal text so the name does
+        not depend on where the heading is rendered. Cancel is `<ds-button variant="secondary">`
+        and the footer `<ds-stack>` is `justify="end"`, as on web.'
     rn:
       element: Modal
       props:
@@ -312,15 +325,20 @@ component:
       - transparent
       - onRequestClose
       - accessibilityViewIsModal
-      notes: Native Modal as in Dialog; the scrim Pressable is absent (no scrim dismissal)
+      notes: 'Native Modal as in Dialog; the scrim Pressable is absent (no scrim dismissal)
         — the scrim is a plain View. onRequestClose → onCancel reason escape. Initial
         accessibility focus on the title so the question is read, then the buttons
         follow in order Cancel, Confirm. iOS also offers Alert.alert() natively; this
         component does not use it, so the look matches the theme and the buttons follow
-        the system's order and variants. The surface uses the RN >= 0.74 `role="alertdialog"`
-        prop with accessibilityViewIsModal. `confirmDisabled` maps to Button's `disabled`,
+        the system''s order and variants. The surface uses the RN >= 0.74 `role="alertdialog"`
+        prop with accessibilityViewIsModal. `confirmDisabled` maps to Button''s `disabled`,
         which on native is accessibilityState.disabled plus a press guard (the control
-        stays focusable), per Button's own contract.
+        stays focusable), per Button''s own contract. Scroll lock has no native meaning
+        — a Modal has no page behind it to scroll — and is not implemented, as in
+        Dialog. Heading has no levels on native: `level` only sets the visual size
+        and the heading trait comes from Heading''s own accessibilityRole="header".
+        Heading forwards no ref, so initial accessibility focus targets the View wrapping
+        the heading rather than its Text node; the announcement is the same.'
     swiftui:
       element: sheet
       props:
@@ -550,7 +568,7 @@ Do not confirm reversible actions; provide undo (a Toast with an action) instead
 
 ## Behavior
 
-Opens like a Dialog: scrim, trapped focus, inert page, locked scroll. Focus lands on the Cancel button. Escape and Cancel fire `onCancel`; Confirm fires `onConfirm`. A scrim click does nothing, so a stray tap cannot dismiss a decision, and there is no close button, so the only ways out are the two named ones. The consumer closes by setting `open` false after handling the event. `confirmDisabled` keeps Confirm inert (aria-disabled, still focusable) until a precondition is met.
+Opens like a Dialog: scrim, trapped focus, inert page, locked scroll. Focus lands on the Cancel button. Escape and Cancel fire `onCancel`; Confirm fires `onConfirm`. A scrim click does nothing, so a stray tap cannot dismiss a decision, and there is no close button, so the only ways out are the two named ones. The consumer closes by setting `open` false after handling the event. `confirmDisabled` keeps Confirm inert until a precondition is met, through the composed Button's own `disabled` — unfocusable on web and Lit, focusable-but-inert on native, whichever that Button does on the platform.
 
 ## Content guidelines
 
@@ -563,7 +581,7 @@ Role `alertdialog` tells assistive technology this is a decision, and the title 
 ## Platform notes
 
 ### Web
-Native `<dialog role="alertdialog" aria-modal="true" aria-labelledby aria-describedby>` through a portal, opened with `showModal()`. Handle `cancel` (preventDefault, then `onCancel('escape')`). Do not attach a scrim click handler. Footer is a horizontal Stack, `gap: tight`, Cancel then Confirm in DOM order (Cancel first so it is focused first; visually the primary sits at the end via `justify: end`). The icon is `<Icon name={tone}>` colored by the tone token.
+Native `<dialog role="alertdialog" aria-modal="true" aria-labelledby aria-describedby>` through a portal, opened with `showModal()`. Handle `cancel` (preventDefault, then `onCancel('escape')`). Do not attach a scrim click handler. Footer is a horizontal Stack, `gap: tight`, Cancel then Confirm in DOM order (Cancel first so it is focused first; visually the primary sits at the end via `justify: end`). Cancel is `variant="secondary"` on every platform; Confirm's variant follows `tone`. The icon is `<Icon name={tone}>` colored by the tone token, `aria-hidden`.
 
 ### Lit
 `<ds-alert-dialog open tone="danger" heading="Delete 3 files?" description="…" confirm-label="Delete files">`. Shadow `<dialog>` with `showModal()`; composed `confirm` and `cancel` events. Renders `<ds-heading>`, `<ds-text>`, `<ds-icon>`, `<ds-stack>` and two `<ds-button>`s.

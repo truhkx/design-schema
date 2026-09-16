@@ -93,7 +93,9 @@ component:
       - center
       - start
       default: center
-      description: Where the capped column sits in a wider viewport.
+      description: 'Where the capped column sits in a wider viewport. `start` sets
+        `margin-inline: 0` on both sides, not just the start side, so the column never
+        picks up an asymmetric margin.'
     element:
       type: enum
       values:
@@ -108,7 +110,9 @@ component:
   styles:
     maxWidth:
       token: layout.maxWidth.{width}
-      description: '`full` renders no max-width; the binding covers the other three.'
+      description: '`full` renders no max-width — the literal `none`, with no hook,
+        which also makes an override of this binding a no-op at that value; the binding
+        covers the other three.'
       locked: false
     paddingInline:
       token: layout.gutter.{gutter}
@@ -135,12 +139,15 @@ component:
       - gutter
       - align
       notes: 'The host is the column (`:host { display: block }`) with a default slot.
-        Same media-query note as web.'
+        Same media-query note as web. A custom element cannot retag its host, so `element`
+        sets an ElementInternals role for `main` only; `div` and `section` set none,
+        since a section is a region only when it is named.'
     rn:
       element: View
       props: []
       notes: View with maxWidth, alignSelf (center → center, start → flex-start),
-        width 100%, paddingHorizontal. The responsive gutter uses useWindowDimensions
+        width 100%, paddingHorizontal. `element` is web and Lit only and is absent
+        from the native props entirely, as in Box. The responsive gutter uses useWindowDimensions
         against the maxWidth tokens. On phones the cap rarely applies; on tablets
         and react-native-web it does.
     swiftui:
@@ -280,7 +287,8 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
 element: View
 props: []
 notes: "View with maxWidth, alignSelf (center \u2192 center, start \u2192 flex-start),\
-  \ width 100%, paddingHorizontal. The responsive gutter uses useWindowDimensions\
+  \ width 100%, paddingHorizontal. `element` is web and Lit only and is absent from\
+  \ the native props entirely, as in Box. The responsive gutter uses useWindowDimensions\
   \ against the maxWidth tokens. On phones the cap rarely applies; on tablets and\
   \ react-native-web it does."
 ```

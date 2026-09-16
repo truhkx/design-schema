@@ -96,10 +96,12 @@ component:
       - danger
       - onAction
       default: default
-      description: Semantic color. `onAction` is only for text placed on an action
-        background.
+      description: 'Semantic color. `onAction` is only for text placed on an action
+        background. There is no `inverse` tone: the shared foreground vocabulary has
+        no such name, so an inverse surface re-scopes the foreground instead (see
+        `styles.color`).'
       a11y: Every tone meets 4.5:1 on the page background in every theme and mode
-        except onAction, which is checked against action backgrounds.
+        except onAction, which is checked against color.action.primary.background.
     align:
       type: enum
       values:
@@ -107,13 +109,22 @@ component:
       - center
       - end
       default: start
-      description: Horizontal alignment. `start`/`end` follow writing direction.
+      description: Horizontal alignment. `start`/`end` follow writing direction. Native
+        has no logical text alignment, so they resolve through I18nManager.isRTL at
+        render; a direction change mid-session does not re-align text that is already
+        on screen.
     truncate:
       type: boolean
       default: false
-      description: Clip to one line with an ellipsis. On web the full text is exposed
+      description: 'Clip to one line with an ellipsis. On web the full text is exposed
         via `title` when children is a plain string; otherwise the consumer passes
-        `title`. Native has no equivalent affordance — a known gap.
+        `title`, and neither one is a development warning — the text is then reachable
+        only to a screen reader. On Lit there is no "plain string" state, so `title`
+        comes from the host''s flattened, whitespace-collapsed textContent and is
+        omitted when that is empty. With `element: span` the clipped box is `display:
+        inline-block; max-inline-size: 100%`, so the width comes from the parent.
+        Native clips with `numberOfLines={1}` and `ellipsizeMode="tail"` and has no
+        affordance that reveals the rest — a known gap.'
       a11y: Truncated text is still read in full by screen readers; ensure sighted
         users can also reach it.
     element:
@@ -123,8 +134,8 @@ component:
       - span
       default: p
       description: The HTML element to render — `p` for a block, `span` for inline.
-        Labels and legends are rendered by Input and (planned) Fieldset, which own
-        the association.
+        Labels and legends are native elements rendered by Input and Fieldset, which
+        own the association; Text never renders one.
       platforms:
       - web
       - lit
@@ -143,6 +154,18 @@ component:
       locked: false
     color:
       token: color.foreground.{tone}
+      description: 'Locked, and locked means absent from the overridable type — so
+        a composing parent that forwards `{ color: … }` gets a compile error, not
+        a silent no-op. A surface with its own foreground (Toast, Tooltip, Slider''s
+        value bubble on `color.inverse.foreground`) therefore does not recolour Text
+        at all: on web and Lit it re-scopes `--color-foreground` on its own container,
+        which the tone resolves through and which touches no part of the child; on
+        React Native, where there is no cascade, it provides the package-internal
+        `TextForegroundContext`, which Text reads only while `tone` is `default`.
+        `onAction` is not a stand-in for either — in dark mode it is near-white while
+        the inverse foreground is near-black. A control that paints its own selected
+        text (a DatePicker day) draws that text itself rather than asking Text for
+        a colour it has no tone for.'
       locked: true
   a11y:
     role: generic
@@ -165,8 +188,13 @@ component:
     web:
       element: p
       attributes: []
-      notes: Renders the `element` prop. `truncate` uses overflow/text-overflow and
-        sets `title` to the full text.
+      notes: 'Renders the `element` prop. `truncate` uses overflow/text-overflow and
+        sets `title` to the full text on the root, the only element Text renders.
+        The root carries `data-ds="Text"` and no `data-part`: composing parents pass
+        their own part name through `...rest` (`description`, `errorMessage`, `label`),
+        and a hardcoded one would collide. Text merges a consumer `className` and
+        `style` onto the root, because most of the package gives it a layout-only
+        class on the way past.'
     lit:
       tag: ds-text
       reflect:
@@ -175,8 +203,12 @@ component:
       - tone
       - align
       - truncate
+      - element
       notes: 'Renders the chosen element inside the shadow root with `part="text"`;
-        the host is `display: contents` for `span`-like use and `display: block` otherwise.'
+        the host is `display: contents` for `span`-like use and `display: block` otherwise.
+        `element` reflects so those two rules are `:host([element="span"])` selectors
+        rather than an inline style — an inline `display: contents` would beat `:host([hidden])
+        { display: none }` and a hidden span would stay visible.'
     rn:
       element: Text
       props:
@@ -188,7 +220,13 @@ component:
         `TextStyleContext` ({ fontSize, color, nested: true }) to its descendants
         — the resolved size and color it renders with — so inline children (Icon,
         Link) can match it; the older boolean `TextNestingContext` is replaced by
-        `nested` on this object.'
+        `nested` on this object. Outside any Text the context reads `{ fontSize: 0,
+        color: '''', nested: false }`, so a consumer branches on `nested` and never
+        on the numbers. `a11y.role: generic` has no native counterpart and no accessibilityRole
+        is set. Font weight tokens are numbers and the platform wants a string union,
+        so a weight snaps to the nearest hundred, and lineHeight × fontSize rounds
+        to a whole pixel: a theme with a weight of 550 or a fractional line height
+        lands on the nearest step.'
     swiftui:
       element: Text
       props:
@@ -391,7 +429,12 @@ notes: "No `element` prop \u2014 RN has one Text primitive. `truncate` maps to `
   \ `TextStyleContext` ({ fontSize, color, nested: true }) to its descendants \u2014\
   \ the resolved size and color it renders with \u2014 so inline children (Icon, Link)\
   \ can match it; the older boolean `TextNestingContext` is replaced by `nested` on\
-  \ this object."
+  \ this object. Outside any Text the context reads `{ fontSize: 0, color: '', nested:\
+  \ false }`, so a consumer branches on `nested` and never on the numbers. `a11y.role:\
+  \ generic` has no native counterpart and no accessibilityRole is set. Font weight\
+  \ tokens are numbers and the platform wants a string union, so a weight snaps to\
+  \ the nearest hundred, and lineHeight \xD7 fontSize rounds to a whole pixel: a theme\
+  \ with a weight of 550 or a fractional line height lands on the nearest step."
 ```
 
 ## Guidance

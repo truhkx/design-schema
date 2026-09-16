@@ -169,7 +169,9 @@ component:
     indicatorStroke:
       token: border.width.focus
       part: indicator
-      description: Stroke thickness of the check mark and dash.
+      description: Stroke thickness of the check mark and dash. Locked, as Icon's
+        own strokeWidth is and on the same token, so the two already agree and nothing
+        is forwarded into the composed Icon.
       locked: true
     pressedOverlay:
       token: opacity.disabled

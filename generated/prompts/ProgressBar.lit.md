@@ -86,8 +86,11 @@ component:
     formatValue:
       type: function
       shape: '(value: number, min: number, max: number) => string'
-      description: Renders the value text ("42%", "3 of 12 files"). Defaults to a
-        percentage.
+      description: 'Renders the value text ("42%", "3 of 12 files"). Defaults to a
+        percentage over the whole range — `(value − min) / (max − min)` — the same
+        arithmetic the fill uses, so a non-zero `min` reads correctly without a custom
+        formatter. A `max` at or below `min` is not a range: the bar renders empty
+        and warns in development.'
     showValue:
       type: boolean
       default: true
@@ -116,7 +119,10 @@ component:
       - complete
       default: complete
       description: 'What a screen reader hears without focusing the bar: nothing,
-        every 25%, or only completion. Each announcement uses `copy.progress` / `copy.complete`.'
+        every 25%, or only completion. Each announcement uses `copy.progress` / `copy.complete`,
+        and `copy.indeterminate` is announced once each time the bar enters the indeterminate
+        state. A value that moves backward resets the tiers already announced, so
+        a retried task announces its progress again on the way up.'
   events: {}
   styles:
     track:
@@ -226,28 +232,34 @@ component:
       - aria-busy
       notes: 'A <div role="progressbar"> with aria-valuenow/min/max and aria-valuetext
         from formatValue; an indeterminate bar omits aria-valuenow and sets aria-busy="true"
-        on itself. Announcements go through a visually-hidden aria-live="polite" region
-        next to the bar, updated per `announce`. Not <progress>: it cannot be themed
-        consistently and its indeterminate animation ignores reduced motion in some
-        browsers.'
+        on itself. Announcements go through a visually-hidden `role="status" aria-live="polite"`
+        region next to the bar, updated per `announce`. Not <progress>: it cannot
+        be themed consistently and its indeterminate animation ignores reduced motion
+        in some browsers.'
     lit:
       tag: ds-progress-bar
       reflect:
       - tone
       - hide-label
       - announce
-      notes: ElementInternals role="progressbar" with ariaValueNow/Min/Max/Text on
-        the host; the live region is in the shadow root.
+      notes: role="progressbar" and aria-valuenow/min/max/text are plain reflected
+        attributes on the host, not ElementInternals — the accessible-value tooling
+        reads attributes, and real assistive technology treats the two identically.
+        The live region is in the shadow root and carries role="status" beside aria-live="polite";
+        it is not an anatomy part and takes no `part`.
     rn:
       element: View
       props:
       - accessibilityRole=progressbar
       - accessibilityLabel
       - accessibilityValue
-      notes: Drawn with Views (Animated.View width for the fill; the indeterminate
-        sweep is an Animated loop that is not started under reduced motion). accessibilityValue={{
-        min, max, now, text }}; announcements via AccessibilityInfo.announceForAccessibility
-        per `announce`.
+      notes: 'Drawn with Views (Animated.View width for the fill; the indeterminate
+        sweep is an Animated loop that is not started under reduced motion, and eases
+        linearly so the loop has no visible seam). accessibilityValue={{ min, max,
+        now, text }} — an indeterminate bar carries min and max only, never a `now`
+        or a `text` that would name a progress it does not know, and sets accessibilityState={{
+        busy: true }}, the native form of aria-busy. Announcements via AccessibilityInfo.announceForAccessibility
+        per `announce`.'
     swiftui:
       element: ProgressView
       props:
@@ -436,8 +448,11 @@ reflect:
 - tone
 - hide-label
 - announce
-notes: ElementInternals role="progressbar" with ariaValueNow/Min/Max/Text on the host;
-  the live region is in the shadow root.
+notes: "role=\"progressbar\" and aria-valuenow/min/max/text are plain reflected attributes\
+  \ on the host, not ElementInternals \u2014 the accessible-value tooling reads attributes,\
+  \ and real assistive technology treats the two identically. The live region is in\
+  \ the shadow root and carries role=\"status\" beside aria-live=\"polite\"; it is\
+  \ not an anatomy part and takes no `part`."
 ```
 
 ## Guidance

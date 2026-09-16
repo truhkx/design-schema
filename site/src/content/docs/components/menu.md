@@ -20,7 +20,7 @@ component:
       type: array
       required: true
       shape: '({ id: string; label: string; icon?: IconName; shortcut?: string; tone?: "default" | "danger"; disabled?: boolean } | { group: string; items: MenuItem[] } | { separator: true })[]'
-      description: Actions, optionally grouped with a label or divided by separators. Groups render their label as a non-interactive heading row.
+      description: 'Actions, optionally grouped with a label or divided by separators. Groups render their label as a non-interactive heading row and hold action items only — the shape is recursive but a group inside a group is not a shape this component draws.'
     triggerVariant:
       type: enum
       values: [ghost, secondary, primary]
@@ -34,7 +34,7 @@ component:
     iconOnly:
       type: boolean
       default: false
-      description: Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required.
+      description: 'Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. With `triggerIcon: none` there would be nothing visible to press, so that pairing warns in development.'
     placement:
       type: enum
       values: [bottom-start, bottom-end, top-start, top-end]
@@ -68,7 +68,7 @@ component:
         escape: Escape pressed while open
         outside: a pointer press landed outside the menu
         action: an item was chosen
-        controlled: the consumer changed the open prop
+        controlled: 'the consumer changed the open prop — the menu never raises this itself; it exists so a composing component can forward its own reason through'
       fires: [user, controlled]
       timing: { phase: after-change, before: [onAction] }
   keyboard:
@@ -138,15 +138,15 @@ component:
     web:
       element: button
       attributes: [aria-haspopup=menu, aria-expanded, aria-controls, role=menu, role=menuitem, role=group, role=separator, aria-labelledby, tabindex]
-      notes: 'Trigger is the system Button with aria-haspopup="menu", aria-expanded and aria-controls. The popup is rendered through a portal with position: fixed, placed from the trigger''s getBoundingClientRect() and flipped on overflow; z-index layer.dropdown. Outside click (pointerdown outside popup and trigger) closes. Items are <div role="menuitem" tabindex="-1"> with one roving tabindex; the menu uses real focus (not aria-activedescendant) so screen readers follow. Keyboard-focused and hovered items share the itemHover style; hover moves the roving focus so the two never diverge. Shortcuts are display-only (aria-keyshortcuts) — the menu does not bind them.'
+      notes: 'Trigger is the system Button with aria-haspopup="menu", aria-expanded and aria-controls. The popup is rendered through a portal with position: fixed, placed from the trigger''s getBoundingClientRect() and flipped on overflow; z-index layer.dropdown. Outside click (pointerdown outside popup and trigger) closes. Items are <div role="menuitem" tabindex="-1"> with one roving tabindex; the menu uses real focus (not aria-activedescendant) so screen readers follow. Keyboard-focused and hovered items share the itemHover style; hover moves the roving focus so the two never diverge. Shortcuts are display-only and aria-hidden — the menu does not bind them, and it does not put them in `aria-keyshortcuts` either, since a display string like "⌘S" is not that attribute''s syntax. One element carries `data-part="popup"` and the `role="menu"` list: the popup and list parts are the same node, as the markup here shows. Disabled items stay in the DOM with `aria-disabled="true"` and are skipped by the arrows, Home/End and typeahead. `container?: HTMLElement` (default document.body) is the portal target — a platform prop, not a schema prop. Page scroll is not locked: a menu is not modal, and the popup repositions on scroll. Clicking the trigger while the menu is open closes it.'
     lit:
       tag: ds-menu
       reflect: [open, placement, icon-only]
-      notes: 'Uses the Popover API (popover="manual", showPopover()) for top-layer rendering without a portal, with a position: fixed fallback; anchor positioning is computed from the trigger rect. `items` is a property. Composed `action` (detail { id }) and `open-change` (detail { open }). The trigger is a <ds-button> in the shadow root; focus delegation lands on it. The menu surface is named with aria-label from the trigger''s text (or the `label` property when given): aria-labelledby cannot reach a slotted trigger from the shadow root.'
+      notes: 'Uses the Popover API (popover="manual", showPopover()) for top-layer rendering without a portal, with a position: fixed fallback; anchor positioning is computed from the trigger rect. `items` is a property. Composed `action` (detail { id }) and `open-change` (detail { open, reason }, the same payload as every other platform — the reason is not dropped here). The trigger is a <ds-button> in the shadow root; focus delegation lands on it. The menu surface is named with aria-label from the trigger''s text (or the `label` property when given): aria-labelledby cannot reach a slotted trigger from the shadow root.'
     rn:
       element: Modal
       props: [visible, transparent, onRequestClose]
-      notes: 'Menus on touch are ActionSheets: on phones Menu renders an ActionSheet with the same items (groups become dividers with a muted label); on tablets and react-native-web it renders a transparent Modal with an absolutely positioned popup measured from the trigger via measureInWindow(). Items are Pressables with accessibilityRole="menuitem"; the trigger Button carries accessibilityState.expanded. Typeahead and arrow keys apply only when a hardware keyboard is present. The popup uses the RN >= 0.74 `role="menu"` prop and items `role="menuitem"`; the trigger Button receives `expanded` so accessibilityState.expanded is exposed. On phones the Menu renders ActionSheet (composition, now that it exists); the anchored dropdown is the tablet and react-native-web presentation. The list scrolls within maxHeight.'
+      notes: 'Menus on touch are ActionSheets: on phones Menu renders an ActionSheet with the same items (groups become dividers with a muted label); on tablets and react-native-web it renders a transparent Modal with an absolutely positioned popup measured from the trigger via measureInWindow(). Items are Pressables with accessibilityRole="menuitem"; the trigger Button carries accessibilityState.expanded. Typeahead and arrow keys apply only when a hardware keyboard is present. The popup uses the RN >= 0.74 `role="menu"` prop and items `role="menuitem"`; the trigger Button receives `expanded` so accessibilityState.expanded is exposed. On phones the Menu renders ActionSheet (composition, now that it exists), and the phone/tablet split uses layout.maxWidth.prose, the same threshold Select and Combobox use; the anchored dropdown is the tablet and react-native-web presentation. ActionSheet takes a flat action list, so in the phone presentation groups are flattened and their labels, the separators and the shortcut hints are dropped — a touch surface has no keyboard to hint at, and a heading faked as an inert row would misread. ActionSheet''s close reasons map to this component''s: `escape` stays, and `scrim`, `cancel` and `drag` all become `outside`. Pressable has no key events, so there are no arrows, no Home/End and no typeahead; each item is its own focus stop, and `typeaheadReset` has nothing to reset here. Opening cannot tell ArrowUp from Enter on the trigger Button, so every open focuses the first enabled item. The list scrolls within maxHeight.'
     swiftui:
       element: Menu
       props: [Menu, .menuStyle, .menuOrder, Button, Divider, .accessibilityLabel, .contextMenu]

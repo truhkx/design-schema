@@ -149,12 +149,13 @@ component:
     expect: focus-wraps-to-first
   - keys:
     - Home
-    action: First segment.
+    action: Moves to and selects the first enabled segment — this control always has
+      a selection, so Home and End select as the arrows do.
     from: last
     expect: focus-first
   - keys:
     - End
-    action: Last segment.
+    action: Moves to and selects the last enabled segment.
     from: first
     expect: focus-last
   styles:
@@ -232,8 +233,10 @@ component:
       locked: false
     minTarget:
       token: size.target.min
-      description: Each segment's minimum; on touch platforms the group height is
-        size.target.comfortable so every segment reaches 44px.
+      description: Each segment's minimum. React Native is touch, so the group height
+        there is size.target.comfortable and every segment reaches 44px; web and Lit
+        keep this floor, because no CSS query tells a touch screen from a hybrid laptop
+        and guessing would shrink or grow the control for the wrong people.
       locked: true
     focusRing:
       token: color.border.focus
@@ -578,7 +581,7 @@ Do not use it to pick a value that is submitted later (RadioGroup) or that has c
 
 ## Behavior
 
-Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End jump. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only.
+Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End do the same to the ends. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only.
 
 ## Content guidelines
 

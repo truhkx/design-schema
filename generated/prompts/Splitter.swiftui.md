@@ -308,7 +308,9 @@ component:
     transition:
       token: motion.duration.fast
       description: Collapse and restore, and the separator color; dragging itself
-        has no transition.
+        has no transition. The pane size is a custom property driving a grid track,
+        which only animates where `@property` registration is reliable — where it
+        is not, collapse and restore are instant and only the separator colour transitions.
       locked: false
   copy:
     collapse: Collapse {label}
@@ -680,7 +682,7 @@ Do not use a Splitter on phone-width layouts — it stacks below `stackBelow`, a
 
 ## Behavior
 
-Dragging the separator resizes the primary pane within `minSize`–`maxSize`; arrow keys move it by `step`, Home/End to the bounds. With `collapsible`, dragging past `minSize`, Enter, or the collapse button collapses the primary pane to nothing (its content becomes inert) and Enter or the button restores the previous size; while collapsed the separator ignores drag and every key but Enter. `collapsed` is controlled or starts from `defaultCollapsed`. `onSizeChange` fires continuously, `onSizeChangeEnd` once per drag or key press. F6 cycles primary → separator → secondary. Below `stackBelow` (measured on the splitter's own width with a ResizeObserver, the breakpoint read from the built token JSON, `literal-ok`) a horizontal splitter stacks its panes in source order at full width and does not render the separator; a vertical one never stacks. With `persistKey` the last size and collapsed state are restored on mount.
+Dragging the separator resizes the primary pane within `minSize`–`maxSize`; arrow keys move it by `step`, Home/End to the bounds. With `collapsible`, dragging past `minSize`, Enter, or the collapse button collapses the primary pane to nothing (its content becomes inert) and Enter or the button restores the previous size; while collapsed the separator ignores drag and every key but Enter. `collapsed` is controlled or starts from `defaultCollapsed`. `onSizeChange` fires continuously, `onSizeChangeEnd` once per drag or key press. F6 cycles primary → separator → secondary and wraps, landing on the first focusable element in the target region or, when it has none, on the region wrapper itself, which takes `tabindex="-1"` for the purpose. Below `stackBelow` (measured on the splitter's own width with a ResizeObserver, the breakpoint read from the built token JSON, `literal-ok`) a horizontal splitter stacks its panes in source order at full width and does not render the separator; a vertical one never stacks. With `persistKey` the last size and collapsed state are restored on mount.
 
 ## Content guidelines
 

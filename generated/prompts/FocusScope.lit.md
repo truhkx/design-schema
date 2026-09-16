@@ -149,16 +149,29 @@ component:
       attributes:
       - tabindex=-1
       - data-focus-scope
-      notes: A <div data-focus-scope> wrapper. Focusable descendants are collected
+      notes: 'A <div data-focus-scope> wrapper. Focusable descendants are collected
         in DOM order including across open shadow roots and assigned slot nodes (the
         same walker the keyboard gate uses); disabled and aria-hidden subtrees are
         excluded, as are elements with tabindex=-1 except the container itself. Keydown
         on Tab at the edges calls preventDefault and focuses the other edge. A focusin
         listener on document pulls focus back to the last focused descendant if it
-        leaves while trapped and active. Two sentinel elements (tabindex=0, visually
-        hidden, data-focus-sentinel so the keyboard gate ignores them) at each end
-        catch focus arriving from the browser chrome. Nested scopes register in a
-        module-level stack; only the top is active.
+        leaves while trapped and active. Elements are not tested for visibility: one
+        hidden by CSS but neither aria-hidden nor inert still counts as focusable,
+        which keeps the walker cheap and matches what the browser does with tabindex.
+        Two sentinel elements (tabindex=0, visually hidden, data-focus-sentinel so
+        the keyboard gate ignores them) at each end catch focus arriving from the
+        browser chrome; each continues the direction of travel rather than wrapping
+        — the start sentinel sends focus to the first descendant, the end sentinel
+        to the last, since wrapping is the Tab handler''s job at the real edges. Restoring
+        to "the next focusable element" when the opener is gone needs the opener''s
+        old position, so the scope leaves an invisible marker node beside it on mount
+        and restores to the first focusable element after that marker. Nested scopes
+        register in a module-level stack and only the top is effective; `active: false`
+        additionally pauses a scope wherever it sits in that stack. The wrapper is
+        `display: block`, not `display: contents`, because `autoFocus: container`
+        needs a real box to carry tabindex — so the scope always adds one element
+        to the layout. A trapped scope with no focusable descendants warns in development,
+        since that is an inescapable trap.'
     lit:
       tag: ds-focus-scope
       reflect:
@@ -169,17 +182,26 @@ component:
       notes: 'The host is the wrapper (display: contents is NOT used — it breaks focus
         delegation; the host is display: block). Same walker; slotted light-DOM children
         are included via assignedElements({ flatten: true }). `escape-attempt` is
-        a composed CustomEvent.'
+        a composed CustomEvent. `delegatesFocus` would send a `focus()` on the host
+        into the first focusable descendant, so `autoFocus: container` targets an
+        invisible tabindex=-1 anchor rendered first in the shadow root: focus lands
+        there, nothing interactive is announced, and the host stays out of the tab
+        order.'
     rn:
       element: View
       props:
       - accessibilityViewIsModal
-      notes: There is no Tab order to confine on native. trapped maps to accessibilityViewIsModal
-        on the wrapper View (VoiceOver/TalkBack ignore siblings); autoFocus calls
-        AccessibilityInfo.setAccessibilityFocus on the first accessible descendant
-        (or the wrapper) after mount; restoreFocus stores the opener's node handle
-        and refocuses it on unmount. Hardware-keyboard Tab wrapping is not implemented;
-        that is a platform limit.
+      notes: 'There is no Tab order to confine on native. trapped maps to accessibilityViewIsModal
+        on the wrapper View (VoiceOver/TalkBack ignore siblings). There is no way
+        to walk arbitrary children for a focusable descendant, so `first`, `last`
+        and `container` all call AccessibilityInfo.setAccessibilityFocus on the wrapper
+        View and only `none` differs — the screen reader then reads the scope from
+        its top, which is the intended result for all three. restoreFocus can only
+        capture an opener that is a TextInput (TextInput.State.currentlyFocusedInput
+        is the one "what is focused" native exposes), which is why `returnFocusTo`
+        is required here for every other kind of trigger. onEscapeAttempt never fires
+        on this platform: nothing can attempt to leave a Tab order that does not exist.
+        Hardware-keyboard Tab wrapping is not implemented; that is a platform limit.'
     swiftui:
       element: VStack
       props:
@@ -371,7 +393,10 @@ reflect:
 notes: "The host is the wrapper (display: contents is NOT used \u2014 it breaks focus\
   \ delegation; the host is display: block). Same walker; slotted light-DOM children\
   \ are included via assignedElements({ flatten: true }). `escape-attempt` is a composed\
-  \ CustomEvent."
+  \ CustomEvent. `delegatesFocus` would send a `focus()` on the host into the first\
+  \ focusable descendant, so `autoFocus: container` targets an invisible tabindex=-1\
+  \ anchor rendered first in the shadow root: focus lands there, nothing interactive\
+  \ is announced, and the host stays out of the tab order."
 ```
 
 ## Guidance

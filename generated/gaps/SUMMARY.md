@@ -1,6 +1,6 @@
-# Gap digest — phase final
+# Gap digest — phase Primitives
 
-Generated 2026-09-16T02:49 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-16T02:50 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 

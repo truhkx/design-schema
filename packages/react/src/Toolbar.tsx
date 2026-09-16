@@ -1,5 +1,7 @@
 import {
   Children,
+  cloneElement,
+  Fragment,
   isValidElement,
   useLayoutEffect,
   useRef,
@@ -13,6 +15,7 @@ import {
   type Ref,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
+import { Button } from './Button';
 import { Divider } from './Divider';
 import { Menu, type MenuAction, type MenuItem } from './Menu';
 import './Toolbar.css';
@@ -30,7 +33,6 @@ export type ToolbarOverridableBinding =
   | 'paddingInline'
   | 'paddingBlock'
   | 'itemGap'
-  | 'itemGapCompact'
   | 'groupGap'
   | 'separatorLength'
   | 'fadeWidth';
@@ -42,7 +44,6 @@ const OVERRIDE_HOOK: Record<ToolbarOverridableBinding, string> = {
   paddingInline: '--ds-toolbar-padding-inline',
   paddingBlock: '--ds-toolbar-padding-block',
   itemGap: '--ds-toolbar-item-gap',
-  itemGapCompact: '--ds-toolbar-item-gap-compact',
   groupGap: '--ds-toolbar-group-gap',
   separatorLength: '--ds-toolbar-separator-length',
   fadeWidth: '--ds-toolbar-fade-width',
@@ -51,122 +52,142 @@ const OVERRIDE_HOOK: Record<ToolbarOverridableBinding, string> = {
 function overridesToStyle(overrides: Partial<Record<ToolbarOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as ToolbarOverridableBinding[]) {
+    const hook = OVERRIDE_HOOK[binding];
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    // Locked bindings are not in the type; one passed anyway has no hook and is ignored.
+    if (hook && ref) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
 }
 
 const COPY = { more: 'More' };
 
+// The roving list: native controls that are not natively disabled, the checked radio of a radio
+// group (SegmentedControl, RadioGroup count as one control), and anything with an explicit tabindex.
 const FOCUSABLE_SELECTOR = [
   'button:not([role="radio"]):not(:disabled)',
   '[role="radio"][aria-checked="true"]:not(:disabled)',
   'select:not(:disabled)',
-  'input:not(:disabled)',
-  '[tabindex]:not([tabindex="-1"])',
+  'input:not([type="hidden"]):not([type="radio"]):not(:disabled)',
+  'input[type="radio"]:checked:not(:disabled)',
+  'textarea:not(:disabled)',
+  '[tabindex]:not(button):not(input):not(select):not(textarea):not([role="radio"])',
 ].join(',');
 
 function isControlDisabled(element: HTMLElement): boolean {
-  return (element as HTMLButtonElement).disabled === true || element.getAttribute('aria-disabled') === 'true';
+  return element.getAttribute('aria-disabled') === 'true';
 }
 
 function getControls(container: HTMLElement): HTMLElement[] {
+  // The overflow Menu's popup is portaled, so nothing inside it is ever matched here.
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
 }
 
 // Writes only on a real change: a same-value tabIndex write still queues a mutation record, and the
 // roving effect's MutationObserver watches `tabindex`, so an unconditional write re-fires it forever.
-function applyRovingTabIndex(controls: HTMLElement[], currentIndex: number) {
-  controls.forEach((control, index) => {
-    const next = index === currentIndex ? 0 : -1;
+function applyRovingTabIndex(controls: HTMLElement[], current: HTMLElement | undefined): void {
+  for (const control of controls) {
+    const next = control === current ? 0 : -1;
     if (control.tabIndex !== next) control.tabIndex = next;
-  });
+  }
 }
 
-/** Best-effort accessible name for a collapsed control, reused as its overflow Menu row label. */
-function actionFromElement(element: ReactElement<any>, id: string): MenuAction {
-  const props = element.props as Record<string, unknown>;
-  const overflowLabel = props.overflowLabel;
-  const ariaLabel = props['aria-label'];
-  const label = props.label;
-  const childText = props.children;
-  const resolvedLabel =
-    (typeof overflowLabel === 'string' && overflowLabel) ||
-    (typeof ariaLabel === 'string' && ariaLabel) ||
-    (typeof label === 'string' && label) ||
-    (typeof childText === 'string' && childText) ||
-    id;
-  const disabled = props.disabled === true || props['aria-disabled'] === 'true' || props['aria-disabled'] === true;
-  return { id, label: resolvedLabel, disabled };
+/** Expands Fragments so `<>…</>` children still yield one entry per control or group. */
+function flattenChildren(children: ReactNode): ReactElement<any>[] {
+  const result: ReactElement<any>[] = [];
+  for (const child of Children.toArray(children)) {
+    if (!isValidElement(child)) continue;
+    if (child.type === Fragment) result.push(...flattenChildren((child.props as { children?: ReactNode }).children));
+    else result.push(child as ReactElement<any>);
+  }
+  return result;
 }
 
-type ToolbarEntry =
-  | { kind: 'control'; element: ReactElement<any>; key: string }
-  | { kind: 'group'; element: ReactElement<ToolbarGroupProps>; key: string }
-  | { kind: 'separator'; key: string };
+/** Applies the toolbar's `size` to a composed control that did not set its own. Host elements are left alone. */
+function withSize(element: ReactElement<any>, size: ToolbarSize, key?: string): ReactElement<any> {
+  const props = element.props as { size?: unknown };
+  if (typeof element.type === 'string' || props.size !== undefined) {
+    return key === undefined ? element : cloneElement(element, { key });
+  }
+  return cloneElement(element, key === undefined ? { size } : { size, key });
+}
+
+type ToolbarEntry = {
+  key: string;
+  kind: 'control' | 'group';
+  element: ReactElement<any>;
+  /** Only Buttons collapse, and a group only as a whole, when every control in it is a Button. */
+  collapsible: boolean;
+};
 
 function buildEntries(children: ReactNode): ToolbarEntry[] {
-  const elements = Children.toArray(children).filter(isValidElement) as ReactElement<any>[];
-  const entries: ToolbarEntry[] = [];
-  elements.forEach((element, index) => {
-    const isGroup = element.type === ToolbarGroup;
-    const previous = entries[entries.length - 1];
-    if (isGroup && previous && previous.kind === 'group') {
-      entries.push({ kind: 'separator', key: `ds-toolbar-separator-${index}` });
+  return flattenChildren(children).map((element, index): ToolbarEntry => {
+    const key = element.key !== null ? String(element.key) : `ds-toolbar-entry-${index}`;
+    if (element.type === ToolbarGroup) {
+      const groupChildren = flattenChildren((element.props as ToolbarGroupProps).children);
+      const collapsible = groupChildren.length > 0 && groupChildren.every((child) => child.type === Button);
+      return { key, kind: 'group', element, collapsible };
     }
-    entries.push({
-      kind: isGroup ? 'group' : 'control',
-      element,
-      key: typeof element.key === 'string' ? element.key : `ds-toolbar-item-${index}`,
-    } as ToolbarEntry);
+    return { key, kind: 'control', element, collapsible: element.type === Button };
   });
-  return entries;
 }
 
-export interface ToolbarGroupProps extends Omit<ComponentPropsWithoutRef<'div'>, 'role'> {
-  /** Accessible name for the cluster, when it isn't obvious from its controls alone. Also becomes its heading if the group overflows into the "More" menu. */
+function actionFromButton(element: ReactElement<any>, id: string): MenuAction {
+  const props = element.props as { overflowLabel?: string | undefined; label?: string | undefined; disabled?: boolean | undefined };
+  return { id, label: props.overflowLabel ?? props.label ?? id, disabled: props.disabled === true };
+}
+
+function readPx(value: string): number {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export interface ToolbarGroupProps extends Omit<ComponentPropsWithoutRef<'div'>, 'role' | 'className' | 'style'> {
+  /** The group's accessible name; also its heading when the group collapses into the "More" Menu. */
   label?: string | undefined;
   /** The group's controls, in order. */
   children: ReactNode;
 }
 
-/** Groups related controls inside a Toolbar; a Divider is drawn automatically between adjacent groups. */
-export const ToolbarGroup = function ToolbarGroup({ ref, label, children, className, ...rest }: ToolbarGroupProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
+/** Groups related controls inside a Toolbar; a Divider is drawn between adjacent groups. */
+export const ToolbarGroup = function ToolbarGroup({
+  ref,
+  label,
+  children,
+  ...rest
+}: ToolbarGroupProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   return (
-    <div
-      {...rest}
-      ref={ref}
-      role="group"
-      aria-label={label}
-      data-ds="ToolbarGroup"
-      data-part="group"
-      className={['ds-toolbar__group', className ?? null].filter(Boolean).join(' ')}
-    >
+    <div {...rest} ref={ref} role="group" aria-label={label} data-ds="ToolbarGroup" data-part="group" className="ds-toolbar__group">
       {children}
     </div>
   );
 };
 
 export interface ToolbarProps
-  extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'aria-label' | 'aria-orientation'> {
+  extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'aria-label' | 'aria-orientation' | 'className' | 'style'> {
   /** What the toolbar controls ("Formatting", "Table actions"). Not visible; read by assistive technology. */
   label: string;
   /**
    * Controls in order: Buttons (usually `ghost` or `secondary`, `iconOnly` for glyph tools),
-   * SegmentedControl, Select, Switch. Group related controls with `ToolbarGroup`; a Divider is
-   * drawn between groups.
+   * SegmentedControl, Select, Switch. Group related controls with `ToolbarGroup`; a Divider is drawn
+   * between groups.
    */
   children: ReactNode;
   /** Vertical toolbars sit beside a canvas; arrow keys swap axes. */
   orientation?: ToolbarOrientation | undefined;
   /**
    * What happens when controls do not fit: wrap onto more rows, collapse trailing controls into a
-   * "More" Menu (each control must provide `overflowLabel`), or scroll horizontally with the edges
-   * faded.
+   * "More" Menu (each collapsible control must provide `overflowLabel`), or scroll horizontally with
+   * the edges faded. Collapsing takes whole entries from the end — a group goes into the Menu as a
+   * group, never half of one — and the width budget reserves `size.target.min` for the More trigger
+   * before it is rendered. `menu` is for horizontal toolbars; a vertical one treats it as `scroll`,
+   * since a menu overflow assumes a fixed cross axis.
    */
   overflow?: ToolbarOverflow | undefined;
-  /** Passed to the child controls that accept it. */
+  /**
+   * Default for child controls that have a `size` prop and do not set their own (applied by cloning
+   * direct children; a child's own `size` wins).
+   */
   size?: ToolbarSize | undefined;
   /** Gap between controls: tight or normal rhythm. */
   density?: ToolbarDensity | undefined;
@@ -175,14 +196,14 @@ export interface ToolbarProps
 }
 
 /**
- * Toolbar — Design Schema, category: navigation.
+ * Toolbar — Design Schema, category: navigation (APG toolbar).
  *
  * When to use:
  * Use a Toolbar for controls that act on the same thing and are used together: text formatting, a
- * table's row actions, a map's view switches, a data page's filter–sort–export row. Group by
- * purpose with `ToolbarGroup` (drawn with a Divider between groups). Use `overflow: menu` for
- * toolbars whose width the layout cannot guarantee; give every control an `overflowLabel` so it
- * reads well as a menu item.
+ * table's row actions, a map's view switches, a data page's filter–sort–export row. Group by purpose
+ * with `ToolbarGroup` (drawn with a Divider between groups). Use `overflow: menu` for toolbars whose
+ * width the layout cannot guarantee; give every control an `overflowLabel` so it reads well as a
+ * menu item.
  */
 export const Toolbar = function Toolbar({
   ref,
@@ -193,19 +214,22 @@ export const Toolbar = function Toolbar({
   size = 'md',
   density = 'comfortable',
   overrides,
-  className,
-  style,
+  onFocus,
+  onKeyDown,
   ...rest
 }: ToolbarProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const currentIndexRef = useRef(0);
-  const itemNodesRef = useRef<Array<HTMLElement | null>>([]);
-  const moreItemRef = useRef<HTMLElement | null>(null);
-  const overflowElementsRef = useRef(new Map<string, ReactElement<any>>());
+  const currentRef = useRef<HTMLElement | null>(null);
+  const entryNodesRef = useRef(new Map<string, HTMLElement>());
+  const probeRef = useRef<HTMLSpanElement | null>(null);
   const observedWidthRef = useRef<number | null>(null);
 
-  const isMenuOverflow = overflow === 'menu';
-  const [renderCount, setRenderCount] = useState<number | null>(null);
+  // A vertical toolbar has no fixed cross axis to measure against, so `menu` scrolls instead.
+  const effectiveOverflow: ToolbarOverflow = overflow === 'menu' && orientation === 'vertical' ? 'scroll' : overflow;
+  const isMenuOverflow = effectiveOverflow === 'menu';
+
+  // null = measuring: every entry is rendered so its size is known; otherwise the collapsed keys.
+  const [hiddenKeys, setHiddenKeys] = useState<string[] | null>(null);
 
   const setContainerRef = (node: HTMLDivElement | null) => {
     containerRef.current = node;
@@ -214,59 +238,72 @@ export const Toolbar = function Toolbar({
   };
 
   const entries = buildEntries(children);
-  const entriesKey = entries.map((entry) => `${entry.kind}:${entry.key}`).join('|');
+  const entriesKey = entries.map((entry) => `${entry.kind}:${entry.key}:${entry.collapsible ? 1 : 0}`).join('|');
 
-  // A widening (or first-mount) container needs its full content remeasured, since collapsed
-  // controls are removed from the DOM entirely and their widths are no longer known.
+  // New content, a new mode or a new rhythm invalidates the last measurement.
   useLayoutEffect(() => {
-    if (!isMenuOverflow) return undefined;
-    setRenderCount(null);
-  }, [isMenuOverflow, orientation, entriesKey]);
+    if (isMenuOverflow) setHiddenKeys(null);
+  }, [isMenuOverflow, entriesKey, size, density]);
 
   useLayoutEffect(() => {
     if (!isMenuOverflow) return undefined;
     const container = containerRef.current;
     if (!container) return undefined;
 
-    if (renderCount === null) {
-      const nodes = itemNodesRef.current.filter((node): node is HTMLElement => node !== null);
-      const total = nodes.length;
-      if (total === 0) {
-        setRenderCount(0);
-        return undefined;
-      }
-      const moreWidth = moreItemRef.current?.offsetWidth ?? 0;
-      const limit = container.clientWidth - moreWidth;
-      let fit = total;
-      for (let i = 0; i < total; i++) {
-        if (nodes[i]!.offsetLeft + nodes[i]!.offsetWidth > limit) {
-          fit = i;
-          break;
+    if (hiddenKeys === null) {
+      const computed = getComputedStyle(container);
+      const available =
+        container.clientWidth - readPx(computed.paddingInlineStart || computed.paddingLeft) - readPx(computed.paddingInlineEnd || computed.paddingRight);
+      const itemGap = readPx(computed.columnGap);
+      const widths = new Map<string, number>();
+      for (const entry of entries) widths.set(entry.key, entryNodesRef.current.get(entry.key)?.offsetWidth ?? 0);
+      const separatorNode = container.querySelector<HTMLElement>(':scope > [data-part="separator"]');
+      const separatorWidth = separatorNode?.offsetWidth ?? 0;
+
+      const widthOf = (visible: ToolbarEntry[]): number => {
+        let total = 0;
+        visible.forEach((entry, index) => {
+          if (index > 0) total += itemGap;
+          const previous = visible[index - 1];
+          if (previous && previous.kind === 'group' && entry.kind === 'group') total += separatorWidth + itemGap;
+          total += widths.get(entry.key) ?? 0;
+        });
+        return total;
+      };
+
+      const hidden = new Set<string>();
+      if (widthOf(entries) > available) {
+        // Reserve the More trigger's minimum target before deciding what goes behind it.
+        const reserve = (probeRef.current?.offsetWidth ?? 0) + itemGap;
+        for (let i = entries.length - 1; i >= 0; i--) {
+          const visible = entries.filter((entry) => !hidden.has(entry.key));
+          if (widthOf(visible) + reserve <= available) break;
+          const entry = entries[i]!;
+          if (entry.collapsible) hidden.add(entry.key);
         }
       }
-      setRenderCount(fit);
+      setHiddenKeys(entries.filter((entry) => hidden.has(entry.key)).map((entry) => entry.key));
       return undefined;
     }
 
-    // jsdom (used by the test suite) has no ResizeObserver; the single measurement pass above
-    // still runs, it just never reacts to a later resize.
+    // jsdom has no ResizeObserver; the single measurement above still runs.
     if (typeof ResizeObserver === 'undefined') return undefined;
-    // observe() always delivers one initial notification, and this observer is re-created after every
-    // remeasure; resetting on that alone remeasures every frame, so only a changed width counts.
+    // observe() always delivers one initial notification and this observer is re-created after every
+    // measurement, so only a width different from the last one seen triggers a remeasure.
     const observer = new ResizeObserver(([entry]) => {
-      const width = entry!.contentRect.width;
+      if (!entry) return;
+      const width = entry.contentRect.width;
       if (observedWidthRef.current === width) return;
       const isFirst = observedWidthRef.current === null;
       observedWidthRef.current = width;
-      if (!isFirst) setRenderCount(null);
+      if (!isFirst) setHiddenKeys(null);
     });
     observer.observe(container);
     return () => observer.disconnect();
-  }, [isMenuOverflow, renderCount]);
+  }, [isMenuOverflow, hiddenKeys]);
 
-  // Roving tabindex: one stop for the whole toolbar. Requery on every DOM change (children
-  // mounting/unmounting, or a composite control like SegmentedControl moving its own tabIndex)
-  // so the current pointer always lands on something real.
+  // Roving tabindex: the toolbar is one tab stop. Requery on every DOM change (controls mounting,
+  // collapsing, or a composite control moving its own checked radio) so the stop is always real.
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return undefined;
@@ -274,12 +311,12 @@ export const Toolbar = function Toolbar({
     const sync = () => {
       const controls = getControls(container);
       if (controls.length === 0) return;
-      if (currentIndexRef.current >= controls.length) currentIndexRef.current = 0;
-      if (isControlDisabled(controls[currentIndexRef.current]!)) {
-        const firstEnabled = controls.findIndex((control) => !isControlDisabled(control));
-        if (firstEnabled !== -1) currentIndexRef.current = firstEnabled;
+      let current = currentRef.current;
+      if (!current || !controls.includes(current)) {
+        current = controls.find((control) => !isControlDisabled(control)) ?? controls[0]!;
+        currentRef.current = current;
       }
-      applyRovingTabIndex(controls, currentIndexRef.current);
+      applyRovingTabIndex(controls, current);
     };
 
     sync();
@@ -293,128 +330,128 @@ export const Toolbar = function Toolbar({
     return () => observer.disconnect();
   });
 
-  const handleFocusIn = (event: ReactFocusEvent<HTMLDivElement>) => {
+  const indexOfTarget = (controls: HTMLElement[], target: EventTarget): number =>
+    controls.findIndex((control) => control === target || control.contains(target as Node));
+
+  const handleFocus = (event: ReactFocusEvent<HTMLDivElement>) => {
+    onFocus?.(event);
     const container = containerRef.current;
     if (!container) return;
     const controls = getControls(container);
-    const index = controls.indexOf(event.target as HTMLElement);
-    if (index !== -1) {
-      currentIndexRef.current = index;
-      applyRovingTabIndex(controls, index);
-    }
+    const index = indexOfTarget(controls, event.target);
+    if (index === -1) return;
+    currentRef.current = controls[index]!;
+    applyRovingTabIndex(controls, currentRef.current);
   };
 
-  // Composite controls (SegmentedControl, RadioGroup) handle their own arrow keys and call
-  // preventDefault() when they do; deferring to that here is what lets them "keep their own
-  // inner arrow keys" without the Toolbar needing to know about them by name.
+  // A control with its own arrow-key model (SegmentedControl, RadioGroup) handles the key first; the
+  // toolbar acts only when the control did not.
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (event.defaultPrevented) return;
-    const nextKey = orientation === 'horizontal' ? 'ArrowRight' : 'ArrowDown';
-    const prevKey = orientation === 'horizontal' ? 'ArrowLeft' : 'ArrowUp';
+    onKeyDown?.(event);
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+    const nextKey = orientation === 'vertical' ? 'ArrowDown' : 'ArrowRight';
+    const prevKey = orientation === 'vertical' ? 'ArrowUp' : 'ArrowLeft';
     if (event.key !== nextKey && event.key !== prevKey && event.key !== 'Home' && event.key !== 'End') return;
 
     const container = containerRef.current;
     if (!container) return;
     const controls = getControls(container);
-    if (controls.length === 0) return;
-    const currentIndex = controls.indexOf(event.target as HTMLElement);
+    const currentIndex = indexOfTarget(controls, event.target);
     if (currentIndex === -1) return;
 
-    const moveTo = (index: number) => {
-      currentIndexRef.current = index;
-      applyRovingTabIndex(controls, index);
-      controls[index]!.focus();
-    };
+    const enabledIndexes = controls.map((control, index) => (isControlDisabled(control) ? -1 : index)).filter((index) => index !== -1);
+    let target: number | undefined;
+    if (event.key === nextKey) target = enabledIndexes.find((index) => index > currentIndex);
+    else if (event.key === prevKey) target = enabledIndexes.filter((index) => index < currentIndex).pop();
+    else if (event.key === 'Home') target = enabledIndexes[0];
+    else target = enabledIndexes[enabledIndexes.length - 1];
 
-    if (event.key === nextKey) {
-      for (let i = currentIndex + 1; i < controls.length; i++) {
-        if (!isControlDisabled(controls[i]!)) {
-          event.preventDefault();
-          moveTo(i);
-          break;
-        }
-      }
-    } else if (event.key === prevKey) {
-      for (let i = currentIndex - 1; i >= 0; i--) {
-        if (!isControlDisabled(controls[i]!)) {
-          event.preventDefault();
-          moveTo(i);
-          break;
-        }
-      }
-    } else if (event.key === 'Home') {
-      const i = controls.findIndex((control) => !isControlDisabled(control));
-      if (i !== -1) {
-        event.preventDefault();
-        moveTo(i);
-      }
-    } else if (event.key === 'End') {
-      for (let i = controls.length - 1; i >= 0; i--) {
-        if (!isControlDisabled(controls[i]!)) {
-          event.preventDefault();
-          moveTo(i);
-          break;
-        }
-      }
-    }
+    // No wrapping: at an end the key is left alone.
+    if (target === undefined || target === currentIndex) return;
+    event.preventDefault();
+    const control = controls[target]!;
+    currentRef.current = control;
+    applyRovingTabIndex(controls, control);
+    control.focus();
   };
 
-  const handleOverflowAction = (id: string) => {
-    const element = overflowElementsRef.current.get(id);
-    const onClickProp = (element?.props as { onClick?: ((event: unknown) => void) | undefined } | undefined)?.onClick;
-    onClickProp?.({});
-  };
+  const hidden = new Set(isMenuOverflow && hiddenKeys !== null ? hiddenKeys : []);
+  const visibleEntries = entries.filter((entry) => !hidden.has(entry.key));
+  const hiddenEntries = entries.filter((entry) => hidden.has(entry.key));
 
-  const separatorOrientation = orientation === 'horizontal' ? 'vertical' : 'horizontal';
-  const renderSeparator = (key: string, ref?: (node: HTMLElement | null) => void) => (
-    <span key={key} ref={ref} className="ds-toolbar__separator" data-part="separator">
-      <Divider orientation={separatorOrientation} />
-    </span>
-  );
-
-  let visibleEntries = entries;
-  if (isMenuOverflow) {
-    const count = renderCount === null ? entries.length : Math.min(renderCount, entries.length);
-    visibleEntries = entries.slice(0, count);
-    while (visibleEntries.length > 0 && visibleEntries[visibleEntries.length - 1]!.kind === 'separator') {
-      visibleEntries = visibleEntries.slice(0, -1);
+  const overflowButtons = new Map<string, ReactElement<any>>();
+  const menuItems: MenuItem[] = [];
+  for (const entry of hiddenEntries) {
+    if (entry.kind === 'group') {
+      const groupProps = entry.element.props as ToolbarGroupProps;
+      const actions = flattenChildren(groupProps.children).map((child, index) => {
+        const id = `${entry.key}-${index}`;
+        overflowButtons.set(id, child);
+        return actionFromButton(child, id);
+      });
+      if (groupProps.label) menuItems.push({ group: groupProps.label, items: actions });
+      else {
+        if (menuItems.length > 0) menuItems.push({ separator: true });
+        menuItems.push(...actions);
+      }
+    } else {
+      overflowButtons.set(entry.key, entry.element);
+      menuItems.push(actionFromButton(entry.element, entry.key));
     }
   }
-  const hiddenEntries = isMenuOverflow ? entries.slice(visibleEntries.length).filter((entry) => entry.kind !== 'separator') : [];
 
-  overflowElementsRef.current.clear();
-  const menuItems: MenuItem[] = hiddenEntries.flatMap((entry): MenuItem[] => {
-    if (entry.kind === 'group') {
-      const groupProps = entry.element.props;
-      const groupChildren = Children.toArray(groupProps.children).filter(isValidElement) as ReactElement<any>[];
-      const actions = groupChildren.map((child, childIndex) => {
-        const id = `${entry.key}-${childIndex}`;
-        overflowElementsRef.current.set(id, child);
-        return actionFromElement(child, id);
-      });
-      return groupProps.label ? [{ group: groupProps.label, items: actions }] : actions;
+  const handleOverflowAction = (id: string) => {
+    const element = overflowButtons.get(id);
+    const onClick = (element?.props as { onClick?: ((event: unknown) => void) | undefined } | undefined)?.onClick;
+    onClick?.(undefined);
+  };
+
+  const separatorOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';
+
+  const renderEntry = (entry: ToolbarEntry): ReactElement => {
+    const element =
+      entry.kind === 'group'
+        ? cloneElement(entry.element, {
+            key: entry.key,
+            children: flattenChildren((entry.element.props as ToolbarGroupProps).children).map((child, index) =>
+              withSize(child, size, child.key !== null ? String(child.key) : `ds-toolbar-control-${index}`),
+            ),
+          })
+        : withSize(entry.element, size, entry.key);
+    if (!isMenuOverflow) return element;
+    return (
+      <span
+        key={entry.key}
+        className="ds-toolbar__entry"
+        ref={(node) => {
+          if (node) entryNodesRef.current.set(entry.key, node);
+          else entryNodesRef.current.delete(entry.key);
+        }}
+      >
+        {element}
+      </span>
+    );
+  };
+
+  const content: ReactElement[] = [];
+  visibleEntries.forEach((entry, index) => {
+    const previous = visibleEntries[index - 1];
+    if (previous && previous.kind === 'group' && entry.kind === 'group') {
+      content.push(
+        <span key={`${entry.key}-separator`} className="ds-toolbar__separator" data-part="separator">
+          <Divider orientation={separatorOrientation} />
+        </span>,
+      );
     }
-    overflowElementsRef.current.set(entry.key, entry.element);
-    return [actionFromElement(entry.element, entry.key)];
+    content.push(renderEntry(entry));
   });
-
-  const mountMoreButton = isMenuOverflow && (renderCount === null || hiddenEntries.length > 0);
-  const moreButtonStyle: CSSProperties | undefined =
-    isMenuOverflow && hiddenEntries.length === 0 ? { visibility: 'hidden', position: 'absolute' } : undefined;
 
   const classes = [
     'ds-toolbar',
     `ds-toolbar--${orientation}`,
-    `ds-toolbar--overflow-${overflow}`,
-    `ds-toolbar--size-${size}`,
-    density === 'compact' ? 'ds-toolbar--density-compact' : null,
-    className ?? null,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+    `ds-toolbar--overflow-${effectiveOverflow}`,
+    `ds-toolbar--${density}`,
+  ].join(' ');
 
   return (
     <div
@@ -426,35 +463,24 @@ export const Toolbar = function Toolbar({
       data-ds="Toolbar"
       data-part="container"
       className={classes}
-      style={mergedStyle}
-      onFocus={handleFocusIn}
+      style={overrides ? overridesToStyle(overrides) : undefined}
+      onFocus={handleFocus}
       onKeyDown={handleKeyDown}
     >
-      {isMenuOverflow
-        ? visibleEntries.map((entry, index) => {
-            const setItemRef = (node: HTMLElement | null) => {
-              itemNodesRef.current[index] = node;
-            };
-            if (entry.kind === 'separator') return renderSeparator(entry.key, setItemRef);
-            return (
-              <span key={entry.key} ref={setItemRef} className="ds-toolbar__item">
-                {entry.element}
-              </span>
-            );
-          })
-        : entries.map((entry) => (entry.kind === 'separator' ? renderSeparator(entry.key) : entry.element))}
-      {mountMoreButton ? (
-        <span ref={(node) => { moreItemRef.current = node; }} className="ds-toolbar__item ds-toolbar__more" style={moreButtonStyle}>
-          <Menu
-            label={COPY.more}
-            items={menuItems.length > 0 ? menuItems : [{ id: 'ds-toolbar-more-empty', label: COPY.more, disabled: true }]}
-            triggerVariant="ghost"
-            triggerIcon="ellipsis"
-            iconOnly
-            data-part="overflowMenu"
-            onAction={handleOverflowAction}
-          />
-        </span>
+      {content}
+      {isMenuOverflow ? (
+        <span ref={probeRef} className="ds-toolbar__reserve" aria-hidden="true" />
+      ) : null}
+      {isMenuOverflow && menuItems.length > 0 ? (
+        <Menu
+          label={COPY.more}
+          items={menuItems}
+          triggerVariant="ghost"
+          triggerIcon="ellipsis"
+          iconOnly
+          data-part="overflowMenu"
+          onAction={handleOverflowAction}
+        />
       ) : null}
     </div>
   );

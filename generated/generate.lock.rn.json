@@ -207,18 +207,19 @@
     }
   },
   "Carousel.rn": {
-    "hash": "5d0febfcc65af645",
-    "lastAttemptHash": "5d0febfcc65af645",
-    "generatedAt": "2026-09-10T23:40:42+00:00",
-    "model": "sonnet",
+    "hash": "0912c2aa3b9e84a3",
+    "lastAttemptHash": "0912c2aa3b9e84a3",
+    "generatedAt": "2026-09-16T15:02:49+00:00",
+    "model": "opus",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 0.5164,
+    "rounds": 1,
+    "costUsd": 2.424,
     "files": [
-      "packages/rn/src/Carousel.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Carousel.stories.tsx",
+      "packages/rn/src/Carousel.test.tsx",
+      "packages/rn/src/Carousel.tsx"
     ],
-    "gaps": 17,
+    "gaps": 18,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1007,21 +1008,19 @@
     }
   },
   "Table.rn": {
-    "hash": "64e7e2c4cbb685a7",
-    "lastAttemptHash": "64e7e2c4cbb685a7",
-    "generatedAt": "2026-09-10T23:42:51+00:00",
-    "model": "sonnet",
+    "hash": "67d1f9b1611ead96",
+    "lastAttemptHash": "67d1f9b1611ead96",
+    "generatedAt": "2026-09-16T15:19:06+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7937,
+    "costUsd": 3.3741,
     "files": [
-      "generated/gaps/Table.rn.md",
       "packages/rn/src/Table.stories.tsx",
       "packages/rn/src/Table.test.tsx",
-      "packages/rn/src/Table.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Table.tsx"
     ],
-    "gaps": 1,
+    "gaps": 16,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1105,18 +1104,19 @@
     }
   },
   "Toolbar.rn": {
-    "hash": "fa1f15d734725e69",
-    "lastAttemptHash": "fa1f15d734725e69",
-    "generatedAt": "2026-09-10T23:38:57+00:00",
-    "model": "sonnet",
+    "hash": "11b625eba56b7367",
+    "lastAttemptHash": "11b625eba56b7367",
+    "generatedAt": "2026-09-16T14:47:31+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2385,
+    "costUsd": 1.6518,
     "files": [
       "packages/rn/src/Toolbar.stories.tsx",
+      "packages/rn/src/Toolbar.test.tsx",
       "packages/rn/src/Toolbar.tsx"
     ],
-    "gaps": 3,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -4,7 +4,7 @@ import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Divider.js';
 import './Menu.js';
 import type { DsDivider } from './Divider.js';
-import type { MenuActionItem, MenuActionDetail } from './Menu.js';
+import type { MenuActionDetail, MenuActionItem, MenuItem } from './Menu.js';
 
 export type ToolbarOrientation = 'horizontal' | 'vertical';
 export type ToolbarOverflow = 'wrap' | 'menu' | 'scroll';
@@ -19,7 +19,6 @@ export type ToolbarOverridableBinding =
   | 'paddingInline'
   | 'paddingBlock'
   | 'itemGap'
-  | 'itemGapCompact'
   | 'groupGap'
   | 'separatorLength'
   | 'fadeWidth';
@@ -31,22 +30,31 @@ const HOOKS: Record<ToolbarOverridableBinding, string> = {
   paddingInline: '--ds-toolbar-padding-inline',
   paddingBlock: '--ds-toolbar-padding-block',
   itemGap: '--ds-toolbar-item-gap',
-  itemGapCompact: '--ds-toolbar-item-gap-compact',
   groupGap: '--ds-toolbar-group-gap',
   separatorLength: '--ds-toolbar-separator-length',
   fadeWidth: '--ds-toolbar-fade-width',
 };
 
-/** Elements this build has moved into the overflow menu, in order, for `click()` on selection. */
-type OverflowTarget = HTMLElement;
+/** copy.more */
+const COPY_MORE = 'More';
+
+/** Marks a light-DOM entry this toolbar hid into the overflow menu (a consumer's own `hidden` is left alone). */
+const COLLAPSED = 'data-ds-toolbar-collapsed';
+/** Marks a `<ds-divider>` this toolbar inserted between two groups. */
+const SEPARATOR = 'data-ds-toolbar-separator';
+/** Marks a control whose `size` came from the toolbar rather than its own markup. */
+const SIZED = 'data-ds-toolbar-size';
+
+const NATIVE_FOCUSABLE = 'button, select, input, textarea, a[href], [tabindex]';
 
 /**
- * `<ds-toolbar-group>` — groups related controls inside a `<ds-toolbar>` (anatomy: group).
+ * `<ds-toolbar-group>` — related controls inside a `<ds-toolbar>` (anatomy: group).
  *
- * A light-DOM wrapper with no independent meaning: `<ds-toolbar>` discovers
- * direct `<ds-toolbar-group>` children by `data-ds`, descends into them for
- * its roving-tabindex list and its `overflow="menu"` collapse, and inserts a
- * `<ds-divider>` between adjacent groups.
+ * A light-DOM `role="group"` wrapper named by `label`. `<ds-toolbar>` descends
+ * into it for its roving tabindex, draws a `<ds-divider>` between adjacent
+ * groups, and collapses it into the overflow Menu as one Menu group.
+ *
+ * @slot - The group's controls.
  */
 @customElement('ds-toolbar-group')
 export class DsToolbarGroup extends LitElement {
@@ -67,10 +75,21 @@ export class DsToolbarGroup extends LitElement {
     }
   `;
 
+  /** The group's accessible name ("Text style", "Alignment"); also the Menu group heading when it collapses. */
+  @property() accessor label: string | undefined;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'ToolbarGroup');
+    this.setAttribute('data-part', 'group');
     this.setAttribute('role', 'group');
+  }
+
+  protected override updated(changed: PropertyValues): void {
+    if (changed.has('label')) {
+      if (this.label) this.setAttribute('aria-label', this.label);
+      else this.removeAttribute('aria-label');
+    }
   }
 
   protected override render(): TemplateResult {
@@ -81,68 +100,62 @@ export class DsToolbarGroup extends LitElement {
 /**
  * `<ds-toolbar>` — Toolbar (category: navigation, APG pattern: toolbar).
  *
- * `<ds-toolbar label="Formatting">` holds slotted light-DOM controls (plain
- * controls or `<ds-toolbar-group>` wrappers) and manages them as one
- * roving-tabindex stop: Tab moves into the last-focused control (initially
- * the first) and out again; arrow keys along `orientation` move real focus
- * between enabled controls without wrapping, Home/End jump to the ends. A
- * control with its own arrow-key model (`ds-segmented-control`,
- * `ds-radio-group`) keeps it — the toolbar does not intercept arrows while
- * focus is inside one (or inside an open `ds-menu`). A `<ds-divider>` is
- * inserted automatically between adjacent `<ds-toolbar-group>` children.
- * `overflow="menu"` uses a `ResizeObserver` to hide trailing controls (their
- * `overflow-label` attribute names them) into a "More" `<ds-menu>`; choosing
- * one calls `click()` on the original, still-present element. `overflow`
- * `wrap` and `scroll` are CSS-only.
+ * `<ds-toolbar label="Formatting">` holds slotted light-DOM controls, bare or
+ * inside `<ds-toolbar-group>`, and makes them one tab stop with a roving
+ * tabindex: Tab enters on the last-focused control (initially the first),
+ * arrows along `orientation` move between enabled controls without wrapping,
+ * Home/End jump to the ends. A control that handles an arrow itself
+ * (`defaultPrevented`, as SegmentedControl does) keeps it. A `<ds-divider>` is
+ * inserted between adjacent groups.
  *
- * ## When to use
+ * `overflow="menu"` (horizontal only; a vertical toolbar scrolls instead)
+ * measures the entries when the host resizes and hides whole trailing entries
+ * of Buttons — a group collapses as a group — into a "More" `<ds-menu>`, whose
+ * items are named by each control's `overflow-label` and call `click()` on the
+ * original element. SegmentedControl, Select and Switch never collapse.
+ * `wrap` and `scroll` are CSS only.
  *
- * Use a Toolbar for controls that act on the same thing and are used
- * together: text formatting, a table's row actions, a data page's
- * filter–sort–export row. Group by purpose with `ToolbarGroup`. Use
- * `overflow="menu"` for toolbars whose width the layout cannot guarantee, and
- * give every control an `overflow-label`.
+ * `role`, `aria-label` and `aria-orientation` are plain host attributes so
+ * accessible-name computation in tests reads them.
  *
- * ## When not to use
- *
- * Not for page navigation (Breadcrumb, Tabs, a nav landmark) or a form's
- * submit row. Not for a single control. Not as a generic horizontal Stack —
- * the roving tabindex changes how Tab works.
- *
- * @csspart container - The flex row/column holding the slotted controls (anatomy: container).
- * @csspart overflow - The composed "More" `<ds-menu>` (anatomy: overflowButton, overflowMenu).
  * @slot - Controls in order, or `<ds-toolbar-group>` wrappers around related ones.
  */
 @customElement('ds-toolbar')
 export class DsToolbar extends LitElement {
   static override styles: CSSResult = css`
     :host {
-      display: flex;
-      box-sizing: border-box;
-      align-items: stretch;
-      gap: var(--ds-toolbar-item-gap);
-      padding-inline: var(--ds-toolbar-padding-inline);
-      padding-block: var(--ds-toolbar-padding-block);
-      border-style: solid;
-      border-width: var(--ds-toolbar-border-width);
-      border-color: var(--ds-toolbar-border);
-      border-radius: var(--ds-toolbar-radius);
-      /* background: color.background.subtle, locked */
-      background: var(--color-background-subtle);
+      --ds-toolbar-background: var(--color-background-subtle);
       --ds-toolbar-border: var(--color-border);
       --ds-toolbar-border-width: var(--border-width-thin);
       --ds-toolbar-radius: var(--radius-md);
       --ds-toolbar-padding-inline: var(--space-2);
       --ds-toolbar-padding-block: var(--space-1);
       --ds-toolbar-item-gap: var(--layout-gap-normal);
-      --ds-toolbar-item-gap-compact: var(--layout-gap-tight);
       --ds-toolbar-group-gap: var(--layout-gap-normal);
       --ds-toolbar-separator-length: var(--space-5);
       --ds-toolbar-fade-width: var(--space-6);
+      /* Locked, and applied nowhere by the toolbar: every focusable thing in it is a composed child drawing its own ring. */
+      --ds-toolbar-focus-ring: var(--color-border-focus);
+      --ds-toolbar-focus-ring-width: var(--border-width-focus);
+      display: flex;
+      position: relative;
+      box-sizing: border-box;
+      align-items: center;
+      gap: var(--ds-toolbar-item-gap);
+      padding-inline: var(--ds-toolbar-padding-inline);
+      padding-block: var(--ds-toolbar-padding-block);
+      border: var(--ds-toolbar-border-width) solid var(--ds-toolbar-border);
+      border-radius: var(--ds-toolbar-radius);
+      background: var(--ds-toolbar-background);
     }
 
     :host([hidden]) {
       display: none;
+    }
+
+    /* itemGap by density */
+    :host([density='compact']) {
+      --ds-toolbar-item-gap: var(--layout-gap-tight);
     }
 
     :host([orientation='vertical']) {
@@ -150,100 +163,98 @@ export class DsToolbar extends LitElement {
       align-items: stretch;
     }
 
-    :host([density='compact']) {
-      gap: var(--ds-toolbar-item-gap-compact);
-    }
-
-    .container {
-      box-sizing: border-box;
+    [data-part='container'] {
       display: flex;
       flex: 1 1 auto;
       align-items: center;
+      gap: var(--ds-toolbar-item-gap);
       min-inline-size: 0;
       min-block-size: 0;
-      gap: var(--ds-toolbar-item-gap);
     }
 
-    :host([density='compact']) .container {
-      gap: var(--ds-toolbar-item-gap-compact);
-    }
-
-    :host([orientation='vertical']) .container {
+    :host([orientation='vertical']) [data-part='container'] {
       flex-direction: column;
       align-items: stretch;
     }
 
-    :host([overflow='wrap']) .container {
+    :host([overflow='wrap']) [data-part='container'] {
       flex-wrap: wrap;
     }
 
-    :host([overflow='scroll']) .container {
-      flex-wrap: nowrap;
+    :host([overflow='scroll']) [data-part='container'] {
       overflow-x: auto;
       overflow-y: hidden;
       scrollbar-width: none;
-      /* mask-image alpha channel: opaque/transparent stops, not a color. literal-ok: mask alpha marker, not a color */
-      mask-image: linear-gradient(to right, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha marker, not a color */
+      mask-image: linear-gradient(to right, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stops, not a color */
     }
 
-    :host([overflow='scroll']) .container::-webkit-scrollbar {
+    /* a vertical toolbar treats overflow menu as scroll */
+    :host([orientation='vertical'][overflow='scroll']) [data-part='container'],
+    :host([orientation='vertical'][overflow='menu']) [data-part='container'] {
+      overflow-x: hidden;
+      overflow-y: auto;
+      scrollbar-width: none;
+      mask-image: linear-gradient(to bottom, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stops, not a color */
+    }
+
+    [data-part='container']::-webkit-scrollbar {
       display: none;
     }
 
-    :host([orientation='vertical'][overflow='scroll']) .container {
-      overflow-x: hidden;
-      overflow-y: auto;
-      mask-image: linear-gradient(to bottom, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha marker, not a color */
-    }
-
-    /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked. Defensive only: the host
-       itself is never given a tabindex by this component, real focus always lands on a slotted control. */
-    :host(:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
-    }
-
-    .overflow {
+    [data-part='overflowMenu'] {
       flex: none;
-      align-self: center;
+    }
+
+    [data-part='overflowMenu'][hidden] {
+      display: none;
+    }
+
+    /* Measures size.target.min, the width budget reserved for the More trigger before it is rendered. */
+    .target-probe {
+      position: absolute;
+      visibility: hidden;
+      pointer-events: none;
+      inline-size: var(--size-target-min);
+      block-size: var(--size-target-min);
     }
   `;
 
   /** What the toolbar controls ("Formatting", "Table actions"). Not visible; the toolbar's accessible name. */
-  @property() accessor label!: string;
+  @property() accessor label: string = '';
 
   /** Vertical toolbars sit beside a canvas; arrow keys swap axes. */
-  @property({ reflect: true }) accessor orientation: ToolbarOrientation = 'horizontal';
+  @property({ type: String, reflect: true }) accessor orientation: ToolbarOrientation = 'horizontal';
 
-  /** Trailing-control behavior when the toolbar does not fit: wrap onto more rows, collapse into a "More" menu, or scroll with faded edges. */
-  @property({ reflect: true }) accessor overflow: ToolbarOverflow = 'menu';
+  /** What happens when controls do not fit: wrap onto more rows, collapse trailing Buttons into a "More" Menu, or scroll with faded edges. */
+  @property({ type: String, reflect: true }) accessor overflow: ToolbarOverflow = 'menu';
 
-  /** Default size passed to child controls that have not set their own `size`. */
-  @property({ reflect: true }) accessor size: ToolbarSize = 'md';
+  /** Default `size` for child controls that have one and do not set their own. */
+  @property({ type: String, reflect: true }) accessor size: ToolbarSize = 'md';
 
-  /** Gap between controls: tight (`compact`) or normal (`comfortable`) rhythm. */
-  @property({ reflect: true }) accessor density: ToolbarDensity = 'comfortable';
+  /** Gap between controls: tight or normal rhythm. */
+  @property({ type: String, reflect: true }) accessor density: ToolbarDensity = 'comfortable';
 
-  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
+  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are not in the type. */
   @property({ attribute: false }) accessor overrides: Partial<Record<ToolbarOverridableBinding, TokenRef | undefined>> | undefined;
 
-  /** Controls currently collapsed into the overflow menu, built from their `overflow-label` attribute. */
-  @state() private accessor overflowItems: MenuActionItem[] = [];
+  /** The overflow Menu's items, built from the collapsed controls. */
+  @state() private accessor overflowItems: MenuItem[] = [];
 
-  @query('.container') private accessor containerEl!: HTMLDivElement | null;
-  @query('.overflow') private accessor overflowMenuEl!: HTMLElement | null;
+  @query('[data-part="overflowMenu"]') private accessor overflowMenuEl!: HTMLElement | null;
+  @query('.target-probe') private accessor probeEl!: HTMLElement | null;
 
-  /** The control that currently carries the roving tabindex (and, usually, real focus). */
+  /** The control carrying tabindex 0: the last one focused, initially the first. */
   private focusedControl: HTMLElement | null = null;
 
-  /** In the same order as `overflowItems`, so choosing an item can `click()` the original element. */
-  private overflowTargets: OverflowTarget[] = [];
+  /** Overflow item id → the original control it clicks. */
+  private overflowTargets = new Map<string, HTMLElement>();
 
-  private resizeObserver?: ResizeObserver | undefined;
+  private recalcFrame = 0;
+  private resizeObserver: ResizeObserver | undefined;
 
-  /** Watches the whole light-DOM subtree: a control added inside an existing `<ds-toolbar-group>` does not
-      fire the default slot's `slotchange`, since it is assigned to that group's own inner slot instead. */
-  private readonly mutationObserver = new MutationObserver(() => this.handleChildrenChanged());
+  /** Watches the whole light-DOM subtree: a control added inside an existing group is assigned to the group's slot, so
+      the toolbar's own `slotchange` would not see it. `childList` only, so the toolbar's attribute writes never re-enter. */
+  private readonly mutationObserver: MutationObserver = new MutationObserver(() => this.handleChildrenChanged());
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -252,6 +263,9 @@ export class DsToolbar extends LitElement {
     this.addEventListener('keydown', this.handleKeydown);
     this.addEventListener('focusin', this.handleFocusIn);
     this.mutationObserver.observe(this, { childList: true, subtree: true });
+    this.resizeObserver = new ResizeObserver(() => this.scheduleRecalc());
+    this.resizeObserver.observe(this);
+    if (this.hasUpdated) this.handleChildrenChanged();
   }
 
   override disconnectedCallback(): void {
@@ -260,88 +274,128 @@ export class DsToolbar extends LitElement {
     this.removeEventListener('focusin', this.handleFocusIn);
     this.mutationObserver.disconnect();
     this.resizeObserver?.disconnect();
+    this.resizeObserver = undefined;
+    if (this.recalcFrame) cancelAnimationFrame(this.recalcFrame);
+    this.recalcFrame = 0;
   }
 
   protected override firstUpdated(): void {
-    if (this.containerEl) {
-      this.resizeObserver = new ResizeObserver(() => this.recalcOverflow());
-      this.resizeObserver.observe(this.containerEl);
-    }
     this.handleChildrenChanged();
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (changed.has('overrides')) {
-      this.applyOverrides();
-    }
-    if (changed.has('orientation')) {
-      this.syncGroupOrientation();
-      for (const child of Array.from(this.children)) {
-        const el = child as HTMLElement;
-        if (el.dataset.ds === 'Divider' && el.hasAttribute('data-ds-toolbar-separator')) {
-          this.applySeparatorGeometry(el);
-        }
-      }
-      this.recalcOverflow();
-    }
-    if (changed.has('overflow')) {
-      if (this.overflow === 'menu') {
-        this.recalcOverflow();
-      } else {
-        this.resetOverflow();
-      }
-    }
+    if (changed.has('overrides')) this.applyOverrides();
   }
 
-  protected override updated(): void {
-    this.syncHostAria();
-    this.warnInDev();
+  protected override updated(changed: PropertyValues): void {
+    if (changed.has('label')) {
+      if (this.label) this.setAttribute('aria-label', this.label);
+      else this.removeAttribute('aria-label');
+      if (import.meta.env.DEV && !this.label) {
+        console.warn("<ds-toolbar> requires a `label`, the toolbar's accessible name.", this);
+      }
+    }
+    if (changed.has('orientation')) {
+      this.setAttribute('aria-orientation', this.orientation);
+      this.syncLayout();
+    }
+    if (changed.has('size')) this.applyDefaultSizes();
+    if (changed.has('orientation') || changed.has('overflow') || changed.has('size') || changed.has('density')) {
+      this.scheduleRecalc();
+    }
   }
 
   protected override render(): TemplateResult {
-    const showOverflow = this.overflow === 'menu';
+    const menu = this.overflow === 'menu' && this.orientation === 'horizontal';
     return html`
-      <div class="container" part="container">
-        <slot></slot>
-      </div>
-      ${showOverflow
-        ? html`
-            <ds-menu
-              class="overflow"
-              part="overflow"
-              label="More"
-              icon-only
-              trigger-variant="ghost"
-              trigger-icon="ellipsis"
-              .items=${this.overflowItems}
-              ?hidden=${this.overflowItems.length === 0}
-              @action=${this.handleOverflowAction}
-            ></ds-menu>
-          `
+      <span class="target-probe" aria-hidden="true"></span>
+      <div part="container" data-part="container"><slot></slot></div>
+      ${menu
+        ? html`<ds-menu
+            part="overflowMenu"
+            data-part="overflowMenu"
+            label=${COPY_MORE}
+            icon-only
+            trigger-variant="ghost"
+            trigger-icon="ellipsis"
+            placement="bottom-end"
+            .items=${this.overflowItems}
+            ?hidden=${this.overflowItems.length === 0}
+            @action=${this.handleOverflowAction}
+          ></ds-menu>`
         : nothing}
     `;
   }
 
-  /** `role`/`aria-label`/`aria-orientation` as plain host attributes — see the class doc for why not `ElementInternals`. */
-  private syncHostAria(): void {
-    if (this.label) {
-      this.setAttribute('aria-label', this.label);
-    } else {
-      this.removeAttribute('aria-label');
-    }
-    this.setAttribute('aria-orientation', this.orientation);
+  // ---- discovery -------------------------------------------------------------------------------------------------
+
+  private isSeparator(el: Element): boolean {
+    return el.hasAttribute(SEPARATOR);
   }
 
-  private readonly handleOverflowAction = (event: CustomEvent<MenuActionDetail>): void => {
-    const index = Number(event.detail.id.slice('overflow-'.length));
-    this.overflowTargets[index]?.click();
-  };
+  private isGroup(el: Element): boolean {
+    return (el as HTMLElement).dataset.ds === 'ToolbarGroup';
+  }
+
+  private isControl(el: Element): boolean {
+    const kind = (el as HTMLElement).dataset.ds;
+    if (kind) return kind !== 'Divider' && kind !== 'ToolbarGroup';
+    return el.matches(NATIVE_FOCUSABLE);
+  }
+
+  /** Top-level entries in order: groups and bare controls (separators excluded). */
+  private entries(): HTMLElement[] {
+    return Array.from(this.children).filter(
+      (el): el is HTMLElement => !this.isSeparator(el) && (this.isGroup(el) || this.isControl(el)),
+    );
+  }
+
+  private controlsOf(entry: HTMLElement): HTMLElement[] {
+    return this.isGroup(entry) ? Array.from(entry.children).filter((el): el is HTMLElement => this.isControl(el)) : [entry];
+  }
+
+  /** Every control, in order, one level into groups; a control's own internals are never descended into. */
+  private controls(): HTMLElement[] {
+    return this.entries().flatMap((entry) => this.controlsOf(entry));
+  }
+
+  private isDisabled(el: HTMLElement): boolean {
+    return el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true';
+  }
+
+  private isShown(el: HTMLElement): boolean {
+    for (let node: HTMLElement | null = el; node && node !== this; node = node.parentElement) {
+      if (node.hidden) return false;
+    }
+    return true;
+  }
+
+  /** What the roving tabindex may land on: shown, enabled controls, then the More trigger when it is showing. */
+  private focusable(): HTMLElement[] {
+    const list = this.controls().filter((el) => this.isShown(el) && !this.isDisabled(el));
+    const menu = this.overflowMenuEl;
+    if (menu && !menu.hidden) list.push(menu);
+    return list;
+  }
+
+  // ---- roving tabindex -------------------------------------------------------------------------------------------
+
+  private syncRovingTabindex(): void {
+    const list = this.focusable();
+    if (!this.focusedControl || !list.includes(this.focusedControl)) this.focusedControl = list[0] ?? null;
+    for (const el of list) {
+      const next = el === this.focusedControl ? 0 : -1;
+      if (el.tabIndex !== next) el.tabIndex = next;
+    }
+    // Collapsed or disabled controls leave the sequence too.
+    for (const el of this.controls()) {
+      if (!list.includes(el) && el.tabIndex !== -1) el.tabIndex = -1;
+    }
+  }
 
   private readonly handleFocusIn = (event: FocusEvent): void => {
-    const controls = this.focusableCandidates();
-    const target = event
-      .composedPath()
-      .find((node): node is HTMLElement => node instanceof HTMLElement && controls.includes(node));
+    const list = this.focusable();
+    const target = event.composedPath().find((node): node is HTMLElement => node instanceof HTMLElement && list.includes(node));
     if (target && target !== this.focusedControl) {
       this.focusedControl = target;
       this.syncRovingTabindex();
@@ -349,287 +403,230 @@ export class DsToolbar extends LitElement {
   };
 
   private readonly handleKeydown = (event: KeyboardEvent): void => {
-    if (this.shouldDelegateToChild(event)) {
-      return;
-    }
+    // A control with its own arrow-key model (SegmentedControl, an open Menu) handled the key first.
+    if (event.defaultPrevented) return;
     const vertical = this.orientation === 'vertical';
-    const nextKey = vertical ? 'ArrowDown' : 'ArrowRight';
-    const prevKey = vertical ? 'ArrowUp' : 'ArrowLeft';
-    if (event.key === nextKey) {
-      event.preventDefault();
-      this.moveFocus(1);
-    } else if (event.key === prevKey) {
-      event.preventDefault();
-      this.moveFocus(-1);
-    } else if (event.key === 'Home') {
-      event.preventDefault();
-      this.focusEdge('first');
-    } else if (event.key === 'End') {
-      event.preventDefault();
-      this.focusEdge('last');
-    }
+    const rtl = !vertical && getComputedStyle(this).direction === 'rtl';
+    const next = vertical ? 'ArrowDown' : rtl ? 'ArrowLeft' : 'ArrowRight';
+    const prev = vertical ? 'ArrowUp' : rtl ? 'ArrowRight' : 'ArrowLeft';
+    const list = this.focusable();
+    if (list.length === 0) return;
+    const path = event.composedPath();
+    const current = list.findIndex((el) => path.includes(el));
+    let index: number;
+    if (event.key === next) index = current < 0 ? 0 : current + 1;
+    else if (event.key === prev) index = current < 0 ? 0 : current - 1;
+    else if (event.key === 'Home') index = 0;
+    else if (event.key === 'End') index = list.length - 1;
+    else return;
+    event.preventDefault();
+    const target = list[index];
+    if (!target) return; // no wrap
+    this.focusedControl = target;
+    this.syncRovingTabindex();
+    target.focus();
   };
 
-  /** True while focus is inside a control that keeps its own arrow-key model (SegmentedControl, RadioGroup) or
-      inside an open overflow Menu, so the toolbar must not steal the key. */
-  private shouldDelegateToChild(event: KeyboardEvent): boolean {
-    for (const node of event.composedPath()) {
-      if (!(node instanceof HTMLElement)) {
-        continue;
-      }
-      if (node === this) {
-        break;
-      }
-      const kind = node.dataset.ds;
-      if (kind === 'SegmentedControl' || kind === 'RadioGroup') {
-        return true;
-      }
-      if (kind === 'Menu' && node.hasAttribute('open')) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private moveFocus(delta: number): void {
-    const controls = this.focusableCandidates();
-    if (controls.length === 0) {
-      return;
-    }
-    const currentIndex = controls.indexOf((this.focusedControl ?? controls[0])!);
-    const nextIndex = currentIndex + delta;
-    if (nextIndex < 0 || nextIndex >= controls.length) {
-      return;
-    }
-    this.focusTo(controls[nextIndex]!);
-  }
-
-  private focusEdge(edge: 'first' | 'last'): void {
-    const controls = this.focusableCandidates();
-    if (controls.length === 0) {
-      return;
-    }
-    this.focusTo((edge === 'first' ? controls[0] : controls[controls.length - 1])!);
-  }
-
-  private focusTo(el: HTMLElement): void {
-    this.focusedControl = el;
-    this.syncRovingTabindex();
-    el.focus();
-  }
-
-  private isDisabled(el: HTMLElement): boolean {
-    return el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true';
-  }
-
-  /** Every non-decorative control, direct child or one level inside a `<ds-toolbar-group>`; a control's own
-      internals (e.g. an icon slotted into it) are never descended into. */
-  private topLevelControls(): HTMLElement[] {
-    const result: HTMLElement[] = [];
-    const collect = (parent: Element): void => {
-      for (const node of Array.from(parent.children)) {
-        const el = node as HTMLElement;
-        const kind = el.dataset.ds;
-        if (kind === 'ToolbarGroup') {
-          collect(el);
-        } else if (kind === 'Divider') {
-          continue;
-        } else if (kind) {
-          result.push(el);
-        }
-      }
-    };
-    collect(this);
-    return result;
-  }
-
-  /** `topLevelControls()` filtered to what the roving tabindex may land on, plus the overflow trigger when it's showing. */
-  private focusableCandidates(): HTMLElement[] {
-    const result = this.topLevelControls().filter((el) => !el.hidden && !this.isDisabled(el));
-    if (this.overflow === 'menu' && this.overflowItems.length > 0 && this.overflowMenuEl) {
-      result.push(this.overflowMenuEl);
-    }
-    return result;
-  }
-
-  private syncRovingTabindex(): void {
-    const controls = this.focusableCandidates();
-    if (controls.length === 0) {
-      return;
-    }
-    if (!this.focusedControl || !controls.includes(this.focusedControl)) {
-      this.focusedControl = controls[0]!;
-    }
-    for (const el of controls) {
-      el.tabIndex = el === this.focusedControl ? 0 : -1;
-    }
-  }
+  // ---- children --------------------------------------------------------------------------------------------------
 
   private handleChildrenChanged(): void {
     this.mutationObserver.disconnect();
     this.syncSeparators();
-    this.syncGroupOrientation();
-    this.applyDefaultSizes();
     this.mutationObserver.observe(this, { childList: true, subtree: true });
+    this.syncLayout();
+    this.applyDefaultSizes();
     this.syncRovingTabindex();
-    this.recalcOverflow();
+    this.scheduleRecalc();
   }
 
-  /** Inserts a `<ds-divider>` between adjacent `<ds-toolbar-group>` children and removes one that no longer sits
-      between two groups. */
+  /** Inserts a `<ds-divider>` between adjacent groups and removes one that no longer sits between two. Every move is
+      conditional, so a pass over settled children writes nothing. */
   private syncSeparators(): void {
-    for (const child of Array.from(this.children)) {
-      const el = child as HTMLElement;
-      if (el.dataset.ds === 'Divider' && el.hasAttribute('data-ds-toolbar-separator')) {
-        const prev = el.previousElementSibling as HTMLElement | null;
-        const next = el.nextElementSibling as HTMLElement | null;
-        const stillValid = prev?.dataset.ds === 'ToolbarGroup' && next?.dataset.ds === 'ToolbarGroup';
-        if (!stillValid) {
-          el.remove();
-        }
-      }
+    for (const el of Array.from(this.children)) {
+      if (!this.isSeparator(el)) continue;
+      const prev = el.previousElementSibling;
+      const next = el.nextElementSibling;
+      if (!(prev && next && this.isGroup(prev) && this.isGroup(next))) el.remove();
     }
-    const groups = Array.from(this.children).filter((child) => (child as HTMLElement).dataset.ds === 'ToolbarGroup');
-    for (let i = 0; i < groups.length - 1; i += 1) {
-      const current = groups[i] as HTMLElement;
-      const next = current.nextElementSibling as HTMLElement | null;
-      if (next?.dataset.ds === 'ToolbarGroup') {
-        const divider = document.createElement('ds-divider') as DsDivider;
-        divider.setAttribute('data-ds-toolbar-separator', '');
-        divider.setAttribute('aria-hidden', 'true');
-        current.after(divider);
-        this.applySeparatorGeometry(divider);
-      } else if (next?.dataset.ds === 'Divider' && next.hasAttribute('data-ds-toolbar-separator')) {
-        this.applySeparatorGeometry(next);
+    for (const el of Array.from(this.children)) {
+      const next = el.nextElementSibling;
+      if (this.isGroup(el) && next && this.isGroup(next)) {
+        const divider = document.createElement('ds-divider');
+        divider.setAttribute(SEPARATOR, '');
+        divider.setAttribute('data-part', 'separator');
+        el.after(divider);
       }
     }
   }
 
-  /** Perpendicular orientation, and length/spacing forwarded to the Divider's own hooks (never its shadow tree). */
-  private applySeparatorGeometry(divider: HTMLElement): void {
+  /** Group axis and separator geometry. Divider draws its own line; the toolbar forwards length and spacing through the
+      Divider's host-level hooks. groupGap replaces itemGap either side of a separator: the flex gap already supplies
+      itemGap, so the Divider's spacing is the difference. */
+  private syncLayout(): void {
     const vertical = this.orientation === 'vertical';
-    (divider as DsDivider).orientation = vertical ? 'horizontal' : 'vertical';
-    divider.style.setProperty('--ds-divider-spacing', 'var(--ds-toolbar-group-gap)');
-    divider.style.alignSelf = 'center';
-    divider.style.flex = 'none';
-    divider.style.blockSize = vertical ? '' : 'var(--ds-toolbar-separator-length)';
-    divider.style.inlineSize = vertical ? 'var(--ds-toolbar-separator-length)' : '';
-  }
-
-  private syncGroupOrientation(): void {
-    const vertical = this.orientation === 'vertical';
-    for (const child of Array.from(this.children)) {
-      const el = child as HTMLElement;
-      if (el.dataset.ds === 'ToolbarGroup') {
-        el.toggleAttribute('data-vertical', vertical);
+    for (const el of Array.from(this.children) as HTMLElement[]) {
+      if (this.isGroup(el)) {
+        if (el.hasAttribute('data-vertical') !== vertical) el.toggleAttribute('data-vertical', vertical);
+      } else if (this.isSeparator(el)) {
+        const divider = el as DsDivider;
+        const orientation = vertical ? 'horizontal' : 'vertical';
+        if (divider.orientation !== orientation) divider.orientation = orientation;
+        if (divider.spacing !== 'tight') divider.spacing = 'tight';
+        el.style.setProperty('--ds-divider-spacing', 'calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap))');
+        el.style.flex = 'none';
+        el.style.alignSelf = 'center';
+        el.style.blockSize = vertical ? '' : 'var(--ds-toolbar-separator-length)';
+        el.style.inlineSize = vertical ? 'var(--ds-toolbar-separator-length)' : '';
       }
     }
   }
 
-  /** One-time default: a control that has not set its own `size` gets the toolbar's. A later change to the
-      toolbar's `size` does not retroactively revisit controls already defaulted. */
+  /** A control with a `size` property that has not set its own takes the toolbar's; its own `size` wins. */
   private applyDefaultSizes(): void {
-    for (const el of this.topLevelControls()) {
-      if (!el.hasAttribute('size')) {
-        el.setAttribute('size', this.size);
-      }
+    for (const el of this.controls()) {
+      // Design-system controls only: a native <input>/<select> has an unrelated numeric `size`.
+      if (!el.dataset.ds || !('size' in el)) continue;
+      const defaulted = el.hasAttribute(SIZED);
+      if (!defaulted && el.hasAttribute('size')) continue;
+      if (!defaulted) el.setAttribute(SIZED, '');
+      if (el.getAttribute('size') !== this.size) el.setAttribute('size', this.size);
     }
   }
 
-  private resetOverflow(): void {
-    for (const el of this.topLevelControls()) {
-      if (el.hasAttribute('data-ds-toolbar-overflow-hidden')) {
-        el.hidden = false;
-        el.removeAttribute('data-ds-toolbar-overflow-hidden');
-      }
-    }
-    this.overflowItems = [];
-    this.overflowTargets = [];
-    this.syncRovingTabindex();
-  }
+  // ---- overflow --------------------------------------------------------------------------------------------------
 
-  /** Measures the top-level controls and, when they do not fit `.container`, hides as many trailing ones as
-      needed and rebuilds the overflow menu from their `overflow-label` attribute. */
-  private recalcOverflow(): void {
-    if (this.overflow !== 'menu') {
-      return;
-    }
-    const container = this.containerEl;
-    if (!container) {
-      return;
-    }
-    const controls = this.topLevelControls();
-    for (const el of controls) {
-      if (el.hasAttribute('data-ds-toolbar-overflow-hidden')) {
-        el.hidden = false;
-      }
-    }
-    if (controls.length === 0) {
-      this.overflowItems = [];
-      this.overflowTargets = [];
-      return;
-    }
-
-    const vertical = this.orientation === 'vertical';
-    const sizes = controls.map((el) => {
-      const rect = el.getBoundingClientRect();
-      return vertical ? rect.height : rect.width;
+  /** Measurement runs a frame later, after child controls have rendered their new size or density. */
+  private scheduleRecalc(): void {
+    if (this.recalcFrame) return;
+    this.recalcFrame = requestAnimationFrame(() => {
+      this.recalcFrame = 0;
+      this.recalcOverflow();
     });
-    const gap = parseFloat(getComputedStyle(container).gap) || 0;
-    const available = vertical ? container.clientHeight : container.clientWidth;
-    let total = sizes.reduce((sum, size) => sum + size, 0) + gap * Math.max(0, controls.length - 1);
+  }
 
-    if (total <= available) {
-      for (const el of controls) {
-        el.removeAttribute('data-ds-toolbar-overflow-hidden');
+  private isCollapsible(entry: HTMLElement): boolean {
+    const controls = this.controlsOf(entry);
+    return controls.length > 0 && controls.every((el) => el.dataset.ds === 'Button');
+  }
+
+  private recalcOverflow(): void {
+    if (!this.isConnected) return;
+    for (const el of Array.from(this.children) as HTMLElement[]) {
+      if (el.hasAttribute(COLLAPSED)) {
+        el.hidden = false;
+        el.removeAttribute(COLLAPSED);
       }
-      this.overflowItems = [];
-      this.overflowTargets = [];
-      this.syncRovingTabindex();
-      return;
     }
-
-    const reserved = parseFloat(getComputedStyle(this).getPropertyValue('--size-target-min')) || 0;
-    const budget = available - reserved;
-    const hidden: HTMLElement[] = [];
-    for (let i = controls.length - 1; i >= 0 && total > budget; i -= 1) {
-      hidden.unshift(controls[i]!);
-      total -= sizes[i]! + gap;
+    const collapsed = this.overflow === 'menu' && this.orientation === 'horizontal' ? this.measureCollapse() : [];
+    for (const el of collapsed) {
+      el.hidden = true;
+      el.setAttribute(COLLAPSED, '');
     }
-
-    for (const el of controls) {
-      const shouldHide = hidden.includes(el);
-      el.hidden = shouldHide;
-      el.toggleAttribute('data-ds-toolbar-overflow-hidden', shouldHide);
-    }
-
-    this.overflowTargets = hidden;
-    this.overflowItems = hidden.map((el, index) => ({
-      id: `overflow-${index}`,
-      label: el.getAttribute('overflow-label') ?? el.getAttribute('label') ?? el.textContent?.trim() ?? `Item ${index + 1}`,
-      disabled: this.isDisabled(el),
-    }));
+    this.syncSeparatorVisibility();
+    this.buildOverflowItems(collapsed);
     this.syncRovingTabindex();
   }
+
+  /** Which trailing collapsible entries must go so the rest, plus a `size.target.min` More trigger, fit the host. */
+  private measureCollapse(): HTMLElement[] {
+    const entries = this.entries().filter((el) => !el.hidden);
+    if (entries.length === 0) return [];
+    const style = getComputedStyle(this);
+    const rtl = style.direction === 'rtl';
+    const start = (r: DOMRect): number => (rtl ? -r.right : r.left);
+    const end = (r: DOMRect): number => (rtl ? -r.left : r.right);
+    const rects = entries.map((el) => el.getBoundingClientRect());
+    const widths = rects.map((r) => r.width);
+    // Space after each entry up to the next one: the gap, plus a separator and its spacing between groups.
+    const after = rects.map((r, i) => (i < rects.length - 1 ? start(rects[i + 1]!) - end(r) : 0));
+    const available = this.clientWidth - (parseFloat(style.paddingInlineStart) || 0) - (parseFloat(style.paddingInlineEnd) || 0);
+    const total = (kept: number[]): number =>
+      kept.reduce((sum, i, k) => sum + widths[i]! + (k < kept.length - 1 ? after[i]! : 0), 0);
+
+    let kept = entries.map((_, i) => i);
+    if (total(kept) <= available) return [];
+
+    const reserve = (this.probeEl?.getBoundingClientRect().width ?? 0) + (parseFloat(style.columnGap) || 0);
+    const budget = available - reserve;
+    for (let i = entries.length - 1; i >= 0 && total(kept) > budget; i -= 1) {
+      if (this.isCollapsible(entries[i]!)) kept = kept.filter((k) => k !== i);
+    }
+    return entries.filter((_, i) => !kept.includes(i));
+  }
+
+  /** A separator shows only between two shown groups, and never twice in a row. */
+  private syncSeparatorVisibility(): void {
+    let prevShown: HTMLElement | null = null;
+    let pending: HTMLElement | null = null;
+    for (const el of Array.from(this.children) as HTMLElement[]) {
+      if (this.isSeparator(el)) {
+        if (pending) {
+          if (!el.hidden) el.hidden = true;
+        } else {
+          pending = el;
+        }
+        continue;
+      }
+      if (el.hidden) continue;
+      if (pending) {
+        const show = !!prevShown && this.isGroup(prevShown) && this.isGroup(el);
+        if (pending.hidden === show) pending.hidden = !show;
+        pending = null;
+      }
+      prevShown = el;
+    }
+    if (pending && !pending.hidden) pending.hidden = true;
+  }
+
+  private buildOverflowItems(collapsed: HTMLElement[]): void {
+    this.overflowTargets = new Map();
+    const items: MenuItem[] = [];
+    let previousWasGroup = false;
+    const toItem = (el: HTMLElement): MenuActionItem => {
+      const id = `overflow-${this.overflowTargets.size}`;
+      this.overflowTargets.set(id, el);
+      const overflowLabel = el.getAttribute('overflow-label');
+      if (import.meta.env.DEV && !overflowLabel) {
+        console.warn('<ds-toolbar> a control collapsed into the More menu has no `overflow-label`.', el);
+      }
+      return {
+        id,
+        label: overflowLabel ?? el.getAttribute('label') ?? el.textContent?.trim() ?? '',
+        disabled: this.isDisabled(el),
+      };
+    };
+    for (const entry of collapsed) {
+      if (this.isGroup(entry)) {
+        const groupItems = this.controlsOf(entry).map(toItem);
+        const heading = entry.getAttribute('label');
+        if (heading) {
+          items.push({ group: heading, items: groupItems });
+        } else {
+          if (items.length > 0) items.push({ separator: true });
+          items.push(...groupItems);
+        }
+        previousWasGroup = true;
+      } else {
+        if (previousWasGroup) items.push({ separator: true });
+        items.push(toItem(entry));
+        previousWasGroup = false;
+      }
+    }
+    const unchanged =
+      items.length === this.overflowItems.length && JSON.stringify(items) === JSON.stringify(this.overflowItems);
+    if (!unchanged) this.overflowItems = items;
+  }
+
+  private readonly handleOverflowAction = (event: CustomEvent<MenuActionDetail>): void => {
+    event.stopPropagation();
+    this.overflowTargets.get(event.detail.id)?.click();
+  };
 
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as ToolbarOverridableBinding[]) {
       const ref = this.overrides?.[binding];
-      const hook = HOOKS[binding];
-      if (ref === undefined) {
-        this.style.removeProperty(hook);
-      } else {
-        this.style.setProperty(hook, cssVar(ref));
-      }
-    }
-  }
-
-  private warnInDev(): void {
-    if (!import.meta.env.DEV) {
-      return;
-    }
-    if (!this.label) {
-      console.warn("<ds-toolbar> requires a `label`, the toolbar's accessible name.", this);
+      if (ref === undefined) this.style.removeProperty(HOOKS[binding]);
+      else this.style.setProperty(HOOKS[binding], cssVar(ref));
     }
   }
 }

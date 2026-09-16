@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { AccessibilityInfo, FlatList, Platform, Pressable, Text as RNText, View } from 'react-native';
-import type { AccessibilityActionEvent, LayoutChangeEvent, ListRenderItemInfo, ListViewToken, TextStyle, ViewStyle } from 'react-native';
+import { AccessibilityInfo, Animated, FlatList, Platform, Pressable, Text as RNText, StyleSheet, View } from 'react-native';
+import type { AccessibilityActionEvent, LayoutChangeEvent, ListRenderItemInfo, ListViewToken, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Icon } from './Icon';
-import { toFontWeight, useReducedMotion, useTheme } from './theme';
+import { Text } from './Text';
+import { toEasing, useReducedMotion, useTheme } from './theme';
 
 export type CarouselPicker = 'dots' | 'tabs' | 'none';
 export type CarouselChangeReason = 'next' | 'prev' | 'picker' | 'swipe' | 'autoplay';
@@ -18,23 +19,21 @@ export type CarouselOverridableBinding =
   | 'pickerGap'
   | 'pickerOffset'
   | 'dotSize'
-  | 'dotTarget'
   | 'radius'
   | 'transition';
 
 export interface CarouselSlideProps {
   /**
-   * This slide's heading. Not rendered — used to build the slide's accessible name
-   * ("{n} of {total}, {heading}") and, when `picker="tabs"`, that slide's tab label.
-   * The visible content still needs its own heading for sighted users (a Card is the
-   * usual shape); this mirrors the web platform's separate `aria-label`.
+   * The slide's name: its tab in a `tabs` picker and part of its accessible name
+   * ("{n} of {total}, {label}"). A plain string, not read from the content; the
+   * slide repeats it visibly in its own heading.
    */
-  heading: string;
+  label: string;
   /** The slide's content. Slides should be equal height. */
   children: React.ReactNode;
 }
 
-/** One slide. Rendered by `Carousel`, never directly. */
+/** One slide. Rendered by `Carousel`, never on its own. */
 export function CarouselSlide({ children }: CarouselSlideProps): React.JSX.Element {
   // eslint-disable-next-line react/jsx-no-useless-fragment
   return <>{children}</>;
@@ -43,31 +42,33 @@ export function CarouselSlide({ children }: CarouselSlideProps): React.JSX.Eleme
 export interface CarouselProps {
   /** What the carousel shows ("Featured products", "Customer stories"). Names the region. */
   label: string;
-  /** One `CarouselSlide` per slide. */
+  /** One `CarouselSlide` per slide. A Card is the usual shape. Slides should be equal height. */
   children: React.ReactNode;
-  /** How many slides are visible at once at the widest layout. */
+  /** How many slides are visible at once at the widest layout; one below the prose width. Whole numbers. */
   perView?: number | undefined;
   /** Next from the last returns to the first. Off by default so users can tell where the end is. */
   loop?: boolean | undefined;
-  /** Rotate automatically every `interval`. Never starts under reduced motion; stops for good on touch or the pause button. */
+  /** Rotate automatically every `interval`. Never starts under reduced motion; pauses while touched or focused; stops on the pause button until play. */
   autoplay?: boolean | undefined;
-  /** Milliseconds between automatic advances. Below 5000 warns in development. */
+  /** Milliseconds between automatic advances; values below 5000 are raised to 5000 (with a development warning). */
   interval?: number | undefined;
-  /** How slides are chosen directly. */
+  /** How slides are chosen directly: dots, tabs with each slide's label, or none (arrows only). */
   picker?: CarouselPicker | undefined;
   /** Controlled current slide (zero-based). Omit for uncontrolled. */
   activeIndex?: number | undefined;
-  /** Swiping or scrolling snaps to slide boundaries. */
+  /** Swiping snaps to slide boundaries. `false` lets the track scroll freely. */
   snap?: boolean | undefined;
   /** Fired when the current slide changes, with the new index and the reason. */
   onChange?: ((index: number, reason: CarouselChangeReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<CarouselOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The region View. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 interface CollectedSlide {
   key: string;
-  heading: string;
+  label: string;
   content: React.ReactNode;
 }
 
@@ -76,7 +77,7 @@ function collectSlides(children: React.ReactNode): CollectedSlide[] {
   React.Children.forEach(children, (child, index) => {
     if (React.isValidElement(child) && child.type === CarouselSlide) {
       const props = child.props as CarouselSlideProps;
-      slides.push({ key: child.key ?? String(index), heading: props.heading, content: props.children });
+      slides.push({ key: child.key ?? String(index), label: props.label, content: props.children });
     }
   });
   return slides;
@@ -92,44 +93,37 @@ const COPY = {
   announce: (n: number, total: number): string => `Slide ${n} of ${total}`,
 } as const;
 
+/** constant `minInterval`: the floor `interval` is raised to, so autoplay never advances faster than a slide can be read. */
+const MIN_INTERVAL = 5000; // literal-ok: schema constant minInterval (ms), no token exists
+
+/** `default` of the `interval` prop. */
+const DEFAULT_INTERVAL = 6000; // literal-ok: schema default for the interval prop (ms)
+
+/** `itemVisiblePercentThreshold` from the platform notes. */
+const VISIBLE_THRESHOLD = 60; // literal-ok: viewability percentage, not a size
+
 const REGION_ACTIONS = [
-  { name: 'increment', label: 'Next slide' },
-  { name: 'decrement', label: 'Previous slide' },
+  { name: 'increment', label: COPY.next },
+  { name: 'decrement', label: COPY.previous },
 ] as const;
 
 /**
- * Carousel — shows several things in the space of one and lets the user page
- * through them.
+ * Carousel — shows several things in the space of one and lets the user page through them.
  *
- * When to use: Use for a small set (three to eight) of peer items too rich for a
- * grid — featured products, testimonials, a gallery. Use `picker="tabs"` when
- * slides have meaningful names, `dots` for images. Leave `autoplay` off unless the
- * content is ambient, and even then keep the pause control visible. Do not hide
- * important content behind slide two, and do not autoplay text people need to read.
+ * When to use: a small set (three to eight) of peer items too rich for a grid — featured
+ * products, testimonials, a gallery. `picker="tabs"` when slides have meaningful names,
+ * `dots` for images. Leave `autoplay` off unless the content is ambient, and keep the pause
+ * control visible. Do not hide important content behind slide two.
  *
- * Renders a horizontal `FlatList` (`pagingEnabled` at `perView` 1, `snapToInterval`
- * otherwise) of slide `View`s, each `accessible` with a positional label
- * (`copy.slideLabel` plus its heading) and hidden from assistive technology
- * (`accessibilityElementsHidden`/`importantForAccessibility`) while outside the
- * current window, so off-screen links are not tab stops. The region `View` carries
- * `accessibilityRole="adjustable"` with increment/decrement `accessibilityActions`
- * as the alternative to the swipe gesture. `prevButton`/`nextButton` are composed
- * `Button`s (`variant="ghost"`, chevron `Icon`s) each in a small wrapper `View` that
- * carries `controlBackground`/`controlShadow` — composing rather than restyling
- * Button, whose overridable bindings have no plain "background" slot. The picker
- * (`dots`/`tabs`) and the play/pause `Button` (only rendered while autoplay can
- * possibly run, i.e. `autoplay` is set and reduced motion is not) are hand-built
- * `Pressable`s with their own focus ring, matching the package's focus-visible
- * convention. A hidden `liveRegion` `View` (`accessibilityLiveRegion="polite"`)
- * covers Android; `AccessibilityInfo.announceForAccessibility` covers iOS, firing
- * for every reason except `autoplay` (APG: do not announce automatic changes).
- *
- * Next/Previous/autoplay each move exactly one slide — the spec's "one slide (or
- * one page of `perView`)" does not define page alignment, so `perView` only governs
- * how many slides are visible at once, never the step size. Autoplay stops for good
- * on touch (`onTouchStart` on the region, `onScrollBeginDrag` on the track); pausing
- * on focus could only be wired for the hand-built picker items, since the composed
- * `Button` exposes no `onFocus` prop to observe.
+ * The region `View` has `accessibilityRole="adjustable"` with increment/decrement actions
+ * mapped to next/previous (the swipe alternative) and is not `accessible`, so the controls
+ * inside stay reachable. In tree order: the play/pause `Button` (only when `autoplay` and
+ * motion is allowed), the viewport with the previous/next `secondary` icon-only `Button`s
+ * overlaid inside their `controlSurface` wrappers, a horizontal `FlatList` track
+ * (`pagingEnabled` at one per view, `snapToInterval` above), and the picker of Carousel's own
+ * `Pressable`s. Slides outside the current page are hidden from assistive technology.
+ * Previous/Next move one page of `perView` slides, disabled at the ends unless `loop`.
+ * User-initiated changes are announced; autoplay changes are not.
  */
 export function Carousel({
   label,
@@ -137,17 +131,19 @@ export function Carousel({
   perView = 1,
   loop = false,
   autoplay = false,
-  interval = 6000,
+  interval = DEFAULT_INTERVAL,
   picker = 'dots',
   activeIndex,
   snap = true,
   onChange,
   overrides,
+  ref,
 }: CarouselProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
 
   const slides = React.useMemo(() => collectSlides(children), [children]);
+  const total = slides.length;
 
   React.useEffect(() => {
     if (__DEV__) {
@@ -160,278 +156,285 @@ export function Carousel({
   }, [children]);
 
   React.useEffect(() => {
-    // literal-ok: a dev-only validation threshold from the spec ("below 5000 is
-    // raised to 5000"), not a style token.
-    if (__DEV__ && interval < 5000) {
-      console.warn('Carousel: interval below the 5-second minimum does not give people enough time to read a slide before it advances; raised to the minimum.');
+    if (__DEV__ && autoplay && interval < MIN_INTERVAL) {
+      console.warn(`Carousel: interval ${interval}ms is below the ${MIN_INTERVAL}ms minimum and was raised to it.`);
     }
-  }, [interval]);
+  }, [autoplay, interval]);
+  const effectiveInterval = Math.max(interval, MIN_INTERVAL);
 
-  // literal-ok: the spec's 5000ms floor, not a style token.
-  const effectiveInterval = Math.max(interval, 5000);
-
-  const perViewClamped = Math.max(1, Math.round(perView));
-  const isControlled = activeIndex !== undefined;
-  const [internalIndex, setInternalIndex] = React.useState(0);
-  const currentIndex = Math.min(isControlled ? (activeIndex as number) : internalIndex, Math.max(0, slides.length - 1));
-
-  const [viewportWidth, setViewportWidth] = React.useState(0);
   const slideGap = overrides?.slideGap ? (resolveToken(t, overrides.slideGap) as number) : t.layoutGapNormal;
-  const itemWidth = viewportWidth > 0 ? (viewportWidth - slideGap * (perViewClamped - 1)) / perViewClamped : viewportWidth;
-
   const controlOffset = overrides?.controlOffset ? (resolveToken(t, overrides.controlOffset) as number) : t.space2;
   const controlShadow = overrides?.controlShadow ? (resolveToken(t, overrides.controlShadow) as typeof t.shadowRaised) : t.shadowRaised;
   const pickerGap = overrides?.pickerGap ? (resolveToken(t, overrides.pickerGap) as number) : t.layoutGapTight;
   const pickerOffset = overrides?.pickerOffset ? (resolveToken(t, overrides.pickerOffset) as number) : t.space3;
   const dotSize = overrides?.dotSize ? (resolveToken(t, overrides.dotSize) as number) : t.space2;
-  const dotTarget = overrides?.dotTarget ? (resolveToken(t, overrides.dotTarget) as number) : t.sizeTargetMin;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
+  const transition = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationBase;
 
-  const controlBackground = t.colorOverlaySurface;
-  const dotColor = t.colorBorderStrong;
-  const dotActiveColor = t.colorControlSelectedBackground;
-  const minTarget = t.sizeTargetComfortable;
-  const focusRingColor = t.colorBorderFocus;
-  const focusRingWidth = t.borderWidthFocus;
+  const [viewportWidth, setViewportWidth] = React.useState(0);
+  const narrow = viewportWidth > 0 && viewportWidth < t.layoutMaxWidthProse;
+  const pageSize = narrow ? 1 : Math.max(1, Math.round(perView));
+  const itemWidth = viewportWidth > 0 ? (viewportWidth - slideGap * (pageSize - 1)) / pageSize : 0;
+  const maxStart = Math.max(0, total - pageSize);
+
+  const isControlled = activeIndex !== undefined;
+  const [internalIndex, setInternalIndex] = React.useState(0);
+  const currentIndex = Math.min(Math.max(0, Math.round(isControlled ? activeIndex : internalIndex)), maxStart);
+
+  /** The start index Next/Previous would move to, or `null` at an end without `loop`. */
+  const stepTarget = (from: number, direction: 1 | -1): number | null => {
+    if (total === 0) {
+      return null;
+    }
+    if (direction === 1) {
+      if (from + pageSize <= maxStart) {
+        return from + pageSize;
+      }
+      if (from < maxStart) {
+        return maxStart;
+      }
+      return loop && maxStart > 0 ? 0 : null;
+    }
+    if (from - pageSize >= 0) {
+      return from - pageSize;
+    }
+    if (from > 0) {
+      return 0;
+    }
+    return loop && maxStart > 0 ? maxStart : null;
+  };
 
   const [announcement, setAnnouncement] = React.useState('');
-  React.useEffect(() => {
-    if (Platform.OS === 'ios' && announcement !== '') {
-      AccessibilityInfo.announceForAccessibility(announcement);
+
+  const goTo = (index: number, reason: CarouselChangeReason): void => {
+    const target = Math.min(Math.max(0, index), maxStart);
+    if (target === currentIndex) {
+      return;
     }
-  }, [announcement]);
-
-  const clampIndex = React.useCallback(
-    (index: number): number => {
-      const total = slides.length;
-      if (total === 0) {
-        return 0;
-      }
-      if (loop) {
-        return ((index % total) + total) % total;
-      }
-      const maxIndex = Math.max(0, total - perViewClamped);
-      return Math.min(Math.max(index, 0), maxIndex);
-    },
-    [slides.length, loop, perViewClamped],
-  );
-
-  const flatListRef = React.useRef<FlatList<CollectedSlide>>(null);
-
-  const goTo = React.useCallback(
-    (index: number, reason: CarouselChangeReason): void => {
-      const clamped = clampIndex(index);
-      if (clamped === currentIndex) {
-        return;
-      }
-      if (!isControlled) {
-        setInternalIndex(clamped);
-      }
-      onChange?.(clamped, reason);
-      flatListRef.current?.scrollToOffset({ offset: clamped * (itemWidth + slideGap), animated: !reducedMotion });
-      if (reason !== 'autoplay') {
-        setAnnouncement(COPY.announce(clamped + 1, slides.length));
-      }
-    },
-    [clampIndex, currentIndex, isControlled, onChange, itemWidth, slideGap, reducedMotion, slides.length],
-  );
-
-  // A stable ticker/callback pair so the autoplay interval and the FlatList's
-  // viewability callback do not need to change identity every render (React
-  // Native warns on a changing `onViewableItemsChanged`), reading fresh state
-  // through a ref instead — the same pattern Slider's thumb uses for its
-  // PanResponder.
-  const latest = React.useRef({ currentIndex, goTo });
-  latest.current = { currentIndex, goTo };
-
-  const [playing, setPlaying] = React.useState(autoplay && !reducedMotion);
-  React.useEffect(() => {
-    if (!autoplay || reducedMotion) {
-      setPlaying(false);
+    if (!isControlled) {
+      setInternalIndex(target);
     }
-  }, [autoplay, reducedMotion]);
+    onChange?.(target, reason);
+    if (reason !== 'autoplay') {
+      const message = COPY.announce(target + 1, total);
+      setAnnouncement(message);
+      if (Platform.OS === 'ios') {
+        AccessibilityInfo.announceForAccessibility(message);
+      }
+    }
+  };
+
+  // Stable callbacks (the interval and FlatList's onViewableItemsChanged) read fresh state here.
+  const latest = React.useRef({ currentIndex, goTo, stepTarget });
+  latest.current = { currentIndex, goTo, stepTarget };
+
+  const trackRef = React.useRef<FlatList<CollectedSlide>>(null);
+  React.useEffect(() => {
+    if (itemWidth > 0) {
+      trackRef.current?.scrollToOffset({ offset: currentIndex * (itemWidth + slideGap), animated: !reducedMotion });
+    }
+  }, [currentIndex, itemWidth, slideGap, reducedMotion]);
+
+  // Autoplay: `playing` is the user's intent (the pause button stops it until play);
+  // touch and focus pause it only while they last.
+  const canRotate = autoplay && !reducedMotion;
+  const [playing, setPlaying] = React.useState(autoplay);
+  const [touching, setTouching] = React.useState(false);
+  const [focusCount, setFocusCount] = React.useState(0);
+  const rotating = canRotate && playing && !touching && focusCount === 0 && total > 1;
 
   React.useEffect(() => {
-    if (!playing) {
+    if (!rotating) {
       return undefined;
     }
     const id = setInterval(() => {
-      latest.current.goTo(latest.current.currentIndex + 1, 'autoplay');
+      const { currentIndex: from, goTo: go, stepTarget: step } = latest.current;
+      const next = step(from, 1);
+      if (next === null) {
+        // Without loop, autoplay stops at the last slide.
+        setPlaying(false);
+        return;
+      }
+      go(next, 'autoplay');
     }, effectiveInterval);
     return () => clearInterval(id);
-  }, [playing, effectiveInterval]);
+  }, [rotating, effectiveInterval]);
 
-  const pauseAutoplay = (): void => setPlaying(false);
+  const onControlFocus = (): void => setFocusCount((n) => n + 1);
+  const onControlBlur = (): void => setFocusCount((n) => Math.max(0, n - 1));
+
+  // Swipe: viewability only reports a change while the user is dragging the track.
+  const dragging = React.useRef(false);
+  const viewabilityConfig = React.useRef({ itemVisiblePercentThreshold: VISIBLE_THRESHOLD }).current;
+  const onViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: ListViewToken[] }): void => {
+    if (!dragging.current) {
+      return;
+    }
+    const first = viewableItems.find((entry) => entry.isViewable && entry.index != null);
+    if (first?.index != null) {
+      latest.current.goTo(first.index, 'swipe');
+    }
+  }).current;
 
   const handleViewportLayout = (event: LayoutChangeEvent): void => {
     setViewportWidth(event.nativeEvent.layout.width);
   };
 
-  const viewabilityConfig = React.useRef({ itemVisiblePercentThreshold: 60 }).current;
-  const onViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: ListViewToken[] }): void => {
-    const first = viewableItems.find((entry) => entry.isViewable);
-    if (!first || first.index === null || first.index === undefined || first.index === latest.current.currentIndex) {
-      return;
-    }
-    latest.current.goTo(first.index, 'swipe');
-  }).current;
+  const prevTarget = stepTarget(currentIndex, -1);
+  const nextTarget = stepTarget(currentIndex, 1);
 
   const handleRegionAccessibilityAction = (event: AccessibilityActionEvent): void => {
-    if (event.nativeEvent.actionName === 'increment') {
-      goTo(currentIndex + 1, 'next');
-    } else if (event.nativeEvent.actionName === 'decrement') {
-      goTo(currentIndex - 1, 'prev');
+    if (event.nativeEvent.actionName === 'increment' && nextTarget !== null) {
+      goTo(nextTarget, 'next');
+    } else if (event.nativeEvent.actionName === 'decrement' && prevTarget !== null) {
+      goTo(prevTarget, 'prev');
     }
   };
 
-  const prevDisabled = !loop && currentIndex <= 0;
-  const nextDisabled = !loop && currentIndex >= Math.max(0, slides.length - perViewClamped);
-
   const renderItem = ({ item, index }: ListRenderItemInfo<CollectedSlide>): React.JSX.Element => {
-    const distance = Math.min(Math.abs(index - currentIndex), slides.length - Math.abs(index - currentIndex));
-    const visible = distance < perViewClamped;
+    const visible = index >= currentIndex && index < currentIndex + pageSize;
     return (
       <View
         testID="Carousel.slide"
         accessible
-        accessibilityLabel={`${COPY.slideLabel(index + 1, slides.length)}, ${item.heading}`}
+        accessibilityLabel={`${COPY.slideLabel(index + 1, total)}, ${item.label}`}
         accessibilityElementsHidden={!visible}
         importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
-        style={{ width: itemWidth > 0 ? itemWidth : undefined }}
+        style={itemWidth > 0 ? { width: itemWidth } : undefined}
       >
         {item.content}
       </View>
     );
   };
 
-  const viewportStyle: ViewStyle = {
-    position: 'relative',
-    borderRadius: radius,
-    overflow: 'hidden',
-  };
-
-  const controlsOverlayStyle: ViewStyle = {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
+  const viewportStyle: ViewStyle = { position: 'relative', borderRadius: radius, overflow: 'hidden' };
+  const controlsStyle: ViewStyle = {
+    ...StyleSheet.absoluteFill,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: controlOffset,
     zIndex: 1,
   };
-
-  const arrowBackdropStyle: ViewStyle = {
-    borderRadius: t.radiusFull,
-    backgroundColor: controlBackground,
-    ...controlShadow,
-  };
-
-  const pickerRowStyle: ViewStyle = {
+  const controlSurfaceStyle: ViewStyle = { borderRadius: t.radiusFull, backgroundColor: t.colorOverlaySurface, ...controlShadow };
+  const pickerStyle: ViewStyle = {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
     gap: pickerGap,
-    marginTop: pickerOffset,
+    paddingTop: pickerOffset,
   };
-
-  const pickerStyleTokens: CarouselPickerStyleTokens = {
-    dotSize,
-    dotTarget,
-    dotColor,
-    dotActiveColor,
-    minTarget,
-    focusRingColor,
-    focusRingWidth,
-    fontFamily: t.fontFamilyBody,
-    fontSize: t.fontSizeSm,
-    fontWeight: t.fontWeightRegular,
-    fontWeightSelected: t.fontWeightSemibold,
-    tabPaddingInline: t.spaceSm,
-    tabColor: t.colorForegroundMuted,
-    tabSelectedColor: t.colorForegroundStrong,
-  };
-
-  const showPlayButton = autoplay && !reducedMotion;
+  const iconColor = t.colorActionSecondaryForeground;
 
   return (
     <View
+      ref={ref}
       testID="Carousel"
       accessibilityRole="adjustable"
       accessibilityLabel={label}
+      accessibilityValue={total > 0 ? { text: COPY.slideLabel(currentIndex + 1, total) } : undefined}
       accessibilityActions={REGION_ACTIONS}
       onAccessibilityAction={handleRegionAccessibilityAction}
-      onTouchStart={pauseAutoplay}
+      onTouchStart={() => setTouching(true)}
+      onTouchEnd={() => setTouching(false)}
+      onTouchCancel={() => setTouching(false)}
     >
-      {showPlayButton ? (
-        <View testID="Carousel.playButton" style={{ marginBottom: t.layoutGapTight, alignSelf: 'flex-start' }}>
-          <Button label={playing ? COPY.pause : COPY.play} variant="secondary" size="sm" onPress={() => setPlaying((prev) => !prev)} />
+      {canRotate ? (
+        <View testID="Carousel.playButton" style={{ alignSelf: 'flex-start', paddingBottom: t.layoutGapTight }}>
+          <Button
+            label={playing ? COPY.pause : COPY.play}
+            variant="secondary"
+            onPress={() => setPlaying((value) => !value)}
+            onFocus={onControlFocus}
+            onBlur={onControlBlur}
+          />
         </View>
       ) : null}
       <View testID="Carousel.viewport" onLayout={handleViewportLayout} style={viewportStyle}>
-        <View style={controlsOverlayStyle} pointerEvents="box-none">
-          <View testID="Carousel.prevButton" style={arrowBackdropStyle}>
-            <Button
-              label={COPY.previous}
-              variant="ghost"
-              iconOnly
-              disabled={prevDisabled}
-              leadingIcon={<Icon name="chevron-left" color={t.colorActionGhostForeground} />}
-              onPress={() => goTo(currentIndex - 1, 'prev')}
-            />
+        <View style={controlsStyle} pointerEvents="box-none">
+          <View testID="Carousel.controlSurface" style={controlSurfaceStyle}>
+            <View testID="Carousel.prevButton">
+              <Button
+                label={COPY.previous}
+                variant="secondary"
+                iconOnly
+                disabled={prevTarget === null}
+                leadingIcon={<Icon name="chevron-left" color={iconColor} />}
+                onPress={() => {
+                  if (prevTarget !== null) {
+                    goTo(prevTarget, 'prev');
+                  }
+                }}
+                onFocus={onControlFocus}
+                onBlur={onControlBlur}
+              />
+            </View>
           </View>
-          <View testID="Carousel.nextButton" style={arrowBackdropStyle}>
-            <Button
-              label={COPY.next}
-              variant="ghost"
-              iconOnly
-              disabled={nextDisabled}
-              leadingIcon={<Icon name="chevron-right" color={t.colorActionGhostForeground} />}
-              onPress={() => goTo(currentIndex + 1, 'next')}
-            />
+          <View testID="Carousel.controlSurface" style={controlSurfaceStyle}>
+            <View testID="Carousel.nextButton">
+              <Button
+                label={COPY.next}
+                variant="secondary"
+                iconOnly
+                disabled={nextTarget === null}
+                leadingIcon={<Icon name="chevron-right" color={iconColor} />}
+                onPress={() => {
+                  if (nextTarget !== null) {
+                    goTo(nextTarget, 'next');
+                  }
+                }}
+                onFocus={onControlFocus}
+                onBlur={onControlBlur}
+              />
+            </View>
           </View>
         </View>
         <FlatList
-          ref={flatListRef}
+          ref={trackRef}
           testID="Carousel.track"
           data={slides}
           keyExtractor={(item) => item.key}
           renderItem={renderItem}
+          extraData={`${currentIndex}:${pageSize}:${itemWidth}`}
           horizontal
-          pagingEnabled={snap && perViewClamped === 1}
-          snapToInterval={snap && perViewClamped > 1 ? itemWidth + slideGap : undefined}
+          pagingEnabled={snap && pageSize === 1}
+          snapToInterval={snap && pageSize > 1 && itemWidth > 0 ? itemWidth + slideGap : undefined}
           snapToAlignment="start"
           decelerationRate="fast"
           showsHorizontalScrollIndicator={false}
-          onScrollBeginDrag={pauseAutoplay}
+          onScrollBeginDrag={() => {
+            dragging.current = true;
+          }}
+          onMomentumScrollEnd={() => {
+            dragging.current = false;
+          }}
           viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
           ItemSeparatorComponent={() => <View style={{ width: slideGap }} />}
         />
       </View>
-      {picker !== 'none' ? (
-        <View testID="Carousel.picker" accessibilityRole={picker === 'tabs' ? 'tablist' : undefined} style={pickerRowStyle}>
+      {picker !== 'none' && total > 0 ? (
+        <View testID="Carousel.picker" accessibilityRole={picker === 'tabs' ? 'tablist' : undefined} style={pickerStyle}>
           {slides.map((slide, index) => (
             <CarouselPickerItem
               key={slide.key}
-              picker={picker}
-              heading={slide.heading}
-              index={index}
-              selected={index === currentIndex}
-              styleTokens={pickerStyleTokens}
+              kind={picker}
+              label={picker === 'tabs' ? slide.label : COPY.goTo(index + 1)}
+              selected={index >= currentIndex && index < currentIndex + pageSize}
+              dotSize={dotSize}
+              transition={reducedMotion ? 0 : transition}
               onSelect={() => goTo(index, 'picker')}
+              onFocus={onControlFocus}
+              onBlur={onControlBlur}
             />
           ))}
         </View>
       ) : null}
       <View
         testID="Carousel.liveRegion"
-        accessibilityLiveRegion="polite"
-        importantForAccessibility="yes"
-        style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden' }}
+        accessibilityLiveRegion={rotating ? 'none' : 'polite'}
+        style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0 }}
       >
         <RNText>{announcement}</RNText>
       </View>
@@ -439,78 +442,81 @@ export function Carousel({
   );
 }
 
-interface CarouselPickerStyleTokens {
-  dotSize: number;
-  dotTarget: number;
-  dotColor: string;
-  dotActiveColor: string;
-  minTarget: number;
-  focusRingColor: string;
-  focusRingWidth: number;
-  fontFamily: string;
-  fontSize: number;
-  fontWeight: number;
-  fontWeightSelected: number;
-  tabPaddingInline: number;
-  tabColor: string;
-  tabSelectedColor: string;
-}
-
 interface CarouselPickerItemProps {
-  picker: CarouselPicker;
-  heading: string;
-  index: number;
+  kind: 'dots' | 'tabs';
+  label: string;
   selected: boolean;
-  styleTokens: CarouselPickerStyleTokens;
+  dotSize: number;
+  transition: number;
   onSelect: () => void;
+  onFocus: () => void;
+  onBlur: () => void;
 }
 
-/** One dot or tab in the picker. Its own component so focus state does not re-render the whole row. */
-function CarouselPickerItem({ picker, heading, index, selected, styleTokens: s, onSelect }: CarouselPickerItemProps): React.JSX.Element {
+/** One dot or tab: Carousel's own Pressable, since no Button variant carries the dot and tab tokens. */
+function CarouselPickerItem({ kind, label, selected, dotSize, transition, onSelect, onFocus, onBlur }: CarouselPickerItemProps): React.JSX.Element {
+  const { tokens: t } = useTheme();
   const [focused, setFocused] = React.useState(false);
-  const isTabs = picker === 'tabs';
+  const isTabs = kind === 'tabs';
 
+  const progress = React.useRef(new Animated.Value(selected ? 1 : 0)).current;
+  const wasSelected = React.useRef(selected);
+  React.useEffect(() => {
+    if (wasSelected.current === selected) {
+      return undefined;
+    }
+    wasSelected.current = selected;
+    const animation = Animated.timing(progress, {
+      toValue: selected ? 1 : 0,
+      duration: transition,
+      easing: toEasing(t.motionEasingStandard),
+      useNativeDriver: false,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [selected, transition, progress, t.motionEasingStandard]);
+
+  const target = isTabs ? t.sizeTargetComfortable : t.sizeTargetMin;
   const hitStyle: ViewStyle = {
-    minWidth: isTabs ? s.minTarget : s.dotTarget,
-    minHeight: isTabs ? s.minTarget : s.dotTarget,
-    paddingHorizontal: isTabs ? s.tabPaddingInline : 0,
+    minWidth: target,
+    minHeight: target,
+    paddingHorizontal: isTabs ? t.spaceSm : 0,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: s.focusRingWidth,
-    borderColor: focused ? s.focusRingColor : 'transparent',
+    borderRadius: t.radiusMd,
+    borderWidth: t.borderWidthFocus,
+    borderColor: focused ? t.colorBorderFocus : 'transparent',
   };
-
-  const dotVisualStyle: ViewStyle = {
-    width: s.dotSize,
-    height: s.dotSize,
-    borderRadius: s.dotSize / 2, // literal-ok: halves a token-derived size into a radius
-    backgroundColor: selected ? s.dotActiveColor : s.dotColor,
-  };
-
-  const tabLabelStyle: TextStyle = {
-    fontFamily: s.fontFamily,
-    fontSize: s.fontSize,
-    fontWeight: toFontWeight(selected ? s.fontWeightSelected : s.fontWeight),
-    color: selected ? s.tabSelectedColor : s.tabColor,
+  const dotStyle: Animated.WithAnimatedValue<ViewStyle> = {
+    width: dotSize,
+    height: dotSize,
+    borderRadius: t.radiusFull,
+    backgroundColor: progress.interpolate({ inputRange: [0, 1], outputRange: [t.colorBorderStrong, t.colorControlSelectedBackground] }),
   };
 
   return (
     <Pressable
       testID="Carousel.pickerItem"
       accessibilityRole={isTabs ? 'tab' : 'button'}
-      accessibilityLabel={isTabs ? heading : COPY.goTo(index + 1)}
+      accessibilityLabel={label}
       accessibilityState={{ selected }}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+      onFocus={() => {
+        setFocused(true);
+        onFocus();
+      }}
+      onBlur={() => {
+        setFocused(false);
+        onBlur();
+      }}
       onPress={onSelect}
       style={hitStyle}
     >
       {isTabs ? (
-        <RNText numberOfLines={1} style={tabLabelStyle}>
-          {heading}
-        </RNText>
+        <Text size="sm" weight={selected ? 'semibold' : 'regular'} tone={selected ? 'strong' : 'muted'}>
+          {label}
+        </Text>
       ) : (
-        <View style={dotVisualStyle} />
+        <Animated.View style={dotStyle} accessibilityElementsHidden importantForAccessibility="no" />
       )}
     </Pressable>
   );

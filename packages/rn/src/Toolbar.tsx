@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
-import type { ViewStyle } from 'react-native';
+import type { ViewInstance, ViewStyle } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Divider } from './Divider';
+import type { DividerOrientation, DividerProps } from './Divider';
 import { useTheme } from './theme';
 
 export type ToolbarOrientation = 'horizontal' | 'vertical';
@@ -20,7 +21,6 @@ export type ToolbarOverridableBinding =
   | 'paddingInline'
   | 'paddingBlock'
   | 'itemGap'
-  | 'itemGapCompact'
   | 'groupGap'
   | 'separatorLength'
   | 'fadeWidth';
@@ -29,65 +29,110 @@ export interface ToolbarProps {
   /** What the toolbar controls ("Formatting", "Table actions"). Not visible; read by assistive technology. */
   label: string;
   /**
-   * Controls in order: `Button` (usually `ghost` or `secondary`, `iconOnly` for glyph
-   * tools), `SegmentedControl`, `Select`, `Switch`. Place a `Divider` between related
-   * clusters — Toolbar gives it extra space on both sides and constrains its length.
+   * Controls in order: Buttons (usually `ghost` or `secondary`, `iconOnly` for glyph tools),
+   * SegmentedControl, Select, Switch. On React Native, group related controls by placing a
+   * `Divider` between clusters; the Toolbar draws it at `separatorLength` between the groups.
    */
   children: React.ReactNode;
-  /** Vertical toolbars sit beside a canvas. Arrow-key axis swapping is a web keyboard model; see the component doc. */
+  /** Vertical toolbars sit beside a canvas; arrow keys swap axes (react-native-web only). */
   orientation?: ToolbarOrientation | undefined;
-  /** What happens when controls do not fit. See the component doc for the native fallback on `menu`. */
+  /**
+   * What happens when controls do not fit: `wrap` onto more rows, or `scroll` with the edges
+   * faded. `menu` renders as `scroll` on React Native (children are opaque and nothing measures
+   * them), with a development warning.
+   */
   overflow?: ToolbarOverflow | undefined;
-  /** Passed to the child controls that accept a `size` prop, unless a child already sets its own. */
+  /** Default for child controls that have a `size` prop and do not set their own (a child's own `size` wins). */
   size?: ToolbarSize | undefined;
   /** Gap between controls: tight or normal rhythm. */
   density?: ToolbarDensity | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<ToolbarOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root `View`, for measurement or accessibility focus. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
-function isDividerElement(node: React.ReactNode): node is React.ReactElement<any> {
+const ITEM_GAP = {
+  compact: 'layoutGapTight',
+  comfortable: 'layoutGapNormal',
+} as const;
+
+let warnedMenu = false;
+
+function isDividerElement(node: React.ReactNode): node is React.ReactElement<DividerProps> {
   return React.isValidElement(node) && node.type === Divider;
 }
 
+/** Direct children with fragments expanded, so a fragment of controls counts as its controls. */
+function flattenChildren(children: React.ReactNode, prefix = ''): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  React.Children.toArray(children).forEach((child) => {
+    if (React.isValidElement<{ children?: React.ReactNode }>(child) && child.type === React.Fragment) {
+      out.push(...flattenChildren(child.props.children, `${prefix}${String(child.key)}`));
+    } else if (React.isValidElement(child)) {
+      out.push(React.cloneElement(child, { key: `${prefix}${String(child.key)}` }));
+    } else {
+      out.push(child);
+    }
+  });
+  return out;
+}
+
+interface ToolbarSegment {
+  /** The Divider drawn before this group; absent on the first. */
+  divider: React.ReactElement<DividerProps> | undefined;
+  items: React.ReactNode[];
+}
+
+/** Splits the controls into groups at each Divider; a Divider with no controls on one side draws nothing. */
+function toSegments(nodes: React.ReactNode[]): ToolbarSegment[] {
+  const segments: ToolbarSegment[] = [];
+  let current: ToolbarSegment = { divider: undefined, items: [] };
+  for (const node of nodes) {
+    if (isDividerElement(node)) {
+      if (current.items.length > 0) {
+        segments.push(current);
+        current = { divider: node, items: [] };
+      } else if (segments.length > 0) {
+        current.divider = node;
+      }
+    } else {
+      current.items.push(node);
+    }
+  }
+  if (current.items.length > 0) segments.push(current);
+  return segments;
+}
+
 /**
- * Toolbar — keeps a set of related controls together so the keyboard treats them as
- * one stop: Tab reaches the toolbar, and, on a hardware keyboard on
- * react-native-web, arrows move within it.
+ * Toolbar — keeps a set of related controls together: one labelled `toolbar` container
+ * whose controls keep their own roles and names.
  *
- * When to use: Use a Toolbar for controls that act on the same thing and are used
- * together — text formatting, a table's row actions, a data page's filter–sort–
- * export row. Group related controls with a `Divider` between clusters. Do not use
- * it for page navigation or a form's submit row, and do not use it as a generic
- * horizontal Stack — it changes how Tab works on web.
+ * When to use: controls that act on the same thing and are used together (text formatting,
+ * a table's row actions, a filter–sort–export row). Not for page navigation, a form's
+ * submit row, a single control, or as a generic horizontal Stack.
  *
- * Renders a `View` with `accessibilityRole="toolbar"` and `accessibilityLabel`
- * carrying `background` (locked), `border`, `radius` and `paddingInline`/
- * `paddingBlock`. Children are wrapped one-by-one, each carrying the trailing
- * margin to its neighbor: `itemGap`/`itemGapCompact` (by `density`) normally,
- * `groupGap` on either side of a `Divider` child. A `Divider` child is additionally
- * wrapped in a `View` constrained to `separatorLength` on the cross axis, so
- * `Divider`'s own `alignSelf: 'stretch'` renders it shorter than the toolbar rather
- * than restyling it. Non-divider children receive `size` by `React.cloneElement`
- * when they do not already set their own — the same fallback pattern `Fieldset`
- * uses for `disabled` — so a caller's explicit choice is never overridden.
+ * Renders a `View` with `accessibilityRole="toolbar"` and `accessibilityLabel` carrying
+ * `background` (locked), `border`, `borderWidth`, `radius` and `paddingInline`/
+ * `paddingBlock`. Children are split into groups at each `Divider` child: each group is a
+ * `View` (`Toolbar.group`) spacing its controls by `itemGap` (by `density`), and the row
+ * spaces groups and separators by `groupGap`, which replaces `itemGap` either side of a
+ * separator. A Divider is laid in a `Toolbar.separator` box `separatorLength` long on the
+ * cross axis, which its own stretch fills — the Toolbar sizes the slot, never the Divider,
+ * and only supplies the Divider's `orientation` (across the toolbar axis) when it sets none.
+ * Direct children (fragments expanded) that are not Dividers receive `size` by cloning
+ * when they do not set their own.
  *
- * `overflow: wrap` renders the children in a plain `View` with `flexWrap: 'wrap'`.
- * `scroll` and `menu` render a `ScrollView` (horizontal unless `orientation` is
- * vertical) with a `Svg`/`LinearGradient` fade of `fadeWidth` at each edge, from
- * `background` to transparent — the RN analog of the web `mask-image` gradient.
+ * `overflow: wrap` wraps rows (columns when vertical). `scroll` — and `menu`, which has no
+ * native measurement, so it renders as `scroll` with a `__DEV__` warning — puts the groups
+ * in a `ScrollView` along the toolbar axis with a react-native-svg gradient `fadeWidth`
+ * long from `background` to transparent over each edge that has content scrolled past it.
  *
- * Acknowledged native limits: there is no `ResizeObserver` equivalent and children
- * are opaque `ReactNode`s with no `overflowLabel` metadata, so `overflow: menu`
- * cannot measure and move trailing controls into a "More" `Menu` the way the web
- * implementation does; it renders the same scrollable row as `overflow: scroll`
- * instead (dev warning in `__DEV__`). There is no generic key-event API on
- * `Pressable`, so the roving-tabindex/arrow-key/Home/End model is a web keyboard
- * concern only, reachable through react-native-web — on native every control is its
- * own accessibility stop, reachable by swipe, the same limit `Tabs` and `Menu`
- * document. `ToolbarGroup`, named in the guidance and the web/Lit platform notes,
- * has no schema of its own; grouping on this platform is expressed by placing a
- * `Divider` between clusters of children rather than a dedicated wrapper component.
+ * Acknowledged native limits: no roving focus or arrow/Home/End keys without a hardware
+ * keyboard — every control is its own accessibility stop, reachable by swipe; the arrow
+ * model applies on react-native-web only. `focusRing`/`focusRingWidth` are applied nowhere:
+ * each composed control draws its own ring. The `overflowButton`/`overflowMenu` parts have
+ * no element on this platform.
  */
 export function Toolbar({
   label,
@@ -97,98 +142,137 @@ export function Toolbar({
   size = 'md',
   density = 'comfortable',
   overrides,
+  ref,
 }: ToolbarProps): React.JSX.Element {
   const { tokens: t } = useTheme();
-  const isVertical = orientation === 'vertical';
+  const vertical = orientation === 'vertical';
+  // `menu` assumes a fixed cross axis and a measurer; neither exists here.
+  const mode: 'wrap' | 'scroll' = overflow === 'wrap' ? 'wrap' : 'scroll';
 
   React.useEffect(() => {
-    if (__DEV__ && overflow === 'menu') {
+    if (__DEV__ && overflow === 'menu' && !vertical && !warnedMenu) {
+      warnedMenu = true;
       console.warn(
-        'Toolbar: `overflow="menu"` has no React Native equivalent — there is no way to measure opaque children and move them into a "More" Menu, so it renders the same scrollable row as `overflow="scroll"`.',
+        'Toolbar: `overflow="menu"` renders as `overflow="scroll"` on React Native — children are opaque, so nothing can measure them and move trailing controls into a "More" Menu.',
       );
     }
-  }, [overflow]);
+  }, [overflow, vertical]);
 
-  const border = overrides?.border ? (resolveToken(t, overrides.border) as string) : t.colorBorder;
-  const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
-  const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
-  const paddingInline = overrides?.paddingInline ? (resolveToken(t, overrides.paddingInline) as number) : t.space2;
-  const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t.space1;
-  const itemGap = overrides?.itemGap ? (resolveToken(t, overrides.itemGap) as number) : t.layoutGapNormal;
-  const itemGapCompact = overrides?.itemGapCompact ? (resolveToken(t, overrides.itemGapCompact) as number) : t.layoutGapTight;
-  const groupGap = overrides?.groupGap ? (resolveToken(t, overrides.groupGap) as number) : t.layoutGapNormal;
-  const separatorLength = overrides?.separatorLength ? (resolveToken(t, overrides.separatorLength) as number) : t.space5;
-  const fadeWidth = overrides?.fadeWidth ? (resolveToken(t, overrides.fadeWidth) as number) : t.space6;
+  const styles = React.useMemo(() => {
+    const border = overrides?.border ? (resolveToken(t, overrides.border) as string) : t.colorBorder;
+    const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
+    const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
+    const paddingInline = overrides?.paddingInline ? (resolveToken(t, overrides.paddingInline) as number) : t.space2;
+    const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t.space1;
+    const itemGap = overrides?.itemGap ? (resolveToken(t, overrides.itemGap) as number) : t[ITEM_GAP[density]];
+    const groupGap = overrides?.groupGap ? (resolveToken(t, overrides.groupGap) as number) : t.layoutGapNormal;
+    const separatorLength = overrides?.separatorLength
+      ? (resolveToken(t, overrides.separatorLength) as number)
+      : t.space5;
+    const fadeWidth = overrides?.fadeWidth ? (resolveToken(t, overrides.fadeWidth) as number) : t.space6;
 
-  const background = t.colorBackgroundSubtle;
-  const gap = density === 'compact' ? itemGapCompact : itemGap;
+    const wrap = mode === 'wrap' ? 'wrap' : 'nowrap';
+    const root: ViewStyle = {
+      backgroundColor: t.colorBackgroundSubtle,
+      borderColor: border,
+      borderWidth,
+      borderRadius: radius,
+      paddingHorizontal: paddingInline,
+      paddingVertical: paddingBlock,
+    };
+    const row: ViewStyle = {
+      flexDirection: vertical ? 'column' : 'row',
+      alignItems: vertical ? 'stretch' : 'center',
+      flexWrap: wrap,
+      gap: groupGap,
+    };
+    const group: ViewStyle = {
+      flexDirection: vertical ? 'column' : 'row',
+      alignItems: vertical ? 'stretch' : 'center',
+      flexWrap: wrap,
+      flexShrink: mode === 'wrap' ? 1 : 0,
+      gap: itemGap,
+    };
+    // A row box lets a vertical Divider stretch to the height; a column box lets a horizontal one stretch to the width.
+    const separator: ViewStyle = vertical
+      ? { width: separatorLength, alignSelf: 'center' }
+      : { height: separatorLength, flexDirection: 'row', alignSelf: 'center' };
+    return { root, row, group, separator, fadeWidth };
+  }, [t, overrides, density, vertical, mode]);
 
-  const childArray = React.Children.toArray(children);
+  const segments = toSegments(flattenChildren(children));
+  const dividerOrientation: DividerOrientation = vertical ? 'horizontal' : 'vertical';
 
-  const items = childArray.map((child, index) => {
-    const key = React.isValidElement(child) && child.key !== null ? child.key : index;
-    const isLast = index === childArray.length - 1;
-    const currentIsDivider = isDividerElement(child);
-    const nextIsDivider = !isLast && isDividerElement(childArray[index + 1]);
-    const marginAfter = isLast ? 0 : currentIsDivider || nextIsDivider ? groupGap : gap;
-    const marginStyle: ViewStyle = isVertical ? { marginBottom: marginAfter } : { marginEnd: marginAfter };
-
-    let content: React.ReactNode = child;
-    if (currentIsDivider) {
-      const lengthStyle: ViewStyle = isVertical
-        ? { width: separatorLength, alignItems: 'center' }
-        : { height: separatorLength, justifyContent: 'center' };
-      content = <View style={lengthStyle}>{child}</View>;
-    } else if (React.isValidElement(child)) {
-      const element = child as React.ReactElement<{ size?: ToolbarSize | undefined }>;
-      if (element.props.size === undefined) {
-        content = React.cloneElement(element, { size });
-      }
+  const content: React.ReactNode[] = [];
+  segments.forEach((segment, index) => {
+    if (segment.divider) {
+      const divider =
+        segment.divider.props.orientation === undefined
+          ? React.cloneElement(segment.divider, { orientation: dividerOrientation })
+          : segment.divider;
+      content.push(
+        <View key={`separator-${index}`} style={styles.separator} testID="Toolbar.separator">
+          {divider}
+        </View>,
+      );
     }
-
-    return (
-      <View key={key} style={marginStyle}>
-        {content}
-      </View>
+    content.push(
+      <View key={`group-${index}`} style={styles.group} testID="Toolbar.group">
+        {segment.items.map((item) => {
+          if (!React.isValidElement<{ size?: unknown }>(item) || item.props.size !== undefined) return item;
+          return React.cloneElement(item, { size });
+        })}
+      </View>,
     );
   });
 
-  const contentContainerStyle: ViewStyle = {
-    flexDirection: isVertical ? 'column' : 'row',
-    alignItems: isVertical ? 'stretch' : 'center',
-    flexWrap: overflow === 'wrap' ? 'wrap' : 'nowrap',
+  // Which edges have content scrolled past them, so a fade only covers hidden content.
+  const [edges, setEdges] = React.useState({ start: false, end: false });
+  const metrics = React.useRef({ offset: 0, viewport: 0, content: 0 });
+  const updateEdges = (): void => {
+    const { offset, viewport, content: length } = metrics.current;
+    const start = offset > 1;
+    const end = offset + viewport < length - 1;
+    setEdges((prev) => (prev.start === start && prev.end === end ? prev : { start, end }));
   };
-
-  const outerStyle: ViewStyle = {
-    backgroundColor: background,
-    borderWidth,
-    borderColor: border,
-    borderRadius: radius,
-    paddingHorizontal: paddingInline,
-    paddingVertical: paddingBlock,
-  };
-
-  const body =
-    overflow === 'wrap' ? (
-      <View style={contentContainerStyle}>{items}</View>
-    ) : (
-      <View>
-        <ScrollView
-          horizontal={!isVertical}
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={contentContainerStyle}
-        >
-          {items}
-        </ScrollView>
-        <ToolbarFade edge="start" vertical={isVertical} width={fadeWidth} color={background} />
-        <ToolbarFade edge="end" vertical={isVertical} width={fadeWidth} color={background} />
-      </View>
-    );
 
   return (
-    <View testID="Toolbar" accessibilityRole="toolbar" accessibilityLabel={label} style={outerStyle}>
-      {body}
+    <View ref={ref} testID="Toolbar" accessibilityRole="toolbar" accessibilityLabel={label} style={styles.root}>
+      {mode === 'wrap' ? (
+        <View style={styles.row}>{content}</View>
+      ) : (
+        <View>
+          <ScrollView
+            horizontal={!vertical}
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.row}
+            scrollEventThrottle={16} // literal-ok: one frame between fade updates
+            onLayout={(event) => {
+              const { width, height } = event.nativeEvent.layout;
+              metrics.current.viewport = vertical ? height : width;
+              updateEdges();
+            }}
+            onContentSizeChange={(width, height) => {
+              metrics.current.content = vertical ? height : width;
+              updateEdges();
+            }}
+            onScroll={(event) => {
+              const { contentOffset } = event.nativeEvent;
+              metrics.current.offset = vertical ? contentOffset.y : contentOffset.x;
+              updateEdges();
+            }}
+          >
+            {content}
+          </ScrollView>
+          {edges.start ? (
+            <ToolbarFade edge="start" vertical={vertical} length={styles.fadeWidth} color={t.colorBackgroundSubtle} />
+          ) : null}
+          {edges.end ? (
+            <ToolbarFade edge="end" vertical={vertical} length={styles.fadeWidth} color={t.colorBackgroundSubtle} />
+          ) : null}
+        </View>
+      )}
     </View>
   );
 }
@@ -196,32 +280,31 @@ export function Toolbar({
 interface ToolbarFadeProps {
   edge: 'start' | 'end';
   vertical: boolean;
-  width: number;
+  length: number;
   color: string;
 }
 
-/** One edge fade over the scrollable row/column, from `background` to transparent. */
-function ToolbarFade({ edge, vertical, width, color }: ToolbarFadeProps): React.JSX.Element {
-  const gradientId = React.useId();
-
-  const positionStyle: ViewStyle = vertical
-    ? { position: 'absolute', left: 0, right: 0, height: width, [edge === 'start' ? 'top' : 'bottom']: 0 }
-    : { position: 'absolute', top: 0, bottom: 0, width, [edge === 'start' ? 'left' : 'right']: 0 };
-
-  // Opaque at the outer edge, fading to transparent moving into the content.
-  const [x1, y1, x2, y2] = vertical
-    ? edge === 'start'
-      ? (['0%', '0%', '0%', '100%'] as const)
-      : (['0%', '100%', '0%', '0%'] as const)
-    : edge === 'start'
-      ? (['0%', '0%', '100%', '0%'] as const)
-      : (['100%', '0%', '0%', '0%'] as const);
+/** One edge fade over the scrolling row, opaque `background` at the edge to transparent inward. */
+function ToolbarFade({ edge, vertical, length, color }: ToolbarFadeProps): React.JSX.Element {
+  // useId's colons are not valid in an SVG `url(#…)` reference on react-native-web.
+  const gradientId = `toolbar-fade-${React.useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const position: ViewStyle = vertical
+    ? { position: 'absolute', left: 0, right: 0, height: length, ...(edge === 'start' ? { top: 0 } : { bottom: 0 }) }
+    : { position: 'absolute', top: 0, bottom: 0, width: length, ...(edge === 'start' ? { left: 0 } : { right: 0 }) };
+  const from = edge === 'start' ? '0%' : '100%';
+  const to = edge === 'start' ? '100%' : '0%';
 
   return (
-    <View style={positionStyle} pointerEvents="none" testID={`Toolbar.fade-${edge}`}>
+    <View style={position} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no">
       <Svg width="100%" height="100%">
         <Defs>
-          <LinearGradient id={gradientId} x1={x1} y1={y1} x2={x2} y2={y2}>
+          <LinearGradient
+            id={gradientId}
+            x1={vertical ? '0%' : from}
+            y1={vertical ? from : '0%'}
+            x2={vertical ? '0%' : to}
+            y2={vertical ? to : '0%'}
+          >
             <Stop offset="0" stopColor={color} stopOpacity={1} />
             <Stop offset="1" stopColor={color} stopOpacity={0} />
           </LinearGradient>

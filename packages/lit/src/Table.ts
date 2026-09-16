@@ -1,7 +1,8 @@
 import { LitElement, css, html, nothing, unsafeCSS, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
+import { live } from 'lit/directives/live.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Heading.js';
 import './Button.js';
@@ -9,9 +10,8 @@ import './Checkbox.js';
 import './Icon.js';
 import './Text.js';
 import type { CheckboxChangeDetail } from './Checkbox.js';
-import type { HeadingOverridableBinding } from './Heading.js';
 
-/** A single record. `id` must be stable across renders; it is what selection and keys use. */
+/** A single record. `id` must be stable; it is what selection and keys use. */
 export interface TableRow {
   id: string;
   [key: string]: unknown;
@@ -21,7 +21,7 @@ export type TableColumnAlign = 'start' | 'end' | 'center';
 export type TableColumnWidth = 'auto' | 'min' | 'fill';
 export type TableColumnHideBelow = 'prose' | 'content';
 
-/** A column definition. Exactly one column in `columns` should set `isRowHeader`. */
+/** A column definition, in display order. Exactly one column may set `isRowHeader`. */
 export interface TableColumn {
   key: string;
   header: string;
@@ -31,8 +31,7 @@ export interface TableColumn {
   width?: TableColumnWidth | undefined;
   isRowHeader?: boolean | undefined;
   hideBelow?: TableColumnHideBelow | undefined;
-  /** Formats the cell. Lit templates (never raw HTML) — e.g. `<ds-text tone="muted">` for a secondary value
-      (`cellMutedColor`). Omitted on the row-header column enables the built-in row Button that fires `row-press`. */
+  /** Formats the cell as a lit template (a `ds-text`, `ds-link`, `ds-meter` or `ds-button`), never raw HTML. */
   render?: ((row: TableRow) => unknown) | undefined;
 }
 
@@ -49,27 +48,26 @@ export type TableResponsive = 'stack' | 'scroll';
 export type TableMaxHeight = 'none' | 'viewport';
 export type TableDensity = 'compact' | 'comfortable';
 
-/** Detail carried by the `sort-change` CustomEvent. */
+/** Detail of the `sort-change` event. */
 export interface TableSortChangeDetail {
   column: string;
   direction: TableSortDirection;
 }
 
-/** Detail carried by the `selection-change` CustomEvent. */
+/** Detail of the `selection-change` event. */
 export interface TableSelectionChangeDetail {
   selected: string[];
 }
 
-/** Detail carried by the `row-press` CustomEvent. */
+/** Detail of the `row-press` event. */
 export interface TableRowPressDetail {
   id: string;
 }
 
-/* copy.* — used verbatim */
+/* copy.* — verbatim */
 const COPY_SORT_ASCENDING = (column: string): string => `Sort by ${column}, ascending`;
 const COPY_SORT_DESCENDING = (column: string): string => `Sort by ${column}, descending`;
-const COPY_SORTED_ANNOUNCEMENT = (column: string, direction: TableSortDirection): string =>
-  `Sorted by ${column}, ${direction}`;
+const COPY_SORTED_ANNOUNCEMENT = (column: string, direction: string): string => `Sorted by ${column}, ${direction}`;
 const COPY_SELECT_ALL = 'Select all rows';
 const COPY_SELECT_ROW = (rowName: string): string => `Select ${rowName}`;
 const COPY_SELECTED_COUNT = (count: number, total: number): string => `${count} of ${total} selected`;
@@ -77,18 +75,18 @@ const COPY_ACTIONS = 'Actions';
 const COPY_EMPTY = 'Nothing to show.';
 const COPY_LOADING = 'Loading';
 const COPY_SCROLL_HINT = 'Scroll sideways to see more columns';
-const COPY_ROW_COUNT = (count: number): string => `${count} rows`;
+const COPY_ROW_COUNT: Record<'one' | 'other', (count: number) => string> = {
+  one: (count) => `${count} row`,
+  other: (count) => `${count} rows`,
+};
 
-/** layout.maxWidth.prose / layout.maxWidth.content: `@container` conditions cannot read custom properties, so the
-    built breakpoints are duplicated here as literals. literal-ok: breakpoint from layout.maxWidth.* */
-const PROSE_BREAKPOINT_PX = 572;
-const CONTENT_BREAKPOINT_PX = 960;
+/** layout.maxWidth.prose / layout.maxWidth.content from the built token JSON: `@container` conditions cannot read
+    custom properties. literal-ok: breakpoint from layout.maxWidth.* */
+const PROSE_BREAKPOINT = 572;
+const CONTENT_BREAKPOINT = 960;
 
-/** Horizontal distance covered by one ArrowLeft/ArrowRight press in the scroll region. Not specified by the doc. */
-const SCROLL_STEP_PX = 40;
-
-/** Negates a boolean attribute: `no-sticky-header` present means `stickyHeader` is `false`. */
-const NEGATED_BOOLEAN_CONVERTER = {
+/** `stickyHeader` defaults to true, so it is exposed as the negated `no-sticky-header` attribute. */
+const NEGATED_BOOLEAN = {
   fromAttribute(value: string | null): boolean {
     return value === null;
   },
@@ -97,9 +95,8 @@ const NEGATED_BOOLEAN_CONVERTER = {
   },
 };
 
-/** Overridable style hooks; see the `overrides` property. `surface`, `headerSurface`, `headerColor`, `rowStripe`,
-    `rowSelected`, `rowSelectedBorder`, `cellColor`, `cellMutedColor`, `stackedLabelColor`, `minTarget`, `focusRing`
-    and `focusRingWidth` are locked and excluded. */
+/** Overridable bindings; the locked ones (surface, header surface/color, stripe, selection, cell colors, stacked
+    label color, target size, focus ring) are excluded. */
 export type TableOverridableBinding =
   | 'headerWeight'
   | 'headerSize'
@@ -109,9 +106,7 @@ export type TableOverridableBinding =
   | 'rowBorder'
   | 'rowBorderWidth'
   | 'rowHover'
-  | 'rowSelectedBorderWidth'
   | 'cellPaddingInline'
-  | 'cellPaddingInlineCompact'
   | 'cellPaddingBlock'
   | 'cellGap'
   | 'captionSize'
@@ -139,9 +134,7 @@ const HOOKS: Record<TableOverridableBinding, string> = {
   rowBorder: '--ds-table-row-border',
   rowBorderWidth: '--ds-table-row-border-width',
   rowHover: '--ds-table-row-hover',
-  rowSelectedBorderWidth: '--ds-table-row-selected-border-width',
   cellPaddingInline: '--ds-table-cell-padding-inline',
-  cellPaddingInlineCompact: '--ds-table-cell-padding-inline-compact',
   cellPaddingBlock: '--ds-table-cell-padding-block',
   cellGap: '--ds-table-cell-gap',
   captionSize: '--ds-table-caption-size',
@@ -161,60 +154,41 @@ const HOOKS: Record<TableOverridableBinding, string> = {
   transition: '--ds-table-transition',
 };
 
+function textOf(value: unknown): string {
+  return value === undefined || value === null ? '' : String(value);
+}
+
+/** Uncontrolled sort: `localeCompare` (numeric) for strings, subtraction for numbers. */
+function compareValues(left: unknown, right: unknown): number {
+  if (typeof left === 'number' && typeof right === 'number') {
+    return left - right;
+  }
+  return textOf(left).localeCompare(textOf(right), undefined, { numeric: true });
+}
+
 /**
  * `<ds-table>` — Table (category: data, APG pattern: table).
  *
- * `<ds-table caption="Open invoices" .columns=${columns} .data=${rows}>` builds
- * a native `<table>` inside its shadow root from the `columns`/`data`
- * properties — rows are never slotted, since crossing the shadow boundary
- * would break table semantics. Every role is stated explicitly
- * (`role="table"`, `"rowgroup"`, `"row"`, `"columnheader"`, `"rowheader"`,
- * `"cell"`) because CSS that changes `display` — which both responsive modes
- * do — strips the implicit native table roles. Sorting and selection can be
- * controlled (`sort`/`selected`) or uncontrolled (`defaultSort`/`defaultSelected`,
- * with the table sorting `data` itself); either way the table only ever
- * fires `sort-change`/`selection-change`, composed and bubbling.
+ * `<ds-table caption="Open invoices" .columns=${columns} .data=${rows}>` builds a native `<table>` inside its
+ * shadow root from the properties; rows are never slotted. Every table role is stated explicitly, because both
+ * responsive layouts change `display` and browsers then drop the implicit roles. The caption is a composed
+ * `ds-heading` above the table that names it through `aria-labelledby`.
  *
- * ## When to use
+ * Sort and selection are controlled (`sort`, `selected`) or uncontrolled (`defaultSort`, `defaultSelected`); the
+ * table fires `sort-change` and `selection-change` in both modes. Rows become interactive (the row header turns
+ * into a Button) only while a `row-press` listener is attached to the element.
  *
- * Use a Table for a list of records with three or more comparable fields.
- * Use `responsive: "stack"` (the default) when each row is a thing a person
- * reads, and `responsive: "scroll"` when the columns themselves are what
- * matters. Add `sortable` to columns people compare by; `selectable: "multiple"`
- * when bulk actions exist. Put the row's identity in the `isRowHeader` column.
- *
- * @fires sort-change - Fired when a sortable header is activated, with `{ column, direction }`.
- * @fires selection-change - Fired with `{ selected }`, the new array of selected row ids.
- * @fires row-press - Fired when a row is activated (its `isRowHeader` column has no `render`), with `{ id }`.
- * @csspart container - The wrapper around the table (anatomy: container).
- * @csspart scroll-region - The focusable, horizontally-scrolling region (`responsive: "scroll"` only; anatomy: scrollRegion).
- * @csspart table - The native `<table>` (anatomy: table).
- * @csspart caption - The `<caption>` (anatomy: caption).
- * @csspart header - The `<thead>` (anatomy: header).
- * @csspart header-row - The header `<tr>` (anatomy: headerRow).
- * @csspart column-header - Each `<th>` in the header row (anatomy: columnHeader).
- * @csspart sort-button - The composed `<ds-button>` inside a sortable header (anatomy: sortButton).
- * @csspart select-all-cell - The header's select-all `<th>` (anatomy: selectAllCell).
- * @csspart body - The `<tbody>` (anatomy: body).
- * @csspart row - Each body `<tr>` (anatomy: row).
- * @csspart row-header - The row's `<th scope="row">` (anatomy: rowHeader).
- * @csspart select-cell - A row's selection `<td>` (anatomy: selectCell).
- * @csspart cell - A body `<td>` (anatomy: cell).
- * @csspart empty-state - The composed `<ds-text>` shown when `data` is empty (anatomy: emptyState).
- * @csspart footer - The slot below the table (anatomy: footer).
- * @slot footer - Content below the table (pagination, a summary row). No styling contract is defined for it in the schema.
+ * @fires sort-change - A sortable header was activated: `{ column, direction }`.
+ * @fires selection-change - The selection changed: `{ selected }`.
+ * @fires row-press - A row was activated: `{ id }`.
+ * @slot footer - Content below the table: a row count, pagination, a total.
  */
 @customElement('ds-table')
 export class DsTable extends LitElement {
+  static override shadowRootOptions: ShadowRootInit = { ...LitElement.shadowRootOptions, delegatesFocus: true };
+
   static override styles: CSSResult = css`
     :host {
-      display: block;
-      container-type: inline-size;
-      font-family: var(--ds-table-font-family);
-      font-size: var(--ds-table-font-size);
-      line-height: var(--ds-table-line-height);
-      /* cellColor: color.foreground, locked */
-      color: var(--color-foreground);
       --ds-table-header-weight: var(--font-weight-semibold);
       --ds-table-header-size: var(--font-size-sm);
       --ds-table-header-border: var(--color-border-strong);
@@ -223,9 +197,7 @@ export class DsTable extends LitElement {
       --ds-table-row-border: var(--color-border);
       --ds-table-row-border-width: var(--border-width-thin);
       --ds-table-row-hover: var(--color-action-ghost-background-hover);
-      --ds-table-row-selected-border-width: var(--border-width-focus);
       --ds-table-cell-padding-inline: var(--layout-inset-md);
-      --ds-table-cell-padding-inline-compact: var(--layout-inset-sm);
       --ds-table-cell-padding-block: var(--space-sm);
       --ds-table-cell-gap: var(--layout-gap-tight);
       --ds-table-caption-size: var(--font-size-md);
@@ -243,6 +215,19 @@ export class DsTable extends LitElement {
       --ds-table-line-height: var(--font-line-height-normal);
       --ds-table-numeric-font: var(--font-family-mono);
       --ds-table-transition: var(--motion-duration-fast);
+
+      display: block;
+      container-type: inline-size;
+      font-family: var(--ds-table-font-family);
+      font-size: var(--ds-table-font-size);
+      line-height: var(--ds-table-line-height);
+      /* cellColor: color.foreground (locked) */
+      color: var(--color-foreground);
+    }
+
+    /* cellPaddingInline by density */
+    :host([density='compact']) {
+      --ds-table-cell-padding-inline: var(--layout-inset-sm);
     }
 
     :host([hidden]) {
@@ -262,30 +247,34 @@ export class DsTable extends LitElement {
       border: 0;
     }
 
-    .wrapper {
+    /* The composed Heading's documented hooks, set from the caption bindings. */
+    [data-part='caption'] ds-heading {
+      --ds-heading-font-size: var(--ds-table-caption-size);
+      --ds-heading-font-weight: var(--ds-table-caption-weight);
+      --ds-heading-margin-block-end: var(--ds-table-caption-gap);
+    }
+
+    .frame {
       position: relative;
     }
 
-    .sentinel {
-      block-size: 1px; /* literal-ok: IntersectionObserver measurement sentinel, not a rendered size */
-    }
-
-    :host([max-height='viewport']) .wrapper {
+    :host([max-height='viewport']) .frame {
       overflow-y: auto;
-      /* the section rhythm on both ends, not specified further by the doc */
-      max-block-size: calc(100vh - var(--layout-gap-section) * 2);
+      /* the viewport height minus two layout.gap.section */
+      max-block-size: calc(100vh - 2 * var(--layout-gap-section));
     }
 
-    .scroll-region {
+    .sentinel {
+      block-size: 0;
+    }
+
+    [data-part='scrollRegion'] {
       overflow-x: auto;
-      scrollbar-width: none;
-      /* mask-image alpha channel: opaque/transparent stops, not a color. literal-ok: mask alpha marker, not a color */
-      mask-image: linear-gradient(to right, transparent, black var(--ds-table-scroll-fade), black calc(100% - var(--ds-table-scroll-fade)), transparent); /* literal-ok: mask alpha marker, not a color */
+      mask-image: linear-gradient(to right, transparent, black var(--ds-table-scroll-fade), black calc(100% - var(--ds-table-scroll-fade)), transparent); /* literal-ok: mask alpha stops, not a rendered color */
     }
-    .scroll-region::-webkit-scrollbar {
-      display: none;
-    }
-    .scroll-region:focus-visible {
+
+    /* focusRing / focusRingWidth (locked) */
+    [data-part='scrollRegion']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: calc(-1 * var(--border-width-focus));
     }
@@ -293,13 +282,8 @@ export class DsTable extends LitElement {
     table {
       inline-size: 100%;
       border-collapse: collapse;
-      /* surface: color.background, locked */
+      /* surface: color.background (locked) */
       background: var(--color-background);
-    }
-
-    caption {
-      padding-block-end: var(--ds-table-caption-gap);
-      text-align: start;
     }
 
     th,
@@ -307,18 +291,15 @@ export class DsTable extends LitElement {
       box-sizing: border-box;
       padding-inline: var(--ds-table-cell-padding-inline);
       padding-block: var(--ds-table-cell-padding-block);
-      border-block-end: var(--ds-table-row-border-width) solid var(--ds-table-row-border);
       text-align: start;
       vertical-align: middle;
+      font-weight: inherit;
     }
 
-    :host([density='compact']) th,
-    :host([density='compact']) td {
-      padding-inline: var(--ds-table-cell-padding-inline-compact);
-    }
-
-    thead th {
-      /* headerSurface / headerColor: locked */
+    [data-part='columnHeader'],
+    [data-part='selectAllCell'],
+    .header-select {
+      /* headerSurface / headerColor (locked) */
       background: var(--color-background-subtle);
       color: var(--color-foreground);
       font-weight: var(--ds-table-header-weight);
@@ -326,65 +307,69 @@ export class DsTable extends LitElement {
       border-block-end: var(--ds-table-header-border-width) solid var(--ds-table-header-border);
     }
 
-    :host(:not([no-sticky-header])) thead th {
+    :host(:not([no-sticky-header])) thead th,
+    :host(:not([no-sticky-header])) thead td {
       position: sticky;
       inset-block-start: 0;
-      z-index: 1;
+      z-index: 2;
     }
 
-    :host(:not([no-sticky-header])[data-header-scrolled]) thead th {
+    :host(:not([no-sticky-header])[data-header-scrolled]) thead th,
+    :host(:not([no-sticky-header])[data-header-scrolled]) thead td {
       box-shadow: var(--ds-table-header-shadow);
     }
 
-    :host([responsive='scroll']) tbody th[scope='row'] {
-      position: sticky;
-      inset-inline-start: 0;
+    [data-part='row'] {
       background: var(--color-background);
-      z-index: 1;
     }
 
-    :host([responsive='scroll'][data-column-scrolled]) tbody th[scope='row'] {
-      box-shadow: var(--ds-table-sticky-column-shadow);
+    [data-part='row'] > th,
+    [data-part='row'] > td {
+      color: var(--color-foreground);
+      border-block-end: var(--ds-table-row-border-width) solid var(--ds-table-row-border);
     }
 
-    :host([striped]) tbody tr:nth-child(even) td,
-    :host([striped]) tbody tr:nth-child(even) th[scope='row'] {
-      /* rowStripe: color.background.subtle, locked */
+    /* rowStripe (locked) */
+    :host([striped]) [data-part='row']:nth-child(even) {
       background: var(--color-background-subtle);
     }
 
-    tbody tr[aria-selected='true'] td,
-    tbody tr[aria-selected='true'] th[scope='row'] {
-      /* rowSelected: color.background.subtle, locked, same tint as a stripe */
+    /* rowSelected (locked): the same tint as a stripe */
+    [data-part='row'][aria-selected='true'] {
       background: var(--color-background-subtle);
     }
 
-    tbody tr[aria-selected='true'] th[scope='row'] {
-      /* rowSelectedBorder: color.control.selectedBackground, locked; a start-edge bar, not color-fill alone */
-      box-shadow: inset var(--ds-table-row-selected-border-width) 0 0 0 var(--color-control-selected-background);
+    /* rowSelectedBorder / rowSelectedBorderWidth (locked): a start-edge bar, so selection is not fill alone */
+    [data-part='row'][aria-selected='true'] > :first-child {
+      box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+    }
+    [data-part='row'][aria-selected='true'] > :first-child:dir(rtl) {
+      box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
     }
 
-    tbody tr.interactive {
+    /* rowHover: interactive rows only */
+    [data-part='row'].interactive {
       cursor: pointer;
       transition: background-color var(--ds-table-transition) var(--motion-easing-standard);
     }
-    tbody tr.interactive:hover td,
-    tbody tr.interactive:hover th[scope='row'] {
+    [data-part='row'].interactive:hover {
       background: var(--ds-table-row-hover);
     }
     @media (prefers-reduced-motion: reduce) {
-      tbody tr.interactive {
+      [data-part='row'].interactive {
         transition: none;
       }
     }
 
-    .row-header-button {
-      display: inline;
+    [data-part='sortButton'] {
+      --ds-button-icon-gap: var(--ds-table-cell-gap);
     }
 
-    .sort-button {
-      --ds-button-padding-inline: 0;
-      --ds-button-padding-block: 0;
+    [data-part='selectCell'],
+    [data-part='selectAllCell'],
+    .header-select {
+      /* minTarget (locked) */
+      inline-size: var(--size-target-min);
     }
 
     .align-end {
@@ -393,38 +378,55 @@ export class DsTable extends LitElement {
     .align-center {
       text-align: center;
     }
-    .numeric {
+    td.align-end {
+      /* numericFont: tabular figures */
       font-family: var(--ds-table-numeric-font);
       font-variant-numeric: tabular-nums;
     }
+    .width-min {
+      inline-size: 1%;
+      white-space: nowrap;
+    }
+    .width-fill {
+      inline-size: 100%;
+    }
 
-    .empty-cell {
-      padding-block: var(--ds-table-stacked-row-inset);
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: var(--ds-table-cell-gap);
+    }
+
+    .empty {
       text-align: center;
     }
 
-    /* focusRing / focusRingWidth: locked */
-    th :focus-visible,
-    td :focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+    :host([responsive='scroll']) [data-part='rowHeader'] {
+      position: sticky;
+      inset-inline-start: 0;
+      z-index: 1;
+      background: inherit;
+    }
+    :host([responsive='scroll'][data-column-scrolled]) [data-part='rowHeader'] {
+      box-shadow: var(--ds-table-sticky-column-shadow);
     }
 
-    /* stackedLabel is drawn from a ::before, with no separate part hook */
-    @container (max-width: ${unsafeCSS(CONTENT_BREAKPOINT_PX)}px) {
-      th.hide-below-content,
-      td.hide-below-content {
+    .footer {
+      font: inherit;
+    }
+
+    @container (max-width: ${unsafeCSS(CONTENT_BREAKPOINT)}px) {
+      .hide-below-content {
         display: none;
       }
     }
 
-    @container (max-width: ${unsafeCSS(PROSE_BREAKPOINT_PX)}px) {
-      th.hide-below-prose,
-      td.hide-below-prose {
+    @container (max-width: ${unsafeCSS(PROSE_BREAKPOINT)}px) {
+      .hide-below-prose {
         display: none;
       }
 
-      /* visually hidden (clip pattern): thead stays in the tree, off-screen, so its columnheaders are still reachable */
+      /* visually hidden, not display none, so the columnheaders stay in the tree */
       :host([responsive='stack']) thead {
         position: absolute;
         inline-size: 1px;
@@ -438,7 +440,12 @@ export class DsTable extends LitElement {
         border: 0;
       }
 
-      :host([responsive='stack']) tbody tr {
+      :host([responsive='stack']) tbody {
+        display: grid;
+        gap: var(--ds-table-stacked-row-gap);
+      }
+
+      :host([responsive='stack']) [data-part='row'] {
         display: grid;
         grid-template-columns: 1fr;
         gap: var(--ds-table-stacked-row-gap);
@@ -447,74 +454,72 @@ export class DsTable extends LitElement {
         border-radius: var(--ds-table-stacked-row-radius);
       }
 
-      :host([responsive='stack']) tbody th,
-      :host([responsive='stack']) tbody td {
+      :host([responsive='stack']) [data-part='row'] > th,
+      :host([responsive='stack']) [data-part='row'] > td {
         display: block;
         padding: 0;
         border: 0;
-        /* box-shadow is left alone: it is how the selected-row start-edge bar is drawn (see rowSelectedBorder) */
+        box-shadow: none;
       }
 
-      :host([responsive='stack']) tbody td[data-label]::before {
+      :host([responsive='stack']) [data-part='row'][aria-selected='true'] {
+        box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+      }
+
+      /* stackedLabel, drawn as a pseudo-element: aria-hidden by nature */
+      :host([responsive='stack']) td[data-label]::before {
         content: attr(data-label);
         display: block;
-        /* stackedLabelColor: color.foreground.muted, locked */
+        /* stackedLabelColor (locked) */
         color: var(--color-foreground-muted);
         font-size: var(--ds-table-stacked-label-size);
         font-weight: var(--ds-table-stacked-label-weight);
       }
     }
-
-    .footer {
-      padding-block-start: var(--ds-table-cell-gap);
-    }
-    .footer:empty {
-      display: none;
-    }
   `;
 
-  /** What the table lists ("Open invoices"). Rendered as the `<caption>` and the accessible name. */
-  @property() accessor caption!: string;
+  /** What the table lists ("Open invoices"): the caption and the accessible name. */
+  @property() accessor caption = '';
 
-  /** Heading level of the caption in the page outline; its size (`captionSize`) is fixed regardless. */
+  /** Heading level of the caption in the page outline; its size is `captionSize` regardless. */
   @property({ attribute: 'caption-level' }) accessor captionLevel: TableCaptionLevel = '2';
 
-  /** Visually hides the caption; it remains the accessible name. */
+  /** Visually hide the caption; it remains the accessible name. */
   @property({ type: Boolean, reflect: true, attribute: 'hide-caption' }) accessor hideCaption = false;
 
-  /** Column definitions in display order. A property, not an attribute. */
+  /** Column definitions in display order. */
   @property({ attribute: false }) accessor columns: TableColumn[] = [];
 
-  /** The rows. `id` must be stable. A property, not an attribute. */
+  /** The rows. `id` must be stable. */
   @property({ attribute: false }) accessor data: TableRow[] = [];
 
-  /** Controlled sort state. When set, the table shows it but never sorts `data` itself. */
+  /** Controlled sort state. The table shows it; the caller sorts `data`. */
   @property({ attribute: false }) accessor sort: TableSort | undefined;
 
   /** Initial sort for uncontrolled use; the table then sorts `data` itself. */
   @property({ attribute: false }) accessor defaultSort: TableSort | undefined;
 
-  /** Adds a selection column: a Checkbox per row (radio-like for `single`) and, for `multiple`, a select-all in the header. */
-  @property({ reflect: true }) accessor selectable: TableSelectable = 'none';
+  /** Adds a first column of Checkboxes, and a select-all in the header for `multiple`. */
+  @property({ type: String, reflect: true }) accessor selectable: TableSelectable = 'none';
 
   /** Controlled selected row ids. */
   @property({ attribute: false }) accessor selected: string[] | undefined;
 
-  /** Initially selected ids, for uncontrolled use. */
-  @property({ attribute: false }) accessor defaultSelected: string[] = [];
+  /** Initially selected ids. */
+  @property({ attribute: false }) accessor defaultSelected: string[] | undefined;
 
-  /** `stack` turns each row into a labelled block below the prose width; `scroll` keeps columns and scrolls horizontally. */
-  @property({ reflect: true }) accessor responsive: TableResponsive = 'stack';
+  /** Below `layout.maxWidth.prose`: `stack` turns rows into labelled blocks; `scroll` scrolls the columns. */
+  @property({ type: String, reflect: true }) accessor responsive: TableResponsive = 'stack';
 
-  /** The header row stays visible while the body scrolls. Exposed as the negated `no-sticky-header` attribute. */
-  @property({ attribute: 'no-sticky-header', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  /** The header row stays visible while the body scrolls. Attribute: `no-sticky-header`. */
+  @property({ attribute: 'no-sticky-header', reflect: true, converter: NEGATED_BOOLEAN })
   accessor stickyHeader = true;
 
   /** `viewport` caps the table at the viewport height and scrolls the body; `none` lets the page scroll. */
-  @property({ reflect: true, attribute: 'max-height' }) accessor maxHeight: TableMaxHeight = 'none';
+  @property({ type: String, reflect: true, attribute: 'max-height' }) accessor maxHeight: TableMaxHeight = 'none';
 
-  /** Cell padding. */
-  @property({ reflect: true }) accessor density: TableDensity = 'comfortable';
+  /** Cell padding: `layout.inset.sm` or `layout.inset.md`. */
+  @property({ type: String, reflect: true }) accessor density: TableDensity = 'comfortable';
 
   /** Alternate row backgrounds. */
   @property({ type: Boolean, reflect: true }) accessor striped = false;
@@ -522,29 +527,27 @@ export class DsTable extends LitElement {
   /** Shown in place of the body when `data` is empty. Defaults to `copy.empty`. */
   @property({ attribute: 'empty-message' }) accessor emptyMessage: string | undefined;
 
-  /** Data is being fetched: the body shows `copy.loading` and `aria-busy` is set. Existing rows stay visible. */
+  /** Data is being fetched: `copy.loading` shows and `aria-busy` is set; existing rows stay visible. */
   @property({ type: Boolean, reflect: true }) accessor loading = false;
 
-  /** Renders a trailing actions cell per row. Kept out of `columns` so the header can be a visually-hidden "Actions". */
+  /** Renders a trailing actions cell (ghost sm icon-only Buttons with Tooltip, or a Menu). */
   @property({ attribute: false }) accessor rowActions: ((row: TableRow) => unknown) | undefined;
 
-  /** Per-instance style overrides: `{ captionSize: 'font.size.lg' }`. Locked bindings are ignored. */
+  /** Per-instance token overrides. Locked bindings are not in the type. */
   @property({ attribute: false }) accessor overrides: Partial<Record<TableOverridableBinding, TokenRef | undefined>> | undefined;
 
-  /** Uncontrolled sort state, seeded from `defaultSort`. */
   @state() private accessor internalSort: TableSort | undefined;
-
-  /** Uncontrolled selection, seeded from `defaultSelected`. */
   @state() private accessor internalSelected: string[] = [];
-
-  /** Text announced through the shared live region (sort or selection changes). */
-  @state() private accessor liveMessage = '';
+  @state() private accessor announcement = '';
+  @state() private accessor hasFooter = false;
+  @state() private accessor rowPressListeners = 0;
 
   @query('.sentinel') private accessor sentinelEl!: HTMLElement | null;
-  @query('.wrapper') private accessor wrapperEl!: HTMLElement | null;
-  @query('.scroll-region') private accessor scrollRegionEl!: HTMLElement | null;
+  @query('.frame') private accessor frameEl!: HTMLElement | null;
 
-  private headerObserver?: IntersectionObserver | undefined;
+  private headerObserver: IntersectionObserver | undefined;
+  private observedFor = '';
+  private readonly warned = new Set<string>();
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -554,316 +557,305 @@ export class DsTable extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.headerObserver?.disconnect();
+    this.headerObserver = undefined;
+    this.observedFor = '';
   }
 
-  protected override firstUpdated(): void {
-    this.internalSort = this.defaultSort;
-    this.internalSelected = this.defaultSelected;
-    this.setupHeaderObserver();
+  /** `onRowPress` is set when a `row-press` listener is attached to the element itself. */
+  override addEventListener(
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | AddEventListenerOptions,
+  ): void {
+    super.addEventListener(type, listener, options);
+    if (type === 'row-press') {
+      this.rowPressListeners += 1;
+    }
+  }
+
+  override removeEventListener(
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | EventListenerOptions,
+  ): void {
+    super.removeEventListener(type, listener, options);
+    if (type === 'row-press' && this.rowPressListeners > 0) {
+      this.rowPressListeners -= 1;
+    }
   }
 
   protected override willUpdate(changed: PropertyValues): void {
+    if (!this.hasUpdated) {
+      this.internalSort = this.defaultSort;
+      this.internalSelected = this.defaultSelected ?? [];
+    }
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
   }
 
-  protected override updated(changed: PropertyValues): void {
-    if (changed.has('stickyHeader') || changed.has('maxHeight')) {
-      this.setupHeaderObserver();
-    }
+  protected override updated(): void {
+    this.observeHeader();
     this.warnInDev();
   }
 
   protected override render(): TemplateResult {
     const rows = this.sortedRows();
-    const colCount = this.columns.length + (this.selectable !== 'none' ? 1 : 0) + (this.rowActions ? 1 : 0);
+    const rowHeaderColumn = this.rowHeaderColumn;
+    const rowsInteractive = this.rowPressListeners > 0 && rowHeaderColumn !== undefined && !rowHeaderColumn.render;
+    const columnCount = (this.selectable !== 'none' ? 1 : 0) + this.columns.length + (this.rowActions ? 1 : 0);
+    const pluralForm = new Intl.PluralRules(document.documentElement.lang || undefined).select(this.data.length);
+    const rowCountText = COPY_ROW_COUNT[pluralForm === 'one' ? 'one' : 'other'](this.data.length);
 
-    const tableTpl = html`
+    const table = html`
       <table
-        part="table"
         role="table"
+        data-part="table"
+        aria-labelledby="caption"
         aria-describedby="row-count"
+        aria-rowcount=${this.data.length + 1}
+        aria-colcount=${columnCount}
         aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
-        aria-rowcount=${rows.length + 1}
-        aria-colcount=${colCount}
       >
-        <caption id="caption" part="caption" class=${this.hideCaption ? 'visually-hidden' : ''}>
-          <ds-heading part="caption-heading" level=${this.captionLevel} size="md" .overrides=${this.captionOverrides}
-            >${this.caption}</ds-heading
-          >
-        </caption>
-        ${this.renderColgroup()}
-        <thead part="header" role="rowgroup">
-          <tr part="header-row" role="row">
-            ${this.renderSelectionHeaderCell(rows)} ${this.columns.map((column) => this.renderColumnHeader(column))}
+        <thead role="rowgroup" data-part="header">
+          <tr role="row" data-part="headerRow">
+            ${this.renderSelectionHeader()} ${this.columns.map((column) => this.renderColumnHeader(column))}
             ${this.rowActions
-              ? html`<th role="columnheader" scope="col" class="visually-hidden">${COPY_ACTIONS}</th>`
+              ? html`<th role="columnheader" scope="col" data-part="columnHeader">
+                  <span class="visually-hidden">${COPY_ACTIONS}</span>
+                </th>`
               : nothing}
           </tr>
         </thead>
-        <tbody part="body" role="rowgroup">
-          ${rows.length === 0 ? this.renderEmptyRow(colCount) : rows.map((row) => this.renderRow(row))}
+        <tbody role="rowgroup" data-part="body">
+          ${rows.length === 0
+            ? html`<tr role="row">
+                <td role="cell" class="empty" colspan=${columnCount}>
+                  <ds-text data-part="emptyState" element="p" tone="muted"
+                    >${this.loading ? COPY_LOADING : (this.emptyMessage ?? COPY_EMPTY)}</ds-text
+                  >
+                </td>
+              </tr>`
+            : rows.map((row) => this.renderRow(row, rowHeaderColumn, rowsInteractive))}
         </tbody>
       </table>
     `;
 
+    const sentinel = html`<div class="sentinel" aria-hidden="true"></div>`;
+
     return html`
-      <div class="wrapper" part="container">
-        <div class="sentinel"></div>
-        <span id="row-count" class="visually-hidden">${COPY_ROW_COUNT(rows.length)}</span>
+      <div data-part="container">
+        <div data-part="caption" class=${classMap({ 'visually-hidden': this.hideCaption })}>
+          <ds-heading id="caption" level=${this.captionLevel} size="md">${this.caption}</ds-heading>
+        </div>
+        <span id="row-count" class="visually-hidden">${rowCountText}</span>
         ${this.responsive === 'scroll'
-          ? html`
-              <div
-                class="scroll-region"
-                part="scroll-region"
+          ? html`<div
+                class="frame"
+                data-part="scrollRegion"
                 role="region"
                 aria-labelledby="caption"
                 aria-describedby="scroll-hint"
                 tabindex="0"
-                @keydown=${this.handleScrollKeydown}
-                @scroll=${this.handleScroll}
+                @scroll=${this.handleRegionScroll}
+                @keydown=${this.handleRegionKeydown}
               >
-                ${tableTpl}
-                <span id="scroll-hint" class="visually-hidden">${COPY_SCROLL_HINT}</span>
+                ${sentinel}${table}
               </div>
-            `
-          : tableTpl}
-        <div class="footer" part="footer"><slot name="footer"></slot></div>
+              <span id="scroll-hint" class="visually-hidden">${COPY_SCROLL_HINT}</span>`
+          : html`<div class="frame">${sentinel}${table}</div>`}
+        ${this.loading && rows.length > 0
+          ? html`<ds-text element="p" tone="muted" size="sm">${COPY_LOADING}</ds-text>`
+          : nothing}
+        <div data-part="footer" class="footer" ?hidden=${!this.hasFooter}>
+          <slot name="footer" @slotchange=${this.handleFooterSlotChange}></slot>
+        </div>
+        <div class="visually-hidden" role="status" aria-live="polite">${this.announcement}</div>
       </div>
-      <div class="visually-hidden" role="status" aria-live="polite">${this.liveMessage}</div>
     `;
   }
 
-  private renderColgroup() {
-    return html`
-      <colgroup>
-        ${this.selectable !== 'none' ? html`<col style="inline-size: var(--size-target-min)" />` : nothing}
-        ${this.columns.map(
-          (column) =>
-            html`<col
-              style=${column.width === 'min' ? 'inline-size: 1%' : column.width === 'fill' ? 'inline-size: 100%' : ''}
-            />`,
-        )}
-        ${this.rowActions ? html`<col />` : nothing}
-      </colgroup>
-    `;
-  }
-
-  private renderSelectionHeaderCell(rows: TableRow[]) {
+  private renderSelectionHeader(): TemplateResult | typeof nothing {
     if (this.selectable === 'none') {
       return nothing;
     }
     if (this.selectable === 'single') {
-      // No select-all in single mode; each row's own Checkbox already carries `copy.selectRow`.
-      return html`<th role="columnheader" scope="col" part="select-all-cell"></th>`;
+      return html`<td role="cell" class="header-select"></td>`;
     }
-    const selected = this.currentSelected();
-    const allSelected = rows.length > 0 && rows.every((row) => selected.includes(row.id));
-    const someSelected = !allSelected && rows.some((row) => selected.includes(row.id));
-    return html`<th role="columnheader" scope="col" part="select-all-cell">
+    const selected = new Set(this.currentSelected);
+    const allSelected = this.data.length > 0 && this.data.every((row) => selected.has(row.id));
+    const someSelected = !allSelected && this.data.some((row) => selected.has(row.id));
+    return html`<th role="columnheader" scope="col" data-part="selectAllCell">
       <ds-checkbox
         label=${COPY_SELECT_ALL}
-        .checked=${allSelected}
-        .indeterminate=${someSelected}
-        @change=${this.handleSelectAllChange}
+        hide-label
+        .checked=${live(allSelected)}
+        .indeterminate=${live(someSelected)}
+        @change=${(event: CustomEvent<CheckboxChangeDetail>) => this.handleSelectAll(event, allSelected)}
       ></ds-checkbox>
     </th>`;
   }
 
-  private renderColumnHeader(column: TableColumn) {
-    const currentSort = this.currentSort();
-    const direction = currentSort?.column === column.key ? currentSort.direction : undefined;
-    return html`
-      <th
-        role="columnheader"
-        scope="col"
-        part="column-header"
-        class=${this.headerCellClass(column)}
-        abbr=${ifDefined(column.abbr)}
-        aria-sort=${ifDefined(column.sortable ? (direction ?? 'none') : undefined)}
-      >
-        ${column.sortable
-          ? html`<ds-button
-              class="sort-button"
-              part="sort-button"
-              variant="ghost"
-              size="sm"
-              label=${this.sortButtonLabel(column, direction)}
-              @press=${(event: Event) => this.handleSort(event, column.key)}
+  private renderColumnHeader(column: TableColumn): TemplateResult {
+    const active = this.currentSort;
+    const sorted = active?.column === column.key ? active.direction : undefined;
+    const next: TableSortDirection = sorted === 'ascending' ? 'descending' : 'ascending';
+    return html`<th
+      role="columnheader"
+      scope="col"
+      data-part="columnHeader"
+      class=${classMap(this.cellClasses(column))}
+      abbr=${ifDefined(column.abbr)}
+      aria-sort=${ifDefined(sorted)}
+    >
+      ${column.sortable
+        ? html`<ds-button
+            data-part="sortButton"
+            variant="ghost"
+            size="sm"
+            label=${column.header}
+            accessible-name=${next === 'ascending' ? COPY_SORT_ASCENDING(column.header) : COPY_SORT_DESCENDING(column.header)}
+            @press=${(event: Event) => this.handleSort(event, column)}
+          >
+            ${sorted
+              ? html`<ds-icon
+                  slot="trailing-icon"
+                  name=${sorted === 'ascending' ? 'chevron-up' : 'chevron-down'}
+                  inline
+                ></ds-icon>`
+              : nothing}
+          </ds-button>`
+        : column.header}
+    </th>`;
+  }
+
+  private renderRow(row: TableRow, rowHeaderColumn: TableColumn | undefined, rowsInteractive: boolean): TemplateResult {
+    const isSelected = this.selectable !== 'none' && this.currentSelected.includes(row.id);
+    const name = rowHeaderColumn ? textOf(row[rowHeaderColumn.key]) || row.id : row.id;
+    return html`<tr
+      role="row"
+      data-part="row"
+      class=${classMap({ interactive: rowsInteractive })}
+      aria-selected=${ifDefined(this.selectable !== 'none' ? String(isSelected) : undefined)}
+      @click=${rowsInteractive ? (event: MouseEvent) => this.handleRowClick(event, row.id) : nothing}
+    >
+      ${this.selectable !== 'none'
+        ? html`<td role="cell" data-part="selectCell">
+            <ds-checkbox
+              label=${COPY_SELECT_ROW(name)}
+              hide-label
+              value=${row.id}
+              .checked=${live(isSelected)}
+              @change=${(event: CustomEvent<CheckboxChangeDetail>) => this.handleSelectRow(event, row.id)}
+            ></ds-checkbox>
+          </td>`
+        : nothing}
+      ${this.columns.map((column) =>
+        column === rowHeaderColumn
+          ? html`<th role="rowheader" scope="row" data-part="rowHeader" class=${classMap(this.cellClasses(column))}>
+              ${rowsInteractive
+                ? html`<ds-button
+                    variant="ghost"
+                    size="sm"
+                    label=${name}
+                    @press=${(event: Event) => this.handleRowPress(event, row.id)}
+                  ></ds-button>`
+                : column.render
+                  ? column.render(row)
+                  : textOf(row[column.key])}
+            </th>`
+          : html`<td
+              role="cell"
+              data-part="cell"
+              data-label=${column.header}
+              class=${classMap(this.cellClasses(column))}
             >
-              <ds-icon
-                slot="trailing-icon"
-                name=${direction === 'descending' ? 'chevron-down' : 'chevron-up'}
-                inline
-              ></ds-icon>
-            </ds-button>`
-          : column.header}
-      </th>
-    `;
+              ${column.render ? column.render(row) : textOf(row[column.key])}
+            </td>`,
+      )}
+      ${this.rowActions
+        ? html`<td role="cell" data-part="cell" data-label=${COPY_ACTIONS}>
+            <div class="actions">${this.rowActions(row)}</div>
+          </td>`
+        : nothing}
+    </tr>`;
   }
 
-  private renderEmptyRow(colCount: number) {
-    const message = this.data.length === 0 && this.loading ? COPY_LOADING : (this.emptyMessage ?? COPY_EMPTY);
-    return html`
-      <tr role="row">
-        <td role="cell" class="empty-cell" colspan=${colCount}>
-          <ds-text part="empty-state" tone="muted">${message}</ds-text>
-        </td>
-      </tr>
-    `;
+  private cellClasses(column: TableColumn): Record<string, boolean> {
+    return {
+      'align-end': column.align === 'end',
+      'align-center': column.align === 'center',
+      'width-min': column.width === 'min',
+      'width-fill': column.width === 'fill',
+      'hide-below-prose': column.hideBelow === 'prose',
+      'hide-below-content': column.hideBelow === 'content',
+    };
   }
 
-  private renderRow(row: TableRow) {
-    const rowHeaderColumn = this.columns.find((column) => column.isRowHeader);
-    const rowPressEnabled = Boolean(rowHeaderColumn) && rowHeaderColumn?.render === undefined;
-    const selected = this.selectable !== 'none' ? this.currentSelected().includes(row.id) : false;
-    const rowName = rowHeaderColumn ? String(row[rowHeaderColumn.key] ?? row.id) : row.id;
-
-    return html`
-      <tr
-        part="row"
-        role="row"
-        class=${classMap({ interactive: rowPressEnabled })}
-        aria-selected=${ifDefined(this.selectable !== 'none' ? String(selected) : undefined)}
-      >
-        ${this.renderSelectionCell(row, rowName, selected)}
-        ${this.columns.map((column) => this.renderCell(column, row, rowName, rowPressEnabled))}
-        ${this.rowActions ? html`<td role="cell" part="cell">${this.rowActions(row)}</td>` : nothing}
-      </tr>
-    `;
+  private get rowHeaderColumn(): TableColumn | undefined {
+    return this.columns.find((column) => column.isRowHeader);
   }
 
-  private renderSelectionCell(row: TableRow, rowName: string, selected: boolean) {
-    if (this.selectable === 'none') {
-      return nothing;
-    }
-    return html`<td role="cell" part="select-cell">
-      <ds-checkbox
-        label=${COPY_SELECT_ROW(rowName)}
-        .checked=${selected}
-        @change=${(event: CustomEvent<CheckboxChangeDetail>) => this.handleSelectRow(event, row.id)}
-      ></ds-checkbox>
-    </td>`;
-  }
-
-  private renderCell(column: TableColumn, row: TableRow, rowName: string, rowPressEnabled: boolean) {
-    const content = column.render ? column.render(row) : String(row[column.key] ?? '');
-
-    if (column.isRowHeader) {
-      return html`
-        <th role="rowheader" scope="row" part="row-header" class=${this.headerCellClass(column)}>
-          ${rowPressEnabled
-            ? html`<ds-button
-                class="row-header-button"
-                variant="ghost"
-                size="sm"
-                label=${rowName}
-                @press=${(event: Event) => this.handlePress(event, row.id)}
-              ></ds-button>`
-            : content}
-        </th>
-      `;
-    }
-
-    return html`
-      <td role="cell" part="cell" class=${this.bodyCellClass(column)} data-label=${column.header}>${content}</td>
-    `;
-  }
-
-  private headerCellClass(column: TableColumn): string {
-    return [
-      column.hideBelow ? `hide-below-${column.hideBelow}` : '',
-      column.align === 'end' ? 'align-end' : column.align === 'center' ? 'align-center' : '',
-    ]
-      .filter(Boolean)
-      .join(' ');
-  }
-
-  private bodyCellClass(column: TableColumn): string {
-    return [
-      column.hideBelow ? `hide-below-${column.hideBelow}` : '',
-      column.align === 'end' ? 'align-end numeric' : column.align === 'center' ? 'align-center' : '',
-    ]
-      .filter(Boolean)
-      .join(' ');
-  }
-
-  private sortButtonLabel(column: TableColumn, direction: TableSortDirection | undefined): string {
-    const next = direction === 'ascending' ? 'descending' : 'ascending';
-    return next === 'ascending' ? COPY_SORT_ASCENDING(column.header) : COPY_SORT_DESCENDING(column.header);
-  }
-
-  private currentSort(): TableSort | undefined {
+  private get currentSort(): TableSort | undefined {
     return this.sort ?? this.internalSort;
   }
 
-  private currentSelected(): string[] {
+  private get currentSelected(): string[] {
     return this.selected ?? this.internalSelected;
   }
 
-  /** Sorted for uncontrolled use only; a controlled `sort` means the caller already sorted `data`. */
+  /** A controlled `sort` means the caller already sorted `data`. */
   private sortedRows(): TableRow[] {
-    if (this.sort !== undefined) {
+    const active = this.internalSort;
+    if (this.sort !== undefined || !active) {
       return this.data;
     }
-    const sortState = this.internalSort;
-    if (!sortState) {
-      return this.data;
-    }
-    const factor = sortState.direction === 'ascending' ? 1 : -1;
-    return [...this.data].sort((a, b) => {
-      const left = a[sortState.column];
-      const right = b[sortState.column];
-      if (typeof left === 'string' && typeof right === 'string') {
-        return left.localeCompare(right, undefined, { numeric: true }) * factor;
-      }
-      return (Number(left) - Number(right)) * factor;
-    });
+    const factor = active.direction === 'ascending' ? 1 : -1;
+    return [...this.data].sort((a, b) => compareValues(a[active.column], b[active.column]) * factor);
   }
 
-  private handleSort(event: Event, column: string): void {
-    // The inner ds-button is internal; consumers see only sort-change.
+  private handleSort(event: Event, column: TableColumn): void {
     event.stopPropagation();
-    const current = this.currentSort();
+    const active = this.currentSort;
     const direction: TableSortDirection =
-      current?.column === column && current.direction === 'ascending' ? 'descending' : 'ascending';
-    const next: TableSort = { column, direction };
+      active?.column === column.key && active.direction === 'ascending' ? 'descending' : 'ascending';
     if (this.sort === undefined) {
-      this.internalSort = next;
+      this.internalSort = { column: column.key, direction };
     }
-    const columnDef = this.columns.find((c) => c.key === column);
-    this.liveMessage = COPY_SORTED_ANNOUNCEMENT(columnDef?.header ?? column, direction);
+    this.announcement = COPY_SORTED_ANNOUNCEMENT(column.header, direction);
     this.dispatchEvent(
-      new CustomEvent<TableSortChangeDetail>('sort-change', { detail: next, bubbles: true, composed: true }),
+      new CustomEvent<TableSortChangeDetail>('sort-change', {
+        detail: { column: column.key, direction },
+        bubbles: true,
+        composed: true,
+      }),
     );
   }
 
-  private handleSelectAllChange(event: CustomEvent<CheckboxChangeDetail>): void {
+  private handleSelectAll(event: CustomEvent<CheckboxChangeDetail>, allSelected: boolean): void {
     event.stopPropagation();
-    const rows = this.sortedRows();
-    const next = event.detail.checked ? rows.map((row) => row.id) : [];
-    this.commitSelection(next);
+    this.commitSelection(allSelected ? [] : this.data.map((row) => row.id));
   }
 
   private handleSelectRow(event: CustomEvent<CheckboxChangeDetail>, id: string): void {
     event.stopPropagation();
     const checked = event.detail.checked;
-    let next: string[];
+    const current = this.currentSelected.filter((existing) => existing !== id);
     if (this.selectable === 'single') {
-      next = checked ? [id] : [];
+      this.commitSelection(checked ? [id] : []);
     } else {
-      const current = this.currentSelected();
-      next = checked ? [...current, id] : current.filter((existing) => existing !== id);
+      this.commitSelection(checked ? [...current, id] : current);
     }
-    this.commitSelection(next);
   }
 
   private commitSelection(next: string[]): void {
     if (this.selected === undefined) {
       this.internalSelected = next;
+    } else {
+      // Controlled: the Checkboxes toggled themselves; re-render so they show the property until it changes.
+      this.requestUpdate();
     }
-    this.liveMessage = COPY_SELECTED_COUNT(next.length, this.data.length);
+    this.announcement = COPY_SELECTED_COUNT(next.length, this.data.length);
     this.dispatchEvent(
       new CustomEvent<TableSelectionChangeDetail>('selection-change', {
         detail: { selected: next },
@@ -873,77 +865,104 @@ export class DsTable extends LitElement {
     );
   }
 
-  private handlePress(event: Event, id: string): void {
-    // The inner ds-button is internal; consumers see only row-press.
+  private handleRowPress(event: Event, id: string): void {
     event.stopPropagation();
+    this.dispatchRowPress(id);
+  }
+
+  /** Pointer convenience: a press on an interactive row outside its own controls activates it. */
+  private handleRowClick(event: MouseEvent, id: string): void {
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest('ds-button, ds-checkbox, ds-link, ds-menu, a, button, input, select, textarea, label, [tabindex]')
+    ) {
+      return;
+    }
+    this.dispatchRowPress(id);
+  }
+
+  private dispatchRowPress(id: string): void {
     this.dispatchEvent(
       new CustomEvent<TableRowPressDetail>('row-press', { detail: { id }, bubbles: true, composed: true }),
     );
   }
 
-  private handleScrollKeydown(event: KeyboardEvent): void {
-    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') {
+  private handleRegionScroll(event: Event): void {
+    const scrolled = Math.abs((event.currentTarget as HTMLElement).scrollLeft) > 0;
+    if (this.hasAttribute('data-column-scrolled') !== scrolled) {
+      this.toggleAttribute('data-column-scrolled', scrolled);
+    }
+  }
+
+  /** Arrow keys scroll the focused region by `space.10`. */
+  private handleRegionKeydown(event: KeyboardEvent): void {
+    if (event.target !== event.currentTarget || (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft')) {
       return;
     }
-    const region = this.scrollRegionEl;
-    if (!region) {
+    const region = event.currentTarget as HTMLElement;
+    const step = parseFloat(getComputedStyle(region).getPropertyValue('--space-10'));
+    if (!Number.isFinite(step)) {
       return;
     }
     event.preventDefault();
-    const delta = event.key === 'ArrowRight' ? SCROLL_STEP_PX : -SCROLL_STEP_PX;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    region.scrollBy({ left: delta, behavior: reduceMotion ? 'auto' : 'smooth' });
+    region.scrollBy({ left: event.key === 'ArrowRight' ? step : -step });
   }
 
-  private handleScroll(): void {
-    const region = this.scrollRegionEl;
-    if (!region) {
+  private handleFooterSlotChange(event: Event): void {
+    this.hasFooter = (event.target as HTMLSlotElement).assignedNodes({ flatten: true }).length > 0;
+  }
+
+  /** `headerShadow` appears once the sentinel above the table has scrolled out past the top of its root. */
+  private observeHeader(): void {
+    const key = `${this.stickyHeader}|${this.maxHeight}|${this.responsive}`;
+    const sentinel = this.sentinelEl;
+    if (key === this.observedFor && this.headerObserver) {
       return;
     }
-    this.toggleAttribute('data-column-scrolled', region.scrollLeft > 0);
-  }
-
-  /** Toggles `data-header-scrolled` once the body has scrolled beneath the sticky header. */
-  private setupHeaderObserver(): void {
     this.headerObserver?.disconnect();
     this.headerObserver = undefined;
-    if (!this.stickyHeader || !this.sentinelEl) {
-      this.removeAttribute('data-header-scrolled');
+    this.observedFor = key;
+    if (!this.stickyHeader || !sentinel || typeof IntersectionObserver === 'undefined') {
+      if (this.hasAttribute('data-header-scrolled')) {
+        this.removeAttribute('data-header-scrolled');
+      }
       return;
     }
-    const root = this.maxHeight === 'viewport' ? (this.wrapperEl ?? null) : null;
     this.headerObserver = new IntersectionObserver(
-      ([entry]) => {
-        this.toggleAttribute('data-header-scrolled', !entry!.isIntersecting);
+      (entries) => {
+        const entry = entries[entries.length - 1];
+        if (!entry) {
+          return;
+        }
+        const rootTop = entry.rootBounds?.top ?? 0;
+        const next = !entry.isIntersecting && entry.boundingClientRect.top < rootTop;
+        if (this.hasAttribute('data-header-scrolled') !== next) {
+          this.toggleAttribute('data-header-scrolled', next);
+        }
       },
-      { root, threshold: 0 },
+      { root: this.maxHeight === 'viewport' ? this.frameEl : null },
     );
-    this.headerObserver.observe(this.sentinelEl);
-  }
-
-  /** `captionSize`/`captionWeight` overrides forwarded to the composed Heading; its own default weight and this
-      fixed `size="md"` already match the caption tokens, so nothing is forwarded unless the consumer overrides them. */
-  private get captionOverrides(): Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> {
-    const result: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> = { marginBlockEnd: 'space.0' };
-    if (this.overrides?.captionSize) {
-      result.fontSize = this.overrides.captionSize;
-    }
-    if (this.overrides?.captionWeight) {
-      result.fontWeight = this.overrides.captionWeight;
-    }
-    return result;
+    this.headerObserver.observe(sentinel);
   }
 
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as TableOverridableBinding[]) {
       const ref = this.overrides?.[binding];
-      const hook = HOOKS[binding];
       if (ref === undefined) {
-        this.style.removeProperty(hook);
+        this.style.removeProperty(HOOKS[binding]);
       } else {
-        this.style.setProperty(hook, cssVar(ref));
+        this.style.setProperty(HOOKS[binding], cssVar(ref));
       }
     }
+  }
+
+  private warnOnce(message: string): void {
+    if (this.warned.has(message)) {
+      return;
+    }
+    this.warned.add(message);
+    console.warn(message, this);
   }
 
   private warnInDev(): void {
@@ -951,10 +970,13 @@ export class DsTable extends LitElement {
       return;
     }
     if (!this.caption) {
-      console.warn('<ds-table> requires a `caption`.', this);
+      this.warnOnce('<ds-table>: `caption` is required; it is the table\'s accessible name.');
     }
-    if (this.columns.length > 0 && !this.columns.some((column) => column.isRowHeader)) {
-      console.warn('<ds-table> has no column with `isRowHeader: true`.', this);
+    if (this.columns.filter((column) => column.isRowHeader).length > 1) {
+      this.warnOnce('<ds-table>: exactly one column may set `isRowHeader`; the first is used.');
+    }
+    if (this.rowPressListeners > 0 && !this.rowHeaderColumn) {
+      this.warnOnce('<ds-table>: `row-press` needs an `isRowHeader` column; rows stay inert.');
     }
   }
 }

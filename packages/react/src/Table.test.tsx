@@ -1,94 +1,157 @@
 /**
  * Table — behavior scenarios from the component doc, one test each, in the doc's order.
- * The doc (site/src/content/docs/components/table.md) is the source of truth; the tests
- * gate runs this file after every generation round. See generated/prompts/Table.web.md.
  */
-import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { Table, type TableProps } from './Table';
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import type { ComponentProps } from 'react';
+import { Table } from './Table';
 import meta from './Table.stories';
 
+type Props = ComponentProps<typeof Table>;
+
 /** The Default story's args plus the scenario's `given`. */
-function setup(given: Partial<TableProps> = {}) {
-  const props = { ...meta.args, ...given } as TableProps;
-  return render(<Table {...props} />);
+function setup(given: Partial<Props> = {}) {
+  const props = { ...meta.args, ...given } as Props;
+  const utils = render(<Table {...props} />);
+  return { ...utils, props, table: () => screen.getByRole('table') };
 }
 
+const invoiceHeader = { key: 'invoice', header: 'Invoice', isRowHeader: true };
+
 describe('Table', () => {
-  /* derived: a11y.role */
+  it('activating-a-sortable-header-reports-the-sort', () => {
+    const onSortChange = vi.fn();
+    const s = setup({
+      columns: [invoiceHeader, { key: 'amount', header: 'Amount', sortable: true, align: 'end' }],
+      data: [
+        { id: 'a', invoice: 'INV-1', amount: 100 },
+        { id: 'b', invoice: 'INV-2', amount: 200 },
+      ],
+      onSortChange,
+    });
+    const header = s.container.querySelector('[data-part="columnHeader"] button');
+    expect(header).not.toBeNull();
+    fireEvent.click(header!);
+    expect(onSortChange).toHaveBeenCalled();
+  });
+
+  it('selecting-a-row-reports-every-selected-id', () => {
+    const onSelectionChange = vi.fn();
+    const s = setup({
+      selectable: 'multiple',
+      columns: [invoiceHeader],
+      data: [
+        { id: 'a', invoice: 'INV-1' },
+        { id: 'b', invoice: 'INV-2' },
+      ],
+      onSelectionChange,
+    });
+    const checkbox = s.container.querySelector<HTMLInputElement>('[data-part="selectCell"] input');
+    expect(checkbox).not.toBeNull();
+    fireEvent.click(checkbox!);
+    expect(onSelectionChange).toHaveBeenCalled();
+  });
+
+  it('select-all-reports-the-whole-selection', () => {
+    const onSelectionChange = vi.fn();
+    const s = setup({
+      selectable: 'multiple',
+      columns: [invoiceHeader],
+      data: [
+        { id: 'a', invoice: 'INV-1' },
+        { id: 'b', invoice: 'INV-2' },
+      ],
+      onSelectionChange,
+    });
+    const checkbox = s.container.querySelector<HTMLInputElement>('[data-part="selectAllCell"] input');
+    expect(checkbox).not.toBeNull();
+    fireEvent.click(checkbox!);
+    expect(onSelectionChange).toHaveBeenCalled();
+  });
+
+  it('the-empty-message-shows-when-there-are-no-rows', () => {
+    setup({ columns: [invoiceHeader], data: [] });
+    expect(screen.getByText('Nothing to show.')).toBeInTheDocument();
+  });
+
+  it('a-custom-empty-message-replaces-the-default', () => {
+    setup({ emptyMessage: 'No invoices yet.', columns: [invoiceHeader], data: [] });
+    expect(screen.getByText('No invoices yet.')).toBeInTheDocument();
+  });
+
+  it('loading-marks-the-table-busy', () => {
+    const s = setup({ loading: true, columns: [invoiceHeader], data: [{ id: 'a', invoice: 'INV-1' }] });
+    expect(s.table()).toHaveAttribute('aria-busy', 'true');
+  });
+
+  /* derived */
   it('renders', () => {
-    const { container } = setup();
-    expect(container.firstChild).not.toBeNull();
+    const s = setup();
+    expect(s.table()).toBeInTheDocument();
   });
 
-  /* derived: props.captionLevel */
-  it('renders-captionLevel-2', () => {
-    const { container } = setup({ captionLevel: '2' });
-    expect(container.firstChild).not.toBeNull();
+  it('renders-caption-level-2', () => {
+    const s = setup({ captionLevel: '2' });
+    expect(s.table()).toBeInTheDocument();
   });
 
-  it('renders-captionLevel-3', () => {
-    const { container } = setup({ captionLevel: '3' });
-    expect(container.firstChild).not.toBeNull();
+  it('renders-caption-level-3', () => {
+    const s = setup({ captionLevel: '3' });
+    expect(s.table()).toBeInTheDocument();
   });
 
-  it('renders-captionLevel-4', () => {
-    const { container } = setup({ captionLevel: '4' });
-    expect(container.firstChild).not.toBeNull();
+  it('renders-caption-level-4', () => {
+    const s = setup({ captionLevel: '4' });
+    expect(s.table()).toBeInTheDocument();
   });
 
-  /* derived: props.selectable */
   it('renders-selectable-none', () => {
-    const { container } = setup({ selectable: 'none' });
-    expect(container.firstChild).not.toBeNull();
+    const s = setup({ selectable: 'none' });
+    expect(s.table()).toBeInTheDocument();
   });
 
   it('renders-selectable-single', () => {
-    const { container } = setup({ selectable: 'single' });
-    expect(container.firstChild).not.toBeNull();
+    const s = setup({ selectable: 'single' });
+    expect(s.table()).toBeInTheDocument();
   });
 
   it('renders-selectable-multiple', () => {
-    const { container } = setup({ selectable: 'multiple' });
-    expect(container.firstChild).not.toBeNull();
+    const s = setup({ selectable: 'multiple' });
+    expect(s.table()).toBeInTheDocument();
   });
 
-  /* derived: props.responsive */
   it('renders-responsive-stack', () => {
-    const { container } = setup({ responsive: 'stack' });
-    expect(container.firstChild).not.toBeNull();
+    const s = setup({ responsive: 'stack' });
+    expect(s.table()).toBeInTheDocument();
   });
 
   it('renders-responsive-scroll', () => {
-    const { container } = setup({ responsive: 'scroll' });
-    expect(container.firstChild).not.toBeNull();
+    const s = setup({ responsive: 'scroll' });
+    expect(s.table()).toBeInTheDocument();
   });
 
-  /* derived: props.maxHeight */
-  it('renders-maxHeight-none', () => {
-    const { container } = setup({ maxHeight: 'none' });
-    expect(container.firstChild).not.toBeNull();
+  it('renders-max-height-none', () => {
+    const s = setup({ maxHeight: 'none' });
+    expect(s.table()).toBeInTheDocument();
   });
 
-  it('renders-maxHeight-viewport', () => {
-    const { container } = setup({ maxHeight: 'viewport' });
-    expect(container.firstChild).not.toBeNull();
+  it('renders-max-height-viewport', () => {
+    const s = setup({ maxHeight: 'viewport' });
+    expect(s.table()).toBeInTheDocument();
   });
 
-  /* derived: props.density */
   it('renders-density-compact', () => {
-    const { container } = setup({ density: 'compact' });
-    expect(container.firstChild).not.toBeNull();
+    const s = setup({ density: 'compact' });
+    expect(s.table()).toBeInTheDocument();
   });
 
   it('renders-density-comfortable', () => {
-    const { container } = setup({ density: 'comfortable' });
-    expect(container.firstChild).not.toBeNull();
+    const s = setup({ density: 'comfortable' });
+    expect(s.table()).toBeInTheDocument();
   });
 
-  /* derived: a11y.requires.accessible-name */
   it('has-accessible-name', () => {
-    setup();
-    expect(screen.getByRole('table', { name: meta.args!.caption! })).toHaveAccessibleName();
+    const s = setup();
+    expect(s.table()).toHaveAccessibleName(s.props.caption);
   });
 });

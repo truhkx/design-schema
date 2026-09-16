@@ -3,6 +3,7 @@ import { html } from 'lit';
 import './Table.js';
 import './Button.js';
 import './Icon.js';
+import './Text.js';
 import type {
   TableCaptionLevel,
   TableColumn,
@@ -10,10 +11,8 @@ import type {
   TableMaxHeight,
   TableResponsive,
   TableRow,
-  TableRowPressDetail,
   TableSelectable,
-  TableSelectionChangeDetail,
-  TableSortChangeDetail,
+  TableSort,
 } from './Table.js';
 
 interface TableArgs {
@@ -22,44 +21,40 @@ interface TableArgs {
   hideCaption: boolean;
   columns: TableColumn[];
   data: TableRow[];
+  sort?: TableSort | undefined;
+  defaultSort?: TableSort | undefined;
   selectable: TableSelectable;
+  selected?: string[] | undefined;
+  defaultSelected?: string[] | undefined;
   responsive: TableResponsive;
   stickyHeader: boolean;
   maxHeight: TableMaxHeight;
   density: TableDensity;
   striped: boolean;
-  loading: boolean;
   emptyMessage?: string | undefined;
+  loading: boolean;
+  rowActions?: ((row: TableRow) => unknown) | undefined;
 }
 
 const invoiceColumns: TableColumn[] = [
-  { key: 'id', header: 'Invoice', isRowHeader: true },
+  { key: 'invoice', header: 'Invoice', isRowHeader: true },
   { key: 'customer', header: 'Customer' },
+  { key: 'due', header: 'Due', hideBelow: 'content' },
   { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },
-  { key: 'status', header: 'Status', hideBelow: 'content' },
 ];
 
 const invoiceRows: TableRow[] = [
-  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },
-  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },
-  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },
-  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },
+  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },
+  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },
+  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },
+  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },
 ];
 
-const wideColumns: TableColumn[] = [
-  { key: 'month', header: 'Month', isRowHeader: true },
-  { key: 'q1', header: 'Region A', align: 'end' },
-  { key: 'q2', header: 'Region B', align: 'end' },
-  { key: 'q3', header: 'Region C', align: 'end' },
-  { key: 'q4', header: 'Region D', align: 'end' },
-  { key: 'q5', header: 'Region E', align: 'end' },
-];
-
-const wideRows: TableRow[] = [
-  { id: 'jan', month: 'January', q1: '1,204', q2: '980', q3: '760', q4: '1,102', q5: '640' },
-  { id: 'feb', month: 'February', q1: '1,410', q2: '1,020', q3: '812', q4: '990', q5: '705' },
-  { id: 'mar', month: 'March', q1: '1,330', q2: '1,105', q3: '890', q4: '1,240', q5: '812' },
-];
+const editAction = (row: TableRow): unknown => html`
+  <ds-button variant="ghost" size="sm" icon-only label="Edit ${String(row.invoice ?? row.id)}">
+    <ds-icon slot="leading-icon" name="chevron-right" inline></ds-icon>
+  </ds-button>
+`;
 
 const meta: Meta<TableArgs> = {
   title: 'Table/Lit',
@@ -77,6 +72,7 @@ const meta: Meta<TableArgs> = {
     stickyHeader: { control: 'boolean' },
     striped: { control: 'boolean' },
     loading: { control: 'boolean' },
+    emptyMessage: { control: 'text' },
   },
   args: {
     caption: 'Open invoices',
@@ -99,18 +95,19 @@ const meta: Meta<TableArgs> = {
       ?hide-caption=${args.hideCaption}
       .columns=${args.columns}
       .data=${args.data}
+      .sort=${args.sort}
+      .defaultSort=${args.defaultSort}
       selectable=${args.selectable}
+      .selected=${args.selected}
+      .defaultSelected=${args.defaultSelected}
       responsive=${args.responsive}
       ?no-sticky-header=${!args.stickyHeader}
       max-height=${args.maxHeight}
       density=${args.density}
       ?striped=${args.striped}
+      .emptyMessage=${args.emptyMessage}
       ?loading=${args.loading}
-      empty-message=${args.emptyMessage ?? ''}
-      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}
-      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>
-        console.log('selection-change', event.detail)}
-      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}
+      .rowActions=${args.rowActions}
     ></ds-table>
   `,
 };
@@ -132,18 +129,11 @@ export const SelectableMultiple: Story = { args: { selectable: 'multiple' } };
 
 /* responsive */
 export const ResponsiveStack: Story = { args: { responsive: 'stack' } };
-export const ResponsiveScroll: Story = {
-  args: { responsive: 'scroll', columns: wideColumns, data: wideRows, caption: 'Revenue by region' },
-};
+export const ResponsiveScroll: Story = { args: { responsive: 'scroll' } };
 
 /* maxHeight */
 export const MaxHeightNone: Story = { args: { maxHeight: 'none' } };
-export const MaxHeightViewport: Story = {
-  args: {
-    maxHeight: 'viewport',
-    data: [...invoiceRows, ...invoiceRows.map((row) => ({ ...row, id: `${row.id}-B` }))],
-  },
-};
+export const MaxHeightViewport: Story = { args: { maxHeight: 'viewport' } };
 
 /* density */
 export const DensityCompact: Story = { args: { density: 'compact' } };
@@ -154,41 +144,83 @@ export const HideCaption: Story = { args: { hideCaption: true } };
 export const NoStickyHeader: Story = { args: { stickyHeader: false } };
 export const Striped: Story = { args: { striped: true } };
 export const Loading: Story = { args: { loading: true } };
-export const LoadingEmpty: Story = { args: { loading: true, data: [] } };
 export const Empty: Story = { args: { data: [] } };
-export const EmptyMessage: Story = { args: { data: [], emptyMessage: 'No invoices match these filters.' } };
+export const RowActions: Story = { args: { rowActions: editAction } };
 
-export const RowActions: Story = {
+export const RowPress: Story = {
   render: (args) => html`
-    <ds-table
-      caption=${args.caption}
-      .columns=${args.columns}
-      .data=${args.data}
-      .rowActions=${(row: TableRow) => html`
-        <ds-button variant="ghost" size="sm" icon-only label="Edit ${row.id}">
-          <ds-icon slot="leading-icon" name="chevron-right" inline></ds-icon>
-        </ds-button>
-      `}
-    ></ds-table>
+    <ds-table caption=${args.caption} .columns=${args.columns} .data=${args.data} @row-press=${() => {}}></ds-table>
   `,
 };
 
-/**
- * `selectable="multiple"` with a sortable column and row actions gives select-all, a sort button, per-row
- * checkboxes and per-row action buttons — every kind of focusable content Tab moves through in reading order.
- */
-export const Keyboard: Story = {
-  render: () => html`
-    <ds-table
-      caption="Open invoices"
-      selectable="multiple"
-      .columns=${invoiceColumns}
-      .data=${invoiceRows}
-      .rowActions=${(row: TableRow) => html`
-        <ds-button variant="ghost" size="sm" icon-only label="Edit ${row.id}">
-          <ds-icon slot="leading-icon" name="chevron-right" inline></ds-icon>
-        </ds-button>
-      `}
-    ></ds-table>
+export const WithFooter: Story = {
+  render: (args) => html`
+    <ds-table caption=${args.caption} .columns=${args.columns} .data=${args.data}>
+      <ds-text slot="footer" tone="muted" size="sm">4 rows</ds-text>
+    </ds-table>
   `,
+};
+
+/* examples */
+export const OpenInvoices: Story = {
+  args: {
+    caption: 'Open invoices',
+    columns: [
+      { key: 'invoice', header: 'Invoice', isRowHeader: true },
+      { key: 'due', header: 'Due' },
+      { key: 'amount', header: 'Amount', align: 'end', sortable: true },
+    ],
+    data: [
+      { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },
+      { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },
+    ],
+  },
+};
+
+export const SelectableRows: Story = {
+  args: {
+    caption: 'Members',
+    selectable: 'multiple',
+    defaultSelected: ['a'],
+    columns: [
+      { key: 'person', header: 'Person', isRowHeader: true },
+      { key: 'role', header: 'Role' },
+    ],
+    data: [
+      { id: 'a', person: 'Ana Souza', role: 'Admin' },
+      { id: 'b', person: 'Bo Lin', role: 'Editor' },
+    ],
+  },
+};
+
+export const DenseDataTableThatScrolls: Story = {
+  args: {
+    caption: 'Daily traffic',
+    responsive: 'scroll',
+    density: 'compact',
+    maxHeight: 'viewport',
+    columns: [
+      { key: 'day', header: 'Day', isRowHeader: true },
+      { key: 'visits', header: 'Visits', align: 'end' },
+      { key: 'signups', header: 'Signups', align: 'end' },
+    ],
+    data: [
+      { id: 'a', day: 'Monday', visits: 1200, signups: 30 },
+      { id: 'b', day: 'Tuesday', visits: 1450, signups: 41 },
+    ],
+  },
+};
+
+export const NothingToShow: Story = {
+  args: {
+    caption: 'Open invoices',
+    emptyMessage: 'No invoices yet.',
+    columns: [{ key: 'invoice', header: 'Invoice', isRowHeader: true }],
+    data: [],
+  },
+};
+
+/** Select-all, a sort button, row checkboxes and row actions: Tab moves through them in reading order. */
+export const Keyboard: Story = {
+  args: { selectable: 'multiple', rowActions: editAction },
 };

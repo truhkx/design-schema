@@ -2,45 +2,29 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Table, type TableColumn, type TableRow } from './Table';
 import { Button } from './Button';
 import { Icon } from './Icon';
+import { Link } from './Link';
 import { Text } from './Text';
 
-interface Invoice extends TableRow {
-  customer: string;
-  status: string;
-  amount: number;
-  due: string;
-}
-
-const DATA: Invoice[] = [
-  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },
-  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },
-  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },
-  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },
+const INVOICE_COLUMNS: TableColumn[] = [
+  { key: 'invoice', header: 'Invoice', isRowHeader: true },
+  { key: 'due', header: 'Due' },
+  { key: 'amount', header: 'Amount', align: 'end', sortable: true },
 ];
 
-const COLUMNS: TableColumn[] = [
-  { key: 'customer', header: 'Customer', isRowHeader: true },
-  { key: 'status', header: 'Status' },
-  {
-    key: 'amount',
-    header: 'Amount (USD)',
-    abbr: 'Amount',
-    align: 'end',
-    sortable: true,
-    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,
-  },
-  { key: 'due', header: 'Due date', hideBelow: 'prose' },
+const INVOICES: TableRow[] = [
+  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },
+  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },
 ];
 
 const meta: Meta<typeof Table> = {
   title: 'Table/React',
   component: Table,
+  tags: ['autodocs'],
   args: {
     caption: 'Open invoices',
-    columns: COLUMNS,
-    data: DATA,
+    columns: INVOICE_COLUMNS,
+    data: INVOICES,
   },
-  tags: ['autodocs'],
 };
 
 export default meta;
@@ -64,58 +48,110 @@ export const ResponsiveScroll: Story = { args: { responsive: 'scroll' } };
 
 /* maxHeight */
 export const MaxHeightNone: Story = { args: { maxHeight: 'none' } };
-export const MaxHeightViewport: Story = { args: { maxHeight: 'viewport', data: [...DATA, ...DATA, ...DATA] } };
+export const MaxHeightViewport: Story = { args: { maxHeight: 'viewport' } };
 
 /* density */
 export const DensityCompact: Story = { args: { density: 'compact' } };
 export const DensityComfortable: Story = { args: { density: 'comfortable' } };
 
+/* examples */
+export const OpenInvoices: Story = {
+  args: {
+    caption: 'Open invoices',
+    columns: [
+      { key: 'invoice', header: 'Invoice', isRowHeader: true },
+      { key: 'due', header: 'Due' },
+      { key: 'amount', header: 'Amount', align: 'end', sortable: true },
+    ],
+    data: [
+      { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },
+      { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },
+    ],
+  },
+};
+
+export const SelectableRows: Story = {
+  args: {
+    caption: 'Members',
+    selectable: 'multiple',
+    defaultSelected: ['a'],
+    columns: [
+      { key: 'person', header: 'Person', isRowHeader: true },
+      { key: 'role', header: 'Role' },
+    ],
+    data: [
+      { id: 'a', person: 'Ana Souza', role: 'Admin' },
+      { id: 'b', person: 'Bo Lin', role: 'Editor' },
+    ],
+  },
+};
+
+export const DenseDataTableThatScrolls: Story = {
+  args: {
+    caption: 'Daily traffic',
+    responsive: 'scroll',
+    density: 'compact',
+    maxHeight: 'viewport',
+    columns: [
+      { key: 'day', header: 'Day', isRowHeader: true },
+      { key: 'visits', header: 'Visits', align: 'end' },
+      { key: 'signups', header: 'Signups', align: 'end' },
+    ],
+    data: [
+      { id: 'a', day: 'Monday', visits: 1200, signups: 30 },
+      { id: 'b', day: 'Tuesday', visits: 1450, signups: 41 },
+    ],
+  },
+};
+
+export const NothingToShow: Story = {
+  args: {
+    caption: 'Open invoices',
+    emptyMessage: 'No invoices yet.',
+    columns: [{ key: 'invoice', header: 'Invoice', isRowHeader: true }],
+    data: [],
+  },
+};
+
 /* notable states */
 export const HideCaption: Story = { args: { hideCaption: true } };
-
 export const NoStickyHeader: Story = { args: { stickyHeader: false } };
-
 export const Striped: Story = { args: { striped: true } };
-
 export const Empty: Story = { args: { data: [] } };
-
-export const EmptyWithMessage: Story = { args: { data: [], emptyMessage: 'No invoices match these filters.' } };
-
 export const Loading: Story = { args: { loading: true } };
+export const DefaultSortDescending: Story = { args: { defaultSort: { column: 'amount', direction: 'descending' } } };
 
-export const LoadingEmpty: Story = { args: { loading: true, data: [] } };
+export const LinkInRowHeader: Story = {
+  args: {
+    columns: [
+      { key: 'invoice', header: 'Invoice', isRowHeader: true, render: (row) => <Link href={`#${row.id}`} label={String(row['invoice'])} /> },
+      { key: 'due', header: 'Due', hideBelow: 'prose' },
+      { key: 'amount', header: 'Amount', align: 'end', sortable: true },
+    ],
+  },
+};
 
-export const DefaultSort: Story = { args: { defaultSort: { column: 'amount', direction: 'descending' } } };
+export const InteractiveRows: Story = { args: { onRowPress: () => undefined } };
 
 export const WithRowActions: Story = {
   args: {
     rowActions: (row) => (
-      <Button variant="ghost" size="sm" iconOnly label={`Open ${(row as Invoice).customer}`} leadingIcon={<Icon name="ellipsis" inline />} />
+      <Button variant="ghost" size="sm" iconOnly label={`More for ${String(row['invoice'])}`} leadingIcon={<Icon name="ellipsis" />} />
     ),
   },
-};
-
-export const InteractiveRows: Story = {
-  args: { onRowPress: () => undefined },
 };
 
 export const WithFooter: Story = {
   args: {
     footer: (
       <Text element="p" size="sm" tone="muted">
-        Showing {DATA.length} of {DATA.length} invoices.
+        2 rows
       </Text>
     ),
   },
 };
 
-/**
- * Open/present with at least three focusable children, for the keyboard gate: the sortable
- * header's Button, the select-all Checkbox plus one per row, and a trailing action Button per row.
- */
+/** Present with more than three focusable children: select-all, a sort button, and a Checkbox per row. */
 export const Keyboard: Story = {
-  args: {
-    selectable: 'multiple',
-    rowActions: (row) => <Button variant="ghost" size="sm" label={`View ${(row as Invoice).customer}`} />,
-  },
+  args: { selectable: 'multiple' },
 };

@@ -9,12 +9,9 @@
   --ds-table-row-border: var(--color-border);
   --ds-table-row-border-width: var(--border-width-thin);
   --ds-table-row-hover: var(--color-action-ghost-background-hover);
-  --ds-table-row-selected-border-width: var(--border-width-focus);
   --ds-table-cell-padding-inline: var(--layout-inset-md);
-  --ds-table-cell-padding-inline-compact: var(--layout-inset-sm);
   --ds-table-cell-padding-block: var(--space-sm);
   --ds-table-cell-gap: var(--layout-gap-tight);
-  --ds-table-caption-gap: var(--space-2);
   --ds-table-stacked-row-inset: var(--layout-inset-md);
   --ds-table-stacked-row-gap: var(--layout-gap-tight);
   --ds-table-stacked-label-size: var(--font-size-xs);
@@ -32,18 +29,11 @@
   font-family: var(--ds-table-font-family);
   font-size: var(--ds-table-font-size);
   line-height: var(--ds-table-line-height);
-  /* cellColor: color.foreground, locked */
-  color: var(--color-foreground);
 }
 
-/* maxHeight: viewport — capped at the viewport height minus the section rhythm on both ends. */
-.ds-table--max-height-viewport {
-  overflow-y: auto;
-  max-block-size: calc(100vh - var(--layout-gap-section) * 2);
-}
-
-.ds-table__sentinel {
-  block-size: 1px; /* literal-ok: IntersectionObserver measurement sentinel, not a rendered size */
+/* cellPaddingInline by density */
+.ds-table--compact {
+  --ds-table-cell-padding-inline: var(--layout-inset-sm);
 }
 
 .ds-table__visually-hidden {
@@ -53,23 +43,26 @@
   margin: -1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
 
-.ds-table__scroll-region {
-  overflow-x: auto;
-  scrollbar-width: none;
-  /* mask-image alpha channel: opaque/transparent stops, not a color. */
-  mask-image: linear-gradient(to right, transparent, black var(--ds-table-scroll-fade), black calc(100% - var(--ds-table-scroll-fade)), transparent); /* literal-ok: mask alpha marker, not a color */
-}
-.ds-table__scroll-region::-webkit-scrollbar {
-  display: none;
+.ds-table__sentinel {
+  block-size: var(--border-width-thin);
 }
 
-/* focus-visible: the scroll region is itself focusable so keyboard users can reach off-screen columns. */
+.ds-table--max-height-viewport .ds-table__frame {
+  max-block-size: calc(100vh - 2 * var(--layout-gap-section));
+  overflow-y: auto;
+}
+
+.ds-table__scroll-region {
+  overflow-x: auto;
+  mask-image: linear-gradient(to right, transparent, black var(--ds-table-scroll-fade), black calc(100% - var(--ds-table-scroll-fade)), transparent); /* literal-ok: mask alpha stops, not a rendered color */
+}
+
+/* focusRing / focusRingWidth, locked */
 .ds-table__scroll-region:focus-visible {
   outline: var(--border-width-focus) solid var(--color-border-focus);
   outline-offset: calc(-1 * var(--border-width-focus));
@@ -77,186 +70,226 @@
 
 .ds-table__table {
   inline-size: 100%;
-  border-collapse: collapse;
-  /* surface: color.background, locked */
+  border-collapse: separate;
+  border-spacing: 0;
+  /* surface, locked */
   background-color: var(--color-background);
 }
 
-.ds-table__caption {
-  padding-block-end: var(--ds-table-caption-gap);
-  text-align: start;
-  caption-side: top;
-}
-
-.ds-table__th,
+.ds-table__column-header,
+.ds-table__row-header,
 .ds-table__cell,
-.ds-table__td {
-  box-sizing: border-box;
-  padding-inline: var(--ds-table-cell-padding-inline);
+.ds-table__select,
+.ds-table__empty {
   padding-block: var(--ds-table-cell-padding-block);
-  border-block-end: var(--ds-table-row-border-width) solid var(--ds-table-row-border);
+  padding-inline: var(--ds-table-cell-padding-inline);
   text-align: start;
   vertical-align: middle;
+  /* cellColor, locked */
+  color: var(--color-foreground);
+  background-color: var(--color-background);
 }
 
-.ds-table--density-compact .ds-table__th,
-.ds-table--density-compact .ds-table__cell,
-.ds-table--density-compact .ds-table__td {
-  padding-inline: var(--ds-table-cell-padding-inline-compact);
+.ds-table__body > .ds-table__row > * {
+  border-block-end: var(--ds-table-row-border-width) solid var(--ds-table-row-border);
 }
 
-.ds-table__thead .ds-table__th {
-  /* headerSurface / headerColor: locked */
+.ds-table__row-header {
+  font-weight: inherit;
+}
+
+/* header part */
+.ds-table__header-row > * {
+  /* headerSurface / headerColor, locked */
   background-color: var(--color-background-subtle);
   color: var(--color-foreground);
-  font-weight: var(--ds-table-header-weight);
   font-size: var(--ds-table-header-size);
+  font-weight: var(--ds-table-header-weight);
   border-block-end: var(--ds-table-header-border-width) solid var(--ds-table-header-border);
 }
 
-.ds-table--sticky-header .ds-table__thead .ds-table__th {
+.ds-table--sticky-header .ds-table__header-row > * {
   position: sticky;
   inset-block-start: 0;
-  z-index: 1;
+  z-index: 2;
 }
 
-.ds-table--scrolled-under-header .ds-table__thead .ds-table__th {
+.ds-table--scrolled-under .ds-table__header-row > * {
   box-shadow: var(--ds-table-header-shadow);
 }
 
-.ds-table--scroll tbody .ds-table__cell[scope='row'] {
-  position: sticky;
-  inset-inline-start: 0;
-  background-color: var(--color-background);
-  z-index: 1;
+.ds-table__select {
+  inline-size: var(--size-target-min);
+  min-inline-size: var(--size-target-min);
 }
 
-.ds-table__scroll-region--scrolled tbody .ds-table__cell[scope='row'] {
-  box-shadow: var(--ds-table-sticky-column-shadow);
-}
-
-.ds-table--striped .ds-table__tbody .ds-table__tr:nth-child(even) .ds-table__cell,
-.ds-table--striped .ds-table__tbody .ds-table__tr:nth-child(even) .ds-table__td {
-  /* rowStripe: color.background.subtle, locked */
-  background-color: var(--color-background-subtle);
-}
-
-.ds-table__tr--selected .ds-table__cell,
-.ds-table__tr--selected .ds-table__td {
-  /* rowSelected: color.background.subtle, locked; same tint as a stripe */
-  background-color: var(--color-background-subtle);
-}
-
-.ds-table__tr--selected .ds-table__cell[scope='row'] {
-  /* rowSelectedBorder: color.control.selectedBackground, locked; a start-edge bar, not color-fill alone */
-  box-shadow: inset var(--ds-table-row-selected-border-width) 0 0 0 var(--color-control-selected-background);
-}
-
-.ds-table__tr--interactive {
-  cursor: pointer;
-}
-.ds-table__tr--interactive .ds-table__cell:hover,
-.ds-table__tr--interactive .ds-table__td:hover {
-  background-color: var(--ds-table-row-hover);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .ds-table__tr--interactive .ds-table__cell,
-  .ds-table__tr--interactive .ds-table__td {
-    transition: background-color var(--ds-table-transition) var(--motion-easing-standard);
-  }
-}
-
-.ds-table__row-button {
-  display: inline;
-}
-
-/* sortButton: flush with the header text, no button chrome of its own. */
-.ds-table__sort-button {
-  --ds-button-padding-inline: 0;
-  --ds-button-padding-block: 0;
-}
-
-.ds-table__cell--align-end,
-.ds-table__th.ds-table__cell--align-end {
+.ds-table__cell--align-end {
   text-align: end;
 }
-.ds-table__cell--align-center,
-.ds-table__th.ds-table__cell--align-center {
+.ds-table__cell--align-center {
   text-align: center;
 }
-/* numericFont: body cells only (align.end column values), never the header text. */
-td.ds-table__cell--align-end {
+/* numericFont: body values of end-aligned columns */
+.ds-table__cell.ds-table__cell--align-end {
   font-family: var(--ds-table-numeric-font);
   font-variant-numeric: tabular-nums;
 }
 
+.ds-table__cell--width-min {
+  inline-size: 0;
+  white-space: nowrap;
+}
+.ds-table__cell--width-fill {
+  inline-size: 100%;
+}
+
+.ds-table__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ds-table-cell-gap);
+}
+
+/* rowStripe, locked */
+.ds-table--striped .ds-table__body > .ds-table__row:nth-child(even) > * {
+  background-color: var(--color-background-subtle);
+}
+
+/* rowSelected + rowSelectedBorder + rowSelectedBorderWidth, locked */
+.ds-table__row--selected > * {
+  background-color: var(--color-background-subtle);
+}
+.ds-table__row--selected > :first-child {
+  box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+}
+.ds-table__row--selected > :first-child:dir(rtl) {
+  box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+}
+
+/* rowHover: interactive rows only */
+.ds-table__row--interactive {
+  cursor: pointer;
+}
+.ds-table__row--interactive > * {
+  transition: background-color var(--ds-table-transition) var(--motion-easing-standard);
+}
+.ds-table__row--interactive:hover > * {
+  background-color: var(--ds-table-row-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-table__row--interactive > * {
+    transition: none;
+  }
+}
+
 .ds-table__empty {
-  padding-block: var(--ds-table-stacked-row-inset);
   text-align: center;
 }
 
-/* focusRing / focusRingWidth: locked */
-.ds-table__th :focus-visible,
-.ds-table__cell :focus-visible,
-.ds-table__td :focus-visible {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
+/* stickyColumnShadow: the row-header column in `responsive: scroll` */
+.ds-table--scroll .ds-table__cell--row-header {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+}
+.ds-table--scroll .ds-table__header-row > .ds-table__cell--row-header {
+  z-index: 3;
+}
+.ds-table__frame--scrolled .ds-table__cell--row-header {
+  box-shadow: var(--ds-table-sticky-column-shadow);
 }
 
 .ds-table__footer {
-  padding-block-start: var(--ds-table-cell-gap);
+  padding-block-start: var(--ds-table-cell-padding-block);
 }
 
-/* `@container` conditions cannot read custom properties, so the built breakpoints are duplicated
-   here as literals. */
+/* Container conditions cannot read custom properties; the numbers are the built tokens. */
 @container (max-width: 960px) { /* literal-ok: breakpoint from layout.maxWidth.content */
-  .ds-table__cell--hide-below-content {
+  .ds-table--stack .ds-table__cell--hide-below-content {
     display: none;
   }
 }
 
 @container (max-width: 572px) { /* literal-ok: breakpoint from layout.maxWidth.prose */
-  .ds-table__cell--hide-below-prose {
+  .ds-table--stack .ds-table__cell--hide-below-prose {
     display: none;
   }
 
-  /* stackedLabel is drawn from a ::before, with no separate part hook. The visually-hidden clip
-     pattern is inlined (rather than reusing .ds-table__visually-hidden) because it applies
-     conditionally, only inside this container query. */
-  .ds-table--stack .ds-table__thead {
-    position: absolute; /* literal-ok: visually-hidden clip pattern */
+  /* The header row keeps select-all and the sort buttons visible; plain column headers are
+     visually hidden (never display none) so they stay in the accessibility tree. */
+  .ds-table--stack .ds-table__header,
+  .ds-table--stack .ds-table__header-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ds-table-cell-gap);
+  }
+  .ds-table--stack .ds-table__header-row > * {
+    position: static;
+    border: 0;
+    box-shadow: none;
+    background-color: transparent;
+  }
+  .ds-table--stack .ds-table__header-row > .ds-table__column-header:not(:has(button)) {
+    position: absolute;
     inline-size: 1px; /* literal-ok: visually-hidden clip pattern */
     block-size: 1px; /* literal-ok: visually-hidden clip pattern */
     margin: -1px; /* literal-ok: visually-hidden clip pattern */
     padding: 0;
     overflow: hidden;
-    clip: rect(0 0 0 0);
     clip-path: inset(50%);
     white-space: nowrap;
-    border: 0;
   }
 
-  .ds-table--stack .ds-table__tbody .ds-table__tr {
+  .ds-table--stack .ds-table__table,
+  .ds-table--stack .ds-table__body {
+    display: block;
+  }
+
+  .ds-table--stack .ds-table__body > .ds-table__row {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--ds-table-stacked-row-gap);
     padding: var(--ds-table-stacked-row-inset);
     border: var(--ds-table-row-border-width) solid var(--ds-table-row-border);
     border-radius: var(--ds-table-stacked-row-radius);
+    background-color: var(--color-background);
   }
 
-  .ds-table--stack .ds-table__tbody .ds-table__cell,
-  .ds-table--stack .ds-table__tbody .ds-table__td {
+  .ds-table--stack .ds-table__body > .ds-table__row > * {
     display: block;
+    inline-size: auto;
     padding: 0;
     border: 0;
     box-shadow: none;
+    text-align: start;
+    background-color: transparent;
   }
 
-  .ds-table--stack .ds-table__tbody .ds-table__td[data-label]::before {
+  .ds-table--stack .ds-table__actions {
+    justify-content: flex-start;
+  }
+
+  .ds-table--striped.ds-table--stack .ds-table__body > .ds-table__row:nth-child(even),
+  .ds-table--stack .ds-table__body > .ds-table__row--selected {
+    background-color: var(--color-background-subtle);
+  }
+  .ds-table--stack .ds-table__body > .ds-table__row--selected {
+    box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+  }
+  .ds-table--stack .ds-table__body > .ds-table__row--selected:dir(rtl) {
+    box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+  }
+  .ds-table--stack .ds-table__body > .ds-table__row--interactive:hover {
+    background-color: var(--ds-table-row-hover);
+  }
+
+  /* stackedLabel: drawn as a pseudo-element, so it has no part hook */
+  .ds-table--stack .ds-table__body [data-label]::before {
     content: attr(data-label);
+    content: attr(data-label) / ''; /* empty alt text: the roles already associate the header */
     display: block;
-    /* stackedLabelColor: color.foreground.muted, locked */
     color: var(--color-foreground-muted);
     font-size: var(--ds-table-stacked-label-size);
     font-weight: var(--ds-table-stacked-label-weight);

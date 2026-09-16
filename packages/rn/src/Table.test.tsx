@@ -1,11 +1,10 @@
 /**
- * Table — behavior scenarios from the component doc, one test each, in the doc's
- * order. Every scenario in the spec is a `renders: true` or accessible-name check,
- * so each test only asserts the tree renders or that the accessible name is set.
- * See generated/prompts/Table.rn.md.
+ * Table — behavior scenarios from the component doc, one test each, in the doc's order.
+ * `loading-marks-the-table-busy` is web-only (the parser narrows it); on native the list
+ * carries `accessibilityState.busy` instead of aria-busy.
  */
 import * as React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { Table } from './Table';
 import type { TableProps } from './Table';
 import meta from './Table.stories';
@@ -22,81 +21,158 @@ function setup(given: Partial<TableProps> = {}) {
   return { ...utils, props };
 }
 
+let warn: jest.SpyInstance;
+beforeEach(() => {
+  warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+});
+afterEach(() => {
+  warn.mockRestore();
+});
+
 describe('Table', () => {
+  it('activating-a-sortable-header-reports-the-sort', () => {
+    const onSortChange = jest.fn();
+    setup({
+      columns: [
+        { key: 'invoice', header: 'Invoice', isRowHeader: true },
+        { key: 'amount', header: 'Amount', sortable: true, align: 'end' },
+      ],
+      data: [
+        { id: 'a', invoice: 'INV-1', amount: 100 },
+        { id: 'b', invoice: 'INV-2', amount: 200 },
+      ],
+      onSortChange,
+    });
+    const sortButton = screen.getAllByTestId('Table.sortButton')[0]!;
+    fireEvent.press(within(sortButton).getByRole('button'));
+    expect(onSortChange).toHaveBeenCalledWith('amount', 'ascending');
+  });
+
+  it('selecting-a-row-reports-every-selected-id', () => {
+    const onSelectionChange = jest.fn();
+    setup({
+      selectable: 'multiple',
+      columns: [{ key: 'invoice', header: 'Invoice', isRowHeader: true }],
+      data: [
+        { id: 'a', invoice: 'INV-1' },
+        { id: 'b', invoice: 'INV-2' },
+      ],
+      onSelectionChange,
+    });
+    const selectCell = screen.getAllByTestId('Table.selectCell')[0]!;
+    fireEvent.press(within(selectCell).getByRole('checkbox'));
+    expect(onSelectionChange).toHaveBeenCalledWith(['a']);
+  });
+
+  it('select-all-reports-the-whole-selection', () => {
+    const onSelectionChange = jest.fn();
+    setup({
+      selectable: 'multiple',
+      columns: [{ key: 'invoice', header: 'Invoice', isRowHeader: true }],
+      data: [
+        { id: 'a', invoice: 'INV-1' },
+        { id: 'b', invoice: 'INV-2' },
+      ],
+      onSelectionChange,
+    });
+    const selectAllCell = screen.getAllByTestId('Table.selectAllCell')[0]!;
+    fireEvent.press(within(selectAllCell).getByRole('checkbox'));
+    expect(onSelectionChange).toHaveBeenCalledWith(['a', 'b']);
+  });
+
+  it('the-empty-message-shows-when-there-are-no-rows', () => {
+    setup({ columns: [{ key: 'invoice', header: 'Invoice', isRowHeader: true }], data: [] });
+    expect(screen.getByText('Nothing to show.')).toBeTruthy();
+  });
+
+  it('a-custom-empty-message-replaces-the-default', () => {
+    setup({ emptyMessage: 'No invoices yet.', columns: [{ key: 'invoice', header: 'Invoice', isRowHeader: true }], data: [] });
+    expect(screen.getByText('No invoices yet.')).toBeTruthy();
+  });
+
   /* derived */
   it('renders', () => {
-    const t = setup();
-    expect(t.toJSON()).not.toBeNull();
+    const s = setup();
+    expect(s.toJSON()).not.toBeNull();
   });
 
-  /* derived: props.captionLevel */
-  it('renders-captionLevel-2', () => {
-    const t = setup({ captionLevel: '2' });
-    expect(t.toJSON()).not.toBeNull();
+  /* derived */
+  it('renders-caption-level-2', () => {
+    const s = setup({ captionLevel: '2' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-captionLevel-3', () => {
-    const t = setup({ captionLevel: '3' });
-    expect(t.toJSON()).not.toBeNull();
+  /* derived */
+  it('renders-caption-level-3', () => {
+    const s = setup({ captionLevel: '3' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-captionLevel-4', () => {
-    const t = setup({ captionLevel: '4' });
-    expect(t.toJSON()).not.toBeNull();
+  /* derived */
+  it('renders-caption-level-4', () => {
+    const s = setup({ captionLevel: '4' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
-  /* derived: props.selectable */
+  /* derived */
   it('renders-selectable-none', () => {
-    const t = setup({ selectable: 'none' });
-    expect(t.toJSON()).not.toBeNull();
+    const s = setup({ selectable: 'none' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
+  /* derived */
   it('renders-selectable-single', () => {
-    const t = setup({ selectable: 'single' });
-    expect(t.toJSON()).not.toBeNull();
+    const s = setup({ selectable: 'single' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
+  /* derived */
   it('renders-selectable-multiple', () => {
-    const t = setup({ selectable: 'multiple' });
-    expect(t.toJSON()).not.toBeNull();
+    const s = setup({ selectable: 'multiple' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
-  /* derived: props.responsive */
+  /* derived */
   it('renders-responsive-stack', () => {
-    const t = setup({ responsive: 'stack' });
-    expect(t.toJSON()).not.toBeNull();
+    const s = setup({ responsive: 'stack' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
+  /* derived */
   it('renders-responsive-scroll', () => {
-    const t = setup({ responsive: 'scroll' });
-    expect(t.toJSON()).not.toBeNull();
+    const s = setup({ responsive: 'scroll' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
-  /* derived: props.maxHeight */
-  it('renders-maxHeight-none', () => {
-    const t = setup({ maxHeight: 'none' });
-    expect(t.toJSON()).not.toBeNull();
+  /* derived */
+  it('renders-max-height-none', () => {
+    const s = setup({ maxHeight: 'none' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-maxHeight-viewport', () => {
-    const t = setup({ maxHeight: 'viewport' });
-    expect(t.toJSON()).not.toBeNull();
+  /* derived */
+  it('renders-max-height-viewport', () => {
+    const s = setup({ maxHeight: 'viewport' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
-  /* derived: props.density */
+  /* derived */
   it('renders-density-compact', () => {
-    const t = setup({ density: 'compact' });
-    expect(t.toJSON()).not.toBeNull();
+    const s = setup({ density: 'compact' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
+  /* derived */
   it('renders-density-comfortable', () => {
-    const t = setup({ density: 'comfortable' });
-    expect(t.toJSON()).not.toBeNull();
+    const s = setup({ density: 'comfortable' });
+    expect(s.toJSON()).not.toBeNull();
   });
 
-  /* derived: a11y.requires */
+  /* derived */
   it('has-accessible-name', () => {
-    const t = setup();
-    expect(screen.getByLabelText(t.props.caption)).toBeTruthy();
+    const s = setup();
+    const list = screen.getByTestId('Table.table');
+    expect(list.props.accessibilityRole).toBe('list');
+    expect(list.props.accessibilityLabel).toBe(s.props.caption);
   });
 });

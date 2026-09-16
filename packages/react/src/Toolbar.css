@@ -7,27 +7,33 @@
   --ds-toolbar-radius: var(--radius-md);
   --ds-toolbar-padding-inline: var(--space-2);
   --ds-toolbar-padding-block: var(--space-1);
-  --ds-toolbar-item-gap: var(--layout-gap-normal);
-  --ds-toolbar-item-gap-compact: var(--layout-gap-tight);
   --ds-toolbar-group-gap: var(--layout-gap-normal);
   --ds-toolbar-separator-length: var(--space-5);
   --ds-toolbar-fade-width: var(--space-6);
-  /* Locked (accessibility-bearing): declared for consumers who set the hook directly from their
-     own CSS, but no selector below reads it — every focusable element in a Toolbar belongs to a
-     composed child (Button, SegmentedControl, Menu, ...) that already owns its own focus ring. */
+  /* Locked (accessibility-bearing): declared for consumers who set the hook from their own CSS, but
+     no rule reads it — every focusable thing in a Toolbar is a composed child drawing its own ring. */
   --ds-toolbar-focus-ring: var(--color-border-focus);
   --ds-toolbar-focus-ring-width: var(--border-width-focus);
   box-sizing: border-box;
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--ds-toolbar-group-gap);
+  gap: var(--ds-toolbar-item-gap);
   min-inline-size: 0;
   padding-inline: var(--ds-toolbar-padding-inline);
   padding-block: var(--ds-toolbar-padding-block);
   background-color: var(--ds-toolbar-background);
   border: var(--ds-toolbar-border-width) solid var(--ds-toolbar-border);
   border-radius: var(--ds-toolbar-radius);
+}
+
+/* itemGap by density. Set on the modifier so an inline override on the root still wins. */
+.ds-toolbar--comfortable {
+  --ds-toolbar-item-gap: var(--layout-gap-normal);
+}
+
+.ds-toolbar--compact {
+  --ds-toolbar-item-gap: var(--layout-gap-tight);
 }
 
 .ds-toolbar--vertical {
@@ -49,7 +55,7 @@
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
-  /* mask-image stops are alpha (black=opaque, transparent=none), not a design color. */
+  /* mask-image stops are alpha (black = opaque), not a design color. */
   mask-image: linear-gradient(to right, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stop */
   -webkit-mask-image: linear-gradient(to right, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stop */
 }
@@ -68,6 +74,7 @@
 .ds-toolbar__group {
   box-sizing: border-box;
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: var(--ds-toolbar-item-gap);
   min-inline-size: 0;
@@ -78,31 +85,43 @@
   align-items: stretch;
 }
 
-.ds-toolbar--density-compact .ds-toolbar__group {
-  gap: var(--ds-toolbar-item-gap-compact);
-}
-
-/* separator: shorter than the toolbar's own cross-size, unlike a standalone Divider's stretch. */
+/* separator: shorter than the toolbar. groupGap replaces itemGap either side of it — the flex gap
+   already contributes itemGap, so the part pads only the difference (a negative calc clamps to 0). */
 .ds-toolbar__separator {
+  box-sizing: content-box;
   display: flex;
   flex: 0 0 auto;
   align-items: stretch;
   justify-content: center;
   block-size: var(--ds-toolbar-separator-length);
+  padding-inline: calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap));
 }
 
 .ds-toolbar--vertical .ds-toolbar__separator {
+  align-items: center;
   inline-size: var(--ds-toolbar-separator-length);
   block-size: auto;
+  padding-inline: 0;
+  padding-block: calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap));
+  align-self: center;
 }
 
-.ds-toolbar__item {
+.ds-toolbar--vertical .ds-toolbar__separator > * {
+  flex: 1 1 auto;
+}
+
+/* Measurement wrapper for overflow: menu; one per top-level entry. */
+.ds-toolbar__entry {
   display: flex;
-  align-items: center;
-  min-inline-size: 0;
   flex: 0 0 auto;
+  align-items: center;
 }
 
-.ds-toolbar__more {
-  flex: 0 0 auto;
+/* The width the More trigger is guaranteed before it renders: size.target.min. */
+.ds-toolbar__reserve {
+  position: absolute;
+  inline-size: var(--size-target-min);
+  block-size: 0;
+  visibility: hidden;
+  pointer-events: none;
 }

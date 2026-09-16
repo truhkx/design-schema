@@ -8,14 +8,16 @@ import {
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type ReactElement,
   type ReactNode,
   type Ref,
-  type UIEvent, type ReactElement,
+  type UIEvent,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Checkbox } from './Checkbox';
-import { Heading, type HeadingOverridableBinding } from './Heading';
+import { Heading } from './Heading';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import './Table.css';
@@ -30,29 +32,26 @@ export type TableColumnAlign = 'start' | 'end' | 'center';
 export type TableColumnWidth = 'auto' | 'min' | 'fill';
 export type TableColumnHideBelow = 'prose' | 'content';
 
-/** A data row. `id` must be stable — selection and React keys use it. */
+/** A data row. `id` must be stable; it is what selection and keys use. */
 export type TableRow = { id: string; [key: string]: unknown };
 
-/** Controlled or initial sort state; the caller sorts `data` for the controlled form. */
-export interface TableSortState {
-  column: string;
-  direction: TableSortDirection;
-}
+/** Sort state: the column key and its direction. */
+export type TableSortState = { column: string; direction: TableSortDirection };
 
 /** One column definition, in display order. */
-export interface TableColumn {
+export type TableColumn = {
   key: string;
   header: string;
-  abbr?: string | undefined;
-  align?: TableColumnAlign | undefined;
-  sortable?: boolean | undefined;
-  width?: TableColumnWidth | undefined;
-  isRowHeader?: boolean | undefined;
-  hideBelow?: TableColumnHideBelow | undefined;
-  render?: ((row: TableRow) => ReactNode) | undefined;
-}
+  abbr?: string;
+  align?: TableColumnAlign;
+  sortable?: boolean;
+  width?: TableColumnWidth;
+  isRowHeader?: boolean;
+  hideBelow?: TableColumnHideBelow;
+  render?: (row: TableRow) => ReactNode;
+};
 
-/** copy.* — used verbatim; placeholders are replaced with the running values. */
+/** copy.* — used verbatim. `sortToolbarLabel` and `cellLabel` belong to the native stacked form. */
 const COPY = {
   sortAscending: 'Sort by {column}, ascending',
   sortDescending: 'Sort by {column}, descending',
@@ -64,8 +63,8 @@ const COPY = {
   empty: 'Nothing to show.',
   loading: 'Loading',
   scrollHint: 'Scroll sideways to see more columns',
-  rowCount: '{count} rows',
-};
+  rowCount: { one: '{count} row', other: '{count} rows' },
+} as const;
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type TableOverridableBinding =
@@ -77,9 +76,7 @@ export type TableOverridableBinding =
   | 'rowBorder'
   | 'rowBorderWidth'
   | 'rowHover'
-  | 'rowSelectedBorderWidth'
   | 'cellPaddingInline'
-  | 'cellPaddingInlineCompact'
   | 'cellPaddingBlock'
   | 'cellGap'
   | 'captionSize'
@@ -98,9 +95,10 @@ export type TableOverridableBinding =
   | 'numericFont'
   | 'transition';
 
-/** `captionSize`/`captionWeight` are forwarded to the composed caption Heading's own overrides
- * (it already owns `fontSize`/`fontWeight`); every other binding is a root CSS hook. */
-const ROOT_OVERRIDE_HOOK: Partial<Record<TableOverridableBinding, string | undefined>> = {
+type TableOverrides = Partial<Record<TableOverridableBinding, TokenRef | undefined>>;
+
+/** Root CSS hooks. The caption bindings are forwarded to the composed Heading's own overrides instead. */
+const OVERRIDE_HOOK: Partial<Record<TableOverridableBinding, string>> = {
   headerWeight: '--ds-table-header-weight',
   headerSize: '--ds-table-header-size',
   headerBorder: '--ds-table-header-border',
@@ -109,12 +107,9 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<TableOverridableBinding, string | undef
   rowBorder: '--ds-table-row-border',
   rowBorderWidth: '--ds-table-row-border-width',
   rowHover: '--ds-table-row-hover',
-  rowSelectedBorderWidth: '--ds-table-row-selected-border-width',
   cellPaddingInline: '--ds-table-cell-padding-inline',
-  cellPaddingInlineCompact: '--ds-table-cell-padding-inline-compact',
   cellPaddingBlock: '--ds-table-cell-padding-block',
   cellGap: '--ds-table-cell-gap',
-  captionGap: '--ds-table-caption-gap',
   stackedRowInset: '--ds-table-stacked-row-inset',
   stackedRowGap: '--ds-table-stacked-row-gap',
   stackedLabelSize: '--ds-table-stacked-label-size',
@@ -129,125 +124,92 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<TableOverridableBinding, string | undef
   transition: '--ds-table-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<TableOverridableBinding, TokenRef | undefined>>): {
-  rootStyle: CSSProperties;
-  captionOverrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>>;
-} {
-  const rootStyle: Record<string, string> = {};
-  const captionOverrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> = { marginBlockEnd: 'space.0' };
+function overridesToStyle(overrides: TableOverrides): CSSProperties {
+  const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as TableOverridableBinding[]) {
+    const hook = OVERRIDE_HOOK[binding];
     const ref = overrides[binding];
-    if (!ref) continue;
-    const hook = ROOT_OVERRIDE_HOOK[binding];
-    if (hook) {
-      rootStyle[hook] = cssVar(ref);
-    } else if (binding === 'captionSize') {
-      captionOverrides.fontSize = ref;
-    } else if (binding === 'captionWeight') {
-      captionOverrides.fontWeight = ref;
-    }
+    if (hook && ref) style[hook] = cssVar(ref);
   }
-  return { rootStyle: rootStyle as CSSProperties, captionOverrides };
+  return style as CSSProperties;
 }
 
-/* Only declared when the bundler defines it; never assumed. */
-declare const process: { env: Record<string, string | undefined> } | undefined;
-const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
-
-/** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    : false;
+declare const process: { env: { NODE_ENV?: string | undefined } };
+const warned = new Set<string>();
+function warnOnce(message: string): void {
+  if (process.env.NODE_ENV !== 'production' && !warned.has(message)) {
+    warned.add(message);
+    console.warn(message);
+  }
 }
 
-/** localeCompare for strings, numeric otherwise — the uncontrolled-sort rule verbatim. */
-function compareRowValues(a: unknown, b: unknown): number {
-  if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b, undefined, { numeric: true });
-  return Number(a) - Number(b);
+/** localeCompare (numeric) for strings, subtraction for numbers; missing values sort last. */
+function compareValues(a: unknown, b: unknown): number {
+  if (a === undefined || a === null) return b === undefined || b === null ? 0 : 1;
+  if (b === undefined || b === null) return -1;
+  if (typeof a === 'number' && typeof b === 'number') return a - b;
+  return String(a).localeCompare(String(b), undefined, { numeric: true });
 }
 
-function cellContent(column: TableColumn, row: TableRow): ReactNode {
-  if (column.render) return column.render(row);
-  const value = row[column.key];
+function textOf(value: unknown): string {
   return value === undefined || value === null ? '' : String(value);
 }
 
-/** Plain-text stand-in for the row header value, for aria-labels that need a string. A custom
- * `render` on the row-header column cannot be reduced to text, so this falls back to the raw value. */
-function rowName(row: TableRow, rowHeaderColumn: TableColumn | undefined): string {
-  if (!rowHeaderColumn) return row.id;
-  const value = row[rowHeaderColumn.key];
-  return value === undefined || value === null ? row.id : String(value);
+function joinClasses(...names: (string | false | null | undefined)[]): string {
+  return names.filter(Boolean).join(' ');
 }
 
-function nextSortDirection(activeSort: TableSortState | undefined, columnKey: string): TableSortDirection {
-  if (activeSort?.column === columnKey) return activeSort.direction === 'ascending' ? 'descending' : 'ascending';
-  return 'ascending';
+/** The document language for plural selection; the runtime default when the page declares none. */
+function pageLocale(): string | undefined {
+  return typeof document !== 'undefined' && document.documentElement.lang ? document.documentElement.lang : undefined;
 }
 
-/** The sort Button's visible label doubles as the action description ("Sort by Amount, ascending"). */
-function sortButtonLabel(column: TableColumn, activeSort: TableSortState | undefined): string {
-  const next = nextSortDirection(activeSort, column.key);
-  const template = next === 'ascending' ? COPY.sortAscending : COPY.sortDescending;
-  return template.replace('{column}', column.header);
-}
-
-function hideBelowClass(column: TableColumn): string | null {
-  return column.hideBelow ? `ds-table__cell--hide-below-${column.hideBelow}` : null;
-}
-
-function alignClass(column: TableColumn): string | null {
-  return column.align === 'end' ? 'ds-table__cell--align-end' : column.align === 'center' ? 'ds-table__cell--align-center' : null;
-}
-
-export interface TableProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
-  /** What the table lists ("Open invoices"). Rendered as the `<caption>` and the table's accessible name. */
+export interface TableProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'className' | 'style'> {
+  /** What the table lists ("Open invoices"). Rendered as the caption and the accessible name; visually hidden with `hideCaption` when a Heading directly above already says it. */
   caption: string;
-  /** Heading level of the caption in the page outline; its size is `captionSize` regardless. */
+  /** Heading level of the caption in the page outline; its size is captionSize regardless. */
   captionLevel?: TableCaptionLevel | undefined;
+  /** Content below the table: a row count, pagination, a total. Rendered in the `footer` part with the table's font. */
+  footer?: ReactNode;
   /** Visually hide the caption; it remains the accessible name. */
   hideCaption?: boolean | undefined;
-  /** Column definitions in display order. Exactly one should set `isRowHeader`. */
+  /** Column definitions in display order. `header` is the visible heading; `align: end` for numbers; `sortable` adds the sort button; exactly one column may be `isRowHeader`; `hideBelow` drops a column below a layout width; `render` formats the cell. */
   columns: TableColumn[];
   /** The rows. `id` must be stable; it is what selection and keys use. */
   data: TableRow[];
-  /** Controlled sort state. The table shows it; the caller sorts `data`. */
+  /** Controlled sort state. The table shows it; the caller sorts the data (so server-side sorting works the same way). */
   sort?: TableSortState | undefined;
-  /** Initial sort for uncontrolled use; the table then sorts `data` itself. */
+  /** Initial sort for uncontrolled use; the table then sorts `data` itself by the column value (localeCompare for strings, numeric otherwise). */
   defaultSort?: TableSortState | undefined;
-  /** Adds a selection column: `single` (radio-like) or `multiple` (with select-all). */
+  /** Adds a first column of Checkboxes (radio-like behavior for `single`) and a select-all in the header for `multiple`. */
   selectable?: TableSelectable | undefined;
   /** Controlled selected row ids. */
   selected?: string[] | undefined;
   /** Initially selected ids. */
   defaultSelected?: string[] | undefined;
-  /** Below the prose width: `stack` turns rows into labelled blocks, `scroll` keeps columns and scrolls horizontally. */
+  /** Below `layout.maxWidth.prose`: `stack` turns each row into a labelled block; `scroll` keeps the columns and scrolls horizontally inside a labelled region with the row-header column sticky. */
   responsive?: TableResponsive | undefined;
-  /** The header row stays visible while the body scrolls. */
+  /** The header row stays visible while the body scrolls (the page, or `maxHeight`). */
   stickyHeader?: boolean | undefined;
-  /** `viewport` caps the table at the viewport height and scrolls the body. */
+  /** `viewport` caps the table at the viewport height minus the section rhythm and scrolls the body; `none` lets the page scroll. */
   maxHeight?: TableMaxHeight | undefined;
-  /** Cell padding: comfortable or compact. */
+  /** Cell padding: layout.inset.sm or layout.inset.md. */
   density?: TableDensity | undefined;
-  /** Alternate row backgrounds. */
+  /** Alternate row backgrounds. Useful past about eight columns; borders are the default row separator. */
   striped?: boolean | undefined;
   /** Shown in place of the body when `data` is empty. Defaults to `copy.empty`. */
   emptyMessage?: string | undefined;
-  /** Data is being fetched: the body shows `copy.loading` and `aria-busy` is set. Existing rows stay visible. */
+  /** Data is being fetched: the body shows `copy.loading` and aria-busy is set. Existing rows stay visible while re-sorting. */
   loading?: boolean | undefined;
-  /** Renders a trailing actions cell for each row (Buttons or a Menu). */
+  /** Renders a trailing actions cell: Buttons (ghost, sm, iconOnly with Tooltip) or a Menu. */
   rowActions?: ((row: TableRow) => ReactNode) | undefined;
-  /** Content below the table (pagination, a summary row). The schema names a `footer` anatomy part
-   * without further contract; this is its React slot. */
-  footer?: ReactNode;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<TableOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired when a sortable header is activated, with the new sort state. */
-  onSortChange?: ((sort: TableSortState) => void) | undefined;
+  overrides?: TableOverrides | undefined;
+  /** Fired when a sortable header is activated (ascending → descending on the same column, ascending on a new one). */
+  onSortChange?: ((column: string, direction: TableSortDirection) => void) | undefined;
   /** Fired with the new array of selected ids. */
   onSelectionChange?: ((selected: string[]) => void) | undefined;
-  /** Fired when a row is activated, with its id. Only when the row-header column has no custom `render`. */
+  /** Fired when a row is activated, with its id. The row-header cell becomes a Button and the row is styled interactive. */
   onRowPress?: ((id: string) => void) | undefined;
 }
 
@@ -255,17 +217,13 @@ export interface TableProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
  * Table — Design Schema, category: data.
  *
  * When to use:
- * Use a Table for a list of records with three or more comparable fields: orders, invoices,
- * members, inventory, results. Use `stack` (the default) when each row is a thing a person reads —
- * a person, an order — and `scroll` when the columns are what matters — figures across months, a
- * comparison. Add `sortable` to columns people compare by; `selectable: multiple` when bulk actions
- * exist (put them in a Toolbar above the table that appears with the selection count). Put the
- * row's identity in the `isRowHeader` column, usually as a Link to its detail page.
+ * Use a Table for a list of records with three or more comparable fields: orders, invoices, members, inventory, results. Use `stack` (the default) when each row is a thing a person reads — a person, an order — and `scroll` when the columns are what matters — figures across months, a comparison. Add `sortable` to columns people compare by; `selectable: multiple` when bulk actions exist (put them in a Toolbar above the table that appears with the selection count). Put the row's identity in the `isRowHeader` column, usually as a Link to its detail page.
  */
-export const Table = function Table({
+export function Table({
   ref,
   caption,
   captionLevel = '2',
+  footer,
   hideCaption = false,
   columns,
   data,
@@ -282,321 +240,348 @@ export const Table = function Table({
   emptyMessage,
   loading = false,
   rowActions,
-  footer,
   overrides,
   onSortChange,
   onSelectionChange,
   onRowPress,
-  className,
-  style,
   ...rest
 }: TableProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
-  const generatedId = useId();
-  const baseId = `ds-table${generatedId}`;
-  const captionId = `${baseId}-caption`;
-  const rowCountId = `${baseId}-row-count`;
-  const scrollHintId = `${baseId}-scroll-hint`;
+  const id = useId();
+  const captionId = `${id}-caption`;
+  const rowCountId = `${id}-row-count`;
+  const scrollHintId = `${id}-scroll-hint`;
 
   const rootRef = useRef<HTMLDivElement | null>(null);
-  useImperativeHandle(ref, () => rootRef.current as HTMLDivElement, []);
+  useImperativeHandle(ref, () => rootRef.current!, []);
+  const frameRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const scrollRegionRef = useRef<HTMLDivElement | null>(null);
 
-  const rowHeaderColumn = useMemo(() => columns.find((column) => column.isRowHeader), [columns]);
+  const rowHeaderColumn = columns.find((column) => column.isRowHeader);
+  const rowHeaderCount = columns.filter((column) => column.isRowHeader).length;
+  if (rowHeaderCount > 1) warnOnce('Table: exactly one column may set `isRowHeader`; the first is used.');
+  if (onRowPress && !rowHeaderColumn) warnOnce('Table: `onRowPress` needs an `isRowHeader` column; rows stay inert.');
+  const rowsInteractive = Boolean(onRowPress && rowHeaderColumn && !rowHeaderColumn.render);
 
-  if (isDev) {
-    const rowHeaderCount = columns.filter((column) => column.isRowHeader).length;
-    if (rowHeaderCount !== 1) {
-      console.warn(`Table: exactly one column should set \`isRowHeader\`; found ${rowHeaderCount}.`);
-    }
-  }
-
-  const isSortControlled = sort !== undefined;
+  /* Sort — controlled by `sort`, uncontrolled from `defaultSort`. */
   const [internalSort, setInternalSort] = useState<TableSortState | undefined>(defaultSort);
-  const activeSort = isSortControlled ? sort : internalSort;
-
-  const [liveMessage, setLiveMessage] = useState('');
-
-  const sortedData = useMemo(() => {
-    if (isSortControlled || !activeSort) return data;
-    const column = activeSort.column;
+  const sortControlled = sort !== undefined;
+  const activeSort = sortControlled ? sort : internalSort;
+  const rows = useMemo(() => {
+    if (sortControlled || !activeSort) return data;
     const factor = activeSort.direction === 'ascending' ? 1 : -1;
-    return [...data].sort((a, b) => compareRowValues(a[column], b[column]) * factor);
-  }, [data, isSortControlled, activeSort]);
+    return [...data].sort((a, b) => compareValues(a[activeSort.column], b[activeSort.column]) * factor);
+  }, [data, sortControlled, activeSort]);
 
-  const handleSort = (column: TableColumn) => {
-    const direction = nextSortDirection(activeSort, column.key);
-    const next: TableSortState = { column: column.key, direction };
-    if (!isSortControlled) setInternalSort(next);
-    onSortChange?.(next);
-    setLiveMessage(COPY.sortedAnnouncement.replace('{column}', column.header).replace('{direction}', direction));
+  const [announcement, setAnnouncement] = useState('');
+
+  const activateSort = (column: TableColumn): void => {
+    const direction: TableSortDirection =
+      activeSort?.column === column.key && activeSort.direction === 'ascending' ? 'descending' : 'ascending';
+    if (!sortControlled) setInternalSort({ column: column.key, direction });
+    onSortChange?.(column.key, direction);
+    setAnnouncement(COPY.sortedAnnouncement.replace('{column}', column.header).replace('{direction}', direction));
   };
 
-  const isSelectionControlled = selected !== undefined;
+  /* Selection — controlled by `selected`, uncontrolled from `defaultSelected`. */
   const [internalSelected, setInternalSelected] = useState<string[]>(defaultSelected ?? []);
-  const selectedIds = isSelectionControlled ? (selected as string[]) : internalSelected;
-  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectionControlled = selected !== undefined;
+  const selectedIds = selectionControlled ? selected : internalSelected;
+  const selectedSet = new Set(selectedIds);
 
-  const commitSelection = (next: string[]) => {
-    if (!isSelectionControlled) setInternalSelected(next);
+  const commitSelection = (next: string[]): void => {
+    if (!selectionControlled) setInternalSelected(next);
     onSelectionChange?.(next);
-    setLiveMessage(COPY.selectedCount.replace('{count}', String(next.length)).replace('{total}', String(sortedData.length)));
+    setAnnouncement(
+      COPY.selectedCount.replace('{count}', String(next.length)).replace('{total}', String(data.length)),
+    );
   };
 
-  const handleToggleRow = (id: string, checked: boolean) => {
-    if (selectable === 'single') {
-      commitSelection(checked ? [id] : []);
-      return;
-    }
-    commitSelection(checked ? [...selectedIds, id] : selectedIds.filter((existing) => existing !== id));
+  const toggleRow = (rowId: string, checked: boolean): void => {
+    if (selectable === 'single') commitSelection(checked ? [rowId] : []);
+    else commitSelection(checked ? [...selectedIds.filter((x) => x !== rowId), rowId] : selectedIds.filter((x) => x !== rowId));
   };
 
-  const allIds = useMemo(() => sortedData.map((row) => row.id), [sortedData]);
-  const allSelected = allIds.length > 0 && allIds.every((id) => selectedSet.has(id));
-  const someSelected = !allSelected && allIds.some((id) => selectedSet.has(id));
-  const handleToggleAll = () => commitSelection(allSelected ? [] : allIds);
+  const allSelected = data.length > 0 && data.every((row) => selectedSet.has(row.id));
+  const someSelected = !allSelected && data.some((row) => selectedSet.has(row.id));
+  const toggleAll = (): void => commitSelection(allSelected ? [] : data.map((row) => row.id));
 
-  // Sticky-header shadow: shown once the sentinel placed just above the table scrolls out of view.
-  const [scrolledUnderHeader, setScrolledUnderHeader] = useState(false);
+  /* Sticky header shadow: on once the sentinel above the table has scrolled out past the top of its root. */
+  const [scrolledUnder, setScrolledUnder] = useState(false);
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!stickyHeader || !sentinel || typeof IntersectionObserver === 'undefined') {
-      setScrolledUnderHeader(false);
+      setScrolledUnder(false);
       return undefined;
     }
-    const observer = new IntersectionObserver(([entry]) => setScrolledUnderHeader(!entry!.isIntersecting), {
-      root: maxHeight === 'viewport' ? rootRef.current : null,
-      threshold: 0,
-    });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[entries.length - 1];
+        if (!entry) return;
+        const rootTop = entry.rootBounds?.top ?? 0;
+        const next = !entry.isIntersecting && entry.boundingClientRect.top < rootTop;
+        setScrolledUnder((current) => (current === next ? current : next));
+      },
+      { root: maxHeight === 'viewport' ? frameRef.current : null },
+    );
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [stickyHeader, maxHeight]);
 
-  // Sticky-column shadow (`responsive: scroll`) and the arrow-key horizontal scroll.
-  const [scrolledHorizontally, setScrolledHorizontally] = useState(false);
-  const handleScroll = (event: UIEvent<HTMLDivElement>) => setScrolledHorizontally(event.currentTarget.scrollLeft > 0);
-  const handleScrollKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+  /* `responsive: scroll` — sticky-column shadow once scrolled, and arrow keys scroll by space.10. */
+  const [scrolledSideways, setScrolledSideways] = useState(false);
+  const onRegionScroll = (event: UIEvent<HTMLDivElement>): void => {
+    const next = Math.abs(event.currentTarget.scrollLeft) > 0;
+    if (next !== scrolledSideways) setScrolledSideways(next);
+  };
+  const onRegionKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    if (event.target !== event.currentTarget) return;
     if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
-    const region = scrollRegionRef.current;
-    if (!region) return;
+    const region = event.currentTarget;
+    const step = parseFloat(getComputedStyle(region).getPropertyValue('--space-10'));
+    if (!Number.isFinite(step)) return;
     event.preventDefault();
-    const step = 40; // Horizontal distance per key press; not specified further by the doc.
-    region.scrollBy({ left: event.key === 'ArrowRight' ? step : -step, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    region.scrollBy({ left: event.key === 'ArrowRight' ? step : -step });
   };
 
-  const totalColumnCount = (selectable !== 'none' ? 1 : 0) + columns.length + (rowActions ? 1 : 0);
+  /* Pointer convenience: a press anywhere on an interactive row that is not on its own control activates it.
+     Keyboard and assistive technology use the row-header Button. */
+  const onRowClick = (event: ReactMouseEvent<HTMLTableRowElement>, rowId: string): void => {
+    if (!rowsInteractive) return;
+    const control = (event.target as Element).closest('button, a, input, select, textarea, label, [tabindex]');
+    if (control && event.currentTarget.contains(control)) return;
+    onRowPress?.(rowId);
+  };
 
-  const classes = [
-    'ds-table',
-    `ds-table--${responsive}`,
-    `ds-table--density-${density}`,
-    stickyHeader ? 'ds-table--sticky-header' : null,
-    maxHeight === 'viewport' ? 'ds-table--max-height-viewport' : null,
-    striped ? 'ds-table--striped' : null,
-    scrolledUnderHeader ? 'ds-table--scrolled-under-header' : null,
-    className ?? null,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const columnCount = (selectable !== 'none' ? 1 : 0) + columns.length + (rowActions ? 1 : 0);
+  const pluralForm = new Intl.PluralRules(pageLocale()).select(data.length) === 'one' ? 'one' : 'other';
+  const rowCountText = COPY.rowCount[pluralForm].replace('{count}', String(data.length));
 
-  const { rootStyle, captionOverrides } = overrides
-    ? overridesToStyle(overrides)
-    : { rootStyle: undefined, captionOverrides: { marginBlockEnd: 'space.0' } as Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> };
-  const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
+  const cellClasses = (base: string, column: TableColumn): string =>
+    joinClasses(
+      base,
+      column.align && column.align !== 'start' && `ds-table__cell--align-${column.align}`,
+      column.width && column.width !== 'auto' && `ds-table__cell--width-${column.width}`,
+      column.hideBelow && `ds-table__cell--hide-below-${column.hideBelow}`,
+      column.isRowHeader && 'ds-table__cell--row-header',
+    );
 
-  const renderColumnHeaderContent = (column: TableColumn) => {
-    if (!column.sortable) return column.header;
-    const sorted = activeSort?.column === column.key;
-    const direction = sorted ? activeSort?.direction : undefined;
+  const headerCell = (column: TableColumn): ReactElement => {
+    const sorted = activeSort?.column === column.key ? activeSort.direction : undefined;
+    const nextDirection = sorted === 'ascending' ? 'descending' : 'ascending';
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        label={sortButtonLabel(column, activeSort)}
-        trailingIcon={<Icon name={direction === 'descending' ? 'chevron-down' : 'chevron-up'} inline />}
-        className="ds-table__sort-button"
-        data-part="sortButton"
-        onClick={() => handleSort(column)}
-      />
+      <th
+        key={column.key}
+        role="columnheader"
+        scope="col"
+        abbr={column.abbr}
+        aria-sort={sorted}
+        data-part="columnHeader"
+        className={cellClasses('ds-table__column-header', column)}
+      >
+        {column.sortable ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            label={column.header}
+            accessibleName={(nextDirection === 'ascending' ? COPY.sortAscending : COPY.sortDescending).replace(
+              '{column}',
+              column.header,
+            )}
+            trailingIcon={sorted ? <Icon name={sorted === 'ascending' ? 'chevron-up' : 'chevron-down'} inline /> : undefined}
+            overrides={overrides?.cellGap ? { iconGap: overrides.cellGap } : undefined}
+            onClick={() => activateSort(column)}
+          />
+        ) : (
+          column.header
+        )}
+      </th>
     );
   };
 
-  const renderRow = (row: TableRow) => {
+  const bodyRow = (row: TableRow): ReactElement => {
     const isSelected = selectedSet.has(row.id);
-    const interactive = Boolean(onRowPress) && Boolean(rowHeaderColumn) && !rowHeaderColumn?.render;
-    const trClasses = [
-      'ds-table__tr',
-      interactive ? 'ds-table__tr--interactive' : null,
-      isSelected ? 'ds-table__tr--selected' : null,
-    ]
-      .filter(Boolean)
-      .join(' ');
-    const name = rowName(row, rowHeaderColumn);
-
+    const name = rowHeaderColumn ? textOf(row[rowHeaderColumn.key]) || row.id : row.id;
     return (
       <tr
         key={row.id}
         role="row"
-        className={trClasses}
+        aria-selected={selectable !== 'none' ? isSelected : undefined}
         data-part="row"
-        aria-selected={selectable !== 'none' ? (isSelected ? 'true' : 'false') : undefined}
+        className={joinClasses(
+          'ds-table__row',
+          isSelected && 'ds-table__row--selected',
+          rowsInteractive && 'ds-table__row--interactive',
+        )}
+        onClick={rowsInteractive ? (event) => onRowClick(event, row.id) : undefined}
       >
         {selectable !== 'none' ? (
-          <td role="cell" className="ds-table__td ds-table__td--select" data-part="selectCell">
+          <td role="cell" data-part="selectCell" className="ds-table__select">
             <Checkbox
               label={COPY.selectRow.replace('{rowName}', name)}
-              name={`${baseId}-select-${row.id}`}
+              hideLabel
+              name={`${id}-select`}
+              value={row.id}
               checked={isSelected}
-              onChange={(checked) => handleToggleRow(row.id, checked)}
+              onChange={(checked) => toggleRow(row.id, checked)}
             />
           </td>
         ) : null}
         {columns.map((column) => {
-          const classes = ['ds-table__cell', alignClass(column), hideBelowClass(column)].filter(Boolean).join(' ');
-          if (column.isRowHeader) {
+          if (column === rowHeaderColumn) {
             return (
-              <th key={column.key} scope="row" role="rowheader" className={classes} data-part="rowHeader">
-                {interactive ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    label={name}
-                    className="ds-table__row-button"
-                    onClick={() => onRowPress?.(row.id)}
-                  />
+              <th key={column.key} role="rowheader" scope="row" data-part="rowHeader" className={cellClasses('ds-table__row-header', column)}>
+                {rowsInteractive ? (
+                  <Button variant="ghost" size="sm" label={name} onClick={() => onRowPress?.(row.id)} />
+                ) : column.render ? (
+                  column.render(row)
                 ) : (
-                  cellContent(column, row)
+                  textOf(row[column.key])
                 )}
               </th>
             );
           }
           return (
-            <td key={column.key} role="cell" className={classes} data-part="cell" data-label={column.header}>
-              {cellContent(column, row)}
+            <td key={column.key} role="cell" data-part="cell" data-label={column.header} className={cellClasses('ds-table__cell', column)}>
+              {column.render ? column.render(row) : textOf(row[column.key])}
             </td>
           );
         })}
         {rowActions ? (
-          <td role="cell" className="ds-table__td ds-table__td--actions" data-part="cell" data-label={COPY.actions}>
-            {rowActions(row)}
+          <td role="cell" data-part="cell" data-label={COPY.actions} className="ds-table__cell ds-table__cell--actions">
+            <div className="ds-table__actions">{rowActions(row)}</div>
           </td>
         ) : null}
       </tr>
     );
   };
 
-  const tableElement = (
+  const table = (
     <table
-      className="ds-table__table"
-      data-part="table"
       role="table"
-      aria-rowcount={sortedData.length + 1}
-      aria-colcount={totalColumnCount}
-      aria-busy={loading ? 'true' : undefined}
+      aria-labelledby={captionId}
       aria-describedby={rowCountId}
+      aria-rowcount={data.length + 1}
+      aria-colcount={columnCount}
+      aria-busy={loading ? true : undefined}
+      data-part="table"
+      className="ds-table__table"
     >
-      <caption id={captionId} data-part="caption" className={hideCaption ? 'ds-table__visually-hidden' : 'ds-table__caption'}>
-        <Heading level={captionLevel} size="md" overrides={captionOverrides}>
-          {caption}
-        </Heading>
-      </caption>
-      <colgroup>
-        {selectable !== 'none' ? <col style={{ inlineSize: 'var(--size-target-min)' }} /> : null}
-        {columns.map((column) => (
-          <col
-            key={column.key}
-            style={column.width === 'min' ? { inlineSize: '1%' } : column.width === 'fill' ? { inlineSize: '100%' } : undefined}
-          />
-        ))}
-        {rowActions ? <col /> : null}
-      </colgroup>
-      <thead className="ds-table__thead" role="rowgroup" data-part="header">
-        <tr role="row" className="ds-table__tr ds-table__tr--header" data-part="headerRow">
+      <thead role="rowgroup" data-part="header" className="ds-table__header">
+        <tr role="row" data-part="headerRow" className="ds-table__header-row">
           {selectable === 'multiple' ? (
-            <th scope="col" role="columnheader" className="ds-table__th ds-table__th--select" data-part="selectAllCell">
+            <th role="columnheader" scope="col" data-part="selectAllCell" className="ds-table__select">
               <Checkbox
                 label={COPY.selectAll}
-                name={`${baseId}-select-all`}
+                hideLabel
+                name={`${id}-select-all`}
                 checked={allSelected}
                 indeterminate={someSelected}
-                onChange={handleToggleAll}
+                onChange={toggleAll}
               />
             </th>
           ) : selectable === 'single' ? (
-            <th scope="col" role="columnheader" className="ds-table__th ds-table__th--select" data-part="selectAllCell" />
+            <td role="cell" className="ds-table__select" />
           ) : null}
-          {columns.map((column) => (
-            <th
-              key={column.key}
-              scope="col"
-              role="columnheader"
-              abbr={column.abbr}
-              aria-sort={column.sortable ? (activeSort?.column === column.key ? activeSort.direction : 'none') : undefined}
-              data-part="columnHeader"
-              className={['ds-table__th', alignClass(column), hideBelowClass(column)].filter(Boolean).join(' ')}
-            >
-              {renderColumnHeaderContent(column)}
-            </th>
-          ))}
+          {columns.map(headerCell)}
           {rowActions ? (
-            <th scope="col" role="columnheader" className="ds-table__th ds-table__th--actions" data-part="columnHeader">
+            <th role="columnheader" scope="col" data-part="columnHeader" className="ds-table__column-header">
               <span className="ds-table__visually-hidden">{COPY.actions}</span>
             </th>
           ) : null}
         </tr>
       </thead>
-      <tbody className="ds-table__tbody" role="rowgroup" data-part="body">
-        {sortedData.length === 0 ? (
-          <tr role="row" className="ds-table__tr">
-            <td role="cell" colSpan={totalColumnCount} className="ds-table__empty">
+      <tbody role="rowgroup" data-part="body" className="ds-table__body">
+        {rows.length === 0 ? (
+          <tr role="row" className="ds-table__row ds-table__row--empty">
+            <td role="cell" colSpan={columnCount} className="ds-table__empty">
               <Text element="p" tone="muted" data-part="emptyState">
                 {loading ? COPY.loading : (emptyMessage ?? COPY.empty)}
               </Text>
             </td>
           </tr>
         ) : (
-          sortedData.map((row) => renderRow(row))
+          rows.map(bodyRow)
         )}
       </tbody>
     </table>
   );
 
+  const frameClass = joinClasses('ds-table__frame', scrolledSideways && 'ds-table__frame--scrolled');
+  const sentinel = <div ref={sentinelRef} aria-hidden="true" className="ds-table__sentinel" />;
+
   return (
-    <div {...rest} ref={rootRef} data-ds="Table" data-part="container" className={classes} style={mergedStyle}>
-      <div ref={sentinelRef} aria-hidden="true" className="ds-table__sentinel" />
+    <div
+      {...rest}
+      ref={rootRef}
+      data-ds="Table"
+      data-part="container"
+      className={joinClasses(
+        'ds-table',
+        `ds-table--${responsive}`,
+        `ds-table--${density}`,
+        `ds-table--max-height-${maxHeight}`,
+        stickyHeader && 'ds-table--sticky-header',
+        striped && 'ds-table--striped',
+        scrolledUnder && 'ds-table--scrolled-under',
+      )}
+      style={overrides ? overridesToStyle(overrides) : undefined}
+    >
+      <div data-part="caption" className={joinClasses('ds-table__caption', hideCaption && 'ds-table__visually-hidden')}>
+        <Heading
+          id={captionId}
+          level={captionLevel}
+          size="md"
+          overrides={{
+            fontSize: overrides?.captionSize ?? 'font.size.md',
+            fontWeight: overrides?.captionWeight ?? 'font.weight.semibold',
+            marginBlockEnd: hideCaption ? 'space.0' : (overrides?.captionGap ?? 'space.2'),
+          }}
+        >
+          {caption}
+        </Heading>
+      </div>
       <span id={rowCountId} className="ds-table__visually-hidden">
-        {COPY.rowCount.replace('{count}', String(sortedData.length))}
+        {rowCountText}
       </span>
       {responsive === 'scroll' ? (
         <div
-          ref={scrollRegionRef}
-          className={['ds-table__scroll-region', scrolledHorizontally ? 'ds-table__scroll-region--scrolled' : null]
-            .filter(Boolean)
-            .join(' ')}
-          data-part="scrollRegion"
+          ref={frameRef}
           role="region"
           aria-labelledby={captionId}
           aria-describedby={scrollHintId}
           tabIndex={0}
-          onScroll={handleScroll}
-          onKeyDown={handleScrollKeyDown}
+          data-part="scrollRegion"
+          className={joinClasses(frameClass, 'ds-table__scroll-region')}
+          onScroll={onRegionScroll}
+          onKeyDown={onRegionKeyDown}
         >
-          {tableElement}
-          <span id={scrollHintId} className="ds-table__visually-hidden">
-            {COPY.scrollHint}
-          </span>
+          {sentinel}
+          {table}
         </div>
       ) : (
-        tableElement
+        <div ref={frameRef} className={frameClass}>
+          {sentinel}
+          {table}
+        </div>
       )}
-      {footer !== undefined ? (
-        <div className="ds-table__footer" data-part="footer">
+      {responsive === 'scroll' ? (
+        <span id={scrollHintId} className="ds-table__visually-hidden">
+          {COPY.scrollHint}
+        </span>
+      ) : null}
+      {loading && rows.length > 0 ? (
+        <Text element="p" tone="muted" size="sm">
+          {COPY.loading}
+        </Text>
+      ) : null}
+      {footer !== undefined && footer !== null ? (
+        <div data-part="footer" className="ds-table__footer">
           {footer}
         </div>
       ) : null}
-      <div className="ds-table__visually-hidden" role="status" aria-live="polite">
-        {liveMessage}
+      <div role="status" aria-live="polite" className="ds-table__visually-hidden">
+        {announcement}
       </div>
     </div>
   );
-};
+}

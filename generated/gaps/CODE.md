@@ -34,3 +34,7 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 - SidePanel.tsx (react): put the panel's classes, style and ref on its own element and compose Landmark inside with role/as/aria-labelledby only; then drop className/style forwarding from Landmark.
 - Dialog (web): passes `data-part="closeButton"` to Button, which keeps its own `data-part`; put the part on a wrapper Dialog owns, as Alert does (found in FocusScope, web).
 - Button / Link / Input (lit): forward host `aria-label` and `aria-description` to the inner control, so ds-tooltip can name or describe a shadow-root trigger (tooltip.md now relies on it).
+- BottomSheet.tsx (react): the wide presentation passes `className` and `style` into Dialog, which the root must not forward; stop passing them and drop them from Dialog's prop type (found in Dialog, web).
+- Button (lit): no `haspopup` prop, so a ds-button Menu trigger cannot expose aria-haspopup; menu.md waives it until Button's schema adds one (found in Menu, lit).
+- Link (rn): no `current` prop, so a native navigation SidePanel cannot mark the current page (found in SidePanel, rn).
+- AlertDialog (web, lit): the tone color is set on a wrapper span and Icon's own color rule wins; forward `overrides.color` to Icon as Alert does (alertdialog.md now declares the forward).

@@ -36,3 +36,18 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - Story generator: example `children` written as prose need one rule for every platform (render the string as Text plus the controls it names); on Lit `children` cannot go in meta.args because the harness assigns args as properties and Element.children is read-only (FocusScope, Tooltip; all).
 - Story rules: whether a boolean-false state needs its own story (TrappedFalse, ActiveFalse, RestoreFocusFalse) is unstated (FocusScope, lit).
 - RN behavior tests: `role: alert` cannot use getByRole when the root must stay non-accessible to keep its buttons separate; the harness needs an accessibilityRole/testID fallback (Toast, rn).
+- Story generator: example `given` children/footer/trigger written as prose need the one shared convention; each overlay realized them differently (Dialog, AlertDialog, BottomSheet, Popover, SidePanel; all).
+- Story generator: whether an example story's "exactly its given" layers over the Default story's meta args or replaces them (ActionSheet needed `heading: undefined`; Dialog kept a stray description) (ActionSheet, Dialog; web, rn).
+- Package digest (rn): shows `toLineHeight(lineHeight, fontSize)` but theme.tsx's signature is `(fontSize, multiplier)` (ActionSheet, Menu; rn).
+- RN behavior tests: getByRole cannot find a non-accessible `role="menu"` container (making it accessible merges its rows); tests read the role prop by testID (ActionSheet, Menu; rn).
+- RN behavior tests: `a-scrim-click-does-nothing` presses a View with no handler and cannot catch a regression to a no-op Pressable; assert the scrim has no press responder (AlertDialog, rn).
+- Keyboard-story rule "at least three focusable children" should exempt overlays with a fixed pair of controls, or count the whole story page (AlertDialog; web, lit).
+- Behavior `when` vocabulary has no drag action, so `gesture: true` events (onDragDismiss) have no scenario (BottomSheet, lit).
+- Generator: schema constants (dismissDistance, dismissVelocity, dragSlop) have no generated constant export, so code uses local module constants (BottomSheet, web).
+- Behavior tests run below every overlay breakpoint, so wide presentations (ActionSheet→Menu, BottomSheet→Dialog) have no scenario coverage (ActionSheet, lit).
+- Test environment: jsdom does not turn Escape into `cancel` on <dialog>, and has no stylesheet, so token-read timings (typeaheadReset) resolve to nothing (Dialog, Menu; web).
+- `forwards` is a one-to-one map, so `inset` → body Box paddingBlock and paddingInline is structural for one target only; a list-valued forward would cover both (Dialog; all).
+- tools/__tests__/composition-forwards.test.ts corpus counts change after regenerating components.json with the new overlay composition props and forwards (Dialog et al.; all).
+- RN: resolveToken has no typed result for composite tokens (shadow), so generated code casts; Jest has no key event for the native Escape path (Menu, rn).
+- Browser tests: Playwright won't click an aria-disabled element, so `a-disabled-item-does-nothing` needs a forced click (Menu, lit).
+- TS: under exactOptionalPropertyTypes the `items` shape needs `| undefined` on optional fields for callers passing `icon: undefined` (Menu, web).

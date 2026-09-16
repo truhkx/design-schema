@@ -33,3 +33,6 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - Package digest (rn): `useNativeDriver: false` is for layout props; transform-only animations keep the native driver (Disclosure, rn).
 - Lit story/test generator: skip examples and scenarios whose `platforms` exclude lit without the doc restating it; validate Stack `gap` values in stories (Landmark, lit).
 - Generator conventions: the browser caveat for a pseudo-element on an appearance:none input belongs in shared conventions (RadioGroup, lit).
+- Story generator: example `children` written as prose need one rule for every platform (render the string as Text plus the controls it names); on Lit `children` cannot go in meta.args because the harness assigns args as properties and Element.children is read-only (FocusScope, Tooltip; all).
+- Story rules: whether a boolean-false state needs its own story (TrappedFalse, ActiveFalse, RestoreFocusFalse) is unstated (FocusScope, lit).
+- RN behavior tests: `role: alert` cannot use getByRole when the root must stay non-accessible to keep its buttons separate; the harness needs an accessibilityRole/testID fallback (Toast, rn).

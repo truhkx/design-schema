@@ -61,7 +61,15 @@ component:
   - popup
   - text
   composition:
-    text: Text
+    text:
+      component: Text
+      props:
+        element: span
+        size: sm
+      forwards:
+        fontFamily: fontFamily
+        fontSize: fontSize
+        lineHeight: lineHeight
   parts:
     trigger:
       kind: slot
@@ -106,7 +114,9 @@ component:
       type: boolean
       description: 'Controlled visibility, for stories and tests only (the Keyboard
         story renders the tooltip open with it). Product code never sets it: a tooltip
-        is hover and focus driven.'
+        is hover and focus driven. There is no change event: Escape still hides a
+        tooltip rendered with `open: true`, and it stays hidden until the `open` prop
+        next changes.'
     delay:
       type: enum
       values:
@@ -117,8 +127,10 @@ component:
         × 3 (roughly 600ms, so casual mouse movement does not flash tooltips); `none`
         for toolbars where a sibling tooltip is already open (a shared "warm" state
         so moving along a toolbar shows tooltips instantly: after a tooltip hides,
-        siblings show with no delay for one motion.duration.loop; the pointer may
-        cross to the tooltip within one motion.duration.fast before it hides).'
+        siblings show with no delay for one motion.duration.base, the `warmWindow`
+        constant — and warm skips the delay for `default` tooltips too, while `none`
+        is always instant; the pointer may cross to the tooltip within one motion.duration.fast
+        before it hides).'
   keyboard:
   - keys:
     - Escape
@@ -159,7 +171,8 @@ component:
       token: space.20
       computed:
         times: 3
-      description: Longer text wraps.
+      description: Longer text wraps. An override replaces the base; the × 3 stays
+        in the rule.
       locked: false
     fontFamily:
       token: font.family.body
@@ -175,8 +188,9 @@ component:
       locked: false
     layer:
       token: layer.toast
-      description: Tooltips sit above everything, including dialogs, because they
-        describe controls inside them.
+      description: 'Tooltips sit above everything, including dialogs, because they
+        describe controls inside them. `overlay.layer: tooltip` names the stacking
+        category; this token is its value.'
       locked: false
     enter:
       token: motion.duration.fast
@@ -184,6 +198,7 @@ component:
       locked: false
     exit:
       token: motion.duration.fast
+      description: Fade out, opacity only with no slide; instant under reduced motion.
       locked: false
   constants:
     hoverDelay:
@@ -233,28 +248,40 @@ component:
       - aria-describedby
       - aria-labelledby
       notes: 'The child is cloned with aria-describedby (or aria-labelledby) pointing
-        at the tooltip id and with mouseenter/mouseleave/focus/blur handlers merged.
-        The tooltip <div role="tooltip"> is rendered through a portal, position: fixed
-        from the trigger rect, flipped on overflow, on layer.toast. It stays open
-        while the pointer is over the tooltip itself (1.4.13 hoverable) and hides
-        on Escape (dismissable) or when the trigger loses hover and focus. Never shown
-        on touch (no hover); the description is still in the accessibility tree. The
-        description is always in the accessibility tree: `content` is rendered in
-        a visually-hidden element that aria-describedby points at, and the visible
-        popup is a second copy — so the Popover API''s display:none while closed does
-        not remove the description.'
+        at the tooltip id and with pointerenter/pointerleave/focus/blur handlers merged.
+        The id, `role="tooltip"` and `data-ds` are on the always-present visually-hidden
+        copy; the visible bubble, a <div aria-hidden="true" data-part="popup">, is
+        rendered through a portal only while shown, position: fixed from the trigger
+        rect, flipped on overflow, on layer.toast. It stays open while the pointer
+        is over the tooltip itself (1.4.13 hoverable) and hides on Escape (dismissable)
+        or when the trigger loses hover and focus. Never shown on touch (no hover):
+        a `pointerenter` with `pointerType === ''touch''` does not show it, while
+        focus still does on hybrid devices; the description is still in the accessibility
+        tree. Logic reads `hoverDelay`, `warmWindow`, `pointerGrace` and `offset`
+        when it needs them by resolving the token expression through getComputedStyle;
+        an unresolved value (jsdom, no theme) is 0. The description is always in the
+        accessibility tree: `content` is rendered in a visually-hidden element that
+        aria-describedby points at, and the visible popup is a second copy — so the
+        Popover API''s display:none while closed does not remove the description.'
     lit:
       tag: ds-tooltip
       reflect:
       - placement
       - prop: describes
         attribute: no-describes
-      notes: Wraps the slotted trigger; because aria-describedby cannot cross the
+      notes: 'Wraps the slotted trigger; because aria-describedby cannot cross the
         shadow boundary, the tooltip element is rendered in the light DOM as a sibling
         of the trigger (appended to the host, not the shadow root) so the ID reference
         resolves. Positioning via the Popover API (popover="manual") with a fixed
         fallback. As on web, aria-describedby targets a visually-hidden copy of the
-        content that is always present; the popover is the visible copy.
+        content that is always present; the popover is the visible copy. ID references
+        do not cross into a trigger''s shadow root (ds-button''s real <button> is
+        inside it), so for a custom-element trigger Tooltip passes the text instead:
+        `describes: false` sets `aria-label` to `content` on the trigger host, `describes:
+        true` sets `aria-description`, and system triggers (ds-button, ds-link, ds-input)
+        forward both to their inner control; a plain light-DOM trigger gets aria-describedby/aria-labelledby.
+        The host is `display: contents` and carries `data-ds`; the bubble carries
+        `data-part="popup"`.'
     rn:
       element: View
       props:
@@ -268,7 +295,17 @@ component:
         the information is never hover-only anywhere. The child must accept `accessibilityHint`/`accessibilityLabel`
         and the `onHoverIn`/`onHoverOut`/`onFocus`/`onBlur`/`onLongPress` handlers
         Tooltip clones onto it; the system Button, Link and Input forward these to
-        their native element. Placement flips using measureInWindow.'
+        their native element. Placement flips on all four sides using measureInWindow
+        against useWindowDimensions, and the cross axis is clamped into the window.
+        There is no portal on native: the bubble is absolutely positioned inside the
+        Tooltip root View with zIndex layer.toast, so an ancestor with overflow hidden
+        can clip it (a stated limit; no Modal is used). The bubble is visible while
+        any of press, hover, bubble hover or focus is active. On react-native-web
+        the bubble takes `onPointerEnter`/`onPointerLeave` with pointerEvents auto
+        (hoverable, 1.4.13); on native it is pointerEvents none. The bubble is hidden
+        from accessibility (accessibilityElementsHidden, importantForAccessibility
+        no-hide-descendants): the hint or label already carries the text, so there
+        is no visually-hidden copy on rn.'
     swiftui:
       element: Group
       props:
@@ -283,7 +320,7 @@ component:
         with `.presentationCompactAdaptation(.popover)` so it never becomes a sheet,
         positioned by `placement`, dismissed on release/leave or Escape. The bubble
         is `.accessibilityHidden(true)` — the hint already carries the text. Delays
-        from the timing tokens; none under reduced motion.
+        from the timing tokens, kept under reduced motion; only the fade is removed.
   behavior:
   - name: the-visible-tooltip-carries-the-tooltip-role
     description: When shown, the bubble is a role=tooltip element linked to the trigger
@@ -310,26 +347,28 @@ component:
     description: The tooltip is the control's name, not a second announcement, so
       it is linked as the label.
     given:
-      content: Bold
-      children: An icon-only Button with the bold Icon
+      content: Add item
+      children: An icon-only Button labelled "Add item" with the plus Icon
       describes: false
   - name: column-header-hint
     description: A clarification on a labelled control in dense UI.
     given:
       content: Includes archived items
-      children: A table column header Button
+      children: A table column header Button labelled "Items"
   - name: warm-toolbar
     description: A toolbar where a sibling tooltip is already open, so the next one
       shows instantly.
     given:
-      content: Italic
-      children: An icon-only Button inside a Toolbar
+      content: Grid view
+      children: An icon-only Button labelled "Grid view" with the grid Icon, inside
+        a Toolbar labelled "View"
       delay: none
   - name: below-the-trigger
     description: A trigger at the top of the page, where the bubble reads better underneath.
     given:
-      content: Copy link
-      children: An icon-only Button in the page header
+      content: Open in new tab
+      children: An icon-only Button labelled "Open in new tab" with the external Icon,
+        in the page header
       placement: bottom
 ```
 
@@ -337,7 +376,7 @@ component:
 
 - `trigger`: slot, `@ViewBuilder` parameter `children`, required
 - `popup`: element
-- `text`: component `Text`
+- `text`: component `Text`; props `element` = "span", `size` = "sm"; forwards `fontFamily` → `overrides.fontFamily`, `fontSize` → `overrides.fontSize`, `lineHeight` → `overrides.lineHeight`
 
 ## Style bindings
 
@@ -367,10 +406,10 @@ overlay:
 - constant `hoverDelay`: `theme.motionDurationBase * 3` (`motion.duration.base` × 3) ms
 - constant `warmWindow`: `theme.motionDurationBase` (`motion.duration.base`) ms
 - constant `pointerGrace`: `theme.motionDurationFast` (`motion.duration.fast`) ms
-- example `icon-only-button-name`, story `IconOnlyButtonName`: given `content: "Bold"`, `children: "An icon-only Button with the bold Icon"`, `describes: false`; The tooltip is the control's name, not a second announcement, so it is linked as the label.
-- example `column-header-hint`, story `ColumnHeaderHint`: given `content: "Includes archived items"`, `children: "A table column header Button"`; A clarification on a labelled control in dense UI.
-- example `warm-toolbar`, story `WarmToolbar`: given `content: "Italic"`, `children: "An icon-only Button inside a Toolbar"`, `delay: "none"`; A toolbar where a sibling tooltip is already open, so the next one shows instantly.
-- example `below-the-trigger`, story `BelowTheTrigger`: given `content: "Copy link"`, `children: "An icon-only Button in the page header"`, `placement: "bottom"`; A trigger at the top of the page, where the bubble reads better underneath.
+- example `icon-only-button-name`, story `IconOnlyButtonName`: given `content: "Add item"`, `children: "An icon-only Button labelled \"Add item\" with the plus Icon"`, `describes: false`; The tooltip is the control's name, not a second announcement, so it is linked as the label.
+- example `column-header-hint`, story `ColumnHeaderHint`: given `content: "Includes archived items"`, `children: "A table column header Button labelled \"Items\""`; A clarification on a labelled control in dense UI.
+- example `warm-toolbar`, story `WarmToolbar`: given `content: "Grid view"`, `children: "An icon-only Button labelled \"Grid view\" with the grid Icon, inside a Toolbar labelled \"View\""`, `delay: "none"`; A toolbar where a sibling tooltip is already open, so the next one shows instantly.
+- example `below-the-trigger`, story `BelowTheTrigger`: given `content: "Open in new tab"`, `children: "An icon-only Button labelled \"Open in new tab\" with the external Icon, in the page header"`, `placement: "bottom"`; A trigger at the top of the page, where the bubble reads better underneath.
 
 ## Overrides (per-instance styling contract)
 
@@ -396,7 +435,8 @@ notes: "There is no tooltip on iOS. The `content` is forwarded to the trigger as
   \ (touch) and pointer hover (iPad) as a `.popover` with `.presentationCompactAdaptation(.popover)`\
   \ so it never becomes a sheet, positioned by `placement`, dismissed on release/leave\
   \ or Escape. The bubble is `.accessibilityHidden(true)` \u2014 the hint already\
-  \ carries the text. Delays from the timing tokens; none under reduced motion."
+  \ carries the text. Delays from the timing tokens, kept under reduced motion; only\
+  \ the fade is removed."
 ```
 
 ## Guidance
@@ -415,7 +455,7 @@ Do not put essential instructions, error messages or any content the user must r
 
 ## Behavior
 
-The tooltip shows after `delay` when the pointer rests on the trigger, or immediately when the trigger receives focus of any kind (keyboard-origin focus cannot be told apart reliably across composed triggers, and a focused control showing its tooltip is never wrong), positioned at `placement` (flipped at the viewport edge). It hides when the pointer leaves both trigger and tooltip, when focus leaves the trigger, or on Escape — which hides it without moving focus, so a user can dismiss a tooltip that covers something. Moving the pointer from one warm toolbar item to the next shows the next tooltip with no delay. The tooltip never takes focus and never blocks pointer events on anything but itself. `start` and `end` are logical on every platform, resolved from the trigger's writing direction. The description lives in two nodes: a visually-hidden span carrying the id and `role="tooltip"`, always in the accessibility tree, and the positioned bubble, which is `aria-hidden` and only a visible copy — that is the only way "always announced" and "shown on hover" hold at once. Of the anatomy, only `text` takes a `data-part`: the trigger is the caller's own element, and the popup is the root, already found by `data-ds`. On native there is no viewport measurement, so top and bottom do not flip; Escape exists only under react-native-web, where a real browser does.
+The tooltip shows after `delay` when the pointer rests on the trigger, or immediately when the trigger receives focus of any kind (keyboard-origin focus cannot be told apart reliably across composed triggers, and a focused control showing its tooltip is never wrong), positioned at `placement` (flipped at the viewport edge). It hides when the pointer leaves both trigger and tooltip, when focus leaves the trigger, or on Escape — which hides it without moving focus, so a user can dismiss a tooltip that covers something. Moving the pointer from one warm toolbar item to the next shows the next tooltip with no delay. The tooltip never takes focus and never blocks pointer events on anything but itself. `start` and `end` are logical on every platform, resolved from the trigger's writing direction. The description lives in two nodes: a visually-hidden span carrying the id and `role="tooltip"`, always in the accessibility tree, and the positioned bubble, which is `aria-hidden` and only a visible copy — that is the only way "always announced" and "shown on hover" hold at once. Of the anatomy, `text` and `popup` take a `data-part`; the trigger is the caller's own element. The bubble is mounted only while shown, so `renders` and the role scenarios find the always-present visually-hidden `role="tooltip"` node, which carries `data-ds` on web. On native, placement flips using measureInWindow as on web; Escape exists only under react-native-web, where a real browser does. Escape also hides a tooltip opened by hover alone while focus is elsewhere (a document-level listener, attached only while the bubble is visible, WCAG 1.4.13), and while a tooltip is visible it stops that Escape in the capture phase, so inside a Dialog the first Escape hides the tooltip and the second closes the Dialog. Delays are not motion and stay under reduced motion; only the fade is removed. Tooltip exposes no `ref`: it adds no root a caller needs, and a caller that wants the trigger refs its own child. Inside a Toolbar the wrapped Button stays the toolbar item: Tooltip adds no tab stop and no role, so the roving tabindex and overflow menu see through it. The Default story uses the schema defaults: `content: 'Includes archived items'` on a Button labelled "Items".
 
 ## Content guidelines
 
@@ -428,13 +468,13 @@ Content that appears on hover or focus must be dismissable without moving the po
 ## Platform notes
 
 ### Web
-Clone the single child with `aria-describedby={id}` (or `aria-labelledby`) and merged `onPointerEnter`, `onPointerLeave`, `onFocus`, `onBlur` handlers. Render `<div role="tooltip" id={id}>` through a portal, `position: fixed`, positioned from the trigger rect with `offset`, flipped when overflowing, `z-index: var(--layer-toast)`, `max-inline-size` from the computed maxWidth. A module-level "warm until" timestamp implements the toolbar behavior. `pointer: coarse` media query disables showing on hover (the description remains).
+Clone the single child with `aria-describedby={id}` (or `aria-labelledby`) and merged `onPointerEnter`, `onPointerLeave`, `onFocus`, `onBlur` handlers. Render the visually-hidden `<span role="tooltip" id={id}>` always, and the `aria-hidden` bubble through a portal while shown, `position: fixed`, positioned from the trigger rect with `offset`, flipped when overflowing, `z-index: var(--layer-toast)`, `max-inline-size` from the computed maxWidth. A module-level "warm until" timestamp implements the toolbar behavior. A `pointerenter` whose `pointerType` is `touch` does not show the tooltip (the description remains, and focus still shows it).
 
 ### Lit
-`<ds-tooltip content="Bold"><ds-button icon-only label="Bold">…</ds-button></ds-tooltip>`. On `slotchange`, take the single assigned element as the trigger, set `aria-describedby` on it, and append the tooltip element to the host in the light DOM so the ID resolves across the boundary; position with the Popover API when available.
+`<ds-tooltip content="Bold"><ds-button icon-only label="Bold">…</ds-button></ds-tooltip>`. On `slotchange`, take the single assigned element as the trigger, set `aria-describedby` on it (or `aria-description` / `aria-label` when it is a custom element with a shadow root), and append the tooltip element to the host in the light DOM so the ID resolves across the boundary; position with the Popover API when available.
 
 ### React Native
-Render the child with `accessibilityHint={content}` (or `accessibilityLabel` when `describes` is false). On `onLongPress`, show a transient `View` with the inverted surface above the child until `onPressOut`. On react-native-web, attach hover/focus handlers as on web.
+Render the child with `accessibilityHint={content}` (or `accessibilityLabel` when `describes` is false). On `onLongPress`, show a transient `View` with the inverted surface above the child until `onPressOut` (it stays while hover or focus is still active). On react-native-web, attach hover/focus handlers as on web.
 
 ## Related
 

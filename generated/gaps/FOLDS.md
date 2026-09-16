@@ -640,3 +640,106 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-16 Switch web: reduced motion covers track colour change? → both thumb travel and colour transition removed
 2026-09-16 Switch web: minTarget row sizing and gap clicks → min-block-size comfortable target on full-width row; gap clicks toggle
 2026-09-16 Switch web: controlled input vs aria-checked mirroring → input uncontrolled for native state; aria-checked mirrored
+2026-09-16 FocusScope rn: platform notes and RN guidance disagree on autoFocus target → guidance fixed: wrapper for first, last and container
+2026-09-16 FocusScope rn: returnFocusTo shape names View, not an instance type → per-platform types stated; rn RefObject<ViewInstance | null>
+2026-09-16 FocusScope rn: accessibilityViewIsModal dependence on active unstated → trapped && active
+2026-09-16 FocusScope rn: autoFocus/restore rerun when props change after mount? → once on mount and unmount only
+2026-09-16 FocusScope rn: example children are prose, not content → TOOLING
+2026-09-16 FocusScope rn: Default story has no children → Behavior names Default: Text plus Cancel/Continue Buttons
+2026-09-16 FocusScope rn: role-is-null scenario with two RN role props → rn notes: no role, accessibilityRole or accessibilityLabel
+2026-09-16 FocusScope rn: Tab wrap rules untestable on native and rnw → wrap keyboard rules scoped to web, lit, swiftui
+2026-09-16 FocusScope rn: ref on the wrapper undeclared → wrapper is root, exposed through ref
+2026-09-16 FocusScope lit: returnFocusTo has no Lit RefObject → HTMLElement | Ref<HTMLElement> property
+2026-09-16 FocusScope lit: restoreFocus true-default lacks negated attribute; autoFocus attribute unnamed → no-restore-focus (not reflected); auto-focus
+2026-09-16 FocusScope lit: delegatesFocus rule contradicts wrapper-is-not-focusable → stated exception: no delegatesFocus
+2026-09-16 FocusScope lit: which element carries the scope part on Lit → the tabindex=-1 shadow anchor
+2026-09-16 FocusScope lit: sentinels redirect to opposite edge vs continue direction → guidance fixed: continue direction of travel
+2026-09-16 FocusScope lit: sentinels when untrapped or inactive unstated → tabindex=0 only while trapped, active and top
+2026-09-16 FocusScope lit: reactivated scope ordering in nesting stack unstated → moves to top; only active scopes count
+2026-09-16 FocusScope lit: autoFocus before slotted children render internals → waits for slotted updateComplete, folded into scope's
+2026-09-16 FocusScope lit: boolean-false states need stories? → TOOLING
+2026-09-16 FocusScope lit: disabled undefined for the walker → :disabled, fieldset[disabled], inert; aria-disabled stays in
+2026-09-16 FocusScope lit: overlays bound defaults-true booleans as attributes → composers set trapped/active/restoreFocus as properties
+2026-09-16 FocusScope web: static tabindex=-1 attribute vs conditional guidance → tabindex=-1 only for autoFocus container
+2026-09-16 FocusScope web: sentinel direction contradiction → continue direction of travel (same fold as lit)
+2026-09-16 FocusScope web: returnFocusTo names an RN type → RefObject<HTMLElement | null> on web
+2026-09-16 FocusScope web: sentinels rendered when untrapped? → tabindex=-1 unless trapped, active and top
+2026-09-16 FocusScope web: sentinel and pull-back while paused → do nothing unless trapped, active and top
+2026-09-16 FocusScope web: pull-back with no target → focus left where it went; dev warning covers it
+2026-09-16 FocusScope web: same-commit nesting order of scopes → order follows tree nesting via context parent link
+2026-09-16 FocusScope web: aria-disabled in walker unspecified → aria-disabled stays focusable and included
+2026-09-16 FocusScope web: example children are prose descriptions → TOOLING
+2026-09-16 FocusScope web: scope data-part vs composing overlay's data-part → FocusScope's own part wins; composer uses own wrapper
+2026-09-16 FocusScope web: Shift+Tab from the container wrapper unspecified → Tab to first; Shift+Tab wraps to last, fires backward
+2026-09-16 FocusScope web: Dialog closeButton data-part overwritten by Button → CODE
+2026-09-16 Tooltip rn: native flip contradicts between Behavior and rn notes → Behavior fixed: flips via measureInWindow; cross axis clamped
+2026-09-16 Tooltip rn: Escape on controlled open with no change event → hides until the open prop next changes
+2026-09-16 Tooltip rn: warm window loop in delay vs base constant → delay text now says base, the warmWindow constant
+2026-09-16 Tooltip rn: long-press end while focus/hover remains on rnw → visible while press, hover, bubble hover or focus
+2026-09-16 Tooltip rn: no portal on native; clipping by ancestors → inline absolute View, zIndex layer.toast; clipping stated limit
+2026-09-16 Tooltip rn: hoverable bubble event API on rnw unnamed → onPointerEnter/Leave, pointerEvents auto web, none native
+2026-09-16 Tooltip rn: rn has no visually-hidden tooltip copy → bubble hidden from accessibility; hint or label carries text
+2026-09-16 Tooltip rn: example glyphs bold/italic/copy missing from icon table → examples now use plus, grid, external
+2026-09-16 Tooltip rn: example children lack verbatim labels → labels "Items", "Grid view", "View" given verbatim
+2026-09-16 Tooltip rn: ref undeclared, package rule adds root ref → Tooltip exposes no ref; caller refs its child
+2026-09-16 Tooltip rn: Default story describes=false vs schema default true → Default uses defaults: hint on "Items" Button
+2026-09-16 Tooltip lit: describedby on ds-button host misses inner button → aria-label/aria-description on host; system triggers forward (CODE)
+2026-09-16 Tooltip lit: warm window loop vs base → base (same fold as rn)
+2026-09-16 Tooltip lit: controlled open cannot report Escape → Escape hides until open next changes
+2026-09-16 Tooltip lit: hover-opened tooltip Escape while focus elsewhere → document-level Escape listener while visible
+2026-09-16 Tooltip lit: Text part has no props or forwards → composition: Text span sm, forwards fontFamily/fontSize/lineHeight
+2026-09-16 Tooltip lit: examples name missing glyphs → examples changed to existing glyphs
+2026-09-16 Tooltip lit: Toolbar roving through a ds-tooltip wrapper unverified → Tooltip adds no tab stop or role; Toolbar sees through
+2026-09-16 Tooltip lit: popup root via data-ds does not map to Lit → host carries data-ds; bubble data-part popup
+2026-09-16 Tooltip lit: pointer:coarse vs touch detection disagree → pointerType touch on pointerenter; focus still shows
+2026-09-16 Tooltip lit: reduced motion effect on delays unstated → delays kept; only fade removed (swiftui note aligned)
+2026-09-16 Tooltip web: web note role=tooltip div vs hidden span → web notes fixed: hidden span has id/role, bubble aria-hidden
+2026-09-16 Tooltip web: closed tooltip has no data-ds node for renders → renders finds the always-present hidden role=tooltip span
+2026-09-16 Tooltip web: Escape on controlled open → hides until open next changes (same fold)
+2026-09-16 Tooltip web: warm window loop vs base → base (same fold)
+2026-09-16 Tooltip web: warm window skips delay for default tooltips too? → yes; none is always instant
+2026-09-16 Tooltip web: overlay.layer tooltip vs layer.toast binding → category name; its token is layer.toast
+2026-09-16 Tooltip web: font bindings reach Text without declared forward → composition forwards to Text overrides
+2026-09-16 Tooltip web: maxWidth override replaces base or product? → override replaces base; × 3 stays
+2026-09-16 Tooltip web: how logic reads timing token expressions → getComputedStyle when needed; unresolved is 0
+2026-09-16 Tooltip web: Escape inside a Dialog closes Dialog too? → capture-phase stop while visible; second Escape closes Dialog
+2026-09-16 Tooltip web: examples name missing glyphs → examples changed (same fold)
+2026-09-16 Tooltip web: enter fade only, exit motion unspecified → exit is opacity fade-out, none under reduced motion
+2026-09-16 Toast rn: no core safe-area inset API → no safe-area term on rn; app pads the provider
+2026-09-16 Toast rn: region position on phones vs wide unclear → left/right/bottom regionInset, centered at every width
+2026-09-16 Toast rn: toast() promise and programmatic dismiss unnamed → Promise<{ reason }>, dismiss(toastId?) with new reason programmatic
+2026-09-16 Toast rn: escape reason on native → kept in type, never fires
+2026-09-16 Toast rn: escape-dismiss unmet on native → dismiss button always shown for persistent toasts
+2026-09-16 Toast rn: page hidden has no native meaning → AppState not active pauses timers
+2026-09-16 Toast rn: focus pause impossible, Button exposes no focus events → native pauses on touch and backgrounding only
+2026-09-16 Toast rn: dev warning fires for default duration → warns only when duration passed explicitly
+2026-09-16 Toast rn: getByRole alert unusable on non-accessible root → TOOLING
+2026-09-16 Toast rn: Button size/iconOnly only in prose → composition: size sm on both, iconOnly on dismiss
+2026-09-16 Toast rn: parts contract blocks testID on Button → parts are wrapping Views carrying testIDs
+2026-09-16 Toast rn: iOS announcement priority unspecified → queue true for polite, interrupting for danger
+2026-09-16 Toast rn: max three stack limit is a prose literal → fixed count, not a token
+2026-09-16 Toast rn: enter rise distance has no token → new binding enterOffset: space.2
+2026-09-16 Toast lit: stackGap/regionInset/layer overridable on toast or region → region's own overrides
+2026-09-16 Toast lit: composition omits button label, iconOnly, size → composition props; labels actionLabel and copy.dismissLabel in Behavior
+2026-09-16 Toast lit: tone and close glyph names only in prose → icon binding names Icon name={tone}; Behavior names close
+2026-09-16 Toast lit: locked inverse text color on Text without inverse tone → re-scope foreground as Tooltip; part message
+2026-09-16 Toast lit: default duration triggers override dev warning → warns only on explicit assignment
+2026-09-16 Toast lit: motion loop resolving to zero gives zero timer → non-positive or unresolved loop means persistent
+2026-09-16 Toast lit: Escape focus return without F6 → element focus came from, else next focusable after region
+2026-09-16 Toast lit: onDismiss before or after exit transition/removal → after exit, just before removal; immediate under reduced motion
+2026-09-16 Toast lit: ElementInternals roles vs plain-attribute convention → plain role/aria-label/aria-live attributes
+2026-09-16 Toast lit: ToastOptions shape and id vs toastId → options listed; Behavior now says toastId
+2026-09-16 Toast lit: region breakpoint has no token → layout.maxWidth.content resolved px, literal-ok like Container
+2026-09-16 Toast web: region bindings overridable where → region's own overrides (same fold)
+2026-09-16 Toast web: message Text inverse color and font forwards → re-scope foreground; composition forwards font bindings
+2026-09-16 Toast web: composition omits size sm from notes → size sm added to composition
+2026-09-16 Toast web: Button overwrites passed data-part → parts on toast-owned wrappers
+2026-09-16 Toast web: interpolated icon color on Icon without forward → composition forwards icon to Icon color
+2026-09-16 Toast web: unresolvable motion token duration behavior → persistent (same fold)
+2026-09-16 Toast web: promise yes, programmatic dismiss missing → dismiss(toastId) and dismiss() with reason programmatic
+2026-09-16 Toast web: toastId meaning on a directly rendered Toast → accepted, no effect, never DOM id
+2026-09-16 Toast web: focus return target without F6 → same rule as lit
+2026-09-16 Toast web: dev warning on default duration; action means actionLabel → explicit only; text now says actionLabel
+2026-09-16 Toast web: onDismiss timing against exit animation → after exit (same fold)
+2026-09-16 Toast web: breakpoint token and safe-area inset → content maxWidth px literal-ok; env(safe-area-inset-bottom) web and Lit
+2026-09-16 Toast web: Keyboard story toasts persist in module store → dismiss() clears all; stories call it on cleanup

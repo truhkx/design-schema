@@ -32,3 +32,5 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 - Fieldset.tsx (react): drop the exported FieldsetContext/useFieldsetContext no field reads; keep passing `disabled` to direct child fields.
 - Fieldset.ts (lit): stop setting Text's --ds-text-* and Stack's --ds-stack-gap hooks from Fieldset hooks; forward through `overrides` only.
 - SidePanel.tsx (react): put the panel's classes, style and ref on its own element and compose Landmark inside with role/as/aria-labelledby only; then drop className/style forwarding from Landmark.
+- Dialog (web): passes `data-part="closeButton"` to Button, which keeps its own `data-part`; put the part on a wrapper Dialog owns, as Alert does (found in FocusScope, web).
+- Button / Link / Input (lit): forward host `aria-label` and `aria-description` to the inner control, so ds-tooltip can name or describe a shadow-root trigger (tooltip.md now relies on it).

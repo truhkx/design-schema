@@ -8,6 +8,7 @@
  *
  * Runs under Node's type stripping: annotations only.
  */
+import { enumValues } from './vocab.ts';
 
 export type Dict = Record<string, unknown>;
 
@@ -90,15 +91,18 @@ export function pyRepr(v: unknown): string {
   return String(v);
 }
 
-/** color.action.{variant}.background → one path per enum value of `variant`. */
-export function expand(tokenRef: string, props: Dict): string[] {
+/** color.action.{variant}.background → one path per enum value of `variant`. `only` (a contrast pair's) narrows a
+ *  slot to the listed values before the product. */
+export function expand(tokenRef: string, props: Dict, only?: Readonly<Record<string, readonly string[]>> | null): string[] {
   const slots = [...tokenRef.matchAll(/\{([a-zA-Z]+)\}/g)].map((m) => m[1] as string);
   if (slots.length === 0) return [tokenRef];
   const choices: string[][] = [];
   for (const s of slots) {
     const p = pyGet(props, s, null) as Dict | null;
     if (!truthy(p) || pyGet(p as Dict, 'type', null) !== 'enum') throw new Error(`${tokenRef}: '{${s}}' must name an enum prop`);
-    choices.push((p as Dict).values as string[]);
+    const values = enumValues(p as { values?: string[]; enumRef?: string }) as string[];
+    const keep = only != null && Object.hasOwn(only, s) ? only[s] : undefined;
+    choices.push(keep === undefined ? values : values.filter((v) => keep.includes(v)));
   }
   const out: string[] = [];
   for (const combo of product(choices)) {

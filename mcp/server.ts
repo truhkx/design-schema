@@ -26,11 +26,12 @@ import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mc
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
+import { componentNeighbours, compositionGraph, isDeprecated, supportMatrix } from '../tools/lib/graph.ts';
 import { which } from '../tools/lib/proc.ts';
 import { appendText, has, pyGet, pyJsonDumps, pyRoundTo, pySorted, pySplitlines, pyStr, pyStrip, readText, sortedNames, truthy, writeText } from '../tools/lib/py.ts';
 import { dump as yamlDump } from '../tools/lib/pyyaml.ts';
 import { REPO_ROOT } from '../tools/lib/root.ts';
-import { resolveRole } from '../schema/component.ts';
+import { expectList, narrowForPlatform, resolveRole } from '../schema/component.ts';
 import { PLATFORM_LABEL, PLATFORMS, SOURCE_EXT, sourceDir } from '../schema/platforms.ts';
 import type { PlatformId } from '../schema/platforms.ts';
 import { themeFrontmatter } from '../schema/theme.ts';
@@ -98,7 +99,9 @@ export const INSTRUCTIONS: string =
   'the exact schema, and lookup_code for generated reference implementations on your platform. Never invent ' +
   'colors, sizes, or copy — use tokens from get_tokens and copy templates from the component schema. ' +
   'get_keyboard_model gives the keys a component must handle, get_layout_rules the spacing between components, ' +
-  'list_gaps what the docs left ambiguous. To author a theme, start_theme then write_theme.';
+  'list_gaps what the docs left ambiguous, get_component_graph which components each is built from (and the ' +
+  'leaves-first build order), get_support_matrix what each platform lacks and whether generated code exists. ' +
+  'To author a theme, start_theme then write_theme.';
 
 // ---------- data access ----------
 
@@ -213,7 +216,7 @@ export async function searchGuidance(args: SearchArgs): Promise<Dict[]> {
   return out;
 }
 
-export const LIST_COMPONENTS_DOC = 'List components with category, status, APG pattern, and the platforms each supports.';
+export const LIST_COMPONENTS_DOC = 'List components with category, status, whether deprecated, APG pattern, and the platforms each supports.';
 
 export const listComponents = logged('list_components', ['platform', 'status'], (args: { platform?: Platform | undefined; status?: string | undefined } = {}): Dict[] => {
   const out: Dict[] = [];
@@ -224,21 +227,27 @@ export const listComponents = logged('list_components', ['platform', 'status'], 
     const supported = Object.entries(c.platforms as Dict).filter(([, n]) => truthy(pyGet(n as Dict, 'supported', true))).map(([p]) => p);
     if (args.platform && !supported.includes(args.platform)) continue;
     if (args.status && pyGet(c, 'status', 'draft') !== args.status) continue;
-    out.push({ name, category: c.category, status: pyGet(c, 'status', 'draft'), apg: pyGet(c, 'apg', null), description: e.description, platforms: supported });
+    out.push({ name, category: c.category, status: pyGet(c, 'status', 'draft'), deprecated: isDeprecated(c), apg: pyGet(c, 'apg', null), description: e.description, platforms: supported });
   }
   return out;
 });
 
 export const GET_COMPONENT_DOC =
   'Full schema and guidance for one component. With `platform`, only that platform\'s mapping and\n' +
-  'notes are included and props/events are annotated with their name on that platform. `behavior` is the\n' +
-  "full scenario list (authored + parser-derived) that the component's tests render, narrowed to the platform.";
+  'notes are included, props/events are annotated with their name on that platform, and requirements\n' +
+  '(a11y.requiresOn), enum values (valuesOn), copy entries and style bindings narrowed away from it are dropped. `behavior` is the\n' +
+  "full scenario list (authored + parser-derived) that the component's tests render, narrowed to the platform.\n" +
+  '`form` (how a field joins a Form: value prop and type, name, validation, messages, discovery) and `overlay`\n' +
+  '(layer, anchor, placement, collision, open prop, close event, dismissal, modality) are returned as declared.\n' +
+  '`copy` is returned raw: each entry is a template string, or { text | plural, params, description } whose params\n' +
+  'say what each {placeholder} holds and whose plural gives the CLDR forms (zero/one/two/few/many/other) picked by a number param.';
 
 export const getComponent = logged('get_component', ['name', 'platform'], (args: { name: string; platform?: Platform | undefined }): Dict => {
   const e = findComponent(args.name);
-  const c = structuredClone(e.component) as Dict;
-  const sections: Record<string, string> = { ...(e.sections as Record<string, string>) };
   const platform = args.platform;
+  // Narrowed first, so the platform view has no requirement, enum value, copy entry or binding narrowed away from it.
+  const c = (platform ? narrowForPlatform(structuredClone(e.component) as Dict, platform) : structuredClone(e.component)) as Dict;
+  const sections: Record<string, string> = { ...(e.sections as Record<string, string>) };
   if (platform) {
     c.platforms = { [platform]: pyGet(c.platforms as Dict, platform, { supported: false, notes: 'Not mapped for this platform.' }) };
     for (const ev of Object.values(pyGet(c, 'events', {}) as Dict)) (ev as Dict).nameOnPlatform = pyGet((ev as Dict).platforms as Dict, platform, null);
@@ -252,10 +261,36 @@ export const getComponent = logged('get_component', ['name', 'platform'], (args:
   return { name: c.name, title: e.title, description: e.description, status: pyGet(c, 'status', 'draft'), schema: c, behavior, guidance: sections, source: e.source };
 });
 
+/** A component's own generated source file on a platform, `<Name>.<ext>` in its source folder (SwiftPM's
+ *  `Sources/DesignSchema` for swiftui). */
+function sourceFile(name: string, platform: Platform): string {
+  return join(sourceDir(paths.ROOT, platform), `${name}.${SOURCE_EXT[platform] as string}`);
+}
+
 /** `<Name>+*.swift` beside the type in the Swift package source, sorted. */
 function swiftExtensions(src: string, name: string): string[] {
   if (!existsSync(src)) return [];
   return sortedNames(readdirSync(src).filter((f) => f.startsWith(`${name}+`) && f.endsWith('.swift'))).map((f) => join(src, f));
+}
+
+/** A token path's name on the platform. {slot} placeholders stay visible so the caller knows to interpolate. */
+export function platformTokenName(path: string, platform: Platform): string {
+  const marker = path.replace(/\{([a-zA-Z]+)\}/g, (_m, g: string) => `zz${g}zz`);
+  return platform === 'rn'
+    ? camelName(marker).replace(/Zz([a-zA-Z]+)zz/g, (_m, g: string) => '{' + g.slice(0, 1).toUpperCase() + g.slice(1).toLowerCase() + '}')
+    : 'var(' + cssName(marker).replace(/zz([a-zA-Z]+)zz/g, (_m, g: string) => '{' + g + '}') + ')';
+}
+
+/** One `lookup_code` token binding: the token and its platform name, and the fields the binding declares (a
+ *  per-value token carries its platform name too). */
+export function tokenBinding(b: Dict, platform: Platform): Dict {
+  const out: Dict = { token: b.token, name: platformTokenName(b.token as string, platform), description: pyGet(b, 'description', null) };
+  for (const key of ['part', 'state', 'platforms', 'by']) if (b[key] !== undefined) out[key] = b[key];
+  if (b.values !== undefined) {
+    out.values = Object.fromEntries(Object.entries(b.values as Dict).map(([value, token]) => [value, { token, name: platformTokenName(token as string, platform) }]));
+  }
+  if (b.computed !== undefined) out.computed = b.computed;
+  return out;
 }
 
 export const LOOKUP_CODE_DOC =
@@ -281,8 +316,8 @@ export const lookupCode = logged('lookup_code', ['component', 'platform', 'inclu
   const candidates: Record<string, string[]> =
     platform === 'swiftui'
       ? // Swift keeps a type's extensions beside it as `<Name>+<Topic>.swift` (Icon+Paths.swift); there is no stylesheet or story.
-        { source: [join(src, `${name}.swift`), ...swiftExtensions(src, name)], styles: [], stories: [] }
-      : { source: [join(src, `${name}.${ext}`)], styles: [join(src, `${name}.css`)], stories: [join(src, `${name}.stories.${ext}`)] };
+        { source: [sourceFile(name, platform), ...swiftExtensions(src, name)], styles: [], stories: [] }
+      : { source: [sourceFile(name, platform)], styles: [join(src, `${name}.css`)], stories: [join(src, `${name}.stories.${ext}`)] };
   for (const [key, list] of Object.entries(candidates)) {
     if (!include.includes(key)) continue;
     for (const p of list) if (existsSync(p)) files[relative(paths.ROOT, p)] = readText(p);
@@ -300,16 +335,7 @@ export const lookupCode = logged('lookup_code', ['component', 'platform', 'inclu
   }
   if (include.includes('tokens')) {
     const bindings: Dict = {};
-    for (const [prop, b] of Object.entries(pyGet(c, 'styles', {}) as Dict)) {
-      const path = (b as Dict).token as string;
-      // Keep {slot} placeholders visible in the platform name so the caller knows to interpolate.
-      const marker = path.replace(/\{([a-zA-Z]+)\}/g, (_m, g: string) => `zz${g}zz`);
-      const tokenName =
-        platform === 'rn'
-          ? camelName(marker).replace(/Zz([a-zA-Z]+)zz/g, (_m, g: string) => '{' + g.slice(0, 1).toUpperCase() + g.slice(1).toLowerCase() + '}')
-          : 'var(' + cssName(marker).replace(/zz([a-zA-Z]+)zz/g, (_m, g: string) => '{' + g + '}') + ')';
-      bindings[prop] = { token: path, name: tokenName, description: pyGet(b as Dict, 'description', null) };
-    }
+    for (const [prop, b] of Object.entries(pyGet(c, 'styles', {}) as Dict)) bindings[prop] = tokenBinding(b as Dict, platform);
     result.tokenBindings = bindings;
     result.tokenNote =
       '{slot} placeholders take the value of that enum prop, e.g. for variant=primary: ' +
@@ -377,12 +403,13 @@ export const CHECK_CONTRAST_DOC =
 
 export const checkContrast = logged(
   'check_contrast',
-  ['foreground', 'background', 'level', 'large_text', 'theme', 'mode'],
-  (args: { foreground: string; background: string; level?: 'AA' | 'AAA' | undefined; large_text?: boolean | undefined; theme?: string | undefined; mode?: string | undefined }): Dict => {
+  ['foreground', 'background', 'level', 'large_text', 'non_text', 'theme', 'mode'],
+  (args: { foreground: string; background: string; level?: 'AA' | 'AAA' | undefined; large_text?: boolean | undefined; non_text?: boolean | undefined; theme?: string | undefined; mode?: string | undefined }): Dict => {
     const theme = args.theme ?? 'calm-precise';
     const mode = args.mode ?? 'light';
     const level = args.level ?? 'AA';
     const largeText = args.large_text ?? false;
+    const nonText = args.non_text ?? false;
     const tokens: Record<string, unknown> = {};
     if (themeIds().includes(theme)) for (const [p, e] of Object.entries(loadTheme(theme, mode))) tokens[publicName(p)] = e.$value;
 
@@ -395,9 +422,10 @@ export const checkContrast = logged(
 
     const fg = resolveColor(args.foreground);
     const bg = resolveColor(args.background);
-    const need = ({ 'AA|false': 4.5, 'AA|true': 3.0, 'AAA|false': 7.0, 'AAA|true': 4.5 } as Record<string, number>)[`${level}|${largeText}`] as number;
+    // A WCAG 1.4.11 non-text pair (boundary, indicator, icon) needs 3:1 whatever the level or text size.
+    const need = nonText ? 3.0 : (({ 'AA|false': 4.5, 'AA|true': 3.0, 'AAA|false': 7.0, 'AAA|true': 4.5 } as Record<string, number>)[`${level}|${largeText}`] as number);
     const ratio = _contrast(fg, bg);
-    return { foreground: fg, background: bg, ratio: pyRoundTo(ratio, 2), required: need, level, largeText, passes: ratio >= need };
+    return { foreground: fg, background: bg, ratio: pyRoundTo(ratio, 2), required: need, level, largeText, nonText, passes: ratio >= need };
   },
 );
 
@@ -410,6 +438,37 @@ export const getGenerationPrompt = logged('get_generation_prompt', ['component',
   const p = join(paths.GENERATED, 'prompts', `${name}.${args.platform}.md`);
   if (!existsSync(p)) throw new Error(`No generation prompt for ${name} on ${args.platform}.`);
   return readText(p);
+});
+
+export const GET_COMPONENT_GRAPH_DOC =
+  'The composition graph: which component each anatomy part is built from (alert.md dismissButton: Button).\n' +
+  'Without `component`, every node ({ name, status, deprecated }), every edge ({ from, part, to, planned }; a\n' +
+  "planned target has no doc yet), `order` (leaves first, ties by name: the order to regenerate in, leaving out a\n" +
+  'component in or built from a cycle) and `cycles`. With `component`, its direct edges both ways (composes,\n' +
+  'composedBy) and every existing component it is built from or part of at any depth.';
+
+export const getComponentGraph = logged('get_component_graph', ['component'], (args: { component?: string | undefined } = {}): Dict => {
+  const graph = compositionGraph(Object.values(components()));
+  if (!args.component) return graph;
+  return componentNeighbours(graph, findComponent(args.component).component.name as string);
+});
+
+export const GET_SUPPORT_MATRIX_DOC =
+  'What each platform covers, across platforms: per component and platform, whether it is supported, whether\n' +
+  'generated code exists (the source file lookup_code returns), missingProps (props whose platforms leave it\n' +
+  'out), unmappedEvents (events with no name on it) and deprecatedMembers (props, events and enum values offered\n' +
+  'there that carry a deprecated block, as props.<prop>, events.<event>, props.<prop>.values.<value>).\n' +
+  '`component` returns that one row; `platform` keeps only that platform in each row.';
+
+export const getSupportMatrix = logged('get_support_matrix', ['component', 'platform'], (args: { component?: string | undefined; platform?: Platform | undefined } = {}): Dict[] | Dict => {
+  const entries = args.component ? [findComponent(args.component)] : Object.values(components());
+  let rows: Dict[] = supportMatrix(entries, (name, platform) => existsSync(sourceFile(name, platform)));
+  const platform = args.platform;
+  if (platform) {
+    if (!(PLATFORMS as readonly string[]).includes(platform)) throw new Error(`Unknown platform '${platform}'. Known: ${PLATFORMS.join(', ')}`);
+    rows = rows.map((r) => ({ ...r, platforms: { [platform]: (r.platforms as Dict)[platform] } }));
+  }
+  return args.component ? (rows[0] as Dict) : rows;
 });
 
 // ---------- keyboard, layout, gaps ----------
@@ -425,8 +484,12 @@ const KEYBOARD_DEFAULTS = { from: 'inside', expect: 'manual' };
 export const GET_KEYBOARD_MODEL_DOC =
   "The component's keyboard model: every rule from its `keyboard` block with `from` (where focus is\n" +
   'before the key: trigger | first | last | inside | any) and `expect` (what the keyboard gate asserts\n' +
-  'after it: closes, opens, focus-next, …, or manual when it is documented but not auto-tested) filled\n' +
-  'in with their defaults, plus the APG pattern and the a11y requirements the rules imply.';
+  'after it: closes, opens, focus-next, …, a list of several asserted in order, or manual when it is\n' +
+  'documented but not auto-tested) filled in with their defaults, plus the APG pattern and the a11y\n' +
+  'requirements the rules imply. A rule may also carry given (props the story renders with for it),\n' +
+  'target (the anatomy part closes/opens assert on), repeat (presses before asserting), platforms (where\n' +
+  'it applies) and native (the rendered element\'s own behavior, which generators do not implement).\n' +
+  'autoTested, manual and native count keys: native is the manual rules marked native, not in manual.';
 
 export const getKeyboardModel = logged('get_keyboard_model', ['component'], (args: { component: string }): Dict => {
   const e = findComponent(args.component);
@@ -434,13 +497,16 @@ export const getKeyboardModel = logged('get_keyboard_model', ['component'], (arg
   const rules: Dict[] = ((pyGet(c, 'keyboard', null) as Dict[] | null) ?? []).map((r) => ({ ...KEYBOARD_DEFAULTS, ...r }));
   const wanted = ['keyboard-operable', 'escape-dismiss', 'arrow-navigation', 'roving-tabindex', 'focus-trap', 'focus-restore'];
   const keys = (rule: Dict): number => (rule.keys as string[]).length;
+  const count = (test: (rule: Dict) => boolean): number => rules.filter(test).reduce((n, r) => n + keys(r), 0);
+  const isManual = (rule: Dict): boolean => expectList(rule).includes('manual');
   return {
     component: c.name, apg: pyGet(c, 'apg', null), role: resolveRole(c),
     ...(has(c.a11y as Dict, 'roleFrom') ? { roleFrom: (c.a11y as Dict).roleFrom } : {}),
     requires: ((c.a11y as Dict).requires as string[]).filter((r) => wanted.includes(r)),
     rules,
-    autoTested: rules.filter((r) => r.expect !== 'manual').reduce((n, r) => n + keys(r), 0),
-    manual: rules.filter((r) => r.expect === 'manual').reduce((n, r) => n + keys(r), 0),
+    autoTested: count((r) => !isManual(r)),
+    manual: count((r) => isManual(r) && r.native !== true),
+    native: count((r) => isManual(r) && r.native === true),
     note: rules.length ? null : 'This component declares no keyboard block; it is not keyboard-interactive or its rules are not yet documented.',
   };
 });
@@ -546,8 +612,8 @@ const THEME_QUESTIONS: Dict[] = [
     question: "Body typeface ('system' for each platform's own face, or a family name), an optional heading face, and the monospace family.",
   },
   {
-    id: 'shape', fields: ['scale.base', 'scale.ratio', 'radius', 'density'],
-    question: 'Type scale (body size and modular ratio: 1.2 dense/technical, 1.25 balanced, 1.333 editorial), corner radius preset, and spacing density.',
+    id: 'shape', fields: ['scale.base', 'scale.ratio', 'radius', 'density', 'tuning'],
+    question: 'Type scale (body size and modular ratio: 1.2 dense/technical, 1.25 balanced, 1.333 editorial), corner radius preset, and spacing density. Only if no preset fits: tuning for radius steps in px, line heights or font weights.',
   },
   {
     id: 'rhythm', fields: ['motion', 'elevation', 'layout.rhythm', 'layout.contentWidth', 'modes'],
@@ -676,7 +742,7 @@ ${rn}
 `;
 }
 
-const THEME_KEYS = ['status', 'tone', 'not', 'seed', 'neutralTint', 'scale', 'radius', 'density', 'motion', 'elevation', 'layout', 'modes', 'statusHues', 'overrides'];
+const THEME_KEYS = ['status', 'tone', 'not', 'seed', 'neutralTint', 'scale', 'radius', 'density', 'motion', 'elevation', 'layout', 'modes', 'statusHues', 'overrides', 'tuning'];
 
 /** `str.capitalize()`: the first character upper, the rest lower. */
 function capitalize(s: string): string {
@@ -687,8 +753,10 @@ export const WRITE_THEME_DOC =
   'Write site/src/content/docs/themes/<id>.md from interview answers in the calm-precise shape, validate the\n' +
   'frontmatter against the theme schema (schema/theme.ts), run tools/theme.ts to derive the tokens for every mode, and\n' +
   'return what happened. `answers` carries the frontmatter decisions (tone, not, seed, neutralTint, scale,\n' +
-  'radius, density, motion, elevation, layout, modes, statusHues?, overrides?) plus prose (title, description,\n' +
-  'feel, notFeel, references, whenToUse, whenNotToUse, accessibility, platformNotes {web, lit, rn}).\n' +
+  'radius, density, motion, elevation, layout, modes, statusHues?, tuning?, overrides?) plus prose (title, description,\n' +
+  'feel, notFeel, references, whenToUse, whenNotToUse, accessibility, platformNotes {web, lit, rn}). `tuning` sets\n' +
+  'radius steps, line heights and font weights by name; `overrides` pins token values by path, under `overrides.base`\n' +
+  'for the palette and scales or `light`/`dark` for mode tokens, and both are validated against the token manifest.\n' +
   'Nothing is written when validation fails; an existing doc is kept unless `overwrite` is true. Derivation\n' +
   'errors and contrast problems are returned, not fixed: the caller decides which decision to change.';
 
@@ -784,14 +852,22 @@ export function createServer(): McpServer {
     'check_contrast',
     {
       description: CHECK_CONTRAST_DOC,
-      inputSchema: { foreground: z.string(), background: z.string(), level: z.enum(['AA', 'AAA']).optional(), large_text: z.boolean().optional(), theme: z.string().optional(), mode: modeArg.optional() },
+      inputSchema: { foreground: z.string(), background: z.string(), level: z.enum(['AA', 'AAA']).optional(), large_text: z.boolean().optional(), non_text: z.boolean().optional(), theme: z.string().optional(), mode: modeArg.optional() },
     },
     (args) => content(checkContrast(args)),
   );
 
   server.registerTool('get_generation_prompt', { description: GET_GENERATION_PROMPT_DOC, inputSchema: { component: z.string(), platform: platformArg } }, (args) => content(getGenerationPrompt(args)));
 
-  server.registerTool('get_keyboard_model', { description: GET_KEYBOARD_MODEL_DOC, inputSchema: { component: z.string() } }, (args) => content(getKeyboardModel(args)));
+  server.registerTool('get_component_graph', { description: GET_COMPONENT_GRAPH_DOC, inputSchema: { component: z.string().optional() } }, (args) => content(getComponentGraph(args)));
+
+  server.registerTool(
+    'get_support_matrix',
+    { description: GET_SUPPORT_MATRIX_DOC, inputSchema: { component: z.string().optional(), platform: platformArg.optional() } },
+    (args) => content(getSupportMatrix(args)),
+  );
+
+  server.registerTool('get_keyboard_model',{ description: GET_KEYBOARD_MODEL_DOC, inputSchema: { component: z.string() } }, (args) => content(getKeyboardModel(args)));
 
   server.registerTool('get_layout_rules', { description: GET_LAYOUT_RULES_DOC, inputSchema: { theme: z.string().optional(), mode: modeArg.optional() } }, (args) => content(getLayoutRules(args)));
 

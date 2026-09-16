@@ -300,23 +300,30 @@ export function styleRows(comp: Dict, modes: Modes): string[][] {
   const styles = truthy(pyGet(comp, 'styles', null)) ? (comp.styles as Dict) : {};
   const rows: string[][] = [];
   for (const [binding, spec] of Object.entries(styles) as [string, Dict][]) {
-    const token = pyGet(spec, 'token', '') as string;
-    let refs: string[];
-    try {
-      refs = expand(token, props);
-    } catch {
-      refs = [token]; // slot names no enum prop: show it verbatim, values unresolved
-    }
-    for (const ref of refs) {
-      rows.push([
-        `\`${binding}\``,
-        `\`${ref}\``,
-        cell(lookup(modes.light as Tokens, ref)),
-        cell(lookup(modes.dark as Tokens, ref)),
-        truthy(pyGet(spec, 'locked', null)) ? 'yes' : 'no',
-        textCell(pyGet(spec, 'description', null)),
-      ]);
-    }
+    const where = [spec.part !== undefined ? `part \`${pyStr(spec.part)}\`` : '', spec.state !== undefined ? `state \`${pyStr(spec.state)}\`` : ''].filter((s) => s !== '').join(', ');
+    const description = textCell(pyGet(spec, 'description', null));
+    const described = where === '' ? description : description === '' ? `${where}.` : `${where}: ${description}`;
+    const tokenRows = (label: string, token: string): void => {
+      let refs: string[];
+      try {
+        refs = expand(token, props);
+      } catch {
+        refs = [token]; // slot names no enum prop: show it verbatim, values unresolved
+      }
+      for (const ref of refs) {
+        rows.push([
+          label,
+          `\`${ref}\``,
+          cell(lookup(modes.light as Tokens, ref)),
+          cell(lookup(modes.dark as Tokens, ref)),
+          truthy(pyGet(spec, 'locked', null)) ? 'yes' : 'no',
+          described,
+        ]);
+      }
+    };
+    tokenRows(`\`${binding}\``, pyGet(spec, 'token', '') as string);
+    // A per-value token gets its own row, after the token that covers every other value.
+    for (const [value, token] of Object.entries((spec.values ?? {}) as Dict)) tokenRows(`\`${binding}\` (${pyStr(spec.by)}=${value})`, token as string);
   }
   return rows;
 }

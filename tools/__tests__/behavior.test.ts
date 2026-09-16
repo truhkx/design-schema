@@ -174,6 +174,40 @@ describe('React Native limits', () => {
   });
 });
 
+describe('deriveBehavior from the overlay block', () => {
+  const OVERLAY = { layer: 'popover', anchor: 'container', open: 'open', closeEvent: 'onOpenChange', dismiss: ['outside-press', 'escape'] };
+
+  function overlaid(overlay: parse.Dict = OVERLAY): parse.Dict {
+    const c = component();
+    c.props.open = { type: 'boolean', description: 'Shown.' };
+    c.events.onOpenChange = { description: 'Dismissed.', platforms: { web: 'onOpenChange', rn: 'onOpenChange' } };
+    c.platforms.lit = { tag: 'ds-widget' };
+    c.overlay = overlay;
+    return c;
+  }
+
+  test('Escape dismissal derives escape-fires-<closeEvent>, off React Native', () => {
+    const sc = parse.deriveBehavior(overlaid()).find((s) => s.name === 'escape-fires-on-open-change');
+    expect(sc).toEqual({
+      name: 'escape-fires-on-open-change',
+      given: { open: true },
+      when: { key: 'Escape' },
+      then: [{ event: 'onOpenChange' }],
+      platforms: ['lit', 'web'],
+      derived: true,
+    });
+    expect(behaviorScenario.safeParse(sc).success).toBe(true);
+  });
+
+  test('no scenario without escape, open or closeEvent', () => {
+    const escapes = (c: parse.Dict): boolean => parse.deriveBehavior(c).some((s) => (s.name as string).startsWith('escape-fires-'));
+    expect(escapes(overlaid({ ...OVERLAY, dismiss: ['outside-press'] }))).toBe(false);
+    expect(escapes(overlaid({ ...OVERLAY, open: undefined }))).toBe(false);
+    expect(escapes(overlaid({ ...OVERLAY, closeEvent: undefined }))).toBe(false);
+    expect(escapes(component())).toBe(false);
+  });
+});
+
 describe('deriveBehavior', () => {
   test('role enum values and requirements', () => {
     const c = component();
@@ -259,6 +293,18 @@ describe('behaviorFor', () => {
   test('a scenario with no applicable expectation is dropped', () => {
     const c = withBehavior(component(), { ...CLICK, then: [{ focusable: true, platforms: ['web'] }] });
     expect(parse.behaviorFor(c, [], 'rn')).toEqual([]);
+  });
+
+  test('a scenario needing an enum value or a requirement narrowed away from the platform is dropped', () => {
+    const c = withBehavior(component(), { ...CLICK, name: 'danger-click', given: { variant: 'danger' } });
+    c.props.variant.valuesOn = { danger: ['web'] };
+    c.a11y.requiresOn = { 'accessible-name': ['web'] };
+    const rn = parse.behaviorFor(c, parse.deriveBehavior(c), 'rn').map((sc) => sc.name);
+    expect(rn).toContain('renders-variant-primary');
+    expect(rn).not.toEqual(expect.arrayContaining(['danger-click']));
+    expect(rn).not.toContain('renders-variant-danger');
+    expect(rn).not.toContain('has-accessible-name');
+    expect(parse.behaviorFor(c, parse.deriveBehavior(c), 'web').map((sc) => sc.name)).toEqual(expect.arrayContaining(['danger-click', 'renders-variant-danger', 'has-accessible-name']));
   });
 });
 

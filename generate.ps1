@@ -6,6 +6,8 @@
 #   powershell -ExecutionPolicy Bypass -File .\generate.ps1 -Stale                          # everything whose doc changed
 #   powershell -ExecutionPolicy Bypass -File .\generate.ps1 -Check                          # report only
 # Extra arguments are passed through, e.g. -Extra "--max-rounds 4 --model opus"
+# Cross-platform equivalent: `pnpm generate <generate.ts flags>` (e.g. `pnpm generate --stale`) parses first too,
+# but a failed parse exits with parse's own code (1), not 2.
 param(
   [string]$Component = "",
   [string]$Platform = "web,lit,rn",

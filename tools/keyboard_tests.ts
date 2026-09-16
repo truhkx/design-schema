@@ -16,7 +16,9 @@
  *     or one of NON_QUERYABLE_ROLES).
  *
  * Rules whose `expect` is `manual` are listed in the spec as `test.skip` so the report shows
- * coverage, not silence.
+ * coverage, not silence (`— native` when the rule is the rendered element's own behavior, `— manual`
+ * otherwise). A rule scoped by `platforms` is emitted only on those platforms; `given` renders the story with
+ * those args, `target` asserts closes/opens on a `data-part`, and `repeat` presses the chord that many times.
  *
  * The same block is also written out as data — `generated/keyboard/<Name>.json` — because the fourth
  * platform's keyboard gate is not Playwright: it is an XCUITest driving an iPad simulator with a hardware
@@ -38,7 +40,7 @@ import { freshOutDir, readComponents } from './lib/components.ts';
 import type { Dict } from './lib/components.ts';
 import { pyGet, truthy, writeText } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
-import { NON_QUERYABLE_ROLES, normalizeKey, resolveRole, roleIn } from '../schema/component.ts';
+import { expectList, NON_QUERYABLE_ROLES, normalizeKey, resolveRole, roleIn } from '../schema/component.ts';
 
 export type { Dict };
 
@@ -72,10 +74,25 @@ export function storyId(name: string, suffix: string): string {
   return `${title}--keyboard`;
 }
 
-export function rootLocator(c: Dict): string {
-  const role = resolveRole(c);
+/** The story's iframe URL. A rule's `given` rides along as Storybook URL args (`&args=key:value;flag:!true`), which
+ *  the schema already restricted to booleans, numbers and strings Storybook accepts; a space is spelled `+`. */
+export function storyUrl(id: string, given?: Dict | null): string {
+  const base = `/iframe.html?id=${id}&viewMode=story`;
+  const entries = Object.entries(given ?? {});
+  if (!entries.length) return base;
+  const arg = (value: unknown): string => (typeof value === 'boolean' ? `!${String(value)}` : String(value).replaceAll(' ', '+'));
+  return `${base}&args=${entries.map(([key, value]) => `${key}:${arg(value)}`).join(';')}`;
+}
+
+export function rootLocator(c: Dict, given?: Dict | null): string {
+  const role = resolveRole(c, given ?? undefined);
   if (role === null || roleIn(NON_QUERYABLE_ROLES, role)) return `page.locator('[data-ds="${c.name as string}"]').first()`;
   return `page.getByRole('${role}').first()`;
+}
+
+/** An anatomy part, by the `data-part` hook the web and Lit conventions put on it. */
+export function partLocator(part: string): string {
+  return `page.locator('[data-part="${part}"]').first()`;
 }
 
 const EXPECT_BLOCKS: Record<string, string> = {
@@ -94,10 +111,14 @@ const EXPECT_BLOCKS: Record<string, string> = {
 };
 
 /** The assertion for one `expect` value; an `expect` the schema does not know is a KeyError, as the
- *  Python dict lookup was (`manual` never reaches here — it becomes a `test.skip`). */
-export function expectBlock(exp: string): string {
+ *  Python dict lookup was (`manual` never reaches here — it becomes a `test.skip`). `repeat` scales the move
+ *  focus-next and focus-prev expect, and `target` is the part closes and opens assert on instead of the root. */
+export function expectBlock(exp: string, repeat = 1, target?: string | null): string {
   if (!Object.hasOwn(EXPECT_BLOCKS, exp)) throw new Error(`KeyError: '${exp}'`);
-  return EXPECT_BLOCKS[exp] as string;
+  let block = EXPECT_BLOCKS[exp] as string;
+  if ((exp === 'closes' || exp === 'opens') && target !== undefined && target !== null) block = block.replace('expect(root)', `expect(${partLocator(target)})`);
+  if ((exp === 'focus-next' || exp === 'focus-prev') && repeat !== 1) block = block.replace(/before ([+-]) 1\)/, `before $1 ${repeat})`);
+  return block;
 }
 
 const FROM_BLOCKS: Record<string, string> = {
@@ -185,31 +206,37 @@ export function specFor(c: Dict, platform: string): string {
     HELPERS,
     `test.describe('${name} (${platform}) keyboard', () => {`,
     '  test.beforeEach(async ({ page }) => {',
-    `    await page.goto('/iframe.html?id=${sid}&viewMode=story');`,
+    `    await page.goto('${storyUrl(sid)}');`,
     `    await expect(${rootLocator(c)}).toBeVisible();`,
     '  });',
   ];
   const rules = truthy(c.keyboard) ? (c.keyboard as Dict[]) : [];
   for (const rule of rules) {
-    const exp = pyGet(rule, 'expect', 'manual') as string;
+    if (!appliesOn(rule, platform)) continue;
+    const outcomes = expectList(rule);
     const frm = pyGet(rule, 'from', 'inside') as string;
+    const given = (rule.given ?? null) as Dict | null;
+    const target = (rule.target ?? null) as string | null;
+    const repeat = (rule.repeat ?? 1) as number;
     for (const key of rule.keys as string[]) {
       const [keyName, label] = LETTERS.test(key) ? ['a', 'typeahead letter'] : [playwrightKey(key), key];
       const title = `${label}: ${rule.action as string}`.replaceAll("'", "\\'");
       const when = truthy(pyGet(rule, 'when', null)) ? ` (${rule.when as string})` : '';
-      if (exp === 'manual') {
-        lines.push(`  test.skip('${title}${when} — manual', async () => {});`);
+      if (outcomes.includes('manual')) {
+        lines.push(`  test.skip('${title}${when} — ${rule.native === true ? 'native' : 'manual'}', async () => {});`);
         continue;
       }
+      lines.push(`  test('${title}${when}', async ({ page }) => {`);
+      if (given !== null) lines.push(`    await page.goto('${storyUrl(sid, given)}');`, `    await expect(${rootLocator(c, given)}).toBeVisible();`);
+      const press = `await page.keyboard.press('${keyName}');`;
       lines.push(
-        `  test('${title}${when}', async ({ page }) => {`,
-        `    const root = ${rootLocator(c)};`,
+        `    const root = ${rootLocator(c, given)};`,
         `    ${fromBlock(frm)}`,
         '    const before = await focusIndex(page, root);',
         '    const stateBefore = await ariaState(page);',
         '    void before; void stateBefore;',
-        `    await page.keyboard.press('${keyName}');`,
-        `    ${expectBlock(exp)}`,
+        repeat > 1 ? `    for (let i = 0; i < ${repeat}; i++) ${press}` : `    ${press}`,
+        ...outcomes.map((exp) => `    ${expectBlock(exp, repeat, target)}`),
         '  });',
       );
     }
@@ -218,9 +245,18 @@ export function specFor(c: Dict, platform: string): string {
   return lines.join('\n') + '\n';
 }
 
+/** True when the rule applies on `platform`: it names no platforms, or names this one. */
+export function appliesOn(rule: Dict, platform: string): boolean {
+  return rule.platforms === undefined || rule.platforms === null || (rule.platforms as string[]).includes(platform);
+}
+
 /** One rule as the XCUITest reads it: the doc's own fields, with the defaults already applied so the
- *  Swift side never has to know what `from` means when it is absent. */
-export type KeyboardRule = { keys: string[]; action: string; from: string; expect: string; when?: string };
+ *  Swift side never has to know what `from` means when it is absent. `expect` is always one string (the Swift
+ *  decoder reads no other form); `expectAll` carries an outcome list, which that decoder ignores. */
+export type KeyboardRule = {
+  keys: string[]; action: string; from: string; expect: string; when?: string;
+  expectAll?: string[]; given?: Dict; target?: string; repeat?: number; platforms?: string[]; native?: boolean;
+};
 export type KeyboardSpec = { name: string; role: string | null; identifier: string; rules: KeyboardRule[] };
 
 /**
@@ -228,17 +264,28 @@ export type KeyboardSpec = { name: string; role: string | null; identifier: stri
  *
  * `identifier` is the component root's `.accessibilityIdentifier` (process/ios-platform.md, "Testability
  * hook": the root carries `<Name>`), which is how XCUITest finds what the web spec finds by role.
+ *
+ * Rules scoped away from swiftui are dropped. The XCUITest can neither render with props nor find a part, and it
+ * presses each key once, so a rule with `given`, `target` or `repeat` above 1 is written as `manual` there.
  */
 export function specData(c: Dict): KeyboardSpec {
   const rules: KeyboardRule[] = [];
   for (const rule of (truthy(c.keyboard) ? (c.keyboard as Dict[]) : [])) {
+    if (!appliesOn(rule, 'swiftui')) continue;
     const when = pyGet(rule, 'when', null);
+    const unreachable = rule.given !== undefined || rule.target !== undefined || ((rule.repeat ?? 1) as number) > 1;
     rules.push({
       keys: [...(rule.keys as string[])],
       action: rule.action as string,
       from: pyGet(rule, 'from', 'inside') as string,
-      expect: pyGet(rule, 'expect', 'manual') as string,
+      expect: unreachable ? 'manual' : (expectList(rule)[0] as string),
       ...(truthy(when) ? { when: when as string } : {}),
+      ...(Array.isArray(rule.expect) ? { expectAll: [...(rule.expect as string[])] } : {}),
+      ...(rule.given !== undefined ? { given: rule.given as Dict } : {}),
+      ...(rule.target !== undefined ? { target: rule.target as string } : {}),
+      ...(rule.repeat !== undefined ? { repeat: rule.repeat as number } : {}),
+      ...(rule.platforms !== undefined ? { platforms: [...(rule.platforms as string[])] } : {}),
+      ...(rule.native !== undefined ? { native: rule.native as boolean } : {}),
     });
   }
   return { name: c.name as string, role: resolveRole(c), identifier: c.name as string, rules };
@@ -250,6 +297,7 @@ export function main(): number {
   let nSpecs = 0;
   let nTests = 0;
   let nManual = 0;
+  let nNative = 0;
   let nData = 0;
   for (const entry of comps) {
     const c = entry.component as Dict;
@@ -265,16 +313,16 @@ export function main(): number {
     writeText(join(paths.OUT, `${c.name as string}.json`), JSON.stringify(specData(c), null, 2) + '\n');
     nData += 1;
     for (const r of c.keyboard as Dict[]) {
-      for (const _key of r.keys as string[]) {
-        void _key;
-        if (pyGet(r, 'expect', 'manual') === 'manual') nManual += 1;
-        else nTests += 1;
-      }
+      if (!Object.keys(PLATFORMS).some((platform) => appliesOn(r, platform))) continue;
+      const keys = (r.keys as string[]).length;
+      if (!expectList(r).includes('manual')) nTests += keys;
+      else if (r.native === true) nNative += keys;
+      else nManual += keys;
     }
   }
   const out = relative(paths.ROOT, paths.OUT);
   process.stdout.write(
-    `✔ keyboard gate: ${nSpecs} spec(s), ${nTests} auto-tested rule(s) per platform, ${nManual} manual, ` +
+    `✔ keyboard gate: ${nSpecs} spec(s), ${nTests} auto-tested rule(s) per platform, ${nManual} manual${nNative > 0 ? `, ${nNative} native` : ''}, ` +
       `${nData} rule set(s) for the swiftui gate → ${out}/\n`,
   );
   return 0;

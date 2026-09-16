@@ -12,8 +12,9 @@
  */
 import type { ComponentDef } from '../../../schema/component';
 
-/** One key → action rule. Taken from the schema, so the generated file and this view cannot drift. */
-export type KeyboardRule = NonNullable<ComponentDef['keyboard']>[number];
+/** One key → action rule. Taken from the schema, so the generated file and this view cannot drift. The file
+ *  writes `expect` as one string and an outcome list as `expectAll`; this view renders neither. */
+export type KeyboardRule = NonNullable<ComponentDef['keyboard']>[number] & { expectAll?: string[] };
 
 /** The shape of one `generated/keyboard/<Name>.json`. */
 export interface KeyboardSpec {

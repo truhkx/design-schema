@@ -202,11 +202,13 @@ const CONSUMER_CHOICE: Partial<Record<Requirement, string>> = {
 };
 
 /** `enum` props render their values; `array`/`object`/`function` props render their declared shape, and
- *  `union` props the shape alone, which already names every kind (`string | string[]`). */
+ *  `union` props the shape alone, which already names every kind (`string | string[]`). An `integer` reads as
+ *  the `number` it is emitted as. */
 function propType(prop: ComponentDef['props'][string]): string {
   if (prop.type === 'enum') return (prop.values ?? []).join(' | ');
   if (prop.type === 'union') return prop.shape ?? prop.type;
-  return prop.shape !== undefined ? `${prop.type} ${prop.shape}` : prop.type;
+  const type = prop.type === 'integer' ? 'number' : prop.type;
+  return prop.shape !== undefined ? `${type} ${prop.shape}` : type;
 }
 
 /** The literal a prop falls back to. `false` and `0` are real defaults, so only absence is a dash. */
@@ -291,7 +293,7 @@ export function contrastRows(def: ComponentDef): ContrastRow[] {
   return (def.a11y.contrast ?? []).map((pair) => ({
     foreground: pair.foreground,
     background: pair.background,
-    level: pair.large ? `${pair.level} (large text)` : pair.level,
+    level: `${pair.level}${pair.nonText ? ' (non-text)' : pair.large ? ' (large text)' : ''}${pair.state ? ` (${pair.state})` : ''}`,
   }));
 }
 

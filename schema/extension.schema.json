@@ -29,6 +29,22 @@
         "description": {
           "type": "string"
         },
+        "platforms": {
+          "description": "The platforms the extension targets, each one the component supports. Omitted means every platform the component supports.",
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platformId"
+          }
+        },
+        "anatomy": {
+          "description": "Parts appended to the component's anatomy.",
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "props": {
           "type": "object",
           "propertyNames": {
@@ -48,7 +64,7 @@
           }
         },
         "styles": {
-          "description": "Unlocked bindings only; the parser rejects `locked: true` and any token a contrast pair locks.",
+          "description": "Unlocked bindings only; the parser rejects `locked: true` and any token a contrast pair locks, unless the pair is one this extension adds.",
           "type": "object",
           "propertyNames": {
             "type": "string"
@@ -58,12 +74,20 @@
           }
         },
         "copy": {
+          "description": "User-facing strings the component renders itself (validation messages, summary headings). Each is a template string, or { text | plural, params, description, platforms } that declares what each {placeholder} holds and the CLDR plural forms a count picks. A placeholder names a declared param or a prop ({label} reads the label prop). Generators must use these verbatim so copy is consistent across platforms and localizable in one place.",
           "type": "object",
           "propertyNames": {
             "type": "string"
           },
           "additionalProperties": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/copyEntry"
+              }
+            ]
           }
         },
         "keyboard": {
@@ -79,6 +103,79 @@
           "items": {
             "$ref": "#/$defs/behaviorScenario"
           }
+        },
+        "a11y": {
+          "description": "Contrast pairs appended to the component's a11y.contrast; role and requires are claims about the upstream component, so they are not allowed.",
+          "type": "object",
+          "properties": {
+            "contrast": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/contrastPair"
+              }
+            }
+          },
+          "required": [
+            "contrast"
+          ],
+          "additionalProperties": false
+        },
+        "defaults": {
+          "description": "Upstream prop name → the default this extension gives it instead.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
+        },
+        "omit": {
+          "description": "Section → names of upstream items removed from the merged component (behavior entries are authored scenario names).",
+          "type": "object",
+          "properties": {
+            "props": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "events": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "styles": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "copy": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "behavior": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
         },
         "modules": {
           "description": "Export name → module contract.",
@@ -98,6 +195,15 @@
       ],
       "additionalProperties": false
     },
+    "platformId": {
+      "type": "string",
+      "enum": [
+        "web",
+        "lit",
+        "rn",
+        "swiftui"
+      ]
+    },
     "propDef": {
       "type": "object",
       "properties": {
@@ -106,6 +212,7 @@
           "enum": [
             "string",
             "number",
+            "integer",
             "boolean",
             "enum",
             "content",
@@ -114,7 +221,7 @@
             "function",
             "union"
           ],
-          "description": "A value of more than one kind (a single id or an array of them) is 'union', with the kinds spelled out in shape."
+          "description": "A value of more than one kind (a single id or an array of them) is 'union', with the kinds spelled out in shape. A whole number (a count, an index, a precision) is 'integer', emitted as a number."
         },
         "description": {
           "type": "string"
@@ -140,6 +247,10 @@
             "type": "string"
           }
         },
+        "enumRef": {
+          "description": "For an enum prop: the shared vocabulary (schema/vocab.ts) it takes its values from. values, when present, narrows it to a subset.",
+          "$ref": "#/$defs/vocabName"
+        },
         "a11y": {
           "type": "string"
         },
@@ -158,6 +269,79 @@
             "$ref": "#/$defs/platformId"
           }
         },
+        "valuesOn": {
+          "description": "For an enum prop: value → the platforms it is offered on, each one the component (and this prop's platforms) declares. A value not listed is offered everywhere.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/platformId"
+            }
+          }
+        },
+        "controls": {
+          "type": "object",
+          "properties": {
+            "event": {
+              "type": "string",
+              "description": "The event that reports a requested change; the consumer updates this prop in response."
+            },
+            "default": {
+              "description": "The prop that seeds the value when this prop is omitted, e.g. defaultChecked.",
+              "type": "string"
+            },
+            "state": {
+              "description": "For a boolean prop: the behavior state it drives, so a then.state assertion can be tied to it.",
+              "type": "string",
+              "enum": [
+                "checked",
+                "expanded",
+                "selected",
+                "disabled",
+                "invalid",
+                "pressed",
+                "open"
+              ]
+            }
+          },
+          "required": [
+            "event"
+          ],
+          "additionalProperties": false,
+          "description": "This prop is controlled when it is given and uncontrolled when it is omitted: event reports a requested change, default names the prop that seeds the uncontrolled value, and state names the behavior state a boolean prop drives."
+        },
+        "since": {
+          "description": "The package version it arrived in.",
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "deprecated": {
+          "$ref": "#/$defs/deprecation"
+        },
+        "valueLifecycle": {
+          "description": "For an enum prop: value → when it arrived (since) and whether it is on its way out (deprecated, whose use names another value of this prop). A sibling of values, which stays a plain list.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "since": {
+                "type": "string",
+                "pattern": "^\\d+\\.\\d+\\.\\d+$"
+              },
+              "deprecated": {
+                "$ref": "#/$defs/deprecation"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
         "source": {
           "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
           "type": "string"
@@ -169,14 +353,36 @@
       ],
       "additionalProperties": false
     },
-    "platformId": {
+    "vocabName": {
       "type": "string",
       "enum": [
-        "web",
-        "lit",
-        "rn",
-        "swiftui"
-      ]
+        "size",
+        "tone",
+        "foregroundTone"
+      ],
+      "description": "A shared value vocabulary: size, tone or foregroundTone."
+    },
+    "deprecation": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "Why callers should move off it."
+        },
+        "since": {
+          "description": "The package version that deprecated it.",
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "use": {
+          "description": "The replacement: another prop or event of the component for a prop or event, another value of the prop for a value, another component for a component.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reason"
+      ],
+      "additionalProperties": false
     },
     "eventDef": {
       "type": "object",
@@ -198,6 +404,52 @@
             "type": "string"
           }
         },
+        "payload": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/payloadField"
+          },
+          "description": "The handler's arguments, in order. On web, React Native and SwiftUI they are positional parameters; on Lit they are the keys of CustomEvent.detail. An empty array means the handler takes no arguments. When the event declares reasons, one field is { name: reason, type: enum } with the reason keys as its values."
+        },
+        "reasons": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Why the event fired: each kebab-case reason the handler can receive, mapped to when it is reported, e.g. { escape: 'Escape pressed while open', close-button: 'the close button was activated' }. A controlled reason means the consumer changed a controlled prop, and fires must then include controlled."
+        },
+        "fires": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "user",
+              "programmatic",
+              "controlled"
+            ]
+          },
+          "description": "Who can make the event fire: user (an interaction), programmatic (the component changes state on its own, such as autoplay or a timeout), controlled (the consumer changed a controlled prop). Generators fire the event for exactly these sources."
+        },
+        "cancelable": {
+          "description": "True when the handler can veto the component's default action (the close, the edit, the navigation). How it vetoes on each platform (return false, preventDefault) belongs in the platform notes. Never true on an after-change event, which has nothing left to cancel.",
+          "type": "boolean"
+        },
+        "timing": {
+          "$ref": "#/$defs/eventTiming"
+        },
+        "since": {
+          "description": "The package version it arrived in.",
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "deprecated": {
+          "$ref": "#/$defs/deprecation"
+        },
         "source": {
           "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
           "type": "string"
@@ -206,6 +458,74 @@
       "required": [
         "description",
         "platforms"
+      ],
+      "additionalProperties": false
+    },
+    "payloadField": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$",
+          "description": "The argument name: an identifier. On Lit it is the key in CustomEvent.detail."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "enum",
+            "array",
+            "object",
+            "union"
+          ],
+          "description": "A value of more than one kind is 'union', with the kinds spelled out in shape."
+        },
+        "shape": {
+          "description": "For array/object/union fields: the item or field shape in TypeScript-like notation, e.g. 'string[]' or '{ rowId: string; column: string }'. Required for those three types.",
+          "type": "string"
+        },
+        "values": {
+          "description": "For enum fields: every value the handler can receive. Required for enum.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "eventTiming": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "type": "string",
+          "enum": [
+            "request",
+            "before-change",
+            "after-change",
+            "commit"
+          ],
+          "description": "When the event fires relative to the state change. request: the component does not change its own state; the consumer decides (Dialog onClose). before-change: fired before the component applies the change. after-change: fired once the new state is in effect. commit: fired once at the end of a continuous interaction (Slider onChangeEnd)."
+        },
+        "before": {
+          "description": "Events of this component that this one fires ahead of, when both fire for one interaction, e.g. onDragDismiss's before: [onClose]. Never the event itself, and two events never list each other.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "phase"
       ],
       "additionalProperties": false
     },
@@ -218,9 +538,153 @@
         "description": {
           "type": "string"
         },
+        "part": {
+          "description": "The anatomy part the binding styles. Omitted means the root.",
+          "type": "string"
+        },
+        "state": {
+          "description": "The state the binding applies in (active is the keyboard-active item in a composite). Omitted means every state.",
+          "type": "string",
+          "enum": [
+            "checked",
+            "expanded",
+            "selected",
+            "disabled",
+            "invalid",
+            "pressed",
+            "open",
+            "hover",
+            "focus-visible",
+            "active",
+            "dragging"
+          ]
+        },
+        "platforms": {
+          "description": "The platforms the binding applies on, each one the component declares. Omitted means all.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platformId"
+          }
+        },
+        "by": {
+          "description": "An enum or boolean prop whose value picks the token from values. Needs values, and the token may not also interpolate {<by>}.",
+          "type": "string"
+        },
+        "values": {
+          "description": "Value of the by prop ('true'/'false' for a boolean) → the token used instead of token for that value.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/tokenRef"
+          }
+        },
+        "computed": {
+          "type": "object",
+          "properties": {
+            "times": {
+              "description": "Multiplies the binding's token.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "plus": {
+              "description": "Operands added.",
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "token": {
+                        "$ref": "#/$defs/tokenRef"
+                      },
+                      "times": {
+                        "description": "A positive finite multiplier.",
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": [
+                      "token"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "binding": {
+                        "type": "string",
+                        "description": "Another styles binding of this component."
+                      },
+                      "times": {
+                        "description": "A positive finite multiplier.",
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": [
+                      "binding"
+                    ],
+                    "additionalProperties": false
+                  }
+                ],
+                "description": "A token or another styles binding, optionally multiplied by times."
+              }
+            },
+            "minus": {
+              "description": "Operands subtracted. Not allowed on a binding that must lock.",
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "token": {
+                        "$ref": "#/$defs/tokenRef"
+                      },
+                      "times": {
+                        "description": "A positive finite multiplier.",
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": [
+                      "token"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "binding": {
+                        "type": "string",
+                        "description": "Another styles binding of this component."
+                      },
+                      "times": {
+                        "description": "A positive finite multiplier.",
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": [
+                      "binding"
+                    ],
+                    "additionalProperties": false
+                  }
+                ],
+                "description": "A token or another styles binding, optionally multiplied by times."
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "A derived size, read as token × times + Σ plus − Σ minus, so no literal multiple lives in prose or code."
+        },
         "locked": {
           "default": false,
-          "description": "Not overridable per instance. The parser locks a binding automatically when (1) its token is a focus-indicator or target-size token (color.border.focus, color.inverse.focus, border.width.focus, size.target.*), (2) its token appears in an a11y.contrast pair, literally or after expanding {slot} interpolation over the enum values, or (3) its name starts with focusRing or is minTarget or dismissTarget. Setting locked: false on such a binding is an error; set locked: true for others (e.g. a size that keeps a target reachable).",
+          "description": "Not overridable per instance. The parser locks a binding automatically when (1) any token it can resolve to (token, a values token, a computed token operand) is a focus-indicator or target-size token (color.border.focus, color.inverse.focus, border.width.focus, size.target.*), (2) such a token appears in an a11y.contrast pair, literally or after expanding {slot} interpolation over the enum values, or (3) its name starts with focusRing or is minTarget or dismissTarget. Setting locked: false on such a binding is an error; set locked: true for others (e.g. a size that keeps a target reachable).",
           "type": "boolean"
         },
         "source": {
@@ -238,6 +702,110 @@
       "pattern": "^[a-z][a-z0-9]*(\\.(\\{[a-zA-Z]+\\}|[a-zA-Z0-9-]+))+$",
       "description": "Dotted token path, e.g. color.foreground.strong. Braces interpolate a prop value: space.{size}."
     },
+    "copyEntry": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "description": "The template, for a string with no plural forms. Exactly one of text and plural.",
+          "type": "string"
+        },
+        "plural": {
+          "description": "The template's CLDR plural forms, picked by a number param. Exactly one of text and plural.",
+          "$ref": "#/$defs/pluralForms"
+        },
+        "params": {
+          "description": "Placeholder name → what it holds. Every {name} in text or a plural form is a declared param or a prop of the component, and every declared param is used by a placeholder or by plural.by.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/copyParam"
+          }
+        },
+        "description": {
+          "description": "What the string is for and where it appears, for translators and generators.",
+          "type": "string"
+        },
+        "platforms": {
+          "description": "The platforms the component renders this string on, each one the component declares. Omitted means all.",
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platformId"
+          }
+        },
+        "source": {
+          "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "description": "A copy template with its placeholders declared: text or CLDR plural forms, the params they use, a description, and the platforms it is rendered on."
+    },
+    "pluralForms": {
+      "type": "object",
+      "properties": {
+        "by": {
+          "type": "string",
+          "description": "The number param whose value picks the form by the locale's CLDR plural rules."
+        },
+        "zero": {
+          "description": "The CLDR zero form, for locales that have one (Arabic, Latvian). English picks other for 0.",
+          "type": "string"
+        },
+        "one": {
+          "description": "The CLDR one form, e.g. \"{count} item\".",
+          "type": "string"
+        },
+        "two": {
+          "description": "The CLDR two form, for locales that have one (Arabic, Welsh).",
+          "type": "string"
+        },
+        "few": {
+          "description": "The CLDR few form, for locales that have one (Polish, Russian, Arabic).",
+          "type": "string"
+        },
+        "many": {
+          "description": "The CLDR many form, for locales that have one (Polish, Russian, Arabic).",
+          "type": "string"
+        },
+        "other": {
+          "type": "string",
+          "description": "The CLDR other form, used for every count no other form covers. Required: every locale has it."
+        }
+      },
+      "required": [
+        "by",
+        "other"
+      ],
+      "additionalProperties": false,
+      "description": "The forms of a template that takes a count, one per CLDR plural category; by names the number param that picks one."
+    },
+    "copyParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "date"
+          ],
+          "description": "The kind of value the placeholder receives: a string inserted as is, a number (formatted for the locale, and the only kind plural.by may name), or a date (formatted for the locale)."
+        },
+        "description": {
+          "description": "What the value is, for translators and generators, e.g. \"the column header text\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "One placeholder a copy template uses: its value type, and what it is."
+    },
     "keyboardRule": {
       "type": "object",
       "properties": {
@@ -254,7 +822,7 @@
           "description": "What happens, in one sentence, from the APG pattern."
         },
         "when": {
-          "description": "Focus location or state the rule applies in, e.g. 'focus on trigger', 'menu open'.",
+          "description": "Focus location or state the rule applies in, e.g. 'focus on trigger', 'menu open'. Prose: a prop state the gate must set belongs in given.",
           "type": "string"
         },
         "from": {
@@ -271,23 +839,77 @@
         },
         "expect": {
           "default": "manual",
-          "description": "Machine-checkable outcome the keyboard gate asserts after the key: the component's role element disappears/appears, focus moves as named, aria-expanded/aria-checked flips (toggles) or the focused item becomes checked/selected (selects). `manual` means the rule is documented but not auto-tested.",
-          "type": "string",
-          "enum": [
-            "closes",
-            "opens",
-            "focus-next",
-            "focus-prev",
-            "focus-first",
-            "focus-last",
-            "focus-wraps-to-first",
-            "focus-wraps-to-last",
-            "focus-trigger",
-            "focus-unchanged",
-            "toggles",
-            "selects",
-            "manual"
+          "description": "Machine-checkable outcome the keyboard gate asserts after the key: the component's role element (or target) disappears/appears, focus moves as named, aria-expanded/aria-checked flips (toggles) or the focused item becomes checked/selected (selects). A list of two or more outcomes (no manual, no duplicates, not both closes and opens) is asserted in order. `manual` means the rule is documented but not auto-tested.",
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "closes",
+                "opens",
+                "focus-next",
+                "focus-prev",
+                "focus-first",
+                "focus-last",
+                "focus-wraps-to-first",
+                "focus-wraps-to-last",
+                "focus-trigger",
+                "focus-unchanged",
+                "toggles",
+                "selects",
+                "manual"
+              ]
+            },
+            {
+              "minItems": 2,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "closes",
+                  "opens",
+                  "focus-next",
+                  "focus-prev",
+                  "focus-first",
+                  "focus-last",
+                  "focus-wraps-to-first",
+                  "focus-wraps-to-last",
+                  "focus-trigger",
+                  "focus-unchanged",
+                  "toggles",
+                  "selects"
+                ]
+              }
+            }
           ]
+        },
+        "given": {
+          "description": "Props the Keyboard story renders with for this rule (prop name -> value), over the story's own args. Each value fits its prop and is a boolean, a number or a string of letters, digits, spaces, _ and -, because it travels in a Storybook URL.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        "target": {
+          "description": "The anatomy part closes/opens assert on, instead of the component root. Only with closes or opens in expect.",
+          "type": "string"
+        },
+        "repeat": {
+          "description": "Press the chord this many times before asserting. Above 1 only with focus-next or focus-prev, which then expect a move of that many.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "platforms": {
+          "description": "The platforms the rule applies on, each one the component declares. Omitted means every declared platform.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platformId"
+          }
+        },
+        "native": {
+          "description": "The rule is the rendered native element's own behavior (a button's Enter, an input's caret on Home/End): generators implement nothing for it, and the gate still asserts its expect when there is one.",
+          "type": "boolean"
         },
         "source": {
           "description": "Set by the parser: the extension doc that added this item, e.g. extensions/Button.analytics.md. Never authored.",
@@ -335,7 +957,7 @@
           "items": {
             "$ref": "#/$defs/thenClause"
           },
-          "description": "Assertions, one object each, each with optional platforms: [<platformId>] to narrow just itself: { event, with? } or { event, fired: false }; { state: checked|expanded|selected|disabled|invalid|pressed|open, is: true|false|'mixed' }; { focusable: <bool> }; { renders: <bool> }; { focused: <part>|none|moved|unchanged }; { text: <text> }; { copy: <copy key> }; { role: <role> }; { name: true } (non-empty) or { name: <exact accessible name> }; { attribute: <name>, is: <string>|<bool>|null, on?: <part> } (null asserts the attribute is absent)."
+          "description": "Assertions, one object each, each with optional platforms: [<platformId>] to narrow just itself: { event, with? } or { event, fired: false } (with is the handler's argument; when the event declares a payload of two or more fields, an object keyed by those field names, and a reason in it must be one of the event's reasons); { state: checked|expanded|selected|disabled|invalid|pressed|open, is: true|false|'mixed' }; { focusable: <bool> }; { renders: <bool> }; { focused: <part>|none|moved|unchanged }; { text: <text> }; { copy: <copy key> }; { role: <role> }; { name: true } (non-empty) or { name: <exact accessible name> }; { attribute: <name>, is: <string>|<bool>|null, on?: <part> } (null asserts the attribute is absent)."
         },
         "platforms": {
           "description": "Restrict to these platforms (default: all).",
@@ -711,6 +1333,72 @@
           "additionalProperties": false
         }
       ]
+    },
+    "contrastPair": {
+      "type": "object",
+      "properties": {
+        "foreground": {
+          "$ref": "#/$defs/tokenRef"
+        },
+        "background": {
+          "$ref": "#/$defs/tokenRef"
+        },
+        "level": {
+          "default": "AA",
+          "type": "string",
+          "enum": [
+            "AA",
+            "AAA"
+          ]
+        },
+        "large": {
+          "default": false,
+          "description": "Large text only (18pt, or 14pt bold): checked at 3:1 for AA and 4.5:1 for AAA. Component boundaries, focus and state indicators and meaningful icons are not text; they set nonText.",
+          "type": "boolean"
+        },
+        "nonText": {
+          "description": "The pair is a WCAG 1.4.11 non-text pair (a component boundary, a focus or state indicator, a meaningful icon), checked at 3:1. Only at level AA, and never with large.",
+          "type": "boolean"
+        },
+        "state": {
+          "description": "The state the pair holds in, e.g. checked for a thumb on its checked track. Omitted means every state. There is no disabled: WCAG 1.4.3 and 1.4.11 exempt inactive components, so a disabled pair has nothing to check.",
+          "type": "string",
+          "enum": [
+            "default",
+            "hover",
+            "pressed",
+            "focus",
+            "selected",
+            "checked",
+            "expanded",
+            "open",
+            "invalid"
+          ]
+        },
+        "surface": {
+          "description": "What a background that resolves to transparent is checked against, instead of color.background: the surface the component really sits on, e.g. color.overlay.surface.",
+          "$ref": "#/$defs/tokenRef"
+        },
+        "only": {
+          "description": "Narrows {slot} expansion: an enum prop interpolated in foreground or background → the subset of its values the pair covers, e.g. { tone: [success, danger] }. A prop not listed expands over all its values.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "foreground",
+        "background"
+      ],
+      "additionalProperties": false
     },
     "moduleDef": {
       "type": "object",

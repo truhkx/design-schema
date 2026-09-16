@@ -44,6 +44,86 @@
             "type": "string",
             "pattern": "^[a-z][A-Za-z0-9]*$"
           }
+        },
+        "events": {
+          "default": {},
+          "description": "Canonical neutral event name → the name each platform emits instead, global (onPress) or scoped to a component (Button.onPress). The rename reaches what generated code actually emits (eventDef.platforms), which is not always the key: Button's onPress is onClick on web and press on Lit. Event renames reach web, lit and rn.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^([A-Z][A-Za-z0-9]*\\.)?[a-z][A-Za-z0-9]*$"
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^on[A-Z][A-Za-z0-9]*$"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "web": {
+                    "type": "string",
+                    "pattern": "^[a-z][A-Za-z0-9]*$"
+                  },
+                  "lit": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+                  },
+                  "rn": {
+                    "type": "string",
+                    "pattern": "^[a-z][A-Za-z0-9]*$"
+                  },
+                  "swiftui": {}
+                },
+                "additionalProperties": false
+              }
+            ],
+            "description": "A string (onActivate) is the brand's neutral name: web and React Native emit it as written and Lit as its kebab form (activate), on each platform whose canonical emitted name follows that convention. An object ({ web: onActivate, lit: activate, rn: onActivate }) gives the exact emitted name per platform and reaches exactly the platforms it lists."
+          }
+        },
+        "anatomy": {
+          "default": {},
+          "description": "Canonical anatomy part → brand part, global (label) or scoped to a component (Button.label). Renames the part's own spellings — the class __part segment and Lit's slot names — and never an identifier, so a prop with the same name keeps its own.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^([A-Z][A-Za-z0-9]*\\.)?[a-z][A-Za-z0-9]*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-z][A-Za-z0-9]*$"
+          }
+        },
+        "values": {
+          "default": {},
+          "description": "Canonical enum prop → canonical value → brand value, global (variant) or scoped to a component (Button.variant). The key is always the canonical prop name, even where props renames the prop. Resolved per component, per prop, per value: a dotted key's entry wins over the bare key's for the same value, and the two merge otherwise, so tone: { danger: critical } and Alert.tone: { info: notice } give Alert both. A value moves only where the code ties it to its prop; token paths never move, and a literal the rename cannot prove is reported, not guessed.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^([A-Z][A-Za-z0-9]*\\.)?[a-z][A-Za-z0-9]*$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+            }
+          }
+        },
+        "aliases": {
+          "default": {},
+          "description": "An adopter's old names, kept working next to the current ones and marked deprecated. Keys are always canonical names, like every other map; an alias names the old spelling of the current name, which is the brand name where this doc renames it. tools/naming.ts writes the compatibility layer into naming-compat/ inside the platform's source folder when it applies the rename, and --revert deletes it.",
+          "$ref": "#/$defs/aliasesDef"
+        },
+        "tokens": {
+          "default": {},
+          "description": "The names tokens/build.mjs emits for an adopter whose stylesheets and code already use their own token names: a prefix on every CSS variable, and a brand dotted path per renamed token. The dotted path stays canonical everywhere a tool reads it; only the emitted CSS variable and JS/RN/Swift key change. tools/naming.ts moves the emitted names in generated code with the rest of the rename.",
+          "$ref": "#/$defs/tokensDef"
         }
       },
       "additionalProperties": false
@@ -65,7 +145,7 @@
         },
         "typePrefix": {
           "default": {},
-          "description": "Per-platform prefix on generated type names where one exists (SwiftUI's DesignSchemaTokens module and its TokenRef enum, React Native's theme context). A platform left out keeps the canonical name.",
+          "description": "Per-platform prefix on generated type names where one exists (SwiftUI's DesignSchemaTokens module and its TokenRef enum, React Native's theme context). Only rn and swiftui have prefixed type names (TYPE_PREFIX_PLATFORMS); another platform's key parses but renames nothing. A platform left out keeps the canonical name.",
           "type": "object",
           "propertyNames": {
             "$ref": "#/$defs/platformId"
@@ -86,6 +166,187 @@
         "rn",
         "swiftui"
       ]
+    },
+    "aliasesDef": {
+      "type": "object",
+      "properties": {
+        "components": {
+          "description": "Canonical component → its old names (Button: [{ name: ActionButton, since: 2.0.0 }]). Supported on every platform.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9]*$"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Za-z0-9]*$"
+                },
+                "since": {
+                  "description": "The package version from which the old name is deprecated.",
+                  "type": "string",
+                  "pattern": "^\\d+\\.\\d+\\.\\d+$"
+                },
+                "deprecated": {
+                  "description": "Why callers should move off the old name; its reason is appended to the dev-only warning.",
+                  "$ref": "#/$defs/deprecation"
+                },
+                "platforms": {
+                  "description": "The platforms the compatibility layer keeps the old name working on. Omitted means every platform; an entry whose kind a platform cannot support has to list the ones that can.",
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/platformId"
+                  }
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "props": {
+          "description": "A props-style key, global (variant) or scoped to a component (Button.variant) → its old names. Supported on web and rn.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^([A-Z][A-Za-z0-9]*\\.)?[a-z][A-Za-z0-9]*$"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[a-z][A-Za-z0-9]*$"
+                },
+                "since": {
+                  "description": "The package version from which the old name is deprecated.",
+                  "type": "string",
+                  "pattern": "^\\d+\\.\\d+\\.\\d+$"
+                },
+                "deprecated": {
+                  "description": "Why callers should move off the old name; its reason is appended to the dev-only warning.",
+                  "$ref": "#/$defs/deprecation"
+                },
+                "platforms": {
+                  "description": "The platforms the compatibility layer keeps the old name working on. Omitted means every platform; an entry whose kind a platform cannot support has to list the ones that can.",
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/platformId"
+                  }
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "values": {
+          "description": "A values-style key → canonical value → its old names. Supported on web and rn.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^([A-Z][A-Za-z0-9]*\\.)?[a-z][A-Za-z0-9]*$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+            },
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+                  },
+                  "since": {
+                    "description": "The package version from which the old name is deprecated.",
+                    "type": "string",
+                    "pattern": "^\\d+\\.\\d+\\.\\d+$"
+                  },
+                  "deprecated": {
+                    "description": "Why callers should move off the old name; its reason is appended to the dev-only warning.",
+                    "$ref": "#/$defs/deprecation"
+                  },
+                  "platforms": {
+                    "description": "The platforms the compatibility layer keeps the old name working on. Omitted means every platform; an entry whose kind a platform cannot support has to list the ones that can.",
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/platformId"
+                    }
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "deprecation": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "Why callers should move off it."
+        },
+        "since": {
+          "description": "The package version that deprecated it.",
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "use": {
+          "description": "The replacement: another prop or event of the component for a prop or event, another value of the prop for a value, another component for a component.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "tokensDef": {
+      "type": "object",
+      "properties": {
+        "cssPrefix": {
+          "description": "Prefix on every emitted token custom property, written without the leading -- or trailing -: acme → --acme-color-foreground. Absent keeps token variables unprefixed. JS, React Native and Swift keys never take it. The dotted path stays canonical everywhere a tool reads it; only the emitted CSS variable and JS/RN/Swift key change.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+        },
+        "rename": {
+          "description": "Canonical public token name (no trailing .default) → the brand's dotted path, which the token build emits instead: color.action.primary.background: color.brand.primary gives --color-brand-primary and colorBrandPrimary. The dotted path stays canonical everywhere a tool reads it; only the emitted CSS variable and JS/RN/Swift key change.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z][A-Za-z0-9]*(\\.[a-z0-9][A-Za-z0-9]*)*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-z][A-Za-z0-9]*(\\.[a-z0-9][A-Za-z0-9]*)*$"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

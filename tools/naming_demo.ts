@@ -137,7 +137,9 @@ export function fileSet(): string[] {
 /** One file of the demo tree: where it came from, and what it is called now. */
 export type Pairing = { canonical: string; brand: string; dir: 'src' | 'behavior' };
 
-export type Built = { out: string; pairs: Pairing[]; resolution: naming.Resolution };
+/** `compat` is what the rename wrote into `src/naming-compat/` from the doc's aliases, as `naming-compat/<file>`:
+ *  files with no canonical original, so never a pairing. */
+export type Built = { out: string; pairs: Pairing[]; resolution: naming.Resolution; compat: string[] };
 
 function freshDir(dir: string): void {
   rmSync(dir, { recursive: true, force: true });
@@ -175,16 +177,41 @@ export function build(out: string = paths.OUT): Built {
     scenarios.push(`${seed}.web.test.tsx`);
   }
 
+  // The compatibility layer is the package source's, so `src` gets one and the derived tests do not.
   const applied = {
     src: naming.rename(src, res, 'brand', 'web'),
-    behavior: naming.rename(behavior, res, 'brand', 'web'),
+    behavior: naming.rename(behavior, res, 'brand', 'web', false, { compat: false }),
   };
   const moved = (a: naming.Applied): Map<string, string> => new Map(a.renames);
   const pairs: Pairing[] = [
     ...files.map((f): Pairing => ({ canonical: f, brand: moved(applied.src).get(f) ?? f, dir: 'src' })),
     ...scenarios.map((f): Pairing => ({ canonical: f, brand: moved(applied.behavior).get(f) ?? f, dir: 'behavior' })),
   ];
-  return { out, pairs, resolution: res };
+  return { out, pairs, resolution: res, compat: applied.src.compat ?? [] };
+}
+
+/** One alias the compatibility layer keeps working on web, for DIFF.md and renames.json. */
+export type AliasRow = { kind: 'component' | 'prop' | 'value'; name: string; now: string; component: string; since: string | null; file: string | null; keeps: string };
+
+export function aliasRows(built: Built): AliasRow[] {
+  const rows: AliasRow[] = [];
+  const onWeb = (use: naming.AliasUse): boolean => use.entry.platforms === undefined || (use.entry.platforms as readonly string[]).includes('web');
+  for (const component of pySorted(Object.keys(built.resolution.aliases))) {
+    const a = built.resolution.aliases[component] as naming.CompatAliases;
+    const module = `${naming.COMPAT_DIR}/${a.current}.ts`;
+    const file = built.compat.includes(module) ? `src/${module}` : null;
+    const row = (kind: AliasRow['kind'], use: naming.AliasUse, now: string, keeps: string): AliasRow => ({
+      kind, name: use.entry.name, now, component: a.current, since: use.entry.since ?? use.entry.deprecated?.since ?? null, file, keeps,
+    });
+    for (const use of a.components.filter(onWeb)) rows.push(row('component', use, a.current, `\`import { ${use.entry.name} }\` and \`${use.entry.name}Props\`, as \`${a.current}\``));
+    for (const p of a.props) {
+      for (const use of p.aliases.filter(onWeb)) rows.push(row('prop', use, p.current, `\`<${a.current} ${use.entry.name}=…>\`, passed on as \`${p.current}\``));
+    }
+    for (const x of a.values) {
+      for (const use of x.aliases.filter(onWeb)) rows.push(row('value', use, x.current, `\`${x.currentProp}="${use.entry.name}"\`, passed on as \`${x.currentProp}="${x.current}"\``));
+    }
+  }
+  return rows;
 }
 
 /** The canonical text a demo file is compared against: the package source, or the derived behavior
@@ -207,6 +234,10 @@ export type Lexicon = {
   components: [string, string][];
   kebabs: [string, string][];
   props: Map<string, string>;
+  /** Every emitted event name the doc renames, on any platform and for any component: `onClick` → `onActivate`, `press` → `activate`. */
+  events: Map<string, string>;
+  /** Anatomy part → brand part, camelCase. */
+  anatomy: Map<string, string>;
   cssFrom: string;
   cssTo: string;
   pascalFrom: string;
@@ -222,11 +253,17 @@ export function lexicon(res: naming.Resolution): Lexicon {
   const components = Object.entries(res.components).sort(byLength);
   const props = new Map<string, string>();
   for (const [key, brand] of Object.entries(res.props)) props.set(key.includes('.') ? (key.split('.')[1] as string) : key, brand);
+  const events = new Map<string, string>();
+  for (const scopes of Object.values(res.events)) for (const renames of Object.values(scopes)) for (const [from, to] of Object.entries(renames)) events.set(from, to);
+  const anatomy = new Map<string, string>();
+  for (const parts of Object.values(res.anatomy)) for (const [from, to] of Object.entries(parts)) anatomy.set(from, to);
   const canonical = naming.resolve(null);
   return {
     components,
     kebabs: components.map(([from, to]): [string, string] => [kebab(from), kebab(to)]).sort(byLength),
     props,
+    events,
+    anatomy,
     cssFrom: canonical.cssPrefix,
     cssTo: res.cssPrefix,
     pascalFrom: naming.pascalPrefix(canonical.cssPrefix),
@@ -250,7 +287,9 @@ export type Category =
   | 'file name'
   | 'component name'
   | 'prop name'
+  | 'event name'
   | 'attribute name'
+  | 'anatomy part'
   | 'CSS custom-property prefix'
   | 'class or custom-element name'
   | 'package scope'
@@ -279,13 +318,18 @@ function dashedName(rest: string, lex: Lexicon): string {
       break;
     }
   }
-  const renamed = part === '' ? '' : `__${kebabProp(part, lex) ?? part}`;
+  // naming.md: an `anatomy` key renames the part's class segment, and a `props` key still does where none does
+  const renamed = part === '' ? '' : `__${kebabName(part, lex.anatomy) ?? kebabProp(part, lex) ?? part}`;
   return `${stem}${renamed}${tail}`;
 }
 
 function kebabProp(name: string, lex: Lexicon): string | null {
+  return kebabName(name, lex.props);
+}
+
+function kebabName(name: string, map: Map<string, string>): string | null {
   const camel = name.replace(/-([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
-  const renamed = lex.props.get(camel);
+  const renamed = map.get(camel);
   return renamed === undefined ? null : kebab(renamed);
 }
 
@@ -319,8 +363,14 @@ export function explain(from: string, to: string, lex: Lexicon): Category | null
     }
     return stemmed(from, lex.components) === to ? 'component name' : null;
   }
-  if (from.includes('-')) return kebabProp(from, lex) === to ? 'attribute name' : null;
+  // an emitted event name is spelled whole: `onClick`, or Lit's `press` and `open-change`
+  if (lex.events.get(from) === to) return 'event name';
+  if (from.includes('-')) {
+    if (kebabProp(from, lex) === to) return 'attribute name';
+    return kebabName(from, lex.anatomy) === to ? 'anatomy part' : null;
+  }
   if (lex.props.get(from) === to) return 'prop name';
+  if (lex.anatomy.get(from) === to) return 'anatomy part';
   if (from.startsWith(lex.camelFrom) && /^[A-Z]/.test(from.charAt(lex.camelFrom.length))) {
     const rest = from.slice(lex.camelFrom.length);
     if (to === lex.camelTo + (stemmed(rest, lex.components) ?? rest)) return 'namespace identifier';
@@ -449,7 +499,9 @@ const CATEGORY_ORDER: Category[] = [
   'file name',
   'component name',
   'prop name',
+  'event name',
   'attribute name',
+  'anatomy part',
   'class or custom-element name',
   'CSS custom-property prefix',
   'namespace identifier',
@@ -551,6 +603,27 @@ export function report(built: Built, diffs: FileDiff[], collisions: { pair: Pair
           ...collisions.map((c) => [`${c.pair.dir}/${c.pair.canonical}`, c.canonical, c.reverted]),
         ]),
     '',
+    '## Compatibility layer',
+    '',
+    `The \`aliases\` in \`themes/${BRAND}/naming.md\` keep Demo Brand's old names working beside the new ones.`,
+    'The model never writes these: `tools/naming.ts` does, when it applies the rename, into `src/naming-compat/`,',
+    'and a revert deletes the folder before it renames anything back.',
+    '',
+    aliasRows(built).length === 0
+      ? 'None: the doc has no aliases.'
+      : table([
+          ['Alias', 'Kind', 'Since', 'File', 'Keeps working'],
+          ...aliasRows(built).map((r) => [`\`${r.name}\``, r.kind, r.since ?? '—', r.file === null ? '(not written)' : `\`${r.file}\``, r.keeps]),
+        ]),
+    '',
+    ...(built.compat.includes(`${naming.COMPAT_DIR}/index.ts`) ? [`\`src/${naming.COMPAT_DIR}/index.ts\` re-exports every module in the folder; exposing it is the fork’s own manifest edit.`, ''] : []),
+    'These files are not in the file-by-file comparison above because they have no canonical original to be',
+    'compared with: nothing in `packages/react/src` is their source. What checks them instead is the demo’s',
+    '`tsc -p demo-brand`, whose `include: ["src"]` reaches subfolders, so the wrapper typechecks against the',
+    'renamed component it wraps under the package’s own compiler options, and `lint-literals`, whose',
+    '`sourceFiles` walk is recursive. The round-trip gate checks that a revert deletes the folder and a',
+    're-apply writes every file back byte for byte.',
+    '',
     '## What a reader should check by hand',
     '',
     `- \`src/${renamed('Button', res)}.tsx\` still writes \`data-ds="Button"\` and \`data-part="leadingIcon"\`.`,
@@ -595,6 +668,8 @@ export function summary(built: Built, diffs: FileDiff[]): unknown {
     identifiers: [...identifiers.values()].sort(
       (a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) || (a.from < b.from ? -1 : a.from > b.from ? 1 : 0),
     ),
+    aliases: aliasRows(built).map(({ kind, name, now, component, since, file }) => ({ kind, name, now, component, since, file })),
+    compat: built.compat.map((f) => `src/${f}`),
   };
 }
 
@@ -649,17 +724,19 @@ function tool(file: string, ...args: string[]): string[] {
  */
 export function roundTrip(built: Built): GateResult {
   const scratch = mkdtempSync(join(tmpdir(), 'ds-naming-demo-'));
+  const options = (sub: string): naming.RenameOptions => ({ compat: sub === 'src' });
   try {
     for (const sub of ['src', 'behavior']) cpSync(join(built.out, sub), join(scratch, sub), { recursive: true });
-    for (const sub of ['src', 'behavior']) naming.rename(join(scratch, sub), built.resolution, 'canonical', 'web');
+    for (const sub of ['src', 'behavior']) naming.rename(join(scratch, sub), built.resolution, 'canonical', 'web', false, options(sub));
     const bad: string[] = [];
     const reworded: string[] = [];
+    if (existsSync(join(scratch, 'src', naming.COMPAT_DIR))) bad.push(`src/${naming.COMPAT_DIR} survives the revert`);
     for (const pair of built.pairs) {
       const back = join(scratch, pair.dir, pair.canonical);
       if (!existsSync(back)) bad.push(`${pair.dir}/${pair.brand} reverts to a name that is not ${pair.canonical}`);
       else if (readFileSync(back, 'utf8') !== canonicalText(pair)) reworded.push(`${pair.dir}/${pair.canonical}`);
     }
-    for (const sub of ['src', 'behavior']) naming.rename(join(scratch, sub), built.resolution, 'brand', 'web');
+    for (const sub of ['src', 'behavior']) naming.rename(join(scratch, sub), built.resolution, 'brand', 'web', false, options(sub));
     for (const pair of built.pairs) {
       const there = join(scratch, pair.dir, pair.brand);
       if (!existsSync(there)) bad.push(`${pair.dir}/${pair.brand} does not survive a revert and a re-apply`);
@@ -667,8 +744,14 @@ export function roundTrip(built: Built): GateResult {
         bad.push(`${pair.dir}/${pair.brand} does not come back byte for byte`);
       }
     }
+    for (const file of built.compat) {
+      const there = join(scratch, 'src', file);
+      if (!existsSync(there)) bad.push(`src/${file} is not written again by the re-apply`);
+      else if (readFileSync(there, 'utf8') !== readFileSync(join(built.out, 'src', file), 'utf8')) bad.push(`src/${file} does not come back byte for byte`);
+    }
     const note = reworded.length === 0 ? '' : `; ${reworded.length} file(s) whose canonical prose the revert rewords (${reworded.join(', ')})`;
-    return { name: 'round-trip', ok: bad.length === 0, detail: bad.length === 0 ? `${built.pairs.length} file(s) revert and re-apply byte for byte${note}` : bad.join('; ') };
+    const layer = built.compat.length === 0 ? '' : `, ${built.compat.length} compat file(s) deleted and rewritten`;
+    return { name: 'round-trip', ok: bad.length === 0, detail: bad.length === 0 ? `${built.pairs.length} file(s) revert and re-apply byte for byte${layer}${note}` : bad.join('; ') };
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
@@ -679,7 +762,7 @@ export function proseCollisions(built: Built): { pair: Pairing; canonical: strin
   const scratch = mkdtempSync(join(tmpdir(), 'ds-naming-prose-'));
   try {
     for (const sub of ['src', 'behavior']) cpSync(join(built.out, sub), join(scratch, sub), { recursive: true });
-    for (const sub of ['src', 'behavior']) naming.rename(join(scratch, sub), built.resolution, 'canonical', 'web');
+    for (const sub of ['src', 'behavior']) naming.rename(join(scratch, sub), built.resolution, 'canonical', 'web', false, { compat: sub === 'src' });
     const out: { pair: Pairing; canonical: string; reverted: string }[] = [];
     for (const pair of built.pairs) {
       const back = join(scratch, pair.dir, pair.canonical);

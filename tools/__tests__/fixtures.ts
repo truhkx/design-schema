@@ -21,7 +21,7 @@ export const VALID_COMPONENT: Dict = {
   props: {
     label: { type: 'string', required: true, description: 'Visible text.' },
     variant: { type: 'enum', values: ['primary', 'danger'], default: 'primary', description: 'Visual emphasis.' },
-    size: { type: 'enum', values: ['sm', 'md'], default: 'md', description: 'Padding scale.' },
+    size: { type: 'enum', enumRef: 'size', values: ['sm', 'md'], default: 'md', description: 'Padding scale.' },
   },
   events: {
     onPress: { description: 'Activated.', platforms: { web: 'onClick', rn: 'onPress' } },
@@ -104,7 +104,6 @@ export function usePaths(): void {
   afterEach(() => {
     Object.assign(parse.paths, savedPaths);
     Object.assign(parse.hooks, savedHooks);
-    parse.resetCaches();
   });
 }
 

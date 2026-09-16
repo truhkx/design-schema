@@ -131,7 +131,7 @@ describe('the shipped docs against the token resolver', () => {
           for (const ref of expand((binding as parse.Dict).token as string, c.props as parse.Dict)) {
             // Tokens are addressed by their public name, so a slot that expands to `...default` resolves to
             // the group itself. A slot that expands to `none`/`full` renders nothing rather than a token
-            // (NO_TOKEN_VALUES in tools/parse.ts), so it needs none.
+            // (NO_TOKEN_VALUES in schema/tokens.ts), so it needs none.
             if (ref.split('.').some((part) => part === 'none' || part === 'full')) continue;
             expect(names, `${c.name as string}.${prop} → ${ref} missing in ${theme}/${mode}`).toContain(publicName(ref));
           }

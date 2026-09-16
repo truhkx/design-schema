@@ -153,6 +153,27 @@ describe('contrast', () => {
   });
 });
 
+describe('styleRows', () => {
+  const modes = { light: LIGHT, dark: DARK };
+
+  test('a per-value token gets its own row, and part and state prefix the description', () => {
+    const comp: Dict = {
+      props: PROPS,
+      styles: {
+        paddingBlock: { token: 'space.sm', by: 'variant', values: { ghost: 'space.1' }, part: 'label', state: 'hover', description: 'Block padding.', locked: false },
+        gap: { token: 'layout.gap.normal', state: 'active', locked: true },
+        radius: { token: 'radius.md', locked: false, description: 'Corners.' },
+      },
+    };
+    expect(ss.styleRows(comp, modes)).toEqual([
+      ['`paddingBlock`', '`space.sm`', ss.cell('8px'), ss.cell('8px'), 'no', 'part `label`, state `hover`: Block padding.'],
+      ['`paddingBlock` (variant=ghost)', '`space.1`', ss.cell('4px'), ss.cell('4px'), 'no', 'part `label`, state `hover`: Block padding.'],
+      ['`gap`', '`layout.gap.normal`', ss.cell('8px'), ss.cell('8px'), 'yes', 'state `active`.'],
+      ['`radius`', '`radius.md`', ss.cell('4px'), ss.cell('4px'), 'no', 'Corners.'],
+    ]);
+  });
+});
+
 describe('main', () => {
   let out = '';
   beforeEach(() => {

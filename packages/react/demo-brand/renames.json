@@ -874,5 +874,35 @@
       "to": "demo",
       "count": 7
     }
+  ],
+  "aliases": [
+    {
+      "kind": "component",
+      "name": "ActionButton",
+      "now": "CtaButton",
+      "component": "CtaButton",
+      "since": "2.0.0",
+      "file": "src/naming-compat/CtaButton.ts"
+    },
+    {
+      "kind": "prop",
+      "name": "kind",
+      "now": "emphasis",
+      "component": "CtaButton",
+      "since": "2.0.0",
+      "file": "src/naming-compat/CtaButton.ts"
+    },
+    {
+      "kind": "value",
+      "name": "cta",
+      "now": "primary",
+      "component": "CtaButton",
+      "since": "2.0.0",
+      "file": "src/naming-compat/CtaButton.ts"
+    }
+  ],
+  "compat": [
+    "src/naming-compat/CtaButton.ts",
+    "src/naming-compat/index.ts"
   ]
 }

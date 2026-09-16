@@ -2,10 +2,11 @@
  * tools/theme.ts — theme doc frontmatter to DTCG token files. Port of tests/test_theme.py,
  * tests/test_theme_derivation.py and tests/test_two_seed.py.
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 
+import * as cc from '../check_contrast.ts';
 import { expand } from '../check_contrast.ts';
 import { pyJsonDumps, pyRound, product } from '../lib/py.ts';
 import { dump as yamlDump } from '../lib/pyyaml.ts';
@@ -602,10 +603,25 @@ describe('applyOverrides', () => {
     expect(tree.color.foreground.default).toEqual({ $value: '#123456' });
   });
 
-  test('creates missing intermediate groups', () => {
-    const tree: Dict = {};
-    th.applyOverrides(tree, { 'color.action.primary.background': '#abcdef' });
-    expect(tree.color.action.primary.background.$value).toBe('#abcdef');
+  test('throws on a path the tree does not hold, creating nothing', () => {
+    const tree: Dict = { color: { action: { primary: { background: { $value: '{color.palette.brand.600}' } } } } };
+    expect(() => th.applyOverrides(tree, { 'color.action.primry.background': '#abcdef' })).toThrow("applyOverrides: 'color.action.primry.background' is not a token in this tree");
+    expect(() => th.applyOverrides(tree, { 'colour.action.primary.background': '#abcdef' })).toThrow('is not a token in this tree');
+    expect(tree).toEqual({ color: { action: { primary: { background: { $value: '{color.palette.brand.600}' } } } } });
+  });
+
+  test('a public name lands on the .default leaf', () => {
+    const tree: Dict = { color: { foreground: { default: { $value: '{color.palette.neutral.800}' }, muted: { $value: '#777777' } } } };
+    th.applyOverrides(tree, { 'color.foreground': '#123456' });
+    expect(tree.color.foreground).toEqual({ default: { $value: '#123456' }, muted: { $value: '#777777' } });
+  });
+
+  test('a leaf in a Map group is replaced in place', () => {
+    const base = th.deriveBase(themeFixture());
+    th.applyOverrides(base, { 'space.3': '10px' });
+    const space = asJson(base.space);
+    expect(space['3'].$value).toBe('10px');
+    expect(Object.keys(space)).toEqual(Object.keys(asJson(th.deriveBase(themeFixture()).space)));
   });
 
   test('empty overrides change nothing', () => {
@@ -615,7 +631,7 @@ describe('applyOverrides', () => {
   });
 
   test('a reference can be used as the override value', () => {
-    const tree: Dict = {};
+    const tree: Dict = { color: { border: { focus: { $value: '{color.palette.brand.500}' } } } };
     th.applyOverrides(tree, { 'color.border.focus': '{color.palette.brand.700}' });
     expect(tree.color.border.focus.$value).toBe('{color.palette.brand.700}');
   });
@@ -681,6 +697,22 @@ describe('main', () => {
       'theme.statusHues.danger: Too big: expected number to be <=360'],
     ['an empty tone word', (t) => { t.tone = ['calm', '']; },
       'theme.tone.1: Too small: expected string to have >=1 characters'],
+    ['a misspelled mode override path', (t) => { t.overrides = { light: { 'color.action.primry.background': '#3B5BDB' } }; },
+      "theme.overrides.light.color.action.primry.background: overrides.light: 'color.action.primry.background' is not a mode token"],
+    ['a base token under light', (t) => { t.overrides = { light: { 'radius.md': '10px' } }; },
+      "theme.overrides.light.radius.md: overrides.light: 'radius.md' is not a mode token: it is a base token, so it goes under overrides.base"],
+    ['a color value on a dimension token', (t) => { t.overrides = { base: { 'radius.md': '#3B5BDB' } }; },
+      "theme.overrides.base.radius.md: overrides.base.radius.md: expected a dimension value, got '#3B5BDB'"],
+    ['a dangling reference', (t) => { t.overrides = { dark: { 'color.border.focus': '{color.palette.brand.1200}' } }; },
+      "theme.overrides.dark.color.border.focus: overrides.dark.color.border.focus: expected a color value, got '{color.palette.brand.1200}'"],
+    ['an override of a target size', (t) => { t.overrides = { base: { 'size.target.min': '20px' } }; },
+      "theme.overrides.base.size.target.min: overrides.base.size.target.min: can't be overridden: LOCKED_TOKENS has 'size.target.*', an accessibility floor"],
+    ['tuning.radius with radius none', (t) => { t.radius = 'none'; t.tuning = { radius: { md: 6 } }; },
+      'theme.tuning.radius: tuning.radius has no effect when radius is none: every corner is 0px; remove one'],
+    ['line heights out of order', (t) => { t.tuning = { lineHeight: { tight: 1.6, normal: 1.4 } }; },
+      'theme.tuning.lineHeight: tuning.lineHeight must be tight ≤ normal ≤ loose: tight 1.6, normal 1.4, loose 1.7 (default)'],
+    ['one token in both tuning and overrides.base', (t) => { t.tuning = { radius: { md: 6 } }; t.overrides = { base: { 'radius.md': '10px' } }; },
+      'theme.overrides.base.radius.md: radius.md is set in both tuning.radius.md and overrides.base; set it in one place'],
   ])('rejects %s', (_name, mutate, line) => {
     const t = themeFixture();
     mutate(t);
@@ -702,6 +734,57 @@ describe('main', () => {
     const [, out] = run(doc(t));
     const light = JSON.parse(readFileSync(join(out, 'test-theme', 'light.json'), 'utf8'));
     expect(light.color.border.focus.$value).toBe('#ff00ff');
+  });
+
+  const written = (out: string, file: string): Dict => JSON.parse(readFileSync(join(out, 'test-theme', file), 'utf8')) as Dict;
+
+  test('a base override lands in base.json', () => {
+    const t = themeFixture();
+    t.overrides = { base: { 'radius.md': '10px' } };
+    const [code, out] = run(doc(t));
+    expect(code).toBe(0);
+    expect(written(out, 'base.json').radius.md.$value).toBe('10px');
+  });
+
+  test('a tuned radius step lands in base.json in px', () => {
+    const t = themeFixture();
+    t.tuning = { radius: { md: 6 } };
+    const [code, out] = run(doc(t));
+    expect(code).toBe(0);
+    const radius = written(out, 'base.json').radius as Dict;
+    expect([radius.sm.$value, radius.md.$value, radius.lg.$value, radius.full.$value]).toEqual(['2px', '6px', '6px', '999px']);
+  });
+
+  test('a public-name override lands on the .default leaf', () => {
+    const t = themeFixture();
+    t.overrides = { light: { 'color.foreground': '#123456' } };
+    const [code, out] = run(doc(t));
+    expect(code).toBe(0);
+    expect(written(out, 'light.json').color.foreground.default.$value).toBe('#123456');
+    expect(written(out, 'light.json').color.foreground).not.toHaveProperty('$value');
+  });
+
+  test('an overridden color is still contrast-checked', () => {
+    const t = themeFixture();
+    t.overrides = { light: { 'color.action.primary.background': '#F5F5F5' } };
+    const [code, out] = run(doc(t));
+    expect(code).toBe(0);
+    const generated = join(tmp(), 'components.json');
+    writeFileSync(generated, JSON.stringify([{ component: { name: 'Button', props: {}, a11y: { role: 'button', requires: [],
+      contrast: [{ foreground: 'color.action.primary.foreground', background: 'color.action.primary.background', level: 'AA' }] } } }]), 'utf8');
+    const saved = { paths: { ...cc.paths }, hooks: { ...cc.hooks } };
+    try {
+      cc.paths.GENERATED = generated;
+      cc.hooks.themes = () => ['test-theme'];
+      cc.hooks.modes = () => ['light'];
+      cc.hooks.loadTheme = (theme, mode) => resolveTokens(flatten(deepMerge(written(out, 'base.json'), JSON.parse(readFileSync(join(out, theme, `${mode}.json`), 'utf8')))));
+      expect(cc.main()).toBe(1);
+    } finally {
+      Object.assign(cc.paths, saved.paths);
+      Object.assign(cc.hooks, saved.hooks);
+    }
+    expect(std.out()).toMatch(/^✖ Button\s+test-theme\/light\s+color\.action\.primary\.foreground on color\.action\.primary\.background: 1\.\d\d:1/m);
+    expect(std.out()).toContain('1 pairs checked, 1 failures');
   });
 
   test('the output is loadable by the resolver', () => {

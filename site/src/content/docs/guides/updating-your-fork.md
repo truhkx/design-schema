@@ -111,7 +111,7 @@ git merge upstream/main                        # a merge, not a rebase: keep you
 pnpm install                                   # the lockfile may have moved
 pnpm check                                     # re-derives themes and tokens, and re-parses the schema
 node --import tsx tools/naming.ts --naming acme --platform web --check
-pnpm generate -- --stale                       # regenerate only what the merged docs made stale
+pnpm generate --stale                          # regenerate only what the merged docs made stale
 ```
 
 Do not skip `pnpm check` (or at least `pnpm parse`, which it runs) before the naming check.
@@ -219,7 +219,7 @@ and the stranded key was reported rather than silently ignored. The `git subtree
 `--squash` log output above are from the same run, vendoring the same two commits at a prefix.*
 
 *Re-checked the same day against job 523's demo fork, which has what the first run did not — renamed
-*output*, not just a naming doc (`logs/523-demo-pull.mjs`). Upstream added a prop to `Button`; the fork
+*output*, not just a naming doc. Upstream added a prop to `Button`; the fork
 pulled it with no conflict and its `themes/demo-brand/naming.md` byte-identical; `pnpm demo:naming:check`
 said the fork's renamed tree was behind rather than letting it quietly ship stale; and one regeneration
 brought the change through as `CtaButton`'s `elevated` prop and `.demo-cta-button--elevated`, with
@@ -227,3 +227,14 @@ brought the change through as `CtaButton`'s `elevated` prop and `.demo-cta-butto
 own generated ones. That is the whole claim of this page, run end to end — see
 [Brand naming, and the update path](/process/customization-and-naming/), "What building the worked
 example changed".*
+
+*To repeat that check in your own fork:*
+
+1. Before the pull, `pnpm parse` and `pnpm demo:naming:check` pass.
+2. Upstream adds a prop to `Button`, and `git merge upstream/main` merges with no conflicted paths.
+3. `git diff <commit before the merge> HEAD -- themes/demo-brand/naming.md` is empty.
+4. `pnpm demo:naming:check` now fails and names `src/CtaButton.tsx` as different.
+5. `pnpm demo:naming` regenerates the renamed tree. The new prop arrives as `CtaButton`'s `elevated`
+   and `.demo-cta-button--elevated`, and `data-ds="Button"` stays canonical.
+6. `pnpm demo:naming:check` passes again, reporting every difference as an identifier.
+7. `git status` shows changes only under `generated/` and `packages/react/demo-brand/`.

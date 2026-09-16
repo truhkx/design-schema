@@ -17,6 +17,14 @@
  * Naming rule: a trailing `default` segment is dropped, so
  *   color.foreground.default  → --color-foreground   / tokens.colorForeground
  *   color.foreground.strong   → --color-foreground-strong / tokens.colorForegroundStrong
+ *
+ * A brand's naming doc can change the emitted names (job 628, schema/naming.ts `tokens`):
+ *   node tokens/build.mjs --naming acme [--out DIR]     (or DS_NAMING=acme, as tools/generate.ts reads it)
+ * `rename` moves a token's CSS variable and JS/RN/Swift key onto a brand path and `cssPrefix` prefixes the CSS
+ * variables. The dotted path stays canonical: the json platform, names.d.ts's `TokenRef` and TOKEN_NAMES, and
+ * TokenRef.swift's raw values. `--out DIR` (relative to the repo root) writes <DIR>/tokens/dist/ and
+ * <DIR>/swiftui/DesignSchemaTokens/ instead of the committed trees. With no doc, or a doc that changes no emitted
+ * name, the build below is today's, byte for byte, and loads nothing beyond Style Dictionary.
  */
 import StyleDictionary from 'style-dictionary';
 import { fileURLToPath } from 'node:url';
@@ -25,8 +33,23 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(here, '..');
 const THEMES_DIR = path.join(here, 'themes');
 const MODES = ['light', 'dark'];
+
+const args = { naming: process.env['DS_NAMING'] ?? null, out: null };
+for (let i = 2; i < process.argv.length; i++) {
+  const [flag, inline] = process.argv[i].split(/=(.*)/s);
+  if (flag !== '--naming' && flag !== '--out') throw new Error(`tokens/build.mjs: unrecognized argument ${process.argv[i]} (expected --naming BRAND|PATH, --out DIR)`);
+  const value = inline ?? process.argv[++i];
+  if (value === undefined) throw new Error(`tokens/build.mjs: argument ${flag}: expected one argument`);
+  args[flag.slice(2)] = value;
+}
+const DIST = args.out === null ? path.join(here, '..', 'packages', 'tokens', 'dist') : path.resolve(ROOT, args.out, 'tokens', 'dist');
+
+// Loaded only when a doc is selected, so the default build imports nothing new. `null` when the doc changes no name.
+const naming = args.naming === null || args.naming === '' ? null : await import('../tools/lib/token_naming.ts');
+const tokenNaming = naming === null ? null : naming.loadTokenNaming(args.naming, ROOT)?.tokens ?? null;
 
 const dropDefault = (p) => (p.at(-1) === 'default' ? p.slice(0, -1) : p);
 const kebab = (parts) => parts.join('-').replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
@@ -53,6 +76,22 @@ StyleDictionary.registerTransform({
   type: 'name',
   transform: (token) => dropDefault(token.path).join('.'),
 });
+// A naming doc's emitted names. Style Dictionary's css format adds the `--`, and `outputReferences` writes a
+// reference through the referenced token's name, so a renamed token's readers follow it.
+if (tokenNaming !== null) {
+  StyleDictionary.registerTransform({
+    name: 'name/css-emitted',
+    type: 'name',
+    transform: (token) => naming.emittedCssName(token.path.join('.'), tokenNaming).slice(2),
+  });
+  StyleDictionary.registerTransform({
+    name: 'name/camel-emitted',
+    type: 'name',
+    transform: (token) => naming.emittedCamelName(token.path.join('.'), tokenNaming),
+  });
+}
+const cssNameTransform = tokenNaming === null ? 'name/kebab-no-default' : 'name/css-emitted';
+const camelNameTransform = tokenNaming === null ? 'name/camel-no-default' : 'name/camel-emitted';
 // React Native wants unitless numbers for dimensions.
 StyleDictionary.registerTransform({
   name: 'dimension/px-to-number',
@@ -340,13 +379,13 @@ StyleDictionary.registerFormat({
 });
 
 const config = (theme, mode) => {
-  const out = path.join(here, '..', 'packages', 'tokens', 'dist', theme);
+  const out = path.join(DIST, theme);
   return {
     log: { verbosity: 'verbose' },
     source: [path.join(THEMES_DIR, theme, 'base.json'), path.join(THEMES_DIR, theme, `${mode}.json`)],
     platforms: {
       css: {
-        transforms: ['attribute/cti', 'name/kebab-no-default', 'fontFamily/css-stack', 'cubicBezier/css', 'shadow/css'],
+        transforms: ['attribute/cti', cssNameTransform, 'fontFamily/css-stack', 'cubicBezier/css', 'shadow/css'],
         buildPath: path.join(out, 'css/'),
         files: [
           {
@@ -360,7 +399,7 @@ const config = (theme, mode) => {
         ],
       },
       js: {
-        transforms: ['attribute/cti', 'name/camel-no-default', 'fontFamily/css-stack', 'cubicBezier/css', 'shadow/css'],
+        transforms: ['attribute/cti', camelNameTransform, 'fontFamily/css-stack', 'cubicBezier/css', 'shadow/css'],
         buildPath: path.join(out, 'js/'),
         files: [
           { destination: `tokens.${mode}.js`, format: 'javascript/es6' },
@@ -368,7 +407,7 @@ const config = (theme, mode) => {
         ],
       },
       rn: {
-        transforms: ['attribute/cti', 'name/camel-no-default', 'dimension/px-to-number', 'duration/ms-to-number', 'fontFamily/first', 'shadow/rn'],
+        transforms: ['attribute/cti', camelNameTransform, 'dimension/px-to-number', 'duration/ms-to-number', 'fontFamily/first', 'shadow/rn'],
         buildPath: path.join(out, 'rn/'),
         files: [
           { destination: `tokens.${mode}.js`, format: 'javascript/es6' },
@@ -385,7 +424,7 @@ const config = (theme, mode) => {
       // is unused but Style Dictionary insists the key exists and ends in a slash.
       swift: {
         transforms: [
-          'attribute/cti', 'name/camel-no-default', 'color/swift', 'dimension/swift', 'duration/swift',
+          'attribute/cti', camelNameTransform, 'color/swift', 'dimension/swift', 'duration/swift',
           'number/swift', 'fontWeight/swift', 'fontFamily/swift', 'cubicBezier/swift', 'shadow/swift',
         ],
         buildPath: path.join(out, 'swift/'),
@@ -430,33 +469,52 @@ async function writeNames(theme, modes) {
     deepMerge(tree, JSON.parse(await fs.readFile(path.join(THEMES_DIR, theme, f), 'utf8')));
   }
   const names = tokenNames(tree);
-  const dist = path.join(here, '..', 'packages', 'tokens', 'dist');
+  const dist = DIST;
+  // The refs stay canonical under a naming doc; only the examples of what a helper returns follow the doc.
+  const cssExample = tokenNaming === null ? '--space-lg' : naming.emittedCssName('space.lg', tokenNaming);
+  const keyExample = tokenNaming === null ? 'spaceLg' : naming.emittedCamelName('space.lg', tokenNaming);
   await fs.writeFile(
     path.join(dist, 'names.d.ts'),
     '// Generated by tokens/build.mjs — the dotted token names every theme provides.\n' +
       'export type TokenRef =\n  | ' + names.map((n) => JSON.stringify(n)).join('\n  | ') + ';\n' +
       'export declare const TOKEN_NAMES: readonly TokenRef[];\n' +
-      "/** 'space.lg' → 'var(--space-lg)' */\nexport declare function cssVar(ref: TokenRef): string;\n" +
-      "/** 'space.lg' → 'spaceLg' (the key in the JS/RN token objects) */\nexport declare function tokenKey(ref: TokenRef): string;\n" +
+      `/** 'space.lg' → 'var(${cssExample})' */\nexport declare function cssVar(ref: TokenRef): string;\n` +
+      `/** 'space.lg' → '${keyExample}' (the key in the JS/RN token objects) */\nexport declare function tokenKey(ref: TokenRef): string;\n` +
       "/** Resolve a ref against a loaded token object: resolveToken(tokens, 'space.lg') */\n" +
       'export declare function resolveToken<T extends Record<string, unknown>>(tokens: T, ref: TokenRef): T[keyof T];\n',
   );
   await fs.writeFile(
     path.join(dist, 'names.js'),
-    '// Generated by tokens/build.mjs\n' +
-      // `', '` between entries, the separator Python's json.dumps used, so the file the Python fallback
-      // wrote and the one Style Dictionary writes differ only in the "Generated by" marker.
-      'export const TOKEN_NAMES = [' + names.map((n) => JSON.stringify(n)).join(', ') + '];\n' +
-      "const kebab = (ref) => ref.replace(/\\./g, '-').replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();\n" +
-      'export const cssVar = (ref) => `var(--${kebab(ref)})`;\n' +
-      "export const tokenKey = (ref) => ref.split('.').map((s, i) => (i === 0 ? s : s[0].toUpperCase() + s.slice(1))).join('');\n" +
-      'export const resolveToken = (tokens, ref) => tokens[tokenKey(ref)];\n',
+    tokenNaming !== null
+      ? emittedNamesJs(names, tokenNaming)
+      : '// Generated by tokens/build.mjs\n' +
+        // `', '` between entries, the separator Python's json.dumps used, so the file the Python fallback
+        // wrote and the one Style Dictionary writes differ only in the "Generated by" marker.
+        'export const TOKEN_NAMES = [' + names.map((n) => JSON.stringify(n)).join(', ') + '];\n' +
+        "const kebab = (ref) => ref.replace(/\\./g, '-').replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();\n" +
+        'export const cssVar = (ref) => `var(--${kebab(ref)})`;\n' +
+        "export const tokenKey = (ref) => ref.split('.').map((s, i) => (i === 0 ? s : s[0].toUpperCase() + s.slice(1))).join('');\n" +
+        'export const resolveToken = (tokens, ref) => tokens[tokenKey(ref)];\n',
   );
 }
 
+/** names.js under a naming doc: the same exports, each taking a canonical `TokenRef` and returning the name the build
+ *  emitted for it, through a table of the renamed entries and the doc's CSS prefix. */
+const emittedNamesJs = (names, tokens) =>
+  '// Generated by tokens/build.mjs\n' +
+  'export const TOKEN_NAMES = [' + names.map((n) => JSON.stringify(n)).join(', ') + '];\n' +
+  "// The naming doc's token renames, canonical → brand path; every other token is emitted under its own path.\n" +
+  'const RENAMED = ' + JSON.stringify(tokens.rename) + ';\n' +
+  'const emitted = (ref) => (Object.hasOwn(RENAMED, ref) ? RENAMED[ref] : ref);\n' +
+  "const kebab = (ref) => emitted(ref).replace(/\\./g, '-').replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();\n" +
+  'export const cssVar = (ref) => `var(--' + (tokens.cssPrefix === undefined ? '' : `${tokens.cssPrefix}-`) + '${kebab(ref)})`;\n' +
+  "export const tokenKey = (ref) => emitted(ref).split('.').map((s, i) => (i === 0 ? s : s[0].toUpperCase() + s.slice(1))).join('');\n" +
+  'export const resolveToken = (tokens, ref) => tokens[tokenKey(ref)];\n';
+
 // ---------- packages/swiftui/Sources/DesignSchemaTokens ----------
 
-const SWIFT_OUT = path.join(here, '..', 'packages', 'swiftui', 'Sources', 'DesignSchemaTokens');
+const SWIFT_OUT =
+  args.out === null ? path.join(here, '..', 'packages', 'swiftui', 'Sources', 'DesignSchemaTokens') : path.resolve(ROOT, args.out, 'swiftui', 'DesignSchemaTokens');
 const THEME_DOCS = path.join(here, '..', 'site', 'src', 'content', 'docs', 'themes');
 
 /** `calm-precise` → `CalmPrecise`. */
@@ -545,12 +603,12 @@ for (const theme of themes) {
     [{ output: swiftBodies[mode] }] = await sd.formatPlatform('swift');
   }
   // Single CSS entry per theme: light (:root) + dark overrides.
-  const cssDir = path.join(here, '..', 'packages', 'tokens', 'dist', theme, 'css');
+  const cssDir = path.join(DIST, theme, 'css');
   const merged = (await Promise.all(modes.map((m) => fs.readFile(path.join(cssDir, `tokens.${m}.css`), 'utf8')))).join('\n');
   await fs.writeFile(path.join(cssDir, 'tokens.css'), `/* Theme: ${theme} */\n${merged}`);
   await writeNames(theme, modes);
   await writeSwiftTheme(theme, swiftBodies);
-  console.log(`✔ ${theme} (${modes.join(', ')}) →`, path.relative(process.cwd(), path.join(here, '..', 'packages', 'tokens', 'dist', theme)));
+  console.log(`✔ ${theme} (${modes.join(', ')}) →`, path.relative(process.cwd(), path.join(DIST, theme)));
 }
 await writeSwiftTokenRef();
 await writeSwiftThemes(themes);

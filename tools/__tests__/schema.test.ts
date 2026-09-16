@@ -68,6 +68,7 @@ describe('Zod validation', () => {
   test('an enum prop needs values', () => {
     const c = component();
     delete c.props.size.values;
+    delete c.props.size.enumRef;
     const r = componentFrontmatter.safeParse({ component: c });
     expect(r.success).toBe(false);
     expect(r.error?.issues.map((i) => i.path.join('.'))).toContain('component.props.size.values');
@@ -80,9 +81,11 @@ describe('Zod validation', () => {
     expect(componentFrontmatter.safeParse({ component: c }).success).toBe(false);
   });
 
-  test('an extension may not carry a11y or anatomy', () => {
+  test('an extension may carry a11y.contrast but not a11y.requires', () => {
     const r = extensionFrontmatter.safeParse({ title: 'x', extension: { extends: 'Widget', name: 'a11y', a11y: { requires: ['focus-trap'] } } });
     expect(r.success).toBe(false);
-    expect(r.error?.issues[0]?.path.join('.')).toBe('extension');
+    expect(r.error?.issues.map((i) => i.path.join('.'))).toContain('extension.a11y');
+    const pair = { foreground: 'color.foreground.muted', background: 'color.background.subtle' };
+    expect(extensionFrontmatter.safeParse({ extension: { extends: 'Widget', name: 'a11y', a11y: { contrast: [pair] } } }).success).toBe(true);
   });
 });

@@ -229,9 +229,16 @@
           "additionalProperties": false
         },
         "overrides": {
-          "description": "Escape hatch: explicit token values per mode, keyed by dotted path. Applied after derivation; still contrast-checked.",
+          "description": "Escape hatch: explicit token values, keyed by a token's full or public path (schema/tokens.ts). `base` sets base-layer tokens (palette, type, spacing, radius, motion) before the modes are derived, so mode choices see them; `light` and `dark` set mode tokens after derivation. Each value must fit its token's type or be a `{path}` reference to a token of the same type. size.target.* and border.width.focus are accessibility floors and can't be overridden. Still contrast-checked.",
           "type": "object",
           "properties": {
+            "base": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            },
             "light": {
               "type": "object",
               "propertyNames": {
@@ -245,6 +252,88 @@
                 "type": "string"
               },
               "additionalProperties": {}
+            }
+          },
+          "additionalProperties": false
+        },
+        "tuning": {
+          "description": "Named adjustments to base values the derivation otherwise fixes, so a theme can state them without an override. Each value left out keeps its derived default.",
+          "type": "object",
+          "properties": {
+            "radius": {
+              "description": "Corner steps in px (0–48), replacing the preset's three steps. radius.full stays 999px. No effect with radius: none.",
+              "type": "object",
+              "properties": {
+                "sm": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 48
+                },
+                "md": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 48
+                },
+                "lg": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 48
+                }
+              },
+              "additionalProperties": false
+            },
+            "lineHeight": {
+              "description": "Line heights (1.0–2.2), tight ≤ normal ≤ loose. Defaults 1.2 / 1.5 / 1.7.",
+              "type": "object",
+              "properties": {
+                "tight": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 2.2
+                },
+                "normal": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 2.2
+                },
+                "loose": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 2.2
+                }
+              },
+              "additionalProperties": false
+            },
+            "fontWeight": {
+              "description": "Font weights (100–900 in steps of 100), ascending. Defaults 400 / 500 / 600 / 700.",
+              "type": "object",
+              "properties": {
+                "regular": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 900,
+                  "multipleOf": 100
+                },
+                "medium": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 900,
+                  "multipleOf": 100
+                },
+                "semibold": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 900,
+                  "multipleOf": 100
+                },
+                "bold": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 900,
+                  "multipleOf": 100
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false

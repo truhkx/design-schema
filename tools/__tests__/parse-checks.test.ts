@@ -1,16 +1,54 @@
 /** tools/parse.ts — the cross-field checks: composition, keyboard, locked bindings, interpolation targets
  *  (port of tests/test_parse_checks.py). */
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, test } from 'vitest';
 
+import { VOCAB } from '../../schema/vocab.ts';
 import { dump } from '../lib/pyyaml.ts';
+import { REPO_ROOT } from '../lib/root.ts';
 import * as parse from '../parse.ts';
-import { component, expectDocError, fmText, usePaths, useTmp, write } from './fixtures.ts';
+import { SIZE_NAMES } from '../theme.ts';
+import { BODY, component, expectDocError, fmText, usePaths, useTmp, write } from './fixtures.ts';
 
 const tmp = useTmp();
 usePaths();
 
 const check = (c: parse.Dict): void => parse.validate({ component: c }, join(tmp(), 'widget.md'));
+
+describe('shared vocabularies', () => {
+  test('an enumRef prop parses, derives one render per vocabulary value, and its generated entry carries the values', () => {
+    const root = tmp();
+    const templates = join(root, 'templates');
+    write(join(templates, 'web.md'), '{{NAME}}|{{PLATFORM}}');
+    write(join(templates, 'rn.md'), '{{NAME}}|{{PLATFORM}}');
+    write(join(templates, 'theme.md'), '{{NAME}}');
+    const c = component();
+    c.props.size = { type: 'enum', enumRef: 'size', default: 'md', description: 'Type scale.' };
+    c.styles.fontSize = { token: 'font.size.{size}' };
+    c.styles.paddingInline.token = 'space.md'; // space.{size} has no token for most of VOCAB.size
+    write(join(root, 'components', 'widget.md'), '---\n' + fmText(c) + '---\n' + BODY);
+    Object.assign(parse.paths, {
+      ROOT: root, DOCS: join(root, 'components'), THEME_DOCS: join(root, 'themes'), OUT: join(root, 'generated'), TEMPLATES: templates,
+      EXT_DOCS: join(root, 'extensions'), PATTERN_DOCS: join(root, 'patterns'),
+    });
+
+    expect(parse.main()).toBe(0);
+    const entry = (JSON.parse(readFileSync(join(root, 'generated', 'components.json'), 'utf8')) as parse.Dict[])[0] as parse.Dict;
+    expect(entry.component.props.size.values).toEqual([...VOCAB.size]);
+    const renders = (entry.behaviorDerived as parse.Dict[]).filter((sc) => sc.name.startsWith('renders-size-'));
+    expect(renders.map((sc) => sc.given.size)).toEqual([...VOCAB.size]);
+  });
+
+  test('VOCAB.size is the theme scale, SIZE_NAMES', () => {
+    expect([...VOCAB.size]).toEqual(SIZE_NAMES);
+  });
+
+  test('every VOCAB.foregroundTone value is a color.foreground token in the built light theme', () => {
+    const light = JSON.parse(readFileSync(join(REPO_ROOT, 'tokens', 'themes', 'calm-precise', 'light.json'), 'utf8')) as parse.Dict;
+    for (const tone of VOCAB.foregroundTone) expect(light.color.foreground[tone]?.$value, `color.foreground.${tone}`).toBeDefined();
+  });
+});
 
 describe('composition', () => {
   /** A stand-in docs folder with a few real-looking component docs, for the composition check. */
@@ -305,23 +343,27 @@ describe('locked bindings', () => {
   });
 });
 
-describe('interpolation targets', () => {
-  /** Every value an interpolated binding can take must name a built token (a trailing `.default` dropped). */
-  const NAMES = ['font.size.sm', 'font.size.md', 'font.size.lg', 'color.action.primary.background', 'color.action.danger.background',
-    'color.background', 'color.background.subtle', 'space.sm', 'space.md', 'radius.md'];
-
+describe('token existence', () => {
+  /** The checks live in componentDef against schema/tokens.ts (component-schema.test.ts has the fixtures); the parser
+   *  reports them with no built tokens anywhere under its paths. */
   beforeEach(() => {
-    parse.hooks.tokenNames = () => new Set(NAMES);
+    const root = tmp();
+    Object.assign(parse.paths, {
+      ROOT: root, DOCS: join(root, 'components'), THEME_DOCS: join(root, 'themes'), OUT: join(root, 'generated'), TEMPLATES: join(root, 'templates'),
+      EXT_DOCS: join(root, 'extensions'), PATTERN_DOCS: join(root, 'patterns'),
+    });
   });
 
-  test('every enum value resolving passes', () => {
+  test('a misspelled token is rejected when nothing has been built', () => {
+    expect(existsSync(join(tmp(), 'packages', 'tokens', 'dist'))).toBe(false);
     const c = component();
-    c.styles.fontSize = { token: 'font.size.{size}' }; // size: [sm, md]
-    check(c);
+    c.styles.radius.token = 'radius.mdd';
+    expectDocError(() => check(c), "widget.md: frontmatter failed schema validation:\n  - component.styles.radius.token: Widget: styles.radius 'radius.mdd' is not a token");
   });
 
   test('an enum value with no token is named in the error', () => {
     const c = component();
+    delete c.props.size.enumRef; // 'huge' is not in VOCAB.size
     c.props.size.values = ['sm', 'huge'];
     c.props.size.default = 'sm'; // the fixture's 'md' default is no longer one of the values
     c.styles.paddingInline.token = 'space.md'; // the fixture's own {size} binding would trip first
@@ -335,26 +377,6 @@ describe('interpolation targets', () => {
     expect(message.endsWith("Widget: styles.fontSize 'font.size.{size}' → 'font.size.huge' is not a token")).toBe(true);
   });
 
-  test('a non enum interpolation target is an error', () => {
-    const c = component();
-    c.styles.fontSize = { token: 'font.size.{label}' };
-    expectDocError(() => check(c), "'label' is not an enum prop");
-  });
-
-  test('a trailing default segment is dropped before the lookup', () => {
-    const c = component();
-    c.props.surface = { type: 'enum', values: ['default', 'subtle'], description: 'x' };
-    c.styles.background = { token: 'color.background.{surface}' };
-    check(c);
-  });
-
-  test.each([...parse.NO_TOKEN_VALUES].sort())('the no-op value %s needs no token', (value) => {
-    const c = component();
-    c.props.surface = { type: 'enum', values: ['subtle', value], description: 'x' };
-    c.styles.background = { token: 'color.background.{surface}' };
-    check(c);
-  });
-
   test('two slots are checked as a product', () => {
     const c = component();
     c.props.tone = { type: 'enum', values: ['primary', 'danger'], description: 'x' };
@@ -362,14 +384,5 @@ describe('interpolation targets', () => {
     check(c);
     c.props.tone.values.push('info');
     expectDocError(() => check(c), "'color.action.info.background' is not a token");
-  });
-
-  test('the check is skipped before tokens are built', () => {
-    parse.hooks.tokenNames = () => null;
-    const c = component();
-    c.props.size.values = ['sm', 'huge'];
-    c.props.size.default = 'sm';
-    c.styles.fontSize = { token: 'font.size.{size}' };
-    check(c);
   });
 });

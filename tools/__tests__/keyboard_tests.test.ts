@@ -45,6 +45,19 @@ describe('storyId', () => {
   });
 });
 
+describe('storyUrl', () => {
+  test('without given it is the story URL the beforeEach has always used', () => {
+    expect(kt.storyUrl('dialog-react--keyboard')).toBe('/iframe.html?id=dialog-react--keyboard&viewMode=story');
+    expect(kt.storyUrl('dialog-react--keyboard', {})).toBe('/iframe.html?id=dialog-react--keyboard&viewMode=story');
+  });
+
+  test('given becomes Storybook URL args: booleans as !true/!false, numbers as digits, spaces as +', () => {
+    expect(kt.storyUrl('tree-react--keyboard', { multiple: true, collapsible: false, level: 2, label: 'Two words', orientation: 'vertical' })).toBe(
+      '/iframe.html?id=tree-react--keyboard&viewMode=story&args=multiple:!true;collapsible:!false;level:2;label:Two+words;orientation:vertical',
+    );
+  });
+});
+
 describe('rootLocator', () => {
   test('a role locates by role', () => {
     expect(kt.rootLocator(DIALOG)).toBe("page.getByRole('dialog').first()");
@@ -194,6 +207,66 @@ describe('specFor', () => {
     expect(kt.specFor(c, 'web')).toContain("test('Escape: Doesn\\'t close when not dismissible.'");
   });
 
+  test('a rule scoped by platforms is emitted only on those platforms', () => {
+    const c = dialog();
+    c.keyboard = [{ keys: ['F6'], action: 'Moves between panes.', expect: 'focus-next', platforms: ['web'] }];
+    expect(titlesOf(kt.specFor(c, 'web'))).toEqual(['F6: Moves between panes.']);
+    expect(titlesOf(kt.specFor(c, 'lit'))).toEqual([]);
+    expect(skipsOf(kt.specFor(c, 'lit'))).toEqual([]);
+  });
+
+  test('given navigates to the story with those args before the rule runs; beforeEach keeps the plain URL', () => {
+    const c = dialog();
+    c.keyboard = [{ keys: ['Control+a'], action: 'Selects all.', expect: 'selects', given: { multiple: true } }];
+    const s = kt.specFor(c, 'web');
+    const body = s.slice(s.indexOf("test('Control+a"));
+    expect(s).toContain("test.beforeEach(async ({ page }) => {\n    await page.goto('/iframe.html?id=dialog-react--keyboard&viewMode=story');");
+    expect(body).toContain("await page.goto('/iframe.html?id=dialog-react--keyboard&viewMode=story&args=multiple:!true');");
+    expect(body.indexOf('page.goto')).toBeLessThan(body.indexOf("press('Control+a')"));
+  });
+
+  test('target asserts closes and opens on the data-part, not the root', () => {
+    const c = dialog();
+    c.keyboard = [{ keys: ['Escape'], action: 'Closes the list.', expect: 'closes', target: 'listbox' }];
+    const s = kt.specFor(c, 'web');
+    expect(s).toContain('await expect(page.locator(\'[data-part="listbox"]\').first()).toBeHidden();');
+    expect(s).not.toContain('await expect(root).toBeHidden();');
+    expect(kt.expectBlock('opens', 1, 'listbox')).toBe('await expect(page.locator(\'[data-part="listbox"]\').first()).toBeVisible();');
+  });
+
+  test('repeat presses the chord N times and focus-next / focus-prev expect a move of N', () => {
+    const c = dialog();
+    c.keyboard = [
+      { keys: ['ArrowDown'], action: 'Moves down.', expect: 'focus-next', repeat: 3 },
+      { keys: ['ArrowUp'], action: 'Moves up.', expect: 'focus-prev', repeat: 2 },
+    ];
+    const s = kt.specFor(c, 'web');
+    expect(s).toContain("    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowDown');");
+    expect(s).toContain('expect(await focusIndex(page, root)).toBe(before + 3);');
+    expect(s).toContain("    for (let i = 0; i < 2; i++) await page.keyboard.press('ArrowUp');");
+    expect(s).toContain('expect(await focusIndex(page, root)).toBe(before - 2);');
+  });
+
+  test('an expect list emits one assertion per outcome, in order', () => {
+    const c = dialog();
+    c.keyboard = [{ keys: ['Escape'], action: 'Closes and returns focus.', expect: ['closes', 'focus-trigger'] }];
+    const s = kt.specFor(c, 'web');
+    const closes = s.indexOf(kt.expectBlock('closes'));
+    expect(closes).toBeGreaterThan(s.indexOf("press('Escape')"));
+    expect(s.indexOf(kt.expectBlock('focus-trigger'))).toBeGreaterThan(closes);
+  });
+
+  test('a manual native rule is skipped as native; a native rule with an expect is still asserted', () => {
+    const c = dialog();
+    c.keyboard = [
+      { keys: ['Enter'], action: 'Activates the focused control.', native: true },
+      { keys: ['Home'], action: 'Moves the caret to the start.', native: true, expect: 'focus-unchanged' },
+    ];
+    const s = kt.specFor(c, 'web');
+    expect(skipsOf(s)).toEqual(['Enter: Activates the focused control. — native']);
+    expect(titlesOf(s)).toEqual(['Home: Moves the caret to the start.']);
+  });
+
   test('the helpers and imports are present once', () => {
     const s = spec();
     expect(s.split("import { test, expect, type Page, type Locator } from '@playwright/test';")).toHaveLength(2);
@@ -221,6 +294,29 @@ describe('specData', () => {
     const c = dialog();
     c.keyboard = [{ keys: ['ArrowDown'], action: 'Opens.', when: 'focus on trigger', from: 'trigger', expect: 'opens' }];
     expect(kt.specData(c).rules[0]?.when).toBe('focus on trigger');
+  });
+
+  test('expect stays a string, the first outcome, and a list is also written as expectAll', () => {
+    const c = dialog();
+    c.keyboard = [{ keys: ['Escape'], action: 'Closes and returns focus.', expect: ['closes', 'focus-trigger'] }];
+    expect(kt.specData(c).rules).toEqual([
+      { keys: ['Escape'], action: 'Closes and returns focus.', from: 'inside', expect: 'closes', expectAll: ['closes', 'focus-trigger'] },
+    ]);
+  });
+
+  test('rules scoped away from swiftui are dropped, and given, target or repeat make a rule manual there', () => {
+    const c = dialog();
+    c.keyboard = [
+      { keys: ['F6'], action: 'Moves between panes.', expect: 'focus-next', platforms: ['web', 'lit'] },
+      { keys: ['Escape'], action: 'Closes the list.', expect: 'closes', target: 'listbox', platforms: ['swiftui'] },
+      { keys: ['Control+a'], action: 'Selects all.', expect: 'selects', given: { multiple: true } },
+      { keys: ['ArrowDown'], action: 'Moves down.', expect: 'focus-next', repeat: 3, native: false },
+    ];
+    expect(kt.specData(c).rules).toEqual([
+      { keys: ['Escape'], action: 'Closes the list.', from: 'inside', expect: 'manual', target: 'listbox', platforms: ['swiftui'] },
+      { keys: ['Control+a'], action: 'Selects all.', from: 'inside', expect: 'manual', given: { multiple: true } },
+      { keys: ['ArrowDown'], action: 'Moves down.', from: 'inside', expect: 'manual', repeat: 3, native: false },
+    ]);
   });
 
   test('the identifier is the component root`s testability hook, not its role', () => {
@@ -260,6 +356,14 @@ describe('main', () => {
     writeComponents([DIALOG]);
     kt.main();
     expect(std.out()).toContain('2 spec(s), 3 auto-tested rule(s) per platform, 2 manual');
+  });
+
+  test('native manual rules are counted apart, and the count only appears when there are some', () => {
+    const c = dialog();
+    c.keyboard = [...DIALOG.keyboard, { keys: ['Home', 'End'], action: 'Moves the caret.', native: true }];
+    writeComponents([c]);
+    kt.main();
+    expect(std.out()).toContain('3 auto-tested rule(s) per platform, 2 manual, 2 native, 1 rule set(s)');
   });
 
   test('components without a keyboard block are skipped', () => {

@@ -17,6 +17,8 @@ The work runs as numbered jobs through `run-jobs.ps1`, in five phases ordered by
 
 **New fields land optional, with the old form still accepted.** `pnpm check` stays green after every job in phases 1 and 2 without touching the docs. A stricter check arrives with the doc migration that satisfies it (phase 3), or one job earlier as a warning. Phase 1 is the exception by design: its jobs fix the docs they find wrong, because those docs are wrong today.
 
+**Warnings go through one channel.** A phase 2 warning is recorded with `warn` in `tools/parse.ts`: a rule about one component returns it from `componentWarnings` in `schema/component.ts`, which the parser forwards, and a rule that reads other docs calls `warn` directly. `pnpm parse` prints each as `⚠ <file>: <message>`, counts them in the summary line and writes `generated/parse-warnings.json`; `DS_WARNINGS_AS_ERRORS=1` turns them into errors, which is how a phase 3 migration proves a warning is gone. Later jobs reuse this channel and never add another.
+
 **The gate block always includes the tool type check.** `pnpm check` omits `typecheck:tools`, so a job can report green with a type error in `tools/`. Every job runs `pnpm check`, `pnpm typecheck:tools`, `pnpm test:tools` and `pnpm mcp:smoke`, then its own proof. Jobs that edit a Zod file run `node --import tsx tools/schema.ts` and keep the regenerated JSON.
 
 **Cite symbols, not line numbers.** Jobs run in sequence and most edit `tools/parse.ts`; a line number from the review is wrong by the second job. Prompts name functions (`validateBehavior`, `deriveBehavior`, `rootLocator`).
@@ -50,7 +52,7 @@ Each job ends with `node logs/600-baseline.mjs --out <job>`, which writes `logs/
 | 1. Make the schema true | 600 to 607 | Opus | only where wrong today | 601 flips all |
 | 2. New fields, optional | 610 to 625 | Opus | no | 625 flips all |
 | 3. Migrate the docs | 630 to 644 | Sonnet | all 51 | every doc |
-| 4. Regenerate | `generate.ps1 -Stale` | generator | no | resolves |
+| 4. Regenerate | `pnpm generate --stale` (Windows: `generate.ps1 -Stale`) | generator | no | resolves |
 | 5. After the regen | 650 onward | Sonnet | as the gap digest says | per doc |
 
 Run each phase as its own queue, because `run-jobs.ps1` takes one model per run, and commit at each phase boundary after the full verify.
@@ -147,7 +149,7 @@ Fifteen jobs on the default model, one field across all 51 docs each, and each f
 
 ## Phase 4: regenerate
 
-`generate.ps1 -Stale` once, in the order composition implies, then every gate against the phase 0 baseline, then `tools/gap_digest.ts`. The DOC lines that remain are the next round's schema work.
+`pnpm generate --stale` (Windows: `generate.ps1 -Stale`) once, in the order composition implies, then every gate against the phase 0 baseline, then `tools/gap_digest.ts`. The DOC lines that remain are the next round's schema work.
 
 ## Phase 5: after the regen
 

@@ -1,9 +1,9 @@
 /**
  * The site's navigation data, read from `generated/nav.json` at build time.
  *
- * `tools/site_nav.ts` writes that file from `generated/components.json` and `regen.ps1`, so the
- * header's links and the docs sidebar's groups are generated, never hand-maintained
- * (site/src/content/docs/process/website-plan.md, "Content pipeline"). Read *in place*, like the
+ * `tools/site_nav.ts` writes that file from `generated/components.json` and `tools/regen-phases.json`
+ * (the phase order), so the header's links and the docs sidebar's groups are generated, never
+ * hand-maintained (site/src/content/docs/process/website-plan.md, "Content pipeline"). Read *in place*, like the
  * schema loader reads components.json — nothing is copied into this app.
  */
 // Imported rather than read with node:fs so Vite resolves it relative to *this* file: a server

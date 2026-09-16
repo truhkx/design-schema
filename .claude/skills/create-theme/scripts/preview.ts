@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 /**
  * Show what a theme doc turned into: the resolved colors of the roles people notice first, per mode, with
- * their contrast, the brand and neutral ramps, and — given inspiration colors — the nearest token to each and
- * how far it drifted.
+ * their contrast, the brand and neutral ramps, what the doc pinned (each `overrides` path, base and per mode, and
+ * each `tuning` value, with the token's resolved value), and — given inspiration colors — the nearest token to
+ * each and how far it drifted.
  *
  *   node --import tsx .claude/skills/create-theme/scripts/preview.ts <id> [#hex ...]
  *
- * Reads tokens/themes/<id>/, so run tools/theme.ts first. Read-only. Drift is the OKLab distance × 100: under 2
- * reads as the same color, under 5 as a close relative, over 10 as a different color.
+ * Reads tokens/themes/<id>/ (theme.json for what was pinned), so run tools/theme.ts first. Read-only. Drift is the
+ * OKLab distance × 100: under 2 reads as the same color, under 5 as a close relative, over 10 as a different color.
  */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { loadTheme, modes, THEMES_DIR } from '../../../../tools/lib/tokens.ts';
@@ -48,6 +49,37 @@ function drift(a: string, b: string): number {
   return 100 * Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
 }
 
+/** The token each `tuning` group sets, by name. */
+const TUNING_GROUPS: Record<string, string> = { radius: 'radius', lineHeight: 'font.lineHeight', fontWeight: 'font.weight' };
+
+/** Each `tuning` value and each `overrides` path (base, then per mode) in theme.json, with the token's resolved value. */
+function printPinned(id: string, themeModes: string[]): void {
+  const file = join(THEMES_DIR, id, 'theme.json');
+  const t = (existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {}) as Record<string, any>;
+  const shown = (v: unknown): string => (typeof v === 'string' ? v : JSON.stringify(v));
+  const resolved = (mode: string, name: string): string => {
+    const flat = loadTheme(id, mode);
+    const entry = flat[name] ?? flat[`${name}.default`];
+    return entry === undefined ? '?' : shown(entry.$value);
+  };
+  const lines: string[] = [];
+  const baseMode = themeModes[0] as string;
+  for (const [group, values] of Object.entries((t.tuning ?? {}) as Record<string, Record<string, unknown>>)) {
+    for (const [name, v] of Object.entries(values ?? {})) {
+      const token = `${TUNING_GROUPS[group] ?? group}.${name}`;
+      lines.push(`  ${`tuning.${group}.${name}`.padEnd(34)} ${shown(v).padEnd(10)} → ${token} ${resolved(baseMode, token)}`);
+    }
+  }
+  const overrides = (t.overrides ?? {}) as Record<string, Record<string, unknown>>;
+  for (const key of ['base', ...themeModes]) {
+    for (const [name, v] of Object.entries(overrides[key] ?? {})) {
+      lines.push(`  ${`overrides.${key}`.padEnd(16)} ${name.padEnd(34)} ${shown(v)} → ${resolved(key === 'base' ? baseMode : key, name)}`);
+    }
+  }
+  process.stdout.write(`\n${id} · overrides and tuning\n`);
+  process.stdout.write(lines.length ? `${lines.join('\n')}\n` : '  none: every token is derived\n');
+}
+
 function main(argv: string[]): number {
   const [id, ...inspiration] = argv;
   if (!id) {
@@ -76,6 +108,7 @@ function main(argv: string[]): number {
           .map((p) => `${p.split('.').pop()} ${hexOf(flat[p]?.$value) ?? '?'}`);
         if (steps.length) process.stdout.write(`  ${ramp.padEnd(16)} ${steps.join('  ')}\n`);
       }
+      printPinned(id, modes(id));
     }
     process.stdout.write(`\n${id} · ${mode}\n`);
     for (const [label, path, on, floor] of ROLES) {

@@ -112,6 +112,23 @@ describe('get_keyboard_model', () => {
     expect(kb.autoTested).toBe(0);
   });
 
+  test('an expect list counts as auto-tested, and native manual rules are counted apart', () => {
+    const generated = join(tmp(), 'generated');
+    mkdirSync(generated, { recursive: true });
+    const keyboard = [
+      { keys: ['Escape'], action: 'Closes and returns focus.', expect: ['closes', 'focus-trigger'], target: 'list' },
+      { keys: ['Enter', ' '], action: 'Activates the focused control.', native: true },
+      { keys: ['Home'], action: 'Moves to the first item.' },
+    ];
+    const entry = { source: 'widget.md', title: 'Widget', description: '', sections: {}, component: { name: 'Widget', apg: null, a11y: { role: 'combobox', requires: ['keyboard-operable'] }, keyboard } };
+    writeFileSync(join(generated, 'components.json'), JSON.stringify([entry]), 'utf8');
+    s.paths.GENERATED = generated;
+    const kb = s.getKeyboardModel({ component: 'Widget' });
+    expect((kb.rules as Dict[])[0]).toMatchObject({ expect: ['closes', 'focus-trigger'], target: 'list', from: 'inside' });
+    expect([kb.autoTested, kb.manual, kb.native]).toEqual([1, 1, 2]);
+    expect(s.GET_KEYBOARD_MODEL_DOC).toMatch(/given[\s\S]*target[\s\S]*repeat[\s\S]*platforms[\s\S]*native/);
+  });
+
   test('an unknown component raises', () => {
     expect(() => s.getKeyboardModel({ component: 'Gadget' })).toThrow(/Unknown component/);
   });
@@ -217,6 +234,11 @@ describe('start_theme', () => {
     expect(allowed.modes.fields.default.enum).toEqual(['light', 'dark']);
   });
 
+  test('the shape question carries tuning from the schema', () => {
+    const shape = (s.startTheme().questions as Dict[]).find((q) => q.id === 'shape') as Dict;
+    expect(Object.keys(shape.allowed.tuning.fields)).toEqual(['radius', 'lineHeight', 'fontWeight']);
+  });
+
   test('carries the process text and the example doc', () => {
     const st = s.startTheme();
     expect((st.process as string).toLowerCase()).toContain('excluded word');
@@ -294,6 +316,22 @@ describe('write_theme', () => {
     expect(out.ok).toBe(false);
     expect(out.errors).toEqual(['theme.neutralTint: neutralTint has no effect when seed.neutral is set: the neutral ramp takes its hue and chroma from seed.neutral; remove one']);
     expect(calls).toEqual([]);
+  });
+
+  test('a misspelled override path is an error, in the schema message, and nothing is written', () => {
+    const out = s.writeTheme({ id: 'warm-test', answers: { ...GOOD, overrides: { light: { 'color.action.primry.background': '#3B5BDB' } } } });
+    expect(out.ok).toBe(false);
+    expect(out.written).toBe(null);
+    expect(out.errors).toEqual(["theme.overrides.light.color.action.primry.background: overrides.light: 'color.action.primry.background' is not a mode token"]);
+    expect(existsSync(join(docs, 'warm-test.md'))).toBe(false);
+    expect(calls).toEqual([]);
+  });
+
+  test('tuning passes through to the doc', () => {
+    s.writeTheme({ id: 'warm-test', answers: { ...GOOD, tuning: { radius: { md: 6 } } } });
+    const raw = readFileSync(join(docs, 'warm-test.md'), 'utf8').replace(/\r\n/g, '\n');
+    const fm = yamlLoad(raw.split('\n---\n')[0]?.replace(/^-+\n/, '') as string) as Dict;
+    expect(fm.theme.tuning).toEqual({ radius: { md: 6 } });
   });
 
   test('an existing doc is kept unless overwrite', () => {

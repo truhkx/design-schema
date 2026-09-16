@@ -96,7 +96,7 @@ One gate is neither a typecheck nor a behavior scenario: **Icon**. Its glyphs ar
 
 ## Phases
 
-The same composition order as `regen.ps1`, so a component never precedes what it composes: Primitives (Icon, Text, Heading, Box, Stack, Container, Landmark) → Core (Button, Link, Input, Form, Card, Divider) → Controls (Checkbox, Switch, RadioGroup, Fieldset, Alert, Disclosure, Breadcrumb, Meter) → Focus (FocusScope, Tooltip, Toast) → Overlays → Selection → Numeric → Rows → Grids → Streams. Icon first because its glyph table is a code-generation job of its own (SVG path data → `Path` commands) and everything else composes it.
+The same composition order as `tools/regen-phases.json` (the order `pnpm regen` and, on Windows, `regen.ps1` run), so a component never precedes what it composes: Primitives (Icon, Text, Heading, Box, Stack, Container, Landmark) → Core (Button, Link, Input, Form, Card, Divider) → Controls (Checkbox, Switch, RadioGroup, Fieldset, Alert, Disclosure, Breadcrumb, Meter) → Focus (FocusScope, Tooltip, Toast) → Overlays → Selection → Numeric → Rows → Grids → Streams. Icon first because its glyph table is a code-generation job of its own (SVG path data → `Path` commands) and everything else composes it.
 
 Estimated cost mirrors the other platforms (Sonnet: ≈ $20 per large phase, $2–3 per component), plus CI wall-clock rather than dollars for the remote gate.
 

@@ -191,7 +191,14 @@ export function deriveBase(t: Dict): Dict {
     breakpoint: { $description: 'Viewport breakpoints for page chrome (header, docs layout) — not for components, which stay container-query-driven. Fixed px; density and rhythm do not scale them.',
       sm: T('640px'), md: T('768px'), lg: T('1024px') },
   };
-  const [rSm, rMd, rLg, rFull] = RADIUS[t.radius as string] as [number, number, number, number];
+  // `tuning` replaces a fixed value by name; each value it leaves out keeps today's.
+  const tuning = (truthy(pyGet(t, 'tuning', null)) ? t.tuning : {}) as Dict;
+  const tuned = (key: string): Dict => (truthy(pyGet(tuning, key, null)) ? (tuning[key] as Dict) : {});
+  const [presetSm, presetMd, presetLg, rFull] = RADIUS[t.radius as string] as [number, number, number, number];
+  const radiusT = tuned('radius');
+  const [rSm, rMd, rLg] = [pyGet(radiusT, 'sm', presetSm), pyGet(radiusT, 'md', presetMd), pyGet(radiusT, 'lg', presetLg)] as number[];
+  const weightT = tuned('fontWeight');
+  const lineHeightT = tuned('lineHeight');
   const motion = MOTION[pyGet(t, 'motion', 'subtle') as string] as { fast: string; base: string };
   return {
     color: { $type: 'color', palette },
@@ -200,9 +207,11 @@ export function deriveBase(t: Dict): Dict {
         body: T(stack(face, SYSTEM_SANS)),
         heading: T(stack(headingFace, SYSTEM_SANS)),
         mono: T(stack(mono, SYSTEM_MONO)) },
-      weight: { $type: 'fontWeight', regular: T(400), medium: T(500), semibold: T(600), bold: T(700) },
+      weight: { $type: 'fontWeight', regular: T(pyGet(weightT, 'regular', 400)), medium: T(pyGet(weightT, 'medium', 500)),
+        semibold: T(pyGet(weightT, 'semibold', 600)), bold: T(pyGet(weightT, 'bold', 700)) },
       size: group('dimension', sizes),
-      lineHeight: { $type: 'number', tight: T(1.2), normal: T(1.5), loose: T(1.7) },
+      lineHeight: { $type: 'number', tight: T(pyGet(lineHeightT, 'tight', 1.2)), normal: T(pyGet(lineHeightT, 'normal', 1.5)),
+        loose: T(pyGet(lineHeightT, 'loose', 1.7)) },
     },
     space: group('dimension', space),
     layout,
@@ -421,15 +430,28 @@ export function deriveMode(base: Dict, mode: string, elevation = 1.0, ink: boole
     shadow: shadows(n['1000'].$value as string, elevation, mode === 'dark') };
 }
 
+/**
+ * Replace the `$value` of each named token that the tree holds: a full path, or a public name (color.foreground)
+ * whose `.default` leaf it holds. schema/theme.ts has already rejected a path that is not a token, so a miss throws
+ * as a guard rather than creating a group nothing reads.
+ */
 export function applyOverrides(tree: Dict, overrides: Dict): void {
+  const child = (node: unknown, key: string): unknown =>
+    node instanceof Map ? node.get(key) : typeof node === 'object' && node !== null && Object.hasOwn(node, key) ? (node as Dict)[key] : undefined;
+  const isLeaf = (node: unknown): node is Dict => typeof node === 'object' && node !== null && !(node instanceof Map) && Object.hasOwn(node, '$value');
   for (const [path, value] of Object.entries(overrides)) {
-    let node = tree;
     const parts = path.split('.');
-    for (const part of parts.slice(0, -1)) {
-      if (!Object.hasOwn(node, part)) node[part] = {};
-      node = node[part] as Dict;
+    let parent: unknown = tree;
+    for (const part of parts.slice(0, -1)) parent = child(parent, part);
+    let key = parts[parts.length - 1] as string;
+    if (!isLeaf(child(parent, key))) {
+      parent = child(parent, key);
+      key = 'default';
     }
-    node[parts[parts.length - 1] as string] = T(value);
+    const leaf = child(parent, key);
+    if (!isLeaf(leaf)) throw new Error(`applyOverrides: '${path}' is not a token in this tree`);
+    if (parent instanceof Map) parent.set(key, { ...leaf, $value: value });
+    else (parent as Dict)[key] = { ...leaf, $value: value };
   }
 }
 
@@ -465,8 +487,10 @@ export function main(): number {
     const out = join(paths.OUT, t.id as string);
     mkdirSync(out, { recursive: true });
     const base = deriveBase(t);
-    writeText(join(out, 'base.json'), pyJsonDumps(base, 2) + '\n');
     const overrides = truthy(pyGet(t, 'overrides', null)) ? (t.overrides as Dict) : {};
+    // Before base.json and before any mode is derived, so the mode choices see an overridden palette.
+    applyOverrides(base, truthy(pyGet(overrides, 'base', null)) ? (overrides.base as Dict) : {});
+    writeText(join(out, 'base.json'), pyJsonDumps(base, 2) + '\n');
     for (const mode of t.modes.supports as string[]) {
       const tree = deriveMode(base, mode, ELEVATION[pyGet(t, 'elevation', 'subtle') as string] as number, isInk(t.seed.color as string));
       applyOverrides(tree, truthy(pyGet(overrides, mode, null)) ? (overrides[mode] as Dict) : {});

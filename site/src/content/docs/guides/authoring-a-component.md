@@ -74,7 +74,7 @@ Text before the first `##` is the overview. Then only these headings are allowed
 
 A doc that fails either check fails the build. That is the feature.
 
-After the doc passes, `generate.ps1 -Component <Name>` (or `pnpm generate -- --component <Name>`) produces the platform code and its test file and runs the code gates, the tests among them; `pnpm generate:check` fails CI while a changed doc has ungenerated code. When only the scenarios changed, `-Extra "--tests-only"` rewrites just the test file against the existing component. See [Generation pipeline](/process/generation-pipeline/).
+After the doc passes, `pnpm generate --component <Name>` (Windows: `generate.ps1 -Component <Name>`) produces the platform code and its test file and runs the code gates, the tests among them; `pnpm generate:check` fails CI while a changed doc has ungenerated code. See [Generation pipeline](/process/generation-pipeline/).
 
 ## The schema tables on the page
 

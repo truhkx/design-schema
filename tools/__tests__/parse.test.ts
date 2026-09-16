@@ -197,6 +197,7 @@ describe('validate', () => {
   test('an enum prop without values is a schema error', () => {
     const c = component();
     delete c.props.size.values;
+    delete c.props.size.enumRef;
     expectDocError(() => check(c), 'component.props.size.values');
   });
 
@@ -204,6 +205,37 @@ describe('validate', () => {
     const c = component();
     c.props.label.colour = 'red';
     expectDocError(() => check(c), 'component.props.label');
+  });
+
+  test("a deprecated component's use names another component with a doc", () => {
+    parse.paths.DOCS = tmp();
+    write(join(tmp(), 'button.md'), '');
+    const c = component();
+    c.status = 'deprecated';
+    c.deprecated = { reason: 'Replaced.', use: 'Button' };
+    check(c);
+    c.deprecated.use = 'Gadget';
+    expectDocError(() => check(c), "deprecated.use names 'Gadget', which is not another component with a doc");
+    c.deprecated.use = 'Widget';
+    write(join(tmp(), 'widget.md'), '');
+    expectDocError(() => check(c), "deprecated.use names 'Widget', which is not another component with a doc");
+  });
+
+  test('a composition naming a deprecated component warns through takeWarnings', () => {
+    parse.takeWarnings();
+    Object.assign(parse.paths, { DOCS: tmp(), ROOT: tmp() });
+    const badge = component();
+    Object.assign(badge, { name: 'Badge', status: 'deprecated', deprecated: { reason: 'Replaced.', use: 'Widget' } });
+    write(join(tmp(), 'badge.md'), '---\n' + fmText(badge) + '---\n' + BODY);
+    const c = component();
+    c.composition = { label: 'Badge' };
+    check(c);
+    expect(parse.takeWarnings()).toEqual([{ file: 'widget.md', message: 'composition.label: Badge is deprecated; use Widget' }]);
+    badge.status = 'review';
+    delete badge.deprecated;
+    write(join(tmp(), 'badge.md'), '---\n' + fmText(badge) + '---\n' + BODY);
+    check(c);
+    expect(parse.takeWarnings()).toEqual([]);
   });
 
   test('starlight fields beside the component block are fine', () => {

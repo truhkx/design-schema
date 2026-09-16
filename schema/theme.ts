@@ -8,12 +8,80 @@
  */
 import { z } from 'zod';
 
+import { LOCKED_TOKENS } from './component.ts';
+import { pyRepr } from './lib.ts';
+import { TOKENS } from './tokens.ts';
+import type { TokenLayer, TokenType } from './tokens.ts';
+
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
 export const mode = z.enum(['light', 'dark']).meta({ id: 'mode' });
 
 /** An OKLCH hue in degrees. */
 const hue = z.number().min(0).max(360);
+
+/** The layer each `overrides` key writes into. */
+const OVERRIDE_LAYERS: Readonly<Record<'base' | 'light' | 'dark', TokenLayer>> = { base: 'base', light: 'mode', dark: 'mode' };
+
+/** A full token path for a full or public name (color.foreground → color.foreground.default), or null. */
+export function overridePath(name: string): string | null {
+  if (Object.hasOwn(TOKENS, name)) return name;
+  return Object.hasOwn(TOKENS, `${name}.default`) ? `${name}.default` : null;
+}
+
+const lockedEntryMatches = (entry: string, path: string): boolean => (entry.endsWith('.') ? path.startsWith(entry) : path === entry);
+
+/** The LOCKED_TOKENS entries that are accessibility floors rather than colors: tools/check_contrast.ts checks the
+ *  color ones through the pairs components declare, so only these can't be overridden. */
+const LOCKED_FLOORS = LOCKED_TOKENS.filter((entry) => Object.entries(TOKENS).some(([p, info]) => lockedEntryMatches(entry, p) && info.type !== 'color'));
+
+const COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+const DIMENSION = /^-?\d+(?:\.\d+)?px$/;
+const DURATION = /^\d+(?:\.\d+)?ms$/;
+const REFERENCE = /^\{([^{}]+)\}$/;
+
+/** True when `value` fits a token of `type`. A `{path}` reference names an existing token of the same type; under
+ *  `base` it must be a base token, since base.json is written before any mode. */
+function fitsType(type: TokenType, value: unknown, layer: TokenLayer): boolean {
+  const ref = typeof value === 'string' ? REFERENCE.exec(value) : null;
+  if (ref) {
+    const target = Object.hasOwn(TOKENS, ref[1] as string) ? TOKENS[ref[1] as string] : undefined;
+    return target !== undefined && target.type === type && (layer === 'mode' || target.layer === 'base');
+  }
+  switch (type) {
+    case 'color': return typeof value === 'string' && (COLOR.test(value) || value === 'transparent');
+    case 'dimension': return typeof value === 'string' && DIMENSION.test(value);
+    case 'number': return typeof value === 'number' && Number.isFinite(value);
+    case 'fontWeight': return Number.isInteger(value) && (value as number) >= 100 && (value as number) <= 900;
+    case 'fontFamily': return typeof value === 'string' || (Array.isArray(value) && value.length > 0 && value.every((v) => typeof v === 'string'));
+    case 'duration': return typeof value === 'string' && DURATION.test(value);
+    case 'cubicBezier': return Array.isArray(value) && value.length === 4 && value.every((v) => typeof v === 'number' && Number.isFinite(v));
+    case 'shadow': {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+      const s = value as Record<string, unknown>;
+      const fields: [string, TokenType, boolean][] = [['color', 'color', true], ['offsetX', 'dimension', true], ['offsetY', 'dimension', true], ['blur', 'dimension', true], ['spread', 'dimension', false]];
+      if (Object.keys(s).some((k) => !fields.some(([f]) => f === k))) return false;
+      return fields.every(([f, t, required]) => (Object.hasOwn(s, f) ? fitsType(t, s[f], layer) : !required));
+    }
+  }
+}
+
+/** The token each `tuning` value sets, keyed by its `tuning.<group>.<name>` path. */
+const TUNED_TOKENS: Readonly<Record<string, string>> = {
+  'radius.sm': 'radius.sm', 'radius.md': 'radius.md', 'radius.lg': 'radius.lg',
+  'lineHeight.tight': 'font.lineHeight.tight', 'lineHeight.normal': 'font.lineHeight.normal', 'lineHeight.loose': 'font.lineHeight.loose',
+  'fontWeight.regular': 'font.weight.regular', 'fontWeight.medium': 'font.weight.medium', 'fontWeight.semibold': 'font.weight.semibold', 'fontWeight.bold': 'font.weight.bold',
+};
+
+/** What tools/theme.ts derives for each tuned token when `tuning` leaves it out (radius steps come from the preset). */
+const LINE_HEIGHTS = { tight: 1.2, normal: 1.5, loose: 1.7 } as const;
+const FONT_WEIGHTS = { regular: 400, medium: 500, semibold: 600, bold: 700 } as const;
+
+/** Token path → value, the keys `overrides.<layer>` accepts. */
+const tokenOverrides = z.record(z.string(), z.unknown());
+const radiusStep = z.int().min(0).max(48);
+const lineHeight = z.number().min(1.0).max(2.2);
+const fontWeight = z.int().min(100).max(900).multipleOf(100);
 
 export const themeDef = z
   .strictObject({
@@ -78,9 +146,28 @@ export const themeDef = z
       })
       .optional(),
     overrides: z
-      .strictObject({ light: z.record(z.string(), z.any()).optional(), dark: z.record(z.string(), z.any()).optional() })
+      .strictObject({ base: tokenOverrides.optional(), light: tokenOverrides.optional(), dark: tokenOverrides.optional() })
       .optional()
-      .describe('Escape hatch: explicit token values per mode, keyed by dotted path. Applied after derivation; still contrast-checked.'),
+      .describe(
+        "Escape hatch: explicit token values, keyed by a token's full or public path (schema/tokens.ts). `base` sets base-layer tokens (palette, type, spacing, radius, motion) before the modes are derived, so mode choices see them; `light` and `dark` set mode tokens after derivation. Each value must fit its token's type or be a `{path}` reference to a token of the same type. size.target.* and border.width.focus are accessibility floors and can't be overridden. Still contrast-checked.",
+      ),
+    tuning: z
+      .strictObject({
+        radius: z
+          .strictObject({ sm: radiusStep.optional(), md: radiusStep.optional(), lg: radiusStep.optional() })
+          .optional()
+          .describe('Corner steps in px (0–48), replacing the preset\'s three steps. radius.full stays 999px. No effect with radius: none.'),
+        lineHeight: z
+          .strictObject({ tight: lineHeight.optional(), normal: lineHeight.optional(), loose: lineHeight.optional() })
+          .optional()
+          .describe('Line heights (1.0–2.2), tight ≤ normal ≤ loose. Defaults 1.2 / 1.5 / 1.7.'),
+        fontWeight: z
+          .strictObject({ regular: fontWeight.optional(), medium: fontWeight.optional(), semibold: fontWeight.optional(), bold: fontWeight.optional() })
+          .optional()
+          .describe('Font weights (100–900 in steps of 100), ascending. Defaults 400 / 500 / 600 / 700.'),
+      })
+      .optional()
+      .describe('Named adjustments to base values the derivation otherwise fixes, so a theme can state them without an override. Each value left out keeps its derived default.'),
   })
   .check((ctx) => {
     // Combinations tools/theme.ts would otherwise ignore without a word.
@@ -97,6 +184,62 @@ export const themeDef = z
       seen.add(m);
     }
     if (!t.modes.supports.includes(t.modes.default)) issue(['modes', 'default'], `default mode '${t.modes.default}' is not in modes.supports`);
+
+    // Overrides name real tokens of the layer they write, with values of the token's type. tools/theme.ts would
+    // otherwise create a typeless token nothing reads.
+    for (const key of ['base', 'light', 'dark'] as const) {
+      const layer = OVERRIDE_LAYERS[key];
+      for (const [name, value] of Object.entries(t.overrides?.[key] ?? {})) {
+        const at: PropertyKey[] = ['overrides', key, name];
+        const path = overridePath(name);
+        const info = path === null ? undefined : TOKENS[path];
+        if (path === null || info === undefined || info.layer !== layer) {
+          const belongs = info === undefined ? '' : info.layer === 'base' ? ': it is a base token, so it goes under overrides.base' : ': it is a mode token, so it goes under overrides.light or overrides.dark';
+          issue(at, `overrides.${key}: '${name}' is not a ${layer} token${belongs}`);
+          continue;
+        }
+        const locked = LOCKED_FLOORS.find((entry) => lockedEntryMatches(entry, path));
+        if (locked !== undefined) {
+          issue(at, `overrides.${key}.${name}: can't be overridden: LOCKED_TOKENS has '${locked.endsWith('.') ? `${locked}*` : locked}', an accessibility floor`);
+          continue;
+        }
+        // tools/theme.ts derives the mode colors from the base palette by contrast, so a palette step has to be a literal.
+        const palette = path.startsWith('color.palette.');
+        if (palette ? !(typeof value === 'string' && HEX.test(value)) : !fitsType(info.type, value, layer)) {
+          issue(at, `overrides.${key}.${name}: expected a ${palette ? '#rrggbb color' : info.type} value, got ${pyRepr(value)}`);
+        }
+      }
+    }
+
+    // Tuning: a value with no effect, values out of order, and a token set in two places.
+    if (t.tuning?.radius !== undefined && t.radius === 'none') {
+      issue(['tuning', 'radius'], 'tuning.radius has no effect when radius is none: every corner is 0px; remove one');
+    }
+    const ordered = <K extends string>(group: 'lineHeight' | 'fontWeight', defaults: Readonly<Record<K, number>>, strict: boolean): void => {
+      const tuned = (t.tuning?.[group] ?? {}) as Partial<Record<K, number>>;
+      if (Object.keys(tuned).length === 0) return;
+      const names = Object.keys(defaults) as K[];
+      const values = names.map((n) => tuned[n] ?? defaults[n]);
+      for (let i = 1; i < names.length; i += 1) {
+        const [a, b] = [values[i - 1] as number, values[i] as number];
+        if (strict ? a >= b : a > b) {
+          const shown = names.map((n, j) => `${n} ${values[j]}${tuned[n] === undefined ? ' (default)' : ''}`).join(', ');
+          issue(['tuning', group], `tuning.${group} must be ${strict ? 'ascending' : `${names.join(' ≤ ')}`}: ${shown}`);
+          return;
+        }
+      }
+    };
+    ordered('lineHeight', LINE_HEIGHTS, false);
+    ordered('fontWeight', FONT_WEIGHTS, true);
+    const baseOverrides = new Map(Object.keys(t.overrides?.base ?? {}).map((name) => [overridePath(name), name] as const));
+    for (const [group, values] of Object.entries(t.tuning ?? {})) {
+      for (const name of Object.keys(values ?? {})) {
+        const token = TUNED_TOKENS[`${group}.${name}`] as string;
+        if (baseOverrides.has(token)) {
+          issue(['overrides', 'base', baseOverrides.get(token) as string], `${token} is set in both tuning.${group}.${name} and overrides.base; set it in one place`);
+        }
+      }
+    }
   })
   .meta({ id: 'themeDef' });
 

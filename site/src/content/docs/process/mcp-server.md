@@ -28,7 +28,11 @@ Chunks are one per (component, section); platform notes are split by their `###`
 
 **`get_component(name, platform?)`** — full schema and guidance; with `platform`, the mapping and notes are narrowed and each event is annotated with its platform name.
 
-**`list_components(platform?, status?)`**, **`list_themes()`**, **`get_theme_skill(theme)`** (the "feel" skill — read first), **`get_tokens(theme, mode, platform, group?)`** (resolved values named for the platform), **`check_contrast(foreground, background, level?, large_text?)`** (hex or token paths), and **`get_generation_prompt(component, platform)`**.
+**`get_component_graph(component?)`** — the composition graph: which component each anatomy part is built from. With no component, every node, edge (a `(planned)` target is an edge marked `planned`), the leaves-first `order` to regenerate in, and any `cycles`; with one, what it composes and what composes it, directly and at any depth.
+
+**`get_support_matrix(component?, platform?)`** — the cross-platform view of coverage: per component and platform, whether it is supported, whether generated code exists, the props and events that platform lacks, and the deprecated props, events and enum values it still offers. The view an adopter needs to decide whether the system covers their existing library.
+
+**`list_components(platform?, status?)`** (each row says whether the component is deprecated), **`list_themes()`**, **`get_theme_skill(theme)`** (the "feel" skill — read first), **`get_tokens(theme, mode, platform, group?)`** (resolved values named for the platform), **`check_contrast(foreground, background, level?, large_text?)`** (hex or token paths), and **`get_generation_prompt(component, platform)`**.
 
 Resources: `design-schema://components`, `design-schema://components/{name}`, `design-schema://themes/{id}/skill`, `design-schema://schema/component`.
 

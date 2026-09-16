@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url';
 
 import { ljust, pySplitlines, pyStr, pyStrip, readText, sortedNames, truthy } from '../tools/lib/py.ts';
 import { REPO_ROOT } from '../tools/lib/root.ts';
-import { resolveRole } from '../schema/component.ts';
+import { copyText, partKind, resolveRole } from '../schema/component.ts';
 import { demoDir, PACKAGE_DIR, PLATFORMS, sourceDir } from '../schema/platforms.ts';
 import type { PlatformId } from '../schema/platforms.ts';
 import { DB_PATH } from './lib/store.ts';
@@ -104,9 +104,28 @@ export function splitPlatformNotes(md: string): Record<string, string> {
   return out;
 }
 
+/** `name → token`, then what the binding declares beyond its token: part, state, platforms, per-value tokens and
+ *  the arithmetic, read as `token × times + plus − minus`. */
+function styleSummary(bName: string, b: Dict): string {
+  const notes: string[] = [];
+  if (b.part !== undefined) notes.push(`part ${pyStr(b.part)}`);
+  if (b.state !== undefined) notes.push(`state ${pyStr(b.state)}`);
+  if (b.platforms !== undefined) notes.push(`platforms ${(b.platforms as string[]).join(', ')}`);
+  for (const [value, token] of Object.entries((b.values ?? {}) as Dict)) notes.push(`${pyStr(b.by)}=${value} → ${pyStr(token)}`);
+  if (b.computed !== undefined) {
+    const times = (n: unknown): string => (n === undefined ? '' : ` × ${String(n)}`);
+    const operand = (op: Dict): string => `${pyStr(op.token ?? op.binding)}${times(op.times)}`;
+    const comp = b.computed as Dict;
+    const terms = [`${b.token}${times(comp.times)}`, ...((comp.plus ?? []) as Dict[]).map((op) => `+ ${operand(op)}`), ...((comp.minus ?? []) as Dict[]).map((op) => `− ${operand(op)}`)];
+    notes.push(`computed ${terms.join(' ')}`);
+  }
+  return `${bName} → ${b.token}` + (notes.length ? ` (${notes.join(', ')})` : '');
+}
+
 /** Prose rendering of the frontmatter so 'what props does Button have' embeds well. */
 export function schemaSummary(c: Dict): string {
-  const lines = [`${c.name} (${c.category}) — anatomy: ${(c.anatomy as string[]).join(', ')}.`];
+  const anatomy = (c.anatomy as string[]).map((part) => (partKind(c, part) === 'slot' ? `${part} (slot)` : part));
+  const lines = [`${c.name} (${c.category}) — anatomy: ${anatomy.join(', ')}.`];
   if (truthy(c.apg)) lines.push(`Implements the ARIA APG '${pyStr(c.apg)}' pattern.`);
   lines.push('Props:');
   for (const [name, p] of Object.entries(c.props as Dict)) {
@@ -114,17 +133,21 @@ export function schemaSummary(c: Dict): string {
     const req = truthy(p.required) ? ', required' : '';
     const dflt = Object.hasOwn(p, 'default') ? `, default ${pyStr(p.default)}` : '';
     const plats = truthy(p.platforms) ? ` (platforms: ${(p.platforms as string[]).join(', ')})` : '';
-    lines.push(`  - ${name}: ${typ}${req}${dflt}${plats}. ${p.description}` + (truthy(p.a11y) ? ` Accessibility: ${p.a11y}` : ''));
+    const controls = p.controls as Dict | undefined;
+    const controlled = controls === undefined ? '' : ` (controlled; changes reported by ${pyStr(controls.event)}` + (controls.default !== undefined ? `; uncontrolled default ${pyStr(controls.default)})` : ')');
+    lines.push(`  - ${name}: ${typ}${req}${dflt}${plats}. ${p.description}` + (truthy(p.a11y) ? ` Accessibility: ${p.a11y}` : '') + controlled);
   }
   if (truthy(c.events)) {
     lines.push('Events:');
     for (const [name, e] of Object.entries(c.events as Dict)) {
       const mapping = Object.entries(e.platforms as Dict).map(([k, v]) => `${k}: ${pyStr(v)}`).join(', ');
-      lines.push(`  - ${name}: ${e.description} Platform names — ${mapping}.`);
+      const reasons = e.reasons !== undefined ? ` Reasons: ${Object.keys(e.reasons as Dict).join(', ')}.` : '';
+      const payload = Array.isArray(e.payload) ? ` Payload: ${(e.payload as Dict[]).map((f) => pyStr(f.name)).join(', ') || 'none'}.` : '';
+      lines.push(`  - ${name}: ${e.description} Platform names — ${mapping}.${reasons}${payload}`);
     }
   }
   if (truthy(c.styles)) {
-    lines.push('Style bindings (token per CSS property): ' + Object.entries(c.styles as Dict).map(([k, v]) => `${k} → ${v.token}`).join('; ') + '.');
+    lines.push('Style bindings (token per CSS property): ' + Object.entries(c.styles as Dict).map(([k, v]) => styleSummary(k, v)).join('; ') + '.');
   }
   const a = c.a11y as Dict;
   const role = truthy(a.roleFrom) ? `from the '${pyStr(a.roleFrom)}' prop` : resolveRole(c);
@@ -136,10 +159,16 @@ export function schemaSummary(c: Dict): string {
     lines.push('Keyboard: ' + (c.keyboard as Dict[]).map((r) => `${(r.keys as string[]).join('/')} → ${r.action}` + (truthy(r.when) ? ` (when ${r.when})` : '')).join('; ') + '.');
   }
   if (truthy(c.composition)) {
-    lines.push('Composition: ' + Object.entries(c.composition as Dict).map(([part, comp]) => `${part} is a ${pyStr(comp)}`).join(', ') + '.');
+    const entries = Object.entries(c.composition as Dict).map(([part, entry]) => {
+      if (typeof entry !== 'object' || entry === null) return `${part} is a ${pyStr(entry)}`;
+      const forwards = Object.entries((entry.forwards ?? {}) as Dict).map(([from, to]) => `${from} → overrides.${pyStr(to)}`);
+      return `${part} is a ${pyStr(entry.component)}` + (forwards.length ? ` (forwards ${forwards.join(', ')})` : '');
+    });
+    lines.push('Composition: ' + entries.join(', ') + '.');
   }
   if (truthy(c.copy)) {
-    lines.push('Copy templates: ' + Object.entries(c.copy as Dict).map(([k, v]) => `${k} = '${pyStr(v)}'`).join('; ') + '.');
+    const entries = Object.entries(c.copy as Dict).map(([k, v]) => `${k} = '${pyStr(copyText(v))}'` + (typeof v === 'object' && v?.plural ? ` (plural by ${pyStr(v.plural.by)})` : ''));
+    lines.push('Copy templates: ' + entries.join('; ') + '.');
   }
   return lines.join('\n');
 }

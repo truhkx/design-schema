@@ -9,13 +9,15 @@ Decided 2026-09-12. The theme doc already tailors a brand's *look* — OKLCH col
 
 ## naming.md — a sibling doc, not a theme-doc section
 
-A new doc type, alongside a theme doc rather than inside one: `themes/<brand>/naming.md`. Three things it can override:
+A new doc type, alongside a theme doc rather than inside one: `themes/<brand>/naming.md`. Five things it can override:
 
 - **Namespace.** The package scope (`@design-schema` → `@acme`), the CSS custom-property prefix (`--ds-` → `--acme-`), and the per-platform type-name prefix where one exists (Swift's generated `TokenRef` enum, RN's theme context name).
 - **Component names.** A map, canonical → brand (`Button: CtaButton`, `Disclosure: Expander`). Applies to the generated file name, the exported type/struct/class name, and every reference to that component from a composite (Card's `headerActions` still renders a `Button`-shaped thing; it now imports it as `CtaButton`).
 - **Prop / anatomy names.** A map, scoped globally or per component (`variant: style` everywhere, or just `Button.variant: style`), for the rare brand whose existing internal conventions already disagree with the schema's.
+- **Enum values.** `values`, keyed exactly like `props` and always by the canonical prop name (`Button.variant: { primary: cta }`), for a brand that already ships `<Button kind="cta">` and needs the values to match as well as the prop.
+- **Emitted token names.** `tokens`, for a brand whose stylesheets and code already use their own token names: a prefix on every token variable (`--acme-color-foreground`), and a brand dotted path per renamed token (`color.action.primary.background: color.brand.primary` emits `--acme-color-brand-primary` and `colorBrandPrimary`). See [Keeping existing token names](#keeping-existing-token-names).
 
-What it explicitly does **not** touch: the canonical schema's own internal keys — `props.variant`, `a11y.role`, the token path `color.action.primary.background`, anything the gates (contrast checker, keyboard-spec derivation, lint-literals, behavior tests) key off of. Those stay fixed across every fork. `naming.md` is a rename applied to *generated output identifiers* at the templating step — the model still reads the canonical schema and the canonical prompt, and only the last step (writing the file, naming the export) consults `naming.md`. This is what keeps the gates brand-agnostic: they never need to know a brand called `Button` something else.
+What it explicitly does **not** touch: the canonical schema's own internal keys — `props.variant`, `a11y.role`, the token path `color.action.primary.background` (`tokens` moves the names a build emits for it, never the path), anything the gates (contrast checker, keyboard-spec derivation, lint-literals, behavior tests) key off of. Those stay fixed across every fork. `naming.md` is a rename applied to *generated output identifiers* at the templating step — the model still reads the canonical schema and the canonical prompt, and only the last step (writing the file, naming the export) consults `naming.md`. This is what keeps the gates brand-agnostic: they never need to know a brand called `Button` something else.
 
 **Composability.** Because naming and theme are separate docs, they vary independently. A company with two sub-brands sharing one component vocabulary but different palettes writes one `naming.md` and two theme docs. A contributor testing a new palette against Design Schema's own vocabulary just doesn't write a `naming.md` at all — omitting it is the default, unrenamed case.
 
@@ -44,10 +46,14 @@ where a reader might guess:
   `.accessibilityIdentifier("Button.label")`. The behavior and keyboard gates derive their locators from
   the canonical docs and find a component through exactly these, so a brand-agnostic gate needs a
   brand-agnostic hook. This is also the concrete reason `data-ds` keeps its own `ds`.
-- A **custom property takes the new prefix and keeps the rest**: `--acme-button-background`, because the
-  rest of a hook's name mirrors the canonical binding. A class or custom-element name is the component's
-  own spelling, so both halves move there: `ds-button__label` → `acme-cta-button__label`,
+- A **component's custom property takes the new prefix and keeps the rest**: `--acme-button-background`,
+  because the rest of a hook's name mirrors the canonical binding. A class or custom-element name is the
+  component's own spelling, so both halves move there: `ds-button__label` → `acme-cta-button__label`,
   `<ds-button>` → `<acme-cta-button>`, and Lit's element class `DsButton` → `AcmeCtaButton`.
+- A **token's emitted names move only under `tokens`, and its dotted path never moves**. Without the block,
+  `var(--color-action-primary-background)` and React Native's `t.colorActionPrimaryBackground` keep their
+  names under any namespace. With it, the CSS variable and the JS/RN/Swift key move to the names the token
+  build emits for the doc, while `color.action.primary.background` and `cssVar('space.md')` stay as they are.
 - **Composites follow automatically**, on every platform, because the rename is applied to the whole
   generated surface rather than to one file: Card's import, ActionSheet's `<acme-cta-button>`, the tag in a
   `querySelector`, a Swift gallery screen's `Gallery.ctaButtonScreen`.
@@ -55,16 +61,196 @@ where a reader might guess:
   component's own files and on its element in a composite's markup, with the dotted key winning. A prop
   threaded through a variable or a spread keeps the canonical spelling — honest limit, not a bug to find
   later.
+- An **event rename reaches the name each platform emits**, not the neutral key. `events` is keyed by the
+  neutral name (`Button.onPress`), but generated code emits `eventDef.platforms`: `onClick` on web,
+  `press` on Lit, `onPress` on React Native. A string (`Alert.onDismiss: onClose`) is the brand's neutral
+  name, and it reaches each platform whose canonical emitted name follows the convention: web and React
+  Native get the string, Lit gets its kebab form without the `on` (`close`). Where a platform's own API
+  won (Button's `onClick`), the string does not reach it, and the run prints a notice saying so. The
+  object form (`Button.onPress: { web: onActivate, lit: activate, rn: onActivate }`) gives the exact
+  emitted name for each platform it lists. On web and React Native the identifier moves in the
+  component's own files and as an attribute on its element in a composite, but never on an intrinsic
+  `<button onClick>` or an imported `<Pressable onPress>`, whose handlers belong to the platform. On Lit
+  the quoted name moves in `new CustomEvent(…)` and `addEventListener` calls in the component's own
+  files, and in `@press=` on its element in a composite. A composite that listens some other way keeps
+  the canonical name: an `addEventListener('press', …)` call, or `@press=` on an ancestor, as Lit's
+  Form does. SwiftUI's emitted names are argument labels, so the schema refuses a `swiftui` key.
+- An **anatomy rename moves the part's own spellings and nothing else**: the class `__part` segment,
+  Lit's `slot="…"`, `<slot name="…">` and a `slot[name='…']` selector. `Button.trailingIcon: endIcon`
+  leaves the `trailingIcon` prop alone, which a `props` key cannot do when a prop and a part share a
+  name. The gate hooks (`data-part`, `part=`, `::part()`) stay canonical, as they do for every rename.
+- An **enum value rename moves a value only where the code ties it to one prop**, because the same word is
+  often a token's name too. `values` resolves per component, per prop, per value: a bare `tone` key reaches
+  every component whose `tone` has the value, and a dotted `Alert.tone` entry wins over the bare one for the
+  same value and merges with it otherwise. The provable contexts are an attribute on the component's element
+  (`variant="primary"`, with the prop's brand spelling in the same pass), a Lit attribute selector, an object
+  property or JSON key naming the prop (a story's `args`, a behavior test's `setup`), a default, a comparison
+  or `case` on the prop, the `ButtonVariant` union or the prop's own declaration, the `ds-button--primary`
+  modifier class, an object literal whose keys are exactly the prop's values and no sibling prop's (React
+  Native's `VARIANT_TOKENS`), and on SwiftUI an `enum ButtonVariant` with exactly those cases and
+  `case .primary` inside `switch variant`. Everything else is reported, not guessed: a quoted literal equal to
+  a renamed value in a file the prop reaches, an object key in a literal that is not the whole set, a SwiftUI
+  `.primary` (which is also a `ShapeStyle`), and a prop interpolated into a token name
+  (`` `color.action.${variant}.background` ``). `tools/naming.ts` prints each as
+  `! <platform>: ambiguous value <file>:<line>` and leaves it untouched in both directions, so brand →
+  canonical → brand stays exact and a brand hand-reviews the list. A value rename never moves a token in
+  any spelling — `var(--color-action-primary-background)`, `colorActionPrimaryBackground`,
+  `color.action.primary.background` — because a token's path is canonical schema that every theme keys
+  off, and only `tokens` changes the names a token is emitted under; neither does a value in a comment or a
+  gate hook.
 - Three things the component generator does not own, and a fork has to: the packages' own `package.json`
   names (the rename rewrites `@design-schema/tokens` → `@acme/tokens` in the code it writes, but it never
-  writes a manifest); the token package itself, which `tokens/build.mjs` emits — a SwiftUI fork setting
-  `typePrefix.swiftui` gets `AcmeTokenRef` and `import AcmeTokens` in its component files, and the token
-  build has to be taught the same prefix for those to resolve; and the fact that a *renamed* tree is not a
-  gateable tree — the derived behavior and keyboard tests are canonical, which is why a generation
-  normalizes before it runs them.
+  writes a manifest); the token package's type prefix — `tokens/build.mjs --naming acme` emits the doc's
+  token names, but `namespace.typePrefix` does not reach the token build, so a SwiftUI fork setting
+  `typePrefix.swiftui` gets `AcmeTokenRef` and `import AcmeTokens` in its component files while the build
+  still writes `TokenRef` into the `DesignSchemaTokens` module beside the hand-written `Theme.swift`; and
+  the fact that a *renamed* tree is not a gateable tree — the derived behavior and keyboard tests are
+  canonical, which is why a generation normalizes before it runs them.
+
+`namespace.typePrefix` applies to rn and swiftui only, the two platforms with prefixed type names. A key
+for any other platform parses, renames nothing, and gets a notice when the rename runs.
 
 `node tools/naming.ts --naming acme --platform web` prints what a rename would change without writing
 anything, which is the cheap way to see a naming doc's effect before regenerating.
+
+## Keeping old names working
+
+Built 2026-09-15 as job 627. A rename replaces a name one for one, and that is what makes `--revert` an exact
+inverse: schema/naming.ts refuses two canonical names mapped onto one brand name, and `tools/naming.ts` refuses a
+brand name that is already a component. The cost lands on an adopter moving onto the system with a product
+already built. A brand that shipped `ActionButton` with `kind="cta"` gets `CtaButton` with `emphasis="primary"`,
+and a codebase-wide migration on day one.
+
+Backwards compatibility with the adopter's existing API cannot come from the model. A compatibility layer the
+generator wrote would be gated, hashed and regenerated like any component. So the *tool* writes it, at `--apply`
+time, into one folder it owns.
+
+**The field.** `aliases` is optional and defaults to `{}`, with three optional maps. Their keys are canonical
+names, like every other map, so an upstream pull strands an alias key as loudly as a rename key:
+
+```yaml
+aliases:
+  components:
+    Button: [{ name: ActionButton, since: '2.0.0' }]
+  props:
+    Button.variant: [{ name: kind, since: '2.0.0' }]
+  values:
+    Button.variant:
+      primary: [{ name: cta, since: '2.0.0' }]
+```
+
+An entry is `name`, then `since` and `deprecated`, then an optional `platforms` list (omitted means every
+platform). `since` and `deprecated` are job 624's lifecycle fields, imported with their exact types, so an alias
+is dated and explained the same way a deprecated prop is. A `deprecated.reason` is appended to the dev-only
+warning. An alias names the old spelling of the *current* name: the brand name where the doc renames it
+(`kind` is the old `emphasis`), and the canonical name otherwise (`cta` is the old `primary`).
+
+Resolution refuses an alias that would shadow a real name:
+- an alias equal to the name it aliases
+- two entries with the same name in one scope
+- a component alias that is any component's canonical or brand name
+- a prop alias that is a prop, event or anatomy name of the component (canonical or brand), or a reserved prop
+  name
+- a value alias that is already a value of the prop
+
+**What each platform gets.**
+
+| Alias | web, rn | lit | swiftui |
+|---|---|---|---|
+| component | `/** @deprecated … */ export const ActionButton: typeof CtaButton = CtaButton;` and `export type ActionButtonProps` | a deprecated subclass `<Prefix>ActionButton` of the current element, registered as `<prefix>-action-button` when that tag is free, warning once on connect in development | `@available(*, deprecated, renamed: "CtaButton") public typealias ActionButton = CtaButton` |
+| prop | a wrapper of the current component's own name that takes the alias, maps it onto the current prop (an explicitly passed current prop wins) and warns once per alias in development | unsupported | unsupported |
+| value | the same wrapper, mapping the old value onto the current one, with a dev-only warning | unsupported | unsupported |
+
+An unsupported cell is an error, not a silent skip. Renaming Lit with a prop alias that reaches it stops the run
+with the entry, the platform and the fix: `aliases.props.Button.variant[0] (kind): prop aliases are not supported
+on lit — the compatibility layer cannot add an attribute to a generated element without editing it. Add
+platforms: [web, rn] to the entry.` The dev-only check in the emitted code is each package's own: `isDev` on
+web, `__DEV__` on React Native, `import.meta.env.DEV` on Lit. Every export carries `@deprecated` with its
+`since`.
+
+**The folder the codemod owns.** Applying a rename writes `naming-compat/` inside the platform's source folder:
+`packages/<pkg>/src/naming-compat/`, or `Sources/DesignSchema/naming-compat/` for SwiftUI. It holds one module per
+aliased component and an `index.ts` barrel (no barrel for Swift). Every file's first line is
+`// Generated by tools/naming.ts from <naming doc> (aliases). Do not edit; --revert deletes this folder.`
+
+- `--apply` renames first, then writes the folder, replacing a previous copy.
+- `--revert` deletes the folder before it renames anything back, so the gates never see it and the canonical
+  tree comes back byte for byte.
+- A file in the folder without the marker line stops both directions. It is somebody's hand-written code, and
+  no run deletes that.
+- No rewrite ever reads the folder: it is in `SKIP_DIRS`, like `custom/`.
+- The pattern demo pages beside a package source are renamed without a compatibility layer.
+- `--check` lists the files a run would write or delete.
+
+**What a fork still owns.** The generator never edits a package's `index.ts` or `package.json`. Exposing
+`naming-compat` is the fork's own manifest edit: an `exports` entry such as `@acme/react/naming-compat`, or a
+re-export from the package root. It is the same kind of edit as the package scope. The token build is no longer
+on that list for names: since job 628 it is taught a doc's `tokens` (`node tokens/build.mjs --naming acme`), so a
+fork's token package emits the same names its renamed components read. It is still untaught one thing:
+`namespace.typePrefix` does not reach it, so `TokenRef`, the `DesignSchemaTokens` module and the hand-written
+`Theme.swift` keep their canonical names, and renaming them is the fork's own edit. Job 628 leaves that there.
+
+## Keeping existing token names
+
+Built 2026-09-15 as job 628. Token names were canonical by design, because the gates key off token paths. That
+left a brand with an existing token set in front of a migration: its stylesheets say `--acme-color-brand-primary`,
+and its JS reads `tokens.colorBrandPrimary`. `tokens` lets a naming doc change the names the token build emits,
+and nothing any tool reads.
+
+```yaml
+tokens:
+  cssPrefix: acme
+  rename:
+    color.action.primary.background: color.brand.primary
+```
+
+**What moves, and what never does.** The dotted path stays canonical everywhere a tool reads it; only the emitted
+CSS variable and JS/RN/Swift key change.
+
+| Name | Canonical | Under the block above |
+|---|---|---|
+| CSS variable | `--color-action-primary-background`, `--space-md` | `--acme-color-brand-primary`, `--acme-space-md` |
+| JS and React Native key, Swift `TokenRef` case and `Theme` accessor | `colorActionPrimaryBackground`, `spaceMd` | `colorBrandPrimary`, `spaceMd` |
+| Dotted path: the component docs, `generated/`, the built JSON, the `TokenRef` type, Swift raw values, `cssVar('…')` | `color.action.primary.background` | unchanged |
+
+`cssPrefix` applies to CSS names only: a JS key lives on an object, so it has no global namespace to protect.
+Without it, token variables stay unprefixed. A `rename` key is the token's public name, without a trailing
+`.default`, and the brand path is any dotted path the checks below accept.
+
+**Two tools apply it.**
+- `node tokens/build.mjs --naming acme` (or `DS_NAMING=acme`, read the way `tools/generate.ts` reads it) emits the
+  brand's names. That covers CSS variables and the references between them, the JS and React Native objects, and
+  Swift's `TokenRef` cases and `Theme` accessors. In `names.js`, `cssVar`, `tokenKey` and `resolveToken` take a
+  canonical ref and return the emitted name. The json output, `names.d.ts` and `TOKEN_NAMES` stay canonical,
+  because tools/parse.ts, tools/spec_sheet.ts, the MCP server and the docs site read them. `--out DIR` writes
+  the trees under `DIR` instead of the committed ones. A doc without `tokens` builds today's bytes.
+- `tools/naming.ts` moves the same names in generated code as part of the rename. It moves a token variable in
+  `var(--…)` and bare `--…` positions in CSS and TS files. On React Native and SwiftUI, the two platforms whose
+  code reads keys, it also moves a camel key used as a member (`t.colorInverseLink`) or as a whole string literal
+  (`'colorActionPrimaryBackground'`). A dotted ref is never touched. The token rule runs before the namespace
+  rule, so with equal prefixes a revert turns `--acme-color-foreground` into `--color-foreground`, not
+  `--ds-color-foreground`.
+
+**Resolution refuses** the following, through `tools/lib/token_naming.ts`, which both tools run:
+- a `rename` key that names no token, naming the public spelling when the key ends in `.default`
+- a brand path that is another token's canonical path, unless that token is renamed away too
+- two tokens that would emit one CSS variable or one JS key, such as `color.brandPrimary` beside
+  `color.brand.primary`; schema/naming.ts already refuses two keys with the same brand path
+- an emitted key that is already a `Theme` member, such as `colorScheme`
+- when `tokens.cssPrefix` is `namespace.cssPrefix`, a token variable that equals or starts with a component's
+  hook stem (`--acme-button-…`), since a revert could not tell the two apart
+
+**The limit, stated plainly.** A fork's gates run canonical component code: a generation normalizes the tree
+before its gates. The fork's token package, built with `--naming`, carries the brand's keys. So during that
+run, React Native code reading camel keys (`t.colorActionPrimaryBackground`) from a brand-named token build finds
+those keys missing. CSS variables in canonical code are missing from a brand-named stylesheet in the same way.
+Dotted refs resolve, because `names.js` maps them. This job does not work around that.
+
+**The limit, stated plainly.** Two kinds of check cover the wrappers' runtime mapping: typecheck, because the
+demo's `tsc -p demo-brand` reaches `src/naming-compat/`, and tests of the emitted text in
+`tools/__tests__/naming_aliases.test.ts`. No behavior run covers it. `pnpm demo:naming:gates` requires the same
+derived tests to reach the same verdict on the canonical and renamed builds, and the canonical build has no old
+names to test, so a scenario exercising `kind="cta"` has nothing to be compared with.
 
 ## What building the worked example changed (job 523, 2026-09-12)
 

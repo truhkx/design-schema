@@ -110,3 +110,32 @@ export function camelName(path: string): string {
   const [first, ...rest] = publicName(path).replace(/-/g, '.').split('.') as [string, ...string[]];
   return first + rest.map((s) => s.slice(0, 1).toUpperCase() + s.slice(1)).join('');
 }
+
+/** A naming doc's `tokens` block, as the emitted-name helpers read it (schema/naming.ts, job 628). */
+export type TokensNaming = { readonly cssPrefix?: string | undefined; readonly rename?: Readonly<Record<string, string>> | undefined };
+
+/** The dotted path a token is emitted under: the brand path `rename` gives its public name, or the public name itself. */
+export function emittedPath(path: string, naming: TokensNaming = {}): string {
+  const name = publicName(path);
+  return naming.rename !== undefined && Object.hasOwn(naming.rename, name) ? (naming.rename[name] as string) : name;
+}
+
+/** The custom property a token is emitted as: `--<cssPrefix>-<kebab of the brand path>`, or `cssName` when the doc
+ *  neither renames the token nor sets a prefix. */
+export function emittedCssName(path: string, naming: TokensNaming = {}): string {
+  const name = cssName(emittedPath(path, naming));
+  return naming.cssPrefix === undefined ? name : `--${naming.cssPrefix}-${name.slice(2)}`;
+}
+
+/** The JS/RN object key and Swift name a token is emitted as. `cssPrefix` never reaches it: a JS key lives on an
+ *  object, so it has no global namespace to protect. */
+export function emittedCamelName(path: string, naming: TokensNaming = {}): string {
+  return camelName(emittedPath(path, naming));
+}
+
+/** tokens/build.mjs's `THEME_MEMBERS`: the `Theme` members a token accessor in TokenRef.swift would shadow. Copied so a
+ *  naming doc is refused before a build runs; tools/__tests__/naming_tokens.test.ts keeps the two sets equal. */
+export const THEME_MEMBERS: ReadonlySet<string> = new Set([
+  'definition', 'colorScheme', 'id', 'title', 'color', 'dimension', 'duration', 'animation',
+  'fontWeight', 'fontFamily', 'number', 'shadow',
+]);

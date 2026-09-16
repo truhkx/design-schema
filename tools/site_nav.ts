@@ -3,12 +3,13 @@
  * Site navigation data — the website's top-level nav and its docs sidebar groups, generated
  * rather than hand-maintained (site/src/content/docs/process/website-plan.md, "Content pipeline").
  *
- * Reads generated/components.json for the component list (name + slug) and regen.ps1 for the
- * phase -> component mapping, so the sidebar's groups and their order are literally the order the
- * generator composes components in (Primitives -> Core -> Controls -> Focus -> Overlays ->
- * Selection -> Numeric -> Rows -> Grids -> Streams). regen.ps1 is the source of that order instead
- * of a second copy here: a phase list that drifts from the one the generator runs would put a
- * component in the wrong sidebar group, and nobody would notice.
+ * Reads generated/components.json for the component list (name + slug) and tools/regen-phases.json
+ * for the phase -> component mapping, so the sidebar's groups and their order are literally the order
+ * the generator composes components in (Primitives -> Core -> Controls -> Focus -> Overlays ->
+ * Selection -> Numeric -> Rows -> Grids -> Streams). tools/regen-phases.json is the source of that
+ * order (the regeneration scripts read it too) instead of a second copy here: a phase list that drifts
+ * from the one the generator runs would put a component in the wrong sidebar group, and nobody
+ * would notice.
  *
  * Writes generated/nav.json:
  *
@@ -26,6 +27,7 @@ import { existsSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { PHASES_FILE, PhasesError, componentPhases, parsePhasesJson } from './lib/phases.ts';
 import { readText, writeTextAtomic } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
 
@@ -33,7 +35,7 @@ import { REPO_ROOT } from './lib/root.ts';
 export const paths = {
   ROOT: REPO_ROOT,
   COMPONENTS: join(REPO_ROOT, 'generated', 'components.json'),
-  REGEN: join(REPO_ROOT, 'regen.ps1'),
+  PHASES: PHASES_FILE,
   OUT: join(REPO_ROOT, 'generated', 'nav.json'),
 };
 
@@ -53,29 +55,13 @@ export const TOP: readonly TopItem[] = [
   { label: 'About', href: '/about' },
 ];
 
-/** Raised for a bad input (a missing file, an unparseable regen.ps1, a component in no phase). */
+/** Raised for a bad input (a missing file, a malformed tools/regen-phases.json, a component in no phase). */
 export class NavError extends Error {}
 
-const PHASES_BLOCK = /^\$phases\s*=\s*@\(([\s\S]*?)^\)/m;
-const PHASE_ENTRY = /@\{([^}]*)\}/g;
-const FIELD = (name: string): RegExp => new RegExp(`\\b${name}\\s*=\\s*"([^"]*)"`);
-
-/** The phases regen.ps1 composes in, in order: [name, component names]. Entries with no
- *  `components` (the trailing `Patterns` phase, which names a pattern) are not sidebar groups. */
+/** The phases tools/regen-phases.json composes in, in order: [name, component names]. Phases that
+ *  name a pattern (the trailing `Patterns` phase) are not sidebar groups. Throws PhasesError. */
 export function parsePhases(text: string): [string, string[]][] {
-  const block = PHASES_BLOCK.exec(text);
-  if (!block) throw new NavError('regen.ps1: no `$phases = @(...)` block — the phase order cannot be read');
-  const phases: [string, string[]][] = [];
-  for (const entry of (block[1] as string).matchAll(PHASE_ENTRY)) {
-    const body = entry[1] as string;
-    const name = FIELD('name').exec(body);
-    if (!name) throw new NavError(`regen.ps1: a phase entry has no name: ${body.trim()}`);
-    const components = FIELD('components').exec(body);
-    if (!components) continue;
-    phases.push([name[1] as string, (components[1] as string).split(',').map((c) => c.trim()).filter((c) => c !== '')]);
-  }
-  if (phases.length === 0) throw new NavError('regen.ps1: the `$phases` block lists no components');
-  return phases;
+  return componentPhases(parsePhasesJson(text, 'tools/regen-phases.json'));
 }
 
 export type Entry = { id?: unknown; component?: { name?: unknown } };
@@ -106,7 +92,7 @@ export function buildNav(components: Entry[], phases: [string, string[]][]): Nav
     for (const name of names) {
       const slug = slugs.get(name);
       if (slug === undefined) {
-        throw new NavError(`regen.ps1 phase ${phase} names ${name}, which is not in generated/components.json`);
+        throw new NavError(`${relToRoot(paths.PHASES)} phase ${phase} names ${name}, which is not in generated/components.json`);
       }
       const already = placed.get(name);
       if (already !== undefined) throw new NavError(`${name} is in two phases: ${already} and ${phase}`);
@@ -117,7 +103,7 @@ export function buildNav(components: Entry[], phases: [string, string[]][]): Nav
   }
   const orphans = [...slugs.keys()].filter((name) => !placed.has(name));
   if (orphans.length > 0) {
-    throw new NavError(`no regen.ps1 phase composes ${orphans.join(', ')} — add them to a phase so the docs sidebar lists them`);
+    throw new NavError(`no ${relToRoot(paths.PHASES)} phase composes ${orphans.join(', ')} — add them to a phase so the docs sidebar lists them`);
   }
   return { top: TOP.map((item) => ({ ...item })), docs };
 }
@@ -136,7 +122,7 @@ export function main(argv: string[] = process.argv.slice(2)): number {
   for (const arg of argv) {
     if (arg === '--check') check = true;
     else if (arg === '-h' || arg === '--help') {
-      process.stdout.write('usage: site_nav.ts [--check]\n\nWrites generated/nav.json from generated/components.json and regen.ps1.\n');
+      process.stdout.write('usage: site_nav.ts [--check]\n\nWrites generated/nav.json from generated/components.json and tools/regen-phases.json.\n');
       return 0;
     } else {
       process.stderr.write(`site_nav.ts: error: unrecognized arguments: ${arg}\n`);
@@ -149,10 +135,17 @@ export function main(argv: string[] = process.argv.slice(2)): number {
     if (!existsSync(paths.COMPONENTS)) {
       throw new NavError(`${relToRoot(paths.COMPONENTS)} missing — run \`pnpm parse\` first`);
     }
-    if (!existsSync(paths.REGEN)) throw new NavError(`${relToRoot(paths.REGEN)} missing — it holds the phase order`);
+    if (!existsSync(paths.PHASES)) throw new NavError(`${relToRoot(paths.PHASES)} missing — it holds the phase order`);
     const components = JSON.parse(readText(paths.COMPONENTS)) as Entry[];
     if (!Array.isArray(components)) throw new NavError(`${relToRoot(paths.COMPONENTS)}: expected a list of components`);
-    text = render(buildNav(components, parsePhases(readText(paths.REGEN))));
+    let phases: [string, string[]][];
+    try {
+      phases = componentPhases(parsePhasesJson(readText(paths.PHASES), relToRoot(paths.PHASES)));
+    } catch (e) {
+      if (e instanceof PhasesError) throw new NavError(e.message);
+      throw e;
+    }
+    text = render(buildNav(components, phases));
   } catch (e) {
     if (!(e instanceof NavError)) throw e;
     process.stderr.write(`✖ ${e.message}\n`);

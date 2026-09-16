@@ -58,6 +58,12 @@ describe('thresholds', () => {
   test('an unknown level is a KeyError, as the Python dict lookup was', () => {
     expect(() => cc.threshold('AAAA', false)).toThrow('KeyError');
   });
+
+  test('a non-text pair needs 3:1 whatever large says, and has no AAA', () => {
+    expect(cc.threshold('AA', false, true)).toBe(3.0);
+    expect(cc.threshold('AA', true, true)).toBe(3.0);
+    expect(() => cc.threshold('AAA', false, true)).toThrow('KeyError');
+  });
 });
 
 describe('expand', () => {
@@ -88,6 +94,16 @@ describe('expand', () => {
   test('a slot naming no prop is rejected', () => {
     expect(() => cc.expand('color.{tone}.background', PROPS)).toThrow('must name an enum prop');
   });
+
+  test('only narrows a slot to the listed values, in enum order, before the product', () => {
+    expect(cc.expand('a.{variant}.{size}', PROPS, { variant: ['danger'] })).toEqual(['a.danger.sm', 'a.danger.md']);
+    expect(cc.expand('a.{size}', PROPS, { size: ['md', 'sm'] })).toEqual(['a.sm', 'a.md']);
+  });
+
+  test('only on a prop the reference does not interpolate changes nothing', () => {
+    expect(cc.expand('color.action.{variant}.background', PROPS, { size: ['sm'] })).toEqual(['color.action.primary.background', 'color.action.danger.background']);
+    expect(cc.expand('color.foreground.muted', PROPS, { variant: ['danger'] })).toEqual(['color.foreground.muted']);
+  });
 });
 
 describe('main', () => {
@@ -106,6 +122,11 @@ describe('main', () => {
       'color.action.danger.foreground': '#ffffff',
       'color.action.ghost.background': 'transparent',
       'color.action.ghost.foreground': '#3553d2',
+      'color.border.strong': '#8f8f8f', // 3.23:1 on white — passes non-text
+      'color.border.subtle': '#999999', // 2.85:1 on white — fails non-text
+      'color.status.success.icon': '#1a7f37',
+      'color.status.danger.icon': '#b51d26',
+      'color.overlay.surface': '#1f1f1f',
     };
     cc.hooks.loadTheme = () => Object.fromEntries(Object.entries(palette).map(([p, v]) => [p, { $value: v, $type: 'color' } as TokenEntry]));
     return (component: Dict): void => {
@@ -176,6 +197,54 @@ describe('main', () => {
       'color.action.ghost.background': { $value: 'transparent', $type: 'color' } as TokenEntry });
     writeFileSync(generated, JSON.stringify([{ component: component([{ foreground: 'color.action.ghost.foreground', background: 'color.action.ghost.background' }], {}) }]), 'utf8');
     expect(() => cc.main()).toThrow("KeyError: 'color.background'");
+  });
+
+  test('a non-text pair at 3.2:1 passes at 3:1', () => {
+    sandbox()(component([{ foreground: 'color.border.strong', background: 'color.background', nonText: true }]));
+    expect(cc.main()).toBe(0);
+    expect(std.out()).toBe('✔ Widget   fake/light         color.border.strong on color.background: 3.23:1 (needs 3.0 for AA non-text)\n\n1 pairs checked, 0 failures\n');
+  });
+
+  test('a non-text pair at 2.9:1 fails', () => {
+    sandbox()(component([{ foreground: 'color.border.subtle', background: 'color.background', nonText: true }]));
+    expect(cc.main()).toBe(1);
+    expect(std.out()).toBe('✖ Widget   fake/light         color.border.subtle on color.background: 2.85:1 (needs 3.0 for AA non-text)\n\n1 pairs checked, 1 failures\n');
+  });
+
+  test('a state is named inside the parentheses', () => {
+    sandbox()(component([
+      { foreground: 'color.border.strong', background: 'color.background', nonText: true, state: 'checked' },
+      { foreground: 'color.foreground.muted', background: 'color.background', state: 'hover' },
+    ]));
+    cc.main();
+    expect(std.out()).toContain('color.border.strong on color.background: 3.23:1 (needs 3.0 for AA non-text, checked)\n');
+    expect(std.out()).toContain('color.foreground.muted on color.background: 4.54:1 (needs 4.5 for AA, hover)\n');
+  });
+
+  test('only narrows the expansion to the listed values', () => {
+    // neutral has no token: expanding it would print an unknown-token failure.
+    const tone = { type: 'enum', values: ['neutral', 'success', 'danger'], description: 'Tone.' };
+    sandbox()(component([{ foreground: 'color.status.{tone}.icon', background: 'color.background', nonText: true, only: { tone: ['success', 'danger'] } }], { tone }));
+    expect(cc.main()).toBe(0);
+    const out = std.out();
+    expect(out).toContain('2 pairs checked, 0 failures');
+    expect(out).toContain('color.status.success.icon on color.background');
+    expect(out).toContain('color.status.danger.icon on color.background');
+    expect(out).not.toContain('neutral');
+  });
+
+  test('a transparent background is checked against the pair surface when it names one', () => {
+    sandbox()(component([{ foreground: 'color.action.ghost.foreground', background: 'color.action.ghost.background', surface: 'color.overlay.surface' }], { variant: PROPS.variant as Dict }));
+    expect(cc.main()).toBe(1);
+    const ratio = pyFixed(cc.contrast('#3553d2', '#1f1f1f'), 2);
+    expect(ratio).not.toBe(pyFixed(cc.contrast('#3553d2', '#ffffff'), 2));
+    expect(std.out()).toContain(`color.action.ghost.foreground on color.action.ghost.background: ${ratio}:1 (needs 4.5 for AA)`);
+  });
+
+  test('a surface the palette lacks is an unknown token', () => {
+    sandbox()(component([{ foreground: 'color.action.ghost.foreground', background: 'color.action.ghost.background', surface: 'color.nope' }], { variant: PROPS.variant as Dict }));
+    expect(cc.main()).toBe(1);
+    expect(std.out()).toContain('✖ Widget: unknown token color.nope\n');
   });
 
   test('an unknown token is a failure, not a crash', () => {

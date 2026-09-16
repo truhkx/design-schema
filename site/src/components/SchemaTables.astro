@@ -79,7 +79,7 @@ const fmt = (v: unknown) => (v === undefined ? '—' : typeof v === 'string' ? v
     <thead><tr><th>Foreground</th><th>Background</th><th>Level</th></tr></thead>
     <tbody>
       {c.a11y.contrast.map((pair) => (
-        <tr><td><code>{pair.foreground}</code></td><td><code>{pair.background}</code></td><td>{pair.level}{pair.large ? ' (large text)' : ''}</td></tr>
+        <tr><td><code>{pair.foreground}</code></td><td><code>{pair.background}</code></td><td>{pair.level}{pair.nonText ? ' (non-text)' : pair.large ? ' (large text)' : ''}{pair.state ? ` (${pair.state})` : ''}</td></tr>
       ))}
     </tbody>
   </table>
@@ -93,7 +93,7 @@ const fmt = (v: unknown) => (v === undefined ? '—' : typeof v === 'string' ? v
       <tr>
         <td><code>{id}</code>{p.supported === false && ' (unsupported)'}</td>
         <td><code>{p.tag ?? p.element ?? '—'}</code></td>
-        <td>{[...(p.attributes ?? []), ...(p.props ?? []), ...(p.reflect ?? []).map((r) => `reflect:${r}`)].map((a) => <code>{a} </code>)}</td>
+        <td>{[...(p.attributes ?? []), ...(p.props ?? []), ...(p.reflect ?? []).map((r) => `reflect:${typeof r === 'string' ? r : r.attribute}`)].map((a) => <code>{a} </code>)}</td>
         <td>{p.notes ?? ''}</td>
       </tr>
     ))}

@@ -1,6 +1,8 @@
 -- The Chroma (chromadb 1.5.9) persistent sqlite schema, dumped from a database the Python
 -- indexer built. mcp/lib/store.ts replays it so `pnpm mcp:index` writes the same file format.
--- Regenerate with: node logs/dump-chroma-schema.mjs
+-- How it was made: ChromaDB 1.5.9 built an mcp/.chroma/chroma.sqlite3, which was opened with node:sqlite.
+-- Every DDL statement came from sqlite_master (skipping the fts5 embedding_fulltext_search_* shadow tables,
+-- which the fts5 virtual table creates itself), followed by an INSERT for each row of the migrations table.
 
 CREATE TABLE migrations (
                 dir TEXT NOT NULL,

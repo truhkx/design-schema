@@ -152,7 +152,7 @@ export function namingFor(args: Args): naming.Resolution {
     print(`naming ${relative(paths.ROOT, res.source as string).replaceAll('\\', '/')}: ` +
       `${Object.keys(res.components).length} component(s), ${Object.keys(res.props).length} prop(s), --${res.cssPrefix}- prefix`);
     for (const platform of PLATFORMS) {
-      for (const warning of naming.collisions(res, platform)) print(`  ! naming ${platform}: ${warning}`);
+      for (const warning of [...naming.collisions(res, platform), ...naming.notices(res, platform)]) print(`  ! naming ${platform}: ${warning}`);
     }
   }
   return res;
@@ -171,20 +171,29 @@ export function resetNaming(): void {
 export function renameTree(platform: string, res: naming.Resolution, direction: naming.Direction): naming.Applied {
   const all: naming.Applied = { edited: [], renames: [] };
   if (naming.isNoop(res)) return all;
+  const demo = demoDir(paths.ROOT, platform);
   for (const dir of generatedDirs(platform)) {
-    const applied = naming.rename(dir, res, direction, platform);
+    // the aliases' compatibility layer belongs to the package source, not to the pattern demo pages
+    const applied = naming.rename(dir, res, direction, platform, false, { compat: dir !== demo });
     all.edited.push(...applied.edited);
     all.renames.push(...applied.renames);
+    if (applied.ambiguous !== undefined) (all.ambiguous ??= []).push(...applied.ambiguous);
+    if (applied.compat !== undefined) (all.compat ??= []).push(...applied.compat);
   }
   return all;
 }
 
-/** What the rename did, as one line — or nothing at all when it found nothing to do. */
+/** What the rename did, as one line — or nothing at all when it found nothing to do. The enum values it could
+ *  not tie to one prop are counted, not listed: `node tools/naming.ts --check` lists them. */
 function printRename(key: string, applied: naming.Applied, direction: naming.Direction): void {
-  if (applied.edited.length === 0 && applied.renames.length === 0) return;
+  const ambiguous = applied.ambiguous?.length ?? 0;
+  const compat = applied.compat?.length ?? 0;
+  if (applied.edited.length === 0 && applied.renames.length === 0 && ambiguous === 0 && compat === 0) return;
   const arrow = direction === 'brand' ? '↻' : '↺';
   const what = direction === 'brand' ? 'brand names applied to' : 'canonical names restored in';
-  print(`  ${arrow} ${key}: naming — ${what} ${applied.edited.length} file(s), ${applied.renames.length} renamed`);
+  const left = ambiguous === 0 ? '' : `, ${ambiguous} ambiguous value(s) left as they were`;
+  const layer = compat === 0 ? '' : `, ${compat} compat file(s) ${direction === 'brand' ? 'written' : 'deleted'}`;
+  print(`  ${arrow} ${key}: naming — ${what} ${applied.edited.length} file(s), ${applied.renames.length} renamed${left}${layer}`);
 }
 
 export const REPORT_INSTRUCTIONS = `

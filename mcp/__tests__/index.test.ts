@@ -96,6 +96,16 @@ describe('schemaSummary', () => {
     expect(text).toContain("required = '{label} is required.'");
   });
 
+  test('a copy entry in the object form reads its text, and a plural entry names the param that picks the form', () => {
+    const c = component();
+    c.copy = {
+      required: '{label} is required.',
+      sortedBy: { text: 'Sorted by {column}', params: { column: { type: 'string' } } },
+      resultCount: { plural: { by: 'count', one: '{count} result', other: '{count} results' }, params: { count: { type: 'number' } } },
+    };
+    expect(ix.schemaSummary(c)).toContain("Copy templates: required = '{label} is required.'; sortedBy = 'Sorted by {column}'; resultCount = '{count} results' (plural by count).");
+  });
+
   test('optional blocks are omitted when absent', () => {
     const c = component();
     for (const key of ['events', 'styles', 'copy']) delete c[key];
@@ -105,6 +115,35 @@ describe('schemaSummary', () => {
     expect(text).not.toContain('Style bindings');
     expect(text).not.toContain('Copy templates');
     expect(text).not.toContain('Contrast pairs');
+  });
+
+  test('a style binding appends its part, state, platforms, per-value tokens and arithmetic when declared', () => {
+    const c = component();
+    c.styles.paddingBlock = { token: 'space.sm', by: 'size', values: { sm: 'space.xs' }, part: 'label', state: 'hover', platforms: ['web'] };
+    c.styles.thumbTravel = { token: 'space.10', computed: { times: 2.5, plus: [{ token: 'space.1' }], minus: [{ binding: 'radius', times: 2 }] } };
+    const text = ix.schemaSummary(c);
+    expect(text).toContain('radius → radius.md; paddingBlock → space.sm (part label, state hover, platforms web, size=sm → space.xs); thumbTravel → space.10 (computed space.10 × 2.5 + space.1 − radius × 2).');
+    expect(ix.schemaSummary(component())).toContain('Style bindings (token per CSS property): background → color.action.{variant}.background; paddingInline → space.{size}; radius → radius.md.');
+  });
+
+  test('an event line appends its declared reasons and payload field names', () => {
+    const c = component();
+    c.events.onPress.reasons = { pointer: 'Clicked or tapped.', keyboard: 'Enter or Space.' };
+    c.events.onPress.payload = [{ name: 'open', type: 'boolean' }, { name: 'reason', type: 'enum', values: ['pointer', 'keyboard'] }];
+    expect(ix.schemaSummary(c)).toContain('  - onPress: Activated. Platform names — web: onClick, rn: onPress. Reasons: pointer, keyboard. Payload: open, reason.\n');
+    expect(ix.schemaSummary(component())).toContain('  - onPress: Activated. Platform names — web: onClick, rn: onPress.\n');
+  });
+
+  test('a controlled prop line names its change event and its uncontrolled default', () => {
+    const c = component();
+    c.events.onChange = { description: 'Changed.', platforms: { web: 'onChange', rn: 'onChange' } };
+    c.props.checked = { type: 'boolean', description: 'Checked.', controls: { default: 'defaultChecked', event: 'onChange', state: 'checked' } };
+    c.props.defaultChecked = { type: 'boolean', default: false, description: 'Initially checked.' };
+    c.props.open = { type: 'boolean', description: 'Open.', controls: { event: 'onChange' } };
+    const text = ix.schemaSummary(c);
+    expect(text).toContain('  - checked: boolean. Checked. (controlled; changes reported by onChange; uncontrolled default defaultChecked)\n');
+    expect(text).toContain('  - defaultChecked: boolean, default False. Initially checked.\n');
+    expect(text).toContain('  - open: boolean. Open. (controlled; changes reported by onChange)\n');
   });
 
   test('prop platform restrictions are surfaced', () => {
@@ -117,6 +156,18 @@ describe('schemaSummary', () => {
     const c = component();
     c.props.value = { type: 'union', shape: 'string | string[]', description: 'Selected ids.' };
     expect(ix.schemaSummary(c)).toContain('value: string | string[]. Selected ids.');
+  });
+
+  test('slot parts are marked, and an object composition entry names its component and forwards', () => {
+    const c = component();
+    c.anatomy.push('footer', 'icon');
+    c.props.footer = { type: 'content', description: 'Actions.' };
+    c.parts = { footer: { kind: 'slot', slot: { prop: 'footer' } } };
+    c.composition = { label: { component: 'Text', forwards: { radius: 'fontSize', paddingInline: 'gap' } }, icon: 'Icon' };
+    const text = ix.schemaSummary(c);
+    expect(text).toContain('anatomy: container, label, footer (slot), icon.');
+    expect(text).toContain('Composition: label is a Text (forwards radius → overrides.fontSize, paddingInline → overrides.gap), icon is a Icon.');
+    expect(text).not.toContain('[object Object]');
   });
 
   test('a summary over the budget is split into continuation chunks', () => {

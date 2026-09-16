@@ -163,6 +163,16 @@ describe('partLocator', () => {
     expect(bt.partLocatorBody(select, 'range', 'web')).toContain('data-part="range"');
   });
 
+  test('an integer prop emits exactly what a number prop does', () => {
+    const typed = (type: string): Dict => ({ ...WIDGET, props: { ...WIDGET.props, count: { type, required: true, default: 3, description: 'x' } } });
+    const scenarios: Dict[] = [{ name: 'renders-count', given: { count: 2 }, then: [{ renders: true }] }, CLICK];
+    expect(bt.scalarType(typed('integer').props.count)).toBe('number');
+    expect(bt.swiftPropValue('count', typed('integer').props.count, undefined, false)).toBe('3');
+    for (const file of [bt.webFile, bt.rnFile, bt.litFile, bt.swiftFile]) {
+      expect(file(typed('integer'), scenarios)).toBe(file(typed('number'), scenarios));
+    }
+  });
+
   test('an unhooked part falls back to the data-part or testID convention', () => {
     expect(bt.partLocatorBody(WIDGET, 'indicator', 'web')).toContain('data-part="indicator"');
     expect(bt.partLocatorBody(WIDGET, 'indicator', 'rn')).toBe("screen.queryByTestId('Widget.indicator') ?? s.root()");
@@ -503,6 +513,37 @@ describe('swift when', () => {
   });
 });
 
+describe('then.copy against an object entry', () => {
+  const TYPED: Dict = {
+    ...WIDGET,
+    copy: {
+      saved: { text: '{label} saved.', description: 'Shown after a save.' },
+      count: { plural: { by: 'count', one: '{count} item', other: '{count} items' }, params: { count: { type: 'number' } } },
+    },
+  };
+
+  test('web, lit and rn match the text, never [object Object]', () => {
+    for (const platform of ['web', 'lit', 'rn']) {
+      const line = bt.thenCopyLines(TYPED, 'saved', platform)[0] as string;
+      expect(line).toContain('new RegExp(escapeRegExp(s.props.label) + ');
+      expect(line).toContain(' saved');
+      expect(line).not.toContain('object Object');
+    }
+    const plural = bt.thenCopyLines(TYPED, 'count', 'web')[0] as string;
+    expect(plural).toContain(' items');
+    expect(plural).not.toContain('object Object');
+  });
+
+  test('swift reads the text and substitutes the label', () => {
+    expect(bt.swiftThenItemLines({ ...SWIDGET, copy: TYPED.copy }, { copy: 'saved' }, { label: 'Go' })).toEqual(['#expect(host.containsText("Go saved."), "\\(host.dump())")']);
+  });
+
+  test('an unknown key keeps its Unmappable text', () => {
+    expect(() => bt.thenCopyLines(TYPED, 'nope', 'web')).toThrow("then.copy: unknown copy key 'nope'");
+    expect(() => bt.swiftThenItemLines({ ...SWIDGET, copy: TYPED.copy }, { copy: 'nope' }, {})).toThrow("then.copy: unknown copy key 'nope'");
+  });
+});
+
 describe('swift then', () => {
   const then = (item: Dict, given: Dict = {}): string[] => bt.swiftThenItemLines(SWIDGET, item, given);
 
@@ -759,6 +800,31 @@ describe('then.attribute', () => {
 
   test('swiftui is unmappable: an accessibility tree has no attributes', () => {
     expect(() => bt.swiftThenItemLines(SWIDGET, { attribute: 'data-x', is: 'y' }, {})).toThrow('then.attribute: an accessibility tree has no attributes; assert the label, value or trait instead');
+  });
+});
+
+describe('then.event with a declared payload', () => {
+  const ONE_FIELD: Dict = {
+    ...WIDGET,
+    events: { onPress: { description: 'Activated.', platforms: { web: 'onPress', lit: 'press', rn: 'onPress' }, payload: [{ name: 'open', type: 'boolean' }] } },
+  };
+
+  test('lit asserts the one payload field against a scalar with', () => {
+    expect(bt.thenEventLines(ONE_FIELD, { event: 'onPress', with: true }, 'lit')).toEqual([
+      'expect(s.events.onPress).toHaveBeenCalledTimes(1);',
+      'expect(s.events.onPress.mock.calls[0]?.[0]?.detail?.open).toEqual(true);',
+    ]);
+  });
+
+  test('without a payload, with an object, and on the other platforms, the lines are unchanged', () => {
+    expect(bt.thenEventLines(WIDGET, { event: 'onPress', with: true }, 'lit')).toEqual([
+      'expect(s.events.onPress).toHaveBeenCalledTimes(1);',
+      'expect(Object.values(s.events.onPress.mock.calls[0]?.[0]?.detail ?? {})).toContain(true);',
+    ]);
+    expect(bt.thenEventLines(ONE_FIELD, { event: 'onPress', with: { open: true } }, 'lit')).toEqual(bt.thenEventLines(WIDGET, { event: 'onPress', with: { open: true } }, 'lit'));
+    for (const platform of ['web', 'rn']) {
+      expect(bt.thenEventLines(ONE_FIELD, { event: 'onPress', with: true }, platform)).toEqual(bt.thenEventLines(WIDGET, { event: 'onPress', with: true }, platform));
+    }
   });
 });
 

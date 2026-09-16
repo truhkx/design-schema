@@ -81,6 +81,28 @@ describe('explain', () => {
     expect(explain(from, to, lex)).toBeNull();
   });
 
+  // themes/demo-brand/naming.md renames no event and no part; the Nimbus fixture does both (job 623).
+  const nimbus = lexicon(resolve('nimbus'));
+
+  test.each([
+    ['onClick', 'onActivate', 'event name'],
+    ['onPress', 'onActivate', 'event name'],
+    ['press', 'activate', 'event name'],
+    ['dismiss', 'close', 'event name'],
+    ['trailing-icon', 'end-icon', 'anatomy part'],
+    ['ds-button__trailing-icon', 'nimbus-cta-button__end-icon', 'class or custom-element name'],
+  ])('under Nimbus, %s → %s is a %s', (from, to, category) => {
+    expect(explain(from, to, nimbus)).toBe(category);
+  });
+
+  test.each([
+    ['onClick', 'onTap', 'an event rename the doc does not ask for'],
+    ['press', 'tap', 'a Lit event rename the doc does not ask for'],
+    ['trailing-icon', 'tail-icon', 'a part rename the doc does not ask for'],
+  ])('under Nimbus, %s → %s is not explained (%s)', (from, to) => {
+    expect(explain(from, to, nimbus)).toBeNull();
+  });
+
   test('the canonical name is only renamed the way the doc says', () => {
     // `Alert: Callout` must not reach `AlertDialog`: the stem has to end on a word boundary.
     expect(explain('AlertDialog', 'CalloutDialog', lex)).toBe('component name');

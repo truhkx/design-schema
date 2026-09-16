@@ -14,7 +14,9 @@ import { ljust, pyFixed, pySplitlines, pyStr, readText } from '../tools/lib/py.t
 import {
   checkContrast,
   getComponent,
+  getComponentGraph,
   getKeyboardModel,
+  getSupportMatrix,
   getLayoutRules,
   getTokens,
   listComponents,
@@ -78,6 +80,16 @@ const tk = getTokens({ theme: 'calm-precise', mode: 'dark', platform: 'rn', grou
 print('\n=== get_tokens calm-precise/dark/rn color.action.primary:', Object.fromEntries(Object.entries(tk.tokens as Dict).map(([k, v]) => [k, (v as Dict).value])));
 
 print('\n=== check_contrast color.foreground.muted on color.background (AA):', checkContrast({ foreground: 'color.foreground.muted', background: 'color.background' }));
+
+const graph = getComponentGraph();
+print('\n=== get_component_graph:', (graph.nodes as Dict[]).length, 'nodes,', (graph.edges as Dict[]).length, 'edges; cycles:', graph.cycles, '; order starts:', (graph.order as string[]).slice(0, 5));
+const alertGraph = getComponentGraph({ component: 'Alert' });
+print('  Alert composes:', (alertGraph.composes as Dict[]).map((e) => `${e.part}: ${e.component}`), '| composedBy:', (alertGraph.composedBy as Dict[]).map((e) => e.component));
+assert((graph.cycles as string[][]).length === 0, 'the composition graph has no cycles');
+
+const matrix = getSupportMatrix({ component: 'Icon' }) as Dict;
+print('\n=== get_support_matrix Icon:', Object.fromEntries(Object.entries(matrix.platforms as Dict).map(([p, v]) => [p, `generated=${(v as Dict).generated} missingProps=${pyStr((v as Dict).missingProps)}`])));
+assert(Object.keys(matrix.platforms as Dict).length === 4);
 
 const kb = getKeyboardModel({ component: 'Dialog' });
 print('\n=== get_keyboard_model Dialog:', kb.autoTested, 'auto-tested,', kb.manual, 'manual');

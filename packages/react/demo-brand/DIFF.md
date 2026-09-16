@@ -207,6 +207,27 @@ English, but it is worth knowing when choosing a brand name.
 | -------------- | ---------------------------------------------------- | --------------------------------------------------- |
 | src/Button.tsx | /** Visual emphasis. One primary button per view. */ | /** Visual variant. One primary button per view. */ |
 
+## Compatibility layer
+
+The `aliases` in `themes/demo-brand/naming.md` keep Demo Brand's old names working beside the new ones.
+The model never writes these: `tools/naming.ts` does, when it applies the rename, into `src/naming-compat/`,
+and a revert deletes the folder before it renames anything back.
+
+| Alias          | Kind      | Since | File                             | Keeps working                                                     |
+| -------------- | --------- | ----- | -------------------------------- | ----------------------------------------------------------------- |
+| `ActionButton` | component | 2.0.0 | `src/naming-compat/CtaButton.ts` | `import { ActionButton }` and `ActionButtonProps`, as `CtaButton` |
+| `kind`         | prop      | 2.0.0 | `src/naming-compat/CtaButton.ts` | `<CtaButton kind=…>`, passed on as `emphasis`                     |
+| `cta`          | value     | 2.0.0 | `src/naming-compat/CtaButton.ts` | `emphasis="cta"`, passed on as `emphasis="primary"`               |
+
+`src/naming-compat/index.ts` re-exports every module in the folder; exposing it is the fork’s own manifest edit.
+
+These files are not in the file-by-file comparison above because they have no canonical original to be
+compared with: nothing in `packages/react/src` is their source. What checks them instead is the demo’s
+`tsc -p demo-brand`, whose `include: ["src"]` reaches subfolders, so the wrapper typechecks against the
+renamed component it wraps under the package’s own compiler options, and `lint-literals`, whose
+`sourceFiles` walk is recursive. The round-trip gate checks that a revert deletes the folder and a
+re-apply writes every file back byte for byte.
+
 ## What a reader should check by hand
 
 - `src/CtaButton.tsx` still writes `data-ds="Button"` and `data-part="leadingIcon"`.

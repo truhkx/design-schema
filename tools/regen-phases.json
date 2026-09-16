@@ -1,0 +1,16 @@
+{
+  "description": "Regeneration phases in composition order: a component is generated only after everything it composes. Read by tools/site_nav.ts (docs sidebar groups), tools/regen.ts and regen.ps1. Pattern pages (site/src/content/docs/patterns) come last: they compose everything above.",
+  "phases": [
+    { "name": "Primitives", "components": ["Icon", "Text", "Heading", "Stack", "Box"] },
+    { "name": "Core", "components": ["Button", "Link", "Input", "Form", "Container", "Card", "Divider"] },
+    { "name": "Controls", "components": ["Checkbox", "Switch", "RadioGroup", "Disclosure", "Alert", "Landmark", "Breadcrumb", "Meter", "Fieldset"] },
+    { "name": "Focus", "components": ["FocusScope", "Tooltip", "Toast"] },
+    { "name": "Overlays", "components": ["Dialog", "AlertDialog", "Menu", "Popover", "BottomSheet", "ActionSheet", "SidePanel"] },
+    { "name": "Selection", "components": ["Tabs", "SegmentedControl", "Listbox", "Select", "Combobox", "Accordion"] },
+    { "name": "Numeric", "components": ["Slider", "NumberInput", "ProgressBar", "Stepper", "Search", "DatePicker"] },
+    { "name": "Rows", "components": ["Toolbar", "Carousel", "Table"] },
+    { "name": "Grids", "components": ["DataGrid", "TreeGrid", "Tree"] },
+    { "name": "Streams", "components": ["Splitter", "Feed"] },
+    { "name": "Patterns", "pattern": "SettingsPage" }
+  ]
+}

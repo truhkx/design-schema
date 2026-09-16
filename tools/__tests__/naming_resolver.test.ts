@@ -122,6 +122,22 @@ describe('resolving a naming doc', () => {
     expect(res.components).toEqual({ Button: 'CtaButton', Disclosure: 'Expander', Alert: 'Callout' });
     expect(res.cssPrefix).toBe('nimbus');
     expect(res.typePrefix).toEqual({ swiftui: 'Nimbus', rn: 'Nimbus' });
+    expect(res.events, "Button's onPress by exact name per platform; Alert's onDismiss by neutral name, which follows the convention on all three").toEqual({
+      web: { Button: { onClick: 'onActivate' }, Alert: { onDismiss: 'onClose' } },
+      lit: { Button: { press: 'activate' }, Alert: { dismiss: 'close' } },
+      rn: { Button: { onPress: 'onActivate' }, Alert: { onDismiss: 'onClose' } },
+    });
+    expect(res.anatomy).toEqual({ Button: { trailingIcon: 'endIcon' } });
+    expect(res.values, "the bare tone key reaches every tone with a danger, and Alert's dotted key merges with it").toEqual({
+      Button: { variant: { danger: 'destructive' } },
+      Alert: { tone: { danger: 'critical', info: 'notice' } },
+      AlertDialog: { tone: { danger: 'critical' } },
+      Meter: { tone: { danger: 'critical' } },
+      ProgressBar: { tone: { danger: 'critical' } },
+      Text: { tone: { danger: 'critical' } },
+      Toast: { tone: { danger: 'critical' } },
+    });
+    for (const platform of ['web', 'lit', 'rn', 'swiftui']) expect(naming.notices(res, platform), platform).toEqual([]);
     expect(res.canonical, 'the canonical list comes from generated/components.json').toContain('Button');
     expect(naming.unknownKeys(res.naming, naming.canonicalIndex()), 'every key names something real').toEqual([]);
   });
@@ -184,6 +200,635 @@ describe('a key that no longer matches the canonical schema', () => {
     expect(existsSync(naming.paths.COMPONENTS)).toBe(false);
     doc('unparsed', '  components:\n    Disclosure: Expander\n');
     expect(naming.resolve('unparsed').components).toEqual({ Disclosure: 'Expander' });
+  });
+});
+
+/**
+ * Job 623: `events` renames what each platform emits and `anatomy` renames a part's own spellings. The
+ * components.json below is a slice of the real one: Button's `onPress` breaks the convention on web
+ * (`onClick`), Alert's `onDismiss` follows it everywhere, and Button's `trailingIcon` is both a prop and a part.
+ */
+describe('event and anatomy renames', () => {
+  function slice(): void {
+    const events = (web: string, lit: string, rn: string, swiftui: string) => ({ platforms: { web, lit, rn, swiftui } });
+    writeFileSync(
+      naming.paths.COMPONENTS,
+      JSON.stringify([
+        {
+          component: {
+            name: 'Button',
+            props: { label: {}, leadingIcon: {}, trailingIcon: {} },
+            events: { onPress: events('onClick', 'press', 'onPress', 'action'), onTrack: events('onTrack', 'track', 'onTrack', 'onTrack') },
+            anatomy: ['container', 'label', 'leadingIcon', 'trailingIcon'],
+          },
+        },
+        {
+          component: {
+            name: 'Alert',
+            props: { tone: {} },
+            events: { onDismiss: events('onDismiss', 'dismiss', 'onDismiss', 'onDismiss') },
+            anatomy: ['container', 'dismissButton'],
+          },
+        },
+        { component: { name: 'Input', props: {}, events: { onFocus: events('onFocus', 'focus (native, retargeted — no CustomEvent)', 'onFocus', 'onFocus') }, anatomy: [] } },
+        { component: { name: 'Card', props: {}, events: {}, anatomy: ['container'] } },
+      ]),
+      'utf8',
+    );
+  }
+
+  const OBJECT = '  events:\n    Button.onPress:\n      web: onActivate\n      lit: activate\n      rn: onActivate\n';
+
+  describe('keys that name nothing', () => {
+    test('an event the component does not have, scoped and global', () => {
+      slice();
+      doc('scoped', '  events:\n    Button.onTap: onGo\n');
+      expect(() => naming.resolve('scoped')).toThrow(/events.Button.onTap: Button has no event called onTap/);
+      doc('global', '  events:\n    onTap: onGo\n');
+      expect(() => naming.resolve('global')).toThrow(/events.onTap: no component has an event called onTap/);
+      doc('scope-gone', '  events:\n    Disclosure.onToggle: onFlip\n');
+      expect(() => naming.resolve('scope-gone')).toThrow(/events.Disclosure.onToggle: no canonical component is called Disclosure/);
+    });
+
+    test('an object-form platform the event has no emitted name for', () => {
+      writeFileSync(
+        naming.paths.COMPONENTS,
+        JSON.stringify([{ component: { name: 'Button', props: {}, events: { onPress: { platforms: { web: 'onClick', lit: 'press' } } }, anatomy: [] } }]),
+        'utf8',
+      );
+      doc('no-rn', OBJECT);
+      expect(() => naming.resolve('no-rn')).toThrow(/events.Button.onPress.rn: Button's onPress has no rn mapping/);
+      slice();
+      doc('native', '  events:\n    Input.onFocus:\n      lit: enter\n');
+      expect(() => naming.resolve('native'), 'a native event has no CustomEvent name to rename').toThrow(/events.Input.onFocus.lit: Input's onFocus has no lit mapping/);
+    });
+
+    test('an anatomy part the component does not have, scoped and global', () => {
+      slice();
+      doc('part', '  anatomy:\n    Button.foo: bar\n');
+      expect(() => naming.resolve('part')).toThrow(/anatomy.Button.foo: Button has no anatomy part called foo/);
+      doc('part-global', '  anatomy:\n    foo: bar\n');
+      expect(() => naming.resolve('part-global')).toThrow(/anatomy.foo: no component has an anatomy part called foo/);
+    });
+  });
+
+  describe('resolving', () => {
+    test('the object form reaches exactly the platforms it lists', () => {
+      slice();
+      doc('object', '  events:\n    Button.onPress:\n      web: onActivate\n      rn: onPress\n');
+      const res = naming.resolve('object');
+      expect(res.events, 'rn is listed but unchanged, so it is not a rename').toEqual({ web: { Button: { onClick: 'onActivate' } } });
+      expect(naming.isNoop(res)).toBe(false);
+    });
+
+    test('a string reaches the platforms whose emitted name follows the convention', () => {
+      slice();
+      doc('string', '  events:\n    Button.onPress: onActivate\n    onDismiss: onClose\n');
+      expect(naming.resolve('string').events).toEqual({
+        lit: { Button: { press: 'activate' }, Alert: { dismiss: 'close' } },
+        rn: { Button: { onPress: 'onActivate' }, Alert: { onDismiss: 'onClose' } },
+        web: { Alert: { onDismiss: 'onClose' } },
+      });
+    });
+
+    test('a dotted event key wins over the bare one, and a name mapped to itself renames nothing', () => {
+      slice();
+      doc('both', '  events:\n    onPress: onTap\n    Button.onPress:\n      rn: onActivate\n  anatomy:\n    container: root\n');
+      const res = naming.resolve('both');
+      expect(res.events).toEqual({ rn: { Button: { onPress: 'onActivate' } } });
+      expect(res.anatomy).toEqual({ '': { container: 'root' } });
+      doc('same', '  events:\n    Button.onPress:\n      web: onClick\n  anatomy:\n    Button.label: label\n');
+      expect(naming.isNoop(naming.resolve('same'))).toBe(true);
+    });
+
+    test('with no components.json the convention is all there is', () => {
+      doc('unparsed', '  events:\n    Button.onPress: onActivate\n');
+      expect(naming.resolve('unparsed').events).toEqual({
+        web: { Button: { onPress: 'onActivate' } },
+        lit: { Button: { press: 'activate' } },
+        rn: { Button: { onPress: 'onActivate' } },
+      });
+    });
+  });
+
+  describe('collisions the schema cannot see', () => {
+    test('two events of one component resolving to one emitted name on a platform', () => {
+      slice();
+      // Different scopes to the schema — a bare key and a dotted one — but one component on rn.
+      doc('twice', '  events:\n    Button.onPress:\n      rn: onGo\n    onTrack:\n      rn: onGo\n');
+      expect(() => naming.resolve('twice')).toThrow(naming.NamingError);
+      expect(() => naming.resolve('twice')).toThrow(/Button.onTrack and Button.onPress both rename to onGo on rn|Button.onPress and Button.onTrack both rename to onGo on rn/);
+    });
+
+    test("a brand emitted name that is another of the component's emitted names", () => {
+      slice();
+      doc('shadow', '  events:\n    Button.onPress:\n      web: onTrack\n');
+      expect(() => naming.resolve('shadow')).toThrow(/Button.onPress renames to onTrack on web, which Button already emits for onTrack — rename onTrack too/);
+      doc('swap', '  events:\n    Button.onPress:\n      web: onTrack\n    Button.onTrack:\n      web: onFollow\n');
+      expect(naming.resolve('swap').events, 'renaming both keeps it injective').toEqual({ web: { Button: { onClick: 'onTrack', onTrack: 'onFollow' } } });
+    });
+
+    test('a brand part that is another unrenamed part of the component', () => {
+      slice();
+      doc('part-shadow', '  anatomy:\n    Button.trailingIcon: leadingIcon\n');
+      expect(() => naming.resolve('part-shadow')).toThrow(/Button.trailingIcon renames to leadingIcon, which is already a Button anatomy part — rename leadingIcon too/);
+      doc('part-twice', '  anatomy:\n    label: text\n    Button.container: text\n');
+      expect(() => naming.resolve('part-twice')).toThrow(/Button.(container and Button.label|label and Button.container) both rename to text/);
+    });
+  });
+
+  describe('notices', () => {
+    test('a string rename that does not reach a platform', () => {
+      slice();
+      doc('string', '  events:\n    Button.onPress: onActivate\n');
+      const res = naming.resolve('string');
+      expect(naming.notices(res, 'web')).toEqual(['Button.onPress → onActivate does not reach web, which emits onClick; use { web: … }']);
+      expect(naming.notices(res, 'lit')).toEqual([]);
+      expect(naming.notices(res, 'rn')).toEqual([]);
+      expect(naming.collisions(res, 'web'), 'notices are their own list').toEqual([]);
+    });
+
+    test('a type prefix for a platform without prefixed type names', () => {
+      doc('prefix', '  namespace:\n    typePrefix:\n      web: Acme\n      rn: Acme\n');
+      const res = naming.resolve('prefix');
+      expect(naming.notices(res, 'web')).toEqual(['namespace.typePrefix.web renames nothing: only rn and swiftui have prefixed type names']);
+      expect(naming.notices(res, 'rn')).toEqual([]);
+    });
+
+    test('a props key that names only an event, or only an anatomy part', () => {
+      slice();
+      doc('riding', '  props:\n    Button.onPress: onTap\n    container: root\n    Button.leadingIcon: startIcon\n');
+      const res = naming.resolve('riding');
+      expect(res.props, 'props still renames exactly as it did').toEqual({ 'Button.onPress': 'onTap', container: 'root', 'Button.leadingIcon': 'startIcon' });
+      expect(naming.notices(res, 'lit')).toEqual([
+        'props.Button.onPress names an event, not a prop: it renames the neutral name, not what each platform emits; move it to events',
+        'props.container names an anatomy part, not a prop: it also renames every identifier spelled container; move it to anatomy',
+      ]);
+    });
+
+    test('the command line prints them beside the collisions, and counts events and parts', () => {
+      slice();
+      doc('cli', `  components:\n    Button: CtaButton\n${OBJECT}    Alert.onDismiss: onClose\n    Button.onTrack: onFollow\n  anatomy:\n    Button.trailingIcon: endIcon\n  namespace:\n    typePrefix:\n      web: Acme\n`);
+      write(join(dir, 'src', 'Button.tsx'), 'export const Button = () => null;\n');
+      expect(naming.main(['--naming', 'cli', '--platform', 'web', '--dir', 'src', '--check'])).toBe(0);
+      expect(std.out()).toContain('1 component(s), 0 prop(s), 3 event(s), 1 anatomy part(s), 0 value(s), 0 token rename(s), --ds- prefix');
+      expect(std.out()).toContain('  ! web: namespace.typePrefix.web renames nothing');
+      expect(std.out(), 'the object form reaches web').not.toContain('Button.onPress →');
+    });
+  });
+
+  describe('rewriting', () => {
+    function resolved(frontmatter: string): naming.Resolution {
+      slice();
+      doc('brand', `  components:\n    Button: CtaButton\n    Alert: Callout\n${frontmatter}`);
+      return naming.resolve('brand');
+    }
+
+    test("web: the component's own emitted name, but not the intrinsic element's", () => {
+      const res = resolved(OBJECT);
+      const before = [
+        'onClick?: ((event: MouseEvent<HTMLButtonElement>) => void) | undefined;',
+        'export const Button = function Button({ label, onClick, onTrack }: ButtonProps) {',
+        '  const handleClick = (event) => { onClick?.(event); };',
+        '  return <button type="button" onClick={handleClick}>{label}</button>;',
+        '};',
+      ].join('\n');
+      const after = rw(before, res, 'web', 'Button.tsx');
+      expect(after).toBe(
+        [
+          'onActivate?: ((event: MouseEvent<HTMLButtonElement>) => void) | undefined;',
+          'export const CtaButton = function CtaButton({ label, onActivate, onTrack }: CtaButtonProps) {',
+          '  const handleClick = (event) => { onActivate?.(event); };',
+          '  return <button type="button" onClick={handleClick}>{label}</button>;',
+          '};',
+        ].join('\n'),
+      );
+      expect(rw(after, res, 'web', 'CtaButton.tsx', 'canonical')).toBe(before);
+    });
+
+    test("a composite: the attribute on the component's element, even past a nested element, and the file's own names in values", () => {
+      const res = resolved(`${OBJECT}    Alert.onDismiss: onClose\n`);
+      const before = '<Button leadingIcon={<Icon name="close" />} onPress={onDismiss} />\n<Pressable onPress={onDismiss}><View /></Pressable>';
+      const after = rw(before, res, 'rn', 'Alert.tsx');
+      expect(after).toBe('<CtaButton leadingIcon={<Icon name="close" />} onActivate={onClose} />\n<Pressable onPress={onClose}><View /></Pressable>');
+      expect(rw(after, res, 'rn', 'Callout.tsx', 'canonical')).toBe(before);
+      expect(rw('<Card onClick={x} /><div onClick={y} />', res, 'web', 'Alert.tsx'), 'not Button, not renamed').toBe('<Card onClick={x} /><div onClick={y} />');
+    });
+
+    test("rn: an imported element's own handler stays", () => {
+      const res = resolved(OBJECT);
+      const before = "import { Pressable } from 'react-native';\nconst { onPress } = props;\n<Pressable onPress={handlePress} onPressIn={x}>";
+      expect(rw(before, res, 'rn', 'Button.tsx')).toBe("import { Pressable } from 'react-native';\nconst { onActivate } = props;\n<Pressable onPress={handlePress} onPressIn={x}>");
+    });
+
+    test("lit: dispatched and listened for in the component's own files, bound on its element in a composite", () => {
+      const res = resolved(`${OBJECT}    Alert.onDismiss: onClose\n`);
+      const own = "this.dispatchEvent(new CustomEvent<ButtonPressDetail>('press', { bubbles: true }));\nel.addEventListener('press', press);\nel.removeEventListener(\"press\", press);\n/** @fires press */";
+      const renamed = rw(own, res, 'lit', 'Button.ts');
+      expect(renamed).toBe(
+        "this.dispatchEvent(new CustomEvent<CtaButtonPressDetail>('activate', { bubbles: true }));\nel.addEventListener('activate', press);\nel.removeEventListener(\"activate\", press);\n/** @fires press */",
+      );
+      expect(rw(renamed, res, 'lit', 'CtaButton.ts', 'canonical')).toBe(own);
+      const composite = "<ds-button @press=${this.handleDismiss} @focus=${f}></ds-button>\nnew CustomEvent('dismiss');\n<form @press=${this.handlePress}>\nthis.addEventListener('press', h);";
+      expect(rw(composite, res, 'lit', 'Alert.ts')).toBe(
+        // The last two are the stated limit: a listener that is not on the component's element keeps the canonical name.
+        "<ds-cta-button @activate=${this.handleDismiss} @focus=${f}></ds-cta-button>\nnew CustomEvent('close');\n<form @press=${this.handlePress}>\nthis.addEventListener('press', h);",
+      );
+    });
+
+    test('anatomy renames the part and never the prop of the same name', () => {
+      const res = resolved('  anatomy:\n    Button.trailingIcon: endIcon\n');
+      const before = [
+        '.ds-button__trailing-icon {}',
+        ":host([loading]) slot[name='trailing-icon'] {}",
+        '<slot name="trailing-icon" part="trailing-icon"></slot>',
+        '<ds-icon slot="trailing-icon"></ds-icon>',
+        "@property({ attribute: 'trailing-icon' }) accessor trailingIcon: string | undefined;",
+        '<span data-part="trailingIcon">{trailingIcon}</span>',
+      ].join('\n');
+      const after = rw(before, res, 'lit', 'Button.ts');
+      expect(after).toBe(
+        [
+          '.ds-cta-button__end-icon {}',
+          ":host([loading]) slot[name='end-icon'] {}",
+          '<slot name="end-icon" part="trailing-icon"></slot>',
+          '<ds-icon slot="end-icon"></ds-icon>',
+          "@property({ attribute: 'trailing-icon' }) accessor trailingIcon: string | undefined;",
+          '<span data-part="trailingIcon">{trailingIcon}</span>',
+        ].join('\n'),
+      );
+      expect(rw(after, res, 'lit', 'CtaButton.ts', 'canonical')).toBe(before);
+    });
+
+    test('a doc without events or anatomy rewrites exactly as before', () => {
+      const res = resolved('');
+      const text = "<ds-button @press=${h}></ds-button>\nnew CustomEvent('press');\nslot[name='trailing-icon']\n<Button onClick={x} />";
+      expect(rw(text, res, 'lit', 'Card.ts')).toBe("<ds-cta-button @press=${h}></ds-cta-button>\nnew CustomEvent('press');\nslot[name='trailing-icon']\n<CtaButton onClick={x} />");
+    });
+  });
+});
+
+/**
+ * Job 626: `values` renames a prop's enum values, but only where the code ties a value to one prop, because the same
+ * words are canonical token names too (`var(--color-action-primary-background)`). The components.json below is a
+ * slice of the real one: Button's variant, size and type, three tones (Link's without a danger, Meter's through
+ * `enumRef`), and Tabs, whose size and density share one value set.
+ */
+describe('enum value renames', () => {
+  function slice(): void {
+    const e = (...values: string[]) => ({ type: 'enum', values });
+    const component = (name: string, props: Record<string, unknown>) => ({ component: { name, props, events: {}, anatomy: [] } });
+    writeFileSync(
+      naming.paths.COMPONENTS,
+      JSON.stringify([
+        component('Button', { label: { type: 'string' }, variant: e('primary', 'secondary', 'ghost', 'danger'), size: e('sm', 'md', 'lg'), type: e('button', 'submit') }),
+        component('Alert', { tone: e('info', 'success', 'warning', 'danger') }),
+        component('Toast', { tone: e('neutral', 'success', 'warning', 'danger') }),
+        component('Link', { tone: e('default', 'inherit') }),
+        component('Meter', { tone: { type: 'enum', enumRef: 'tone' } }),
+        component('Icon', { size: e('sm', 'md', 'lg') }),
+        component('Tabs', { size: e('sm', 'md'), density: e('sm', 'md') }),
+      ]),
+      'utf8',
+    );
+  }
+
+  describe('keys that name nothing', () => {
+    test('a dotted key whose component has no such prop, or whose prop is not an enum', () => {
+      slice();
+      doc('typo', '  values:\n    Button.varient:\n      primary: cta\n');
+      expect(() => naming.resolve('typo')).toThrow(/values.Button.varient: Button has no prop called varient/);
+      doc('label', '  values:\n    Button.label:\n      primary: cta\n');
+      expect(() => naming.resolve('label')).toThrow(/values.Button.label: Button.label is not an enum prop/);
+      doc('gone', '  values:\n    Disclosure.size:\n      sm: small\n');
+      expect(() => naming.resolve('gone')).toThrow(/values.Disclosure.size: no canonical component is called Disclosure/);
+    });
+
+    test('a value the prop does not have', () => {
+      slice();
+      doc('primray', '  values:\n    Button.variant:\n      primray: cta\n');
+      expect(() => naming.resolve('primray')).toThrow(/values.Button.variant.primray: Button.variant has no value primray/);
+    });
+
+    test('a bare key that matches no enum prop, or a value no matching enum prop has', () => {
+      slice();
+      doc('bare', '  values:\n    label:\n      primary: cta\n');
+      expect(() => naming.resolve('bare')).toThrow(/values.label: no component has an enum prop called label/);
+      doc('bare-value', '  values:\n    tone:\n      critical: severe\n');
+      expect(() => naming.resolve('bare-value')).toThrow(/values.tone.critical: no enum prop called tone has a value critical/);
+    });
+
+    test("an enumRef prop with no values in components.json is checked against schema/vocab.ts", () => {
+      slice();
+      doc('ref', '  values:\n    Meter.tone:\n      info: notice\n');
+      expect(naming.resolve('ref').values).toEqual({ Meter: { tone: { info: 'notice' } } });
+      doc('ref-miss', '  values:\n    Meter.tone:\n      inherit: plain\n');
+      expect(() => naming.resolve('ref-miss')).toThrow(/values.Meter.tone.inherit: Meter.tone has no value inherit/);
+    });
+  });
+
+  describe('resolving', () => {
+    test("a dotted key's entry wins over the bare key's for the same value, and the two merge otherwise", () => {
+      slice();
+      doc('merge', '  values:\n    tone:\n      danger: critical\n      warning: caution\n    Alert.tone:\n      info: notice\n      warning: heads-up\n');
+      expect(naming.resolve('merge').values, "Link's tones have neither value").toEqual({
+        Alert: { tone: { danger: 'critical', info: 'notice', warning: 'heads-up' } },
+        Toast: { tone: { danger: 'critical', warning: 'caution' } },
+        Meter: { tone: { danger: 'critical', warning: 'caution' } },
+      });
+    });
+
+    test('the map is looked up by the canonical prop even when props renames it; a value mapped to itself renames nothing', () => {
+      slice();
+      doc('renamed', '  props:\n    Button.variant: kind\n  values:\n    Button.variant:\n      primary: cta\n      ghost: ghost\n');
+      const res = naming.resolve('renamed');
+      expect(res.values).toEqual({ Button: { variant: { primary: 'cta' } } });
+      expect(naming.isNoop({ ...res, props: {} }), 'values alone are a rename').toBe(false);
+      doc('same', '  values:\n    Button.variant:\n      primary: primary\n');
+      expect(naming.resolve('same').values).toEqual({});
+      expect(naming.isNoop(naming.resolve('same'))).toBe(true);
+    });
+
+    test('collisions the schema cannot see: two keys merged onto one brand value, or a value the key does not list', () => {
+      slice();
+      doc('merged', '  values:\n    tone:\n      danger: bad\n    Alert.tone:\n      warning: bad\n');
+      expect(() => naming.resolve('merged')).toThrow(/Alert.tone.(danger and Alert.tone.warning|warning and Alert.tone.danger) both rename to bad/);
+      doc('shadow', '  values:\n    Button.variant:\n      primary: secondary\n');
+      expect(() => naming.resolve('shadow')).toThrow(/Button.variant.primary renames to secondary, which is already one of its values/);
+    });
+
+    test('the command line counts values and lists what it left alone', () => {
+      slice();
+      doc('cli', '  values:\n    Button.variant:\n      primary: cta\n');
+      write(join(dir, 'src', 'Button.tsx'), "export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';\nconst fallback = 'primary';\n");
+      expect(naming.main(['--naming', 'cli', '--platform', 'web', '--dir', 'src', '--check'])).toBe(0);
+      expect(std.out()).toContain('0 anatomy part(s), 1 value(s), 0 token rename(s), --ds- prefix');
+      expect(std.out()).toContain("  ! web: ambiguous value src/Button.tsx:2: const fallback = 'primary';");
+      expect(std.out()).toContain('would change 1 file(s), 0 move(s)');
+    });
+  });
+
+  describe('rewriting', () => {
+    const TOKEN = 'var(--color-action-primary-background)';
+
+    function resolved(more: string = ''): naming.Resolution {
+      slice();
+      doc(
+        'brand',
+        `  components:\n    Button: CtaButton\n  props:\n    Button.variant: kind\n  values:\n    Button.variant:\n      primary: cta\n      danger: destructive\n    Button.size:\n      md: medium\n${more}`,
+      );
+      return naming.resolve('brand');
+    }
+
+    /** Canonical → brand is `after`, and brand → canonical gives back `before`. */
+    function both(before: string, after: string, platform: string, file: string, res: naming.Resolution = resolved()): void {
+      expect(rw(before, res, platform, file)).toBe(after);
+      expect(rw(after, res, platform, file.replace('Button', 'CtaButton'), 'canonical')).toBe(before);
+    }
+
+    function hitsOf(text: string, res: naming.Resolution, platform: string, file: string): string[] {
+      const hits: string[] = [];
+      naming.rewrite(text, naming.vocab(res, platform, 'brand'), file, hits);
+      return hits;
+    }
+
+    test("an attribute on the component's element, with the prop's brand spelling in the same pass", () => {
+      const res = resolved();
+      both(
+        `<Button variant="primary" size={'md'} style={{ background: '${TOKEN}' }} />\n<Icon size="md" />\n<button type="button" data-ds="Button" />`,
+        `<CtaButton kind="cta" size={'medium'} style={{ background: '${TOKEN}' }} />\n<Icon size="md" />\n<button type="button" data-ds="Button" />`,
+        'web',
+        'Card.tsx',
+        res,
+      );
+      both(
+        `<ds-button variant="danger" size="md"></ds-button>\n<ds-icon size="md"></ds-icon>\nbackground: var(--color-action-danger-background);`,
+        `<ds-cta-button kind="destructive" size="medium"></ds-cta-button>\n<ds-icon size="md"></ds-icon>\nbackground: var(--color-action-danger-background);`,
+        'lit',
+        'Card.ts',
+        res,
+      );
+      expect(hitsOf('<Button variant="primary" />\n<Icon size="md" />', res, 'web', 'Card.tsx'), "Icon's size is provably Icon's").toEqual([]);
+    });
+
+    test('a Lit attribute selector, on the host or on a named element', () => {
+      both(
+        `:host([variant='primary']) button { background: ${TOKEN}; }\n:host([size="md"]) {}\nds-icon[size='md'] {}`,
+        `:host([kind='cta']) button { background: ${TOKEN}; }\n:host([size="medium"]) {}\nds-icon[size='md'] {}`,
+        'lit',
+        'Button.ts',
+      );
+    });
+
+    test('an object property or a JSON key naming the prop', () => {
+      both(
+        "args: { variant: 'primary', label: 'Save' },\nconst token = { background: 'colorActionPrimaryBackground' };",
+        "args: { kind: 'cta', label: 'Save' },\nconst token = { background: 'colorActionPrimaryBackground' };",
+        'web',
+        'Button.stories.tsx',
+      );
+      both(
+        'const s = setup({"variant": "danger", "size": "md"});\ncolor: var(--color-action-danger-foreground);',
+        'const s = setup({"kind": "destructive", "size": "medium"});\ncolor: var(--color-action-danger-foreground);',
+        'web',
+        'Button.web.test.tsx',
+      );
+    });
+
+    test('a default, in a destructuring or on an accessor', () => {
+      both(
+        "function Button({ variant = 'primary', size = 'md' }: ButtonProps) {\n  return t.colorActionPrimaryBackground;\n}",
+        "function CtaButton({ kind = 'cta', size = 'medium' }: CtaButtonProps) {\n  return t.colorActionPrimaryBackground;\n}",
+        'rn',
+        'Button.tsx',
+      );
+      both(
+        `@property({ reflect: true }) accessor variant: ButtonVariant = 'danger';\ncolor: ${TOKEN};`,
+        `@property({ reflect: true }) accessor kind: CtaButtonVariant = 'destructive';\ncolor: ${TOKEN};`,
+        'lit',
+        'Button.ts',
+      );
+    });
+
+    test('a comparison or a switch on the prop, and not a switch on something else', () => {
+      both(
+        "if (variant === 'danger' || props.size !== 'md') {}\nswitch (this.variant) {\n  case 'primary':\n    return 'colorActionPrimaryBackground';\n  case 'ghost':\n    return x;\n}\nswitch (other) {\n  case 'primary':\n}",
+        "if (kind === 'destructive' || props.size !== 'medium') {}\nswitch (this.kind) {\n  case 'cta':\n    return 'colorActionPrimaryBackground';\n  case 'ghost':\n    return x;\n}\nswitch (other) {\n  case 'primary':\n}",
+        'web',
+        'Button.tsx',
+      );
+    });
+
+    test("a union in the <Component><Prop> type, or in the prop's own declaration", () => {
+      both(
+        "export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';\nexport type ButtonType = 'button' | 'submit';\ninterface ButtonProps {\n  size?: 'sm' | 'md' | 'lg';\n  token: 'colorActionPrimaryBackground';\n}\nexport type IconSize = 'sm' | 'md' | 'lg';",
+        "export type CtaButtonVariant = 'cta' | 'secondary' | 'ghost' | 'destructive';\nexport type CtaButtonType = 'button' | 'submit';\ninterface CtaButtonProps {\n  size?: 'sm' | 'medium' | 'lg';\n  token: 'colorActionPrimaryBackground';\n}\nexport type IconSize = 'sm' | 'md' | 'lg';",
+        'web',
+        'Button.tsx',
+      );
+    });
+
+    test('a modifier class, in CSS and in TS, renamed in the same match as its stem', () => {
+      both(
+        `.ds-button--primary { background: ${TOKEN}; }\n.ds-button--md {}\n.ds-button--icon-only {}\n.ds-icon--md {}`,
+        `.ds-cta-button--cta { background: ${TOKEN}; }\n.ds-cta-button--medium {}\n.ds-cta-button--icon-only {}\n.ds-icon--md {}`,
+        'web',
+        'Button.css',
+      );
+      both("inverse ? 'ds-button--danger' : `ds-button--${variant}`", "inverse ? 'ds-cta-button--destructive' : `ds-cta-button--${kind}`", 'web', 'Button.tsx');
+    });
+
+    test("an object literal keyed by the prop's whole value set, unless a sibling prop has the same set", () => {
+      both(
+        "const VARIANT_TOKENS = {\n  primary: { background: 'colorActionPrimaryBackground' },\n  secondary: { background: 'colorActionSecondaryBackground' },\n  ghost: {},\n  danger: { background: 'colorActionDangerBackground' },\n};",
+        "const VARIANT_TOKENS = {\n  cta: { background: 'colorActionPrimaryBackground' },\n  secondary: { background: 'colorActionSecondaryBackground' },\n  ghost: {},\n  destructive: { background: 'colorActionDangerBackground' },\n};",
+        'rn',
+        'Button.tsx',
+      );
+      const res = resolved('    Tabs.size:\n      md: medium\n');
+      const tabs = "const PADDING = { sm: 'spaceSm', md: 'spaceMd' };\n.ds-tabs--md {}";
+      expect(rw(tabs, res, 'web', 'Tabs.tsx'), 'size and density share the set, so neither is provable').toBe(tabs);
+      expect(hitsOf(tabs, res, 'web', 'Tabs.tsx')).toEqual(["1: const PADDING = { sm: 'spaceSm', md: 'spaceMd' };", '2: .ds-tabs--md {}']);
+    });
+
+    test('SwiftUI: an enum with the whole value set and `case .primary` inside `switch variant`, never a bare `.primary`', () => {
+      const res = resolved();
+      const before = [
+        'public enum ButtonVariant: String {',
+        '    case primary, secondary',
+        '    case ghost',
+        '    case danger = "danger"',
+        '}',
+        'switch variant {',
+        'case .primary, .danger: return TokenRef.colorActionPrimaryBackground',
+        'case .ghost: return .colorActionGhostBackground',
+        '}',
+        'Label("x").foregroundStyle(.primary)',
+      ].join('\n');
+      const after = [
+        'public enum CtaButtonVariant: String {',
+        '    case cta, secondary',
+        '    case ghost',
+        '    case destructive = "destructive"',
+        '}',
+        'switch kind {',
+        'case .cta, .destructive: return TokenRef.colorActionPrimaryBackground',
+        'case .ghost: return .colorActionGhostBackground',
+        '}',
+        'Label("x").foregroundStyle(.primary)',
+      ].join('\n');
+      both(before, after, 'swiftui', 'Button.swift', res);
+      expect(hitsOf(before, res, 'swiftui', 'Button.swift'), '.primary is also a ShapeStyle').toEqual(['10: Label("x").foregroundStyle(.primary)']);
+    });
+
+    test('never inside a token reference, a comment or a gate hook', () => {
+      const res = resolved();
+      const text = [
+        "// Use the `primary` variant for the main action: 'primary'",
+        "/* color.action.{variant}.* and 'danger' */",
+        "const ref = 'color.action.primary.background';",
+        `const key = t.colorActionPrimaryBackground; // ${TOKEN}`,
+        '<span data-part="primary" part=\'danger\' />',
+        "testID={'primary'}",
+      ].join('\n');
+      expect(rw(text, res, 'web', 'Button.tsx'), 'the prop name in prose moves, as it always has; the values do not').toBe(text.replaceAll('variant', 'kind'));
+      expect(hitsOf(text, res, 'web', 'Button.tsx')).toEqual([]);
+    });
+
+    test('a literal no context ties to the prop is reported and left alone, in both directions', () => {
+      const res = resolved();
+      const text = "const fallback = 'primary';\nconst icons = { primary: 'star' };\n<Icon name=\"danger\" />";
+      expect(rw(text, res, 'web', 'Button.tsx')).toBe(text);
+      expect(hitsOf(text, res, 'web', 'Button.tsx')).toEqual(["1: const fallback = 'primary';", "2: const icons = { primary: 'star' };", '3: <Icon name="danger" />']);
+      expect(rw(text, res, 'web', 'CtaButton.tsx', 'canonical')).toBe(text);
+    });
+
+    test('a prop interpolated into a token name is reported; a modifier class built the same way is not', () => {
+      const res = resolved();
+      const text = "const bg = `color.action.${variant}.background`;\nconst fg = `var(--color-action-${this.variant}-foreground)`;\nconst cls = `ds-button--${variant}`;\nconst plain = `${size}`;";
+      expect(rw(text, res, 'web', 'Button.tsx')).toBe(text.replaceAll('variant', 'kind').replace('ds-button', 'ds-cta-button'));
+      expect(hitsOf(text, res, 'web', 'Button.tsx')).toEqual([
+        '1: const bg = `color.action.${variant}.background`;',
+        '2: const fg = `var(--color-action-${this.variant}-foreground)`;',
+      ]);
+    });
+
+    test('a naming doc with no values rewrites the committed files byte for byte as before', () => {
+      slice();
+      doc('plain', '  components:\n    Button: CtaButton\n  props:\n    Button.variant: kind\n');
+      const plain = naming.resolve('plain');
+      doc('identity', '  components:\n    Button: CtaButton\n  props:\n    Button.variant: kind\n  values:\n    Button.variant:\n      primary: primary\n');
+      const identity = naming.resolve('identity');
+      expect(identity.values).toEqual({});
+      for (const [platform, file] of [['web', 'Button.tsx'], ['web', 'Button.css'], ['rn', 'Button.tsx'], ['lit', 'Button.ts']] as const) {
+        const text = readFileSync(join(sourceDir(REPO_ROOT, platform), file), 'utf8');
+        const v = naming.vocab(plain, platform, 'brand');
+        expect(v.values.size, 'no value rule is even compiled').toBe(0);
+        expect(naming.rewrite(text, naming.vocab(identity, platform, 'brand'), file), `${platform} ${file}`).toBe(naming.rewrite(text, v, file));
+      }
+      const src = join(dir, 'plain-src');
+      mkdirSync(src, { recursive: true });
+      cpSync(join(sourceDir(REPO_ROOT, 'web'), 'Button.tsx'), join(src, 'Button.tsx'));
+      expect(naming.rename(src, plain, 'brand', 'web'), 'no ambiguous key at all').toEqual({ edited: ['Button.tsx'], renames: [['Button.tsx', 'CtaButton.tsx']] });
+    });
+
+    test('round trip: the committed Button on web, rn and lit moves every value context, reverts byte for byte, and reapplies identically', () => {
+      const themes = naming.paths.THEMES;
+      Object.assign(naming.paths, savedPaths);
+      const docFile = write(
+        join(dir, 'round-trip.md'),
+        '---\ntitle: round trip\nnaming:\n  components:\n    Button: CtaButton\n  props:\n    Button.variant: kind\n  values:\n    Button.variant:\n      primary: cta\n      danger: destructive\n---\n',
+      );
+      const res = naming.resolve(docFile);
+      Object.assign(naming.paths, { ROOT: dir, THEMES: themes, COMPONENTS: join(dir, 'components.json') });
+
+      const trees = [
+        ['web', ['Button.tsx', 'Button.css', 'Button.stories.tsx']],
+        ['rn', ['Button.tsx']],
+        ['lit', ['Button.ts']],
+      ] as const;
+      const moved: Record<string, string> = {};
+      for (const [platform, files] of trees) {
+        const src = join(dir, `${platform}-values`);
+        mkdirSync(src, { recursive: true });
+        for (const f of files) cpSync(join(sourceDir(REPO_ROOT, platform), f), join(src, f));
+        const applied = naming.rename(src, res, 'brand', platform);
+        expect(applied.ambiguous, `${platform}: every primary and danger in Button is provable`).toBeUndefined();
+        const first = snapshot(src);
+        for (const [f, text] of Object.entries(first)) {
+          moved[`${platform}/${f}`] = text;
+          expect(text, `${platform} ${f}: no quoted canonical value is left`).not.toMatch(/['"](?:primary|danger)['"]/);
+          expect(text, `${platform} ${f}: no modifier either`).not.toMatch(/--(?:primary|danger)\b/);
+        }
+        naming.rename(src, res, 'canonical', platform);
+        for (const f of files) expect(readFileSync(join(src, f)).equals(readFileSync(join(sourceDir(REPO_ROOT, platform), f))), `${platform} ${f} reverts`).toBe(true);
+        naming.rename(src, res, 'brand', platform);
+        expect(snapshot(src), `${platform} reapplies`).toEqual(first);
+      }
+
+      const web = moved['web/CtaButton.tsx'] as string;
+      expect(web).toContain("export type CtaButtonVariant = 'cta' | 'secondary' | 'ghost' | 'destructive';");
+      expect(web).toContain("kind = 'cta',");
+      expect(web, 'the class follows the value through the prop').toContain('`ds-cta-button--${kind}`');
+      expect(web, 'prose keeps the canonical value').toContain('Use the `primary` kind');
+      const css = moved['web/CtaButton.css'] as string;
+      expect(css).toContain('.ds-cta-button--cta {');
+      expect(css).toContain('.ds-cta-button--destructive {');
+      expect(css).toContain('--ds-button-background: var(--color-action-primary-background);');
+      expect(css).toContain('--ds-button-background: var(--color-action-danger-background);');
+      const stories = moved['web/CtaButton.stories.tsx'] as string;
+      expect(stories).toContain("export const VariantPrimary: Story = { args: { kind: 'cta' } };");
+      expect(stories).toContain("args: { kind: 'destructive', label: 'Delete file' }");
+      const rn = moved['rn/CtaButton.tsx'] as string;
+      expect(rn).toMatch(/const VARIANT_TOKENS = \{\r?\n {2}cta: \{\r?\n {4}background: 'colorActionPrimaryBackground',/);
+      expect(rn).toMatch(/ {2}destructive: \{\r?\n {4}background: 'colorActionDangerBackground',/);
+      expect(rn).toContain("kind = 'cta',");
+      expect(rn).toContain("kind === 'ghost' && inverse");
+      const lit = moved['lit/CtaButton.ts'] as string;
+      expect(lit).toMatch(/:host\(\[kind='cta'\]\) button \{\s+color: var\(--color-action-primary-foreground\);\s+background: var\(--color-action-primary-background\);/);
+      expect(lit).toMatch(/:host\(\[kind='destructive'\]\) \{\s+--ds-button-background-hover: var\(--color-action-danger-background-hover\);/);
+      expect(lit).toContain("accessor kind: CtaButtonVariant = 'cta';");
+    });
   });
 });
 
@@ -481,8 +1126,8 @@ function isDir(file: string): boolean {
 
 describe("the job's gate: the committed Button output, renamed", () => {
   /** The real generated files, copied into the sandbox — nothing here writes to packages/. */
-  function sandbox(platform: string, files: string[]): string {
-    const src = join(dir, 'src');
+  function sandbox(platform: string, files: string[], name: string = 'src'): string {
+    const src = join(dir, name);
     mkdirSync(src, { recursive: true });
     for (const f of files) cpSync(join(sourceDir(REPO_ROOT, platform), f), join(src, f));
     return src;
@@ -537,6 +1182,69 @@ describe("the job's gate: the committed Button output, renamed", () => {
     expect(sheet).toContain('<nimbus-cta-button');
   });
 
+  test("job 623: Nimbus renames each platform's emitted event and Button's trailingIcon part, and nothing that is the platform's own", () => {
+    const themes = naming.paths.THEMES;
+    Object.assign(naming.paths, savedPaths);
+    const res = naming.resolve('nimbus');
+    const index = naming.canonicalIndex();
+    const notices = ['web', 'lit', 'rn'].flatMap((platform) => naming.notices(res, platform, index));
+    Object.assign(naming.paths, { ROOT: dir, THEMES: themes, COMPONENTS: join(dir, 'components.json') });
+    expect(notices.filter((n) => n.includes('Button.onPress')), 'the object form reaches every platform it lists').toEqual([]);
+
+    const trees: Record<'web' | 'lit' | 'rn', string> = {
+      web: sandbox('web', ['Button.tsx', 'Alert.tsx'], 'web'),
+      lit: sandbox('lit', ['Button.ts', 'Alert.ts'], 'lit'),
+      rn: sandbox('rn', ['Button.tsx'], 'rn'),
+    };
+    for (const [platform, src] of Object.entries(trees)) naming.rename(src, res, 'brand', platform);
+    const read = (platform: keyof typeof trees, file: string): string => readFileSync(join(trees[platform], file), 'utf8');
+
+    const webButton = read('web', 'CtaButton.tsx');
+    expect(webButton).toContain('onActivate?: ((event: MouseEvent<HTMLButtonElement>) => void) | undefined;');
+    expect(webButton).toContain('onActivate?.(event);');
+    expect(webButton, "the native <button>'s own handler").toMatch(/<button\s[^]*?onClick=\{handleClick\}/);
+    const webCallout = read('web', 'Callout.tsx');
+    expect(webCallout, 'the composite binds the brand name on the element').toContain('onActivate={handleDismiss}');
+    expect(webCallout).not.toMatch(/\sonClick=/);
+    expect(webCallout, 'the string form reaches web').toContain('onClose?.();');
+
+    const litButton = read('lit', 'CtaButton.ts');
+    expect(litButton).toMatch(/new CustomEvent<\w+>\('activate'/);
+    expect(litButton).not.toMatch(/new CustomEvent<\w+>\('press'/);
+    expect(litButton, 'the part moves, its gate hook does not').toContain('<slot name="end-icon" part="trailing-icon"></slot>');
+    expect(litButton).toContain("slot[name='end-icon']");
+    const litCallout = read('lit', 'Callout.ts');
+    expect(litCallout).toContain('@activate=${this.handleDismiss}');
+    expect(litCallout).not.toContain('@press=');
+    expect(litCallout, 'the string form reaches lit as its kebab name').toMatch(/new CustomEvent<\w+>\('close'/);
+
+    const rnButton = read('rn', 'CtaButton.tsx');
+    expect(rnButton).toContain('onActivate?: (() => void) | undefined;');
+    expect(rnButton).toContain('onActivate?.();');
+    expect(rnButton, "Pressable's own onPress").toMatch(/<Pressable\s[^]*?onPress=\{handlePress\}/);
+    expect(rnButton, 'the prop that shares the part name keeps its name').toContain('trailingIcon?: React.ReactNode;');
+
+    // brand → canonical → brand: the trip a fork's committed tree takes, byte for byte
+    for (const [platform, src] of Object.entries(trees)) {
+      const brand = snapshot(src);
+      naming.rename(src, res, 'canonical', platform);
+      naming.rename(src, res, 'brand', platform);
+      expect(snapshot(src), platform).toEqual(brand);
+    }
+    // and the event and anatomy maps alone restore the committed files from canonical too: nothing they
+    // rename is a word the canonical output already uses
+    const mapsOnly: naming.Resolution = { ...res, components: {}, props: {}, typePrefix: {}, cssPrefix: 'ds', package: '@design-schema' };
+    for (const [platform, files] of [['web', ['Button.tsx', 'Alert.tsx']], ['lit', ['Button.ts', 'Alert.ts']], ['rn', ['Button.tsx']]] as const) {
+      const src = sandbox(platform, [...files], `${platform}-maps`);
+      naming.rename(src, mapsOnly, 'brand', platform);
+      expect(readFileSync(join(src, 'Button.' + (platform === 'lit' ? 'ts' : 'tsx')), 'utf8'), platform).not.toBe(
+        readFileSync(join(sourceDir(REPO_ROOT, platform), 'Button.' + (platform === 'lit' ? 'ts' : 'tsx')), 'utf8'),
+      );
+      naming.rename(src, mapsOnly, 'canonical', platform);
+      for (const f of files) expect(readFileSync(join(src, f)).equals(readFileSync(join(sourceDir(REPO_ROOT, platform), f))), `${platform} ${f}`).toBe(true);
+    }
+  });
+
   test('regenerating with no naming.md leaves the committed output byte-identical', () => {
     const src = sandbox('web', ['Button.tsx', 'Button.css']);
     const before = snapshot(src);
@@ -563,7 +1271,7 @@ describe('the command line', () => {
     const src = join(dir, 'src');
     write(join(src, 'Button.tsx'), 'export const Button = () => null;\n');
     expect(naming.main(['--naming', 'acme', '--platform', 'web', '--dir', 'src', '--check'])).toBe(0);
-    expect(std.out()).toContain('1 component(s), 1 prop(s), --acme- prefix');
+    expect(std.out()).toContain('1 component(s), 1 prop(s), 0 event(s), 0 anatomy part(s), 0 value(s), 0 token rename(s), --acme- prefix');
     expect(std.out()).toContain('would change 1 file(s), 1 move(s)');
     expect(std.out()).toContain('Button.tsx → CtaButton.tsx');
     expect(readdirSync(src), 'a check writes nothing').toEqual(['Button.tsx']);

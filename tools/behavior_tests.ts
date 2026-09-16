@@ -58,7 +58,7 @@ import { freshOutDir, readComponents } from './lib/components.ts';
 import type { Dict } from './lib/components.ts';
 import { has, pyGet, pyJsonDumps, pyReEscape, pyRepr, pySorted, pySplitlines, pyStr, pyStrip, readText, truthy, writeText } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
-import { NON_QUERYABLE_ROLES, normalizeKey, resolveRole, roleIn } from '../schema/component.ts';
+import { controlledPairs, copyText, NON_QUERYABLE_ROLES, normalizeKey, resolveRole, roleIn } from '../schema/component.ts';
 import { PLATFORMS, SOURCE_EXT, sourceDir, TS_PLATFORMS } from '../schema/platforms.ts';
 import { accessibleNameProp, behaviorFor } from './parse.ts';
 
@@ -200,10 +200,11 @@ export function rootLocatorBody(c: Dict, platform: string): string {
   throw new Unmappable(`unknown platform '${platform}'`);
 }
 
-/** The type a prop's literal takes: its `type`, except that a `union` whose `shape` starts with a scalar
- *  (`string | string[]`, `number | [number, number]`) reads as that scalar, the way it was typed before
- *  `union` existed. A given value is still rendered by its runtime type. */
+/** The type a prop's literal takes: its `type`, except that an `integer` is a `number`, and a `union` whose
+ *  `shape` starts with a scalar (`string | string[]`, `number | [number, number]`) reads as that scalar, the way
+ *  it was typed before `union` existed. A given value is still rendered by its runtime type. */
 export function scalarType(prop: Dict): string {
+  if (prop.type === 'integer') return 'number';
   if (prop.type !== 'union') return prop.type as string;
   const first = pyStr(pyGet(prop, 'shape', '')).split('|')[0]?.trim();
   return first === 'string' || first === 'number' || first === 'boolean' ? first : 'union';
@@ -341,7 +342,7 @@ export function whenLines(c: Dict, sc: Dict, platform: string): string[] {
 // `then` items → assertion lines
 // ---------------------------------------------------------------------------
 
-export function thenEventLines(_c: Dict, item: Dict, platform: string): string[] {
+export function thenEventLines(c: Dict, item: Dict, platform: string): string[] {
   const name = item.event as string;
   const mock = `s.events.${name}`;
   if (pyGet(item, 'fired', null) === false) return [`expect(${mock}).not.toHaveBeenCalled();`];
@@ -350,6 +351,12 @@ export function thenEventLines(_c: Dict, item: Dict, platform: string): string[]
     if (platform === 'web') return [`expect(${mock}).toHaveBeenCalledWith(${js(value)}, expect.anything());`];
     if (platform === 'rn') return [`expect(${mock}).toHaveBeenCalledWith(${js(value)});`];
     if (platform === 'lit') {
+      // A declared one-field payload names the detail key a scalar `with` is.
+      const payload = (c.events as Dict | undefined)?.[name]?.payload as Dict[] | undefined;
+      const field = payload?.length === 1 ? (payload[0]?.name as string) : null;
+      if (field !== null && (value === null || typeof value !== 'object')) {
+        return [`expect(${mock}).toHaveBeenCalledTimes(1);`, `expect(${mock}.mock.calls[0]?.[0]?.detail?.${field}).toEqual(${js(value)});`];
+      }
       if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
         return [`expect(${mock}).toHaveBeenCalledTimes(1);`, `expect(${mock}.mock.calls[0]?.[0]?.detail).toMatchObject(${js(value)});`];
       }
@@ -425,9 +432,9 @@ export function thenTextLines(_c: Dict, text: string, platform: string): string[
 
 export function thenCopyLines(c: Dict, key: string, platform: string): string[] {
   const copy = (truthy(c.copy) ? c.copy : {}) as Dict;
-  const template = pyGet(copy, key, null) as string | null;
-  if (template === null || template === undefined) throw new Unmappable(`then.copy: unknown copy key '${key}'`);
-  return thenTextLines(c, template, platform);
+  const entry = pyGet(copy, key, null) as Parameters<typeof copyText>[0] | null;
+  if (entry === null || entry === undefined) throw new Unmappable(`then.copy: unknown copy key '${key}'`);
+  return thenTextLines(c, copyText(entry), platform);
 }
 
 export function thenRoleLines(_c: Dict, role: string, platform: string): string[] {
@@ -518,12 +525,20 @@ export function needsSurface(sc: Dict): boolean {
   return (sc.then as Dict[]).some((item) => keys.some((k) => has(item, k)));
 }
 
-/** `given` plus `open: true` for components with a boolean `open` prop, unless the scenario sets it. */
+/** The boolean prop that opens the component's surface: the controlled prop whose `state` is `open`, else a
+ *  boolean prop named `open`; null when there is neither. */
+function openPropName(c: Dict): string | null {
+  const props = (truthy(c.props) ? c.props : {}) as Dict;
+  const name = controlledPairs(c).find((pair) => pair.state === 'open')?.prop ?? 'open';
+  const prop = pyGet(props, name, undefined) as Dict | undefined;
+  return truthy(prop) && (prop as Dict).type === 'boolean' ? name : null;
+}
+
+/** `given` plus the open prop set to true (see `openPropName`), unless the scenario sets it. */
 export function effectiveGiven(c: Dict, sc: Dict): Dict {
   const given: Dict = { ...((truthy(pyGet(sc, 'given', null)) ? sc.given : {}) as Dict) };
-  const props = (truthy(c.props) ? c.props : {}) as Dict;
-  const openProp = pyGet(props, 'open', undefined) as Dict | undefined;
-  if (truthy(openProp) && (openProp as Dict).type === 'boolean' && !has(given, 'open') && needsSurface(sc)) given.open = true;
+  const open = openPropName(c);
+  if (open !== null && !has(given, open) && needsSurface(sc)) given[open] = true;
   return given;
 }
 
@@ -536,8 +551,9 @@ export function scenarioBlock(c: Dict, sc: Dict, platform: string): string {
     if (role !== null && HOVER_ROLES.has(role) && needsSurface(sc)) {
       if (platform === 'rn') throw new Unmappable(`role '${role}' needs its trigger hovered or focused; covered by the Keyboard story`);
       // The trigger is the first anatomy part; a scenario with its own interaction performs that instead, and one
-      // whose controlled `open` prop already shows the surface needs no hover (Lit's harness slots no trigger).
-      if (!truthy(pyGet(sc, 'when', null)) && effectiveGiven(c, sc).open !== true) when = whenLines(c, { ...sc, when: { hover: primaryPart(c) } }, platform);
+      // whose controlled open prop already shows the surface needs no hover (Lit's harness slots no trigger).
+      const open = openPropName(c);
+      if (!truthy(pyGet(sc, 'when', null)) && (open === null || effectiveGiven(c, sc)[open] !== true)) when = whenLines(c, { ...sc, when: { hover: primaryPart(c) } }, platform);
     }
     when = when.concat(whenLines(c, sc, platform));
     for (const item of sc.then as Dict[]) then = then.concat(thenItemLines(c, item, platform));
@@ -655,16 +671,17 @@ function onSwiftUI(prop: Dict): boolean {
 }
 
 /**
- * SwiftUI's controlled/uncontrolled idiom: where a doc declares both `open` and `defaultOpen`, the
- * initializer takes `open` as a `Binding<Bool>?` and `defaultOpen` as the initial value
- * (prompts/templates/swiftui.md). A scenario that sets the controlled prop to a literal is describing that
- * initial state, and the `default…` parameter is the only one a literal typechecks against.
+ * SwiftUI's controlled/uncontrolled idiom: where a controlled prop has a default prop (`controlledPairs`:
+ * `open` seeded by `defaultOpen`), the initializer takes the controlled prop as a `Binding<Bool>?` and the
+ * default prop as the initial value (prompts/templates/swiftui.md). A scenario that sets the controlled prop to a
+ * literal is describing that initial state, and the default parameter is the only one a literal typechecks against.
  */
 export function swiftUncontrolled(props: Dict, given: Dict): Dict {
+  const seeds = new Map(controlledPairs({ props }).flatMap((pair) => (pair.default === null ? [] : [[pair.prop, pair.default] as const])));
   const remapped: Dict = {};
   for (const [key, value] of Object.entries(given)) {
-    const sibling = `default${(key[0] ?? '').toUpperCase()}${key.slice(1)}`;
-    if (has(props, sibling) && !has(given, sibling)) remapped[sibling] = value;
+    const seed = seeds.get(key);
+    if (seed !== undefined && has(props, seed) && !has(given, seed)) remapped[seed] = value;
     else remapped[key] = value;
   }
   return remapped;
@@ -793,9 +810,9 @@ export function swiftThenItemLines(c: Dict, item: Dict, given: Dict): string[] {
       template = item.text as string;
     } else {
       const copy = (truthy(c.copy) ? c.copy : {}) as Dict;
-      const found = pyGet(copy, item.copy as string, null) as string | null;
+      const found = pyGet(copy, item.copy as string, null) as Parameters<typeof copyText>[0] | null;
       if (found === null || found === undefined) throw new Unmappable(`then.copy: unknown copy key '${item.copy as string}'`);
-      template = found;
+      template = copyText(found);
     }
     const expected = pyStrip(template);
     if (expected.includes('{label}')) {

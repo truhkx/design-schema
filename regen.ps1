@@ -1,5 +1,6 @@
 # Full regeneration of every component from the docs, in composition order, with a pause for gap-folding
 # between phases. Claude Code runs the jobs queue; this script runs the generator. ASCII only.
+# Cross-platform equivalent: `pnpm regen` (tools/regen.ts), the same flags in kebab-case (-From -> --from, -NoPause -> --no-pause).
 #
 #   powershell -ExecutionPolicy Bypass -File .\regen.ps1                      # all phases, all platforms, sequential
 #   powershell -ExecutionPolicy Bypass -File .\regen.ps1 -Platform web        # one platform (run three windows for parallel; needs job 100)
@@ -60,21 +61,8 @@ if ($requested -contains "swiftui" -and -not (Get-Command gh -ErrorAction Silent
 # The browser gates are a Playwright project per TypeScript platform; there is none for swiftui.
 $browserPlatforms = @($requested | Where-Object { $_ -ne "swiftui" })
 
-# Phases in composition order. A component is generated only after everything it composes.
-$phases = @(
-  @{ name = "Primitives"; components = "Icon,Text,Heading,Stack,Box" },
-  @{ name = "Core";       components = "Button,Link,Input,Form,Container,Card,Divider" },
-  @{ name = "Controls";   components = "Checkbox,Switch,RadioGroup,Disclosure,Alert,Landmark,Breadcrumb,Meter,Fieldset" },
-  @{ name = "Focus";      components = "FocusScope,Tooltip,Toast" },
-  @{ name = "Overlays";   components = "Dialog,AlertDialog,Menu,Popover,BottomSheet,ActionSheet,SidePanel" },
-  @{ name = "Selection";  components = "Tabs,SegmentedControl,Listbox,Select,Combobox,Accordion" },
-  @{ name = "Numeric";    components = "Slider,NumberInput,ProgressBar,Stepper,Search,DatePicker" },
-  @{ name = "Rows";       components = "Toolbar,Carousel,Table" },
-  @{ name = "Grids";      components = "DataGrid,TreeGrid,Tree" },
-  @{ name = "Streams";    components = "Splitter,Feed" },
-  # Pattern pages (site/src/content/docs/patterns) come last: they compose everything above.
-  @{ name = "Patterns";   pattern = "SettingsPage" }
-)
+if (-not (Test-Path tools\regen-phases.json)) { Log "tools\regen-phases.json is missing: it holds the phase order."; exit 1 }
+$phases = @((Get-Content tools\regen-phases.json -Raw -Encoding utf8 | ConvertFrom-Json).phases)
 
 $plan = @()
 if ($Phase -ne "") {
@@ -90,7 +78,7 @@ if ($Phase -ne "") {
 }
 
 Log "Plan: $(($plan | ForEach-Object { $_.name }) -join ' -> ')  platforms=$Platform force=$($Force.IsPresent) gates=$($Gates.IsPresent) pause=$(-not $NoPause.IsPresent)"
-if ($DryRun) { $plan | ForEach-Object { Log "  $($_.name): $(if ($_.pattern) { 'pattern ' + $_.pattern } else { $_.components })" }; exit 0 }
+if ($DryRun) { $plan | ForEach-Object { Log "  $($_.name): $(if ($_.pattern) { 'pattern ' + $_.pattern } else { $_.components -join ',' })" }; exit 0 }
 
 # Preparation: tokens, prompts, and a parse that must be clean before any model call.
 Log "== pnpm themes =="
@@ -129,7 +117,7 @@ function AutoFold($phaseName) {
   try {
     Log "== auto-fold ($FoldModel) after $phaseName =="
     $prompt = Get-Content prompts\fold-gaps.md -Raw -Encoding utf8
-    $prompt | claude -p --model $FoldModel --permission-mode acceptEdits --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(node tools/*),Bash(pnpm *),Bash(powershell *),Bash(git *)" 2>&1 | ForEach-Object { Log "$_" }
+    $prompt | claude -p --model $FoldModel --permission-mode acceptEdits --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(node tools/*),Bash(node --import tsx tools/*),Bash(pnpm *),Bash(git *)" 2>&1 | ForEach-Object { Log "$_" }
     pnpm parse 2>&1 | ForEach-Object { Log "$_" }
     if ($LASTEXITCODE -ne 0) {
       Log "auto-fold left the docs unparseable: stopping so a human can look (git diff site/src/content/docs)."
@@ -143,10 +131,10 @@ $i = 0
 foreach ($p in $plan) {
   $i++
   Log ""
-  $what = if ($p.pattern) { "pattern " + $p.pattern } else { $p.components }
+  $what = if ($p.pattern) { "pattern " + $p.pattern } else { $p.components -join "," }
   Log "==== Phase $($p.name) ($i of $($plan.Count)): $what ===="
   $args = @("tools/generate.ts", "--platform", $Platform)
-  if ($p.pattern) { $args += @("--pattern", $p.pattern) } else { $args += @("--component", $p.components) }
+  if ($p.pattern) { $args += @("--pattern", $p.pattern) } else { $args += @("--component", ($p.components -join ",")) }
   if ($Force) { $args += "--force" }
   if ($Gates -and $browserPlatforms.Count -gt 0) { $args += @("--with", "keyboard", "--with", "axe") }
   node @args 2>&1 | ForEach-Object { Log "$_" }

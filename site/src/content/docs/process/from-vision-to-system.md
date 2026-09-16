@@ -11,7 +11,7 @@ Design Schema is built so that **design decisions are made once, early, in plain
 
 | Stage | Question it answers | Input | Output (an artifact in the repo) |
 | --- | --- | --- | --- |
-| 1. Theme | *How should it feel, and what few decisions define that?* | A conversation | `themes/<id>.md` — tone, the word it must not be, seed color & type, ratio, radius, density |
+| 1. Theme | *How should it feel, and what few decisions define that?* | A conversation | `site/src/content/docs/themes/<id>.md` — tone, the word it must not be, seed color & type, ratio, radius, density |
 | 2. Foundations | *What are the raw materials?* | The theme doc | `tokens/themes/<id>/base.json` — derived palettes, type scale, spacing, radius |
 | 3. Semantics | *What do the materials mean?* | Foundations | `tokens/themes/<id>/{light,dark}.json` — `foreground`, `background`, `action.primary`… |
 | 4. Components | *How do people use it?* | Semantics + patterns from MUI, Primer, etc. | `components/*.md` — schema + guidance |

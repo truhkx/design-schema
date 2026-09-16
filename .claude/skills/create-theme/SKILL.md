@@ -68,7 +68,8 @@ Present a short table — decision, value, the evidence it came from — and get
 - **`neutralTint`:** 0 pure gray, 0.1–0.2 a subtle cast, 0.3–0.4 clearly warm or cool.
 - **`seed.typeface` / `headingTypeface` / `mono`:** `system` or a family name. The system names the family; it doesn't host fonts, so note licensing and loading in the platform notes.
 - **`scale`:** `base` 14–16 for apps, 16–18 for reading; `ratio` 1.2 dense/technical, 1.25 balanced, 1.333 editorial.
-- **`radius`:** none, sm (2/4/6), md (4/8/12), lg (8/12/16), full (pills).
+- **`tuning.lineHeight` / `tuning.fontWeight`:** only when the defaults don't suit the face. Line heights `tight`/`normal`/`loose` run 1.0–2.2 and stay in that order (defaults 1.2/1.5/1.7); weights `regular`/`medium`/`semibold`/`bold` are multiples of 100, ascending (defaults 400/500/600/700). Set only the ones that change.
+- **`radius`:** none, sm (2/4/6), md (4/8/12), lg (8/12/16), full (pills). When no preset fits, `tuning.radius` sets the three steps in px (`sm`, `md`, `lg`, 0–48) on top of the nearest preset; `full` stays a pill, and it has no effect with `none`, so the schema rejects the pair.
 - **`density`:** compact, comfortable, roomy. **`layout.rhythm`:** tight, normal, loose; **`layout.contentWidth`** 480–1600px.
 - **`motion`:** none, subtle, expressive. **`elevation`:** flat (borders and scrims), subtle, pronounced (real shadows).
 - **`id`:** kebab-case and equal to the file name. `status: draft` for a new theme.
@@ -101,20 +102,24 @@ node --import tsx .claude/skills/create-theme/scripts/preview.ts <id> '#hex' '#h
 
 `preview.ts` prints each mode's page, text, border, button, link and focus colors with their contrast, the brand and neutral ramps, and for every inspiration color you pass, the nearest token and its drift (OKLab distance × 100: under 2 reads as the same color, under 5 as a close relative, over 10 as a different color). Show them this and say plainly where the result moved away from the inspiration and why — usually contrast pushing an accent darker or lighter.
 
-When they want a specific token pinned to an exact value, add it per mode:
+When they want a specific token pinned to an exact value, add it per mode, or under `base` for a base token. A radius step, line height or weight has a named `tuning` value; use that instead:
 
 ```yaml
+  tuning:
+    radius: { sm: 3, md: 6, lg: 10 }
   overrides:
+    base:
+      space.3: '10px'
     light:
       color.action.primary.background: '#3B5BDB'
     dark:
       color.action.primary.background: '#748FFC'
 ```
 
-Copy token paths exactly from the preview output: override paths aren't validated, and a typo silently creates a token nothing reads. Overrides reach the per-mode color and shadow tokens only, not the type, spacing or radius scales. They are still contrast-checked, so run steps 6 again after adding one.
+Override paths and values are validated against `schema/tokens.ts`. Use a full path (`color.foreground.default`) or its public name (`color.foreground`), copied from the preview output. A typo, a token under the wrong key or a value of the wrong type fails `tools/theme.ts` before anything is written; the error names the key and the path, says which key a token of the other layer goes under, and shows the value it got. `light` and `dark` reach the per-mode color and shadow tokens. `base` reaches the palette and the type, spacing, radius and motion scales, and is applied before the modes are derived, so the mode colors are chosen against the overridden palette (a palette step must be a `#rrggbb` literal). Target sizes (`size.target.*`) and the focus width (`border.width.focus`) are accessibility floors and can't be overridden, and a token can't be set in both `tuning` and `overrides.base`. Overrides are still contrast-checked, so run step 6 again after adding one.
 
 ## 7. Finish
 
 - `node --import tsx tools/parse.ts` writes `generated/prompts/theme.<id>.md` (and refreshes the other generated prompts).
 - `pnpm tokens` builds `packages/tokens/dist/<id>/` for CSS, JS and React Native; `pnpm docs` shows the theme page with its derived swatches.
-- Summarize what was decided, what drifted from the inspiration and why, and any overrides added. Don't commit unless asked.
+- Summarize what was decided, what drifted from the inspiration and why, and any overrides or tuning added. Don't commit unless asked.

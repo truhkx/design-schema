@@ -25,7 +25,7 @@ component:
       type: enum
       values: [default, inherit]
       default: default
-      description: '`default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone — for links inside muted or on-action text.'
+      description: '`default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone — for links inside muted or on-action text. Under `inherit` the color, colorHover and colorVisited bindings are not applied: rest, hover, visited and (on native) pressed all resolve to the inherited color (currentColor on web and Lit, the enclosing TextStyleContext color on native), and the underline and the external icon follow that same color, so an inherited link has no hover or visited color change by design.'
     download:
       type: boolean
       default: false
@@ -33,17 +33,17 @@ component:
       platforms: [web, lit]
   events:
     onPress:
-      description: 'Fired when the link is activated. On web the default navigation still happens unless the consumer prevents it; on native the consumer must navigate (the system opens URLs with Linking when no handler is given). On Lit the name is the native anchor''s own `click`, retargeted out of the shadow root — Link emits no `press` CustomEvent.'
+      description: 'Fired when the link is activated. On web the default navigation still happens unless the consumer prevents it; on native the consumer must navigate (the system opens URLs with Linking when no handler is given). On Lit the name is the native anchor''s own `click`, retargeted out of the shadow root — Link emits no `press` CustomEvent. Cancelling: on web the handler receives the click event and cancels navigation with preventDefault or by returning `false` (typed `(event) => void | boolean`; Link calls preventDefault on `false`); on Lit the consumer calls preventDefault on the click; on native the handler receives `href` and returning `false` cancels the Linking hand-off, the only default action native has. `fires: [user]` means Link never dispatches it itself; on web and Lit a script calling `.click()` on the anchor still fires it, as on any link, and Link does not try to filter that out.'
       platforms: { web: onClick, lit: click, rn: onPress, swiftui: action }
       cancelable: true
       fires: [user]
   styles:
     color: { token: color.link }
-    colorHover: { token: color.link.hover, state: hover, description: Pointer hover and active state. }
+    colorHover: { token: color.link.hover, state: hover, description: 'Pointer hover only on web and Lit (not :active); on native, which has no hover, the pressed color.' }
     colorVisited: { token: color.link.visited, description: 'Web and Lit only; native has no visited state.' }
     underlineThickness: { token: border.width.thin, description: 'Text-decoration thickness; the underline is always present at rest.' }
     underlineOffset: { token: space.1 }
-    externalIconGap: { token: space.1, part: externalIcon, description: 'Gap before the trailing icon, which is 1em of the surrounding font size (no token: it scales with the text).' }
+    externalIconGap: { token: space.1, part: externalIcon, description: 'Gap before the trailing icon, applied as margin-inline-start on Link''s own `externalIcon` wrapper span (inline text has no Stack to use), never on the Icon inside it. The icon is 1em of the surrounding font size (no token: it scales with the text). On React Native nested Text ignores margins, so the gap is a single literal space and this binding is not applied.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
     focusRingRadius: { token: radius.sm }
@@ -62,15 +62,15 @@ component:
     web:
       element: a
       attributes: [href, target, rel, download]
-      notes: 'A native <a href>. `external` sets target="_blank" and rel="noopener noreferrer". The visible label stays as-is; the external suffix is added in visually hidden text, not aria-label, so the accessible name still starts with the visible text.'
+      notes: 'A native <a href>. `external` sets target="_blank" and rel="noopener noreferrer". The visible label stays as-is; the external suffix is added in visually hidden text, not aria-label, so the accessible name still starts with the visible text. Link accepts no `className` or `style`: a composite that shows a link inside its own row uses `tone: inherit` and keeps the underline. The root <a> carries `data-ds="Link"` and `data-part="anchor"`, and those win: a parent never stamps its own `data-part` onto Link''s root, it puts its part on a wrapper element it owns.'
     lit:
       tag: ds-link
       reflect: [tone, external, download]
-      notes: 'Wraps a native <a> in the shadow root with delegatesFocus. No custom event: the native click bubbles and retargets to the host. Consumers who intercept navigation call preventDefault on that click. A ds-link inside a ds-text paragraph is inline by default (display: inline).'
+      notes: 'Wraps a native <a> in the shadow root with delegatesFocus. No custom event: the native click bubbles and retargets to the host. Consumers who intercept navigation call preventDefault on that click. A ds-link inside a ds-text paragraph is inline by default (display: inline). `href` and `label` are required but a property needs an initial value, so both start as '''' and Link does not warn; an empty href is the consumer''s authoring error (render Text instead).'
     rn:
       element: Text
       props: [accessibilityRole=link, accessibilityLabel, onPress]
-      notes: 'Renders Text with accessibilityRole="link" so it is inline inside a parent Text. The external mark is `Icon name="external" inline` colored with the link color (with `tone: inherit` it takes the parent Text''s color from TextStyleContext); it swaps color instantly on press while the label crossfades. Of the override bindings only `transition` has an effect on native (Text cannot set underline thickness/offset). Activation calls `onPress(href)` first when provided; for a non-external link that handler is the navigation and Linking is only the fallback when there is none, while an `external` link then always hands off to Linking.openURL(href) as well, because a consumer''s own router cannot open the system browser. With `tone: inherit` and `external` there is no currentColor to inherit from, so the mark falls back to Icon''s own default colour. Icon''s inline mode renders at font.size.md rather than the enclosing Text''s size, which is Icon''s own documented limit and can look mis-sized inside a non-md Text. No hover or visited state; the pressed state uses colorHover. On react-native-web this becomes a real anchor. Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur` and `onLongPress` to the native element, so Tooltip can attach to it.'
+      notes: 'Renders Text with accessibilityRole="link" so it is inline inside a parent Text. The external mark is `Icon name="external" inline`, preceded by a single literal space (nested Text ignores margins, so `externalIconGap` is not applied). With `tone: default` Link passes the link color to Icon''s `color` prop, and it swaps instantly on press while the label crossfades; with `tone: inherit` Link passes no `color`, so Icon takes the enclosing TextStyleContext color when nested in a system Text and color.foreground otherwise. Of the override bindings only `transition` has an effect on native (Text cannot set underline thickness/offset, and the gap is a space), so the native LinkOverridableBinding type is `transition` alone. Activation calls `onPress(href)` first when provided, and returning `false` from it cancels any Linking hand-off. For a non-external link that handler is the navigation and Linking.openURL(href) is only the fallback when there is no handler; an `external` link hands off to Linking.openURL(href) after the handler as well, because a consumer''s own router cannot open the system browser. `accessibilityLabel` is the label plus `copy.externalSuffix` verbatim when `external`: one suffix string on every platform, kept even though native opens the system browser rather than a tab; `copy.external` is unused on native. Icon''s inline mode renders at font.size.md rather than the enclosing Text''s size, which is Icon''s own documented limit and can look mis-sized inside a non-md Text. No hover or visited state; the pressed state uses colorHover. On react-native-web this becomes a real anchor. Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur` and `onLongPress` to the native element, so Tooltip can attach to it through those props; Link exposes no `ref` prop and no ref to its Text root.'
     swiftui:
       element: Link
       props: [Link, Button, .accessibilityAddTraits=isLink, openURL, .underline, .accessibilityHint]
@@ -83,11 +83,11 @@ component:
       then:
         - { event: onPress }
     - name: external-link-announces-that-it-leaves
-      description: 'The accessible name is the visible text plus copy.externalSuffix, so users are told the link leaves the current context before they activate it.'
+      description: 'The accessible name is the visible text plus copy.externalSuffix, so users are told the link leaves the current context before they activate it. On web and Lit the `copy` expectation reads the anchor''s text content, where the suffix sits in visually hidden text; the name is reached through the shadow root on Lit and is the accessibilityLabel on native.'
       given: { external: true, label: 'View the billing history' }
       then:
         - { copy: externalSuffix, platforms: [web, lit] }
-        - { name: 'View the billing history (opens in new tab)', platforms: [web] }
+        - { name: 'View the billing history (opens in new tab)', platforms: [web, lit, rn] }
     - name: external-link-opens-a-new-tab
       description: 'external sets target="_blank" and rel="noopener noreferrer" on web and Lit.'
       given: { external: true }
@@ -101,13 +101,13 @@ component:
         - { attribute: download, is: '', platforms: [web, lit] }
   examples:
     - name: inline-in-a-paragraph
-      description: The default link inside body text, underlined and taking the paragraph's typography.
+      description: 'The default link inside body text, underlined and taking the paragraph''s typography. The story renders it inside a default Text paragraph reading "Invoices from the last twelve months are kept. " followed by the link and a full stop.'
       given: { href: '/billing/history', label: 'View the billing history' }
     - name: external-destination
       description: A link that leaves the product, so the name says so before it is activated.
       given: { href: 'https://status.example.com', label: 'Status page', external: true }
     - name: inside-muted-text
-      description: A link in muted or on-action text, where the color is inherited and the underline alone marks it.
+      description: 'A link in muted or on-action text, where the color is inherited and the underline alone marks it. The story renders it inside a Text with `tone: muted` reading "For how charges are calculated, read " followed by the link and a full stop.'
       given: { href: '/help/billing', label: 'the billing guide', tone: inherit }
     - name: downloadable-file
       description: A link to a file the browser should save rather than open.
@@ -129,7 +129,7 @@ Do not use a Link to trigger an action — submitting, opening a dialog, togglin
 
 A Link has no typography of its own: it inherits font family, size, weight and line height from the text it sits in, so it looks right inside a paragraph, a caption, or a breadcrumb without configuration. Standalone, it inherits from the page body.
 
-Activation with pointer, Enter, or assistive technology navigates to `href`. `onPress` fires first; on web the consumer may prevent the default to route client-side, and on native the consumer's handler is the navigation. With `external`, web opens a new tab and native hands the URL to the system. `download` asks the browser to save rather than open and does nothing on native. The link is never disabled: a destination that is not available is not rendered as a link.
+Activation with pointer, Enter, or assistive technology navigates to `href`. `onPress` fires first; on web the consumer may prevent the default to route client-side, and on native the consumer's handler is the navigation (an `external` link still hands off to the system afterwards unless the handler returns `false`). With `external`, web opens a new tab and native hands the URL to the system. `download` asks the browser to save rather than open and does nothing on native. The link is never disabled: a destination that is not available is not rendered as a link.
 
 ## Content guidelines
 
@@ -142,13 +142,13 @@ The accessible name is the visible text (WCAG 2.4.4, 2.5.3), plus `copy.external
 ## Platform notes
 
 ### Web
-Render `<a href>` with the visible label as content. For `external`, render, in order: the label, a visually hidden `<span>` containing `copy.externalSuffix`, then the decorative icon (an inline 1em SVG with `aria-hidden`). The visually hidden span uses the standard clip pattern (absolute, 1px box, clip-path inset 50%, white-space nowrap) — the one place where 1px literals are sanctioned. `font: inherit` on the anchor. Prefer `text-underline-offset` and `text-decoration-thickness` from the tokens over border tricks so the underline behaves in wrapped text.
+Render `<a href>` with the visible label as content. For `external`, render, in order: the label, a visually hidden `<span>` containing `copy.externalSuffix`, then the decorative icon: a `<span data-part="externalIcon">` wrapper carrying the `externalIconGap` margin, containing the system `<Icon name="external" inline />` with no label (so it hides itself). Icon's `inline` sizes it at 1em of the surrounding text, and its color is currentColor, so it follows the anchor's rest, hover and visited colors; no hand-drawn SVG. The visually hidden span uses the standard clip pattern (absolute, 1px box, clip-path inset 50%, white-space nowrap) — the one place where 1px literals are sanctioned. `font: inherit` on the anchor. Prefer `text-underline-offset` and `text-decoration-thickness` from the tokens over border tricks so the underline behaves in wrapped text.
 
 ### Lit
 `<ds-link>` hosts a shadow root with `delegatesFocus: true` and a native `<a>` inside. Do not dispatch a CustomEvent named `click`; the native click retargets to the host and consumers listen for it there. The host defaults to `display: inline` so it can sit inside a `<ds-text>` paragraph; reflect `tone` and `external` so consumers can style from outside.
 
 ### React Native
-Render `Text` with `accessibilityRole="link"` and `accessibilityLabel` (label plus the external suffix when `external`). Nested inside a parent `Text` it flows inline; standalone it is its own line. `onPress(href)` is the navigation when provided; otherwise call `Linking.openURL(href)` — never both. Standalone, the Link sets the body typography (`font.size.md`, `font.weight.regular`, `font.lineHeight.normal` via Text's helpers) since there is no cascade; nested in the system Text it inherits, which Text signals through an exported `TextNestingContext` — inside a raw RN Text the Link is standalone. Put a single space before the external glyph, since nested Text ignores margins. Platform limits, all acknowledged: no visited state (`colorVisited` unused), no hover (`colorHover` is the pressed color), no underline offset or thickness, and no focus events on `Text`, so the focus ring is the platform's own — `focusRing*` bindings are not applied.
+Render `Text` with `accessibilityRole="link"` and `accessibilityLabel` (label plus the external suffix when `external`). Nested inside a parent `Text` it flows inline; standalone it is its own line. `onPress(href)` is the navigation when provided; otherwise call `Linking.openURL(href)`. The one exception is `external`: after the handler runs, Link still calls `Linking.openURL(href)` unless the handler returned `false`. Standalone, the Link sets the body typography (`font.size.md`, `font.weight.regular`, `font.lineHeight.normal` via Text's helpers) since there is no cascade; nested in the system Text it inherits, which Text signals through its exported `TextStyleContext` (its `nested` field; there is no `TextNestingContext`) — inside a raw RN Text the Link is standalone. Put a single space before the external glyph, since nested Text ignores margins. Platform limits, all acknowledged: no visited state (`colorVisited` unused), no hover (`colorHover` is the pressed color), no underline offset or thickness, and no focus events on `Text`, so the focus ring is the platform's own — `focusRing*` bindings are not applied.
 
 ## Related
 

@@ -21,3 +21,10 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 - FocusScope consumers (rn): Dialog, Popover, Menu, Select and SidePanel each set `restoreFocus={false}` and hand-roll the restore; `returnFocusTo` now exists and replaces all five.
 - FormContext (react/rn): `FormFieldValue` has no numeric variant, but the Form contract is `string | number | boolean | string[] | [number, number]`. NumberInput and Slider stringify to fit.
 - Toolbar (lit): the overflow width budget reads `--size-target-min`, which does not exist; the doc now names `size.target.min`.
+- FormContext.ts / FormContext.tsx (rn): both exist with different types; imports resolve to `.ts`, the `.tsx` looks stale.
+- Lit field components (Checkbox, Switch, RadioGroup, Select, NumberInput, DatePicker): do not set `data-ds-field`, so ds-form cannot collect them; Checkbox and Switch must set `data-ds-field="change"`.
+- Form.ts (lit): discovers fields with a tag list (FIELD_TAGS) instead of `data-ds-field`, and never sets `invalid` on a failing field, so in-field messages never show under ds-form validation.
+- RN field components (Input, Checkbox, Switch, RadioGroup): do not pass `label` when they register with Form.
+- Text.tsx (rn): hardcodes `testID="Text"` and takes no testID prop, so a composite cannot tag it `Input.<part>`.
+- Feed (web): passes `tabIndex={-1}` to Card instead of `focusable`.
+- Tree.tsx / Tree.css (web): passes `className` and `data-part="label"` to Link and strips its underline; should pass `tone="inherit"`, put its part on its own wrapper and keep the underline. tree.md should also say href nodes use `tone: inherit`.

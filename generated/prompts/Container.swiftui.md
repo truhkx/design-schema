@@ -62,7 +62,9 @@ component:
       type: content
       required: true
       description: 'The page or region content, usually a Stack with `gap: section`
-        between regions.'
+        between regions. A string given as `children` in an example is an illustrative
+        label, not content to build: stories render it inside a Text on every platform
+        (native requires one) and do not construct the Stack it names.'
     width:
       type: enum
       values:
@@ -93,7 +95,8 @@ component:
       default: center
       description: 'Where the capped column sits in a wider viewport. `start` sets
         `margin-inline: 0` on both sides, not just the start side, so the column never
-        picks up an asymmetric margin.'
+        picks up an asymmetric margin. React Native has no margin here: `center` maps
+        to `alignSelf: center` and `start` to `alignSelf: flex-start`.'
     element:
       type: enum
       values:
@@ -102,6 +105,9 @@ component:
       - section
       default: div
       description: Use `main` for the page's main column when no Landmark wraps it.
+        A page has exactly one `main`; that is the author's responsibility, since
+        the component cannot see the rest of the page, so it neither enforces it nor
+        warns.
       platforms:
       - web
       - lit
@@ -110,13 +116,19 @@ component:
       token: layout.maxWidth.{width}
       description: '`full` renders no max-width — the literal `none`, with no hook,
         which also makes an override of this binding a no-op at that value; the binding
-        covers the other three.'
+        covers the other three. No dev warning fires for an override that has no effect.'
       locked: false
     paddingInline:
       token: layout.gutter.{gutter}
-      description: '`none` renders no padding (a literal 0, with no hook). `narrow`
-        and `wide` are fixed at every viewport. Only `default` is responsive: narrow
-        below layout.maxWidth.content, default between, wide above layout.maxWidth.page.'
+      description: '`none` renders no padding (a literal 0, with no hook), which also
+        makes an override of this binding a no-op at that value, with no dev warning.
+        `narrow` and `wide` are fixed at every viewport. Only `default` is responsive:
+        `layout.gutter.narrow` below layout.maxWidth.content, `layout.gutter.default`
+        (the `--layout-gutter` variable) from layout.maxWidth.content, and `layout.gutter.wide`
+        from layout.maxWidth.page. Both boundaries are inclusive (`>=`, a min-width
+        query), so a viewport exactly at a token width takes the wider gutter. An
+        override of this binding replaces the value at every viewport width, including
+        the whole responsive `default` gutter, not just its middle band.'
       locked: false
   a11y:
     role: none
@@ -129,7 +141,13 @@ component:
         and padding-inline from tokens; the responsive gutter uses two media queries
         keyed to the maxWidth tokens (min-width: var() is not valid in media queries,
         so the generator reads the resolved px values from the token file at build
-        time — the one place a resolved number appears, marked literal-ok).'
+        time — the one place a resolved number appears, marked literal-ok). The breakpoint
+        px come from the default theme, calm-precise (960 / 1280); the CSS is one
+        theme-independent file, so under a theme with other maxWidth values the cap
+        follows the theme (it is a custom property) but the gutter switches at calm-precise
+        widths — a known limit. The block `element: div` is the default; the root
+        renders whichever tag the `element` prop chooses. The root is the `column`
+        part and carries `data-part="column"`, as Box''s root carries `surface`.'
     lit:
       tag: ds-container
       reflect:
@@ -139,15 +157,20 @@ component:
       notes: 'The host is the column (`:host { display: block }`) with a default slot.
         Same media-query note as web. A custom element cannot retag its host, so `element`
         sets an ElementInternals role for `main` only; `div` and `section` set none,
-        since a section is a region only when it is named.'
+        since a section is a region only when it is named. The role stays on ElementInternals,
+        as in Box, with no `role` attribute added to the host; the main-landmark scenario
+        is web-only because the test accessibility lookup cannot read ElementInternals.
+        The host carries `data-part="column"`.'
     rn:
       element: View
       props: []
       notes: View with maxWidth, alignSelf (center → center, start → flex-start),
         width 100%, paddingHorizontal. `element` is web and Lit only and is absent
         from the native props entirely, as in Box. The responsive gutter uses useWindowDimensions
-        against the maxWidth tokens. On phones the cap rarely applies; on tablets
-        and react-native-web it does.
+        against the active theme's maxWidth tokens, with the same inclusive `>=` boundaries
+        as web. The component forwards a ref to its root View, typed as Box types
+        its ref. On phones the cap rarely applies; on tablets and react-native-web
+        it does.
     swiftui:
       element: VStack
       props:
@@ -157,8 +180,9 @@ component:
       - GeometryReader
       notes: 'Centers content at `layout.maxWidth.{width}` with horizontal gutters
         from the inset token: `.frame(maxWidth:)` inside `.frame(maxWidth: .infinity)`.
-        Gutters shrink to the compact token below the prose width (a `GeometryReader`
-        on the container''s own width, never `UIScreen`). Safe-area insets are respected
+        The `default` gutter follows the same rule as web: narrow below the content
+        width, default from it, wide from the page width (a `GeometryReader` on the
+        container''s own width, never `UIScreen`). Safe-area insets are respected
         by default (`ignoresSafeArea` is never applied by a component).'
   behavior:
   - name: main-element-is-the-page-landmark
@@ -216,9 +240,10 @@ props:
 - .frame=maxWidth-infinity
 - GeometryReader
 notes: 'Centers content at `layout.maxWidth.{width}` with horizontal gutters from
-  the inset token: `.frame(maxWidth:)` inside `.frame(maxWidth: .infinity)`. Gutters
-  shrink to the compact token below the prose width (a `GeometryReader` on the container''s
-  own width, never `UIScreen`). Safe-area insets are respected by default (`ignoresSafeArea`
+  the inset token: `.frame(maxWidth:)` inside `.frame(maxWidth: .infinity)`. The `default`
+  gutter follows the same rule as web: narrow below the content width, default from
+  it, wide from the page width (a `GeometryReader` on the container''s own width,
+  never `UIScreen`). Safe-area insets are respected by default (`ignoresSafeArea`
   is never applied by a component).'
 ```
 
@@ -251,7 +276,7 @@ Content reflows to a single column at 320px wide without horizontal scrolling be
 ## Platform notes
 
 ### Web
-`display: block; max-inline-size: var(--layout-max-width-{width}); margin-inline: auto; padding-inline: var(--layout-gutter-narrow)`, then `@media (min-width: <content px>) { padding-inline: var(--layout-gutter) }` and `@media (min-width: <page px>) { padding-inline: var(--layout-gutter-wide) }`. The two breakpoint numbers are read from the built token JSON at generation time and marked `literal-ok: breakpoint from layout.maxWidth.*`; custom properties cannot be used in media queries.
+`display: block; max-inline-size: var(--layout-max-width-{width}); margin-inline: auto; padding-inline: var(--layout-gutter-narrow)`, then `@media (min-width: <content px>) { padding-inline: var(--layout-gutter) }` and `@media (min-width: <page px>) { padding-inline: var(--layout-gutter-wide) }`. The two breakpoint numbers are read from the default theme's (calm-precise) built token JSON at generation time and marked `literal-ok: breakpoint from layout.maxWidth.*`; custom properties cannot be used in media queries.
 
 ### Lit
 `<ds-container width="content">`; the host is the column with the same rules on `:host`. Same breakpoint note.

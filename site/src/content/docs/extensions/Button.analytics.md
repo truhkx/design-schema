@@ -10,8 +10,11 @@ extension:
       description: 'An event name sent to analytics when the button is pressed. Omit for no tracking.'
   events:
     onTrack:
-      description: "Fired after onPress with the `track` name and the button's label."
+      description: "Fired after onPress with the `track` name and the button's label: two positional arguments on web, rn and swiftui; the Lit `track` event detail is `{ name, label }`."
       platforms: { web: onTrack, lit: track, rn: onTrack, swiftui: onTrack }
+      payload:
+        - { name: name, type: string, description: The `track` value. }
+        - { name: label, type: string, description: "The button's visible label." }
   behavior:
     - name: press-tracks
       given: { track: 'signup', label: 'Sign up' }

@@ -40,38 +40,38 @@ component:
       description: '`submit` submits the enclosing Form. Everything else is `button`.'
     expanded:
       type: boolean
-      description: 'Set by a parent that the button discloses (Menu, Popover, SidePanel, Disclosure): aria-expanded on web, accessibilityState.expanded on native. Consumers rarely set it directly.'
+      description: 'Set by a parent that the button discloses (Menu, Popover, SidePanel, Disclosure): aria-expanded on web, accessibilityState.expanded on native. Consumers rarely set it directly. No default, and tri-state on every platform: undefined means the button discloses nothing, so no expanded state is reported at all (no aria-expanded on the container; `expanded` omitted from accessibilityState), never a false one.'
     disabled:
       type: boolean
       default: false
-      description: Prevents activation. The button stays in the tab order and is announced as disabled.
+      description: 'Prevents activation. The button stays in the tab order and is announced as disabled. A press blocked by `disabled` or `loading` is not a press: onPress does not fire and nothing chained from it (an extension''s tracking) runs. Inside a disabled Form the button is disabled whatever this prop says.'
     accessibleName:
       type: string
-      description: 'Overrides the accessible name when it must say more than the visible label ("Sort by Amount, ascending" on a header that shows "Amount"). The visible label must be the start of it (WCAG 2.5.3 label-in-name). Maps to aria-label / accessibilityLabel.'
+      description: 'Overrides the accessible name when it must say more than the visible label ("Sort by Amount, ascending" on a header that shows "Amount"). The name must contain the visible label (WCAG 2.5.3 label-in-name); starting with it is preferred but not required. Maps to aria-label / accessibilityLabel.'
     overflowLabel:
       type: string
-      description: 'Text used for this button when a Toolbar collapses it into its overflow Menu. Only Buttons collapse; other controls stay visible.'
+      description: 'Text used for this button when a Toolbar collapses it into its overflow Menu. Only Buttons collapse; other controls stay visible. Button itself never renders it: on web Toolbar reads it from the Button element''s props (it never reaches the DOM); on Lit it is the plain `overflow-label` attribute on ds-button, which Toolbar reads from the host.'
     iconOnly:
       type: boolean
       default: false
-      description: Hides the visible label and shows only `leadingIcon`. `label` is still required and becomes the accessible name. Padding becomes equal on all sides (`space.sm`).
+      description: Hides the visible label and shows only `leadingIcon`; `trailingIcon` is not rendered either. `label` is still required and becomes the accessible name. Padding becomes equal on all sides (`space.sm`).
     loading:
       type: boolean
       default: false
-      description: 'Shows a 1em ring spinner in `currentColor` in the leading icon slot (whether or not `leadingIcon` is set; for `iconOnly` it replaces the sole glyph), hides `trailingIcon`, keeps the label visible and the layout unchanged, and blocks repeat activation while an action is pending.'
+      description: 'Shows a ring spinner (spinnerSize across, spinnerStroke thick, in the resolved foreground: `currentColor` on web/Lit) in the leading icon slot (whether or not `leadingIcon` is set; for `iconOnly` it replaces the sole glyph), hides `trailingIcon`, keeps the label visible and the layout unchanged, and blocks repeat activation while an action is pending. The spinner is not an anatomy part and carries no part name; it only takes the leadingIcon position. `copy.loading` is announced as a description, never as part of the name, so it survives aria-label: web and Lit render it in a visually hidden node inside the button''s own tree referenced by aria-describedby (merged with any caller aria-describedby); rn sets `accessibilityValue={{ text: copy.loading }}` beside `busy`; SwiftUI uses `.accessibilityValue`.'
       platforms: [web, lit, rn]
     inverse:
       type: boolean
       default: false
-      description: 'The button sits on an inverse surface (Toast, Tooltip-like panels): `ghost` text uses color.inverse.link and hover uses color.inverse.foreground at 12% over the surface (the sanctioned color-mix of tokens on web/Lit; an alpha of the resolved color on native); the focus ring uses color.inverse.focus for every variant while `inverse` is true, since the ring must read against the inverse surface. Only `ghost` changes its fill on inverse surfaces; other variants keep their own fills.'
+      description: 'The button sits on an inverse surface (Toast, Tooltip-like panels): `ghost` text uses color.inverse.link and hover uses inverseBackgroundHover at inverseHoverOpacity over the surface (the sanctioned color-mix of tokens on web/Lit; an alpha of the resolved color on native); the focus ring uses color.inverse.focus for every variant while `inverse` is true, since the ring must read against the inverse surface. Only `ghost` changes its fill on inverse surfaces; other variants keep their own fills, which need no pair against color.inverse.surface: their text is proven against their own fill, and the label, not the fill edge, identifies the control.'
   events:
     onPress:
-      description: Fired when the button is activated by pointer, keyboard (Enter/Space), or assistive technology.
+      description: 'Fired when the button is activated by pointer, keyboard (Enter/Space), or assistive technology. No payload: pointer position and modifiers are not part of the contract, so the rn handler takes no arguments (the GestureResponderEvent is not passed).'
       platforms: { web: onClick, lit: press, rn: onPress, swiftui: action }
       fires: [user]
   styles:
     background: { token: 'color.action.{variant}.background' }
-    backgroundHover: { token: 'color.action.{variant}.backgroundHover', state: hover, description: Pointer hover and pressed state. }
+    backgroundHover: { token: 'color.action.{variant}.backgroundHover', state: hover, locked: true, description: 'Pointer hover and pressed state. Locked like background and foreground, so an override cannot put an unproven fill behind the locked foreground.' }
     foreground: { token: 'color.action.{variant}.foreground' }
     iconGap: { token: space.2, description: 'Gap between an icon and the label.' }
     paddingInline: { token: 'space.{size}' }
@@ -84,11 +84,15 @@ component:
     focusRingWidth: { token: border.width.focus }
     inverseForeground: { token: color.inverse.link, description: 'ghost text when `inverse`.' }
     inverseFocusRing: { token: color.inverse.focus, description: 'Focus ring when `inverse`.' }
-    minTarget: { token: size.target.min }
+    inverseBackgroundHover: { token: color.inverse.foreground, state: hover, description: 'ghost hover and pressed fill when `inverse`: this color at inverseHoverOpacity over color.inverse.surface.' }
+    inverseHoverOpacity: { token: opacity.disabled, computed: { times: 0.25 }, state: hover, description: 'The alpha of inverseBackgroundHover: color-mix percentage on web/Lit, the alpha of the resolved color on native.' }
+    minTarget: { token: size.target.min, description: 'min-width and min-height of the button on every platform. Web and Lit apply only this floor; there is no coarse-pointer rule.' }
+    touchTarget: { token: size.target.comfortable, platforms: [rn, swiftui], description: 'The hit area on touch platforms, reached without changing the visual size: hitSlop on rn, .contentShape on SwiftUI.' }
     disabledOpacity: { token: opacity.disabled, description: 'Applied to the whole button when disabled; colors are unchanged so contrast math still holds for the enabled state.' }
-    transition: { token: motion.duration.fast, description: 'Background/foreground transitions on hover and press, with motion.easing.standard.' }
+    transition: { token: motion.duration.fast, description: 'Background transitions on hover and press, with motion.easing.standard. No variant changes its foreground between states, so only the background animates.' }
     loadingSpin: { token: motion.duration.loop, description: 'One rotation of the loading indicator; disabled under prefers-reduced-motion.' }
-    spinnerStroke: { token: border.width.focus, description: 'Ring thickness of the loading spinner: a 1em circle with one quarter transparent, drawn in currentColor.' }
+    spinnerSize: { token: 'font.size.{size}', description: 'Diameter of the loading ring: 1em of the label font. On rn, which has no em, the ring is this size and its radius is half of it.' }
+    spinnerStroke: { token: border.width.focus, description: 'Ring thickness of the loading spinner: a spinnerSize circle with one quarter transparent, drawn in currentColor (the resolved foreground binding on rn). Locked because border.width.focus is a focus token: it keeps its `--ds-button-spinner-stroke` hook but is not a member of the overrides type.' }
   copy:
     loading: Loading
   a11y:
@@ -102,19 +106,19 @@ component:
     web:
       element: button
       attributes: [type, aria-disabled, aria-busy, aria-label]
-      notes: 'Use aria-disabled rather than the disabled attribute so the button remains discoverable by keyboard and screen readers. `expanded` is not a separate React prop here: the native `aria-expanded` arrives through `...rest`, which is how Menu, Popover, Disclosure, SidePanel, Combobox and Search already set it.'
+      notes: 'Use aria-disabled rather than the disabled attribute so the button remains discoverable by keyboard and screen readers. `expanded` is a React prop mapped to aria-expanded; when it is undefined, an `aria-expanded` arriving through `...rest` still applies, which is how Menu, Popover, Disclosure, SidePanel, Combobox and Search already set it.'
     lit:
       tag: ds-button
-      reflect: [variant, size, type, disabled, icon-only, loading, inverse]
-      notes: 'Wraps a native <button> in the shadow root with delegatesFocus so the host element is focusable. `press` is a composed CustomEvent. Icons are named slots `leading-icon` / `trailing-icon`. ds-button is NOT form-associated (a FACE with a reflected disabled attribute becomes truly disabled and unfocusable); `type=submit` is handled by ds-form listening for `press`, and by `closest(''form'')?.requestSubmit()` when placed directly in a native form. `expanded` is a JS property only (`attribute: false`) and stays tri-state — undefined means the button discloses nothing, so no aria-expanded is set at all. A disclosing parent sets `.expanded=`; a raw `aria-expanded` attribute on the host does not reach the inner button.'
+      reflect: [variant, size, type, disabled, icon-only, loading, inverse, overflow-label]
+      notes: 'Wraps a native <button> in the shadow root with delegatesFocus so the host element is focusable. `press` is a composed CustomEvent. Icons are named slots `leading-icon` / `trailing-icon`; the part names stay the anatomy names verbatim (`part="leadingIcon"`, `part="trailingIcon"`), so slot names are kebab-case and part names camelCase. A blocked activation (disabled or loading) is swallowed on the inner button with preventDefault() and stopPropagation(): neither `press` nor the native click leaves the host, and no form submits. ds-button is NOT form-associated (a FACE with a reflected disabled attribute becomes truly disabled and unfocusable); `type=submit` is handled by ds-form listening for `press`, and by `closest(''form'')?.requestSubmit()` only when no ds-form encloses the button, so a ds-form nested in a native form submits once. `expanded` is a JS property only (`attribute: false`) and stays tri-state — undefined means the button discloses nothing, so no aria-expanded is set at all. A disclosing parent sets `.expanded=`; a raw `aria-expanded` attribute on the host does not reach the inner button.'
     rn:
       element: Pressable
       props: [accessibilityRole=button, accessibilityLabel, accessibilityState, hitSlop]
-      notes: 'No hover state on touch; backgroundHover is applied to the pressed state. `type: submit` calls submit() on the nearest Form context, since there is no native form. Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur` and `onLongPress` to the native element, so Tooltip can attach to it.'
+      notes: 'No hover state on touch; backgroundHover is applied to the pressed state. `type: submit` calls submit() on the nearest Form context, since there is no native form. Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur`, `onLongPress` and `onPressOut` (chained with Button''s own pressed-state tracking) to the native element, so Tooltip can attach to it. The accessibilityLabel is `accessibleName ?? accessibilityLabel ?? label`. Button exposes its root Pressable as `ref` so a parent (Tooltip, Toolbar) can measure and focus it. `disabled` is never passed to Pressable, which would drop it from the focus order: it is a press guard plus `accessibilityState.disabled`, so a hardware-keyboard user can still focus it and the press is swallowed, as on web.'
     swiftui:
       element: Button
       props: [action, .buttonStyle=custom, .accessibilityLabel, .accessibilityHint, .accessibilityAddTraits=isButton, .frame=minWidth-minHeight, .contentShape, .focusable, .focused, .onLongPressGesture]
-      notes: 'A SwiftUI `Button(action:)` with a package `ButtonStyle` (`DSButtonStyle`) that draws variant/size from tokens and reads `isPressed` for the pressed state; hover from `.onHover` on iPad pointer. `iconOnly` sets `.accessibilityLabel(label)` and hides the text; `accessibleName` overrides the label (and must start with the visible one); `loading` sets `.accessibilityValue(copy.loading)`, disables presses without `.disabled`, and swaps the leading icon for a `ProgressView` tinted from the foreground token. `disabled` is `.accessibilityRespondsToUserInteraction(false)` + `.opacity` + guard, keeping the button focusable per the doc. Long press forwards to Tooltip through `onLongPress`; `accessibilityHint` is forwarded verbatim. `overflowLabel` is read by Toolbar only.'
+      notes: 'A SwiftUI `Button(action:)` with a package `ButtonStyle` (`DSButtonStyle`) that draws variant/size from tokens and reads `isPressed` for the pressed state; hover from `.onHover` on iPad pointer. `iconOnly` sets `.accessibilityLabel(label)` and hides the text; `accessibleName` overrides the label (and must contain the visible one); `loading` sets `.accessibilityValue(copy.loading)`, disables presses without `.disabled`, and swaps the leading icon for a `ProgressView` tinted from the foreground token. `disabled` is `.accessibilityRespondsToUserInteraction(false)` + `.opacity` + guard, keeping the button focusable per the doc. Long press forwards to Tooltip through `onLongPress`; `accessibilityHint` is forwarded verbatim. `overflowLabel` is read by Toolbar only.'
   behavior:
     # Authored scenarios; the parser adds renders/enum/accessible-name/focusable ones from the schema.
     - name: click-fires-on-press
@@ -122,12 +126,13 @@ component:
       then:
         - { event: onPress }
     - name: enter-activates
-      description: 'Activation fires onPress exactly once per pointer click, Enter key, Space key, or assistive-technology activation.'
+      description: 'Activation fires onPress exactly once per pointer click, Enter key, Space key, or assistive-technology activation. Native: the <button> synthesises the click, so no key handling is written.'
       when: { key: Enter }
       then:
         - { event: onPress }
       platforms: [web, lit]
     - name: space-activates
+      description: 'Native: the <button> synthesises the click from Space, so no key handling is written.'
       when: { key: Space }
       then:
         - { event: onPress }
@@ -169,7 +174,7 @@ component:
       given: { label: 'Delete file', variant: danger }
     - name: icon-only-in-a-toolbar
       description: A low-emphasis icon-only control in dense UI, whose label says what it does rather than what the icon depicts.
-      given: { label: Close, iconOnly: true, variant: ghost, size: sm }
+      given: { label: Close, iconOnly: true, leadingIcon: 'The close Icon', variant: ghost, size: sm }
     - name: pending-submit
       description: The submit button of a form while the request is in flight - busy, and ignoring repeat activation.
       given: { label: 'Create account', type: submit, loading: true }
@@ -206,7 +211,7 @@ Every button must have an accessible name (WCAG 4.1.2). The name comes from the 
 Render a native `<button>` with `type` from the prop (default `button`, so a button inside a form never submits by accident). Use `aria-disabled="true"` for the disabled state; the button stays in the tab order. Set `aria-busy="true"` while loading.
 
 ### Lit
-The host element `<ds-button>` reflects `variant`, `size`, `disabled`, `icon-only` and `loading` as attributes so consumers can style states from outside the shadow root. The inner element is a real `<button>`; the shadow root is created with `delegatesFocus: true`. Activation dispatches a composed, bubbling `press` CustomEvent. Consumers can also listen to the native `click` that bubbles out of the shadow root.
+The host element `<ds-button>` reflects `variant`, `size`, `disabled`, `icon-only` and `loading` as attributes so consumers can style states from outside the shadow root. The inner element is a real `<button>`; the shadow root is created with `delegatesFocus: true`. Activation dispatches a composed, bubbling `press` CustomEvent. Consumers can also listen to the native `click` that bubbles out of the shadow root; a click blocked by `disabled` or `loading` never leaves it.
 
 ### React Native
 Render a `Pressable` with `accessibilityRole="button"`, `accessibilityLabel={label}` and `accessibilityState={{ disabled, busy: loading }}`. There is no CSS cascade, so every style binding is applied explicitly from the token object. Because there is no hover on touch, `backgroundHover` is used for the pressed state. Icons passed as `leadingIcon`/`trailingIcon` are the system `Icon` and are rendered as given: there is no cascade, so Button cannot recolor them, and callers pass the variant's foreground to the Icon's own `overrides.color`. When the visual footprint is smaller than 44px, add `hitSlop` to reach the comfortable target size.

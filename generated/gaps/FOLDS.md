@@ -203,3 +203,203 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-16 TreeGrid lit: the Shift+Space key row listed keys its prose did not mean → the row now says one thing
 2026-09-16 TreeGrid lit: no empty-state string → copy.empty added
 2026-09-16 TreeGrid web: `*` inclusivity, cascade scope, lazy re-expansion, guide-line shape → all four stated
+2026-09-16 Button rn: copy.loading has no rn surface → accessibilityValue text copy.loading beside busy
+2026-09-16 Button rn: inverse ghost hover 12% has no token or binding → inverseBackgroundHover + inverseHoverOpacity (opacity.disabled × 0.25)
+2026-09-16 Button rn: rn notes omit onPressOut from the Tooltip forwarding list → onPressOut added, chained with pressed-state tracking
+2026-09-16 Button rn: accessibleName vs parent accessibilityLabel precedence unspecified → accessibleName ?? accessibilityLabel ?? label
+2026-09-16 Button rn: schema declares no ref for parent measuring/focusing → root Pressable exposed as ref for Tooltip and Toolbar
+2026-09-16 Button rn: icon-only example has no glyph, renders empty → example given gains leadingIcon close
+2026-09-16 Button rn: 1em currentColor ring impossible on rn, no spinner size → spinnerSize binding font.size.{size}; ring in resolved foreground
+2026-09-16 Button rn: 44px touch target used an undeclared token → touchTarget binding size.target.comfortable (rn, swiftui) via hitSlop
+2026-09-16 Button rn: iconOnly with trailingIcon undefined → trailingIcon not rendered either
+2026-09-16 Button rn: expanded undefined might announce collapsed → tri-state; omitted from accessibilityState when undefined
+2026-09-16 Button rn: blocked press analytics and Form disabled unspecified → blocked press runs nothing chained; disabled inside a disabled Form
+2026-09-16 Button rn: onPress drops GestureResponderEvent, intent unconfirmed → no payload; rn handler takes no arguments
+2026-09-16 Button rn: transition claims foreground transitions no variant has → background only
+2026-09-16 Button rn: overridable backgroundHover can break the locked AA pair → backgroundHover locked
+2026-09-16 Button rn: disabled-stays-focusable reads as a bug on rn → disabled never passed to Pressable; press guard + accessibilityState.disabled
+2026-09-16 Button lit: copy.loading has no surface, dropped under aria-label → description via visually hidden node + aria-describedby
+2026-09-16 Button lit: accessibleName "start of" contradicts the Amount example → name must contain the label; starting with it preferred
+2026-09-16 Button lit: spinnerStroke moved to locked with no deprecation note → locked, keeps its CSS hook, not in the overrides type
+2026-09-16 Button lit: blocked click may escape the shadow root → preventDefault + stopPropagation; nothing leaves the host
+2026-09-16 Button lit: ds-form inside a native form double-submits → requestSubmit only when no ds-form encloses the button
+2026-09-16 Button lit: part vs slot casing collide → part camelCase leadingIcon, slot kebab-case leading-icon
+2026-09-16 Button lit: 44px touch target has no token or coarse-pointer rule → web/Lit keep the 24px floor only; touchTarget is rn/swiftui
+2026-09-16 Button lit: non-ghost fills on inverse surface unproven → no pair needed; text proven against its own fill
+2026-09-16 Button lit: expanded tri-state vs boolean, scenario spelling unclear → tri-state, aria-expanded on the container
+2026-09-16 Button lit: overflowLabel not reflected, Toolbar cannot read it → overflow-label reflected; Toolbar reads the attribute
+2026-09-16 Button lit: enter/space scenarios need no key code → both scenarios say native button activation
+2026-09-16 Button web: web notes deny the expanded prop the scenario passes → expanded is a React prop; rest aria-expanded applies when undefined
+2026-09-16 Button web: copy.loading placement would change the accessible name → hidden node via aria-describedby, merged with caller's
+2026-09-16 Button web: spinnerStroke removal from overrides type is breaking → locked, keeps --ds-button-spinner-stroke
+2026-09-16 Button web: icon-only example renders empty → example given gains leadingIcon close
+2026-09-16 Button web: spinner has no anatomy part or data-part → not an anatomy part; takes the leadingIcon position only
+2026-09-16 Button web: inverse ghost hover 12% is a bare literal → inverseBackgroundHover + inverseHoverOpacity bindings
+2026-09-16 Button web: no comfortable-target binding or rule for when it applies → minTarget is the web floor; touchTarget is rn/swiftui
+2026-09-16 Button web: overflowLabel has no web contract for Toolbar → Toolbar reads it from element props; never reaches the DOM
+2026-09-16 Button web: onTrack argument shape undeclared → Button.analytics declares payload [name, label], positional on web/rn/swiftui, detail on Lit
+2026-09-16 Card rn: hoverBackground is a hover state native lacks → shown while pressed, and on pointer hover where one exists
+2026-09-16 Card rn: zero or several Link/Button children unstated → card stays non-interactive and warns once in development
+2026-09-16 Card rn: does a disabled child disable the card → yes; accessibilityState disabled, press ignored
+2026-09-16 Card rn: focusable tabIndex -1 only works on react-native-web → stated; native screen readers swipe card to card via the header
+2026-09-16 Card rn: interactive default card loses its resting border → reserved focus-width border is `border` color on default, transparent on subtle
+2026-09-16 Card rn: headingLevel changes nothing visible at size lg → level passed for parity; size lg on every platform
+2026-09-16 Card rn: example children are prose strings → plain strings render in Text; link example renders a Link at top level
+2026-09-16 Card rn: actionsGap binding names no part → part headerActions
+2026-09-16 Card lit: hit area on ds-link host never activates the inner element → card calls click() on the child's inner a[href]/button
+2026-09-16 Card lit: interactive default card loses visible border → border color at rest on default, transparent on subtle
+2026-09-16 Card lit: header actions/footer clickable above hit area unstated → they sit above it (position relative, z-index 1)
+2026-09-16 Card lit: search direct slotted children or all descendants → assigned elements of the default slot only
+2026-09-16 Card lit: :focus-within rings the card on mouse or header-action focus → target-focus custom state from :focus-visible on the target
+2026-09-16 Card lit: delegatesFocus conflicts with a focusable card → host tabindex -1, no delegatesFocus
+2026-09-16 Card lit: which element carries data-part for footer/body/headerActions → the row or wrapper holding the part, not the slot
+2026-09-16 Card lit: Heading size lg only in prose notes → heading prop: Heading size lg on every platform
+2026-09-16 Card lit: example children prose string not a value → plain strings render as Text; link example renders a Link
+2026-09-16 Card lit: article role and tabindex scenarios web-only though Lit implements both → both now [web, lit]
+2026-09-16 Card lit: consumer role vs the card's own article role → set role only if none; remove only a role the card wrote
+2026-09-16 Card web: interactive default card's reserved border hides the resting border → border color at rest on default
+2026-09-16 Card web: zero or several interactive children unstated outside Lit → non-interactive plus one dev warning, every platform
+2026-09-16 Card web: how to recognise the one interactive child → top-level body children only; wrappers are not searched
+2026-09-16 Card web: whole-card-is-a-link children string cannot be interactive → example renders a Link labelled with that text
+2026-09-16 Card web: Heading writes its own data-part, no heading hook → heading found by role or text, keeps Heading's hook
+2026-09-16 Card web: Heading default bottom margin inside header → Heading overrides marginBlockEnd space.0
+2026-09-16 Card web: :focus-within rings on header-action and mouse focus → ring only via :has(.target:focus-visible)
+2026-09-16 Card web: how a focusable card draws its ring → outline focusRingWidth in focusRing on :focus-visible, no offset
+2026-09-16 Card web: tabIndex through rest allowed → not a Card prop; `focusable` wins
+2026-09-16 Card web: empty heading string handling → counts as omitted (no article, no label)
+2026-09-16 Container rn: viewport exactly at a breakpoint → min-width inclusive; that width gets the wider gutter
+2026-09-16 Container rn: override on the default gutter replaces all bands or one → replaces the value at every width
+2026-09-16 Container rn: override at gutter none only implied inert → does nothing, no dev warning
+2026-09-16 Container rn: example children are bare strings → label rendered inside Text on every platform
+2026-09-16 Container rn: align start described in CSS margin terms → alignSelf center / flex-start on rn
+2026-09-16 Container rn: whether a ref reaches the root View → ref forwarded to the root View, typed as Box does
+2026-09-16 Container lit: breakpoint px differ by theme, doc names none → calm-precise 960/1280; other themes switch at those widths (known limit)
+2026-09-16 Container lit: plain role="main" host attribute too → no; ElementInternals as Box, landmark scenario web-only
+2026-09-16 Container lit: example children strings, children not a property → label rendered in Text; stories build no Stack
+2026-09-16 Container lit: override at width full silently ignored → no dev warning
+2026-09-16 Container lit: host has no column part marker → host carries data-part column
+2026-09-16 Container web: breakpoint px depend on theme but CSS is one file → calm-precise widths; known limit stated
+2026-09-16 Container web: which side of an exact token width → inclusive min-width
+2026-09-16 Container web: default gutter's middle token unnamed → narrow, layout.gutter.default, wide
+2026-09-16 Container web: column part has no binding home → root is the column part with data-part column
+2026-09-16 Container web: element div vs main/section prop → div is the default; root renders the element prop's tag
+2026-09-16 Container web: example children are prose → label rendered in Text
+2026-09-16 Container web: exactly one main unenforceable, warn? → author's responsibility; no enforcement, no warning
+2026-09-16 Container web: SwiftUI shrinks gutters unlike web/RN → swiftui note follows the web rule
+2026-09-16 Divider rn: rn props list accessibilityRole native lacks → removed; notes say native has no separator role
+2026-09-16 Divider rn: how spacing applies on rn → root View padded on the cross axis, line an inner View
+2026-09-16 Divider rn: labelled row line pieces hidden from AT? → each line View hidden; label Text readable
+2026-09-16 Divider rn: importantForAccessibility no with inner View → decorative root uses no-hide-descendants
+2026-09-16 Divider rn: label layout, compose Stack? → no Stack; root is a row with gap labelGap
+2026-09-16 Divider rn: empty-string label → no label: decorative, no warning
+2026-09-16 Divider rn: vertical + ignored label + semantic → both dev warnings
+2026-09-16 Divider rn: dev warning frequency → fires when the combination appears or changes
+2026-09-16 Divider rn: label Text size/tone only in web section → composition.label passes size sm, tone muted, element span
+2026-09-16 Divider rn: label scenario checks text only on rn → scenario says rn checks text alone
+2026-09-16 Divider lit: ElementInternals vs host attributes for role → plain host attributes
+2026-09-16 Divider lit: host display block cannot lay out line/label/line → host is the line unlabelled, flex row via data-labelled
+2026-09-16 Divider lit: is the label the separator's name → yes; host aria-label is the label text
+2026-09-16 Divider lit: spacing none has no token → none renders no space, sets no hook, override inert
+2026-09-16 Divider lit: axis spacing applies to → cross axis (margin-block horizontal, margin-inline vertical)
+2026-09-16 Divider lit: label Text size, tone, element unstated → composition.label props and forwards labelSize/fontFamily
+2026-09-16 Divider lit: aria-hidden/separator expectations web only → now [web, lit]
+2026-09-16 Divider lit: label scenario role check web only → now [web, lit]
+2026-09-16 Divider lit: vertical divider in block flow has no height → needs a flex/grid row or definite-height parent
+2026-09-16 Divider web: separator children presentational, label unannounced → aria-labelledby to the Text's id
+2026-09-16 Divider web: hr vs div for an unlabelled semantic divider → semantic is div role separator; decorative is hr aria-hidden
+2026-09-16 Divider web: line part has no element when unlabelled → root is the line; labelled, two spans carry data-part line
+2026-09-16 Divider web: fontFamily has no part → part label, reaches only the Text
+2026-09-16 Divider web: labelColor/labelSize as Text props or bindings → Text size sm tone muted; no own rule
+2026-09-16 Divider web: spacing none resolves to layout.gap.none → none is off: no space, no hook
+2026-09-16 Divider web: labelGap override with no label → does nothing
+2026-09-16 Divider web: vertical display unspecified → inline-block, block-size 100%, align-self stretch, background box
+2026-09-16 Divider web: vertical-label warning frequency → when the combination appears or changes
+2026-09-16 Divider web: stories need a sized row for vertical → toolbar-groups example in a horizontal Stack, align stretch
+2026-09-16 Form rn: error summary has no border width, radius, padding → errorSummaryBorderWidth, Radius, Padding, Gap bindings
+2026-09-16 Form rn: summary item links lack target/focus bindings → each item is a Link keeping its own
+2026-09-16 Form rn: "Label: message" doubles the label → item text is the field's message; label only when message empty
+2026-09-16 Form rn: register name as argument or handle property → register(name, { label, getValue, validate, focus })
+2026-09-16 Form rn: onSubmit payload narrower than FormFieldValue → payload widened to string | number | boolean | string[] | [number, number]
+2026-09-16 Form rn: disabled opacity would stack on fields → container adds no opacity, only exposes disabled state
+2026-09-16 Form rn: summaryHeadingOne/invalidSummary use on RN → summaryHeading only; invalidSummary SwiftUI-only
+2026-09-16 Form rn: notes vs guidance on focus target → summary when errorSummary on, else first invalid field
+2026-09-16 Form rn: role form has no native landmark → react-native-web only; accessibilityLabel names the group on native
+2026-09-16 Form rn: example children/actions are prose → examples name each Input's name and label, in a Stack
+2026-09-16 Form lit: discovery: context has no Lit counterpart → attribute discovery over light DOM is the Lit form
+2026-09-16 Form lit: no way to tell a field has no blur moment → data-ds-field="change" validates on change
+2026-09-16 Form lit: Enter submits in ds-input or any field → any data-ds-field field except textarea, button, link
+2026-09-16 Form lit: disabled reaches fields only or actions too → fields plus every ds-button in actions
+2026-09-16 Form lit: copy.invalidSummary on Lit → not rendered (SwiftUI only)
+2026-09-16 Form lit: summaryHeadingOne duplicates plural; locale unstated → plural by count in nearest lang ancestor's locale
+2026-09-16 Form lit: errorSummary attribute name → negated no-error-summary
+2026-09-16 Form lit: summary item link not in Related → Link tone inherit, focuses field, never navigates; Link/Text in Related
+2026-09-16 Form lit: DsFormField.currentValue type vs submit payload → same widened value contract
+2026-09-16 Form lit: example children/actions are prose → concrete Input names and labels
+2026-09-16 Form lit: landmark scenario web-only → [web, lit]
+2026-09-16 Form lit: summary padding/radius/border/item spacing unbound → four new bindings; list has no markers or indent
+2026-09-16 Form web: copy.invalidSummary on web → never rendered (SwiftUI only)
+2026-09-16 Form web: summaryHeadingOne duplicates the plural one form → unused on web
+2026-09-16 Form web: no locale source for Intl.PluralRules → nearest lang ancestor, else runtime default
+2026-09-16 Form web: summary padding/radius/border-width unbound → four new overridable bindings
+2026-09-16 Form web: "strong Text" weight and tone → Text weight semibold, tone danger
+2026-09-16 Form web: summary link tone and click behavior → Link tone inherit; focuses field, no navigation
+2026-09-16 Form web: no spacing between summary heading and list → errorSummaryGap layout.gap.tight; list is a Stack as ul
+2026-09-16 Form web: data-ds-field vs discovery: context → context registers; data-ds-field only sorts into document order
+2026-09-16 Form web: example children/actions are prose → concrete Input names and labels
+2026-09-16 Form web: nameless form gets no warning → nothing enforces it at runtime, no dev warning
+2026-09-16 Input rn: TextInput has no hover or long-press handlers → pointer enter/leave; onLongPress after longPressDelay constant
+2026-09-16 Input rn: rn notes omit Tooltip's onPressOut → added to forwarded props
+2026-09-16 Input rn: description and parent hint both use accessibilityHint → description first, then forwarded hint
+2026-09-16 Input rn: parent label vs Fieldset legend order → parent label replaces label; legend still prefixed
+2026-09-16 Input rn: disabled cannot stay focusable on native → editable false + accessibilityState.disabled, not focusable
+2026-09-16 Input rn: does size set the label's type → fontSize covers field and label; helper text stays helperSize
+2026-09-16 Input rn: minTargetSm locked with no per-size override → locked like minTarget
+2026-09-16 Input rn: no visually-hidden pattern for hideLabel → label Text not rendered; name in accessibilityLabel only
+2026-09-16 Input rn: label/description Text take no testID → Text receives testID Input.<part> directly
+2026-09-16 Input rn: required and error scenarios web attributes only → required shown by indicator; error by live region
+2026-09-16 Input lit: when the error slot shows copy.required/invalid → error, else only while invalid: required then invalid
+2026-09-16 Input lit: Form/field contract for in-field messages → Form sets and clears invalid, never error
+2026-09-16 Input lit: data-ds-field vs Form.ts tag list → host carries data-ds-field
+2026-09-16 Input lit: does value have an attribute → property-only; default-value is the attribute
+2026-09-16 Input lit: does controlled mode revert → yes, shows .value again unless rebound synchronously
+2026-09-16 Input lit: helperSize has no CSS hook → reaches Text through its overrides only
+2026-09-16 Input lit: is requiredIndicator in the accessible name → yes, plain label text
+2026-09-16 Input lit: hideLabel attribute name → hide-label, not reflected
+2026-09-16 Input lit: Lit has no FieldsetContext → property from ds-fieldset or formDisabledCallback
+2026-09-16 Input lit: no root part but disabledOpacity dims the group → root wrapper named per platform, not an anatomy part
+2026-09-16 Input web: onFocus/onBlur list no payload → no payload; onChange passes value only
+2026-09-16 Input web: no FieldsetContext in React → group disabled via the prop Fieldset passes
+2026-09-16 Input web: no copy for browser validity → reports copy.invalid, never validationMessage
+2026-09-16 Input web: ref target root or input → the input element
+2026-09-16 Input web: does label size follow size → yes, fontSize covers the label
+2026-09-16 Input web: focus-visible says outline, binding says border → the border meets it, no outline
+2026-09-16 Input web: descriptionText/errorText have no CSS hook → Text tones, helperSize via Text overrides
+2026-09-16 Input web: no transition binding → transition motion.duration.fast, border color only
+2026-09-16 Input web: read-only fields submitted and validated? → yes, as native
+2026-09-16 Input web: invalid set directly renders copy.invalid? → yes, required or invalid while invalid
+2026-09-16 Link rn: what cancelling onPress means on native → returning false cancels the Linking hand-off
+2026-09-16 Link rn: notes contradict on icon color under inherit → no color passed; Icon takes TextStyleContext color
+2026-09-16 Link rn: external always Linking vs "never both" → openURL after handler unless it returned false
+2026-09-16 Link rn: TextNestingContext named but TextStyleContext exported → guidance names TextStyleContext.nested
+2026-09-16 Link rn: overrides list bindings inert on native → rn LinkOverridableBinding is transition alone
+2026-09-16 Link rn: externalIconGap cannot apply to nested Text → native uses a single space, binding unused
+2026-09-16 Link rn: ref to Text root → no ref; Tooltip attaches through forwarded props
+2026-09-16 Link rn: external accessible-name expectation web-only → web, lit, rn via accessibilityLabel
+2026-09-16 Link rn: "(opens in new tab)" wrong on native → externalSuffix used as-is; copy.external unused on native
+2026-09-16 Link lit: colorHover says hover and active → hover only (not :active); pressed color on native
+2026-09-16 Link lit: required href/label have no initial value → both start '', no warning
+2026-09-16 Link lit: must Lit reach the full external name → yes, through the shadow root
+2026-09-16 Link lit: examples lack surrounding paragraph text → descriptions quote it and name the wrapping Text
+2026-09-16 Link lit: underline color under tone inherit → follows the inherited color
+2026-09-16 Link lit: inherit also turns off hover/visited colors → yes, by design
+2026-09-16 Link lit: externalIcon color not bound → Icon is currentColor, follows rest/hover/visited
+2026-09-16 Link lit: fires user cannot stop script .click() → Link never dispatches itself; does not filter script clicks
+2026-09-16 Link web: Tree passes className and strips underline → Link takes no className/style; composites use tone inherit
+2026-09-16 Link web: Tree's data-part clashes with anchor → Link's data-part wins; parent parts go on its own wrapper
+2026-09-16 Link web: onClick returns void but contract allows false → typed void | boolean; false calls preventDefault
+2026-09-16 Link web: externalIcon is the Icon or a wrapper → span data-part externalIcon wrapper carrying the gap
+2026-09-16 Link web: hand-drawn SVG vs Icon rule → Icon name external inline, no label
+2026-09-16 Link web: tone inherit turning off locked colors unstated → color/colorHover/colorVisited not applied under inherit
+2026-09-16 Link web: copy expectation has no matcher → reads anchor text content incl. visually hidden suffix
+2026-09-16 Link web: examples lack surrounding paragraph text → quoted paragraph text in both examples
+2026-09-16 Link web: colorHover applied to :hover and :active → hover only

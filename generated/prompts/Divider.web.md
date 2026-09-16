@@ -63,7 +63,15 @@ component:
   - line
   - label
   composition:
-    label: Text
+    label:
+      component: Text
+      props:
+        size: sm
+        tone: muted
+        element: span
+      forwards:
+        labelSize: fontSize
+        fontFamily: fontFamily
   props:
     orientation:
       type: enum
@@ -71,15 +79,24 @@ component:
       - horizontal
       - vertical
       default: horizontal
-      description: Vertical dividers sit between inline siblings (toolbar groups)
-        and stretch to the row height.
+      description: 'Vertical dividers sit between inline siblings (toolbar groups)
+        and stretch to the row height: inline-block with block-size 100% and align-self
+        stretch. They need a flex or grid row (a horizontal Stack with align stretch)
+        or a parent with a definite height; in plain block flow a vertical divider
+        has no height and draws nothing.'
     label:
       type: string
       description: 'Optional text in the middle of a horizontal divider ("or", "Earlier
         today"). Turns the divider from decorative into a labelled separator (`semantic`
         is implied). Ignored on a vertical divider, with a development warning: a
         vertical line has no room for centered text. An ignored label implies nothing
-        either — a vertical divider is semantic only when `semantic` says so.'
+        either — a vertical divider is semantic only when `semantic` says so. An empty
+        string is no label: the divider stays decorative and nothing warns. The development
+        warning fires when the ignored combination appears or changes (an effect keyed
+        on `label` and `orientation`), not on every render; on React Native a vertical
+        divider with an ignored label and `semantic: true` gets both warnings. When
+        in effect, the label is the separator''s accessible name (see the platform
+        notes), and the two line pieces on either side are hidden from assistive technology.'
     semantic:
       type: boolean
       default: false
@@ -96,8 +113,12 @@ component:
       - normal
       - loose
       default: none
-      description: Space on both sides, from the layout rhythm, for dividers used
-        outside a Stack that already spaces them.
+      description: 'Space on both sides along the cross axis (above and below a horizontal
+        divider, left and right of a vertical one), from the layout rhythm, for dividers
+        used outside a Stack that already spaces them. The space is transparent: web
+        and Lit use margin-block (horizontal) or margin-inline (vertical); React Native
+        pads the root View on that axis (paddingVertical or paddingHorizontal) with
+        the line as an inner View.'
   styles:
     color:
       token: color.border
@@ -107,9 +128,9 @@ component:
       locked: false
     spacing:
       token: layout.gap.{spacing}
-      description: '`spacing: none` is the off state, so an override of this binding
-        does nothing until a spacing value is chosen — overrides change values, never
-        presence.'
+      description: '`spacing: none` is the off state: it renders no space and sets
+        no hook (not a `layout.gap.none` value), so an override of this binding does
+        nothing until a spacing value is chosen — overrides change values, never presence.'
       locked: false
     labelColor:
       token: color.foreground.muted
@@ -119,15 +140,23 @@ component:
       token: font.size.sm
       part: label
       description: Passed to the composed Text as its `fontSize` override, along with
-        `fontFamily`; Divider does not style the Text itself.
+        `fontFamily`; Divider does not style the Text itself. The label color and
+        default size come from the Text props `size="sm" tone="muted"`, so Divider
+        writes no label color or size rule of its own.
       locked: false
     labelGap:
       token: layout.gap.normal
       part: label
-      description: Gap between the label and the lines on each side.
+      description: 'Gap between the label and the lines on each side: the gap of the
+        labelled root row (flex `gap` on web and Lit, the `gap` style on React Native),
+        not a composed Stack. With no label in effect there is no row, and an override
+        of it does nothing.'
       locked: false
     fontFamily:
       token: font.family.body
+      part: label
+      description: Reaches only the composed label Text, through its `fontFamily`
+        override; the line has no text, so the root sets no font hook.
       locked: false
   a11y:
     role: separator
@@ -145,33 +174,47 @@ component:
       - role=separator
       - aria-orientation
       notes: 'A decorative divider is <hr aria-hidden="true"> (hr has an implicit
-        separator role, so hiding it is deliberate); a semantic or labelled one is
-        <div role="separator" aria-orientation> containing the label text, because
-        <hr> cannot hold content. Vertical: inline-size thin, block-size 100% / align-self
-        stretch.'
+        separator role, so hiding it is deliberate); every semantic divider, labelled
+        or not, is <div role="separator" aria-orientation>, so the semantic and labelled
+        cases share one element. With a label the div is a flex row of two aria-hidden
+        line spans (data-part="line") around the composed Text (data-part="label"),
+        and the separator takes its accessible name from the label through aria-labelledby
+        pointing at the Text id (from useId) — separator children are presentational,
+        so containment alone does not name it. Unlabelled, the root paints itself
+        and is the `line` part; it carries no data-part. The line is a background-color
+        box of the thickness, not a border. Vertical: display inline-block, inline-size
+        thin, block-size 100% / align-self stretch.'
     lit:
       tag: ds-divider
       reflect:
       - orientation
       - semantic
       - spacing
-      notes: 'Host is the line (`:host { display: block }`, `:host([orientation="vertical"])
-        { display: inline-block }`); role and aria-orientation are set on the host
-        via ElementInternals when semantic; `label` is a property rendered in the
-        shadow root between two line segments.'
+      notes: 'Host is the line when unlabelled (`:host { display: block }`, `:host([orientation="vertical"])
+        { display: inline-block }`). When a label is in effect the host switches to
+        a flex row through an internal `data-labelled` host attribute and the shadow
+        root renders line segment, label Text, line segment, the segments aria-hidden.
+        role, aria-orientation and aria-hidden are plain host attributes, not ElementInternals,
+        because tests read them (dom-accessibility-api ignores internals). A labelled
+        host also sets aria-label to the label text: ids do not cross the shadow root,
+        and separator children are presentational. `label` is a property.'
     rn:
       element: View
       props:
       - accessibilityElementsHidden
       - importantForAccessibility
-      - accessibilityRole
       notes: 'A View with height (or width) = border.width.thin and backgroundColor
-        color.border. Decorative: accessibilityElementsHidden + importantForAccessibility="no".
-        Semantic: there is no separator role on native; render the label (if any)
-        as Text so it is read, otherwise the divider stays hidden — announcing "separator"
-        has no native idiom. `semantic: true` with no label therefore has no observable
-        effect here, and warns in development so the author knows the boundary is
-        silent on this platform.'
+        color.border, inside a root View that carries `spacing` as padding. Decorative:
+        accessibilityElementsHidden + importantForAccessibility="no-hide-descendants"
+        on the root, since it wraps the inner line View. No accessibilityRole is set:
+        there is none for a separator. Labelled: the root is a row (flexDirection
+        row, alignItems center, `gap` from labelGap) of two line Views, each hidden
+        (accessibilityElementsHidden + importantForAccessibility="no"), around the
+        label Text, which stays readable. Semantic: there is no separator role on
+        native; render the label (if any) as Text so it is read, otherwise the divider
+        stays hidden — announcing "separator" has no native idiom. `semantic: true`
+        with no label therefore has no observable effect here, and warns in development
+        so the author knows the boundary is silent on this platform.'
     swiftui:
       element: Rectangle
       props:
@@ -195,26 +238,31 @@ component:
       is: 'true'
       platforms:
       - web
+      - lit
     - attribute: accessibilityElementsHidden
       is: true
       platforms:
       - rn
   - name: semantic-divider-is-a-separator
     description: 'true means the divider marks a real boundary: role=separator with
-      aria-orientation.'
+      aria-orientation. React Native has no separator role, so there is nothing to
+      assert there.'
     given:
       semantic: true
     then:
     - role: separator
       platforms:
       - web
+      - lit
     - attribute: aria-orientation
       is: horizontal
       platforms:
       - web
+      - lit
   - name: label-is-read-and-makes-the-divider-semantic
     description: A label turns the divider from decorative into a labelled separator,
-      and the text is what gets read.
+      and the text is what gets read. On React Native only the rendered text is observable
+      (no separator role), so the test there checks the text alone.
     given:
       label: or
     then:
@@ -222,6 +270,7 @@ component:
     - role: separator
       platforms:
       - web
+      - lit
   examples:
   - name: or-between-alternatives
     description: A labelled divider between two ways of signing in.
@@ -235,7 +284,8 @@ component:
       orientation: horizontal
   - name: toolbar-groups
     description: A vertical line between groups of toolbar controls, stretching to
-      the row height.
+      the row height; shown inside a horizontal Stack with align stretch so the row
+      has a height to fill.
     given:
       orientation: vertical
   - name: section-boundary
@@ -246,17 +296,23 @@ component:
       spacing: loose
 ```
 
+## Parts and slots
+
+- `line`: element
+- `label`: component `Text`; props `size` = "sm", `tone` = "muted", `element` = "span"; forwards `labelSize` → `overrides.fontSize`, `fontFamily` → `overrides.fontFamily`
+
 ## Style bindings
 
 - `labelColor`: token `color.foreground.muted`; part `label`; locked
 - `labelSize`: token `font.size.sm`; part `label`
 - `labelGap`: token `layout.gap.normal`; part `label`
+- `fontFamily`: token `font.family.body`; part `label`
 
 ## Constants and examples
 
 - example `or-between-alternatives`, story `OrBetweenAlternatives`: given `label: "or"`, `spacing: "normal"`; A labelled divider between two ways of signing in.
 - example `list-furniture`, story `ListFurniture`: given `orientation: "horizontal"`; The default line between rows of a dense list - decorative, and silent to assistive technology.
-- example `toolbar-groups`, story `ToolbarGroups`: given `orientation: "vertical"`; A vertical line between groups of toolbar controls, stretching to the row height.
+- example `toolbar-groups`, story `ToolbarGroups`: given `orientation: "vertical"`; A vertical line between groups of toolbar controls, stretching to the row height; shown inside a horizontal Stack with align stretch so the row has a height to fill.
 - example `section-boundary`, story `SectionBoundary`: given `semantic: true`, `spacing: "loose"`; An unlabelled line that still marks a real boundary a screen-reader user should hear.
 
 ## Overrides (per-instance styling contract)
@@ -283,7 +339,8 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     is: 'true'
 - name: semantic-divider-is-a-separator
   description: 'true means the divider marks a real boundary: role=separator with
-    aria-orientation.'
+    aria-orientation. React Native has no separator role, so there is nothing to assert
+    there.'
   given:
     semantic: true
   then:
@@ -292,7 +349,8 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     is: horizontal
 - name: label-is-read-and-makes-the-divider-semantic
   description: A label turns the divider from decorative into a labelled separator,
-    and the text is what gets read.
+    and the text is what gets read. On React Native only the rendered text is observable
+    (no separator role), so the test there checks the text alone.
   given:
     label: or
   then:
@@ -348,10 +406,17 @@ attributes:
 - aria-hidden
 - role=separator
 - aria-orientation
-notes: 'A decorative divider is <hr aria-hidden="true"> (hr has an implicit separator
-  role, so hiding it is deliberate); a semantic or labelled one is <div role="separator"
-  aria-orientation> containing the label text, because <hr> cannot hold content. Vertical:
-  inline-size thin, block-size 100% / align-self stretch.'
+notes: "A decorative divider is <hr aria-hidden=\"true\"> (hr has an implicit separator\
+  \ role, so hiding it is deliberate); every semantic divider, labelled or not, is\
+  \ <div role=\"separator\" aria-orientation>, so the semantic and labelled cases\
+  \ share one element. With a label the div is a flex row of two aria-hidden line\
+  \ spans (data-part=\"line\") around the composed Text (data-part=\"label\"), and\
+  \ the separator takes its accessible name from the label through aria-labelledby\
+  \ pointing at the Text id (from useId) \u2014 separator children are presentational,\
+  \ so containment alone does not name it. Unlabelled, the root paints itself and\
+  \ is the `line` part; it carries no data-part. The line is a background-color box\
+  \ of the thickness, not a border. Vertical: display inline-block, inline-size thin,\
+  \ block-size 100% / align-self stretch."
 ```
 
 ## Guidance
@@ -378,18 +443,18 @@ Labels are one to three words, sentence case or lowercase for conjunctions ("or"
 
 ## Accessibility
 
-Decorative dividers are hidden from assistive technology so lists do not announce "separator" between every row (WCAG 1.3.1 — structure is conveyed by the list, not the line). Semantic dividers expose role `separator` with `aria-orientation`, and labelled ones read their text. The line is below the 3:1 non-text threshold on purpose — it is not required to identify anything (1.4.11 exemption), and the label, when present, meets 4.5:1.
+Decorative dividers are hidden from assistive technology so lists do not announce "separator" between every row (WCAG 1.3.1 — structure is conveyed by the list, not the line). Semantic dividers expose role `separator` with `aria-orientation`, and labelled ones take the label as their accessible name (separator children are presentational, so the name is set explicitly: `aria-labelledby` on web, `aria-label` on Lit) with the flanking line pieces hidden. The line is below the 3:1 non-text threshold on purpose — it is not required to identify anything (1.4.11 exemption), and the label, when present, meets 4.5:1.
 
 ## Platform notes
 
 ### Web
-Decorative: `<hr aria-hidden="true" class="ds-divider">`. Semantic: `<div role="separator" aria-orientation={orientation}>` with, for a label, two flex-grow line spans around a `Text size="sm" tone="muted"`. Vertical uses `inline-size: var(--border-width-thin); align-self: stretch`.
+Decorative: `<hr aria-hidden="true" class="ds-divider">`. Semantic: `<div role="separator" aria-orientation={orientation}>` with, for a label, two aria-hidden flex-grow line spans around a `Text size="sm" tone="muted"` that names the separator through `aria-labelledby`. Vertical uses `inline-size: var(--border-width-thin); align-self: stretch`.
 
 ### Lit
-`<ds-divider>`; `<ds-divider semantic label="or">`. Host carries the styles and, when semantic, `internals.role = 'separator'` and `ariaOrientation`. The label renders in the shadow root.
+`<ds-divider>`; `<ds-divider semantic label="or">`. Host carries the styles and, when semantic, plain `role="separator"` and `aria-orientation` attributes (plus `aria-label` with a label); decorative hosts get `aria-hidden="true"`. The label renders in the shadow root.
 
 ### React Native
-`View` with `height: t.borderWidthThin, backgroundColor: t.colorBorder` (or width for vertical, `alignSelf: 'stretch'`). Decorative: hidden from AT. Labelled: a row of two lines with a `Text` between; the text is what gets read.
+`View` with `height: t.borderWidthThin, backgroundColor: t.colorBorder` (or width for vertical, `alignSelf: 'stretch'`). Decorative: hidden from AT. Labelled: a row of two hidden lines with a `Text size="sm" tone="muted"` between; the text is what gets read.
 
 ## Related
 

@@ -183,7 +183,9 @@ describe.skipIf(!hasBash || WORKFLOW === undefined)('chromatic.yml’s changes f
     expect(run(['packages/lit/src/Tabs.ts'])).toEqual({ react: false, lit: true, rn: false });
     expect(run(['packages/rn/src/Alert.tsx'])).toEqual({ react: false, lit: false, rn: true });
     expect(run(['packages/react/src/a.tsx', 'packages/rn/src/b.tsx'])).toEqual({ react: true, lit: false, rn: true });
-  });
+    // Each run() spawns git-bash. Four spawns sit right at vitest's 5s default on Windows once the whole suite
+    // is running in parallel, so this case needs its own budget; alone the file takes under 8s.
+  }, 30000);
 
   test('a shared input publishes all three', () => {
     // Every preview imports the token CSS, so anything that changes it changes all three Storybooks.
@@ -193,7 +195,8 @@ describe.skipIf(!hasBash || WORKFLOW === undefined)('chromatic.yml’s changes f
     expect(run(['storybook/shared/mode.ts'])).toEqual({ react: true, lit: true, rn: true });
     expect(run(['pnpm-lock.yaml'])).toEqual({ react: true, lit: true, rn: true });
     expect(run(['.github/workflows/chromatic.yml'])).toEqual({ react: true, lit: true, rn: true });
-  });
+    // Six git-bash spawns, the most in this file: same reason as above.
+  }, 30000);
 
   test('a change to nothing it cares about publishes nothing', () => {
     expect(run(['site/src/content/docs/process/publishing.md'])).toEqual({ react: false, lit: false, rn: false });

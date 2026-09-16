@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html } from 'lit';
+import { html, type TemplateResult } from 'lit';
 import './Link.js';
 import './Text.js';
 import type { LinkTone } from './Link.js';
@@ -11,6 +11,14 @@ interface LinkArgs {
   tone: LinkTone;
   download: boolean;
 }
+
+const link = (args: LinkArgs): TemplateResult => html`<ds-link
+  href=${args.href}
+  label=${args.label}
+  tone=${args.tone}
+  ?external=${args.external}
+  ?download=${args.download}
+></ds-link>`;
 
 const meta: Meta<LinkArgs> = {
   title: 'Link/Lit',
@@ -30,15 +38,7 @@ const meta: Meta<LinkArgs> = {
     tone: 'default',
     download: false,
   },
-  render: (args) => html`
-    <ds-link
-      href=${args.href}
-      label=${args.label}
-      tone=${args.tone}
-      ?external=${args.external}
-      ?download=${args.download}
-    ></ds-link>
-  `,
+  render: link,
 };
 
 export default meta;
@@ -50,35 +50,24 @@ export const Default: Story = {};
 export const ToneDefault: Story = { args: { tone: 'default' } };
 export const ToneInherit: Story = {
   args: { tone: 'inherit' },
-  render: (args) => html`
-    <ds-text tone="muted"
-      >Your trial ends in 3 days.
-      <ds-link
-        href=${args.href}
-        label="Compare plans"
-        tone=${args.tone}
-        ?external=${args.external}
-        ?download=${args.download}
-      ></ds-link
-      >.</ds-text
-    >
-  `,
+  render: (args) => html`<ds-text tone="muted">See ${link(args)}.</ds-text>`,
 };
 
-/* boolean states */
-export const ExternalTrue: Story = {
-  args: { external: true, href: 'https://www.w3.org/WAI/ARIA/apg/', label: 'ARIA Authoring Practices Guide' },
-};
-export const DownloadTrue: Story = {
-  args: { download: true, href: '/invoice-2026-09.pdf', label: 'Download invoice (PDF)' },
+/* examples */
+export const InlineInAParagraph: Story = {
+  args: { href: '/billing/history', label: 'View the billing history' },
+  render: (args) => html`<ds-text>Invoices from the last year are listed. ${link(args)}.</ds-text>`,
 };
 
-export const Inline: Story = {
-  render: (args) => html`
-    <ds-text
-      >Screen-reader users navigate by pulling up a list of links, so
-      <ds-link href=${args.href} label="link text should describe the destination"></ds-link>
-      and make sense out of context.</ds-text
-    >
-  `,
+export const ExternalDestination: Story = {
+  args: { href: 'https://status.example.com', label: 'Status page', external: true },
+};
+
+export const InsideMutedText: Story = {
+  args: { href: '/help/billing', label: 'the billing guide', tone: 'inherit' },
+  render: (args) => html`<ds-text tone="muted">For details, read ${link(args)}.</ds-text>`,
+};
+
+export const DownloadableFile: Story = {
+  args: { href: '/invoices/2026-09.pdf', label: 'Download the September invoice', download: true },
 };

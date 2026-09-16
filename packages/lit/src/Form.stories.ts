@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html } from 'lit';
+import { html, type TemplateResult } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Form.js';
 import './Input.js';
@@ -8,32 +8,38 @@ import './Stack.js';
 import type { FormValidate } from './Form.js';
 
 interface FormArgs {
-  name: string;
+  name?: string | undefined;
   label?: string | undefined;
-  validate: FormValidate;
-  disabled: boolean;
-  errorSummary: boolean;
+  labelledBy?: string | undefined;
+  validate?: FormValidate | undefined;
+  disabled?: boolean | undefined;
+  errorSummary?: boolean | undefined;
 }
 
-const fields = html`
+const signInFields = html`
   <ds-stack gap="normal">
     <ds-input label="Email address" name="email" type="email" required autocomplete="email"></ds-input>
-    <ds-input
-      label="Password"
-      name="password"
-      type="password"
-      required
-      autocomplete="current-password"
-      description="At least 8 characters."
-    ></ds-input>
+    <ds-input label="Password" name="password" type="password" required autocomplete="current-password"></ds-input>
   </ds-stack>
 `;
 
-const actions = html`
+const submitAction = (label: string): TemplateResult => html`
   <ds-stack slot="actions" direction="horizontal" gap="tight" align="start">
-    <ds-button label="Sign in" type="submit"></ds-button>
-    <ds-button label="Cancel" variant="secondary"></ds-button>
+    <ds-button label=${label} type="submit"></ds-button>
   </ds-stack>
+`;
+
+const renderForm = (args: FormArgs, fields: TemplateResult, actions: TemplateResult): TemplateResult => html`
+  <ds-form
+    name=${ifDefined(args.name)}
+    label=${ifDefined(args.label)}
+    labelledBy=${ifDefined(args.labelledBy)}
+    validate=${ifDefined(args.validate)}
+    ?disabled=${args.disabled ?? false}
+    ?no-error-summary=${args.errorSummary === false}
+  >
+    ${fields} ${actions}
+  </ds-form>
 `;
 
 const meta: Meta<FormArgs> = {
@@ -54,18 +60,7 @@ const meta: Meta<FormArgs> = {
     disabled: false,
     errorSummary: true,
   },
-  render: (args) => html`
-    <ds-form
-      name=${args.name}
-      label=${ifDefined(args.label)}
-      validate=${args.validate}
-      ?disabled=${args.disabled}
-      ?error-summary=${args.errorSummary}
-    >
-      ${fields}
-      ${actions}
-    </ds-form>
-  `,
+  render: (args) => renderForm(args, signInFields, submitAction('Sign in')),
 };
 
 export default meta;
@@ -78,6 +73,41 @@ export const ValidateSubmit: Story = { args: { validate: 'submit' } };
 export const ValidateBlur: Story = { args: { validate: 'blur' } };
 export const ValidateChange: Story = { args: { validate: 'change' } };
 
-/* booleans */
-export const Disabled: Story = { args: { disabled: true } };
-export const WithoutErrorSummary: Story = { args: { errorSummary: false } };
+/* examples */
+
+/** The smallest real form - two fields and one submit action, validated on submit. */
+export const SignIn: Story = {
+  args: { name: 'sign-in', label: 'Sign in' },
+  render: (args) => renderForm(args, signInFields, submitAction('Sign in')),
+};
+
+/** A longer form where feedback per field as focus leaves it beats one report at the end. */
+export const LongFormValidatedOnBlur: Story = {
+  args: { name: 'profile', label: 'Profile details', validate: 'blur' },
+  render: (args) =>
+    renderForm(
+      args,
+      html`
+        <ds-stack gap="normal">
+          <ds-input label="Full name" name="fullName" required autocomplete="name"></ds-input>
+          <ds-input label="Email address" name="email" type="email" required autocomplete="email"></ds-input>
+          <ds-input label="Phone number" name="phone" type="tel" autocomplete="tel"></ds-input>
+          <ds-input label="Job title" name="jobTitle" autocomplete="organization-title"></ds-input>
+        </ds-stack>
+      `,
+      submitAction('Save profile'),
+    ),
+};
+
+/** A form while its request is in flight - every field and action disabled, so it cannot be submitted twice. */
+export const Submitting: Story = {
+  args: { name: 'sign-in', label: 'Sign in', disabled: true },
+  render: (args) => renderForm(args, signInFields, submitAction('Sign in')),
+};
+
+/** A short form that reports errors at the fields alone, moving focus to the first invalid one. */
+export const WithoutASummary: Story = {
+  args: { name: 'rename', label: 'Rename file', errorSummary: false },
+  render: (args) =>
+    renderForm(args, html`<ds-input label="Name" name="name" required></ds-input>`, submitAction('Rename')),
+};

@@ -27,6 +27,64 @@ function setup(given: Partial<ButtonProps> = {}) {
 }
 
 describe('Button', () => {
+  it('click-fires-on-press', async () => {
+    const s = setup();
+    await s.user.click(s.control());
+    expect(s.onClick).toHaveBeenCalledTimes(1);
+  });
+
+  /* Activation fires onPress exactly once per pointer click, Enter key, Space key, or
+     assistive-technology activation. */
+  it('enter-activates', async () => {
+    const s = setup();
+    act(() => s.control().focus());
+    await s.user.keyboard('{Enter}');
+    expect(s.onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('space-activates', async () => {
+    const s = setup();
+    act(() => s.control().focus());
+    await s.user.keyboard('[Space]');
+    expect(s.onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('disabled-does-not-fire', async () => {
+    const s = setup({ disabled: true });
+    await s.user.click(s.control());
+    expect(s.onClick).not.toHaveBeenCalled();
+    expect(s.control()).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  /* aria-disabled, not the native attribute, so the button stays in the tab order and can be
+     discovered. */
+  it('disabled-stays-focusable', () => {
+    const s = setup({ disabled: true });
+    expect(s.control()).not.toHaveAttribute('disabled');
+    act(() => s.control().focus());
+    expect(s.control()).toHaveFocus();
+  });
+
+  /* While loading is true the button announces itself as busy and ignores further activation, but
+     keeps its size so the layout does not shift. */
+  it('loading-announces-busy-and-ignores-activation', async () => {
+    const s = setup({ loading: true });
+    await s.user.click(s.control());
+    expect(s.onClick).not.toHaveBeenCalled();
+    expect(s.control()).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('expanded-is-reported', () => {
+    const s = setup({ expanded: true });
+    expect(s.control()).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  /* iconOnly hides the visible label, and label becomes the accessible name. */
+  it('icon-only-keeps-its-name', () => {
+    setup({ iconOnly: true, accessibleName: 'Open menu' });
+    expect(screen.getByRole('button', { name: 'Open menu' })).toBeInTheDocument();
+  });
+
   it('press-tracks', async () => {
     const s = setup({ track: 'signup', label: 'Sign up' });
     await s.user.click(s.control());

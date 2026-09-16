@@ -1,10 +1,8 @@
 /* Input — styled only through Design Schema token custom properties. */
 
 .ds-input {
-  /* helperSize is forwarded entirely into the composed description/error Text elements' own
-     overrides instead (they render the helper text); fontFamily/lineHeight are forwarded to
-     those Text elements *and* kept here, for the label and the raw `<input>`, neither of which
-     is a Text. */
+  /* descriptionText and errorText are the composed Text's `muted` and `danger` tones; helperSize
+     is forwarded to those Text elements' `fontSize` override, so none of the three has a hook here. */
   --ds-input-background: var(--color-background);
   --ds-input-foreground: var(--color-foreground);
   --ds-input-placeholder: var(--color-foreground-muted);
@@ -13,13 +11,8 @@
   --ds-input-border-invalid: var(--color-border-danger);
   --ds-input-border-width: var(--border-width-thin);
   --ds-input-radius: var(--radius-md);
-  --ds-input-padding-inline: var(--space-md);
-  --ds-input-padding-block: var(--space-sm);
-  --ds-input-padding-block-sm: var(--space-1);
-  --ds-input-padding-inline-sm: var(--space-2);
   --ds-input-part-gap: var(--space-1);
   --ds-input-font-family: var(--font-family-body);
-  --ds-input-font-size: var(--font-size-md);
   --ds-input-label-weight: var(--font-weight-medium);
   --ds-input-line-height: var(--font-line-height-normal);
   --ds-input-min-target: var(--size-target-comfortable);
@@ -31,24 +24,36 @@
   gap: var(--ds-input-part-gap);
   inline-size: 100%;
   font-family: var(--ds-input-font-family);
+  line-height: var(--ds-input-line-height);
 }
 
-/* size: sm swaps paddingBlock/paddingInline/minTarget for their Sm bindings and fontSize to sm. */
+/* paddingInline / paddingBlock / fontSize by size */
+.ds-input--md {
+  --ds-input-padding-inline: var(--space-md);
+  --ds-input-padding-block: var(--space-sm);
+  --ds-input-font-size: var(--font-size-md);
+}
+
 .ds-input--sm {
-  --ds-input-padding-block: var(--ds-input-padding-block-sm);
-  --ds-input-padding-inline: var(--ds-input-padding-inline-sm);
-  --ds-input-min-target: var(--ds-input-min-target-sm);
+  --ds-input-padding-inline: var(--space-2);
+  --ds-input-padding-block: var(--space-1);
   --ds-input-font-size: var(--font-size-sm);
 }
 
-.ds-input__label {
-  display: inline-block;
-  font-weight: var(--ds-input-label-weight);
-  line-height: var(--ds-input-line-height);
-  color: var(--ds-input-foreground);
+/* disabledOpacity: the whole field group dims, as Button dims the whole control. */
+.ds-input--disabled {
+  opacity: var(--ds-input-disabled-opacity);
 }
 
-/* visually hidden: clipped to a 1px box, off the normal flow — the standard sanctioned pixel literals */
+.ds-input__label {
+  color: var(--ds-input-foreground);
+  font-family: var(--ds-input-font-family);
+  font-size: var(--ds-input-font-size);
+  font-weight: var(--ds-input-label-weight);
+  line-height: var(--ds-input-line-height);
+}
+
+/* hideLabel: the standard clip pattern — the sanctioned pixel literals. */
 .ds-input__visually-hidden {
   position: absolute;
   inline-size: 1px;
@@ -61,8 +66,9 @@
   border: 0;
 }
 
-.ds-input__required {
-  font-weight: var(--ds-input-label-weight);
+.ds-input__description,
+.ds-input__error {
+  margin: 0;
 }
 
 .ds-input__field {
@@ -80,8 +86,13 @@
   font-family: var(--ds-input-font-family);
   font-size: var(--ds-input-font-size);
   line-height: var(--ds-input-line-height);
-  -webkit-appearance: none;
   appearance: none;
+  transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
+}
+
+/* minTargetSm */
+.ds-input--sm .ds-input__field {
+  min-block-size: var(--ds-input-min-target-sm);
 }
 
 .ds-input__field::placeholder {
@@ -89,40 +100,28 @@
   opacity: 1;
 }
 
-/* borderFocus + focusRingWidth: the border itself thickens and recolors as the focus indicator;
-   padding shrinks by the added width so the field's outer box does not shift. */
+.ds-input__field[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/* borderFocus + focusRingWidth: the border is the focus ring, replacing borderWidth; padding
+   shrinks by the difference so the field does not shift. */
 .ds-input__field:focus-visible {
+  outline: none;
   border-color: var(--ds-input-border-focus);
   border-width: var(--ds-input-focus-ring-width);
   padding-inline: calc(var(--ds-input-padding-inline) - (var(--ds-input-focus-ring-width) - var(--ds-input-border-width)));
   padding-block: calc(var(--ds-input-padding-block) - (var(--ds-input-focus-ring-width) - var(--ds-input-border-width)));
 }
 
-/* borderInvalid */
-.ds-input__field[aria-invalid='true'] {
+/* borderInvalid: stays when focused too, so focus never hides the error; only the width changes. */
+.ds-input__field[aria-invalid='true'],
+.ds-input__field[aria-invalid='true']:focus-visible {
   border-color: var(--ds-input-border-invalid);
 }
 
-/* disabled: visible, readable, not editable — dimmed rather than recolored. */
-.ds-input__field[aria-disabled='true'] {
-  opacity: var(--ds-input-disabled-opacity);
-  cursor: not-allowed;
-}
-
-.ds-input__description {
-  margin: 0;
-}
-
-.ds-input__error {
-  margin: 0;
-}
-
-@media (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: reduce) {
   .ds-input__field {
-    transition:
-      border-color var(--motion-duration-fast) var(--motion-easing-standard),
-      border-width var(--motion-duration-fast) var(--motion-easing-standard),
-      padding-inline var(--motion-duration-fast) var(--motion-easing-standard),
-      padding-block var(--motion-duration-fast) var(--motion-easing-standard);
+    transition: none;
   }
 }

@@ -1,4 +1,4 @@
-import { type ComponentPropsWithoutRef, type CSSProperties, type Ref, type ReactElement } from 'react';
+import { useEffect, useId, type ComponentPropsWithoutRef, type CSSProperties, type Ref, type ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
 import './Divider.css';
@@ -11,46 +11,28 @@ declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
 /**
- * Style bindings that can be overridden per instance; accessibility-bearing bindings (labelColor)
- * are never in this list. `labelSize` and `fontFamily` are forwarded to the composed `Text`
- * label's own `overrides`, since Text already owns those bindings.
+ * Style bindings that can be overridden per instance; the accessibility-bearing `labelColor` is
+ * never in this list. `labelSize` and `fontFamily` are forwarded to the composed `Text` label's
+ * own `overrides` (as `fontSize` and `fontFamily`); Divider does not style the Text itself.
  */
 export type DividerOverridableBinding = 'color' | 'thickness' | 'spacing' | 'labelSize' | 'labelGap' | 'fontFamily';
 
-const ROOT_OVERRIDE_HOOK: Partial<Record<DividerOverridableBinding, string | undefined>> = {
+const ROOT_OVERRIDE_HOOK: Partial<Record<DividerOverridableBinding, string>> = {
   color: '--ds-divider-color',
   thickness: '--ds-divider-thickness',
   spacing: '--ds-divider-spacing',
   labelGap: '--ds-divider-label-gap',
 };
 
-function overridesToStyle(overrides: Partial<Record<DividerOverridableBinding, TokenRef | undefined>>): {
-  rootStyle: CSSProperties;
-  textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
-} {
-  const rootStyle: Record<string, string> = {};
-  const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-  for (const binding of Object.keys(overrides) as DividerOverridableBinding[]) {
-    const ref = overrides[binding];
-    if (!ref) continue;
-    const hook = ROOT_OVERRIDE_HOOK[binding];
-    if (hook) {
-      rootStyle[hook] = cssVar(ref);
-    } else if (binding === 'labelSize') {
-      textOverrides.fontSize = ref;
-    } else if (binding === 'fontFamily') {
-      textOverrides.fontFamily = ref;
-    }
-  }
-  return { rootStyle: rootStyle as CSSProperties, textOverrides };
-}
-
-export interface DividerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'aria-orientation'> {
+export interface DividerProps
+  extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'aria-orientation' | 'aria-hidden' | 'className' | 'style'> {
   /** Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height. */
   orientation?: DividerOrientation | undefined;
   /**
    * Optional text in the middle of a horizontal divider ("or", "Earlier today"). Turns the divider
-   * from decorative into a labelled separator. Meaningful on `horizontal` dividers only.
+   * from decorative into a labelled separator (`semantic` is implied). Ignored on a vertical
+   * divider, with a development warning: a vertical line has no room for centered text. An ignored
+   * label implies nothing either — a vertical divider is semantic only when `semantic` says so.
    */
   label?: string | undefined;
   /**
@@ -74,59 +56,95 @@ export interface DividerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'chi
  * `label` as an "or" between alternatives (sign in with email — or — with a provider) or a date
  * heading in a feed. Use `spacing` when the divider stands outside a Stack.
  */
-export const Divider = function Divider({ ref, orientation = 'horizontal', label, semantic = false, spacing = 'none', overrides, className, style, ...rest }: DividerProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
+export function Divider({
+  ref,
+  orientation = 'horizontal',
+  label,
+  semantic = false,
+  spacing = 'none',
+  overrides,
+  ...rest
+}: DividerProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
+  const labelId = useId();
+  const labelIgnored = Boolean(label) && orientation === 'vertical';
   const showLabel = Boolean(label) && orientation === 'horizontal';
   const isSemantic = semantic || showLabel;
 
-  if (isDev && label && orientation === 'vertical') {
-    console.warn('Divider: `label` is ignored on a vertical divider — a vertical line has no room for centered text.');
-  }
+  useEffect(() => {
+    if (isDev && labelIgnored) {
+      console.warn('Divider: `label` is ignored on a vertical divider — a vertical line has no room for centered text.');
+    }
+  }, [labelIgnored]);
 
-  const classes = [
+  const rootStyle: Record<string, string> = {};
+  const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  if (overrides) {
+    for (const binding of Object.keys(overrides) as DividerOverridableBinding[]) {
+      const token = overrides[binding];
+      if (!token) continue;
+      // Overrides change values, never presence: spacing is off at `none`, the label bindings only
+      // apply while a label is shown.
+      if (binding === 'spacing' && spacing === 'none') continue;
+      if (binding === 'labelGap' && !showLabel) continue;
+      if (binding === 'labelSize') textOverrides.fontSize = token;
+      else if (binding === 'fontFamily') textOverrides.fontFamily = token;
+      else {
+        const hook = ROOT_OVERRIDE_HOOK[binding];
+        if (hook) rootStyle[hook] = cssVar(token);
+      }
+    }
+  }
+  const style = Object.keys(rootStyle).length > 0 ? (rootStyle as CSSProperties) : undefined;
+
+  const className = [
     'ds-divider',
     `ds-divider--${orientation}`,
     `ds-divider--spacing-${spacing}`,
     showLabel ? 'ds-divider--labelled' : null,
-    className ?? null,
   ]
     .filter(Boolean)
     .join(' ');
 
-  const { rootStyle, textOverrides } = overrides ? overridesToStyle(overrides) : { rootStyle: undefined, textOverrides: {} };
-  const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
-
-  if (showLabel) {
+  if (!isSemantic) {
     return (
-      <div
+      <hr
         {...rest}
-        ref={ref as Ref<HTMLDivElement>}
+        ref={ref as Ref<HTMLHRElement>}
         data-ds="Divider"
-        className={classes}
-        style={mergedStyle}
-        role="separator"
-        aria-orientation={orientation}
-      >
-        <span className="ds-divider__line" data-part="line" aria-hidden="true" />
-        <span className="ds-divider__label" data-part="label">
-          <Text element="span" size="sm" tone="muted" overrides={Object.keys(textOverrides).length ? textOverrides : undefined}>
-            {label}
-          </Text>
-        </span>
-        <span className="ds-divider__line" data-part="line" aria-hidden="true" />
-      </div>
+        className={className}
+        style={style}
+        aria-hidden="true"
+      />
     );
   }
 
   return (
-    <hr
+    <div
       {...rest}
-      ref={ref as Ref<HTMLHRElement>}
+      ref={ref as Ref<HTMLDivElement>}
       data-ds="Divider"
-      className={classes}
-      style={mergedStyle}
-      aria-hidden={isSemantic ? undefined : 'true'}
-      role={isSemantic ? 'separator' : undefined}
-      aria-orientation={isSemantic ? orientation : undefined}
-    />
+      className={className}
+      style={style}
+      role="separator"
+      aria-orientation={orientation}
+      aria-labelledby={showLabel ? labelId : undefined}
+    >
+      {showLabel ? (
+        <>
+          <span className="ds-divider__line" data-part="line" />
+          <Text
+            id={labelId}
+            element="span"
+            size="sm"
+            tone="muted"
+            data-part="label"
+            overrides={Object.keys(textOverrides).length > 0 ? textOverrides : undefined}
+          >
+            {label}
+          </Text>
+          <span className="ds-divider__line" data-part="line" />
+        </>
+      ) : null}
+    </div>
   );
-};
+}

@@ -164,18 +164,20 @@
     }
   },
   "Button.web": {
-    "hash": "442dc19d7fa73dfa",
-    "lastAttemptHash": "442dc19d7fa73dfa",
-    "generatedAt": "2026-09-10T23:45:55+00:00",
-    "model": "sonnet",
+    "hash": "7b3626ca2354fe68",
+    "lastAttemptHash": "7b3626ca2354fe68",
+    "generatedAt": "2026-09-16T07:43:49+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.422,
+    "costUsd": 3.9159,
     "files": [
       "packages/react/src/Button.css",
+      "packages/react/src/Button.stories.tsx",
+      "packages/react/src/Button.test.tsx",
       "packages/react/src/Button.tsx"
     ],
-    "gaps": 3,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -186,19 +188,20 @@
     }
   },
   "Card.web": {
-    "hash": "6a45d2f62aa43af0",
-    "lastAttemptHash": "6a45d2f62aa43af0",
-    "generatedAt": "2026-09-10T21:33:59+00:00",
-    "model": "sonnet",
+    "hash": "a39865b16be0ca77",
+    "lastAttemptHash": "a39865b16be0ca77",
+    "generatedAt": "2026-09-16T08:23:46+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4073,
+    "costUsd": 1.6572,
     "files": [
       "packages/react/src/Card.css",
       "packages/react/src/Card.stories.tsx",
+      "packages/react/src/Card.test.tsx",
       "packages/react/src/Card.tsx"
     ],
-    "gaps": 2,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -277,19 +280,20 @@
     }
   },
   "Container.web": {
-    "hash": "ad750081293feacc",
-    "lastAttemptHash": "ad750081293feacc",
-    "generatedAt": "2026-09-10T21:32:29+00:00",
-    "model": "sonnet",
+    "hash": "762365fc090778bc",
+    "lastAttemptHash": "762365fc090778bc",
+    "generatedAt": "2026-09-16T08:19:02+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2134,
+    "costUsd": 0.8359,
     "files": [
       "packages/react/src/Container.css",
       "packages/react/src/Container.stories.tsx",
+      "packages/react/src/Container.test.tsx",
       "packages/react/src/Container.tsx"
     ],
-    "gaps": 2,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -392,20 +396,20 @@
     }
   },
   "Divider.web": {
-    "hash": "62462a0103cb4132",
-    "lastAttemptHash": "62462a0103cb4132",
-    "generatedAt": "2026-09-10T21:35:33+00:00",
-    "model": "sonnet",
+    "hash": "b33da243ba3ce895",
+    "lastAttemptHash": "b33da243ba3ce895",
+    "generatedAt": "2026-09-16T08:29:54+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4005,
+    "costUsd": 0.936,
     "files": [
       "packages/react/src/Divider.css",
       "packages/react/src/Divider.stories.tsx",
       "packages/react/src/Divider.test.tsx",
       "packages/react/src/Divider.tsx"
     ],
-    "gaps": 2,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -485,19 +489,20 @@
     }
   },
   "Form.web": {
-    "hash": "86a90dd139a43d15",
-    "lastAttemptHash": "86a90dd139a43d15",
-    "generatedAt": "2026-09-10T21:31:48+00:00",
-    "model": "sonnet",
+    "hash": "e6ff7723950d3744",
+    "lastAttemptHash": "e6ff7723950d3744",
+    "generatedAt": "2026-09-16T08:13:08+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0032,
+    "costUsd": 1.1053,
     "files": [
       "packages/react/src/Form.css",
       "packages/react/src/Form.stories.tsx",
+      "packages/react/src/Form.test.tsx",
       "packages/react/src/Form.tsx"
     ],
-    "gaps": 3,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -555,18 +560,20 @@
     }
   },
   "Input.web": {
-    "hash": "32fe26c4d611b67b",
-    "lastAttemptHash": "32fe26c4d611b67b",
-    "generatedAt": "2026-09-10T23:52:47+00:00",
-    "model": "sonnet",
+    "hash": "3b9ac4ea9f22ab26",
+    "lastAttemptHash": "3b9ac4ea9f22ab26",
+    "generatedAt": "2026-09-16T08:04:52+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8786,
+    "costUsd": 1.7107,
     "files": [
       "packages/react/src/Input.css",
+      "packages/react/src/Input.stories.tsx",
+      "packages/react/src/Input.test.tsx",
       "packages/react/src/Input.tsx"
     ],
-    "gaps": 1,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -600,19 +607,19 @@
     }
   },
   "Link.web": {
-    "hash": "3db44d6bff1e2bba",
-    "lastAttemptHash": "3db44d6bff1e2bba",
-    "generatedAt": "2026-09-10T21:23:31+00:00",
-    "model": "sonnet",
+    "hash": "b99ecad880166aa6",
+    "lastAttemptHash": "b99ecad880166aa6",
+    "generatedAt": "2026-09-16T07:59:07+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5534,
+    "costUsd": 1.1733,
     "files": [
-      "packages/react/src/Link.css",
       "packages/react/src/Link.stories.tsx",
+      "packages/react/src/Link.test.tsx",
       "packages/react/src/Link.tsx"
     ],
-    "gaps": 1,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,

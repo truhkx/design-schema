@@ -1,7 +1,6 @@
-import { LitElement, css, html, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import { classMap } from 'lit/directives/class-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { trackPress } from './custom/analytics.js';
 
@@ -18,7 +17,12 @@ export interface ButtonTrackDetail {
   label: string;
 }
 
-/** Overridable style hooks; see the `overrides` property. `background`, `foreground`, `focusRing`, `focusRingWidth`, `inverseForeground`, `inverseFocusRing` and `minTarget` are locked and excluded. */
+/**
+ * Overridable style hooks; see the `overrides` property. The accessibility-bearing
+ * bindings — `background`, `foreground`, `focusRing`, `focusRingWidth`,
+ * `inverseForeground`, `inverseFocusRing`, `minTarget` and `spinnerStroke` — are
+ * locked and excluded.
+ */
 export type ButtonOverridableBinding =
   | 'backgroundHover'
   | 'iconGap'
@@ -30,8 +34,7 @@ export type ButtonOverridableBinding =
   | 'fontSize'
   | 'disabledOpacity'
   | 'transition'
-  | 'loadingSpin'
-  | 'spinnerStroke';
+  | 'loadingSpin';
 
 const HOOKS: Record<ButtonOverridableBinding, string> = {
   backgroundHover: '--ds-button-background-hover',
@@ -39,14 +42,16 @@ const HOOKS: Record<ButtonOverridableBinding, string> = {
   paddingInline: '--ds-button-padding-inline',
   paddingBlock: '--ds-button-padding-block',
   radius: '--ds-button-radius',
-  fontFamily: `--ds-button-font-family`,
+  fontFamily: '--ds-button-font-family',
   fontWeight: '--ds-button-font-weight',
   fontSize: '--ds-button-font-size',
   disabledOpacity: '--ds-button-disabled-opacity',
   transition: '--ds-button-transition',
   loadingSpin: '--ds-button-loading-spin',
-  spinnerStroke: '--ds-button-spinner-stroke',
 };
+
+/** copy.loading — announced beside the label while `loading` is true. */
+const COPY_LOADING = 'Loading';
 
 /**
  * `<ds-button>` — Button (category: action, APG pattern: button).
@@ -59,6 +64,11 @@ const HOOKS: Record<ButtonOverridableBinding, string> = {
  * also calls the hand-written `trackPress` analytics module and then fires a
  * composed `track` CustomEvent with `{ name, label }`.
  *
+ * `ds-button` is deliberately *not* form-associated: a form-associated custom
+ * element with a reflected `disabled` attribute becomes truly disabled and
+ * unfocusable, and the doc requires a disabled button to stay in the tab order.
+ * The disabled state is `aria-disabled` on the inner button instead.
+ *
  * ## When to use
  *
  * Use a Button when the user needs to **do something**: submit, save, confirm,
@@ -68,17 +78,17 @@ const HOOKS: Record<ButtonOverridableBinding, string> = {
  * Use the `primary` variant for the single most important action in a view.
  * Use `secondary` for the alternatives beside it, `ghost` for low-emphasis
  * actions in dense UI such as toolbars, and `danger` only for destructive,
- * hard-to-undo actions.
+ * hard-to-undo actions. Navigation belongs to Link, never to Button.
  *
  * @fires press - Fired when the button is activated by pointer, keyboard
  *   (Enter/Space), or assistive technology. Not fired while `disabled` or `loading`.
  * @fires track - Fired after `press`, only when `track` is set, with `{ name, label }` in `detail`.
- * @slot leading-icon - Icon rendered before the label (anatomy: leadingIcon).
- * @slot trailing-icon - Icon rendered after the label (anatomy: trailingIcon).
+ * @slot leading-icon - Icon rendered before the label (anatomy: leadingIcon). Decorative.
+ * @slot trailing-icon - Icon rendered after the label (anatomy: trailingIcon). Decorative.
  * @csspart container - The native `<button>` (anatomy: container).
- * @csspart label - The visible label text.
- * @csspart leading-icon - The leading-icon slot (anatomy: leadingIcon).
- * @csspart trailing-icon - The trailing-icon slot (anatomy: trailingIcon).
+ * @csspart label - The visible label text (anatomy: label).
+ * @csspart leadingIcon - The leading-icon slot (anatomy: leadingIcon).
+ * @csspart trailingIcon - The trailing-icon slot (anatomy: trailingIcon).
  */
 @customElement('ds-button')
 export class DsButton extends LitElement {
@@ -102,7 +112,6 @@ export class DsButton extends LitElement {
       --ds-button-disabled-opacity: var(--opacity-disabled);
       --ds-button-transition: var(--motion-duration-fast);
       --ds-button-loading-spin: var(--motion-duration-loop);
-      --ds-button-spinner-stroke: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -116,6 +125,7 @@ export class DsButton extends LitElement {
       align-items: center;
       justify-content: center;
       inline-size: 100%;
+      /* minTarget: locked — 24px CSS minimum at every size (WCAG 2.5.8) */
       min-inline-size: var(--size-target-min);
       min-block-size: var(--size-target-min);
       margin: 0;
@@ -131,6 +141,7 @@ export class DsButton extends LitElement {
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
+      /* transition: motion.duration.fast with motion.easing.standard */
       transition:
         background-color var(--ds-button-transition) var(--motion-easing-standard),
         color var(--ds-button-transition) var(--motion-easing-standard);
@@ -167,6 +178,7 @@ export class DsButton extends LitElement {
     /* iconOnly: equal padding on all sides (space.sm), regardless of size */
     :host([icon-only]) {
       --ds-button-padding-inline: var(--space-sm);
+      --ds-button-padding-block: var(--space-sm);
     }
 
     /* background / foreground: color.action.{variant}.*, locked */
@@ -204,15 +216,16 @@ export class DsButton extends LitElement {
       background: var(--ds-button-background-hover);
     }
 
-    /* inverse: only ghost is meaningful on inverse surfaces (Toast, Tooltip-like panels); locked tokens */
-    :host([variant='ghost']) button.inverse {
+    /*
+     * inverse: only the ghost variant changes its fill on an inverse surface
+     * (Toast, Tooltip-like panels) — the sanctioned color-mix of two tokens.
+     * Other variants keep their own fills.
+     */
+    :host([inverse][variant='ghost']) button {
       color: var(--color-inverse-link);
     }
-    :host([variant='ghost']:not([disabled]):not([loading])) button.inverse:is(:hover, :active) {
+    :host([inverse][variant='ghost']:not([disabled]):not([loading])) button:is(:hover, :active) {
       background: color-mix(in srgb, var(--color-inverse-foreground) 12%, transparent);
-    }
-    button.inverse:focus-visible {
-      outline-color: var(--color-inverse-focus);
     }
 
     /* focus-visible: color.border.focus at border.width.focus, locked */
@@ -221,7 +234,12 @@ export class DsButton extends LitElement {
       outline-offset: var(--border-width-focus);
     }
 
-    /* disabledOpacity: applied to the whole button; colors are unchanged */
+    /* inverseFocusRing: the ring must read against the inverse surface, for every variant */
+    :host([inverse]) button:focus-visible {
+      outline-color: var(--color-inverse-focus);
+    }
+
+    /* disabledOpacity: applied to the whole button; colors are unchanged so the contrast math still holds */
     :host([disabled]) button {
       opacity: var(--ds-button-disabled-opacity);
       cursor: not-allowed;
@@ -230,6 +248,7 @@ export class DsButton extends LitElement {
     .content {
       display: inline-flex;
       align-items: center;
+      /* iconGap: space.2 */
       gap: var(--ds-button-icon-gap);
     }
 
@@ -238,13 +257,15 @@ export class DsButton extends LitElement {
       display: none;
     }
 
-    /* loading: spinner takes the leading-icon spot, trailing icon hides, label stays visible */
+    /*
+     * loading: the spinner takes the leading-icon spot (replacing the sole glyph
+     * when iconOnly), the trailing icon hides, and the label stays visible, so the
+     * layout does not shift.
+     */
     :host([loading]) button {
       cursor: progress;
     }
-    :host([loading]) slot[name='leading-icon'] {
-      display: none;
-    }
+    :host([loading]) slot[name='leading-icon'],
     :host([loading]) slot[name='trailing-icon'] {
       display: none;
     }
@@ -253,7 +274,8 @@ export class DsButton extends LitElement {
       box-sizing: border-box;
       inline-size: 1em;
       block-size: 1em;
-      border: var(--ds-button-spinner-stroke) solid currentColor;
+      /* spinnerStroke: border.width.focus, locked */
+      border: var(--border-width-focus) solid currentColor;
       border-inline-end-color: transparent;
       border-radius: var(--radius-full);
       animation: ds-button-spin var(--ds-button-loading-spin) linear infinite;
@@ -271,55 +293,87 @@ export class DsButton extends LitElement {
         animation: none;
       }
     }
+
+    /* visually-hidden: clipped off-screen but still part of the accessible name */
+    .visually-hidden {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
   `;
 
   /** The button's text. Also its accessible name. */
-  @property() accessor label = '';
+  @property({ type: String }) accessor label = '';
 
   /** Visual emphasis. One primary button per view. */
-  @property({ reflect: true }) accessor variant: ButtonVariant = 'primary';
+  @property({ type: String, reflect: true }) accessor variant: ButtonVariant = 'primary';
 
-  /** Controls padding and font size. Touch targets never drop below the minimum regardless of size. */
-  @property({ reflect: true }) accessor size: ButtonSize = 'md';
+  /** Controls horizontal padding and font size. Touch targets never drop below the minimum regardless of size. */
+  @property({ type: String, reflect: true }) accessor size: ButtonSize = 'md';
 
   /** `submit` submits the enclosing Form. Everything else is `button`. */
-  @property({ reflect: true }) accessor type: ButtonType = 'button';
+  @property({ type: String, reflect: true }) accessor type: ButtonType = 'button';
 
   /**
    * Set by a parent that the button discloses (Menu, Popover, SidePanel,
-   * Disclosure): reflected to the inner button's `aria-expanded`. `undefined`
-   * (the default) means this button does not disclose anything, so no
-   * `aria-expanded` is rendered. Consumers rarely set it directly.
+   * Disclosure): rendered as `aria-expanded` on the inner button. A JS property
+   * only, and tri-state — `undefined` (the default) means this button discloses
+   * nothing, so no `aria-expanded` is rendered at all. Consumers rarely set it
+   * directly; a raw `aria-expanded` attribute on the host does not reach the
+   * inner button.
    */
   @property({ type: Boolean, attribute: false }) accessor expanded: boolean | undefined;
 
   /** Prevents activation. The button stays in the tab order and is announced as disabled. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
-  /** Hides the visible label and shows only the icon. `label` is still required and becomes the accessible name. */
+  /**
+   * Hides the visible label and shows only `leadingIcon`. `label` is still
+   * required and becomes the accessible name. Padding becomes equal on all sides.
+   */
   @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) accessor iconOnly = false;
 
-  /** Shows progress and blocks repeat activation while an action is pending. */
+  /**
+   * Shows a 1em ring spinner in `currentColor` in the leading icon slot, hides
+   * `trailingIcon`, keeps the label visible and the layout unchanged, and blocks
+   * repeat activation while an action is pending.
+   */
   @property({ type: Boolean, reflect: true }) accessor loading = false;
 
-  /** The button sits on an inverse surface (Toast, Tooltip-like panels). Only meaningful on `ghost`. */
+  /**
+   * The button sits on an inverse surface (Toast, Tooltip-like panels): `ghost`
+   * text and hover change, and the focus ring uses the inverse focus token for
+   * every variant.
+   */
   @property({ type: Boolean, reflect: true }) accessor inverse = false;
 
   /**
    * Overrides the accessible name when it must say more than the visible label
    * ("Sort by Amount, ascending" on a header that shows "Amount"). The visible
-   * label must be the start of it. Maps to `aria-label`.
+   * label must be part of it (WCAG 2.5.3 label-in-name). Maps to `aria-label`.
    */
-  @property({ attribute: 'accessible-name' }) accessor accessibleName: string | undefined;
+  @property({ type: String, attribute: 'accessible-name' }) accessor accessibleName: string | undefined;
 
-  /** Text used for this button when a Toolbar collapses it into its overflow Menu. */
-  @property({ attribute: 'overflow-label' }) accessor overflowLabel: string | undefined;
+  /**
+   * Text used for this button when a Toolbar collapses it into its overflow
+   * Menu. Read by Toolbar only; it has no effect on the button's own rendering.
+   */
+  @property({ type: String, attribute: 'overflow-label' }) accessor overflowLabel: string | undefined;
 
-  /** Analytics event name sent on press. Omit for no tracking. */
-  @property() accessor track: string | undefined;
+  /** An event name sent to analytics when the button is pressed. Omit for no tracking. */
+  @property({ type: String }) accessor track: string | undefined;
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> | undefined;
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<ButtonOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -336,7 +390,6 @@ export class DsButton extends LitElement {
     return html`
       <button
         part="container"
-        class=${classMap({ inverse: this.inverse })}
         type=${this.type}
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
         aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
@@ -345,10 +398,11 @@ export class DsButton extends LitElement {
         @click=${this.handleClick}
       >
         <span class="content">
-          <span class="spinner" part="leading-icon" aria-hidden="true"></span>
-          <slot name="leading-icon" part="leading-icon"></slot>
+          <span class="spinner" aria-hidden="true"></span>
+          <slot name="leading-icon" part="leadingIcon"></slot>
           <span class="label" part="label">${this.label}</span>
-          <slot name="trailing-icon" part="trailing-icon"></slot>
+          <slot name="trailing-icon" part="trailingIcon"></slot>
+          ${this.loading ? html`<span class="visually-hidden">${COPY_LOADING}</span>` : nothing}
         </span>
       </button>
     `;
@@ -356,18 +410,18 @@ export class DsButton extends LitElement {
 
   private handleClick(event: MouseEvent): void {
     if (this.disabled || this.loading) {
-      // aria-disabled keeps the button discoverable, so we have to swallow the
-      // activation ourselves: no `press`, no native click leaking out, no submit.
+      // aria-disabled keeps the button discoverable, so the activation has to be
+      // swallowed here: no `press`, no native click leaking out, no submit.
       event.preventDefault();
       event.stopPropagation();
       return;
     }
 
-    this.dispatchEvent(
-      new CustomEvent<ButtonPressDetail>('press', { bubbles: true, composed: true }),
-    );
+    this.dispatchEvent(new CustomEvent<ButtonPressDetail>('press', { bubbles: true, composed: true }));
 
     if (this.track) {
+      // The analytics seam: a hand-written module the adopter owns, called once
+      // per press, after `press` and before `track`.
       trackPress(this.track, this.label);
       this.dispatchEvent(
         new CustomEvent<ButtonTrackDetail>('track', {

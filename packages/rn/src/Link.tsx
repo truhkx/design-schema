@@ -45,9 +45,10 @@ export interface LinkProps {
    * Fired when the link is activated, with `href`. On native the consumer's handler
    * is the navigation; when no handler is given the system opens the URL with `Linking`.
    * For `external` links `onPress` fires first but `Linking` always performs the
-   * navigation, since a consumer-side router cannot leave the app.
+   * navigation, since a consumer-side router cannot leave the app. Cancelable: return
+   * `false` to skip the `Linking` hand-off.
    */
-  onPress?: ((href: string) => void) | undefined;
+  onPress?: ((href: string) => boolean | void) | undefined;
 }
 
 const COPY = {
@@ -110,7 +111,7 @@ export function Link({
   onPress,
 }: LinkProps): React.JSX.Element {
   const { tokens: t } = useTheme();
-  const { nested } = React.useContext(TextStyleContext);
+  const { nested, color: inheritedColor } = React.useContext(TextStyleContext);
   const reducedMotion = useReducedMotion();
   const [pressed, setPressed] = React.useState(false);
 
@@ -141,15 +142,27 @@ export function Link({
   }, [pressed, reducedMotion, highlight, transitionDuration, t.motionEasingStandard, tone]);
 
   const animatedColor = highlight.interpolate({ inputRange: [0, 1], outputRange: [t.colorLink, t.colorLinkHover] });
-  const iconColor = tone === 'inherit' ? undefined : pressed ? t.colorLinkHover : t.colorLink;
+  // With `tone: inherit` the mark takes the enclosing system Text's color; outside one
+  // there is no currentColor to inherit, so Icon falls back to its own default.
+  const iconColor =
+    tone === 'inherit'
+      ? nested && inheritedColor !== ''
+        ? inheritedColor
+        : undefined
+      : pressed
+        ? t.colorLinkHover
+        : t.colorLink;
 
   const handlePress = (): void => {
-    onPress?.(href);
+    // Cancelable: a handler returning `false` skips the default hand-off to Linking.
+    if (onPress?.(href) === false) {
+      return;
+    }
     // For a non-external link the consumer's handler is the navigation; only without
     // one does the system open the URL. External always leaves through Linking, since
     // no consumer-side router can hand off to the system browser.
     if (external || onPress === undefined) {
-      Linking.openURL(href).catch(() => undefined);
+      Promise.resolve(Linking.openURL(href)).catch(() => undefined);
     }
   };
 

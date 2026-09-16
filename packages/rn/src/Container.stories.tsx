@@ -42,3 +42,19 @@ export const AlignStart: Story = { args: { align: 'start' } };
 export const WithOverrides: Story = {
   args: { overrides: { maxWidth: 'layout.maxWidth.page', paddingInline: 'layout.gutter.wide' } },
 };
+
+// examples
+/** The default page column for application screens, centered at the content measure. */
+export const ApplicationScreen: Story = {
+  args: { children: <Text>A Stack of page regions</Text>, width: 'content' },
+};
+
+/** An article capped at the prose measure, about 65 characters a line. */
+export const ReadingMeasure: Story = {
+  args: { children: <Text>An article</Text>, width: 'prose' },
+};
+
+/** A narrower measure inside an already padded parent, so the gutters are not applied twice. */
+export const NestedSection: Story = {
+  args: { children: <Text>A narrower section</Text>, width: 'prose', gutter: 'none' },
+};

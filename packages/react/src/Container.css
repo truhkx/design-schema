@@ -4,22 +4,25 @@
   box-sizing: border-box;
   display: block;
   margin-inline: auto;
-  max-inline-size: var(--ds-container-max-width, none);
+  max-inline-size: var(--ds-container-max-width);
   padding-inline: var(--ds-container-padding-inline);
 }
 
-/* width → layout.maxWidth.{width}; full sets no hook, so max-inline-size falls back to none. */
+/* width → layout.maxWidth.{width}. full renders the literal none with no hook, so an override of
+   this binding is a no-op at that value. */
 .ds-container--width-prose { --ds-container-max-width: var(--layout-max-width-prose); }
 .ds-container--width-content { --ds-container-max-width: var(--layout-max-width-content); }
 .ds-container--width-page { --ds-container-max-width: var(--layout-max-width-page); }
+.ds-container--width-full { max-inline-size: none; }
 
-/* gutter → layout.gutter.{gutter}; none renders no padding. default is responsive: narrow below
-   layout.maxWidth.content, the base gutter through layout.maxWidth.page, wide above it. Custom
-   properties are not valid in media queries, so the breakpoints are the resolved px values of
-   those two tokens, read from the token file at generation time. */
+/* gutter → layout.gutter.{gutter}. none renders a literal 0 with no hook. narrow and wide are fixed at
+   every viewport; default is responsive: narrow below layout.maxWidth.content, the base gutter
+   between, wide above layout.maxWidth.page. Custom properties are not valid in media queries, so the
+   breakpoints are the resolved px values of those two tokens, read from the token file at generation
+   time. */
 .ds-container--gutter-narrow { --ds-container-padding-inline: var(--layout-gutter-narrow); }
 .ds-container--gutter-wide { --ds-container-padding-inline: var(--layout-gutter-wide); }
-.ds-container--gutter-none { --ds-container-padding-inline: 0; }
+.ds-container--gutter-none { padding-inline: 0; }
 .ds-container--gutter-default { --ds-container-padding-inline: var(--layout-gutter-narrow); }
 
 @media (min-width: 960px) { /* literal-ok: breakpoint from layout.maxWidth.content */
@@ -30,5 +33,5 @@
   .ds-container--gutter-default { --ds-container-padding-inline: var(--layout-gutter-wide); }
 }
 
-/* align → margin-inline; center keeps the column centered, start pins it to the inline start. */
+/* align → margin-inline; start zeroes both sides so the column never picks up an asymmetric margin. */
 .ds-container--align-start { margin-inline: 0; }

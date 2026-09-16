@@ -16,6 +16,8 @@ export type FormValues = Record<string, Exclude<FormFieldValue, undefined>>;
 
 /** What a field (Input, Checkbox, Switch, RadioGroup) registers with the enclosing Form. */
 export interface FormFieldHandle {
+  /** The field's visible label, so the error summary can read "Label: message". */
+  label?: string | undefined;
   /** Current value of the field. `undefined` means "contributes nothing". */
   getValue(): FormFieldValue;
   /** Returns an error message when the field is invalid, otherwise `null`. */

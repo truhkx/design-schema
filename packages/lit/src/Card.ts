@@ -1,14 +1,13 @@
 import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Heading.js';
-import './Stack.js';
 
 export type CardHeadingLevel = '2' | '3' | '4' | '5' | '6';
 export type CardInset = 'sm' | 'md' | 'lg';
 export type CardSurface = 'default' | 'subtle';
 
-/** Overridable style hooks; see the `overrides` property. `background`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. `background`, `hoverBackground`, `focusRing` and `focusRingWidth` are locked and excluded. */
 export type CardOverridableBinding =
   | 'paddingBlock'
   | 'paddingInline'
@@ -19,7 +18,6 @@ export type CardOverridableBinding =
   | 'border'
   | 'borderWidth'
   | 'radius'
-  | 'hoverBackground'
   | 'transition';
 
 const HOOKS: Record<CardOverridableBinding, string> = {
@@ -32,7 +30,6 @@ const HOOKS: Record<CardOverridableBinding, string> = {
   border: '--ds-card-border',
   borderWidth: '--ds-card-border-width',
   radius: '--ds-card-radius',
-  hoverBackground: '--ds-card-hover-background',
   transition: '--ds-card-transition',
 };
 
@@ -40,19 +37,19 @@ const HOOKS: Record<CardOverridableBinding, string> = {
 const HIT_AREA_SELECTOR = 'ds-link, ds-button, a[href], button';
 /** Marks the light-DOM link/button whose hit area extends across the whole card. */
 const HIT_AREA_CLASS = 'ds-card-hit-area';
-const HIT_AREA_STYLE = `.${HIT_AREA_CLASS} { position: relative; } .${HIT_AREA_CLASS}::after { content: ''; position: absolute; inset: 0; }`;
+/** The target itself stays unpositioned so its `::after` resolves against the card host (`position: relative`). */
+const HIT_AREA_STYLE = `.${HIT_AREA_CLASS}::after { content: ''; position: absolute; inset: 0; }`;
 
 /** Roots that already carry the hit-area rule (a Document per page, a ShadowRoot per nesting host). */
 const styledHitAreaRoots = new WeakSet<Document | ShadowRoot>();
 
 /**
- * Injects the hit-area pseudo-element rule into the tree the slotted link or
- * button actually lives in (the page, or an ancestor shadow root). A shadow
- * stylesheet cannot reach that light-DOM content with `::after`, so the rule
- * has to live outside `ds-card`'s own shadow root.
+ * Injects the hit-area pseudo-element rule once into the tree the slotted link
+ * or button lives in (the document head, or the nearest ancestor shadow root).
+ * A shadow stylesheet cannot give light-DOM content an `::after`.
  */
-function ensureHitAreaStyle(root: Document | ShadowRoot): void {
-  if (styledHitAreaRoots.has(root)) {
+function ensureHitAreaStyle(root: Node): void {
+  if (!(root instanceof Document || root instanceof ShadowRoot) || styledHitAreaRoots.has(root)) {
     return;
   }
   styledHitAreaRoots.add(root);
@@ -66,43 +63,26 @@ function ensureHitAreaStyle(root: Document | ShadowRoot): void {
   target.appendChild(style);
 }
 
-/** `ElementInternals` with the cross-root ARIA reflection Chromium ships; not yet in every DOM lib. */
-type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[] | null | undefined };
-
 /**
  * `<ds-card>` — Card (category: container).
  *
- * `<ds-card heading="Plan" heading-level="3" inset="md">…</ds-card>`. The host
- * gets an `article` role (via `ElementInternals`, best-effort labelled by the
- * heading across the shadow boundary) when `heading` is set, and no role
- * otherwise. Inside the shadow root: a `.surface` box (padding, background,
- * border and radius from tokens) holding a header row (`<ds-heading>` plus the
- * `header-actions` slot), shown when `heading` or header-actions content is
- * present; the default slot as the body; and a `footer` row, shown when
- * present. `interactive` cards grow their single slotted `ds-link`/`ds-button`
- * hit area across the whole card (a class added on `slotchange`, backed by a
- * rule injected into the light tree — see `ensureHitAreaStyle`) and draw the
- * focus ring on the card via `:focus-within`; the card itself is never a
- * second tab stop. `focusable` cards instead take `tabindex="-1"` (scripted
- * focus only, e.g. from a Feed) and draw the same ring via `:focus-visible`.
+ * `<ds-card heading="Plan" heading-level="3" inset="md">…</ds-card>`. With a
+ * `heading` the host is `role="article"` named by `aria-label` (ids do not
+ * cross the shadow root); without one it has no role. Inside the shadow root a
+ * surface holds the header row (`<ds-heading size="lg">` plus the
+ * `header-actions` slot, shown when either is present), the default slot as
+ * the body, and the footer row (shown when footer content is slotted). The
+ * rows are the card's own flex rows so their gaps stay overridable.
  *
- * ## When to use
- *
- * Use Cards for collections of like items where each needs its own boundary,
- * and for a single panel that groups a heading, content and actions. Give the
- * card a `heading` when it is a unit in a list, and set `headingLevel` to fit
- * the page. Use `interactive` only when the card contains exactly one Link or
- * Button whose action the whole card should extend to.
+ * `interactive` extends the single slotted `ds-link`/`ds-button` (or raw
+ * `a[href]`/`button`) in the default slot across the whole card and draws the
+ * ring on the card via `:focus-within`; the card is never a focus stop.
+ * `focusable` gives the host `tabindex="-1"` for scripted focus (Feed) and
+ * draws the ring on `:focus-visible`; with `interactive` it is a no-op.
  *
  * @slot - The body. Usually a Stack of Text and controls.
  * @slot header-actions - Controls at the end of the header row — a ghost icon-only Button, a Link. At most two.
- * @slot footer - The action row. Buttons in a horizontal Stack, primary first, following Form's action-order rule.
- * @csspart surface - The padded, bordered box (anatomy: surface).
- * @csspart header - The header row (anatomy: header).
- * @csspart heading - The `<ds-heading>` (anatomy: heading).
- * @csspart header-actions - The header-actions slot (anatomy: headerActions).
- * @csspart body - The body wrapper (anatomy: body).
- * @csspart footer - The footer row (anatomy: footer).
+ * @slot footer - The action row. Buttons in a row, primary first, following Form's action-order rule.
  */
 @customElement('ds-card')
 export class DsCard extends LitElement {
@@ -110,7 +90,6 @@ export class DsCard extends LitElement {
     :host {
       display: block;
       box-sizing: border-box;
-      font-family: var(--font-family-body);
       --ds-card-padding-block: var(--layout-inset-md);
       --ds-card-padding-inline: var(--layout-inset-md);
       --ds-card-part-gap: var(--layout-gap-loose);
@@ -120,7 +99,6 @@ export class DsCard extends LitElement {
       --ds-card-border: var(--color-border);
       --ds-card-border-width: var(--border-width-thin);
       --ds-card-radius: var(--radius-lg);
-      --ds-card-hover-background: var(--color-background-subtle);
       --ds-card-transition: var(--motion-duration-fast);
     }
 
@@ -128,7 +106,7 @@ export class DsCard extends LitElement {
       display: none;
     }
 
-    /* paddingBlock/paddingInline: layout.inset.{inset} */
+    /* paddingBlock / paddingInline: layout.inset.{inset} */
     :host([inset='sm']) {
       --ds-card-padding-block: var(--layout-inset-sm);
       --ds-card-padding-inline: var(--layout-inset-sm);
@@ -142,12 +120,7 @@ export class DsCard extends LitElement {
       --ds-card-padding-inline: var(--layout-inset-lg);
     }
 
-    /* hoverBackground: color.background.subtle; a subtle surface hovers one step up, to color.background.strong */
-    :host([surface='subtle']) {
-      --ds-card-hover-background: var(--color-background-strong);
-    }
-
-    .surface {
+    [data-part='surface'] {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
@@ -156,210 +129,275 @@ export class DsCard extends LitElement {
       padding-inline: var(--ds-card-padding-inline);
       border-style: solid;
       border-width: 0;
-      border-color: var(--ds-card-border);
+      border-color: transparent;
       border-radius: var(--ds-card-radius);
-      /* background: color.background.{surface}, locked — no override hook */
-      background: var(--color-background);
-      transition: background-color var(--ds-card-transition) var(--motion-easing-standard);
+      /* background: color.background.{surface}, locked; default drops the segment */
+      background-color: var(--color-background);
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      .surface {
-        transition: none;
-      }
+    :host([surface='subtle']) [data-part='surface'] {
+      background-color: var(--color-background-subtle);
     }
 
-    /* background: color.background.{surface}, locked */
-    :host([surface='subtle']) .surface {
-      background: var(--color-background-subtle);
-    }
-
-    /* borderWidth: rendered only with surface default — the calm option; subtle has no border */
-    :host([surface='default']) .surface {
+    /* borderWidth / border: rendered only with surface default */
+    :host([surface='default']) [data-part='surface'] {
       border-width: var(--ds-card-border-width);
+      border-color: var(--ds-card-border);
     }
 
-    /* interactive: position context for the slotted link/button's extending hit area (see ensureHitAreaStyle) */
-    :host([interactive]) {
-      position: relative;
-    }
-    :host([interactive]) .surface {
-      cursor: pointer;
-    }
-    :host([interactive]) .surface:hover {
-      background: var(--ds-card-hover-background);
-    }
-
-    /* focusRing/focusRingWidth: color.border.focus, border.width.focus, locked. Drawn on the card, never a second tab stop. */
-    :host([interactive]:focus-within) .surface {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
-    }
-
-    /* focusable: scripted focus only (tabindex="-1"); the card draws its own ring via :focus-visible. */
-    :host(:focus-visible) .surface {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
-    }
-
-    .body {
+    /* headerGap: layout.gap.normal, between the heading and headerActions */
+    [data-part='header'] {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ds-card-header-gap);
       min-inline-size: 0;
     }
 
-    /* actionsGap: layout.gap.tight, between the (at most two) header-actions controls */
-    slot[name='header-actions'] {
+    /* actionsGap: layout.gap.tight, between the headerActions controls */
+    [data-part='headerActions'] {
       display: flex;
       align-items: center;
       gap: var(--ds-card-actions-gap);
+      flex: 0 0 auto;
+      margin-inline-start: auto;
+    }
+
+    [data-part='body'] {
+      display: block;
+      min-inline-size: 0;
+    }
+
+    /* footerGap: layout.gap.tight, between footer actions */
+    [data-part='footer'] {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--ds-card-footer-gap);
+    }
+
+    [hidden] {
+      display: none;
+    }
+
+    /*
+     * interactive: position context for the slotted target's ::after. The card always reserves
+     * border.width.focus, transparent until focused, so the ring never shifts the layout.
+     */
+    :host([interactive]) {
+      position: relative;
+    }
+    :host([interactive]) [data-part='surface'] {
+      border-width: var(--border-width-focus);
+      border-color: transparent;
+      transition:
+        background-color var(--ds-card-transition) var(--motion-easing-standard),
+        border-color var(--ds-card-transition) var(--motion-easing-standard);
+    }
+    /* Header actions and footer controls keep their own targets above the extended hit area. */
+    :host([interactive]) [data-part='headerActions'],
+    :host([interactive]) [data-part='footer'] {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* hoverBackground: color.background.subtle, locked; subtle cards use color.background.strong */
+    :host([interactive]:hover) [data-part='surface'] {
+      background-color: var(--color-background-subtle);
+    }
+    :host([interactive][surface='subtle']:hover) [data-part='surface'] {
+      background-color: var(--color-background-strong);
+    }
+
+    /* focusRing / focusRingWidth: locked; drawn on the card while its target has focus */
+    :host([interactive]:focus-within) [data-part='surface'] {
+      border-color: var(--color-border-focus);
+    }
+
+    /* focusable: scripted focus only; the card draws its own ring */
+    :host([focusable]:not([interactive])) {
+      outline: none;
+    }
+    :host([focusable]:not([interactive]):focus-visible) [data-part='surface'] {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      :host([interactive]) [data-part='surface'] {
+        transition: none;
+      }
     }
   `;
 
-  /** The card's title, rendered as a Heading at `headingLevel`. Omit for a card that is a single piece of content. */
+  /** The card's title, rendered as a Heading at the card's level. Omit for cards that are a single piece of content. */
   @property() accessor heading: string | undefined;
 
   /** Heading level for `heading`, so cards fit the page outline. Cards in a list share a level. */
-  @property({ reflect: true, attribute: 'heading-level' }) accessor headingLevel: CardHeadingLevel = '3';
+  @property({ type: String, reflect: true, attribute: 'heading-level' }) accessor headingLevel: CardHeadingLevel = '3';
 
   /** Padding inside the card from the layout inset presets. `sm` for dense grids, `lg` for a single featured card. */
-  @property({ reflect: true }) accessor inset: CardInset = 'md';
+  @property({ type: String, reflect: true }) accessor inset: CardInset = 'md';
 
   /** `default` is the page background with a border — the calm option; `subtle` is a tinted surface without a border. */
-  @property({ reflect: true }) accessor surface: CardSurface = 'default';
+  @property({ type: String, reflect: true }) accessor surface: CardSurface = 'default';
 
   /**
    * The whole card is one link or button target. Requires exactly one
-   * interactive child (a `ds-link` or `ds-button`) whose action the card
-   * extends to its full area; the card itself is not focusable.
+   * interactive child (a Link or Button) whose action the card extends to its
+   * full area; the card itself is not focusable.
    */
   @property({ type: Boolean, reflect: true }) accessor interactive = false;
 
   /**
-   * The card root takes `tabindex="-1"` so a container (Feed) can move focus
-   * to it by script, and draws its own focus ring when focused that way. Not
-   * a tab stop; not for making cards clickable (`interactive`).
+   * The card root takes tabindex=-1 so a container (Feed) can move focus to it
+   * by script, and draws its own focus ring when focused that way. Not a tab
+   * stop. With `interactive` also set, `interactive` wins and this is a no-op.
    */
-  @property({ type: Boolean }) accessor focusable = false;
+  @property({ type: Boolean, reflect: true }) accessor focusable = false;
 
-  /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings (background, focusRing, focusRingWidth) are ignored. */
+  /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are not accepted. */
   @property({ attribute: false }) accessor overrides: Partial<Record<CardOverridableBinding, TokenRef | undefined>> | undefined;
 
-  private readonly internals: ElementInternals;
+  @state() private accessor hasHeaderActions = false;
+  @state() private accessor hasFooter = false;
+
   private hitAreaTarget: Element | null = null;
+  /** Host attributes this element wrote, so a consumer's own `role`/`tabindex` is never removed. */
+  private ownsRole = false;
+  private ownsTabindex = false;
 
   constructor() {
     super();
-    this.internals = this.attachInternals();
+    this.addEventListener('click', this.handleHostClick);
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Card');
+    this.hasHeaderActions = this.querySelector(':scope > [slot="header-actions"]') !== null;
+    this.hasFooter = this.querySelector(':scope > [slot="footer"]') !== null;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
-    if (changed.has('focusable')) {
-      if (this.focusable) {
-        this.setAttribute('tabindex', '-1');
-      } else {
-        this.removeAttribute('tabindex');
-      }
+    if (changed.has('heading')) {
+      this.syncName();
+    }
+    if (changed.has('focusable') || changed.has('interactive')) {
+      this.syncTabindex();
     }
   }
 
   protected override render(): TemplateResult {
     const hasHeading = Boolean(this.heading);
-    const hasHeaderActions = this.querySelector('[slot="header-actions"]') !== null;
-    const hasHeader = hasHeading || hasHeaderActions;
-    const hasFooter = this.querySelector('[slot="footer"]') !== null;
-
     return html`
-      <div class="surface" part="surface">
-        ${hasHeader
-          ? html`
-              <ds-stack
-                part="header"
-                direction="horizontal"
-                justify="between"
-                align="center"
-                style="gap: var(--ds-card-header-gap)"
-              >
-                ${hasHeading
-                  ? html`<ds-heading id="heading" part="heading" level=${this.headingLevel} size="md"
-                      >${this.heading}</ds-heading
-                    >`
-                  : nothing}
-                <slot name="header-actions" part="header-actions"></slot>
-              </ds-stack>
-            `
-          : nothing}
-        <div class="body" part="body">
-          <slot @slotchange=${this.handleDefaultSlotChange}></slot>
+      <div part="surface" data-part="surface">
+        <div part="header" data-part="header" ?hidden=${!hasHeading && !this.hasHeaderActions}>
+          ${hasHeading
+            ? html`<ds-heading part="heading" data-part="heading" level=${this.headingLevel} size="lg"
+                >${this.heading}</ds-heading
+              >`
+            : nothing}
+          <slot
+            name="header-actions"
+            data-part="headerActions"
+            @slotchange=${this.handleHeaderActionsSlotChange}
+          ></slot>
         </div>
-        ${hasFooter
-          ? html`
-              <ds-stack part="footer" direction="horizontal" style="gap: var(--ds-card-footer-gap)">
-                <slot name="footer"></slot>
-              </ds-stack>
-            `
-          : nothing}
+        <slot data-part="body" @slotchange=${this.handleBodySlotChange}></slot>
+        <div part="footer" data-part="footer" ?hidden=${!this.hasFooter}>
+          <slot name="footer" @slotchange=${this.handleFooterSlotChange}></slot>
+        </div>
       </div>
     `;
   }
 
   protected override updated(changed: PropertyValues): void {
-    this.syncInternals();
     if (changed.has('interactive')) {
-      const slot = this.renderRoot.querySelector<HTMLSlotElement>('slot:not([name])');
-      if (slot !== null) {
-        if (this.interactive) {
-          this.syncHitArea(slot);
-        } else if (this.hitAreaTarget !== null) {
-          this.hitAreaTarget.classList.remove(HIT_AREA_CLASS);
-          this.hitAreaTarget = null;
-        }
-      }
+      this.syncHitArea();
     }
   }
 
-  private handleDefaultSlotChange(event: Event): void {
-    if (!this.interactive) {
-      return;
-    }
-    this.syncHitArea(event.target as HTMLSlotElement);
+  private handleHeaderActionsSlotChange(event: Event): void {
+    const next = (event.target as HTMLSlotElement).assignedNodes({ flatten: true }).length > 0;
+    if (this.hasHeaderActions !== next) this.hasHeaderActions = next;
   }
 
-  /** Finds the single interactive child and marks it as the card's extending hit area. */
-  private syncHitArea(slot: HTMLSlotElement): void {
-    const candidates = slot
-      .assignedElements({ flatten: true })
-      .filter((element) => element.matches(HIT_AREA_SELECTOR));
-    if (this.hitAreaTarget !== null) {
-      this.hitAreaTarget.classList.remove(HIT_AREA_CLASS);
-      this.hitAreaTarget = null;
-    }
+  private handleFooterSlotChange(event: Event): void {
+    const next = (event.target as HTMLSlotElement).assignedNodes({ flatten: true }).length > 0;
+    if (this.hasFooter !== next) this.hasFooter = next;
+  }
+
+  private handleBodySlotChange(): void {
+    this.syncHitArea();
+  }
+
+  /** Finds the single interactive child in the body and marks it as the card's extended hit area. */
+  private syncHitArea(): void {
+    const slot = this.renderRoot.querySelector<HTMLSlotElement>('slot:not([name])');
+    const candidates = this.interactive && slot !== null
+      ? slot.assignedElements({ flatten: true }).flatMap((element) =>
+          element.matches(HIT_AREA_SELECTOR) ? [element] : Array.from(element.querySelectorAll(HIT_AREA_SELECTOR)),
+        )
+      : [];
     const [target, ...rest] = candidates;
-    if (target !== undefined && rest.length === 0) {
-      ensureHitAreaStyle(this.getRootNode() as Document | ShadowRoot);
-      target.classList.add(HIT_AREA_CLASS);
-      this.hitAreaTarget = target;
-    } else if (import.meta.env.DEV) {
+    const next = target !== undefined && rest.length === 0 ? target : null;
+    if (this.hitAreaTarget !== null && this.hitAreaTarget !== next) {
+      this.hitAreaTarget.classList.remove(HIT_AREA_CLASS);
+    }
+    this.hitAreaTarget = next;
+    if (next !== null) {
+      ensureHitAreaStyle(next.getRootNode());
+      if (!next.classList.contains(HIT_AREA_CLASS)) next.classList.add(HIT_AREA_CLASS);
+    } else if (this.interactive && import.meta.env.DEV) {
       console.warn(
-        `<ds-card interactive> requires exactly one interactive child (a ds-link or ds-button); found ${candidates.length}.`,
+        `<ds-card interactive> requires exactly one interactive child (a ds-link or ds-button); found ${candidates.length}. The card stays non-interactive.`,
       );
     }
   }
 
-  /** Article role + best-effort cross-shadow labelling by the heading, when one is set. */
-  private syncInternals(): void {
-    const hasHeading = Boolean(this.heading);
-    this.internals.role = hasHeading ? 'article' : null;
-    const internals = this.internals as LabelledInternals;
-    if ('ariaLabelledByElements' in internals) {
-      const headingEl = hasHeading ? this.renderRoot.querySelector<HTMLElement>('#heading') : null;
-      internals.ariaLabelledByElements = headingEl ? [headingEl] : null;
+  /**
+   * A click on the extended area lands on the target's own host box (its `::after`), not on the
+   * native control inside a `ds-link`/`ds-button` shadow root, so it is forwarded to that control.
+   */
+  private readonly handleHostClick = (event: MouseEvent): void => {
+    const target = this.hitAreaTarget;
+    if (target === null || !this.interactive || event.composedPath()[0] !== target || target.shadowRoot === null) {
+      return;
+    }
+    const control = target.shadowRoot.querySelector<HTMLElement>('a[href], button');
+    control?.click();
+  };
+
+  /** `role="article"` named by `aria-label` when a heading is set; plain attributes so accessible-name tests see them. */
+  private syncName(): void {
+    if (this.heading) {
+      if (!this.hasAttribute('role') || this.ownsRole) {
+        if (this.getAttribute('role') !== 'article') this.setAttribute('role', 'article');
+        this.ownsRole = true;
+      }
+      if (this.getAttribute('aria-label') !== this.heading) this.setAttribute('aria-label', this.heading);
+    } else {
+      if (this.ownsRole) {
+        this.removeAttribute('role');
+        this.ownsRole = false;
+      }
+      this.removeAttribute('aria-label');
+    }
+  }
+
+  private syncTabindex(): void {
+    if (this.focusable && this.interactive && import.meta.env.DEV) {
+      console.warn('<ds-card>: `focusable` has no effect with `interactive`; the card already has a target.');
+    }
+    if (this.focusable && !this.interactive) {
+      if (this.getAttribute('tabindex') !== '-1') this.setAttribute('tabindex', '-1');
+      this.ownsTabindex = true;
+    } else if (this.ownsTabindex) {
+      this.removeAttribute('tabindex');
+      this.ownsTabindex = false;
     }
   }
 

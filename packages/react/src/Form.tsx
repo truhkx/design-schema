@@ -9,9 +9,9 @@ import {
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type FormEvent,
-  type MouseEvent,
+  type ReactElement,
   type ReactNode,
-  type Ref, type ReactElement,
+  type Ref,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import {
@@ -21,21 +21,32 @@ import {
   type FormFieldValue,
   type FormValidateMode,
 } from './FormContext';
+import { Link } from './Link';
+import { Stack } from './Stack';
 import { Text } from './Text';
 import './Form.css';
 
 export type { FormValidateMode, FormFieldValue } from './FormContext';
 
-/** Collected values keyed by field `name`. Strings from Input, booleans from Switch, `value` from a checked Checkbox. */
+/** Collected values keyed by field `name`. Strings from Input and RadioGroup, a boolean from Switch, `value` from a checked Checkbox. */
 export type FormValues = Record<string, Exclude<FormFieldValue, undefined>>;
 /** Error messages keyed by field `name`. */
 export type FormErrors = Record<string, string>;
 
-/** copy.* — used verbatim; `{count}` is replaced by the number of errors. */
+/** copy.* — used verbatim. `summaryHeading` is selected by `Intl.PluralRules` on `count`. */
 const COPY = {
-  summaryHeading: '{count} problems with this form',
+  summaryHeading: {
+    one: '1 problem with this form',
+    other: '{count} problems with this form',
+  },
   summaryHeadingOne: '1 problem with this form',
-};
+  invalidSummary: 'This form has errors.',
+} as const;
+
+function summaryHeading(count: number): string {
+  const form = new Intl.PluralRules(undefined).select(count) === 'one' ? COPY.summaryHeading.one : COPY.summaryHeading.other;
+  return form.replace('{count}', String(count));
+}
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type FormOverridableBinding = 'gap' | 'errorSummaryBorder';
@@ -45,24 +56,34 @@ const OVERRIDE_HOOK: Record<FormOverridableBinding, string> = {
   errorSummaryBorder: '--ds-form-error-summary-border',
 };
 
-function overridesToStyle(overrides: Partial<Record<FormOverridableBinding, TokenRef | undefined>>): CSSProperties {
+function overridesToStyle(
+  overrides: Partial<Record<FormOverridableBinding, TokenRef | undefined>>,
+): CSSProperties | undefined {
   const style: Record<string, string> = {};
-  for (const binding of Object.keys(overrides) as FormOverridableBinding[]) {
+  for (const binding of Object.keys(OVERRIDE_HOOK) as FormOverridableBinding[]) {
     const ref = overrides[binding];
     if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
   }
-  return style as CSSProperties;
+  return Object.keys(style).length > 0 ? (style as CSSProperties) : undefined;
 }
 
 export interface FormProps
   extends Omit<
     ComponentPropsWithoutRef<'form'>,
-    'children' | 'name' | 'onSubmit' | 'onInvalid' | 'noValidate' | 'aria-label' | 'aria-labelledby'
+    | 'children'
+    | 'name'
+    | 'onSubmit'
+    | 'onInvalid'
+    | 'noValidate'
+    | 'action'
+    | 'aria-label'
+    | 'aria-labelledby'
+    | 'style'
+    | 'className'
   > {
   /** Fields (Input etc.) and layout (Stack). The action row goes in `actions`. */
   children: ReactNode;
-  /** The action row: at least one Button with `type: submit`, primary first (Form's action-order
-   * rule). Rendered after the fields with the form gap. */
+  /** The action row: at least one Button with `type: submit`, primary first (Form's action-order rule). Rendered after the fields with the form gap. */
   actions: ReactNode;
   /** Identifier for the form, used for analytics and as the base of generated ids. */
   name?: string | undefined;
@@ -74,7 +95,7 @@ export interface FormProps
   validate?: FormValidateMode | undefined;
   /** Disables every field and action inside. Use while submitting. */
   disabled?: boolean | undefined;
-  /** When submission fails validation, render a summary of errors above the fields that links to each field. */
+  /** When submission fails validation, render a summary of errors above the fields that links to each field. Each item reads "Label: message". */
   errorSummary?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<FormOverridableBinding, TokenRef | undefined>> | undefined;
@@ -99,7 +120,7 @@ function shallowEqual(a: Readonly<FormErrors>, b: Readonly<FormErrors>): boolean
  * submission has consequences (sign-in, search with side effects). Place actions (submit, cancel)
  * at the end in a Stack. Give the form a `label` when the page contains more than one.
  */
-export const Form = function Form({
+export function Form({
   ref,
   children,
   actions,
@@ -112,22 +133,17 @@ export const Form = function Form({
   overrides,
   onSubmit,
   onInvalid,
-  className,
-  style,
   ...rest
 }: FormProps & { ref?: Ref<HTMLFormElement> | undefined }): ReactElement {
   const formRef = useRef<HTMLFormElement | null>(null);
   useImperativeHandle(ref, () => formRef.current as HTMLFormElement, []);
 
   const generatedId = useId();
-  const idBase = name ?? `ds-form${generatedId}`;
-  const summaryId = `${idBase}-error-summary`;
+  const summaryId = `${name ?? `ds-form${generatedId}`}-error-summary`;
 
-  // Registered fields in registration (≈ DOM) order.
   const fieldsRef = useRef(new Map<string, FormFieldRegistration>());
   const [errors, setErrors] = useState<FormErrors>({});
-  // Once a submission has failed, fields re-validate on blur/change even in `submit` mode so
-  // errors clear as they are fixed.
+  // After a failed submission, fields re-validate on blur and change even under `validate: submit`.
   const submittedRef = useRef(false);
   const [failedSubmissions, setFailedSubmissions] = useState(0);
   const summaryRef = useRef<HTMLDivElement | null>(null);
@@ -138,6 +154,21 @@ export const Form = function Form({
       if (fieldsRef.current.get(field.name) === field) fieldsRef.current.delete(field.name);
     };
   }, []);
+
+  /** Registered fields in document order, so the first invalid field is the first one on the page. */
+  const orderedFields = (): FormFieldRegistration[] => {
+    const fields = [...fieldsRef.current.values()];
+    const root = formRef.current;
+    if (!root) return fields;
+    const position = new Map<FormFieldRegistration, Element | null>();
+    for (const field of fields) position.set(field, root.ownerDocument.getElementById(field.id));
+    return fields.sort((a, b) => {
+      const elA = position.get(a);
+      const elB = position.get(b);
+      if (!elA || !elB || elA === elB) return 0;
+      return elA.compareDocumentPosition(elB) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+    });
+  };
 
   const validateField = useCallback(
     (fieldName: string) => {
@@ -160,7 +191,7 @@ export const Form = function Form({
     [validate],
   );
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     if (disabled) return;
     submittedRef.current = true;
@@ -169,12 +200,12 @@ export const Form = function Form({
     const values: FormValues = {};
     let firstInvalid: FormFieldRegistration | null = null;
 
-    for (const field of fieldsRef.current.values()) {
+    for (const field of orderedFields()) {
       if (field.isDisabled()) continue;
       const message = field.validate();
       if (message !== null) {
         nextErrors[field.name] = message;
-        if (firstInvalid === null) firstInvalid = field;
+        firstInvalid ??= field;
       } else {
         const fieldValue = field.getValue();
         if (fieldValue !== undefined) values[field.name] = fieldValue;
@@ -185,17 +216,14 @@ export const Form = function Form({
 
     if (firstInvalid !== null) {
       onInvalid?.(nextErrors);
-      if (errorSummary) {
-        setFailedSubmissions((count) => count + 1);
-      } else {
-        firstInvalid.focus();
-      }
+      if (errorSummary) setFailedSubmissions((count) => count + 1);
+      else firstInvalid.focus();
       return;
     }
     onSubmit?.(values);
   };
 
-  // Move focus to the summary once it has rendered after a failed submission.
+  // Focus the summary once it has rendered after a failed submission.
   useEffect(() => {
     if (failedSubmissions > 0 && errorSummary) summaryRef.current?.focus();
   }, [failedSubmissions, errorSummary]);
@@ -208,19 +236,6 @@ export const Form = function Form({
   const errorEntries = Object.entries(errors);
   const showSummary = errorSummary && errorEntries.length > 0;
 
-  const focusField = (fieldName: string) => (event: MouseEvent<HTMLAnchorElement>) => {
-    const field = fieldsRef.current.get(fieldName);
-    if (field) {
-      event.preventDefault();
-      field.focus();
-    }
-  };
-
-  const classes = ['ds-form', className ?? null].filter(Boolean).join(' ');
-
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
-
   return (
     <FormContext.Provider value={contextValue}>
       <form
@@ -229,8 +244,8 @@ export const Form = function Form({
         name={name}
         data-ds="Form"
         data-part="container"
-        className={classes}
-        style={mergedStyle}
+        className="ds-form"
+        style={overrides ? overridesToStyle(overrides) : undefined}
         noValidate
         aria-label={labelledBy ? undefined : label}
         aria-labelledby={labelledBy}
@@ -245,24 +260,35 @@ export const Form = function Form({
             role="alert"
             tabIndex={-1}
           >
-            <Text element="p" weight="semibold" tone="danger" className="ds-form__error-summary-heading">
-              {errorEntries.length === 1
-                ? COPY.summaryHeadingOne
-                : COPY.summaryHeading.replace('{count}', String(errorEntries.length))}
-            </Text>
-            <ul className="ds-form__error-list">
-              {errorEntries.map(([fieldName, message]) => {
-                const field = fieldsRef.current.get(fieldName);
-                const href = field ? `#${field.id}` : undefined;
-                return (
-                  <li key={fieldName}>
-                    <a className="ds-form__error-link" href={href} onClick={focusField(fieldName)}>
-                      {field ? `${field.label}: ${message}` : message}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
+            <Stack gap="tight">
+              <Text element="p" weight="semibold" tone="danger">
+                {summaryHeading(errorEntries.length)}
+              </Text>
+              <Stack element="ul" gap="tight">
+                {errorEntries.map(([fieldName, message]) => {
+                  const field = fieldsRef.current.get(fieldName);
+                  return (
+                    <li key={fieldName}>
+                      {field ? (
+                        <Link
+                          href={`#${field.id}`}
+                          label={`${field.label}: ${message}`}
+                          tone="inherit"
+                          onClick={() => {
+                            field.focus();
+                            return false;
+                          }}
+                        />
+                      ) : (
+                        <Text element="span" tone="danger">
+                          {message}
+                        </Text>
+                      )}
+                    </li>
+                  );
+                })}
+              </Stack>
+            </Stack>
           </div>
         ) : null}
         <div className="ds-form__fields" data-part="fields">
@@ -274,4 +300,4 @@ export const Form = function Form({
       </form>
     </FormContext.Provider>
   );
-};
+}

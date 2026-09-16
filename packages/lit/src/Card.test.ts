@@ -5,87 +5,95 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import './Card.js';
 import './Text.js';
+import './Link.js';
 import type { DsCard } from './Card.js';
 import meta from './Card.stories.js';
 
-type Given = Partial<Pick<DsCard, 'heading' | 'headingLevel' | 'inset' | 'surface' | 'interactive'>>;
+type Given = Partial<Pick<DsCard, 'heading' | 'headingLevel' | 'inset' | 'surface' | 'interactive' | 'focusable'>>;
 
-/** The Default story's args plus the scenario's `given`, as properties on a fresh element with body content. */
+/** The Default story's args plus the scenario's `given`, rendered the way the story renders its body. */
 async function setup(given: Given = {}) {
+  const { children, ...args } = { ...meta.args, ...given } as Record<string, unknown>;
   const el = document.createElement('ds-card');
-  const props = { ...meta.args, ...given };
-  for (const [key, value] of Object.entries(props)) {
+  for (const [key, value] of Object.entries(args)) {
     if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
   }
-  const body = document.createElement('ds-text');
-  body.textContent = 'Choose which updates you want to hear about, and how.';
+  const body = el.interactive ? document.createElement('ds-link') : document.createElement('ds-text');
+  if (el.interactive) {
+    body.setAttribute('href', '#card');
+    body.setAttribute('label', String(children));
+  } else {
+    body.textContent = String(children);
+  }
   el.append(body);
   document.body.append(el);
   await el.updateComplete;
   return { el };
 }
 
+const rendered = (el: DsCard): void => {
+  expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+};
+
 beforeEach(() => {
   document.body.replaceChildren();
 });
 
 describe('ds-card', () => {
-  /* derived: a11y.role */
+  it('heading-is-rendered-as-a-heading', async () => {
+    const { el } = await setup({ heading: 'Team plan' });
+    expect(el.shadowRoot!.textContent).toContain('Team plan');
+  });
+
+  it('interactive-adds-no-focus-stop', async () => {
+    const { el } = await setup({ interactive: true });
+    expect(el.hasAttribute('tabindex')).toBe(false);
+    el.focus();
+    expect(document.activeElement).not.toBe(el);
+  });
+
+  /* derived */
   it('renders', async () => {
-    const { el } = await setup();
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    rendered((await setup()).el);
   });
 
-  /* derived: props.headingLevel */
-  it('renders-headinglevel-2', async () => {
-    const { el } = await setup({ headingLevel: '2' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  it('renders-heading-level-2', async () => {
+    rendered((await setup({ headingLevel: '2' })).el);
   });
 
-  it('renders-headinglevel-3', async () => {
-    const { el } = await setup({ headingLevel: '3' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  it('renders-heading-level-3', async () => {
+    rendered((await setup({ headingLevel: '3' })).el);
   });
 
-  it('renders-headinglevel-4', async () => {
-    const { el } = await setup({ headingLevel: '4' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  it('renders-heading-level-4', async () => {
+    rendered((await setup({ headingLevel: '4' })).el);
   });
 
-  it('renders-headinglevel-5', async () => {
-    const { el } = await setup({ headingLevel: '5' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  it('renders-heading-level-5', async () => {
+    rendered((await setup({ headingLevel: '5' })).el);
   });
 
-  it('renders-headinglevel-6', async () => {
-    const { el } = await setup({ headingLevel: '6' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  it('renders-heading-level-6', async () => {
+    rendered((await setup({ headingLevel: '6' })).el);
   });
 
-  /* derived: props.inset */
   it('renders-inset-sm', async () => {
-    const { el } = await setup({ inset: 'sm' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    rendered((await setup({ inset: 'sm' })).el);
   });
 
   it('renders-inset-md', async () => {
-    const { el } = await setup({ inset: 'md' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    rendered((await setup({ inset: 'md' })).el);
   });
 
   it('renders-inset-lg', async () => {
-    const { el } = await setup({ inset: 'lg' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    rendered((await setup({ inset: 'lg' })).el);
   });
 
-  /* derived: props.surface */
   it('renders-surface-default', async () => {
-    const { el } = await setup({ surface: 'default' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    rendered((await setup({ surface: 'default' })).el);
   });
 
   it('renders-surface-subtle', async () => {
-    const { el } = await setup({ surface: 'subtle' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    rendered((await setup({ surface: 'subtle' })).el);
   });
 });

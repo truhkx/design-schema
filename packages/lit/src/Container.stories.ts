@@ -5,6 +5,7 @@ import './Text.js';
 import type { ContainerAlign, ContainerElement, ContainerGutter, ContainerWidth } from './Container.js';
 
 interface ContainerArgs {
+  children: string;
   width: ContainerWidth;
   gutter: ContainerGutter;
   align: ContainerAlign;
@@ -26,6 +27,7 @@ const meta: Meta<ContainerArgs> = {
     element: { control: 'select', options: ELEMENTS },
   },
   args: {
+    children: 'Container content',
     width: 'content',
     gutter: 'default',
     align: 'center',
@@ -33,7 +35,7 @@ const meta: Meta<ContainerArgs> = {
   },
   render: (args) => html`
     <ds-container width=${args.width} gutter=${args.gutter} align=${args.align} element=${args.element}>
-      <ds-text>Container content</ds-text>
+      <ds-text>${args.children}</ds-text>
     </ds-container>
   `,
 };
@@ -63,3 +65,14 @@ export const AlignStart: Story = { args: { align: 'start' } };
 export const ElementDiv: Story = { args: { element: 'div' } };
 export const ElementMain: Story = { args: { element: 'main' } };
 export const ElementSection: Story = { args: { element: 'section' } };
+
+/* examples */
+export const ApplicationScreen: Story = {
+  args: { children: 'A Stack of page regions', width: 'content' },
+};
+export const ReadingMeasure: Story = {
+  args: { children: 'An article', width: 'prose' },
+};
+export const NestedSection: Story = {
+  args: { children: 'A narrower section', width: 'prose', gutter: 'none' },
+};

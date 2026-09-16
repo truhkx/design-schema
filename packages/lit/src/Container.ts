@@ -64,8 +64,9 @@ export class DsContainer extends LitElement {
     :host([width='page']) {
       --ds-container-max-width: var(--layout-max-width-page);
     }
+    /* full: the literal none with no hook, so a maxWidth override is a no-op here. */
     :host([width='full']) {
-      --ds-container-max-width: none;
+      max-inline-size: none;
     }
 
     /* paddingInline: layout.gutter.{gutter}; none renders no padding. default is responsive,
@@ -78,8 +79,9 @@ export class DsContainer extends LitElement {
     :host([gutter='wide']) {
       --ds-container-padding-inline: var(--layout-gutter-wide);
     }
+    /* none: a literal 0 with no hook, so a paddingInline override is a no-op here. */
     :host([gutter='none']) {
-      --ds-container-padding-inline: 0;
+      padding-inline: 0;
     }
     :host([gutter='default']) {
       --ds-container-padding-inline: var(--layout-gutter-narrow);
@@ -97,23 +99,23 @@ export class DsContainer extends LitElement {
       }
     }
 
-    /* align: margin-inline; center keeps the column centered, start pins it to the inline start. */
+    /* align: margin-inline; center keeps the column centered, start zeroes both sides. */
     :host([align='start']) {
       margin-inline: 0;
     }
   `;
 
   /** `prose` for reading, `content` for most screens, `page` for wide layouts, `full` for no cap. */
-  @property({ reflect: true }) accessor width: ContainerWidth = 'content';
+  @property({ type: String, reflect: true }) accessor width: ContainerWidth = 'content';
 
   /** Horizontal padding at the viewport edge. `default` is responsive; `none` for a nested container. */
-  @property({ reflect: true }) accessor gutter: ContainerGutter = 'default';
+  @property({ type: String, reflect: true }) accessor gutter: ContainerGutter = 'default';
 
-  /** Where the capped column sits in a wider viewport. */
-  @property({ reflect: true }) accessor align: ContainerAlign = 'center';
+  /** Where the capped column sits in a wider viewport. `start` sets `margin-inline: 0` on both sides. */
+  @property({ type: String, reflect: true }) accessor align: ContainerAlign = 'center';
 
   /** Use `main` for the page's main column when no Landmark wraps it. */
-  @property() accessor element: ContainerElement = 'div';
+  @property({ type: String }) accessor element: ContainerElement = 'div';
 
   /** Per-instance style overrides: `{ maxWidth: 'layout.maxWidth.page' }`. */
   @property({ attribute: false }) accessor overrides: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>> | undefined;

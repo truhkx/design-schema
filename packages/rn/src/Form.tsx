@@ -5,6 +5,7 @@ import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { FormContext } from './FormContext';
 import type { FormContextValue, FormFieldHandle, FormValidateMode, FormValues } from './FormContext';
+import { Stack } from './Stack';
 import { Text } from './Text';
 import { useTheme } from './theme';
 
@@ -16,9 +17,9 @@ export type FormOverridableBinding = 'gap' | 'errorSummaryBorder';
 export interface FormProps {
   /** Fields (Input etc.) and layout (Stack). The action row goes in `actions`. */
   children: React.ReactNode;
-  /** The action row: at least one Button with `type: submit`, primary first. Rendered after the fields with the form gap; the `actions` anatomy part. */
+  /** The action row: at least one Button with `type: submit`, primary first (Form's action-order rule). Rendered after the fields with the form gap; the `actions` anatomy part. */
   actions: React.ReactNode;
-  /** Identifier for the form, used for analytics and as the base of generated ids. */
+  /** Identifier for the form, used for analytics and as the base of generated ids. React Native has no ids and focuses by ref, so it is inert here and exists for parity. */
   name?: string | undefined;
   /** Accessible name for the form landmark, e.g. "Sign in". Required when a page has more than one form. */
   label?: string | undefined;
@@ -26,22 +27,65 @@ export interface FormProps {
   validate?: FormValidateMode | undefined;
   /** Disables every field and action inside. Use while submitting. */
   disabled?: boolean | undefined;
-  /** When submission fails validation, render a summary of errors above the fields that links to each field. */
+  /** When submission fails validation, render a summary of errors above the fields that links to each field. Each item reads "Label: message". */
   errorSummary?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<FormOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root view, so a parent can measure it. */
+  ref?: React.Ref<ViewInstance> | undefined;
   /**
    * Fired when the form is submitted and every field is valid. Receives the collected
-   * values keyed by field name: strings from Input, RadioGroup and checked Checkboxes,
-   * booleans from Switch. An unchecked Checkbox contributes no key.
+   * values keyed by field name: Input and RadioGroup contribute strings, Switch a boolean,
+   * Checkbox its `value` when checked; an unchecked Checkbox, an unselected RadioGroup and
+   * a disabled field contribute no key at all.
    */
   onSubmit?: ((values: FormValues) => void) | undefined;
   /** Fired when submission is blocked by validation. Receives the errors keyed by field name. */
   onInvalid?: ((errors: Record<string, string>) => void) | undefined;
 }
 
-function summaryTitle(count: number): string {
-  return count === 1 ? '1 problem with this form' : `${count} problems with this form`;
+/** copy.* — used verbatim. `summaryHeading` is selected by `Intl.PluralRules` on `count`. */
+const COPY = {
+  summaryHeading: {
+    one: '1 problem with this form',
+    other: '{count} problems with this form',
+  },
+  summaryHeadingOne: '1 problem with this form',
+  invalidSummary: 'This form has errors.',
+} as const;
+
+function summaryHeading(count: number): string {
+  const form = new Intl.PluralRules(undefined).select(count) === 'one' ? COPY.summaryHeading.one : COPY.summaryHeading.other;
+  return form.replace('{count}', String(count));
+}
+
+interface SummaryItemProps {
+  text: string;
+  onPress: () => void;
+}
+
+/** One summary entry: a link that moves focus to its field, with a hand-tracked focus ring. */
+function SummaryItem({ text, onPress }: SummaryItemProps): React.JSX.Element {
+  const { tokens: t } = useTheme();
+  const [focused, setFocused] = React.useState(false);
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={text}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onPress={onPress}
+      style={{
+        minHeight: t.sizeTargetMin,
+        justifyContent: 'center',
+        borderWidth: t.borderWidthFocus,
+        borderColor: focused ? t.colorBorderFocus : 'transparent',
+        borderRadius: t.radiusSm,
+      }}
+    >
+      <Text tone="danger">{text}</Text>
+    </Pressable>
+  );
 }
 
 /**
@@ -53,28 +97,30 @@ function summaryTitle(count: number): string {
  * the form a `label` when the page contains more than one.
  *
  * React Native has no form element. Form renders a `View` with `role="form"` and
- * `accessibilityLabel` and provides a context; each Input registers
- * `{ getValue, validate, focus }` by name (Checkbox, Switch and RadioGroup register
- * the same way), a Button with `type: submit` calls `submit()`, and the last
- * Input's return key submits. `children` (the fields) and `actions` (the action
- * row) render in separate anatomy parts, both spaced by `gap`. On a failed
- * submission the error summary is announced (`accessibilityLiveRegion="assertive"`
- * on Android, `announceForAccessibility` on iOS) and focus moves to the summary
- * when `errorSummary` is on, otherwise to the first invalid field.
+ * `accessibilityLabel` and provides a context; each field registers
+ * `{ name, label, getValue, validate, focus }` in mount order (disabled fields do not
+ * register), a Button with `type: submit` calls `submit()`, non-last Inputs get
+ * `returnKeyType="next"` and the last one's return key submits. `children` (the fields)
+ * and `actions` (the action row) render in separate anatomy parts, spaced by `gap`.
+ * On a failed submission the error summary is announced
+ * (`accessibilityLiveRegion="assertive"` on Android, `announceForAccessibility` on iOS)
+ * and focus moves to the summary when `errorSummary` is on, otherwise to the first
+ * invalid field.
  */
 export function Form({
   children,
   actions,
-  name,
+  name: _name,
   label,
   validate = 'submit',
   disabled = false,
   errorSummary = true,
   overrides,
+  ref,
   onSubmit,
   onInvalid,
 }: FormProps): React.JSX.Element {
-  const { tokens } = useTheme();
+  const { tokens: t } = useTheme();
   const handles = React.useRef<Map<string, FormFieldHandle>>(new Map());
   const orderRef = React.useRef<string[]>([]);
   const [order, setOrder] = React.useState<readonly string[]>([]);
@@ -192,77 +238,78 @@ export function Form({
     [register, unregister, submit, focusField, reportValidity, disabled, validate, errorSummary, errors, order],
   );
 
+  // Each item reads "Label: message"; a field that registers no label shows its message alone.
   const errorEntries = order
-    .filter((fieldName) => fieldName in errors)
-    .map((fieldName) => [fieldName, errors[fieldName] ?? ''] as const);
+    .filter((fieldName) => errors[fieldName] !== undefined)
+    .map((fieldName) => {
+      const message = errors[fieldName] ?? '';
+      const fieldLabel = handles.current.get(fieldName)?.label;
+      return [fieldName, fieldLabel ? `${fieldLabel}: ${message}` : message] as const;
+    });
+
+  const heading = summaryHeading(errorEntries.length);
 
   // iOS has no live regions: announce the summary whenever the set of errors changes.
-  // Android is covered by accessibilityLiveRegion on the summary view. Inputs stay
+  // Android is covered by accessibilityLiveRegion on the summary view. Fields stay
   // silent about form-managed errors while the summary is on, so nothing is read twice.
   const announcement =
-    errorSummary && errorEntries.length > 0
-      ? [summaryTitle(errorEntries.length), ...errorEntries.map(([, message]) => message)].join('. ')
-      : '';
+    errorSummary && errorEntries.length > 0 ? [heading, ...errorEntries.map(([, text]) => text)].join('. ') : '';
   React.useEffect(() => {
     if (Platform.OS === 'ios' && announcement !== '') {
       AccessibilityInfo.announceForAccessibility(announcement);
     }
   }, [announcement]);
 
-  const gap = overrides?.gap ? (resolveToken(tokens, overrides.gap) as number) : tokens.layoutGapLoose;
-  const errorSummaryBorderColor = overrides?.errorSummaryBorder
-    ? (resolveToken(tokens, overrides.errorSummaryBorder) as string)
-    : tokens.colorBorderDanger;
-
-  const containerStyle: ViewStyle = {
-    flexDirection: 'column',
-    gap,
-  };
-
-  // The same gap also separates individual fields, so the rhythm is uniform
-  // whether siblings are two fields or a fields block and the action row.
-  const fieldsStyle: ViewStyle = {
-    flexDirection: 'column',
-    gap,
-  };
-
-  const summaryStyle: ViewStyle = {
-    borderWidth: tokens.borderWidthThin,
-    borderColor: errorSummaryBorderColor,
-    borderRadius: tokens.radiusMd,
-    backgroundColor: tokens.colorBackgroundSubtle,
-    paddingHorizontal: tokens.spaceMd,
-    paddingVertical: tokens.spaceSm,
-    gap: tokens.spaceSm,
-  };
-
-  const summaryItemStyle: ViewStyle = {
-    minHeight: tokens.sizeTargetMin,
-    justifyContent: 'center',
-  };
+  const styles = React.useMemo(() => {
+    const gap = overrides?.gap ? (resolveToken(t, overrides.gap) as number) : t.layoutGapLoose;
+    const summaryBorderColor = overrides?.errorSummaryBorder
+      ? (resolveToken(t, overrides.errorSummaryBorder) as string)
+      : t.colorBorderDanger;
+    // No opacity here: every field and action inside dims itself from the context,
+    // and dimming the container too would compound the two.
+    const container: ViewStyle = { flexDirection: 'column', gap };
+    // The same gap separates individual fields, so the rhythm is uniform whether
+    // siblings are two fields or the fields block and the action row.
+    const fields: ViewStyle = { flexDirection: 'column', gap };
+    const summary: ViewStyle = {
+      borderWidth: t.borderWidthThin,
+      borderColor: summaryBorderColor,
+      borderRadius: t.radiusMd,
+      backgroundColor: t.colorBackgroundSubtle,
+      paddingHorizontal: t.spaceMd,
+      paddingVertical: t.spaceSm,
+    };
+    return { container, fields, summary };
+  }, [t, overrides?.gap, overrides?.errorSummaryBorder]);
 
   return (
     <FormContext.Provider value={contextValue}>
-      <View testID="Form" role="form" accessibilityLabel={label} style={containerStyle}>
+      <View
+        ref={ref}
+        testID="Form"
+        role="form"
+        accessibilityLabel={label}
+        accessibilityState={{ disabled }}
+        style={styles.container}
+      >
         {errorSummary && errorEntries.length > 0 ? (
-          <View ref={summaryRef} testID="Form.errorSummary" accessibilityLiveRegion="assertive" style={summaryStyle}>
-            <Text tone="danger" weight="semibold">
-              {summaryTitle(errorEntries.length)}
-            </Text>
-            {errorEntries.map(([fieldName, message]) => (
-              <Pressable
-                key={fieldName}
-                accessibilityRole="link"
-                accessibilityLabel={message}
-                style={summaryItemStyle}
-                onPress={() => handles.current.get(fieldName)?.focus()}
-              >
-                <Text tone="danger">{message}</Text>
-              </Pressable>
-            ))}
+          <View
+            ref={summaryRef}
+            testID="Form.errorSummary"
+            accessibilityLiveRegion="assertive"
+            style={styles.summary}
+          >
+            <Stack gap="tight">
+              <Text tone="danger" weight="semibold">
+                {heading}
+              </Text>
+              {errorEntries.map(([fieldName, text]) => (
+                <SummaryItem key={fieldName} text={text} onPress={() => handles.current.get(fieldName)?.focus()} />
+              ))}
+            </Stack>
           </View>
         ) : null}
-        <View testID="Form.fields" style={fieldsStyle}>
+        <View testID="Form.fields" style={styles.fields}>
           {children}
         </View>
         <View testID="Form.actions">{actions}</View>

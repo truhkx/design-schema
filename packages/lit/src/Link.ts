@@ -35,9 +35,7 @@ const HOOKS: Record<LinkOverridableBinding, string> = {
  * destination leaves the product so people are warned before they lose their
  * place. Do not use a Link to trigger an action; that is a ghost Button.
  *
- * @csspart anchor - The native `<a>` (anatomy: anchor).
- * @csspart label - The visible link text (anatomy: label).
- * @csspart external-icon - The decorative trailing icon shown when `external` (anatomy: externalIcon).
+ * @fires click - The native anchor's click, retargeted to the host (onPress). Cancelable: `preventDefault()` skips navigation.
  */
 @customElement('ds-link')
 export class DsLink extends LitElement {
@@ -59,8 +57,8 @@ export class DsLink extends LitElement {
       display: none;
     }
 
-    a {
-      /* Inherit the surrounding font so the link flows with its paragraph. */
+    [data-part='anchor'] {
+      /* A link has no typography of its own: it takes the surrounding text's. */
       font: inherit;
       color: var(--color-link);
       text-decoration-line: underline;
@@ -72,37 +70,37 @@ export class DsLink extends LitElement {
     }
 
     @media (prefers-reduced-motion: reduce) {
-      a {
+      [data-part='anchor'] {
         transition: none;
       }
     }
 
-    /* colorVisited: web and Lit only */
-    a:visited {
+    /* colorVisited */
+    [data-part='anchor']:visited {
       color: var(--color-link-visited);
     }
 
-    /* colorHover: pointer hover and active state */
-    a:is(:hover, :active) {
+    /* colorHover */
+    [data-part='anchor']:hover {
       color: var(--color-link-hover);
     }
 
-    /* tone=inherit: takes the surrounding text color; the underline alone marks the link */
-    :host([tone='inherit']) a,
-    :host([tone='inherit']) a:visited,
-    :host([tone='inherit']) a:is(:hover, :active) {
+    /* tone=inherit: the surrounding text color; the underline alone marks the link */
+    :host([tone='inherit']) [data-part='anchor'],
+    :host([tone='inherit']) [data-part='anchor']:visited,
+    :host([tone='inherit']) [data-part='anchor']:hover {
       color: inherit;
     }
 
-    /* focus-visible: the ring follows the text box (inline), rounded by focusRingRadius */
-    a:focus-visible {
+    /* focusRing, focusRingWidth, focusRingRadius: the ring follows the inline text box */
+    [data-part='anchor']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
       border-radius: var(--radius-sm);
     }
 
-    /* externalIcon: 1em of the surrounding font size (ds-icon's own inline sizing), never larger */
-    ds-icon {
+    /* externalIconGap; the icon itself is 1em of the surrounding font (ds-icon inline) */
+    [data-part='externalIcon'] {
       margin-inline-start: var(--ds-link-external-icon-gap);
     }
 
@@ -120,19 +118,19 @@ export class DsLink extends LitElement {
     }
   `;
 
-  /** The destination URL. */
+  /** The destination. */
   @property() accessor href = '';
 
   /** The link text. Also the accessible name. Says where the link goes, not "click here". */
   @property() accessor label = '';
 
-  /** Opens in a new tab and appends the external suffix to the accessible name, with a decorative trailing icon. */
+  /** Opens the destination in a new tab and appends the external suffix to the accessible name, with a decorative trailing icon. */
   @property({ type: Boolean, reflect: true }) accessor external = false;
 
   /** `default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone. */
-  @property({ reflect: true }) accessor tone: LinkTone = 'default';
+  @property({ type: String, reflect: true }) accessor tone: LinkTone = 'default';
 
-  /** Downloads the resource instead of navigating. */
+  /** Downloads the resource instead of navigating, under the server's file name. */
   @property({ type: Boolean, reflect: true }) accessor download = false;
 
   /** Per-instance style overrides: `{ underlineOffset: 'space.2' }`. Locked bindings are ignored. */
@@ -144,32 +142,31 @@ export class DsLink extends LitElement {
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (changed.has('overrides')) {
+    if (changed.has('overrides') || changed.has('external')) {
       this.applyOverrides();
     }
   }
 
   protected override render(): TemplateResult {
-    return html`
-      <a
-        part="anchor"
-        href=${this.href}
-        target=${ifDefined(this.external ? '_blank' : undefined)}
-        rel=${ifDefined(this.external ? 'noopener noreferrer' : undefined)}
-        ?download=${this.download}
-      >
-        <span part="label">${this.label}</span>${this.external
-          ? html`<span class="visually-hidden">${EXTERNAL_SUFFIX}</span
-              ><ds-icon part="external-icon" name="external" inline></ds-icon>`
-          : nothing}
-      </a>
-    `;
+    return html`<a
+      part="anchor"
+      data-part="anchor"
+      href=${this.href}
+      target=${ifDefined(this.external ? '_blank' : undefined)}
+      rel=${ifDefined(this.external ? 'noopener noreferrer' : undefined)}
+      ?download=${this.download}
+      ><span part="label" data-part="label">${this.label}</span>${this.external
+        ? html`<span class="visually-hidden">${EXTERNAL_SUFFIX}</span
+            ><ds-icon part="externalIcon" data-part="externalIcon" name="external" inline></ds-icon>`
+        : nothing}</a
+    >`;
   }
 
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as LinkOverridableBinding[]) {
-      const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
+      // externalIconGap only applies where the externalIcon part is present.
+      const ref = binding === 'externalIconGap' && !this.external ? undefined : this.overrides?.[binding];
       if (ref === undefined) {
         this.style.removeProperty(hook);
       } else {

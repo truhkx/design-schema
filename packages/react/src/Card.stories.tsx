@@ -5,68 +5,91 @@ import { Text } from './Text';
 import { Button } from './Button';
 import { Link } from './Link';
 
-const body = (
-  <Stack gap="tight">
-    <Text element="p">Unlimited projects, priority support and advanced analytics for growing teams.</Text>
-    <Text element="p" tone="muted" size="sm">
-      $24/month, billed annually.
-    </Text>
-  </Stack>
-);
-
-const footer = <Button label="Choose plan" variant="primary" size="sm" />;
-
 const meta: Meta<typeof Card> = {
   title: 'Card/React',
   component: Card,
+  tags: ['autodocs'],
   args: {
-    heading: 'Team plan',
-    headingLevel: '3',
-    inset: 'md',
-    surface: 'default',
-    interactive: false,
-    children: body,
-    footer,
+    children: 'What the plan includes',
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = {
+  args: {
+    heading: 'Team plan',
+    children: (
+      <Stack gap="tight">
+        <Text element="p">Unlimited projects, priority support and advanced analytics for growing teams.</Text>
+        <Text element="p" tone="muted" size="sm">
+          Billed annually.
+        </Text>
+      </Stack>
+    ),
+    footer: (
+      <>
+        <Button label="Choose plan" variant="primary" size="sm" />
+        <Button label="Compare plans" variant="secondary" size="sm" />
+      </>
+    ),
+  },
+};
 
 /* headingLevel */
-export const HeadingLevel2: Story = { args: { headingLevel: '2' } };
-export const HeadingLevel3: Story = { args: { headingLevel: '3' } };
-export const HeadingLevel4: Story = { args: { headingLevel: '4' } };
-export const HeadingLevel5: Story = { args: { headingLevel: '5' } };
-export const HeadingLevel6: Story = { args: { headingLevel: '6' } };
+export const HeadingLevel2: Story = { args: { ...Default.args, headingLevel: '2' } };
+export const HeadingLevel3: Story = { args: { ...Default.args, headingLevel: '3' } };
+export const HeadingLevel4: Story = { args: { ...Default.args, headingLevel: '4' } };
+export const HeadingLevel5: Story = { args: { ...Default.args, headingLevel: '5' } };
+export const HeadingLevel6: Story = { args: { ...Default.args, headingLevel: '6' } };
 
 /* inset */
-export const InsetSm: Story = { args: { inset: 'sm' } };
-export const InsetMd: Story = { args: { inset: 'md' } };
-export const InsetLg: Story = { args: { inset: 'lg' } };
+export const InsetSm: Story = { args: { ...Default.args, inset: 'sm' } };
+export const InsetMd: Story = { args: { ...Default.args, inset: 'md' } };
+export const InsetLg: Story = { args: { ...Default.args, inset: 'lg' } };
 
 /* surface */
-export const SurfaceDefault: Story = { args: { surface: 'default' } };
-export const SurfaceSubtle: Story = { args: { surface: 'subtle' } };
+export const SurfaceDefault: Story = { args: { ...Default.args, surface: 'default' } };
+export const SurfaceSubtle: Story = { args: { ...Default.args, surface: 'subtle' } };
 
 /* notable states */
-export const WithoutHeading: Story = { args: { heading: undefined, footer: undefined } };
-
 export const WithHeaderActions: Story = {
   args: {
-    headerActions: <Button label="Dismiss" variant="ghost" size="sm" iconOnly />,
+    ...Default.args,
+    headerActions: <Link href="#" label="Details" />,
   },
 };
 
 export const Interactive: Story = {
   args: {
+    heading: 'September invoice',
     interactive: true,
-    heading: undefined,
-    footer: undefined,
-    children: <Link href="#" label="View plan details" />,
+    children: <Link href="#" label="View the September invoice" />,
   },
 };
 
-export const Focusable: Story = { args: { focusable: true } };
+export const InteractiveSubtle: Story = {
+  args: { ...Interactive.args, surface: 'subtle' },
+};
+
+/* examples */
+export const PlanCard: Story = {
+  args: { heading: 'Team plan', headingLevel: '3', children: 'What the plan includes' },
+};
+
+export const DenseGridCard: Story = {
+  args: { children: 'A search result', inset: 'sm', surface: 'subtle' },
+};
+
+export const WholeCardIsALink: Story = {
+  args: {
+    heading: 'September invoice',
+    children: <Link href="#" label="A Link to the invoice" />,
+    interactive: true,
+  },
+};
+
+export const CardFocusedByAFeed: Story = {
+  args: { heading: 'New comment', children: 'The comment body', focusable: true },
+};

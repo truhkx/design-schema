@@ -1,12 +1,14 @@
 import * as React from 'react';
 import { AccessibilityInfo, Platform, TextInput, View, findNodeHandle } from 'react-native';
 import type {
+  GestureResponderEvent,
   KeyboardTypeOptions,
   ReturnKeyTypeOptions,
   TextInputFocusEvent,
   TextInputInstance,
   TextInputProps,
   TextStyle,
+  ViewInstance,
   ViewStyle,
 } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
@@ -23,25 +25,21 @@ export type InputSize = 'sm' | 'md';
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type InputOverridableBinding =
-  | 'borderFocus'
   | 'borderInvalid'
   | 'borderWidth'
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
-  | 'paddingBlockSm'
-  | 'paddingInlineSm'
   | 'partGap'
   | 'fontFamily'
   | 'fontSize'
   | 'labelWeight'
   | 'helperSize'
   | 'lineHeight'
-  | 'minTargetSm'
   | 'disabledOpacity';
 
 export interface InputProps {
-  /** Visible label. Always rendered; never replaced by a placeholder. Also the field's `accessibilityLabel`. */
+  /** Visible label (visually hidden with `hideLabel`). Never replaced by a placeholder. Also the field's `accessibilityLabel`. */
   label: string;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
@@ -53,11 +51,11 @@ export interface InputProps {
   placeholder?: string | undefined;
   /** Persistent helper text below the label explaining format or purpose. Also the field's `accessibilityHint`. */
   description?: string | undefined;
-  /** Input type. Drives the keyboard (`keyboardType`, `textContentType`, `secureTextEntry`). */
+  /** Input type. Drives the keyboard on touch platforms (`keyboardType`, `textContentType`, `secureTextEntry`). */
   type?: InputType | undefined;
   /** The field must have a value to submit. Shown in the label, not only by color. */
   required?: boolean | undefined;
-  /** Visually hide the label (it remains the field's `accessibilityLabel`). Only for a field whose context already names it. */
+  /** Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search. */
   hideLabel?: boolean | undefined;
   /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
   size?: InputSize | undefined;
@@ -69,12 +67,26 @@ export interface InputProps {
   error?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<InputOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root view (label, description, field and error group), so a parent can measure it. */
+  ref?: React.Ref<ViewInstance> | undefined;
+  /** Supplementary description forwarded to the field; Tooltip sets it when it describes the field. Read after `description`. */
+  accessibilityHint?: string | undefined;
+  /** Set by a parent (Tooltip, when its content *is* the name) to replace the name the label would give. */
+  accessibilityLabel?: string | undefined;
   /** Fired on every value change with the new string value. */
   onChange?: ((value: string) => void) | undefined;
   /** Fired when the field receives focus. */
   onFocus?: ((event: TextInputFocusEvent) => void) | undefined;
   /** Fired when the field loses focus. The usual moment to validate. */
   onBlur?: ((event: TextInputFocusEvent) => void) | undefined;
+  /** Forwarded to the field (pointer enter; react-native-web pointer only) so Tooltip can attach to it. */
+  onHoverIn?: TextInputProps['onPointerEnter'];
+  /** Forwarded to the field (pointer leave; react-native-web pointer only) so Tooltip can attach to it. */
+  onHoverOut?: TextInputProps['onPointerLeave'];
+  /** Forwarded to the field so Tooltip can open on long press. */
+  onLongPress?: ((event: GestureResponderEvent) => void) | undefined;
+  /** Forwarded to the field so Tooltip can close when the press ends. */
+  onPressOut?: ((event: GestureResponderEvent) => void) | undefined;
 }
 
 const KEYBOARD_TYPE: Record<InputType, KeyboardTypeOptions> = {
@@ -101,6 +113,12 @@ const TEXT_CONTENT_TYPE: Record<InputType, TextInputProps['textContentType']> = 
 const VERBATIM_TYPES: ReadonlySet<InputType> = new Set<InputType>(['email', 'password', 'url']);
 
 const FONT_SIZE_TOKEN = { sm: 'fontSizeSm', md: 'fontSizeMd' } as const satisfies Record<InputSize, keyof Tokens>;
+const PADDING_INLINE_TOKEN = { sm: 'space2', md: 'spaceMd' } as const satisfies Record<InputSize, keyof Tokens>;
+const PADDING_BLOCK_TOKEN = { sm: 'space1', md: 'spaceSm' } as const satisfies Record<InputSize, keyof Tokens>;
+const MIN_TARGET_TOKEN = { sm: 'sizeTargetMin', md: 'sizeTargetComfortable' } as const satisfies Record<InputSize, keyof Tokens>;
+
+/** TextInput has no long-press event; this matches Pressable's default `delayLongPress`. */
+const LONG_PRESS_DELAY_MS = 500; // literal-ok: React Native's own long-press threshold, not a design token
 
 const COPY = {
   required: (label: string): string => `${label} is required.`,
@@ -112,25 +130,28 @@ const COPY = {
  * Input — collects a single line of text, bundling label, helper text, field and
  * error message so their association is always correct.
  *
- * When to use: Use Input for names, emails, passwords, search terms, and short
- * free-text values. Choose `type` for the value so touch keyboards and browser
- * validation match. Provide `description` when the format matters ("Use the email
- * you signed up with"). Set `autocomplete` on web whenever the value is personal
- * data so browsers and assistive tools can fill it.
+ * When to use: names, emails, passwords, search terms and short free-text values.
+ * Choose `type` so the touch keyboard matches; provide `description` when the
+ * format matters. Not for multi-line content, a fixed set of choices, or on/off
+ * values, and never with `placeholder` standing in for the label.
  *
  * Renders a `Text` label, optional description, a `TextInput`, and an error `Text`.
  * The label is also passed as `accessibilityLabel`, description as
  * `accessibilityHint`, and `accessibilityState={{ disabled }}`. `type` maps to
- * `keyboardType`, `textContentType` and `secureTextEntry`. Inside a Form the field
- * registers `{ getValue, validate, focus }` by `name`; the last field's return key
- * submits the form. The focus ring replaces the border with `focusRingWidth`
- * (locked to `border.width.focus`) and padding shrinks by the same amount so the
- * field never shifts; `disabled` dims the whole label/description/field/error
- * group with `disabledOpacity` rather than inventing a disabled color. Inside a
- * Fieldset, the group's `disabled` applies as if set on the field and the legend
- * prefixes the field's `accessibilityLabel` ("Shipping address, Street"). `size:
- * sm` swaps `paddingBlock`/`paddingInline`/the target height for their `Sm`
- * bindings and the field text to `font.size.sm`; nothing else changes.
+ * `keyboardType`, `textContentType` and `secureTextEntry`. Errors are announced
+ * with `accessibilityLiveRegion` (Android) and
+ * `AccessibilityInfo.announceForAccessibility` (iOS). Inside a Form the field
+ * registers `{ getValue, validate, focus }` by `name` (precedence: `error`, then
+ * `required`, then `invalid`); a disabled field is not registered. The border is
+ * the focus ring: focus widens it to `focusRingWidth` and padding shrinks by the
+ * difference so the field never shifts; an invalid field keeps its danger color
+ * while focused. `disabled` dims the whole group with `disabledOpacity`. Inside a
+ * Fieldset the group's `disabled` applies as if set on the field and the legend
+ * prefixes the `accessibilityLabel` ("Shipping address, Street"). `size: sm` swaps
+ * padding and the target height for their Sm bindings and the type to
+ * `font.size.sm`. `accessibilityHint`, `accessibilityLabel`, `onHoverIn`,
+ * `onHoverOut`, `onFocus`, `onBlur`, `onLongPress` and `onPressOut` reach the
+ * native field so Tooltip can attach to it.
  */
 export function Input({
   label,
@@ -147,14 +168,22 @@ export function Input({
   invalid = false,
   error,
   overrides,
+  ref,
+  accessibilityHint,
+  accessibilityLabel,
   onChange,
   onFocus,
   onBlur,
+  onHoverIn,
+  onHoverOut,
+  onLongPress,
+  onPressOut,
 }: InputProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const form = useFormContext();
   const fieldset = useFieldsetContext();
   const inputRef = React.useRef<TextInputInstance>(null);
+  const longPressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [internalValue, setInternalValue] = React.useState<string>(defaultValue ?? '');
   const [focused, setFocused] = React.useState(false);
 
@@ -222,6 +251,15 @@ export function Input({
     }
   }, [displayedError, summarised]);
 
+  React.useEffect(
+    () => () => {
+      if (longPressTimer.current !== null) {
+        clearTimeout(longPressTimer.current);
+      }
+    },
+    [],
+  );
+
   const handleChangeText = (next: string): void => {
     if (value === undefined) {
       setInternalValue(next);
@@ -245,6 +283,24 @@ export function Input({
     }
   };
 
+  const handlePressIn = (event: GestureResponderEvent): void => {
+    if (onLongPress === undefined) {
+      return;
+    }
+    longPressTimer.current = setTimeout(() => {
+      longPressTimer.current = null;
+      onLongPress(event);
+    }, LONG_PRESS_DELAY_MS);
+  };
+
+  const handlePressOut = (event: GestureResponderEvent): void => {
+    if (longPressTimer.current !== null) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    onPressOut?.(event);
+  };
+
   const position = form === null ? -1 : form.order.indexOf(name);
   const isLast = form !== null && position !== -1 && position === form.order.length - 1;
   const nextName = form !== null && position !== -1 ? form.order[position + 1] : undefined;
@@ -262,44 +318,28 @@ export function Input({
   };
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
-  const accessibleLabel = fieldset !== null ? `${fieldset.legend}, ${visibleLabel}` : visibleLabel;
+  const ownName = accessibilityLabel ?? visibleLabel;
+  const accessibleName = fieldset !== null ? `${fieldset.legend}, ${ownName}` : ownName;
+  const hints = [description, accessibilityHint].filter((part): part is string => part !== undefined && part !== '');
+  const accessibleHint = hints.length > 0 ? hints.join(' ') : undefined;
 
-  const borderFocusColor = overrides?.borderFocus ? (resolveToken(t, overrides.borderFocus) as string) : t.colorBorderFocus;
   const borderInvalidColor = overrides?.borderInvalid ? (resolveToken(t, overrides.borderInvalid) as string) : t.colorBorderDanger;
   const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
-  const paddingInline =
-    size === 'sm'
-      ? overrides?.paddingInlineSm
-        ? (resolveToken(t, overrides.paddingInlineSm) as number)
-        : t.space2
-      : overrides?.paddingInline
-        ? (resolveToken(t, overrides.paddingInline) as number)
-        : t.spaceMd;
-  const paddingBlock =
-    size === 'sm'
-      ? overrides?.paddingBlockSm
-        ? (resolveToken(t, overrides.paddingBlockSm) as number)
-        : t.space1
-      : overrides?.paddingBlock
-        ? (resolveToken(t, overrides.paddingBlock) as number)
-        : t.spaceSm;
-  const minTarget =
-    size === 'sm'
-      ? overrides?.minTargetSm
-        ? (resolveToken(t, overrides.minTargetSm) as number)
-        : t.sizeTargetMin
-      : t.sizeTargetComfortable;
+  const paddingInline = overrides?.paddingInline ? (resolveToken(t, overrides.paddingInline) as number) : t[PADDING_INLINE_TOKEN[size]];
+  const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t[PADDING_BLOCK_TOKEN[size]];
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[FONT_SIZE_TOKEN[size]];
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
 
-  // The focus ring is drawn by widening the border to the locked `focusRingWidth`;
-  // padding shrinks by the same amount so the field never shifts when it gains focus.
+  // The border is the focus ring: focus widens it to the locked `focusRingWidth` and
+  // padding shrinks by the difference so the field never shifts. An invalid field keeps
+  // its danger color while focused, so focus never hides the error.
   const activeBorderWidth = focused ? t.borderWidthFocus : borderWidth;
-  const inset = t.borderWidthFocus - borderWidth;
+  const inset = activeBorderWidth - borderWidth;
+  const borderColor = isInvalid ? borderInvalidColor : focused ? t.colorBorderFocus : t.colorBorderStrong;
 
   const containerStyle: ViewStyle = {
     flexDirection: 'column',
@@ -308,14 +348,14 @@ export function Input({
   };
 
   const fieldStyle: TextStyle = {
-    minHeight: minTarget,
+    minHeight: t[MIN_TARGET_TOKEN[size]],
     backgroundColor: t.colorBackground,
     color: t.colorForeground,
     borderWidth: activeBorderWidth,
-    borderColor: focused ? borderFocusColor : isInvalid ? borderInvalidColor : t.colorBorderStrong,
+    borderColor,
     borderRadius: radius,
-    paddingHorizontal: paddingInline + inset,
-    paddingVertical: paddingBlock + inset,
+    paddingHorizontal: Math.max(0, paddingInline - inset),
+    paddingVertical: Math.max(0, paddingBlock - inset),
     fontFamily,
     fontSize,
     lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
@@ -324,24 +364,30 @@ export function Input({
   const helperOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.helperSize, lineHeight: overrides?.lineHeight };
 
   return (
-    <View style={containerStyle} testID="Input">
+    <View ref={ref} style={containerStyle} testID="Input">
       {hideLabel ? null : (
-        <Text
-          weight="medium"
-          overrides={{ fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, fontWeight: overrides?.labelWeight, lineHeight: overrides?.lineHeight }}
-        >
-          {visibleLabel}
-        </Text>
+        <View testID="Input.label">
+          <Text
+            size={size}
+            weight="medium"
+            overrides={{ fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, fontWeight: overrides?.labelWeight, lineHeight: overrides?.lineHeight }}
+          >
+            {visibleLabel}
+          </Text>
+        </View>
       )}
-      {description !== undefined ? (
-        <Text size="sm" tone="muted" overrides={helperOverrides}>
-          {description}
-        </Text>
+      {description !== undefined && description !== '' ? (
+        <View testID="Input.description">
+          <Text size="sm" tone="muted" overrides={helperOverrides}>
+            {description}
+          </Text>
+        </View>
       ) : null}
       <TextInput
         ref={inputRef}
-        accessibilityLabel={accessibleLabel}
-        accessibilityHint={description}
+        testID="Input.field"
+        accessibilityLabel={accessibleName}
+        accessibilityHint={accessibleHint}
         accessibilityState={{ disabled: isDisabled }}
         keyboardType={KEYBOARD_TYPE[type]}
         textContentType={TEXT_CONTENT_TYPE[type]}
@@ -354,15 +400,19 @@ export function Input({
         placeholder={placeholder}
         placeholderTextColor={t.colorForegroundMuted}
         returnKeyType={returnKeyType}
-        blurOnSubmit={isLast}
+        submitBehavior={isLast ? 'blurAndSubmit' : 'submit'}
         onSubmitEditing={handleSubmitEditing}
         onChangeText={handleChangeText}
         onFocus={handleFocus}
         onBlur={handleBlur}
+        onPointerEnter={onHoverIn}
+        onPointerLeave={onHoverOut}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         style={fieldStyle}
       />
       {displayedError !== undefined ? (
-        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
+        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} testID="Input.errorMessage">
           <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
           </Text>

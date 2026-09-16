@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, useWindowDimensions } from 'react-native';
-import type { ViewStyle } from 'react-native';
+import type { ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { useTheme } from './theme';
@@ -18,26 +18,35 @@ export interface ContainerProps {
   children: React.ReactNode;
   /** `prose` for reading (a 65-character measure), `content` for most screens, `page` for full-bleed layouts with wide grids, `full` for no cap (gutters only). */
   width?: ContainerWidth | undefined;
-  /** Horizontal padding at the viewport edge. `default` is responsive: narrow below the content width and wide above the page width. `none` for a nested container inside a padded parent. */
+  /** Horizontal padding at the viewport edge. Responsive: `default` uses the narrow gutter under the content width and the wide gutter above the page width. `none` for a nested container inside a padded parent. */
   gutter?: ContainerGutter | undefined;
-  /** Where the capped column sits in a wider viewport. */
+  /** Where the capped column sits in a wider viewport. `start` sits the column at the start edge with no margin on either side. */
   align?: ContainerAlign | undefined;
-  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. An override is a no-op where its binding renders nothing (`width: full`, `gutter: none`). */
   overrides?: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root `View`. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
-const MAX_WIDTH_TOKEN = {
+const MAX_WIDTH = {
   prose: 'layoutMaxWidthProse',
   content: 'layoutMaxWidthContent',
   page: 'layoutMaxWidthPage',
 } as const satisfies Record<Exclude<ContainerWidth, 'full'>, keyof Tokens>;
 
+const GUTTER = {
+  narrow: 'layoutGutterNarrow',
+  wide: 'layoutGutterWide',
+} as const satisfies Record<'narrow' | 'wide', keyof Tokens>;
+
 /**
  * Container — decides a screen's horizontal rhythm once: a gutter at the viewport
  * edge and a cap on how wide content can get.
  *
- * Renders a `View` with maxWidth, alignSelf and paddingHorizontal resolved from the
- * token object. `element` does not apply on React Native.
+ * Renders a `View` with `width: '100%'`, `maxWidth` from `layout.maxWidth.{width}`
+ * (none for `full`), `alignSelf` from `align` and `paddingHorizontal` from
+ * `layout.gutter.{gutter}`. The `default` gutter compares `useWindowDimensions().width`
+ * with the content and page max-width tokens. `element` is web and Lit only.
  */
 export function Container({
   children,
@@ -45,44 +54,43 @@ export function Container({
   gutter = 'default',
   align = 'center',
   overrides,
+  ref,
 }: ContainerProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const { width: viewportWidth } = useWindowDimensions();
 
   const style = React.useMemo<ViewStyle>(() => {
-    // ViewStyle is read-only in React Native's strict TypeScript API; this one is built up in place.
-    const next: { -readonly [K in keyof ViewStyle]: ViewStyle[K] } = {
-      width: '100%',
-      alignSelf: align === 'start' ? 'flex-start' : 'center',
-    };
-
-    if (overrides?.maxWidth) {
-      next.maxWidth = resolveToken(t, overrides.maxWidth) as number;
-    } else if (width !== 'full') {
-      next.maxWidth = t[MAX_WIDTH_TOKEN[width]];
+    let maxWidth: number | undefined;
+    if (width !== 'full') {
+      maxWidth = overrides?.maxWidth ? (resolveToken(t, overrides.maxWidth) as number) : t[MAX_WIDTH[width]];
     }
 
-    if (overrides?.paddingInline) {
-      next.paddingHorizontal = resolveToken(t, overrides.paddingInline) as number;
-    } else if (gutter === 'none') {
-      next.paddingHorizontal = 0;
-    } else if (gutter === 'narrow') {
-      next.paddingHorizontal = t.layoutGutterNarrow;
-    } else if (gutter === 'wide') {
-      next.paddingHorizontal = t.layoutGutterWide;
-    } else if (viewportWidth < t.layoutMaxWidthContent) {
-      next.paddingHorizontal = t.layoutGutterNarrow;
-    } else if (viewportWidth > t.layoutMaxWidthPage) {
-      next.paddingHorizontal = t.layoutGutterWide;
+    let paddingHorizontal: number;
+    if (gutter === 'none') {
+      paddingHorizontal = 0;
+    } else if (overrides?.paddingInline) {
+      paddingHorizontal = resolveToken(t, overrides.paddingInline) as number;
+    } else if (gutter !== 'default') {
+      paddingHorizontal = t[GUTTER[gutter]];
+    } else if (viewportWidth >= t.layoutMaxWidthPage) {
+      // Same breakpoints as the web media queries (min-width is inclusive).
+      paddingHorizontal = t.layoutGutterWide;
+    } else if (viewportWidth >= t.layoutMaxWidthContent) {
+      paddingHorizontal = t.layoutGutter;
     } else {
-      next.paddingHorizontal = t.layoutGutter;
+      paddingHorizontal = t.layoutGutterNarrow;
     }
 
-    return next;
+    return {
+      width: '100%',
+      maxWidth,
+      alignSelf: align === 'start' ? 'flex-start' : 'center',
+      paddingHorizontal,
+    };
   }, [t, width, gutter, align, overrides, viewportWidth]);
 
   return (
-    <View style={style} testID="Container">
+    <View ref={ref} style={style} testID="Container">
       {children}
     </View>
   );

@@ -6,6 +6,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ComponentProps } from 'react';
 import { Input, type InputProps } from './Input';
 import meta from './Input.stories';
 
@@ -14,7 +15,7 @@ function setup(given: Partial<InputProps> = {}) {
   const onChange = vi.fn();
   const onFocus = vi.fn();
   const onBlur = vi.fn();
-  const props = { ...meta.args, ...given, onChange, onFocus, onBlur } as InputProps;
+  const props = { ...meta.args, ...given, onChange, onFocus, onBlur } as ComponentProps<typeof Input>;
   const utils = render(<Input {...props} />);
   const user = userEvent.setup();
   return {
@@ -24,18 +25,50 @@ function setup(given: Partial<InputProps> = {}) {
     onFocus,
     onBlur,
     props,
-    control: () => screen.getByLabelText(props.label) as HTMLInputElement,
+    control: () => screen.getByLabelText(props.label, { exact: false }) as HTMLInputElement,
   };
 }
 
 describe('Input', () => {
-  /* derived: true */
+  it('typing-reports-the-new-value', async () => {
+    const s = setup();
+    await s.user.type(s.control(), 'a');
+    expect(s.onChange).toHaveBeenCalledTimes(1);
+    expect(s.onChange).toHaveBeenCalledWith('a');
+  });
+
+  it('focus-is-reported', async () => {
+    const s = setup();
+    await s.user.tab();
+    expect(s.control()).toHaveFocus();
+    expect(s.onFocus).toHaveBeenCalledTimes(1);
+  });
+
+  it('required-is-shown-in-the-label', () => {
+    const s = setup({ required: true });
+    const label = s.container.querySelector('label');
+    expect(label?.textContent).toBe(`${s.props.label} (required)`);
+    expect(s.control()).toHaveAttribute('aria-required', 'true');
+  });
+
+  it('error-is-announced-when-it-appears', () => {
+    setup({ error: 'Enter an email address like name@example.com' });
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter an email address like name@example.com');
+  });
+
+  it('disabled-stays-focusable-and-is-announced', () => {
+    const s = setup({ disabled: true });
+    expect(s.control()).toHaveAttribute('aria-disabled', 'true');
+    expect(s.control()).not.toHaveAttribute('disabled');
+    act(() => s.control().focus());
+    expect(s.control()).toHaveFocus();
+  });
+
   it('renders', () => {
     const s = setup();
     expect(s.control()).toBeInTheDocument();
   });
 
-  /* derived: props.type */
   it('renders-type-text', () => {
     const s = setup({ type: 'text' });
     expect(s.control()).toBeInTheDocument();
@@ -71,14 +104,22 @@ describe('Input', () => {
     expect(s.control()).toBeInTheDocument();
   });
 
-  /* derived: keyboard-operable */
+  it('renders-size-sm', () => {
+    const s = setup({ size: 'sm' });
+    expect(s.control()).toBeInTheDocument();
+  });
+
+  it('renders-size-md', () => {
+    const s = setup({ size: 'md' });
+    expect(s.control()).toBeInTheDocument();
+  });
+
   it('control-is-focusable', () => {
     const s = setup();
     act(() => s.control().focus());
     expect(s.control()).toHaveFocus();
   });
 
-  /* derived: error-identification */
   it('error-is-identified', () => {
     const s = setup({ error: 'Fix this before continuing.' });
     expect(screen.getByText('Fix this before continuing.')).toBeInTheDocument();

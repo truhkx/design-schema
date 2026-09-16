@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Animated, Easing, Platform, Pressable, Text as RNText, View } from 'react-native';
-import type { Insets, LayoutChangeEvent, TextStyle, ViewStyle } from 'react-native';
+import type { Insets, LayoutChangeEvent, PressableProps, TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
@@ -24,8 +24,7 @@ export type ButtonOverridableBinding =
   | 'fontSize'
   | 'disabledOpacity'
   | 'transition'
-  | 'loadingSpin'
-  | 'spinnerStroke';
+  | 'loadingSpin';
 
 /** The pair sent to `onTrack` after a tracked press. */
 export interface ButtonTrackEvent {
@@ -60,10 +59,11 @@ export interface ButtonProps {
   /** Replaces the icon slot with a ring spinner, keeps the label in place, and blocks repeat activation while an action is pending. */
   loading?: boolean | undefined;
   /**
-   * The button sits on an inverse surface (Toast, tooltip-like panels). Only
-   * meaningful on `ghost`, whose text switches to `color.inverse.link`; every
-   * variant's focus ring switches to `color.inverse.focus` since that ring must
-   * read against the inverse surface regardless of the button's own fill.
+   * The button sits on an inverse surface (Toast, tooltip-like panels). Only `ghost`
+   * changes its fill there: its text switches to `color.inverse.link` and its pressed
+   * fill to `color.inverse.foreground` at 12%. Every variant's focus ring switches to
+   * `color.inverse.focus`, since that ring must read against the inverse surface
+   * regardless of the button's own fill.
    */
   inverse?: boolean | undefined;
   /**
@@ -81,11 +81,32 @@ export interface ButtonProps {
   track?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root `Pressable`, so a parent can measure or focus the button. */
+  ref?: React.Ref<ViewInstance> | undefined;
+  /** Supplementary description, forwarded verbatim to the root; Tooltip sets it when it describes the button. */
+  accessibilityHint?: string | undefined;
+  /** Set by a parent (Tooltip, when its content *is* the name) to replace the name the label would give. `accessibleName` still wins. */
+  accessibilityLabel?: string | undefined;
   /** Fired when the button is activated by touch, keyboard, or assistive technology. */
   onPress?: (() => void) | undefined;
   /** Fired after `onPress` with the `track` name and the button's label, only when `track` is set. */
   onTrack?: ((event: ButtonTrackEvent) => void) | undefined;
+  /** Forwarded to the root so Tooltip can attach to the button; the button's own pressed state is kept alongside. */
+  onPressOut?: PressableProps['onPressOut'];
+  /** Forwarded to the root so Tooltip can open on long press. */
+  onLongPress?: PressableProps['onLongPress'];
+  /** Forwarded to the root (react-native-web pointer only). */
+  onHoverIn?: PressableProps['onHoverIn'];
+  /** Forwarded to the root (react-native-web pointer only). */
+  onHoverOut?: PressableProps['onHoverOut'];
+  /** Forwarded to the root; the button's own focus-ring state is kept alongside. */
+  onFocus?: PressableProps['onFocus'];
+  /** Forwarded to the root; the button's own focus-ring state is kept alongside. */
+  onBlur?: PressableProps['onBlur'];
 }
+
+/** The component's user-facing strings, from the doc's `copy` block. */
+const COPY = { loading: 'Loading' } as const;
 
 const VARIANT_TOKENS = {
   primary: {
@@ -122,6 +143,25 @@ const FONT_SIZE_TOKEN = {
   lg: 'fontSizeLg',
 } as const satisfies Record<ButtonSize, keyof Tokens>;
 
+/** The share of `color.inverse.foreground` a ghost button's pressed fill shows on an inverse surface. */
+const INVERSE_PRESSED_ALPHA = 0.12; // literal-ok: the doc states 12%; there is no token for this mix
+
+/**
+ * `color` at `alpha`. The doc's inverse ghost fill is a mix of a token with the surface;
+ * web and Lit write it as `color-mix`, and native has no such function, so the resolved
+ * token is re-emitted with an alpha channel. Anything that is not a `#rgb`/`#rrggbb`
+ * token (a named color, an already-transparent value) is returned untouched.
+ */
+function withAlpha(color: string, alpha: number): string {
+  const hex = color.startsWith('#') ? color.slice(1) : '';
+  const full = hex.length === 3 ? `${hex[0]!}${hex[0]!}${hex[1]!}${hex[1]!}${hex[2]!}${hex[2]!}` : hex;
+  if (full.length !== 6 || !/^[0-9a-fA-F]{6}$/u.test(full)) {
+    return color;
+  }
+  const channel = (at: number): number => Number.parseInt(full.slice(at, at + 2), 16);
+  return `rgba(${channel(0)}, ${channel(2)}, ${channel(4)}, ${alpha})`; // literal-ok: an alpha of a resolved token, not a new color
+}
+
 /**
  * Button — lets people take an action with a single tap.
  *
@@ -134,24 +174,27 @@ const FONT_SIZE_TOKEN = {
  * dense UI such as toolbars, and `danger` only for destructive, hard-to-undo actions.
  *
  * Renders a `Pressable` with `accessibilityRole="button"`, `accessibilityLabel`
- * (`accessibleName` when set, else `label`) and `accessibilityState={{ disabled, busy,
- * expanded }}` (`expanded` omitted unless a disclosing parent sets it). `disabled` is
- * never passed to `Pressable`
- * itself — that would drop it from the tab order — so a disabled button stays
- * focusable and is announced as disabled while a press guard blocks `onPress`. There
- * is no hover on touch, so `backgroundHover` animates in for the pressed state instead
- * (over `transition`, eased with `motion.easing.standard`, skipped under reduced
- * motion); the focus ring is a border drawn in `color.border.focus` (or
- * `color.inverse.focus` when `inverse`) that is transparent, not absent, so focusing
- * never shifts layout. `loading` replaces the leading icon slot with a ring spinner
- * that rotates continuously over `loadingSpin` (frozen under reduced motion), hides
- * `trailingIcon`, and keeps the label visible; it also blocks repeat activation
- * alongside `disabled`. `inverse` only changes `ghost`'s foreground token; other
- * variants keep their own fills. `type="submit"` calls `submit()` on the nearest Form
- * context. `track`, when set, calls the hand-written `trackPress(name, label)` after
- * `onPress` and before `onTrack` fires with the same pair. When the measured
- * footprint is smaller than the comfortable target, `hitSlop` makes up the
- * difference. `leadingIcon`/`trailingIcon` render in decorative wrappers
+ * (`accessibleName`, else a name set by a parent, else `label`) and
+ * `accessibilityState={{ disabled, busy, expanded }}` (`expanded` omitted unless a
+ * disclosing parent sets it). `disabled` is never passed to `Pressable` itself — that
+ * would drop it from the tab order — so a disabled button stays focusable and is
+ * announced as disabled while a press guard blocks `onPress`. There is no hover on
+ * touch, so `backgroundHover` animates in for the pressed state instead (over
+ * `transition`, eased with `motion.easing.standard`, skipped under reduced motion); the
+ * focus ring is a border drawn in `color.border.focus` (or `color.inverse.focus` when
+ * `inverse`) that is transparent, not absent, so focusing never shifts layout.
+ * `loading` replaces the leading icon slot with a ring spinner that rotates
+ * continuously over `loadingSpin` (frozen under reduced motion), hides `trailingIcon`,
+ * keeps the label visible, announces `copy.loading` as the button's accessibility
+ * value, and blocks repeat activation alongside `disabled`. `inverse` changes only
+ * `ghost`'s foreground and pressed fill; other variants keep their own fills.
+ * `type="submit"` calls `submit()` on the nearest Form context, since there is no
+ * native form. `track`, when set, calls the hand-written `trackPress(name, label)`
+ * after `onPress` and before `onTrack` fires with the same pair. When the measured
+ * footprint is smaller than the comfortable target, `hitSlop` makes up the difference.
+ * `accessibilityHint`, `accessibilityLabel`, `onHoverIn`, `onHoverOut`, `onFocus`,
+ * `onBlur`, `onLongPress` and `onPressOut` are forwarded to the root so Tooltip can
+ * attach to the button. `leadingIcon`/`trailingIcon` render in decorative wrappers
  * (`accessibilityElementsHidden`, `importantForAccessibility="no"`); there is no
  * cascade, so callers color glyphs with the variant's foreground themselves.
  */
@@ -170,8 +213,17 @@ export function Button({
   accessibleName,
   track,
   overrides,
+  ref,
+  accessibilityHint,
+  accessibilityLabel,
   onPress,
   onTrack,
+  onPressOut,
+  onLongPress,
+  onHoverIn,
+  onHoverOut,
+  onFocus,
+  onBlur,
 }: ButtonProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const form = useFormContext();
@@ -183,13 +235,16 @@ export function Button({
 
   const isDisabled = disabled || (form?.disabled ?? false);
   const colors = VARIANT_TOKENS[variant];
+  const isInverseGhost = variant === 'ghost' && inverse;
 
   const background = t[colors.background];
   const backgroundHover = overrides?.backgroundHover
     ? (resolveToken(t, overrides.backgroundHover) as string)
-    : t[colors.backgroundHover];
+    : isInverseGhost
+      ? withAlpha(t.colorInverseForeground, INVERSE_PRESSED_ALPHA)
+      : t[colors.backgroundHover];
   // Only `ghost` is meaningful on an inverse surface; other variants keep their own fills.
-  const foreground = variant === 'ghost' && inverse ? t.colorInverseLink : t[colors.foreground];
+  const foreground = isInverseGhost ? t.colorInverseLink : t[colors.foreground];
   const focusRingColor = inverse ? t.colorInverseFocus : t.colorBorderFocus;
 
   const iconGap = overrides?.iconGap ? (resolveToken(t, overrides.iconGap) as number) : t.space2;
@@ -212,9 +267,8 @@ export function Button({
   const loadingSpinDuration = overrides?.loadingSpin
     ? (resolveToken(t, overrides.loadingSpin) as number)
     : t.motionDurationLoop;
-  const spinnerStroke = overrides?.spinnerStroke
-    ? (resolveToken(t, overrides.spinnerStroke) as number)
-    : t.borderWidthFocus;
+  // `spinnerStroke` is locked: the ring has to stay legible at its 1em size.
+  const spinnerStroke = t.borderWidthFocus;
 
   // Background transitions between rest and pressed since there is no hover on touch.
   const highlight = React.useRef(new Animated.Value(0)).current;
@@ -339,36 +393,51 @@ export function Button({
 
   return (
     <Pressable
+      ref={ref}
       testID="Button"
       accessibilityRole="button"
-      accessibilityLabel={accessibleName ?? label}
+      accessibilityLabel={accessibleName ?? accessibilityLabel ?? label}
+      accessibilityHint={accessibilityHint}
       accessibilityState={expanded === undefined ? { disabled: isDisabled, busy: loading } : { disabled: isDisabled, busy: loading, expanded }}
+      accessibilityValue={loading ? { text: COPY.loading } : undefined}
       hitSlop={hitSlop}
       onPress={handlePress}
       onPressIn={() => setPressedState(true)}
-      onPressOut={() => setPressedState(false)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+      onPressOut={(event) => {
+        setPressedState(false);
+        onPressOut?.(event);
+      }}
+      onLongPress={onLongPress}
+      onHoverIn={onHoverIn}
+      onHoverOut={onHoverOut}
+      onFocus={(event) => {
+        setFocused(true);
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        setFocused(false);
+        onBlur?.(event);
+      }}
       onLayout={handleLayout}
       style={containerStyle}
     >
       <Animated.View style={backgroundFillStyle} pointerEvents="none" />
       {loading ? (
-        <View style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
+        <View testID="Button.leadingIcon" style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
           <Animated.View style={spinnerStyle} />
         </View>
       ) : leadingIcon !== undefined && leadingIcon !== null ? (
-        <View style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
+        <View testID="Button.leadingIcon" style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
           {leadingIcon}
         </View>
       ) : null}
       {iconOnly ? null : (
-        <RNText allowFontScaling style={labelStyle}>
+        <RNText testID="Button.label" allowFontScaling style={labelStyle}>
           {label}
         </RNText>
       )}
       {!iconOnly && !loading && trailingIcon !== undefined && trailingIcon !== null ? (
-        <View style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
+        <View testID="Button.trailingIcon" style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
           {trailingIcon}
         </View>
       ) : null}

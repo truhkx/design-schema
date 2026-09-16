@@ -25,26 +25,34 @@
   background-color: var(--ds-card-background);
   border-style: solid;
   border-width: 0;
-  border-color: var(--ds-card-border);
+  border-color: transparent;
   border-radius: var(--ds-card-radius);
-  font-family: var(--font-family-body);
 }
 
 /* inset → layout.inset.{inset} */
-.ds-card--inset-sm { --ds-card-padding-block: var(--layout-inset-sm); --ds-card-padding-inline: var(--layout-inset-sm); }
-.ds-card--inset-md { --ds-card-padding-block: var(--layout-inset-md); --ds-card-padding-inline: var(--layout-inset-md); }
-.ds-card--inset-lg { --ds-card-padding-block: var(--layout-inset-lg); --ds-card-padding-inline: var(--layout-inset-lg); }
+.ds-card--inset-sm {
+  --ds-card-padding-block: var(--layout-inset-sm);
+  --ds-card-padding-inline: var(--layout-inset-sm);
+}
+.ds-card--inset-md {
+  --ds-card-padding-block: var(--layout-inset-md);
+  --ds-card-padding-inline: var(--layout-inset-md);
+}
+.ds-card--inset-lg {
+  --ds-card-padding-block: var(--layout-inset-lg);
+  --ds-card-padding-inline: var(--layout-inset-lg);
+}
 
-/* surface → color.background.{surface} (locked); `default` also draws the border, `subtle` does not. */
+/* surface → color.background.{surface} (locked); `default` drops the segment and draws the border. */
 .ds-card--surface-default {
   --ds-card-background: var(--color-background);
   --ds-card-hover-background: var(--color-background-subtle);
   border-width: var(--ds-card-border-width);
+  border-color: var(--ds-card-border);
 }
 .ds-card--surface-subtle {
   --ds-card-background: var(--color-background-subtle);
   --ds-card-hover-background: var(--color-background-strong);
-  border-width: 0;
 }
 
 .ds-card__header {
@@ -52,9 +60,6 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--ds-card-header-gap);
-}
-
-.ds-card__heading {
   min-inline-size: 0;
 }
 
@@ -71,42 +76,52 @@
 
 .ds-card__footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--ds-card-footer-gap);
 }
 
-/* interactive: the card grows the single link/button child's hit area to its own bounds. */
+/*
+ * interactive: the card extends its single link/button child's hit area over its own geometry.
+ * The card always reserves border.width.focus, transparent until focused, so the ring never
+ * shifts the layout; borderWidth overrides therefore only change non-interactive cards.
+ */
 .ds-card--interactive {
   position: relative;
+  border-width: var(--ds-card-focus-ring-width);
+  border-color: transparent;
 }
 
-.ds-card--interactive .ds-card__interactive-target::after {
+.ds-card--interactive .ds-card__target::after {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: inherit;
 }
 
-/* hoverBackground: interactive cards only, on pointer hover. */
+/* hoverBackground (locked): interactive cards only, on pointer hover. */
 .ds-card--interactive:hover {
   background-color: var(--ds-card-hover-background);
 }
 
-/* focus-visible: the card draws the ring while its single interactive child has focus, never removed. */
+/* focus-visible: the ring is drawn on the card while its child target has focus. */
 .ds-card--interactive:focus-within {
-  outline: var(--ds-card-focus-ring-width) solid var(--ds-card-focus-ring);
-  outline-offset: var(--ds-card-focus-ring-width);
+  border-color: var(--ds-card-focus-ring);
 }
 
-/* focusable: scripted focus (e.g. Feed) draws the ring on the card itself; not a tab stop. */
+/* focusable: scripted focus (Feed PageUp/PageDown) draws the ring on the card itself. */
 .ds-card--focusable:focus-visible {
   outline: var(--ds-card-focus-ring-width) solid var(--ds-card-focus-ring);
-  outline-offset: var(--ds-card-focus-ring-width);
 }
 
-/* transition: hoverBackground, with motion.easing.standard. */
-@media (prefers-reduced-motion: no-preference) {
+/* transition: interactive hover, with motion.easing.standard; removed under reduced motion. */
+.ds-card--interactive {
+  transition:
+    background-color var(--ds-card-transition) var(--motion-easing-standard),
+    border-color var(--ds-card-transition) var(--motion-easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
   .ds-card--interactive {
-    transition: background-color var(--ds-card-transition) var(--motion-easing-standard);
+    transition: none;
   }
 }

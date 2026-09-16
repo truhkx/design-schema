@@ -10,6 +10,9 @@ import meta from './Link.stories.js';
 
 type Given = Partial<Pick<DsLink, 'href' | 'label' | 'external' | 'tone' | 'download'>>;
 
+/** copy.externalSuffix */
+const EXTERNAL_SUFFIX = ' (opens in new tab)';
+
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-link');
@@ -23,7 +26,7 @@ async function setup(given: Given = {}) {
   return {
     el,
     props,
-    anchor: () => root.querySelector<HTMLAnchorElement>('[part=anchor]')!,
+    anchor: () => root.querySelector<HTMLAnchorElement>('[data-part=anchor]')!,
   };
 }
 
@@ -32,6 +35,37 @@ beforeEach(() => {
 });
 
 describe('ds-link', () => {
+  it('click-fires-on-press', async () => {
+    const l = await setup();
+    const clicks: Event[] = [];
+    l.el.addEventListener('click', (event) => {
+      clicks.push(event);
+      // Keep the test page in place; the event is cancelable like any native click.
+      event.preventDefault();
+    });
+    l.anchor().click();
+    expect(clicks).toHaveLength(1);
+    expect(clicks[0]!.cancelable).toBe(true);
+    expect(clicks[0]!.target).toBe(l.el);
+  });
+
+  it('external-link-announces-that-it-leaves', async () => {
+    const l = await setup({ external: true, label: 'View the billing history' });
+    expect(l.anchor().textContent).toContain(EXTERNAL_SUFFIX);
+    expect(l.anchor()).toHaveAccessibleName(`View the billing history${EXTERNAL_SUFFIX}`);
+  });
+
+  it('external-link-opens-a-new-tab', async () => {
+    const l = await setup({ external: true });
+    expect(l.anchor().getAttribute('target')).toBe('_blank');
+    expect(l.anchor().getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it('download-asks-the-browser-to-save', async () => {
+    const l = await setup({ download: true });
+    expect(l.anchor().getAttribute('download')).toBe('');
+  });
+
   /* derived: a11y.role */
   it('renders', async () => {
     const l = await setup();

@@ -15,3 +15,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Input: guidance says the field should read FieldsetContext for disabled and legend-prefixing ('Shipping address, Street'), but no other RN component in the package (Checkbox, Switch, RadioGroup) reads it yet — Fieldset only applies a disabled clone fallback. I wired Input to read useFieldsetContext() directly since the spec calls it out explicitly for Input, but this makes Input inconsistent with sibling form components until they're updated too.
 - Input: 'keyboard' testability-hook story requirement doesn't apply — this schema has no `keyboard` block.
 - Input: `autocomplete` is web/lit-only per the schema's `platforms` restriction on that prop, so it's intentionally omitted from the RN props.
+
+## 2026-09-16 04:11 — round 1
+
+- Input: platforms.rn says it forwards onHoverIn, onHoverOut and onLongPress to the native element, but in RN 0.87 TextInput has none of them. I mapped onHoverIn/onHoverOut to onPointerEnter/onPointerLeave and built onLongPress from onPressIn plus a 500 ms timer (Pressable's default delayLongPress, marked literal-ok, since no token exists). The doc should say how a TextInput-based field exposes long press and hover.
+- Input: Tooltip also sets onPressOut on its child, but the Input rn notes don't list it. I forwarded it too.
+- Input: description and a parent's accessibilityHint (Tooltip) both go to accessibilityHint, and the spec doesn't say how to combine them. I read the description first, then the forwarded hint, joined with a space.
+- Input: a parent's accessibilityLabel replaces the label as the accessible name, and the Fieldset legend still goes in front. The spec doesn't say which comes first; I followed Button.
+- Input: 'disabled stays focusable' applies to web and Lit only. On native, editable={false} makes an iOS TextInput unfocusable, and the doc doesn't say whether native should use editable={false} or stay focusable and block edits. I kept editable={false} with accessibilityState.disabled.
+- Input: the size binding says sm uses font.size.sm, but it doesn't say whether that covers only the field text or the label too. I sized the label with `size` as well; description and error stay at helperSize.
+- Input: minTargetSm is locked and there's no locked minTarget swap per size in the overrides list, so the sm height floor is always size.target.min.
+- Input: hideLabel has no visually-hidden pattern in RN. I don't render the label Text and rely on accessibilityLabel.
+- Input: the anatomy parts label and description are Text, which accepts no testID. I wrapped each in a View with testID=Input.<part>. Either Text should take a testID or the doc should name this wrapper.
+- Input: the required-is-shown-in-the-label and error-is-announced scenarios check aria-required and role=alert on web only. RN has no required a11y state, so on native required is conveyed by the ' (required)' label text alone.
+- Input: example stories need exactly their given args, but the old meta args (placeholder, description) would have leaked into them. I trimmed the meta args to label and name, and the test merges meta.args with Default.args.

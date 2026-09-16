@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Text.js';
+import './Link.js';
 
 export type FormValidate = 'submit' | 'blur' | 'change';
 
@@ -18,22 +19,22 @@ export interface FormInvalidDetail {
 
 /**
  * The contract a light-DOM element must implement to be collected by
- * `<ds-form>`: `ds-input`, `ds-checkbox`, `ds-switch` and `ds-radio-group` all
- * satisfy it. `error` and `validationMessage` are set by `ds-switch` only in
- * spirit — it never has anything invalid to report, so both stay `undefined`
- * at runtime even though the type says otherwise; Form treats a missing
- * message as `''`.
+ * `<ds-form>`. Form finds fields by the `data-ds-field` attribute on their host,
+ * never by tag, so any element that sets it and implements this interface is
+ * collected. `error` and `validationMessage` are optional: a field that never
+ * validates (Switch) omits them, and Form treats absence as valid.
  */
 export interface DsFormField extends HTMLElement {
   name: string;
   label: string;
   required: boolean;
   disabled: boolean;
-  error: string | undefined;
+  error?: string | undefined;
   readonly currentValue: string | boolean | null;
+  id: string;
   focus(): void;
   checkValidity(): boolean;
-  readonly validationMessage: string;
+  readonly validationMessage?: string | undefined;
 }
 
 /** Overridable style hooks; see the `overrides` property. `errorSummaryText` and `errorSummaryBackground` are locked and excluded. */
@@ -44,18 +45,24 @@ const HOOKS: Record<FormOverridableBinding, string> = {
   errorSummaryBorder: '--ds-form-error-summary-border',
 };
 
-/** copy.summaryHeading / copy.summaryHeadingOne */
-const COPY_SUMMARY_HEADING = (count: number): string => `${count} problems with this form`;
+/** copy.summaryHeading (plural by `count`); the `one` form is copy.summaryHeadingOne. */
 const COPY_SUMMARY_HEADING_ONE = '1 problem with this form';
+const COPY_SUMMARY_HEADING_OTHER = '{count} problems with this form';
 
-const FIELD_TAGS: ReadonlySet<string> = new Set(['DS-INPUT', 'DS-CHECKBOX', 'DS-SWITCH', 'DS-RADIO-GROUP']);
-const FIELD_SELECTOR = 'ds-input, ds-checkbox, ds-switch, ds-radio-group';
-const CONTROL_SELECTOR = `${FIELD_SELECTOR}, ds-button`;
+/** Every field component sets this attribute on its host; Form discovers fields by it alone. */
+const FIELD_SELECTOR = '[data-ds-field]';
+
+/** Negates a boolean attribute: `no-error-summary` present means `errorSummary` is `false`. */
+const NEGATED_BOOLEAN_CONVERTER = {
+  fromAttribute(value: string | null): boolean {
+    return value === null;
+  },
+  toAttribute(value: boolean): string | null {
+    return value ? null : '';
+  },
+};
 
 let formInstanceCount = 0;
-
-/** `ElementInternals` with the cross-root ARIA reflection Chromium ships; not yet in every DOM lib. */
-type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[] | null | undefined };
 
 /**
  * `<ds-form>` — Form (category: container).
@@ -64,18 +71,18 @@ type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[]
  * in its shadow root, with a default slot for fields (Input etc. and layout
  * like Stack) and a named `actions` slot for the action row, but form
  * ownership is DOM-tree based, so the slotted fields are not owned by it.
- * Instead it collects light-DOM `ds-input`, `ds-checkbox`, `ds-switch` and
- * `ds-radio-group` descendants that have a `name` and implement `DsFormField`
- * (skipping any inside a closed `ds-disclosure` without `keep-mounted`),
- * submits on a composed `press` from a `ds-button[type=submit]` and on Enter
- * in a `ds-input` (a `keydown` listener, never a CustomEvent named after a
- * native event), and propagates `disabled` to every field and `ds-button`
- * descendant, remembering which ones it disabled so it never re-enables a
- * field that was already disabled on its own. The host takes `role="form"`
- * and its accessible name (via `ElementInternals`, `labelledBy` winning over
- * `label`) so the landmark lives in the light DOM tree. Dispatches composed
- * `submit` (`{ values }`) and `invalid` (`{ errors }`) CustomEvents; never
- * navigates. Never nest a `<ds-form>` inside another.
+ * Instead it collects light-DOM descendants carrying `data-ds-field` that have
+ * a `name` and implement `DsFormField` (skipping any inside a closed
+ * `ds-disclosure` without `keep-mounted`), submits on a composed `press` from
+ * a `ds-button[type=submit]` and on Enter in any field (a `keydown` listener,
+ * never a CustomEvent named after a native event), and propagates `disabled`
+ * to the fields it found and to `ds-button` descendants, remembering which
+ * ones it disabled so it never re-enables one already disabled on its own.
+ * The host carries `role="form"` and `aria-label` / `aria-labelledby`
+ * (`labelledBy` winning over `label`) as plain attributes, so the landmark
+ * lives in the light DOM tree. Dispatches composed `submit` (`{ values }`) and
+ * `invalid` (`{ errors }`) CustomEvents; never navigates. Never nest inside a
+ * native form or another `<ds-form>`.
  *
  * ## When to use
  *
@@ -88,10 +95,6 @@ type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[]
  * @fires invalid - Fired when submission is blocked by validation, with `{ errors }` in `detail`.
  * @slot - Fields (Input etc.) and layout (Stack) (anatomy: fields).
  * @slot actions - The action row: at least one Button with `type: submit`, primary first (anatomy: actions).
- * @csspart container - The native `<form>` (anatomy: container).
- * @csspart errorSummary - The focusable error summary region, shown after a failed submission (anatomy: errorSummary).
- * @csspart fields - The default slot wrapping fields (anatomy: fields).
- * @csspart actions - The named `actions` slot, rendered after the fields with the form gap (anatomy: actions).
  */
 @customElement('ds-form')
 export class DsForm extends LitElement {
@@ -112,7 +115,7 @@ export class DsForm extends LitElement {
       display: none;
     }
 
-    form {
+    [data-part='container'] {
       display: flex;
       flex-direction: column;
       gap: var(--ds-form-gap);
@@ -121,41 +124,31 @@ export class DsForm extends LitElement {
     }
 
     /* errorSummaryBackground / errorSummaryText: color.background.subtle / color.foreground.danger, locked */
-    .summary {
+    [data-part='errorSummary'] {
       box-sizing: border-box;
-      padding-block: var(--space-md);
-      padding-inline: var(--space-md);
+      padding: var(--space-md);
       border: var(--border-width-thin) solid var(--ds-form-error-summary-border);
       border-radius: var(--radius-md);
       background: var(--color-background-subtle);
       color: var(--color-foreground-danger);
     }
 
-    .summary:focus-visible {
+    [data-part='errorSummary']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
     }
 
-    .heading {
-      margin-block-end: var(--space-sm);
-    }
-
     .list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--layout-gap-tight);
       margin: 0;
+      padding: 0;
+      padding-block-start: var(--space-sm);
       padding-inline-start: var(--space-lg);
       font-family: var(--font-family-body);
       font-size: var(--font-size-sm);
       line-height: var(--font-line-height-normal);
-    }
-
-    .link {
-      color: var(--color-foreground-danger);
-      text-decoration: underline;
-    }
-
-    .link:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
     }
   `;
 
@@ -174,8 +167,13 @@ export class DsForm extends LitElement {
   /** Disables every field and action inside. Use while submitting. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
-  /** When submission fails validation, render a summary of errors above the fields that links to each field. */
-  @property({ type: Boolean, attribute: 'error-summary' }) accessor errorSummary = true;
+  /**
+   * When submission fails validation, render a summary of errors above the fields that links to each field.
+   * Attribute is the negation, `no-error-summary`, because a boolean attribute cannot express `false` for a
+   * prop that defaults `true`.
+   */
+  @property({ attribute: 'no-error-summary', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  accessor errorSummary = true;
 
   /** Per-instance style overrides: `{ gap: 'layout.gap.normal' }`. Locked bindings (errorSummaryText, errorSummaryBackground) are ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<FormOverridableBinding, TokenRef | undefined>> | undefined;
@@ -189,20 +187,15 @@ export class DsForm extends LitElement {
   /** Fields and actions this Form disabled itself, so re-enabling never touches one already disabled by the consumer. */
   private readonly disabledByForm = new WeakSet<HTMLElement>();
 
-  /** Re-syncs disabled propagation when fields are added or removed anywhere in the subtree. */
-  private readonly mutationObserver = new MutationObserver(() => this.syncDisabled());
+  /** Re-syncs disabled propagation when fields are added or removed; observes `childList` only, never the attributes it writes. */
+  private readonly mutationObserver = new MutationObserver(() => {
+    if (this.disabled) this.syncDisabled();
+  });
 
   /** Focus the error summary once it exists, after the render that follows a failed submission. */
   private pendingSummaryFocus = false;
 
   private readonly instanceId = `ds-form-${++formInstanceCount}`;
-
-  private readonly internals: ElementInternals;
-
-  constructor() {
-    super();
-    this.internals = this.attachInternals();
-  }
 
   private get idBase(): string {
     return this.name || this.instanceId;
@@ -211,7 +204,11 @@ export class DsForm extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Form');
+    if (this.getAttribute('role') !== 'form') this.setAttribute('role', 'form');
     this.mutationObserver.observe(this, { childList: true, subtree: true });
+    if (import.meta.env.DEV && this.parentElement?.closest('form, ds-form')) {
+      console.warn('<ds-form> must not be nested inside a native <form> or another <ds-form>.');
+    }
   }
 
   override disconnectedCallback(): void {
@@ -223,66 +220,74 @@ export class DsForm extends LitElement {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
+    if (changed.has('label') || changed.has('labelledBy')) {
+      this.syncName();
+    }
   }
 
   protected override updated(changed: PropertyValues): void {
     if (changed.has('disabled')) {
       this.syncDisabled();
     }
-    if (changed.has('label') || changed.has('labelledBy')) {
-      this.syncLabelInternals();
-    }
     if (this.pendingSummaryFocus) {
       this.pendingSummaryFocus = false;
-      this.renderRoot.querySelector<HTMLElement>('#summary')?.focus();
+      this.renderRoot.querySelector<HTMLElement>('[data-part="errorSummary"]')?.focus();
     }
   }
 
   protected override render(): TemplateResult {
     const errorEntries = Object.entries(this.errors);
     const showSummary = this.errorSummary && errorEntries.length > 0;
-    const fieldsByName = new Map(this.queryFields().map((field) => [field.name, field] as const));
-    const heading =
-      errorEntries.length === 1 ? COPY_SUMMARY_HEADING_ONE : COPY_SUMMARY_HEADING(errorEntries.length);
 
     return html`
       <form
-        id="form"
         part="container"
+        data-part="container"
         novalidate
         name=${ifDefined(this.name || undefined)}
         @keydown=${this.handleKeydown}
         @change=${this.handleFieldChange}
         @focusout=${this.handleFieldFocusOut}
         @press=${this.handlePress}
+        @submit=${this.handleNativeSubmit}
       >
-        ${showSummary
-          ? html`
-              <div id="summary" class="summary" part="errorSummary" role="alert" tabindex="-1">
-                <ds-text class="heading" element="p" weight="semibold" tone="danger">${heading}</ds-text>
-                <ul class="list">
-                  ${errorEntries.map(([name, message]) => {
-                    const field = fieldsByName.get(name);
-                    const text = field ? `${field.label}: ${message}` : message;
-                    return html`
-                      <li>
-                        <a
-                          class="link"
-                          href=${field ? `#${field.id}` : '#'}
-                          @click=${(event: MouseEvent) => this.handleSummaryLinkClick(event, name)}
-                          >${text}</a
-                        >
-                      </li>
-                    `;
-                  })}
-                </ul>
-              </div>
-            `
-          : nothing}
-        <slot part="fields"></slot>
-        <slot name="actions" part="actions"></slot>
+        ${showSummary ? this.renderSummary(errorEntries) : nothing}
+        <slot data-part="fields"></slot>
+        <slot name="actions" data-part="actions"></slot>
       </form>
     `;
+  }
+
+  private renderSummary(errorEntries: [string, string][]): TemplateResult {
+    const fieldsByName = new Map(this.queryFields().map((field) => [field.name, field] as const));
+    return html`
+      <div data-part="errorSummary" role="alert" tabindex="-1">
+        <ds-text element="p" weight="semibold" tone="danger">${this.summaryHeading(errorEntries.length)}</ds-text>
+        <ul class="list">
+          ${errorEntries.map(([name, message]) => {
+            const field = fieldsByName.get(name);
+            const text = field?.label ? `${field.label}: ${message}` : message;
+            return html`
+              <li>
+                <ds-link
+                  tone="inherit"
+                  href=${field?.id ? `#${field.id}` : '#'}
+                  label=${text}
+                  @click=${(event: MouseEvent) => this.handleSummaryLinkClick(event, name)}
+                ></ds-link>
+              </li>
+            `;
+          })}
+        </ul>
+      </div>
+    `;
+  }
+
+  private summaryHeading(count: number): string {
+    const locale = this.closest('[lang]')?.getAttribute('lang') || navigator.language;
+    return new Intl.PluralRules(locale).select(count) === 'one'
+      ? COPY_SUMMARY_HEADING_ONE
+      : COPY_SUMMARY_HEADING_OTHER.replace('{count}', String(count));
   }
 
   /** Validate every field and, only if all pass, dispatch `submit` with the collected values. */
@@ -303,14 +308,12 @@ export class DsForm extends LitElement {
       }
       if (field.checkValidity()) {
         const value = field.currentValue;
-        if (value !== null) {
+        if (value !== null && value !== undefined) {
           values[field.name] = value;
         }
       } else {
-        errors[field.name] = field.validationMessage || '';
-        if (firstInvalid === undefined) {
-          firstInvalid = field;
-        }
+        errors[field.name] = field.validationMessage ?? '';
+        firstInvalid ??= field;
       }
     }
 
@@ -334,12 +337,22 @@ export class DsForm extends LitElement {
     );
   }
 
+  private handleNativeSubmit(event: Event): void {
+    // The shadow <form> owns no controls; never let it navigate.
+    event.preventDefault();
+  }
+
   private handleKeydown(event: KeyboardEvent): void {
-    if (event.key !== 'Enter') {
+    if (event.key !== 'Enter' || event.defaultPrevented || event.isComposing) {
       return;
     }
-    const target = event.target as HTMLElement;
-    if (target.tagName !== 'DS-INPUT') {
+    const field = this.fieldFor(event.target);
+    if (field === null) {
+      return;
+    }
+    // Enter in a multi-line control inserts a line break; on a native button or link it activates it.
+    const origin = event.composedPath()[0];
+    if (origin instanceof HTMLTextAreaElement || origin instanceof HTMLButtonElement || origin instanceof HTMLAnchorElement) {
       return;
     }
     event.preventDefault();
@@ -355,44 +368,49 @@ export class DsForm extends LitElement {
   }
 
   private handleFieldChange(event: Event): void {
-    const target = event.target as HTMLElement;
-    if (!this.isTrackedField(target)) {
+    const field = this.fieldFor(event.target);
+    if (field === null) {
       return;
     }
-    const isCheckboxLike = target.tagName === 'DS-SWITCH' || target.tagName === 'DS-CHECKBOX';
     const shouldValidate =
       this.validate === 'change' ||
-      (this.validate === 'blur' && isCheckboxLike) ||
+      (this.validate === 'blur' && this.hasNoBlurMoment(event)) ||
       (this.validate === 'submit' && this.hasFailedSubmission);
     if (shouldValidate) {
-      this.validateField(target as unknown as DsFormField);
+      this.validateField(field);
     }
   }
 
   private handleFieldFocusOut(event: FocusEvent): void {
-    const target = event.target as HTMLElement;
-    if (!this.isTrackedField(target)) {
+    const field = this.fieldFor(event.target);
+    if (field === null || this.hasNoBlurMoment(event)) {
       return;
     }
-    if (target.tagName === 'DS-SWITCH' || target.tagName === 'DS-CHECKBOX') {
-      // No useful blur moment; these validate on change instead.
-      return;
-    }
-    if (event.relatedTarget === target) {
-      // Composed retargeting: focus moved between two radios in the same ds-radio-group,
-      // not out of the group, so this is not the "focus left the whole group" moment.
+    const related = event.relatedTarget;
+    if (related instanceof Node && (related === field || field.contains(related))) {
+      // Focus moved within the same field (two radios in one group), not out of it.
       return;
     }
     const shouldValidate = this.validate === 'blur' || (this.validate === 'submit' && this.hasFailedSubmission);
     if (shouldValidate) {
-      this.validateField(target as unknown as DsFormField);
+      this.validateField(field);
     }
+  }
+
+  /** Checkbox and Switch controls have no useful blur moment; under `blur` they validate on change instead. */
+  private hasNoBlurMoment(event: Event): boolean {
+    const origin = event.composedPath()[0];
+    return (
+      (origin instanceof HTMLInputElement && origin.type === 'checkbox') ||
+      (origin instanceof Element && origin.getAttribute('role') === 'switch')
+    );
   }
 
   private handleSummaryLinkClick(event: MouseEvent, name: string): void {
     event.preventDefault();
-    const field = this.queryFields().find((candidate) => candidate.name === name);
-    field?.focus();
+    this.queryFields()
+      .find((candidate) => candidate.name === name)
+      ?.focus();
   }
 
   private validateField(field: DsFormField): void {
@@ -400,37 +418,29 @@ export class DsForm extends LitElement {
     if (field.disabled || field.checkValidity()) {
       delete next[field.name];
     } else {
-      next[field.name] = field.validationMessage || '';
+      next[field.name] = field.validationMessage ?? '';
     }
     this.errors = next;
   }
 
-  private isTrackedField(el: HTMLElement): boolean {
-    if (!FIELD_TAGS.has(el.tagName)) {
-      return false;
+  /** The collected field an event came from, or `null`. */
+  private fieldFor(target: EventTarget | null): DsFormField | null {
+    if (!(target instanceof Element)) {
+      return null;
     }
-    const field = el as unknown as DsFormField;
-    if (!field.name) {
-      return false;
+    const el = target.closest<HTMLElement>(FIELD_SELECTOR);
+    if (el === null || !this.contains(el)) {
+      return null;
     }
-    return !this.isInsideClosedDisclosure(el);
+    const field = el as DsFormField;
+    return field.name && !this.isInsideClosedDisclosure(el) ? field : null;
   }
 
   /** Fields with a `name`, not inside a closed `ds-disclosure` without `keep-mounted`. */
   private queryFields(): DsFormField[] {
-    const candidates = Array.from(this.querySelectorAll<HTMLElement>(FIELD_SELECTOR));
-    const fields: DsFormField[] = [];
-    for (const candidate of candidates) {
-      const field = candidate as unknown as DsFormField;
-      if (!field.name) {
-        continue;
-      }
-      if (this.isInsideClosedDisclosure(candidate)) {
-        continue;
-      }
-      fields.push(field);
-    }
-    return fields;
+    return Array.from(this.querySelectorAll<HTMLElement>(FIELD_SELECTOR)).filter(
+      (el): el is DsFormField => Boolean((el as DsFormField).name) && !this.isInsideClosedDisclosure(el),
+    );
   }
 
   private isInsideClosedDisclosure(el: HTMLElement): boolean {
@@ -447,7 +457,7 @@ export class DsForm extends LitElement {
     return false;
   }
 
-  /** `name` is the base for a generated id, so an error summary link always has somewhere to point. */
+  /** A field missing an `id` gets `{name}-{field.name}`, so an error summary link always has somewhere to point. */
   private assignFieldIds(fields: readonly DsFormField[]): void {
     for (const field of fields) {
       if (!field.id) {
@@ -456,9 +466,11 @@ export class DsForm extends LitElement {
     }
   }
 
-  /** Disables every field and `ds-button` inside, remembering which it disabled so re-enabling is exact. */
+  /** Disables every found field and `ds-button` inside, remembering which it disabled so re-enabling is exact. */
   private syncDisabled(): void {
-    const controls = Array.from(this.querySelectorAll<HTMLElement & { disabled: boolean }>(CONTROL_SELECTOR));
+    const controls = Array.from(
+      this.querySelectorAll<HTMLElement & { disabled: boolean }>(`${FIELD_SELECTOR}, ds-button`),
+    );
     for (const control of controls) {
       if (this.disabled) {
         if (!control.disabled) {
@@ -472,22 +484,18 @@ export class DsForm extends LitElement {
     }
   }
 
-  /** Landmark role + accessible name, `labelledBy` winning over `label`, via ElementInternals so it lives in the light DOM. */
-  private syncLabelInternals(): void {
-    this.internals.role = 'form';
-    const internals = this.internals as LabelledInternals;
+  /** Accessible name as plain host attributes, `labelledBy` winning over `label`. */
+  private syncName(): void {
     if (this.labelledBy) {
-      const root = this.getRootNode() as Document | ShadowRoot;
-      const target = root.getElementById(this.labelledBy);
-      if ('ariaLabelledByElements' in internals) {
-        internals.ariaLabelledByElements = target ? [target] : null;
-      }
-      internals.ariaLabel = null;
+      this.setAttribute('aria-labelledby', this.labelledBy);
+      this.removeAttribute('aria-label');
     } else {
-      if ('ariaLabelledByElements' in internals) {
-        internals.ariaLabelledByElements = null;
+      this.removeAttribute('aria-labelledby');
+      if (this.label) {
+        this.setAttribute('aria-label', this.label);
+      } else {
+        this.removeAttribute('aria-label');
       }
-      internals.ariaLabel = this.label ?? null;
     }
   }
 

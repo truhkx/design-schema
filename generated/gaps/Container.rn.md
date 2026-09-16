@@ -29,3 +29,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - No token exists for a 'none' gutter or a 'full' max-width, and no layoutMaxWidthFull/zero-gutter token is named in the spec — used a literal 0 for gutter:none padding and simply omit maxWidth for width:full, per the doc's 'renders no max-width'/'renders no padding' language.
 - Container has no interaction or a11y role to assert, so all 11 behavior scenarios collapse to a 'renders: true' check per given-prop combination, matching Box's derived-only test shape.
 - The element prop is scoped to web/lit only in the schema, so it's absent from ContainerProps entirely on RN, inferred from Box's identical pattern rather than stated verbatim.
+
+## 2026-09-16 04:21 — round 1
+
+- Container: the paddingInline description says the default gutter is narrow 'below' layout.maxWidth.content and wide 'above' layout.maxWidth.page, but the web note uses inclusive min-width media queries; the width exactly at each breakpoint is ambiguous. Chose inclusive (>=) to match web.
+- Container: it is unspecified whether a paddingInline override on gutter: default replaces the whole responsive gutter or only the middle band. Chose to replace it at every viewport width.
+- Container: the maxWidth description only covers `full` as a no-op for overrides; for paddingInline the matching `none` case is stated only by the general 'overrides change values, never presence' rule. Applied both as no-ops.
+- Container: the examples give `children` as plain strings, but React Native cannot render a bare string inside a View; wrapped each in Text in the example stories.
+- Container: align: start's description is in CSS terms (`margin-inline: 0` on both sides); the rn note maps it to alignSelf flex-start, which has no margin concept. Followed the rn note.
+- Container: the rn platform section doesn't say whether Container exposes a ref to its root View; added `ref?: React.Ref<ViewInstance>` per the package convention (as in Box).
+- Container: the behavior scenario main-element-is-the-page-landmark is web-only and `element` is absent on rn, so it has no rn test; all 11 rn scenarios are render-only and cannot check maxWidth or the responsive gutter.

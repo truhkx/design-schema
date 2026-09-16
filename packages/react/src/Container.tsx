@@ -21,16 +21,21 @@ const OVERRIDE_HOOK: Record<ContainerOverridableBinding, string> = {
   paddingInline: '--ds-container-padding-inline',
 };
 
-function overridesToStyle(overrides: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>>): CSSProperties {
+function overridesToStyle(
+  overrides: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>>,
+  inEffect: Record<ContainerOverridableBinding, boolean>,
+): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as ContainerOverridableBinding[]) {
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    const hook = OVERRIDE_HOOK[binding];
+    // An override changes a value, never presence: `width: full` and `gutter: none` have no hook to set.
+    if (ref && hook && inEffect[binding]) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
 }
 
-export interface ContainerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
+export interface ContainerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'className' | 'style'> {
   /** The page or region content, usually a Stack with `gap: section` between regions. */
   children: ReactNode;
   /** `prose` for reading (a 65-character measure), `content` for most screens, `page` for full-bleed
@@ -40,7 +45,8 @@ export interface ContainerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'c
    * content width and the wide gutter above the page width. `none` for a nested container inside a
    * padded parent. */
   gutter?: ContainerGutter | undefined;
-  /** Where the capped column sits in a wider viewport. */
+  /** Where the capped column sits in a wider viewport. `start` sets `margin-inline: 0` on both sides,
+   * not just the start side, so the column never picks up an asymmetric margin. */
   align?: ContainerAlign | undefined;
   /** Use `main` for the page's main column when no Landmark wraps it. */
   element?: ContainerElement | undefined;
@@ -57,6 +63,9 @@ export interface ContainerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'c
  * side-by-side panels, and `full` only for edge-to-edge sections (a hero, a map) that manage their own
  * inner Container. Nest a `gutter: none` Container inside a padded parent when a section needs a
  * narrower measure than the page.
+ *
+ * Container adds no semantics unless `element: main` is chosen, in which case it is the page's main
+ * landmark and there must be exactly one.
  */
 export const Container = function Container({
   ref,
@@ -66,8 +75,6 @@ export const Container = function Container({
   align = 'center',
   element = 'div',
   overrides,
-  className,
-  style,
   ...rest
 }: ContainerProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const Tag = element as ElementType;
@@ -77,16 +84,14 @@ export const Container = function Container({
     `ds-container--width-${width}`,
     `ds-container--gutter-${gutter}`,
     `ds-container--align-${align}`,
-    className ?? null,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  ].join(' ');
 
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+  const style = overrides
+    ? overridesToStyle(overrides, { maxWidth: width !== 'full', paddingInline: gutter !== 'none' })
+    : undefined;
 
   return (
-    <Tag {...rest} ref={ref as Ref<HTMLElement>} data-ds="Container" className={classes} style={mergedStyle}>
+    <Tag {...rest} ref={ref as Ref<HTMLElement>} data-ds="Container" data-part="column" className={classes} style={style}>
       {children}
     </Tag>
   );

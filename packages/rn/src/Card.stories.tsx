@@ -45,6 +45,27 @@ export const InsetLg: Story = { args: { inset: 'lg' } };
 export const SurfaceDefault: Story = { args: { surface: 'default' } };
 export const SurfaceSubtle: Story = { args: { surface: 'subtle' } };
 
+// examples
+export const PlanCard: Story = {
+  args: { heading: 'Team plan', headingLevel: '3', children: <Text>What the plan includes</Text> },
+};
+
+export const DenseGridCard: Story = {
+  args: { heading: undefined, children: <Text>A search result</Text>, inset: 'sm', surface: 'subtle' },
+};
+
+export const WholeCardIsALink: Story = {
+  args: {
+    heading: 'September invoice',
+    children: <Link href="/invoices/september" label="A Link to the invoice" />,
+    interactive: true,
+  },
+};
+
+export const CardFocusedByAFeed: Story = {
+  args: { heading: 'New comment', children: <Text>The comment body</Text>, focusable: true },
+};
+
 // notable states
 export const NoHeading: Story = { args: { heading: undefined } };
 
@@ -65,25 +86,8 @@ export const WithFooter: Story = {
   },
 };
 
-export const Interactive: Story = {
-  args: {
-    interactive: true,
-    heading: 'Growth plan',
-    children: (
-      <>
-        <Text>10 seats, unlimited projects, priority support.</Text>
-        <Link href="/plans/growth" label="View plan" />
-      </>
-    ),
-  },
-};
-
-export const Focusable: Story = {
-  args: { focusable: true },
-};
-
 export const WithOverrides: Story = {
   args: {
-    overrides: { radius: 'radius.full', border: 'color.border.strong' },
+    overrides: { radius: 'radius.sm', border: 'color.border.strong' },
   },
 };

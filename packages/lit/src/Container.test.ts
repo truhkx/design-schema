@@ -13,10 +13,12 @@ type Given = Partial<Pick<DsContainer, 'width' | 'gutter' | 'align' | 'element'>
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-container');
-  const props = { ...meta.args, ...given };
-  for (const [key, value] of Object.entries(props)) {
+  const { children, ...args } = { ...meta.args, ...given };
+  for (const [key, value] of Object.entries(args)) {
     if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
   }
+  // `children` is slotted content, not a property (HTMLElement.children is read-only).
+  if (typeof children === 'string') el.textContent = children;
   document.body.append(el);
   await el.updateComplete;
   return { el };

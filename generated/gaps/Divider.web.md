@@ -12,3 +12,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Divider: the schema requires a development warning when `label` is set on a `vertical` divider ('no room for centered text'), but the existing implementation silently dropped the label with no warning and also incorrectly forced `isSemantic=true` from the ignored label (making a plain vertical <hr> announce role=separator with no visible/accessible text driving that semantics). Fixed both: added the console.warn gated on isDev, and changed isSemantic to derive from `showLabel` (label only takes effect when horizontal) rather than raw `Boolean(label)`.
 - No story or test exercises the vertical+label combination (the dev-warning path) since it isn't an enum value in the behavior scenarios; left untested per the 'render every scenario, don't invent new ones' instruction — flagging in case a dedicated story/test is wanted for that guard.
+
+## 2026-09-16 04:29 — round 1
+
+- Divider: role=separator makes its children presentational in ARIA, so 'the label text is what gets read' is not guaranteed by containment alone; chose aria-labelledby on the separator pointing at the label Text (id from useId) so the text is its accessible name without duplicating it in aria-label.
+- Divider: platforms.web.element is `hr` but the notes make every semantic divider a div; unclear whether an unlabelled semantic divider may stay <hr> (implicit separator role). Chose <div role=separator aria-orientation> for all semantic/labelled cases, <hr aria-hidden> only for decorative.
+- Divider: anatomy lists `line` and `label`, but the unlabelled divider has no separate line element (the root paints itself); chose data-part="line" only on the two flanking spans of a labelled divider, and data-part="label" on the composed Text.
+- Divider: `fontFamily` has no `part` and the root has no text of its own; the labelSize description says it travels 'along with fontFamily' to Text, so chose to forward fontFamily to Text's overrides only, never setting a root hook.
+- Divider: `labelColor` is locked and `labelSize` defaults to font.size.sm, but the Web notes express them as Text `size="sm" tone="muted"` props rather than bindings; chose the Text props (no Divider CSS for label color/size).
+- Divider: `spacing: none` resolves to layout.gap.none (a token that exists) yet is described as the off state; chose to emit no hook and no margin for `none`, so the spacing override is a no-op there, instead of var(--layout-gap-none).
+- Divider: labelGap override when no label is shown is not stated either way; applied the 'overrides change values, never presence' rule and ignore it.
+- Divider: 'block-size: 100% / align-self stretch' for vertical leaves display unspecified; chose inline-block with both block-size: 100% and align-self: stretch so it works in flex rows and in inline flow with a sized parent.
+- Divider: the dev warning for an ignored vertical label doesn't say 'once'; chose a useEffect keyed on the ignored state so it warns per change rather than per render.
+- Divider: ToolbarGroups/OrientationVertical stories need a sized flex row to show a vertical line; the spec gives no demo wrapper, so the stories use a decorator with an inline flex row style (blockSize: '3rem').

@@ -5,6 +5,7 @@ import { Text } from './Text';
 const meta: Meta<typeof Link> = {
   title: 'Link/React',
   component: Link,
+  tags: ['autodocs'],
   args: {
     href: '/billing/history',
     label: 'View the billing history',
@@ -14,6 +15,7 @@ const meta: Meta<typeof Link> = {
   },
   argTypes: {
     onClick: { action: 'onClick' },
+    tone: { control: 'inline-radio', options: ['default', 'inherit'] },
   },
 };
 
@@ -25,25 +27,37 @@ export const Default: Story = {};
 /* tone */
 export const ToneDefault: Story = { args: { tone: 'default' } };
 export const ToneInherit: Story = {
-  args: { tone: 'inherit', label: 'privacy policy', href: '/privacy' },
+  args: { tone: 'inherit' },
   render: (args) => (
-    <Text tone="muted" size="sm">
-      By continuing you agree to the <Link {...args} />.
+    <Text tone="muted">
+      <Link {...args} />
     </Text>
   ),
 };
 
-/* booleans */
-export const External: Story = {
-  args: { external: true, href: 'https://example.com/docs', label: 'Example documentation' },
-};
-export const Download: Story = { args: { download: true, href: '/invoices/2026-09.pdf', label: 'Invoice for September' } };
-
-/* inline in body text */
-export const Inline: Story = {
+/* examples */
+export const InlineInAParagraph: Story = {
+  args: { href: '/billing/history', label: 'View the billing history' },
   render: (args) => (
     <Text>
       Your plan renews on 1 October. <Link {...args} /> to see previous charges.
     </Text>
   ),
+};
+
+export const ExternalDestination: Story = {
+  args: { href: 'https://status.example.com', label: 'Status page', external: true },
+};
+
+export const InsideMutedText: Story = {
+  args: { href: '/help/billing', label: 'the billing guide', tone: 'inherit' },
+  render: (args) => (
+    <Text tone="muted">
+      For invoices and refunds, read <Link {...args} />.
+    </Text>
+  ),
+};
+
+export const DownloadableFile: Story = {
+  args: { href: '/invoices/2026-09.pdf', label: 'Download the September invoice', download: true },
 };

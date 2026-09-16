@@ -36,3 +36,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Card: the existing Card.tsx/Card.css (generated in an earlier round) omitted the `focusable` prop entirely — added tabIndex={focusable ? -1 : undefined}, a `ds-card--focusable` modifier class, and a `:focus-visible` ring rule reusing the same locked focusRing/focusRingWidth hooks as `interactive`; no story existed to demonstrate it either, so I added `Focusable`.
 - Card: spec doesn't say whether `interactive` and `focusable` can be combined (e.g. a Feed item that is both a link-card and scriptable-focus target); left them orthogonal (independent classes/attributes) since nothing forbids it, but didn't add a dev warning for the combination.
+
+## 2026-09-16 04:23 — round 1
+
+- Card: borderWidth says an interactive card 'reserves border.width.focus instead, transparent until focused', which taken literally removes the visible border from an interactive surface:default card (contradicting 'surface: default draws a border'). Chose literal: interactive cards get a transparent focus-width border that turns color.border.focus on :focus-within, so no border shows at rest.
+- Card: the docs don't say what an interactive card does when it has zero or several interactive children (only the Lit notes do). Chose the Lit behavior on web: stay non-interactive (no hit area, no hover background) and warn once in development.
+- Card: 'exactly one interactive child' doesn't say how to recognise one. Chose: `children` is a single element whose type is the package's Link or Button, a native <button>, or an <a> with href; wrappers (a Stack around a Link) are not searched.
+- Card: the example whole-card-is-a-link gives `children: "A Link to the invoice"` (a string), which cannot satisfy `interactive`. The WholeCardIsALink story renders `<Link href="#" label="A Link to the invoice" />` instead of the literal string.
+- Card: the interactive-adds-no-focus-stop scenario runs on the Default args, whose body is not a Link or Button, so it only checks that the root isn't focusable and triggers the dev warning. It never exercises a real interactive card; a given with a Link child would test the contract.
+- Card: the anatomy lists `heading` as a part, but Heading writes its own data-part="text" after spreading props, so the heading element can't carry data-part="heading". It has no heading hook.
+- Card: Heading's default margin-block-end (space.sm) would add space inside the header row, and the docs don't mention it. Chose to cancel it through Heading's own contract: overrides={{ marginBlockEnd: 'space.0' }}.
+- Card: the web notes put the ring on :focus-within, which also rings the card when a headerActions/footer control is focused, and on mouse focus, not only on keyboard focus. Followed the notes as written instead of :has(.target:focus-visible).
+- Card: focusable says the card 'draws its own focus ring' without saying how. Chose an outline at the focus width (no offset) on :focus-visible, so non-interactive cards don't need a reserved border.
+- Card: tabIndex isn't a schema prop, but Feed passes tabIndex={-1} to Card. A caller's tabIndex now passes through `...rest` unless `focusable` sets -1. The docs should say whether rest tabIndex is allowed.
+- Card: examples say 'exactly its given as args', but the scenarios run on the Default story's args. Put a minimal `children` in meta.args and the full demo content in Default.args; the test merges meta.args + Default.args + given.
+- Card: interactive with an empty or falsy `heading` — treated heading '' as absent (renders a <div>, no aria-labelledby).

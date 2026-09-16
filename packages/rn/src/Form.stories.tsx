@@ -43,3 +43,57 @@ export const Default: Story = {};
 export const ValidateSubmit: Story = { args: { validate: 'submit' } };
 export const ValidateBlur: Story = { args: { validate: 'blur' } };
 export const ValidateChange: Story = { args: { validate: 'change' } };
+
+// examples — `children` and `actions` are described in prose by the doc, so each renders them.
+const signInFields = (
+  <>
+    <Input label="Email" name="email" type="email" required />
+    <Input label="Password" name="password" type="password" required />
+  </>
+);
+
+/** The smallest real form - two fields and one submit action, validated on submit. */
+export const SignIn: Story = {
+  args: { name: 'sign-in', label: 'Sign in' },
+  render: (args) => (
+    <Form {...args} actions={<Button label="Sign in" type="submit" />}>
+      {signInFields}
+    </Form>
+  ),
+};
+
+/** A longer form where feedback per field as focus leaves it beats one report at the end. */
+export const LongFormValidatedOnBlur: Story = {
+  args: { name: 'profile', label: 'Profile details', validate: 'blur' },
+  render: (args) => (
+    <Form {...args} actions={<Button label="Save profile" type="submit" />}>
+      <Stack gap="loose">
+        <Input label="Full name" name="name" required />
+        <Input label="Display name" name="displayName" />
+        <Input label="Email address" name="email" type="email" required />
+        <Input label="Phone" name="phone" type="tel" />
+        <Input label="Website" name="website" type="url" />
+      </Stack>
+    </Form>
+  ),
+};
+
+/** A form while its request is in flight - every field and action disabled, so it cannot be submitted twice. */
+export const Submitting: Story = {
+  args: { name: 'sign-in', label: 'Sign in', disabled: true },
+  render: (args) => (
+    <Form {...args} actions={<Button label="Sign in" type="submit" />}>
+      {signInFields}
+    </Form>
+  ),
+};
+
+/** A short form that reports errors at the fields alone, moving focus to the first invalid one. */
+export const WithoutASummary: Story = {
+  args: { name: 'rename', label: 'Rename file', errorSummary: false },
+  render: (args) => (
+    <Form {...args} actions={<Button label="Rename" type="submit" />}>
+      <Input label="Name" name="name" required />
+    </Form>
+  ),
+};

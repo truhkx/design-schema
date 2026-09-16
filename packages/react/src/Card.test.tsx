@@ -3,74 +3,112 @@
  * The doc (site/src/content/docs/components/card.md) is the source of truth; the tests
  * gate runs this file after every generation round. See generated/prompts/Card.web.md.
  */
-import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { Card, type CardProps } from './Card';
-import meta from './Card.stories';
+import meta, { Default } from './Card.stories';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 /** The Default story's args plus the scenario's `given`. */
 function setup(given: Partial<CardProps> = {}) {
-  const props = { ...meta.args, ...given } as CardProps;
-  return render(<Card {...props} />);
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const props = { ...meta.args, ...Default.args, ...given } as CardProps;
+  const utils = render(<Card {...props} />);
+  const root = () => utils.container.querySelector<HTMLElement>('[data-ds="Card"]')!;
+  return { ...utils, props, root };
+}
+
+/** True when the element can take focus: script focus lands on it. */
+function canFocus(el: HTMLElement): boolean {
+  el.focus();
+  const focused = document.activeElement === el;
+  el.blur();
+  return focused;
 }
 
 describe('Card', () => {
+  it('heading-is-rendered-as-a-heading', () => {
+    setup({ heading: 'Team plan' });
+    expect(screen.getByText('Team plan')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Team plan' })).toBeTruthy();
+  });
+
+  it('a-card-with-a-heading-is-an-article', () => {
+    setup({ heading: 'Team plan' });
+    expect(screen.getByRole('article', { name: 'Team plan' })).toBeTruthy();
+  });
+
+  it('interactive-adds-no-focus-stop', () => {
+    const { root } = setup({ interactive: true });
+    expect(root().hasAttribute('tabindex')).toBe(false);
+    expect(canFocus(root())).toBe(false);
+  });
+
+  it('focusable-takes-scripted-focus-only', () => {
+    const { root } = setup({ focusable: true });
+    expect(root().getAttribute('tabindex')).toBe('-1');
+    expect(canFocus(root())).toBe(true);
+  });
+
   /* derived: a11y.role */
   it('renders', () => {
-    const { container } = setup();
-    expect(container.firstChild).not.toBeNull();
+    const { root } = setup();
+    expect(root()).not.toBeNull();
   });
 
   /* derived: props.headingLevel */
-  it('renders-headinglevel-2', () => {
-    const { container } = setup({ headingLevel: '2' });
-    expect(container.firstChild).not.toBeNull();
+  it('renders-heading-level-2', () => {
+    const { root } = setup({ headingLevel: '2' });
+    expect(root()).not.toBeNull();
   });
 
-  it('renders-headinglevel-3', () => {
-    const { container } = setup({ headingLevel: '3' });
-    expect(container.firstChild).not.toBeNull();
+  it('renders-heading-level-3', () => {
+    const { root } = setup({ headingLevel: '3' });
+    expect(root()).not.toBeNull();
   });
 
-  it('renders-headinglevel-4', () => {
-    const { container } = setup({ headingLevel: '4' });
-    expect(container.firstChild).not.toBeNull();
+  it('renders-heading-level-4', () => {
+    const { root } = setup({ headingLevel: '4' });
+    expect(root()).not.toBeNull();
   });
 
-  it('renders-headinglevel-5', () => {
-    const { container } = setup({ headingLevel: '5' });
-    expect(container.firstChild).not.toBeNull();
+  it('renders-heading-level-5', () => {
+    const { root } = setup({ headingLevel: '5' });
+    expect(root()).not.toBeNull();
   });
 
-  it('renders-headinglevel-6', () => {
-    const { container } = setup({ headingLevel: '6' });
-    expect(container.firstChild).not.toBeNull();
+  it('renders-heading-level-6', () => {
+    const { root } = setup({ headingLevel: '6' });
+    expect(root()).not.toBeNull();
   });
 
   /* derived: props.inset */
   it('renders-inset-sm', () => {
-    const { container } = setup({ inset: 'sm' });
-    expect(container.firstChild).not.toBeNull();
+    const { root } = setup({ inset: 'sm' });
+    expect(root()).not.toBeNull();
   });
 
   it('renders-inset-md', () => {
-    const { container } = setup({ inset: 'md' });
-    expect(container.firstChild).not.toBeNull();
+    const { root } = setup({ inset: 'md' });
+    expect(root()).not.toBeNull();
   });
 
   it('renders-inset-lg', () => {
-    const { container } = setup({ inset: 'lg' });
-    expect(container.firstChild).not.toBeNull();
+    const { root } = setup({ inset: 'lg' });
+    expect(root()).not.toBeNull();
   });
 
   /* derived: props.surface */
   it('renders-surface-default', () => {
-    const { container } = setup({ surface: 'default' });
-    expect(container.firstChild).not.toBeNull();
+    const { root } = setup({ surface: 'default' });
+    expect(root()).not.toBeNull();
   });
 
   it('renders-surface-subtle', () => {
-    const { container } = setup({ surface: 'subtle' });
-    expect(container.firstChild).not.toBeNull();
+    const { root } = setup({ surface: 'subtle' });
+    expect(root()).not.toBeNull();
   });
 });

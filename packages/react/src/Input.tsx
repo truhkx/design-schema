@@ -3,11 +3,12 @@ import {
   useId,
   useImperativeHandle,
   useRef,
+  useState,
   type ChangeEvent,
   type ComponentPropsWithoutRef,
   type CSSProperties,
-  type FocusEvent,
-  type Ref, type ReactElement,
+  type Ref,
+  type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
@@ -26,80 +27,55 @@ const COPY = {
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type InputOverridableBinding =
-  | 'borderFocus'
   | 'borderInvalid'
   | 'borderWidth'
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
-  | 'paddingBlockSm'
-  | 'paddingInlineSm'
   | 'partGap'
   | 'fontFamily'
   | 'fontSize'
   | 'labelWeight'
   | 'helperSize'
   | 'lineHeight'
-  | 'minTargetSm'
   | 'disabledOpacity';
 
-/** Bindings owned by the root; `helperSize` is forwarded entirely into the composed description/
- * error Text elements' own `overrides` instead (they render the helper text, not the root), and
- * `fontFamily`/`lineHeight` are forwarded to those Text elements *and* kept on the root for the
- * label and the raw `<input>`, neither of which is a Text. */
-const ROOT_OVERRIDE_HOOK: Partial<Record<InputOverridableBinding, string | undefined>> = {
-  borderFocus: '--ds-input-border-focus',
+/** Hooks on the root. `helperSize` has none: it is forwarded to the description and error Text
+ * elements' `fontSize`. `fontFamily`/`lineHeight` are forwarded to those Text elements *and* kept
+ * here for the label and the `<input>`, which are not Text. */
+const ROOT_OVERRIDE_HOOK: Partial<Record<InputOverridableBinding, string>> = {
   borderInvalid: '--ds-input-border-invalid',
   borderWidth: '--ds-input-border-width',
   radius: '--ds-input-radius',
   paddingInline: '--ds-input-padding-inline',
   paddingBlock: '--ds-input-padding-block',
-  paddingBlockSm: '--ds-input-padding-block-sm',
-  paddingInlineSm: '--ds-input-padding-inline-sm',
   partGap: '--ds-input-part-gap',
   fontFamily: '--ds-input-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-input-font-size',
   labelWeight: '--ds-input-label-weight',
   lineHeight: '--ds-input-line-height',
-  minTargetSm: '--ds-input-min-target-sm',
   disabledOpacity: '--ds-input-disabled-opacity',
 };
 
+type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+
 function resolveOverrides(overrides: Partial<Record<InputOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
-  errorOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  helperOverrides: TextOverrides;
 } {
   const rootStyle: Record<string, string> = {};
-  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-  const errorOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-
+  const helperOverrides: TextOverrides = {};
   for (const binding of Object.keys(overrides) as InputOverridableBinding[]) {
     const ref = overrides[binding];
     if (!ref) continue;
-    switch (binding) {
-      case 'helperSize':
-        descriptionOverrides.fontSize = ref;
-        errorOverrides.fontSize = ref;
-        break;
-      case 'fontFamily':
-        rootStyle['--ds-input-font-family'] = cssVar(ref); // literal-ok: CSS custom-property hook name, not a font stack
-        descriptionOverrides.fontFamily = ref;
-        errorOverrides.fontFamily = ref;
-        break;
-      case 'lineHeight':
-        rootStyle['--ds-input-line-height'] = cssVar(ref);
-        descriptionOverrides.lineHeight = ref;
-        errorOverrides.lineHeight = ref;
-        break;
-      default: {
-        const hook = ROOT_OVERRIDE_HOOK[binding];
-        if (hook) rootStyle[hook] = cssVar(ref);
-      }
-    }
+    if (binding === 'helperSize') helperOverrides.fontSize = ref;
+    if (binding === 'fontFamily') helperOverrides.fontFamily = ref;
+    if (binding === 'lineHeight') helperOverrides.lineHeight = ref;
+    // Locked bindings have no entry here, so they are ignored if passed.
+    const hook = ROOT_OVERRIDE_HOOK[binding];
+    if (hook) rootStyle[hook] = cssVar(ref);
   }
-
-  return { rootStyle: rootStyle as CSSProperties, descriptionOverrides, errorOverrides };
+  return { rootStyle: rootStyle as CSSProperties, helperOverrides };
 }
 
 export interface InputProps
@@ -120,9 +96,12 @@ export interface InputProps
     | 'aria-describedby'
     | 'aria-invalid'
     | 'aria-required'
+    | 'aria-disabled'
+    | 'className'
+    | 'style'
     | 'children'
   > {
-  /** Visible label. Always rendered; never replaced by a placeholder. */
+  /** Visible label (visually hidden with `hideLabel`). Never replaced by a placeholder. */
   label: string;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
@@ -141,8 +120,7 @@ export interface InputProps
   /** Visually hide the label (it remains the accessible name). Only for a field whose context
    * already names it: a DataGrid cell editor, a Search. */
   hideLabel?: boolean | undefined;
-  /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small
-   * type. */
+  /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
   size?: InputSize | undefined;
   /** Not editable and not submitted. Stays visible and readable. */
   disabled?: boolean | undefined;
@@ -155,11 +133,11 @@ export interface InputProps
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<InputOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired on every value change with the new string value. */
-  onChange?: ((value: string, event: ChangeEvent<HTMLInputElement>) => void) | undefined;
+  onChange?: ((value: string) => void) | undefined;
   /** Fired when the field receives focus. */
-  onFocus?: ((event: FocusEvent<HTMLInputElement>) => void) | undefined;
+  onFocus?: (() => void) | undefined;
   /** Fired when the field loses focus. The usual moment to validate. */
-  onBlur?: ((event: FocusEvent<HTMLInputElement>) => void) | undefined;
+  onBlur?: (() => void) | undefined;
 }
 
 /**
@@ -171,7 +149,7 @@ export interface InputProps
  * format matters ("Use the email you signed up with"). Set `autocomplete` on web whenever the
  * value is personal data so browsers and assistive tools can fill it.
  */
-export const Input = function Input({
+export function Input({
   ref,
   label,
   name,
@@ -191,9 +169,8 @@ export const Input = function Input({
   onChange,
   onFocus,
   onBlur,
+  readOnly,
   id: idProp,
-  className,
-  style,
   ...rest
 }: InputProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
   const form = useFormContext();
@@ -205,10 +182,16 @@ export const Input = function Input({
   const inputRef = useRef<HTMLInputElement | null>(null);
   useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, []);
 
+  // Uncontrolled from `defaultValue`; controlled whenever `value` is given.
+  const [uncontrolledValue, setUncontrolledValue] = useState<string>(defaultValue ?? '');
+  const isControlled = value !== undefined;
+  const currentValue = isControlled ? value : uncontrolledValue;
+
   const isDisabled = disabled || (form?.disabled ?? false);
   // A direct `error` prop wins; otherwise the Form may hold an error for this field.
   const resolvedError = error ?? form?.errors[name];
-  const isInvalid = invalid || resolvedError !== undefined;
+  const hasError = resolvedError !== undefined && resolvedError !== '';
+  const isInvalid = invalid || hasError;
 
   // Keep the latest props in a ref so the Form registration does not churn on every render.
   const latest = useRef({ label, required, disabled: isDisabled, invalid, error });
@@ -222,38 +205,39 @@ export const Input = function Input({
       get label() {
         return latest.current.label;
       },
-      getValue: () => inputRef.current?.value ?? '',
+      // Disabled fields are not submitted.
+      getValue: () => (latest.current.disabled ? undefined : (inputRef.current?.value ?? '')),
       isDisabled: () => latest.current.disabled,
       validate: () => {
         const { label: currentLabel, required: isRequired, invalid: isInvalidProp, error: errorProp } = latest.current;
         const el = inputRef.current;
-        const currentValue = el?.value ?? '';
-        if (errorProp !== undefined) return errorProp;
-        if (isRequired && currentValue.trim() === '') return COPY.required.replace('{label}', currentLabel);
+        const fieldValue = el?.value ?? '';
+        if (errorProp !== undefined && errorProp !== '') return errorProp;
+        if (isRequired && fieldValue.trim() === '') return COPY.required.replace('{label}', currentLabel);
         if (isInvalidProp) return COPY.invalid.replace('{label}', currentLabel);
-        // Browser type validation (email, url, number…) still runs under novalidate via validity.
-        if (el && currentValue !== '' && !el.validity.valid) {
-          return el.validationMessage || COPY.invalid.replace('{label}', currentLabel);
-        }
+        // Browser type validity (email, url, number) last, reported with copy.invalid.
+        if (el && !el.validity.valid) return COPY.invalid.replace('{label}', currentLabel);
         return null;
       },
       focus: () => inputRef.current?.focus(),
     });
   }, [form, name, id]);
 
-  const describedBy = [description ? descriptionId : null, resolvedError ? errorId : null].filter(Boolean).join(' ');
+  const describedBy = [description ? descriptionId : null, hasError ? errorId : null].filter(Boolean).join(' ');
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     if (isDisabled) {
       event.preventDefault();
       return;
     }
-    onChange?.(event.target.value, event);
+    const next = event.target.value;
+    if (!isControlled) setUncontrolledValue(next);
+    onChange?.(next);
     if (form && form.validate === 'change') form.validateField(name);
   };
 
-  const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
-    onBlur?.(event);
+  const handleBlur = (): void => {
+    onBlur?.();
     if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
   };
 
@@ -261,22 +245,21 @@ export const Input = function Input({
     'ds-input',
     `ds-input--${size}`,
     isInvalid ? 'ds-input--invalid' : null,
-    className ?? null,
+    isDisabled ? 'ds-input--disabled' : null,
   ]
     .filter(Boolean)
     .join(' ');
   const labelClasses = ['ds-input__label', hideLabel ? 'ds-input__visually-hidden' : null].filter(Boolean).join(' ');
 
-  const { rootStyle, descriptionOverrides, errorOverrides } = overrides
+  const { rootStyle, helperOverrides } = overrides
     ? resolveOverrides(overrides)
-    : { rootStyle: undefined, descriptionOverrides: undefined, errorOverrides: undefined };
-  const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
+    : { rootStyle: undefined, helperOverrides: undefined };
 
   return (
-    <div className={classes} data-ds="Input" data-ds-field style={mergedStyle}>
-      <label className={labelClasses} htmlFor={id}>
+    <div className={classes} data-ds="Input" data-ds-field style={rootStyle}>
+      <label className={labelClasses} htmlFor={id} data-part="label">
         {label}
-        {required ? <span className="ds-input__required">{COPY.requiredIndicator}</span> : null}
+        {required ? COPY.requiredIndicator : null}
       </label>
       {description ? (
         <Text
@@ -286,7 +269,7 @@ export const Input = function Input({
           size="sm"
           tone="muted"
           className="ds-input__description"
-          overrides={descriptionOverrides}
+          overrides={helperOverrides}
         >
           {description}
         </Text>
@@ -297,21 +280,21 @@ export const Input = function Input({
         id={id}
         name={name}
         type={type}
-        value={value}
-        defaultValue={defaultValue}
+        value={currentValue}
         placeholder={placeholder}
         autoComplete={autocomplete}
         className="ds-input__field"
+        data-part="field"
         aria-describedby={describedBy || undefined}
         aria-invalid={isInvalid ? 'true' : undefined}
         aria-required={required ? 'true' : undefined}
         aria-disabled={isDisabled ? 'true' : undefined}
-        readOnly={isDisabled ? true : rest.readOnly}
+        readOnly={isDisabled ? true : readOnly}
         onChange={handleChange}
-        onFocus={onFocus}
+        onFocus={() => onFocus?.()}
         onBlur={handleBlur}
       />
-      {resolvedError ? (
+      {hasError ? (
         <Text
           element="p"
           id={errorId}
@@ -320,11 +303,11 @@ export const Input = function Input({
           size="sm"
           tone="danger"
           className="ds-input__error"
-          overrides={errorOverrides}
+          overrides={helperOverrides}
         >
           {resolvedError}
         </Text>
       ) : null}
     </div>
   );
-};
+}

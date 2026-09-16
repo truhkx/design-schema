@@ -1,4 +1,4 @@
-import { LitElement, css, html, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Text.js';
@@ -15,49 +15,43 @@ const HOOKS: Record<DividerOverridableBinding, string> = {
   spacing: '--ds-divider-spacing',
   labelSize: '--ds-divider-label-size',
   labelGap: '--ds-divider-label-gap',
-  fontFamily: `--ds-divider-font-family`,
+  fontFamily: '--ds-divider-font-family',
 };
 
 /**
- * `<ds-divider>` — Divider (category: layout, APG: separator).
+ * `<ds-divider>` — Divider (category: layout, role: separator).
  *
- * `<ds-divider>` is decorative and hidden from assistive technology by
- * default. `<ds-divider semantic>` or `<ds-divider label="or">` expose it as
- * `role="separator"` with `aria-orientation`, set on the host through
- * `ElementInternals` (a labelled divider is always semantic, whether or not
- * `semantic` is set). The host is the flex layout for one or two line
- * segments (`part="line"`) around an optional `<ds-text part="label">`.
+ * The host is the line. `<ds-divider>` is decorative and hidden from assistive
+ * technology (`aria-hidden="true"`). `<ds-divider semantic>` or
+ * `<ds-divider label="or">` is exposed as `role="separator"` with
+ * `aria-orientation`; a label renders in the shadow root as a
+ * `<ds-text part="label">` between two line segments (`part="line"`).
  *
  * ## When to use
  *
- * Use a Divider between items in a dense list where whitespace alone does not
- * separate them, between toolbar groups (`orientation="vertical"`), and with
- * a `label` as an "or" between alternatives or a date heading in a feed. Use
- * `spacing` when the divider stands outside a Stack.
+ * Between items in a dense list where whitespace alone does not separate
+ * them, between toolbar groups (`orientation="vertical"`), and with a `label`
+ * as an "or" between alternatives or a date heading in a feed. Use `spacing`
+ * when the divider stands outside a Stack.
  *
  * ## When not to use
  *
- * Do not use dividers between page sections — use spacing and headings. Do
- * not use a labelled divider as a heading substitute.
- *
- * @csspart line - Each line segment either side of the label (anatomy: line).
- * @csspart label - The `<ds-text>` label (anatomy: label).
+ * Not between page sections (use section spacing and headings), not under a
+ * heading as decoration, and not as a heading substitute.
  */
 @customElement('ds-divider')
 export class DsDivider extends LitElement {
   static override styles: CSSResult = css`
     :host {
-      display: flex;
-      align-items: center;
-      box-sizing: border-box;
-      gap: var(--ds-divider-label-gap);
-      margin-block: var(--ds-divider-spacing);
       --ds-divider-color: var(--color-border);
       --ds-divider-thickness: var(--border-width-thin);
-      --ds-divider-spacing: var(--layout-gap-none);
       --ds-divider-label-size: var(--font-size-sm);
       --ds-divider-label-gap: var(--layout-gap-normal);
       --ds-divider-font-family: var(--font-family-body);
+      display: block;
+      box-sizing: border-box;
+      block-size: var(--ds-divider-thickness);
+      background: var(--ds-divider-color);
     }
 
     :host([hidden]) {
@@ -65,17 +59,13 @@ export class DsDivider extends LitElement {
     }
 
     :host([orientation='vertical']) {
-      display: inline-flex;
-      flex-direction: column;
+      display: inline-block;
+      inline-size: var(--ds-divider-thickness);
+      block-size: auto;
       align-self: stretch;
-      margin-block: 0;
-      margin-inline: var(--ds-divider-spacing);
     }
 
-    /* spacing: layout.gap.{spacing} */
-    :host([spacing='none']) {
-      --ds-divider-spacing: var(--layout-gap-none);
-    }
+    /* spacing: layout.gap.{spacing}; none is the off state, so the hook (and any override of it) applies only once a value is chosen */
     :host([spacing='tight']) {
       --ds-divider-spacing: var(--layout-gap-tight);
     }
@@ -85,53 +75,57 @@ export class DsDivider extends LitElement {
     :host([spacing='loose']) {
       --ds-divider-spacing: var(--layout-gap-loose);
     }
+    :host([spacing]:not([spacing='none'])) {
+      margin-block: var(--ds-divider-spacing);
+    }
+    :host([orientation='vertical'][spacing]:not([spacing='none'])) {
+      margin-block: 0;
+      margin-inline: var(--ds-divider-spacing);
+    }
 
-    /* color / thickness: color.border, border.width.thin */
-    .line {
+    /* labelled (horizontal only): the host lays out line, label, line */
+    :host([data-labelled]) {
+      display: flex;
+      align-items: center;
+      gap: var(--ds-divider-label-gap);
+      block-size: auto;
+      background: none;
+    }
+
+    [data-part='line'] {
       flex: 1 1 auto;
+      block-size: var(--ds-divider-thickness);
       background: var(--ds-divider-color);
     }
-    :host(:not([orientation='vertical'])) .line {
-      block-size: var(--ds-divider-thickness);
-    }
-    :host([orientation='vertical']) .line {
-      inline-size: var(--ds-divider-thickness);
-    }
 
-    /* labelSize / fontFamily forward into ds-text's own override hooks; labelColor stays on ds-text's locked tone="muted" */
-    .label {
+    /* labelSize / fontFamily reach ds-text through its own documented hooks; labelColor stays on its locked tone="muted" */
+    [data-part='label'] {
       --ds-text-font-size: var(--ds-divider-label-size);
       --ds-text-font-family: var(--ds-divider-font-family);
+      flex: 0 0 auto;
       white-space: nowrap;
     }
   `;
 
   /** Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height. */
-  @property({ reflect: true }) accessor orientation: DividerOrientation = 'horizontal';
+  @property({ type: String, reflect: true }) accessor orientation: DividerOrientation = 'horizontal';
 
   /**
    * Optional text in the middle of a horizontal divider ("or", "Earlier
-   * today"). Setting it turns the divider semantic. Ignored on a vertical
-   * divider (a dev warning is logged): a vertical line has no room for
-   * centered text.
+   * today"). Turns the divider into a labelled separator (`semantic` is
+   * implied). Ignored on a vertical divider, with a development warning; an
+   * ignored label implies nothing either.
    */
-  @property() accessor label: string | undefined;
+  @property({ type: String }) accessor label: string | undefined;
 
-  /** Expose as role="separator" to assistive technology. Leave false for purely visual lines between list rows. */
+  /** Expose as a separator to assistive technology. Leave false for purely visual lines between list rows. */
   @property({ type: Boolean, reflect: true }) accessor semantic = false;
 
   /** Space on both sides, from the layout rhythm, for dividers used outside a Stack that already spaces them. */
-  @property({ reflect: true }) accessor spacing: DividerSpacing = 'none';
+  @property({ type: String, reflect: true }) accessor spacing: DividerSpacing = 'none';
 
-  /** Per-instance style overrides: `{ spacing: 'layout.gap.tight' }`. `labelColor` is locked and ignored. */
+  /** Per-instance style overrides: `{ color: 'color.border.strong' }`. `labelColor` is locked and ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<DividerOverridableBinding, TokenRef | undefined>> | undefined;
-
-  private readonly internals: ElementInternals;
-
-  constructor() {
-    super();
-    this.internals = this.attachInternals();
-  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -139,55 +133,58 @@ export class DsDivider extends LitElement {
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (changed.has('overrides')) {
-      this.applyOverrides();
-    }
+    if (changed.has('overrides')) this.applyOverrides();
     if (changed.has('semantic') || changed.has('label') || changed.has('orientation')) {
-      this.syncInternals();
-    }
-    if ((changed.has('label') || changed.has('orientation')) && this.label && this.orientation === 'vertical') {
-      if (import.meta.env.DEV) {
-        console.warn(
-          'ds-divider: `label` is ignored on a vertical divider — a vertical line has no room for centered text.',
-        );
+      this.syncSemantics();
+      if (import.meta.env.DEV && this.label && this.orientation === 'vertical') {
+        console.warn('ds-divider: `label` is ignored on a vertical divider: a vertical line has no room for centered text.');
       }
     }
   }
 
-  /** `label` has no effect on a vertical divider (no room for centered text). */
+  /** The label in effect: none on a vertical divider. */
   private get effectiveLabel(): string | undefined {
-    return this.orientation === 'vertical' ? undefined : this.label;
+    return this.orientation === 'vertical' ? undefined : this.label || undefined;
   }
 
-  protected override render(): TemplateResult {
+  protected override render(): TemplateResult | typeof nothing {
     const label = this.effectiveLabel;
-    if (!label) {
-      return html`<span class="line" part="line"></span>`;
-    }
+    if (label === undefined) return nothing;
     return html`
-      <span class="line" part="line"></span>
-      <ds-text part="label" class="label" element="span" size="sm" tone="muted">${label}</ds-text>
-      <span class="line" part="line"></span>
+      <span part="line" data-part="line"></span>
+      <ds-text part="label" data-part="label" element="span" size="sm" tone="muted">${label}</ds-text>
+      <span part="line" data-part="line"></span>
     `;
   }
 
-  /** role=separator + aria-orientation when semantic or labelled; aria-hidden otherwise. */
-  private syncInternals(): void {
-    const semantic = this.semantic || Boolean(this.effectiveLabel);
-    this.internals.role = semantic ? 'separator' : null;
-    this.internals.ariaOrientation = semantic ? this.orientation : null;
-    this.internals.ariaHidden = semantic ? null : 'true';
+  /**
+   * Decorative → aria-hidden; semantic or labelled → role=separator with
+   * aria-orientation (and the label as its name, since a separator's content
+   * is presentational). Plain host attributes so accessibility-tree readers observe them.
+   */
+  private syncSemantics(): void {
+    const label = this.effectiveLabel;
+    const semantic = this.semantic || label !== undefined;
+    this.toggleAttribute('data-labelled', label !== undefined);
+    if (semantic) {
+      this.removeAttribute('aria-hidden');
+      this.setAttribute('role', 'separator');
+      this.setAttribute('aria-orientation', this.orientation);
+    } else {
+      this.setAttribute('aria-hidden', 'true');
+      this.removeAttribute('role');
+      this.removeAttribute('aria-orientation');
+    }
+    if (label !== undefined) this.setAttribute('aria-label', label);
+    else this.removeAttribute('aria-label');
   }
 
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as DividerOverridableBinding[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
-      if (ref === undefined) {
-        this.style.removeProperty(hook);
-      } else {
-        this.style.setProperty(hook, cssVar(ref));
-      }
+      if (ref === undefined) this.style.removeProperty(hook);
+      else this.style.setProperty(hook, cssVar(ref));
     }
   }
 }

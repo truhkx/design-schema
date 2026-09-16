@@ -44,3 +44,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Container: schema doesn't specify whether `align: start` clears margin-inline entirely or just the inline-start side; chose margin-inline: 0 (both sides), matching Box/Card sibling-spacing convention.
 - Container: `full` width intentionally emits no --ds-container-max-width hook (falls back to `none`) rather than a literal value, per the 'a resolved path ending in a no-op renders nothing' rule — worth confirming this is the intended reading for `width` (not just background/border/max-width bindings named in the general rule).
+
+## 2026-09-16 04:18 — round 1
+
+- Container: the breakpoint px values depend on the theme (calm-precise content/page = 960px/1280px, warm-sleek = 1040px/1387px), but the CSS is a single theme-independent file; I used the calm-precise values, the package's theme, so another theme's responsive gutter switches at the wrong widths.
+- Container: the gutter.default description says 'narrow below content, default between, wide above page' but does not say which side a viewport exactly at the token width falls on; I used min-width media queries, so exactly 960px gets the base gutter and exactly 1280px gets the wide one.
+- Container: layout.gutter.default resolves to --layout-gutter (the .default drop rule), and the web note names it, but the prop description only mentions the narrow and wide gutters for `default`; I used narrow → --layout-gutter → wide.
+- Container: the anatomy names one part, `column`, but no binding names a `part`; I put data-part="column" on the root, since the column is the root.
+- Container: the web platform block says `element: div` while the `element` prop allows main/section; I render the tag the prop chooses, with div as the default.
+- Container: the example `given.children` values are prose descriptions ('A Stack of page regions') and not content; the stories pass them verbatim as string children, so ApplicationScreen shows no real Stack.
+- Container: the `main-element-is-the-page-landmark` scenario says 'there must be exactly one', but a component can't enforce that across the page and the spec asks for no dev warning; the test only checks that one main role renders, and no warning is added.
+- Container: the SwiftUI notes say gutters shrink below the *prose* width, while the web/RN notes key off the content and page widths; this is a cross-platform inconsistency I didn't act on for web.

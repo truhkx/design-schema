@@ -28,3 +28,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-09 22:24 — round 1
 
 - Container was already fully implemented and exported; the only change made was adding the `data-ds="Container"` testability hook in `connectedCallback`, which had been omitted (Box and Card already had it, per the convention that older/untouched components may lack it).
+
+## 2026-09-16 04:20 — round 1
+
+- Container: the responsive-gutter breakpoints are 'read from the built token JSON', but they differ by theme (calm-precise: content 960px / page 1280px; warm-sleek and warm-friendly: 1040px / 1387px) and the doc doesn't say which theme's values to use. I used calm-precise's 960/1280 to match packages/react/src/Container.css, so under the warm themes the default gutter switches at the wrong widths.
+- Container: the platform note says `element: main` sets an ElementInternals role, but the package convention says roles that tests must read go on the host as plain attributes, because dom-accessibility-api doesn't read ElementInternals. The main-element-is-the-page-landmark scenario is web-only, so Lit has no test for it. I followed the component note (ElementInternals.role = 'main'). The doc should say whether Lit should also set role="main" on the host.
+- Container: the `children` example values are strings ('A Stack of page regions'), but the prop is `content`. The stories render them as text inside ds-text rather than building a real Stack of regions, and the test puts them in as slotted text because `children` can't be set as a property on an HTMLElement.
+- Container: the scenarios for element div/main/section only check that the element renders; nothing checks that `section` adds no role and `div` adds nothing, so the rule that a section is a region only when named isn't tested.
+- Container: the doc's 'Overrides change values, never presence' rule plus 'full renders the literal none with no hook' means an override set at width=full is silently ignored. I implemented it that way (hook bypassed for full and gutter none), but the doc doesn't say whether a dev warning should fire.

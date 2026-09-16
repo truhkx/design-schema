@@ -1,9 +1,9 @@
 /**
  * Container — behavior scenarios from the component doc, one test each, in the doc's order.
- * Container has no interactive behavior (a11y.role: none), so every scenario only asserts render.
+ * Container has no interactive behavior (a11y.role: none); the derived scenarios only assert render.
  */
 import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Container, type ContainerProps } from './Container';
 import meta from './Container.stories';
 import type { ComponentProps } from 'react';
@@ -15,6 +15,11 @@ function setup(given: Partial<ContainerProps> = {}) {
 }
 
 describe('Container', () => {
+  it('main-element-is-the-page-landmark', () => {
+    setup({ element: 'main' });
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+  });
+
   /* derived: a11y.role */
   it('renders', () => {
     const { container } = setup();

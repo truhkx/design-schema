@@ -104,3 +104,16 @@ export const Inverse: Story = {
 
 // track — trackPress logs to the console in development; no onTrack handler needed to see it fire.
 export const Tracked: Story = { args: { track: 'signup', label: 'Sign up' } };
+
+// examples from the doc, each with exactly its `given`
+/** The single most important action in a view, labelled with the outcome. */
+export const PrimarySave: Story = { args: { label: 'Save changes', variant: 'primary' } };
+
+/** A destructive, hard-to-undo action, which is the only use of the danger variant. */
+export const DestructiveConfirm: Story = { args: { label: 'Delete file', variant: 'danger' } };
+
+/** A low-emphasis icon-only control in dense UI, whose label says what it does rather than what the icon depicts. */
+export const IconOnlyInAToolbar: Story = { args: { label: 'Close', iconOnly: true, variant: 'ghost', size: 'sm' } };
+
+/** The submit button of a form while the request is in flight — busy, and ignoring repeat activation. */
+export const PendingSubmit: Story = { args: { label: 'Create account', type: 'submit', loading: true } };

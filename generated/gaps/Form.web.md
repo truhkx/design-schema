@@ -14,3 +14,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Form: schema anatomy adds `actions` alongside `fields`/`errorSummary`/`container`, but only one `gap` style token governs spacing for all of them ("between fields and between fields and actions"). Kept `children` and `actions` as siblings of the same flex-column root and gave their wrapper divs `display: contents` so the existing single-token gap continues to apply uniformly between every field and before the actions row, matching the Lit implementation's slot-based (non-boxed) layout.
 - Form: root landmark role. Spec's `a11y.role: form` plus `aria-label`/`aria-labelledby` are already implied by the native `<form>` element with an accessible name, so no explicit `role="form"` attribute was added (redundant on a native form) — flagging in case an explicit role is wanted for older AT.
 - Form: updated packages/react/demo/SignIn.tsx and Preferences.tsx to pass their submit/cancel buttons through the new required `actions` prop instead of embedding them in `children`, since the prop is now mandatory and the old shape would fail to type-check.
+
+## 2026-09-16 04:13 — round 1
+
+- Form: `copy.invalidSummary` ("This form has errors.") has no web use in the spec — the web summary is announced through role=alert with `summaryHeading`, and without a summary focus goes to the first invalid field. Left it as a constant, never rendered.
+- Form: `copy.summaryHeadingOne` duplicates `summaryHeading.plural.one`; chose the plural form via Intl.PluralRules and kept summaryHeadingOne unused.
+- Form: no locale prop or source for `new Intl.PluralRules(locale)`; used the runtime default locale (undefined).
+- Form: the errorSummary part has border, text and background bindings but no padding, radius or border-width binding; used --space-md, --radius-md and --border-width-thin, not overridable.
+- Form: 'strong Text' for the summary heading doesn't say which Text prop: weight=semibold or tone=strong. The errorSummaryText binding is foreground.danger, so chose weight=semibold tone=danger.
+- Form: summary item links: the spec doesn't say which Link tone to use; chose tone=inherit so the links take the locked errorSummaryText color. Also unspecified: whether clicking one should navigate to the hash or only move focus; chose focus only (onClick returns false).
+- Form: spacing between the summary heading and its list isn't specified (no binding); used Stack gap=tight with element=ul.
+- Form: the conventions say Form discovers fields by `data-ds-field`, but the schema says `discovery: context`; kept context registration and used the DOM only to sort registered fields into document order by id.
+- Form: scenario 'label-names-the-form-landmark' only checks role and name; label vs labelledBy precedence and the submit/invalid flow have no scenarios, so they're only covered by stories.
+- Form: the example `given` values (children/actions) are prose descriptions, not args; turned each into concrete Input/Button content (e.g. the 'profile fields' were made up: full name, email, phone, city).
+- Form: `label` and `labelledBy` are both optional, so nothing stops a form with no accessible name; no dev warning is specified, so none was added.

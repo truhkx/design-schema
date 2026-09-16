@@ -1,8 +1,6 @@
 /**
  * Card — behavior scenarios from the component doc, one test each, in the doc's
- * order. Every scenario in the spec is a `renders: true` check (no click, focus or
- * set scenarios are declared for this component), so each test only asserts the
- * tree renders. See generated/prompts/Card.rn.md.
+ * order. `given` overrides the Default story's args.
  */
 import * as React from 'react';
 import { render } from '@testing-library/react-native';
@@ -23,39 +21,42 @@ function setup(given: Partial<CardProps> = {}) {
 }
 
 describe('Card', () => {
-  /* derived: a11y.role */
+  it('heading-is-rendered-as-a-heading', () => {
+    const c = setup({ heading: 'Team plan' });
+    expect(c.getByText('Team plan')).toBeTruthy();
+  });
+
+  /* derived */
   it('renders', () => {
     const c = setup();
     expect(c.toJSON()).not.toBeNull();
   });
 
-  /* derived: props.headingLevel */
-  it('renders-headinglevel-2', () => {
+  it('renders-heading-level-2', () => {
     const c = setup({ headingLevel: '2' });
     expect(c.toJSON()).not.toBeNull();
   });
 
-  it('renders-headinglevel-3', () => {
+  it('renders-heading-level-3', () => {
     const c = setup({ headingLevel: '3' });
     expect(c.toJSON()).not.toBeNull();
   });
 
-  it('renders-headinglevel-4', () => {
+  it('renders-heading-level-4', () => {
     const c = setup({ headingLevel: '4' });
     expect(c.toJSON()).not.toBeNull();
   });
 
-  it('renders-headinglevel-5', () => {
+  it('renders-heading-level-5', () => {
     const c = setup({ headingLevel: '5' });
     expect(c.toJSON()).not.toBeNull();
   });
 
-  it('renders-headinglevel-6', () => {
+  it('renders-heading-level-6', () => {
     const c = setup({ headingLevel: '6' });
     expect(c.toJSON()).not.toBeNull();
   });
 
-  /* derived: props.inset */
   it('renders-inset-sm', () => {
     const c = setup({ inset: 'sm' });
     expect(c.toJSON()).not.toBeNull();
@@ -71,7 +72,6 @@ describe('Card', () => {
     expect(c.toJSON()).not.toBeNull();
   });
 
-  /* derived: props.surface */
   it('renders-surface-default', () => {
     const c = setup({ surface: 'default' });
     expect(c.toJSON()).not.toBeNull();

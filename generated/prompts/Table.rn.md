@@ -364,11 +364,9 @@ component:
     cellPaddingInline:
       token: layout.inset.md
       part: cell
-      locked: false
-    cellPaddingInlineCompact:
-      token: layout.inset.sm
-      part: cell
-      description: Used instead of cellPaddingInline when density is compact.
+      by: density
+      values:
+        compact: layout.inset.sm
       locked: false
     cellPaddingBlock:
       token: space.sm
@@ -849,8 +847,7 @@ component:
 - `rowSelectedBorderWidth`: token `border.width.focus`; part `row`; locked
 - `cellColor`: token `color.foreground`; part `cell`; locked
 - `cellMutedColor`: token `color.foreground.muted`; part `cell`; locked
-- `cellPaddingInline`: token `layout.inset.md`; part `cell`
-- `cellPaddingInlineCompact`: token `layout.inset.sm`; part `cell`
+- `cellPaddingInline`: token `layout.inset.md`; part `cell`; by `density`: compact → `layout.inset.sm`, any other value → `layout.inset.md`
 - `cellPaddingBlock`: token `space.sm`; part `cell`
 - `cellGap`: token `layout.gap.tight`; part `cell`
 - `captionSize`: token `font.size.md`; part `caption`
@@ -895,7 +892,7 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 
 The `platforms.rn.props` list names the native props the schema cares about; `overrides` and `testID` apply to every component regardless of whether that list mentions them.
 
-Overridable: `headerWeight`, `headerSize`, `headerBorder`, `headerBorderWidth`, `headerShadow`, `rowBorder`, `rowBorderWidth`, `rowHover`, `cellPaddingInline`, `cellPaddingInlineCompact`, `cellPaddingBlock`, `cellGap`, `captionSize`, `captionWeight`, `captionGap`, `stackedRowInset`, `stackedRowGap`, `stackedLabelSize`, `stackedLabelWeight`, `stackedRowRadius`, `stickyColumnShadow`, `scrollFade`, `fontFamily`, `fontSize`, `lineHeight`, `numericFont`, `transition`
+Overridable: `headerWeight`, `headerSize`, `headerBorder`, `headerBorderWidth`, `headerShadow`, `rowBorder`, `rowBorderWidth`, `rowHover`, `cellPaddingInline`, `cellPaddingBlock`, `cellGap`, `captionSize`, `captionWeight`, `captionGap`, `stackedRowInset`, `stackedRowGap`, `stackedLabelSize`, `stackedLabelWeight`, `stackedRowRadius`, `stickyColumnShadow`, `scrollFade`, `fontFamily`, `fontSize`, `lineHeight`, `numericFont`, `transition`
 Locked (accessibility-bearing, never overridable): `surface`, `headerSurface`, `headerColor`, `rowStripe`, `rowSelected`, `rowSelectedBorder`, `rowSelectedBorderWidth`, `cellColor`, `cellMutedColor`, `stackedLabelColor`, `minTarget`, `focusRing`, `focusRingWidth`
 
 ## Behavior scenarios (19)

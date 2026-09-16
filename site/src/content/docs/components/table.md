@@ -144,8 +144,7 @@ component:
     rowSelectedBorderWidth: { token: border.width.focus, part: row }
     cellColor: { token: color.foreground, part: cell }
     cellMutedColor: { token: color.foreground.muted, part: cell, description: 'Secondary values (a date beside a title) rendered with Text tone muted.' }
-    cellPaddingInline: { token: layout.inset.md, part: cell }
-    cellPaddingInlineCompact: { token: layout.inset.sm, part: cell, description: 'Used instead of cellPaddingInline when density is compact.' }
+    cellPaddingInline: { token: layout.inset.md, part: cell, by: density, values: { compact: layout.inset.sm } }
     cellPaddingBlock: { token: space.sm, part: cell }
     cellGap: { token: layout.gap.tight, part: cell, description: 'Between a sort button''s label and its arrow, and between actions in the actions cell.' }
     captionSize: { token: font.size.md, part: caption }

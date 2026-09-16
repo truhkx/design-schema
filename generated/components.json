@@ -27340,12 +27340,10 @@
         "cellPaddingInline": {
           "token": "layout.inset.md",
           "part": "cell",
-          "locked": false
-        },
-        "cellPaddingInlineCompact": {
-          "token": "layout.inset.sm",
-          "part": "cell",
-          "description": "Used instead of cellPaddingInline when density is compact.",
+          "by": "density",
+          "values": {
+            "compact": "layout.inset.sm"
+          },
           "locked": false
         },
         "cellPaddingBlock": {
@@ -30080,12 +30078,11 @@
         },
         "itemGap": {
           "token": "layout.gap.normal",
+          "by": "density",
+          "values": {
+            "compact": "layout.gap.tight"
+          },
           "description": "Between adjacent controls, inside a group and between ungrouped top-level controls alike.",
-          "locked": false
-        },
-        "itemGapCompact": {
-          "token": "layout.gap.tight",
-          "description": "Used instead of itemGap when density is compact.",
           "locked": false
         },
         "groupGap": {

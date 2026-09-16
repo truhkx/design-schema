@@ -1349,7 +1349,7 @@ Every style binding per component, in `generated/components.json` order. Binding
 | `cellColor` | `color.foreground` | <span style="display: inline-block; inline-size: 1.1em; block-size: 1.1em; vertical-align: -0.2em; border-radius: 3px; border: 1px solid #88888880; background: #2a2b2f"></span> `#2a2b2f` | <span style="display: inline-block; inline-size: 1.1em; block-size: 1.1em; vertical-align: -0.2em; border-radius: 3px; border: 1px solid #88888880; background: #ecedee"></span> `#ecedee` | yes | part `cell`. |
 | `cellMutedColor` | `color.foreground.muted` | <span style="display: inline-block; inline-size: 1.1em; block-size: 1.1em; vertical-align: -0.2em; border-radius: 3px; border: 1px solid #88888880; background: #56585c"></span> `#56585c` | <span style="display: inline-block; inline-size: 1.1em; block-size: 1.1em; vertical-align: -0.2em; border-radius: 3px; border: 1px solid #88888880; background: #bcbec1"></span> `#bcbec1` | yes | part `cell`: Secondary values (a date beside a title) rendered with Text tone muted. |
 | `cellPaddingInline` | `layout.inset.md` | 12px | 12px | no | part `cell`. |
-| `cellPaddingInlineCompact` | `layout.inset.sm` | 8px | 8px | no | part `cell`: Used instead of cellPaddingInline when density is compact. |
+| `cellPaddingInline` (density=compact) | `layout.inset.sm` | 8px | 8px | no | part `cell`. |
 | `cellPaddingBlock` | `space.sm` | 8px | 8px | no | part `cell`. |
 | `cellGap` | `layout.gap.tight` | 4px | 4px | no | part `cell`: Between a sort button's label and its arrow, and between actions in the actions cell. |
 | `captionSize` | `font.size.md` | 16px | 16px | no | part `caption`. |
@@ -1470,7 +1470,7 @@ Every style binding per component, in `generated/components.json` order. Binding
 | `paddingInline` | `space.2` | 8px | 8px | no |  |
 | `paddingBlock` | `space.1` | 4px | 4px | no |  |
 | `itemGap` | `layout.gap.normal` | 8px | 8px | no | Between adjacent controls, inside a group and between ungrouped top-level controls alike. |
-| `itemGapCompact` | `layout.gap.tight` | 4px | 4px | no | Used instead of itemGap when density is compact. |
+| `itemGap` (density=compact) | `layout.gap.tight` | 4px | 4px | no | Between adjacent controls, inside a group and between ungrouped top-level controls alike. |
 | `groupGap` | `layout.gap.normal` | 8px | 8px | no | part `group`: Either side of a separator, replacing itemGap there (not added to it). |
 | `separatorLength` | `space.5` | 20px | 20px | no | part `separator`: The Divider between groups is shorter than the toolbar height. |
 | `fadeWidth` | `space.6` | 24px | 24px | no | Edge fade for `overflow: scroll`, a gradient from the toolbar background to transparent. |

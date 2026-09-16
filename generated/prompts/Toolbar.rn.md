@@ -171,12 +171,11 @@ component:
       locked: false
     itemGap:
       token: layout.gap.normal
+      by: density
+      values:
+        compact: layout.gap.tight
       description: Between adjacent controls, inside a group and between ungrouped
         top-level controls alike.
-      locked: false
-    itemGapCompact:
-      token: layout.gap.tight
-      description: Used instead of itemGap when density is compact.
       locked: false
     groupGap:
       token: layout.gap.normal
@@ -336,6 +335,7 @@ component:
 
 ## Style bindings
 
+- `itemGap`: token `layout.gap.normal`; by `density`: compact → `layout.gap.tight`, any other value → `layout.gap.normal`
 - `groupGap`: token `layout.gap.normal`; part `group`
 - `separatorLength`: token `space.5`; part `separator`
 
@@ -358,7 +358,7 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 
 The `platforms.rn.props` list names the native props the schema cares about; `overrides` and `testID` apply to every component regardless of whether that list mentions them.
 
-Overridable: `border`, `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `itemGap`, `itemGapCompact`, `groupGap`, `separatorLength`, `fadeWidth`
+Overridable: `border`, `borderWidth`, `radius`, `paddingInline`, `paddingBlock`, `itemGap`, `groupGap`, `separatorLength`, `fadeWidth`
 Locked (accessibility-bearing, never overridable): `background`, `focusRing`, `focusRingWidth`
 
 ## Behavior scenarios (11)

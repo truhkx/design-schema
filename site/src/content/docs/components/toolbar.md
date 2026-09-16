@@ -57,8 +57,7 @@ component:
     radius: { token: radius.md }
     paddingInline: { token: space.2 }
     paddingBlock: { token: space.1 }
-    itemGap: { token: layout.gap.normal, description: 'Between adjacent controls, inside a group and between ungrouped top-level controls alike.' }
-    itemGapCompact: { token: layout.gap.tight, description: 'Used instead of itemGap when density is compact.' }
+    itemGap: { token: layout.gap.normal, by: density, values: { compact: layout.gap.tight }, description: 'Between adjacent controls, inside a group and between ungrouped top-level controls alike.' }
     groupGap: { token: layout.gap.normal, part: group, description: 'Either side of a separator, replacing itemGap there (not added to it).' }
     separatorLength: { token: space.5, part: separator, description: 'The Divider between groups is shorter than the toolbar height.' }
     fadeWidth: { token: space.6, description: 'Edge fade for `overflow: scroll`, a gradient from the toolbar background to transparent.' }

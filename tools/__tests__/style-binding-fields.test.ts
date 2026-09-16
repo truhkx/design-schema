@@ -295,7 +295,7 @@ describe('generated/components.json after the migration', () => {
   test('the fields the migration added, counted', () => {
     const count = (field: string): number => bindings.filter(([, , s]) => s[field] !== undefined).length;
     expect({ part: count('part'), state: count('state'), by: count('by'), values: count('values'), computed: count('computed') })
-      .toEqual({ part: 361, state: 16, by: 8, values: 8, computed: 3 });
+      .toEqual({ part: 360, state: 16, by: 10, values: 10, computed: 3 });
     expect(bindings.filter(([, , s]) => s.state !== undefined).map(([, name]) => name)).toEqual([
       'ActionSheet.itemHover', 'Button.backgroundHover', 'Card.hoverBackground', 'Checkbox.pressedOverlay', 'DataGrid.rowHover',
       'DatePicker.dayHover', 'Disclosure.triggerBackgroundHover', 'Link.colorHover', 'Listbox.optionActiveBackground', 'Menu.itemHover',
@@ -304,6 +304,7 @@ describe('generated/components.json after the migration', () => {
     expect(bindings.filter(([, , s]) => s.by !== undefined).map(([, name]) => name)).toEqual([
       'DatePicker.paddingInline', 'DatePicker.paddingBlock', 'Input.paddingInline', 'Input.paddingBlock',
       'NumberInput.paddingInline', 'NumberInput.paddingBlock', 'Search.paddingBlock', 'Select.triggerPaddingBlock',
+      'Table.cellPaddingInline', 'Toolbar.itemGap',
     ]);
     // Every part names an anatomy part of its own doc (componentDef checks it; this pins that they were authored).
     for (const [c, name, spec] of bindings) {
@@ -313,7 +314,7 @@ describe('generated/components.json after the migration', () => {
 
   /** Job 640 ¶6's predicate: a styles key K whose suffix is a value of an enum or boolean prop P and whose remaining
    *  prefix R is another styles key of the same doc — the parallel-key shape `by`/`values` replaces. The schema error
-   *  was not landed (see the job report: the predicate catches four keys the migration was not scoped to fold), so
+   *  was not landed (it would still catch the two SidePanel keys below, which cannot fold), so
    *  this test is what holds the line: any new parallel key fails here. */
   test('the parallel keys left in the corpus are the ones this migration did not fold', () => {
     const parallel: string[] = generated.flatMap((c): string[] => {
@@ -337,10 +338,10 @@ describe('generated/components.json after the migration', () => {
       'DataGrid.rowHeightComfortable', 'DatePicker.minTargetSm', 'Input.minTargetSm', 'NumberInput.minTargetSm',
       'ProgressBar.fillSuccess', 'ProgressBar.fillDanger', 'Select.minTargetSm',
     ]);
-    // Reported, not folded: SidePanel.widthNarrow carries the ×3 `computed` a per-value token cannot hold.
-    expect(parallel.filter((name) => !locked(name))).toEqual([
-      'SidePanel.widthNarrow', 'SidePanel.widthWide', 'Table.cellPaddingInlineCompact', 'Toolbar.itemGapCompact',
-    ]);
+    // Not folded, and not foldable: SidePanel.widthNarrow carries the ×3 `computed` a per-value token cannot
+    // hold, and folding widthWide alone would leave `narrow` falling back to the base token — a wrong value,
+    // not merely an unfolded one. Table.cellPaddingInline and Toolbar.itemGap were folded on 2026-09-16.
+    expect(parallel.filter((name) => !locked(name))).toEqual(['SidePanel.widthNarrow', 'SidePanel.widthWide']);
   });
 });
 

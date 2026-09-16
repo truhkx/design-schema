@@ -746,18 +746,18 @@
     }
   },
   "Pattern.SettingsPage.web": {
-    "hash": "316a0649244a2fc9",
-    "lastAttemptHash": "316a0649244a2fc9",
-    "generatedAt": "2026-09-11T00:26:01+00:00",
-    "model": "sonnet",
+    "hash": "d7c3cfebba131676",
+    "lastAttemptHash": "d7c3cfebba131676",
+    "generatedAt": "2026-09-16T17:10:49+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2291,
+    "costUsd": 1.0141,
     "files": [
       "packages/react/demo/SettingsPage.stories.tsx",
       "packages/react/demo/SettingsPage.tsx"
     ],
-    "gaps": 8,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,

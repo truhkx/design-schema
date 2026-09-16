@@ -1,5 +1,5 @@
 import { LitElement, css, html, type CSSResult, type TemplateResult } from 'lit';
-import { customElement, query, state } from 'lit/decorators.js';
+import { customElement, state } from 'lit/decorators.js';
 
 import '../src/Landmark.js';
 import '../src/Container.js';
@@ -21,11 +21,11 @@ import '../src/AlertDialog.js';
 import '../src/Toast.js';
 
 import type { TabsTab } from '../src/Tabs.js';
-import type { DsForm, FormSubmitDetail } from '../src/Form.js';
+import type { FormSubmitDetail } from '../src/Form.js';
+import type { InputChangeDetail } from '../src/Input.js';
 import type { SwitchChangeDetail } from '../src/Switch.js';
-import type { RadioGroupOption } from '../src/RadioGroup.js';
-import type { SegmentedControlOption, SegmentedControlChangeDetail } from '../src/SegmentedControl.js';
-import type { AlertDialogCancelDetail } from '../src/AlertDialog.js';
+import type { RadioGroupChangeDetail, RadioGroupOption } from '../src/RadioGroup.js';
+import type { SegmentedControlChangeDetail, SegmentedControlOption } from '../src/SegmentedControl.js';
 import { toast } from '../src/Toast.js';
 
 const SETTINGS_TABS: TabsTab[] = [
@@ -52,14 +52,26 @@ const DENSITY_OPTIONS: RadioGroupOption[] = [
   { value: 'compact', label: 'Compact' },
 ];
 
+/** The profile form's values; Cancel restores the last saved copy. */
+export interface SettingsProfile {
+  name: string;
+  email: string;
+  displayName: string;
+  website: string;
+}
+
+const EMPTY_PROFILE: SettingsProfile = { name: '', email: '', displayName: '', website: '' };
+
 /**
- * Settings pattern page composed from the Calm & precise Lit elements: a main
- * Landmark → Container → Tabs (Profile, Notifications, Appearance, Account),
- * each panel built only from Form, Fieldset, Input, Checkbox, Switch,
- * RadioGroup, SegmentedControl, Card, Alert and Button.
+ * `<ds-pattern-settings-page>` — the Settings pattern: a main Landmark →
+ * Container → Tabs (Profile, Notifications, Appearance, Account), composed only
+ * from system elements.
  *
- * Expects the token custom properties to be loaded once at the app root
- * (`import '@design-schema/tokens/calm-precise/css'`).
+ * The Appearance controls are presentational: they are real, controlled inputs
+ * that drive nothing. The mode is set by an ancestor (`data-mode` on `<html>`)
+ * and the theme has no density, so the page never reads or writes either.
+ *
+ * Expects the token custom properties to be loaded once at the app root.
  */
 @customElement('ds-pattern-settings-page')
 export class DsPatternSettingsPage extends LitElement {
@@ -69,41 +81,71 @@ export class DsPatternSettingsPage extends LitElement {
     }
   `;
 
+  /** Last saved profile; there is no seed data, so it starts empty. */
+  @state() private accessor savedProfile: SettingsProfile = EMPTY_PROFILE;
+
+  /** Unsaved edits to the profile form. */
+  @state() private accessor draftProfile: SettingsProfile = EMPTY_PROFILE;
+
   @state() private accessor pushEnabled = false;
+
+  @state() private accessor frequency: string | undefined;
+
+  @state() private accessor colorMode = 'system';
+
+  @state() private accessor density = 'comfortable';
 
   @state() private accessor deleteDialogOpen = false;
 
-  @query('ds-form') private accessor profileFormEl!: DsForm | null;
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'Pattern.SettingsPage');
+  }
 
   protected override render(): TemplateResult {
+    const profile = this.draftProfile;
     return html`
       <ds-landmark role="main">
         <ds-container width="content">
-          <ds-stack gap="section" align="stretch">
+          <ds-stack gap="section">
             <ds-heading level="1">Settings</ds-heading>
 
             <ds-tabs label="Settings sections" .tabs=${SETTINGS_TABS} keep-mounted>
               <ds-tab-panel id="profile">
-                <ds-form
-                  name="profile"
-                  label="Profile"
-                  .errorSummary=${false}
-                  @submit=${this.handleProfileSubmit}
-                >
+                <ds-form no-error-summary @submit=${this.handleProfileSubmit}>
                   <ds-stack gap="loose">
                     <ds-fieldset legend="Your details">
-                      <ds-input label="Name" name="name" required></ds-input>
+                      <ds-input
+                        label="Name"
+                        name="name"
+                        required
+                        .value=${profile.name}
+                        @change=${(event: CustomEvent<InputChangeDetail>) => this.editProfile('name', event)}
+                      ></ds-input>
                       <ds-input
                         label="Email"
                         name="email"
                         type="email"
                         required
                         description="We send receipts here."
+                        .value=${profile.email}
+                        @change=${(event: CustomEvent<InputChangeDetail>) => this.editProfile('email', event)}
                       ></ds-input>
                     </ds-fieldset>
                     <ds-fieldset legend="Public profile">
-                      <ds-input label="Display name" name="displayName"></ds-input>
-                      <ds-input label="Website" name="website" type="url"></ds-input>
+                      <ds-input
+                        label="Display name"
+                        name="displayName"
+                        .value=${profile.displayName}
+                        @change=${(event: CustomEvent<InputChangeDetail>) => this.editProfile('displayName', event)}
+                      ></ds-input>
+                      <ds-input
+                        label="Website"
+                        name="website"
+                        type="url"
+                        .value=${profile.website}
+                        @change=${(event: CustomEvent<InputChangeDetail>) => this.editProfile('website', event)}
+                      ></ds-input>
                     </ds-fieldset>
                   </ds-stack>
                   <ds-stack slot="actions" direction="horizontal" gap="tight" justify="end">
@@ -114,68 +156,56 @@ export class DsPatternSettingsPage extends LitElement {
               </ds-tab-panel>
 
               <ds-tab-panel id="notifications">
-                <ds-stack gap="loose">
-                  <ds-fieldset legend="Email me about">
-                    <ds-checkbox label="Product updates" description="About once a month."></ds-checkbox>
-                    <ds-checkbox label="Security alerts" default-checked></ds-checkbox>
-                    <ds-checkbox label="Tips and tutorials"></ds-checkbox>
-                  </ds-fieldset>
-                  <ds-fieldset legend="Push notifications">
-                    <ds-switch
-                      label="Enable push notifications"
-                      .checked=${this.pushEnabled}
-                      @change=${this.handlePushChange}
-                    ></ds-switch>
-                    <ds-radio-group
-                      label="Frequency"
-                      .options=${FREQUENCY_OPTIONS}
-                      default-value="immediately"
-                      ?disabled=${!this.pushEnabled}
-                    ></ds-radio-group>
-                  </ds-fieldset>
-                </ds-stack>
+                <ds-fieldset legend="Email me about">
+                  <ds-checkbox label="Product updates" description="About once a month."></ds-checkbox>
+                  <ds-checkbox label="Security alerts" default-checked></ds-checkbox>
+                  <ds-checkbox label="Tips and tutorials"></ds-checkbox>
+                </ds-fieldset>
+                <ds-fieldset legend="Push notifications">
+                  <ds-switch
+                    label="Enable push notifications"
+                    .checked=${this.pushEnabled}
+                    @change=${this.handlePushChange}
+                  ></ds-switch>
+                  <ds-radio-group
+                    label="Frequency"
+                    .options=${FREQUENCY_OPTIONS}
+                    .value=${this.frequency}
+                    ?disabled=${!this.pushEnabled}
+                    @change=${this.handleFrequencyChange}
+                  ></ds-radio-group>
+                </ds-fieldset>
               </ds-tab-panel>
 
               <ds-tab-panel id="appearance">
-                <ds-stack gap="loose">
-                  <ds-fieldset legend="Theme">
-                    <ds-segmented-control
-                      label="Color mode"
-                      .options=${COLOR_MODE_OPTIONS}
-                      default-value="system"
-                      @change=${this.handleColorModeChange}
-                    ></ds-segmented-control>
-                  </ds-fieldset>
-                  <ds-fieldset legend="Density">
-                    <ds-radio-group
-                      label="Layout density"
-                      .options=${DENSITY_OPTIONS}
-                      default-value="comfortable"
-                      description="Affects tables and lists."
-                    ></ds-radio-group>
-                  </ds-fieldset>
-                </ds-stack>
+                <ds-fieldset legend="Theme">
+                  <ds-segmented-control
+                    label="Color mode"
+                    .options=${COLOR_MODE_OPTIONS}
+                    .value=${this.colorMode}
+                    @change=${this.handleColorModeChange}
+                  ></ds-segmented-control>
+                </ds-fieldset>
+                <ds-fieldset legend="Density">
+                  <ds-radio-group
+                    label="Layout density"
+                    description="Affects tables and lists."
+                    .options=${DENSITY_OPTIONS}
+                    .value=${this.density}
+                    @change=${this.handleDensityChange}
+                  ></ds-radio-group>
+                </ds-fieldset>
               </ds-tab-panel>
 
               <ds-tab-panel id="account">
-                <ds-stack gap="loose">
-                  <ds-card surface="subtle" inset="lg" heading="Export your data" heading-level="2">
-                    <ds-stack gap="normal">
-                      <ds-text>Download everything we store about you as a ZIP.</ds-text>
-                      <ds-button variant="secondary" label="Request export"></ds-button>
-                    </ds-stack>
-                  </ds-card>
-                  <ds-card surface="subtle" inset="lg" heading="Delete account" heading-level="2">
-                    <ds-stack gap="normal">
-                      <ds-alert tone="warning">This cannot be undone.</ds-alert>
-                      <ds-button
-                        variant="danger"
-                        label="Delete account…"
-                        @press=${this.handleDeleteRequest}
-                      ></ds-button>
-                    </ds-stack>
-                  </ds-card>
-                </ds-stack>
+                <ds-card surface="subtle" inset="lg" heading="Export your data" heading-level="2">
+                  <ds-text>Download everything we store about you as a ZIP.</ds-text>
+                  <ds-button variant="secondary" label="Request export"></ds-button>
+                </ds-card>
+                <ds-card surface="subtle" inset="lg" heading="Delete account" heading-level="2">
+                  <ds-alert tone="warning">This cannot be undone.</ds-alert>
+                  <ds-button variant="danger" label="Delete account…" @press=${this.handleDeleteRequest}></ds-button>
+                </ds-card>
               </ds-tab-panel>
             </ds-tabs>
           </ds-stack>
@@ -183,52 +213,57 @@ export class DsPatternSettingsPage extends LitElement {
 
         <ds-alert-dialog
           ?open=${this.deleteDialogOpen}
+          tone="danger"
           heading="Delete your account?"
           description="This permanently deletes your account and everything in it. This cannot be undone."
-          tone="danger"
           confirm-label="Delete account"
-          @confirm=${this.handleDeleteConfirm}
-          @cancel=${this.handleDeleteCancel}
+          @confirm=${this.closeDeleteDialog}
+          @cancel=${this.closeDeleteDialog}
         ></ds-alert-dialog>
       </ds-landmark>
     `;
   }
 
+  private editProfile(field: keyof SettingsProfile, event: CustomEvent<InputChangeDetail>): void {
+    this.draftProfile = { ...this.draftProfile, [field]: event.detail.value };
+  }
+
+  /** Form has validated before `submit` fires; the save is faked, and the toast does not move focus. */
   private readonly handleProfileSubmit = (_event: CustomEvent<FormSubmitDetail>): void => {
-    void new Promise<void>((resolve) => setTimeout(resolve, 300)).then(() => {
+    const saving = this.draftProfile;
+    void Promise.resolve().then(() => {
+      this.savedProfile = saving;
       void toast({ message: 'Changes saved' });
     });
   };
 
-  /** No native form.reset() reaches these slotted fields (see the gap list), so each is cleared by hand. */
   private readonly handleProfileCancel = (): void => {
-    const inputs = this.profileFormEl?.querySelectorAll('ds-input') ?? [];
-    inputs.forEach((input) => {
-      input.value = undefined;
-    });
+    this.draftProfile = this.savedProfile;
   };
 
   private readonly handlePushChange = (event: CustomEvent<SwitchChangeDetail>): void => {
     this.pushEnabled = event.detail.checked;
   };
 
+  private readonly handleFrequencyChange = (event: CustomEvent<RadioGroupChangeDetail>): void => {
+    this.frequency = event.detail.value;
+  };
+
+  /** Presentational: records the choice and drives nothing ("System" means no override). */
   private readonly handleColorModeChange = (event: CustomEvent<SegmentedControlChangeDetail>): void => {
-    if (event.detail.value === 'dark') {
-      document.documentElement.dataset.mode = 'dark';
-    } else {
-      delete document.documentElement.dataset.mode;
-    }
+    this.colorMode = event.detail.value;
+  };
+
+  /** Presentational: the theme has no density, so this drives nothing. */
+  private readonly handleDensityChange = (event: CustomEvent<RadioGroupChangeDetail>): void => {
+    this.density = event.detail.value;
   };
 
   private readonly handleDeleteRequest = (): void => {
     this.deleteDialogOpen = true;
   };
 
-  private readonly handleDeleteConfirm = (): void => {
-    this.deleteDialogOpen = false;
-  };
-
-  private readonly handleDeleteCancel = (_event: CustomEvent<AlertDialogCancelDetail>): void => {
+  private readonly closeDeleteDialog = (): void => {
     this.deleteDialogOpen = false;
   };
 }

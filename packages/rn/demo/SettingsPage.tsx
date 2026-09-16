@@ -19,67 +19,83 @@ import {
   TabPanel,
   Tabs,
   Text,
-  ToastProvider,
-  useToast,
+  toast,
 } from '../src';
-import type { FormValues } from '../src';
+import type { FormValues, RadioGroupOption, SegmentedControlOption, TabsTab } from '../src';
 
-interface SavedProfile {
+const SETTINGS_TABS: TabsTab[] = [
+  { id: 'profile', label: 'Profile' },
+  { id: 'notifications', label: 'Notifications' },
+  { id: 'appearance', label: 'Appearance' },
+  { id: 'account', label: 'Account' },
+];
+
+const FREQUENCY_OPTIONS: RadioGroupOption[] = [
+  { value: 'immediately', label: 'Immediately' },
+  { value: 'daily', label: 'Daily digest' },
+  { value: 'weekly', label: 'Weekly digest' },
+];
+
+const COLOR_MODE_OPTIONS: SegmentedControlOption[] = [
+  { value: 'system', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
+
+const DENSITY_OPTIONS: RadioGroupOption[] = [
+  { value: 'comfortable', label: 'Comfortable' },
+  { value: 'compact', label: 'Compact' },
+];
+
+const COPY = {
+  saved: 'Changes saved',
+  themeNote: 'A preview only: the app sets the color mode, and System means no override.',
+  densityNote: 'A preview only: the theme has no density setting yet.',
+} as const;
+
+interface Profile {
   name: string;
   email: string;
   displayName: string;
   website: string;
 }
 
-const EMPTY_PROFILE: SavedProfile = { name: '', email: '', displayName: '', website: '' };
+const EMPTY_PROFILE: Profile = { name: '', email: '', displayName: '', website: '' };
 
-/**
- * Settings pattern page composed entirely from Design Schema React Native components.
- *
- * A `ToastProvider` wraps the screen so the profile form can confirm a save; the
- * region it renders is an overlay outside the normal flow (see the gap list), not a
- * sibling inside the page's own Stack. Everything else is one scrollable `main`
- * Landmark holding a Container, a page Heading, and a four-tab settings surface.
- */
-export function SettingsPage(): React.JSX.Element {
-  return (
-    <ToastProvider>
-      <SettingsPageBody />
-    </ToastProvider>
-  );
+/** Stands in for the network call: the save always succeeds. */
+function saveProfile(profile: Profile): Promise<Profile> {
+  return Promise.resolve(profile);
 }
 
-function SettingsPageBody(): React.JSX.Element {
-  const { toast } = useToast();
-
-  const [savedProfile, setSavedProfile] = React.useState<SavedProfile>(EMPTY_PROFILE);
-  const [formResetKey, setFormResetKey] = React.useState(0);
-
+/**
+ * Settings pattern page: a scrolling `main` Landmark → Container → Tabs (Profile,
+ * Notifications, Appearance, Account), composed only from the package's components.
+ * The theme and mode come from an ancestor, and so does the `ToastProvider` that owns
+ * the toast region; the Appearance controls are controlled inputs that drive nothing.
+ */
+export function SettingsPage(): React.JSX.Element {
+  const [savedProfile, setSavedProfile] = React.useState<Profile>(EMPTY_PROFILE);
+  const [profile, setProfile] = React.useState<Profile>(EMPTY_PROFILE);
   const [pushEnabled, setPushEnabled] = React.useState(false);
-
-  // Presentational only — see the gap list: the page has no route to the theme's
-  // mode or a density setting without `useTheme()`, which these rules forbid here.
   const [colorMode, setColorMode] = React.useState('system');
   const [density, setDensity] = React.useState('comfortable');
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
-  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const setField =
+    (field: keyof Profile) =>
+    (value: string): void => {
+      setProfile((prev) => ({ ...prev, [field]: value }));
+    };
 
-  const handleProfileSubmit = (values: FormValues): void => {
-    // Fakes the save; a real screen would await its own request here.
-    Promise.resolve().then(() => {
-      setSavedProfile({
-        name: (values.name as string | undefined) ?? '',
-        email: (values.email as string | undefined) ?? '',
-        displayName: (values.displayName as string | undefined) ?? '',
-        website: (values.website as string | undefined) ?? '',
-      });
-      toast({ message: 'Changes saved' });
+  const handleSubmit = (_values: FormValues): void => {
+    void saveProfile(profile).then((saved) => {
+      setSavedProfile(saved);
+      void toast({ message: COPY.saved });
     });
   };
 
-  const handleProfileCancel = (): void => {
-    // Remounts the Form (and its uncontrolled Inputs) back to the last saved values.
-    setFormResetKey((key) => key + 1);
+  const handleCancel = (): void => {
+    setProfile(savedProfile);
   };
 
   return (
@@ -88,45 +104,47 @@ function SettingsPageBody(): React.JSX.Element {
         <Container width="content">
           <Stack gap="section">
             <Heading level={1}>Settings</Heading>
-            <Tabs
-              label="Settings sections"
-              keepMounted
-              tabs={[
-                { id: 'profile', label: 'Profile' },
-                { id: 'notifications', label: 'Notifications' },
-                { id: 'appearance', label: 'Appearance' },
-                { id: 'account', label: 'Account' },
-              ]}
-            >
+
+            <Tabs label="Settings sections" tabs={SETTINGS_TABS} keepMounted>
               <TabPanel id="profile">
                 <Form
-                  key={formResetKey}
                   name="profile"
-                  label="Profile"
                   errorSummary={false}
-                  onSubmit={handleProfileSubmit}
+                  onSubmit={handleSubmit}
                   actions={
                     <Stack direction="horizontal" gap="tight" justify="end">
-                      <Button label="Cancel" variant="secondary" onPress={handleProfileCancel} />
+                      <Button label="Cancel" variant="secondary" onPress={handleCancel} />
                       <Button label="Save changes" variant="primary" type="submit" />
                     </Stack>
                   }
                 >
                   <Stack gap="loose">
                     <Fieldset legend="Your details">
-                      <Input label="Name" name="name" defaultValue={savedProfile.name} required />
+                      <Input label="Name" name="name" required value={profile.name} onChange={setField('name')} />
                       <Input
                         label="Email"
                         name="email"
                         type="email"
-                        defaultValue={savedProfile.email}
                         required
                         description="We send receipts here."
+                        value={profile.email}
+                        onChange={setField('email')}
                       />
                     </Fieldset>
                     <Fieldset legend="Public profile">
-                      <Input label="Display name" name="displayName" defaultValue={savedProfile.displayName} />
-                      <Input label="Website" name="website" type="url" defaultValue={savedProfile.website} />
+                      <Input
+                        label="Display name"
+                        name="displayName"
+                        value={profile.displayName}
+                        onChange={setField('displayName')}
+                      />
+                      <Input
+                        label="Website"
+                        name="website"
+                        type="url"
+                        value={profile.website}
+                        onChange={setField('website')}
+                      />
                     </Fieldset>
                   </Stack>
                 </Form>
@@ -137,23 +155,15 @@ function SettingsPageBody(): React.JSX.Element {
                   <Fieldset legend="Email me about">
                     <Checkbox label="Product updates" name="productUpdates" description="About once a month." />
                     <Checkbox label="Security alerts" name="securityAlerts" defaultChecked />
-                    <Checkbox label="Tips and tutorials" name="tipsAndTutorials" />
+                    <Checkbox label="Tips and tutorials" name="tips" />
                   </Fieldset>
                   <Fieldset legend="Push notifications">
-                    <Switch
-                      label="Enable push notifications"
-                      checked={pushEnabled}
-                      onValueChange={setPushEnabled}
-                    />
+                    <Switch label="Enable push notifications" checked={pushEnabled} onValueChange={setPushEnabled} />
                     <RadioGroup
                       label="Frequency"
-                      name="frequency"
+                      name="pushFrequency"
+                      options={FREQUENCY_OPTIONS}
                       disabled={!pushEnabled}
-                      options={[
-                        { value: 'immediately', label: 'Immediately' },
-                        { value: 'daily', label: 'Daily digest' },
-                        { value: 'weekly', label: 'Weekly digest' },
-                      ]}
                     />
                   </Fieldset>
                 </Stack>
@@ -161,29 +171,22 @@ function SettingsPageBody(): React.JSX.Element {
 
               <TabPanel id="appearance">
                 <Stack gap="loose">
-                  <Fieldset legend="Theme">
+                  <Fieldset legend="Theme" description={COPY.themeNote}>
                     <SegmentedControl
                       label="Color mode"
+                      options={COLOR_MODE_OPTIONS}
                       value={colorMode}
                       onChange={setColorMode}
-                      options={[
-                        { value: 'system', label: 'System' },
-                        { value: 'light', label: 'Light' },
-                        { value: 'dark', label: 'Dark' },
-                      ]}
                     />
                   </Fieldset>
-                  <Fieldset legend="Density">
+                  <Fieldset legend="Density" description={COPY.densityNote}>
                     <RadioGroup
                       label="Layout density"
                       name="density"
+                      options={DENSITY_OPTIONS}
+                      description="Affects tables and lists."
                       value={density}
                       onChange={setDensity}
-                      description="Affects tables and lists."
-                      options={[
-                        { value: 'comfortable', label: 'Comfortable' },
-                        { value: 'compact', label: 'Compact' },
-                      ]}
                     />
                   </Fieldset>
                 </Stack>
@@ -192,15 +195,15 @@ function SettingsPageBody(): React.JSX.Element {
               <TabPanel id="account">
                 <Stack gap="loose">
                   <Card surface="subtle" inset="lg" heading="Export your data" headingLevel={2}>
-                    <Stack gap="normal">
+                    <Stack gap="normal" align="start">
                       <Text>Download everything we store about you as a ZIP.</Text>
                       <Button label="Request export" variant="secondary" />
                     </Stack>
                   </Card>
                   <Card surface="subtle" inset="lg" heading="Delete account" headingLevel={2}>
-                    <Stack gap="normal">
+                    <Stack gap="normal" align="start">
                       <Alert tone="warning">This cannot be undone.</Alert>
-                      <Button label="Delete account…" variant="danger" onPress={() => setDeleteOpen(true)} />
+                      <Button label="Delete account…" variant="danger" onPress={() => setDeleteDialogOpen(true)} />
                     </Stack>
                   </Card>
                 </Stack>
@@ -208,17 +211,17 @@ function SettingsPageBody(): React.JSX.Element {
             </Tabs>
           </Stack>
         </Container>
-      </Landmark>
 
-      <AlertDialog
-        open={deleteOpen}
-        tone="danger"
-        heading="Delete account?"
-        description="This will permanently delete your account and everything in it. This cannot be undone."
-        confirmLabel="Delete account"
-        onConfirm={() => setDeleteOpen(false)}
-        onCancel={() => setDeleteOpen(false)}
-      />
+        <AlertDialog
+          open={deleteDialogOpen}
+          tone="danger"
+          heading="Delete your account?"
+          description="This permanently deletes your account and everything in it. This cannot be undone."
+          confirmLabel="Delete account"
+          onConfirm={() => setDeleteDialogOpen(false)}
+          onCancel={() => setDeleteDialogOpen(false)}
+        />
+      </Landmark>
     </ScrollView>
   );
 }

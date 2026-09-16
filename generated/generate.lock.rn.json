@@ -715,18 +715,18 @@
     }
   },
   "Pattern.SettingsPage.rn": {
-    "hash": "389059d249368ce4",
-    "lastAttemptHash": "389059d249368ce4",
-    "generatedAt": "2026-09-11T00:35:50+00:00",
-    "model": "sonnet",
+    "hash": "f7a6e2553b2792b8",
+    "lastAttemptHash": "f7a6e2553b2792b8",
+    "generatedAt": "2026-09-16T17:14:32+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2235,
+    "costUsd": 1.0246,
     "files": [
       "packages/rn/demo/SettingsPage.stories.tsx",
       "packages/rn/demo/SettingsPage.tsx"
     ],
-    "gaps": 8,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,

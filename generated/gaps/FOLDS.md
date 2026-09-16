@@ -1396,3 +1396,106 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-16 Table web: onRowPress by pointer outside the Button → click anywhere outside a control fires it on web and Lit
 2026-09-16 Table web: actions header part → columnHeader part like the others
 2026-09-16 Table web: Checkbox registers with Form inside a table → doc says not form fields; Checkbox opt-out to CODE
+2026-09-16 DataGrid rn: FlatList role grid vs list as body rowgroup → FlatList is the grid; only the header row has a rowgroup
+2026-09-16 DataGrid web,lit,rn: onCellChange value cannot be undefined → value/previous shapes add `| undefined`
+2026-09-16 DataGrid rn: number and date editors have no blur → commit on another press or `activate`; `escape` cancels
+2026-09-16 DataGrid rn: editable-cell hint hard-coded English → copy.editHint, rn only
+2026-09-16 DataGrid web,lit,rn: caption heading level unspecified → new `captionLevel` prop, as Table
+2026-09-16 DataGrid web: captionSize/Weight reach the Heading how → composition forwards to fontSize/fontWeight; marginBlockEnd space.0
+2026-09-16 DataGrid rn: default column width 160 literal → `columnWidth` binding, space.20 × 2
+2026-09-16 DataGrid rn: cellInvalidForeground has nowhere to go → status bar message on a re-scoped cellInvalidBackground span
+2026-09-16 DataGrid web,lit,rn: cellMutedColor has no stated use → existing cell text while `loading`
+2026-09-16 DataGrid rn,web: viewport height, native and caption/status bar → whole component fits; window height on native
+2026-09-16 DataGrid web,lit,rn: onRangeNeeded window size and end inclusive → one page from data.length, end inclusive, never on mount
+2026-09-16 DataGrid rn,web: editor inset-zero overrides mapping → per editor names in web notes; Checkbox none
+2026-09-16 DataGrid rn: Select editor opening and BottomSheet source → opens at once, closing without choice cancels; sheet is Select's own
+2026-09-16 DataGrid rn: pinned order and shadow edges → pins keep order; start pins shade end edge, end pins start edge
+2026-09-16 DataGrid rn,web: resize handle on touch and keyboard → always visible on native; not focusable, Shift+Arrow on header; new resizeHandle part
+2026-09-16 DataGrid rn: rowHover on native and select cell → pressed fill, select cell included, selected row wins
+2026-09-16 DataGrid lit,web: Escape clears range with no empty member → fires nothing; collapse fires one-cell range once
+2026-09-16 DataGrid lit,web: unchanged commit fires onCellChange? → only when value differs (Object.is); validate still runs
+2026-09-16 DataGrid lit: Delete clears what, validate runs? → per-mode scope, none clears nothing, validate skipped
+2026-09-16 DataGrid lit: minWidth floor for resize → minWidth defaults to and never below size.target.min
+2026-09-16 DataGrid lit: numericFont target → cells whose raw value is a number, no render
+2026-09-16 DataGrid lit: scrollRegion and grid one element or two → two nested; ring on scrollRegion, role/focus on grid
+2026-09-16 DataGrid lit,web: statusBar Text with surface, live region vs position → div part with inner role=status span; counts outside it
+2026-09-16 DataGrid web: status bar item spacing → new statusBarGap binding, no separator characters
+2026-09-16 DataGrid lit,web: Control chords ignore Meta → Control or Meta everywhere in the table
+2026-09-16 DataGrid lit,web: pointer row selection rules → select cell/Ctrl-click toggle, Shift-click adds from anchor, plain click focuses
+2026-09-16 DataGrid lit: Enter inside select/date editors → belongs to the open popup; date commits from its text field
+2026-09-16 DataGrid lit,web: scrollHint placement → status bar while overflowing and not yet scrolled sideways
+2026-09-16 DataGrid lit,web: abbr on sortable vs non-sortable headers → non-sortable name is abbr; sortable keeps sort copy
+2026-09-16 DataGrid lit: stickyHeader with height content → sticks to the grid's scroll region only, never the page
+2026-09-16 DataGrid lit: Home/End/Page keys collapse a range? → every plain navigation key collapses
+2026-09-16 DataGrid lit: render type on Lit → lit-renderable value (TemplateResult, string, number)
+2026-09-16 DataGrid web: onEditStart preventDefault with positional payload → return false on web and rn
+2026-09-16 DataGrid web: selection column width binding → selectColumnWidth, size.target.min plus 2 × cellPaddingInline
+2026-09-16 DataGrid web: window before first row measurement → token row size, at most 50 rows
+2026-09-16 DataGrid web: sortButton data-part overwritten by Button → grid-owned span; header weight/size forwarded to Button
+2026-09-16 DataGrid web: cell mode selection visual → focus ring only; fires on every move
+2026-09-16 DataGrid web: Space opens editor in none/cell → Space is never an edit trigger
+2026-09-16 DataGrid web: range fill vs pinned cells → fill beneath content, border above, pinned cells cover fill
+2026-09-16 DataGrid web: clicked cell ring not :focus-visible → ring whenever grid has focus, pointer included
+2026-09-16 TreeGrid web,lit,rn: onCellChange empty value coerced to '' → undefined, as DataGrid
+2026-09-16 TreeGrid web,lit,rn: row/selection totals visible or loaded → every loaded row at every level
+2026-09-16 TreeGrid rn: row header label format and leaf count → copy.level and copy.childCount joined; count omitted for leaves/unloaded lazy
+2026-09-16 TreeGrid rn: native stand-ins for keyboard table → actions, expandAll/collapseAll, Checkboxes; `*`/Shift+Space/Ctrl+A none
+2026-09-16 TreeGrid rn: press on editable parent row header → press toggles, long-press edits
+2026-09-16 TreeGrid rn: select-all scope without selectChildren → every loaded row at every level, always
+2026-09-16 TreeGrid rn,lit,web: DataGrid bindings not overridable here → stated; cellPaddingInline and fixedHeight added
+2026-09-16 TreeGrid rn: posinset/setsize on native → stated absent; level and count only
+2026-09-16 TreeGrid rn: expand Button inside accessible row header → Button hidden from AT; row actions are the path
+2026-09-16 TreeGrid rn: uncontrolled sort vs caller sorts → grid sorts siblings when uncontrolled, as DataGrid
+2026-09-16 TreeGrid lit,web: Shift+Arrow column resize dropped → kept on resizable header cells
+2026-09-16 TreeGrid lit,web: PageUp/Down, Delete, type-to-edit omitted → new keyboard row, as DataGrid
+2026-09-16 TreeGrid lit: ArrowLeft on level-1 row header → moves to the previous cell
+2026-09-16 TreeGrid lit,web: `*` in defaultExpanded, lazy rows, controlled → non-empty loaded rows, live, never lazy; resolved on first toggle
+2026-09-16 TreeGrid lit,web: `children: []` → a leaf
+2026-09-16 TreeGrid lit,web: loading placeholder row navigation → navigable, level+1, loading in row header, other cells empty
+2026-09-16 TreeGrid lit,web: Ctrl+Home header row or body → header row included, as DataGrid
+2026-09-16 TreeGrid lit,web: indent padding vs indent part → spacer part at row header start
+2026-09-16 TreeGrid lit,web: guide line offset → inside row header, cellPaddingInline + indent × depth + half expand button
+2026-09-16 TreeGrid lit,web: indeterminate aria-selected and which acts cascade → false; all own-row toggles cascade, ranges don't
+2026-09-16 TreeGrid lit,web: importing DataGridColumn / shared base → type import fine; shared base optional
+2026-09-16 TreeGrid web: onExpand vs onExpandChange order → onExpand first; nothing when nothing opens
+2026-09-16 TreeGrid web: expand Button props and chevron rotation → zero padding overrides, rotation on owned span, RTL mirror
+2026-09-16 TreeGrid web: Enter on a leaf row header → DataGrid order: edit, else activate
+2026-09-16 Tree rn: custom `activate` action hijacks double-tap → standard `longpress` action in multiple mode
+2026-09-16 Tree rn: tap meaning in single and none → Enter's meaning; none does not toggle expansion
+2026-09-16 Tree rn: href navigation on native → row calls Linking.openURL; routers use onActivate
+2026-09-16 Tree rn,lit: label font bindings never reach Text → label forwards fontFamily, fontSize, lineHeight
+2026-09-16 Tree rn: Link cannot take font size → Link tone inherit nested in label Text; no selected weight
+2026-09-16 Tree rn: checkbox border width and checked edge → checkboxBorderWidth binding; border takes checkboxSelected when checked
+2026-09-16 Tree rn: selection bar shifts layout → absolutely positioned at logical start, mirrored in RTL
+2026-09-16 Tree rn: rowHover on touch → pressed fill, instant; selected wins
+2026-09-16 Tree rn,web: onExpand first time vs retry → every open of a still-lazy node, as TreeGrid
+2026-09-16 Tree rn: chevron color and accessibility → Button's own color; native chevron accessible and named
+2026-09-16 Tree rn,lit,web: selectChildren cascade scope and parent id → enabled loaded descendants; parent id iff all selected
+2026-09-16 Tree rn: `*` on native → not offered; no expand-all action
+2026-09-16 Tree rn: container and group parts on native → root View is container; group has no element
+2026-09-16 Tree lit: bare detail vs `ids` payload keys → bare values stated in lit notes; renderer to TOOLING
+2026-09-16 Tree lit,web: expand vs expand-change order → onExpand first
+2026-09-16 Tree lit,web: expandButtonSize on unsized Button → owned wrapper part sized both axes
+2026-09-16 Tree lit,web: checkboxGap vs rowGap → checkbox followed by checkboxGap instead of rowGap
+2026-09-16 Tree lit: Enter on href node → clicks the composed link, no onActivate; single selects first
+2026-09-16 Tree lit,web: loading placeholder role → aria-disabled treeitem, not navigable, aria-busy parent
+2026-09-16 Tree lit: selectedCount announcement timing → hidden status region, every user selection change, multiple only
+2026-09-16 Tree lit,web: Control+a ignores Meta → Control or Meta
+2026-09-16 Tree lit: type-ahead letters only → any printable character
+2026-09-16 Tree lit: ArrowLeft to disabled parent → focus stays put
+2026-09-16 Tree lit,web: `*` and disabled or lazy siblings → enabled siblings, focused included, lazy fire onExpand
+2026-09-16 Tree lit,web: disabled parent expandable by pointer → no; chevron disabled, don't disable reachable parents
+2026-09-16 Tree lit: selected fill on checked nodes → applies to aria-checked true
+2026-09-16 Tree lit,web: ul role=tree has no part → no data-part; address by role
+2026-09-16 Tree lit: emptyState Text props → tone muted
+2026-09-16 Tree lit: CSS hooks don't reach forwarded children → stated: override forwarded bindings via overrides
+2026-09-16 Tree web: `*` and lazy ids in defaultExpanded → loaded parents only; listed lazy ids stay closed
+2026-09-16 Tree web: aria-activedescendant listed with roving tabindex → removed from attributes; roving only
+2026-09-16 Tree web: no-op selection changes → fire only when the set changes
+2026-09-16 Tree web: order of ids in events → selection tree order; expansion opening order
+2026-09-16 Tree web: Shift+arrows with selectChildren or outside multiple → cascade like Space; plain arrows outside multiple
+2026-09-16 Tree web: double-click toggles twice → detail ≥ 2 clicks don't toggle
+2026-09-16 Tree web: Heading/Button data-part overwritten → heading and expandButton parts on owned wrappers
+2026-09-16 Tree web: Heading-to-tree spacing → Heading's own marginBlockEnd
+2026-09-16 Tree web: icon and badge color forwards → Icon forwards iconColor to color; badge is Text tone muted (Text.color locked)
+2026-09-16 Tree web: RTL chevron and bar → both mirrored

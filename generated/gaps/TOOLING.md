@@ -73,3 +73,7 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - Keyboard story has no `given` to follow, so the generator invents autoplay and slide content for it (Carousel, rn).
 - Example stories must render exactly their given, but meta.args (caption/columns/data) still merge in (Table, rn).
 - Array `shape` strings are used verbatim (`abbr?: string`), which under exactOptionalPropertyTypes forbids an explicit undefined where the props convention adds `| undefined` (Table, rn).
+- Keyboard story rule asks for "its trigger"; a Tree has none, so the generator picked showLabel plus an expanded node (Tree, rn).
+- Events contract renderer: a payload entry named `ids`/`id` reads as an object key, but Tree and TreeGrid send bare detail values on Lit; the renderer needs a bare-payload form (Tree, TreeGrid; lit).
+- Generator Constants rule says to read constants through token expressions, which a documented `literal-ok` number cannot follow; DataGrid's 160 is now the `columnWidth` binding, but the rule should name `literal-ok` as the exception (DataGrid, rn).
+- tools/__tests__/composition-forwards.test.ts corpus counts go stale with the new DataGrid (caption, sortButton, statusBar) and Tree (icon, label) forwards (all).

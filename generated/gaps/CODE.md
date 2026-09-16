@@ -50,3 +50,5 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 - Popover (lit): always focuses its first focusable with no initial-focus element, and doesn't re-measure when slotted content lays out after opening (found in DatePicker, lit).
 - Form (lit): one host carries one `data-ds-field`; a range field needs a way to register `name-end` as a second field (found in DatePicker, lit).
 - Checkbox (web): always sets data-ds-field and registers with FormContext, so Table's selection Checkboxes inside a Form are collected as fields; table.md now says they are not form fields, and Checkbox needs an opt-out (found in Table, web).
+- TreeGrid.tsx (rn): `onColumnResize` is still object-shaped and imports DataGridColumnResize, while DataGrid's is positional `(column, width)`; align it and drop the export (found in DataGrid, rn).
+- Link.tsx (react): the comment says it accepts className "because Tree passes one"; the regenerated Tree no longer does (found in Tree, web).

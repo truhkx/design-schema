@@ -221,6 +221,7 @@ export type {
   MenuGroup,
   MenuSeparator,
   MenuItem,
+  MenuOpenChangeReason,
   MenuActionDetail,
   MenuOpenChangeDetail,
   MenuOverridableBinding,

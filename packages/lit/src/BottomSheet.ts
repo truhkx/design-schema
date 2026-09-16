@@ -9,7 +9,9 @@ import './Box.js';
 import './Stack.js';
 import './FocusScope.js';
 import './Dialog.js';
-import type { DialogOverridableBinding } from './Dialog.js';
+import type { DsFocusScope } from './FocusScope.js';
+import type { DialogCloseDetail, DialogOverridableBinding } from './Dialog.js';
+import type { StackOverridableBinding } from './Stack.js';
 
 export type BottomSheetHeight = 'content' | 'half' | 'full';
 export type BottomSheetCloseReason = 'escape' | 'close-button' | 'scrim' | 'drag' | 'action';
@@ -19,10 +21,10 @@ export interface BottomSheetCloseDetail {
   reason: BottomSheetCloseReason;
 }
 
-/** Detail carried by the `drag-dismiss` CustomEvent (none). */
+/** Detail carried by the `drag-dismiss` CustomEvent (none: distance and velocity are not part of the contract). */
 export type BottomSheetDragDismissDetail = void;
 
-/** Overridable style hooks; see the `overrides` property. `surface`, `handle`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. `surface`, `handle`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
 export type BottomSheetOverridableBinding =
   | 'scrim'
   | 'shadow'
@@ -52,6 +54,18 @@ const HOOKS: Record<BottomSheetOverridableBinding, string> = {
   exit: '--ds-bottom-sheet-exit',
 };
 
+/** footerGap's token, forwarded to the footer Stack as `overrides.gap` when no override is set. */
+const FOOTER_GAP_TOKEN: TokenRef = 'layout.gap.tight';
+
+/** The maxWidth breakpoint, read once from the theme (not per-instance). */
+const MAX_WIDTH_PROPERTY = '--layout-max-width-prose';
+
+/** constants.dismissDistance: fraction of the sheet height a release must pass to dismiss. */
+const DISMISS_DISTANCE = 0.25;
+
+/** constants.dismissVelocity: release speed, in px/ms, that dismisses whatever the distance. */
+const DISMISS_VELOCITY = 1.5;
+
 /** copy.closeLabel */
 const COPY_CLOSE_LABEL = 'Close';
 
@@ -71,38 +85,36 @@ const FOCUSABLE_SELECTOR = [
   'input:not([disabled])',
   'select:not([disabled])',
   'textarea:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-  'ds-button',
-  'ds-link',
-  'ds-input',
-  'ds-checkbox',
-  'ds-switch',
-  'ds-radio-group',
-  'ds-disclosure',
+  'summary',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]',
 ].join(',');
 
-function findFirstFocusable(root: Element): HTMLElement | null {
-  if (root instanceof HTMLElement && root.matches(FOCUSABLE_SELECTOR)) {
-    return root;
+/** The first tabbable element in tree order, walking slot assignments and open shadow roots. */
+function firstFocusableIn(node: Element): HTMLElement | null {
+  if (node.hasAttribute('inert') || node.getAttribute('aria-hidden') === 'true') {
+    return null;
   }
-  return root.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-}
-
-/** How many `<ds-bottom-sheet>` instances (in their bottom-edge presentation) currently hold the body-scroll lock. */
-let openSheetCount = 0;
-
-function lockBodyScroll(): void {
-  openSheetCount += 1;
-  if (openSheetCount === 1) {
-    document.documentElement.style.overflow = 'hidden';
+  if (node instanceof HTMLElement && !node.hidden && node.tabIndex >= 0 && node.matches(FOCUSABLE_SELECTOR)) {
+    return node;
   }
-}
-
-function unlockBodyScroll(): void {
-  openSheetCount = Math.max(0, openSheetCount - 1);
-  if (openSheetCount === 0) {
-    document.documentElement.style.removeProperty('overflow');
+  if (node instanceof HTMLSlotElement) {
+    for (const assigned of node.assignedElements({ flatten: true })) {
+      const found = firstFocusableIn(assigned);
+      if (found) {
+        return found;
+      }
+    }
+    return null;
   }
+  const scope = node.shadowRoot ?? node;
+  for (const child of Array.from(scope.children)) {
+    const found = firstFocusableIn(child);
+    if (found) {
+      return found;
+    }
+  }
+  return null;
 }
 
 function getDeepActiveElement(): Element | null {
@@ -113,53 +125,69 @@ function getDeepActiveElement(): Element | null {
   return active;
 }
 
-function prefersReducedMotion(): boolean {
-  return matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** How many open sheets hold the page-scroll lock, so a second one does not release it early. */
+let scrollLocks = 0;
+let previousOverflow = '';
+let previousGutter = '';
+
+function lockPageScroll(): void {
+  scrollLocks += 1;
+  if (scrollLocks === 1) {
+    const style = document.documentElement.style;
+    previousOverflow = style.getPropertyValue('overflow');
+    previousGutter = style.getPropertyValue('scrollbar-gutter');
+    style.setProperty('overflow', 'hidden');
+    style.setProperty('scrollbar-gutter', 'stable');
+  }
+}
+
+function unlockPageScroll(): void {
+  scrollLocks = Math.max(0, scrollLocks - 1);
+  if (scrollLocks === 0) {
+    const style = document.documentElement.style;
+    style.setProperty('overflow', previousOverflow);
+    style.setProperty('scrollbar-gutter', previousGutter);
+  }
+}
+
+interface DragSample {
+  startY: number;
+  lastY: number;
+  lastTime: number;
+  velocity: number;
 }
 
 /**
  * `<ds-bottom-sheet>` — BottomSheet (category: overlay, APG pattern: dialog-modal).
  *
- * The phone's dialog: rises from the bottom edge behind a scrim, and above
- * the `maxWidth` breakpoint renders `<ds-dialog size="md">` instead — a
- * `matchMedia` listener on the resolved `layout.maxWidth.prose` token decides
- * which, so consumers write the screen once. Below the breakpoint a shadow
- * `<dialog>` is opened with `showModal()` for the top layer, background
- * inertness and `::backdrop` scrim; `<ds-focus-scope trapped>` wraps the
- * header, body and footer. A downward drag on the header (Pointer Events,
- * `setPointerCapture`) past a distance or velocity threshold fires
- * `drag-dismiss` then `close` with reason `drag`; it is purely additive, the
- * close button and Escape always work.
+ * `<ds-bottom-sheet open heading="Filters" height="half">…</ds-bottom-sheet>`. The phone's
+ * dialog: a native `<dialog>` in the shadow root opened with `showModal()` (top layer, inert
+ * background, Escape), covering the viewport with a scrim element and the surface anchored to the
+ * bottom edge. `<ds-focus-scope>` wraps the surface and returns focus to the opener on close.
+ * Above the `layout.maxWidth.prose` viewport width (a `matchMedia` listener) the same props render
+ * `<ds-dialog size="md">` instead, so screens are written once.
+ *
+ * Escape, the close button, a scrim click and a downward drag on the handle or header each request
+ * close through the composed `close` event; the sheet never closes itself, the consumer flips
+ * `open`. A drag past the threshold fires `drag-dismiss` first. A slotted form submitted with
+ * `method="dialog"` requests close with reason `action`.
  *
  * ## When to use
  *
- * Use a BottomSheet on phones for a task or a set of choices that would
- * otherwise be a Dialog: filters, a form of a few fields, details of a
- * selected item, a picker with many options. Use `height="content"` by
- * default; `full` for a task that needs the whole screen but should still
- * feel dismissable; `half` for a browsable list where seeing the page behind
- * matters (a map with results). For a flat list of actions, ActionSheet is
- * the lighter component.
+ * On phones, for a task or a set of choices that would otherwise be a Dialog: filters, a form of a
+ * few fields, details of a selected item, a picker with many options. For a flat list of actions,
+ * ActionSheet is the lighter component.
  *
  * ## When not to use
  *
- * Not as a menu (ActionSheet or Menu), a persistent panel (a bottom Landmark
- * region), or content the user must read at length (a page). Never stack
- * sheets, and never rely on the drag gesture as the only way to dismiss.
+ * Not as a menu (ActionSheet or Menu), a persistent panel (a bottom Landmark region), or content
+ * the user must read at length (a page). Never stack sheets, and never rely on the drag gesture to
+ * teach dismissal.
  *
  * @fires close - Requests close, with `{ reason: 'escape' | 'close-button' | 'scrim' | 'drag' | 'action' }`.
- *   The consumer sets `open` to false (or not).
- * @fires drag-dismiss - Fired before `close` (reason `drag`) when a drag gesture crosses the dismiss threshold.
+ * @fires drag-dismiss - Fired before `close` (reason `drag`) when a drag passes the dismiss threshold.
  * @slot - The body. Scrolls inside the sheet when taller than the sheet's height.
- * @slot footer - Action row, pinned above the safe area.
- * @csspart surface - The padded, bordered surface (anatomy: surface).
- * @csspart focus-scope - The focus-trapping wrapper (anatomy: focusScope).
- * @csspart handle - The decorative drag handle (anatomy: handle).
- * @csspart header - The header row (anatomy: header).
- * @csspart heading - The `<ds-heading>` (anatomy: heading).
- * @csspart body - The body wrapper (anatomy: body).
- * @csspart footer - The footer row (anatomy: footer).
- * @csspart close-button - The close `<ds-button>` (anatomy: closeButton).
+ * @slot footer - Action row, pinned to the bottom of the sheet above the safe area.
  */
 @customElement('ds-bottom-sheet')
 export class DsBottomSheet extends LitElement {
@@ -170,7 +198,7 @@ export class DsBottomSheet extends LitElement {
 
   static override styles: CSSResult = css`
     :host {
-      display: block;
+      display: contents;
       --ds-bottom-sheet-scrim: var(--color-overlay-scrim);
       --ds-bottom-sheet-shadow: var(--shadow-overlay);
       --ds-bottom-sheet-radius: var(--radius-lg);
@@ -192,75 +220,103 @@ export class DsBottomSheet extends LitElement {
     dialog {
       box-sizing: border-box;
       position: fixed;
-      inset-block-end: 0;
-      inset-inline: 0;
+      inset: 0;
+      inline-size: auto;
+      block-size: auto;
+      max-inline-size: none;
+      max-block-size: none;
       margin: 0;
       padding: 0;
       border: 0;
-      inline-size: 100%;
-      max-inline-size: none;
-      max-block-size: 90dvh;
       background: transparent;
       color: inherit;
+      overflow: hidden;
       z-index: var(--ds-bottom-sheet-layer);
     }
 
-    /* height: content (default) sizes to the body up to the dialog's own 90dvh max-block-size; half
-       and full set an exact block-size instead, so the 90dvh cap must not also apply to them. */
-    :host([height='half']) dialog {
-      max-block-size: none;
-      block-size: 50dvh;
-    }
-    :host([height='full']) dialog {
-      max-block-size: none;
-      block-size: calc(100dvh - var(--layout-gutter));
+    dialog[open] {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
     }
 
-    /* scrim: color.overlay.scrim */
+    /* The scrim is the element below; the native backdrop stays clear. */
     dialog::backdrop {
+      background: transparent;
+    }
+
+    .scrim {
+      position: absolute;
+      inset: 0;
       background: var(--ds-bottom-sheet-scrim);
+      opacity: 1;
       transition: opacity var(--ds-bottom-sheet-enter) var(--motion-easing-standard);
     }
 
-    @starting-style {
-      dialog[open]::backdrop {
-        opacity: 0;
-      }
+    .scope {
+      position: relative;
+      display: flex;
+      box-sizing: border-box;
+      inline-size: 100%;
+    }
+
+    /* height: content sizes to the body up to 90% of the viewport; the cap belongs to content alone. */
+    :host([height='content']) .scope {
+      max-block-size: 90dvh; /* literal-ok: 90% of the viewport, from the height prop's description */
+    }
+    :host([height='half']) .scope {
+      block-size: 50dvh; /* literal-ok: half of the viewport, from the height prop's description */
+    }
+    :host([height='full']) .scope {
+      block-size: calc(100dvh - var(--layout-gutter)); /* literal-ok: the full viewport less the top gutter */
     }
 
     .surface {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      block-size: 100%;
+      flex: 1 1 auto;
+      min-inline-size: 0;
+      max-block-size: 100%;
       gap: var(--ds-bottom-sheet-part-gap);
+      padding-inline: var(--ds-bottom-sheet-inset);
+      padding-block-start: var(--layout-gap-tight);
+      padding-block-end: calc(var(--ds-bottom-sheet-inset) + env(safe-area-inset-bottom));
       font-family: var(--font-family-body);
-      /* surface: color.overlay.surface, locked — no override hook */
+      color: var(--color-foreground);
+      /* surface: color.overlay.surface, locked — no hook */
       background: var(--color-overlay-surface);
-      /* radius: top corners only on phones; ds-dialog rounds all corners for the wide presentation */
+      /* radius: top corners only on phones */
       border-start-start-radius: var(--ds-bottom-sheet-radius);
       border-start-end-radius: var(--ds-bottom-sheet-radius);
       box-shadow: var(--ds-bottom-sheet-shadow);
-      overflow: hidden;
-      padding-block-end: env(safe-area-inset-bottom);
       transform: translateY(0);
       transition: transform var(--ds-bottom-sheet-enter) var(--motion-easing-standard);
     }
 
-    .surface.closing {
+    @starting-style {
+      .scrim {
+        opacity: 0;
+      }
+      .surface {
+        transform: translateY(100%);
+      }
+    }
+
+    /* exit: motion.duration.fast with motion.easing.exit, from wherever the surface is */
+    .closing .scrim {
+      opacity: 0;
+      transition-duration: var(--ds-bottom-sheet-exit);
+      transition-timing-function: var(--motion-easing-exit);
+    }
+    .closing .surface {
       transform: translateY(100%);
       transition-duration: var(--ds-bottom-sheet-exit);
       transition-timing-function: var(--motion-easing-exit);
     }
 
-    @starting-style {
-      dialog[open] .surface {
-        transform: translateY(100%);
-      }
-    }
-
     @media (prefers-reduced-motion: reduce) {
-      dialog::backdrop,
+      .scrim,
       .surface {
         transition: none;
       }
@@ -270,13 +326,15 @@ export class DsBottomSheet extends LitElement {
       display: flex;
       flex-direction: column;
       gap: var(--layout-gap-tight);
-      padding-inline: var(--ds-bottom-sheet-inset);
-      padding-block-start: var(--layout-gap-tight);
-      flex: 0 0 auto;
-      touch-action: none;
+      flex: none;
     }
 
-    /* handle: color.foreground.muted, locked — a 4×36 decorative pill, aria-hidden and not focusable */
+    .header.draggable {
+      touch-action: none;
+      cursor: grab;
+    }
+
+    /* handle: color.foreground.muted, locked; a decorative pill, aria-hidden and never a focus stop */
     .handle {
       align-self: center;
       inline-size: var(--ds-bottom-sheet-handle-width);
@@ -285,21 +343,34 @@ export class DsBottomSheet extends LitElement {
       background: var(--color-foreground-muted);
     }
 
-    .heading-row {
+    .title-row {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: var(--layout-gap-normal);
       min-inline-size: 0;
     }
 
-    .heading {
-      min-inline-size: 0;
+    /* minTarget: size.target.comfortable, locked — the Button keeps its own size and colors */
+    .close-button {
+      flex: none;
+      margin-inline-start: auto;
+      min-inline-size: var(--size-target-comfortable);
+      min-block-size: var(--size-target-comfortable);
     }
 
-    /* hideHeading: kept for the accessible name, removed from the visual layout. */
-    .heading--hidden {
-      /* literal-ok: standard visually-hidden clip pattern, exempt from token-only rule */
+    /* The heading takes focus when nothing else can. */
+    .heading:focus {
+      outline: none;
+    }
+    .heading:focus-visible {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: var(--border-width-focus);
+    }
+
+    /* hideHeading: out of view, still the accessible name. */
+    .heading.visually-hidden {
+      /* literal-ok: standard visually-hidden clip pattern */
       position: absolute;
       width: 1px;
       height: 1px;
@@ -311,16 +382,6 @@ export class DsBottomSheet extends LitElement {
       border: 0;
     }
 
-    #heading:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
-      border-radius: var(--radius-sm);
-    }
-
-    .close {
-      flex: none;
-    }
-
     .body {
       flex: 1 1 auto;
       min-block-size: 0;
@@ -328,117 +389,140 @@ export class DsBottomSheet extends LitElement {
     }
   `;
 
-  /** Controlled visibility, as in Dialog. */
+  /** Controlled visibility, as in Dialog. The consumer owns it; the sheet requests changes through `close`. */
   @property({ type: Boolean, reflect: true }) accessor open = false;
 
-  /**
-   * The sheet's title and accessible name. Named `heading`, not `title` —
-   * `HTMLElement` already defines `title` as the tooltip attribute (see
-   * Dialog and AlertDialog).
-   */
-  @property() accessor heading!: string;
+  /** The sheet's title and accessible name. May be visually hidden with `hideHeading`. */
+  @property() accessor heading = '';
 
-  /** Keep the heading for assistive technology but do not render it. The accessible name is required regardless. */
+  /** Keep the heading for assistive technology but do not render it. Attribute: `hide-heading`. */
   @property({ type: Boolean, attribute: 'hide-heading' }) accessor hideHeading = false;
 
   /** `content` sizes to the body up to 90% of the viewport; `half` is a fixed half-height; `full` is near-full-screen. */
-  @property({ reflect: true }) accessor height: BottomSheetHeight = 'content';
+  @property({ type: String, reflect: true }) accessor height: BottomSheetHeight = 'content';
 
   /**
-   * Escape, the close button, a scrim tap and the drag gesture all request close. `false` for a
-   * sheet that must be answered from its footer actions; Escape still reports. Attribute is the
-   * negation, `no-dismiss`, because a boolean attribute cannot express `false` for a prop that
-   * defaults `true` (see Dialog).
+   * Escape, the close button, a scrim tap and the drag gesture all request close. When false,
+   * only the footer actions close it; Escape still reports. Attribute: `no-dismiss`.
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor dismissible = true;
 
   /**
-   * Drag the handle (or header) downward to dismiss. Purely additive: the close button and
-   * Escape always exist. `platforms.lit.reflect` lists this attribute in its direct (non-negated)
-   * form, unlike `dismissible`'s `no-dismiss` — kept literal per the doc; see the generation gap notes.
+   * Drag the handle or header downward to dismiss. Purely additive: the close button and Escape
+   * always exist. Attribute: `no-drag-to-dismiss`.
    */
-  @property({ type: Boolean, attribute: 'drag-to-dismiss', reflect: true }) accessor dragToDismiss = true;
+  @property({ attribute: 'no-drag-to-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  accessor dragToDismiss = true;
 
-  /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings (surface, handle, focusRing, focusRingWidth) are ignored. Only applied below the wide-viewport breakpoint; above it the sheet renders as Dialog and uses Dialog's own overrides contract. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>> | undefined;
+  /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
-  /** Above `layout.maxWidth.prose` the sheet renders as a centered `<ds-dialog size="md">` instead. */
-  @state() private accessor isWide = false;
+  /** Above the maxWidth breakpoint the sheet presents as `<ds-dialog size="md">`. */
+  @state() private accessor wide = false;
 
-  /** Whether the exit transition is playing (kept open a beat past the `open` flip so it can animate out). */
+  /** The exit transition is playing: the sheet stays rendered a beat past `open` turning false. */
   @state() private accessor closing = false;
 
-  @query('dialog') private accessor dialogEl!: HTMLDialogElement;
-  @query('#heading') private accessor headingEl!: HTMLElement;
-  @query('.close') private accessor closeButtonEl!: HTMLElement;
+  @state() private accessor hasFooter = false;
 
-  private openerElement: Element | null = null;
+  @query('dialog') private accessor dialogEl!: HTMLDialogElement | null;
+  @query('.scope') private accessor scopeEl!: DsFocusScope | null;
+  @query('.scrim') private accessor scrimEl!: HTMLElement | null;
+  @query('.surface') private accessor surfaceEl!: HTMLElement | null;
+  @query('.heading') private accessor headingEl!: HTMLElement | null;
+  @query('.close-button') private accessor closeButtonEl!: HTMLElement | null;
+  @query('slot:not([name])') private accessor bodySlotEl!: HTMLSlotElement | null;
+  @query('slot[name="footer"]') private accessor footerSlotEl!: HTMLSlotElement | null;
+
+  private scrollLocked = false;
   private closingProgrammatically = false;
-  private suppressCloseSync = false;
+  private focusBeforeCancel: HTMLElement | null = null;
   private wideQuery: MediaQueryList | null = null;
-  private dragState: { startY: number; startTime: number } | null = null;
+  private drag: DragSample | null = null;
 
   private readonly handleWideChange = (event: MediaQueryListEvent): void => {
-    this.isWide = event.matches;
+    this.wide = event.matches;
   };
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'BottomSheet');
-    const breakpoint = getComputedStyle(document.documentElement).getPropertyValue('--layout-max-width-prose').trim();
+    this.addEventListener('submit', this.handleSubmit);
+    const breakpoint = getComputedStyle(document.documentElement).getPropertyValue(MAX_WIDTH_PROPERTY).trim();
     if (breakpoint) {
-      this.wideQuery = matchMedia(`(min-width: ${breakpoint})`);
-      this.isWide = this.wideQuery.matches;
+      this.wideQuery = matchMedia(`(width > ${breakpoint})`);
+      this.wide = this.wideQuery.matches;
       this.wideQuery.addEventListener('change', this.handleWideChange);
     }
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.removeEventListener('submit', this.handleSubmit);
     this.wideQuery?.removeEventListener('change', this.handleWideChange);
-    if (!this.isWide && this.dialogEl?.open) {
-      unlockBodyScroll();
-    }
+    this.wideQuery = null;
+    this.releaseScroll();
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
+    if (this.wide) {
+      this.closing = false;
+      return;
+    }
+    if (changed.has('open')) {
+      if (this.open) {
+        this.closing = false;
+      } else if (changed.get('open') === true) {
+        this.closing = true;
+      }
+    }
   }
 
   protected override updated(changed: PropertyValues): void {
-    if (!this.isWide && changed.has('open')) {
+    if (changed.has('wide') && this.wide) {
+      // The Dialog presentation owns scroll lock and focus from here.
+      this.releaseScroll();
+    }
+    if (!this.wide && (changed.has('open') || changed.has('wide'))) {
       if (this.open) {
-        this.handleOpen();
-      } else if (changed.get('open') as boolean) {
-        if (this.suppressCloseSync) {
-          this.suppressCloseSync = false;
-        } else {
-          this.playExit();
-        }
+        void this.handleOpen();
+      } else if (this.closing) {
+        void this.handleClose();
       }
     }
-    this.warnInDev();
-  }
-
-  protected override render(): TemplateResult {
-    if (this.isWide) {
-      return this.renderAsDialog();
+    if (import.meta.env.DEV && (changed.has('heading') || changed.has('open'))) {
+      this.warnInDev();
     }
-    return this.renderAsSheet();
   }
 
-  private renderAsDialog() {
+  protected override render(): TemplateResult | typeof nothing {
+    if (this.wide) {
+      return this.renderDialog();
+    }
+    if (!this.open && !this.closing) {
+      return nothing;
+    }
+    return this.renderSheet();
+  }
+
+  /** Above the breakpoint: the same props and slots on Dialog, with the shared overrides forwarded. */
+  private renderDialog(): TemplateResult {
     return html`
       <ds-dialog
         ?open=${this.open}
         heading=${this.heading}
         size="md"
-        .dismissible=${this.dismissible}
         .hideHeading=${this.hideHeading}
+        .dismissible=${this.dismissible}
         .overrides=${this.dialogOverrides()}
+        @close=${this.handleDialogClose}
+        @opened=${this.stopInnerEvent}
       >
         <slot></slot>
         <slot name="footer" slot="footer"></slot>
@@ -446,103 +530,111 @@ export class DsBottomSheet extends LitElement {
     `;
   }
 
-  private renderAsSheet() {
-    const hasFooter = this.querySelector('[slot="footer"]') !== null;
-    const headingClasses = classMap({ heading: true, 'heading--hidden': this.hideHeading });
+  private renderSheet(): TemplateResult {
+    const footerOverrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> = {
+      gap: this.overrides?.footerGap ?? FOOTER_GAP_TOKEN,
+    };
+    const draggable = this.dismissible && this.dragToDismiss;
 
     return html`
       <dialog
+        class=${classMap({ closing: this.closing })}
         aria-modal="true"
         aria-labelledby="heading"
         @cancel=${this.handleCancel}
         @close=${this.handleNativeClose}
-        @click=${this.handleDialogClick}
       >
-        <div class="surface${this.closing ? ' closing' : ''}" part="surface">
-          <ds-focus-scope
-            part="focus-scope"
-            .trapped=${true}
-            .active=${this.open}
-            auto-focus="none"
-            .restoreFocus=${false}
-            style="display: flex; flex-direction: column; gap: var(--ds-bottom-sheet-part-gap)"
-          >
+        <div class="scrim" part="scrim" data-part="scrim" @click=${this.handleScrimClick}></div>
+        <ds-focus-scope
+          class="scope"
+          part="focusScope"
+          data-part="focusScope"
+          auto-focus="none"
+          .active=${!this.closing}
+        >
+          <div class="surface" part="surface" data-part="surface">
             <div
-              class="header"
+              class=${classMap({ header: true, draggable })}
               part="header"
-              @pointerdown=${this.handleHeaderPointerDown}
-              @pointermove=${this.handleHeaderPointerMove}
-              @pointerup=${this.handleHeaderPointerUp}
-              @pointercancel=${this.handleHeaderPointerUp}
+              data-part="header"
+              @pointerdown=${this.handlePointerDown}
+              @pointermove=${this.handlePointerMove}
+              @pointerup=${this.handlePointerUp}
+              @pointercancel=${this.handlePointerCancel}
             >
-              <span class="handle" part="handle" aria-hidden="true"></span>
-              <div class="heading-row">
-                <ds-heading id="heading" part="heading" class=${headingClasses} level="2" size="lg" tabindex="-1"
+              <span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>
+              <div class="title-row">
+                <ds-heading
+                  id="heading"
+                  class=${classMap({ heading: true, 'visually-hidden': this.hideHeading })}
+                  part="heading"
+                  data-part="heading"
+                  level="2"
+                  tabindex="-1"
                   >${this.heading}</ds-heading
                 >
-                <ds-button
-                  class="close"
-                  part="close-button"
-                  variant="ghost"
-                  size="md"
-                  icon-only
-                  label=${COPY_CLOSE_LABEL}
-                  @press=${this.handleCloseButtonPress}
-                >
-                  <ds-icon slot="leading-icon" name="close"></ds-icon>
-                </ds-button>
+                ${this.dismissible
+                  ? html`<ds-button
+                      class="close-button"
+                      part="closeButton"
+                      data-part="closeButton"
+                      variant="ghost"
+                      icon-only
+                      label=${COPY_CLOSE_LABEL}
+                      @press=${this.handleCloseButtonPress}
+                      ><ds-icon slot="leading-icon" name="close"></ds-icon
+                    ></ds-button>`
+                  : nothing}
               </div>
             </div>
-            <ds-box class="body" part="body" inset="lg" .overrides=${this.bodyOverrides()}>
-              <slot></slot>
-            </ds-box>
-            ${hasFooter
-              ? html`
-                  <ds-stack part="footer" direction="horizontal" justify="end" style="gap: var(--ds-bottom-sheet-footer-gap)">
-                    <slot name="footer"></slot>
-                  </ds-stack>
-                `
-              : nothing}
-          </ds-focus-scope>
-        </div>
+            <ds-box class="body" part="body" data-part="body"><slot></slot></ds-box>
+            <ds-stack
+              part="footer"
+              data-part="footer"
+              direction="horizontal"
+              justify="end"
+              .overrides=${footerOverrides}
+              ?hidden=${!this.hasFooter}
+              ><slot name="footer" @slotchange=${this.handleFooterSlotChange}></slot
+            ></ds-stack>
+          </div>
+        </ds-focus-scope>
       </dialog>
     `;
   }
 
-  private bodyOverrides() {
-    const inset = this.overrides?.inset;
-    return inset ? { paddingBlock: inset, paddingInline: inset } : undefined;
-  }
-
-  /** Forwards the sheet-and-Dialog-shared bindings to `<ds-dialog>` in the wide presentation; sheet-only bindings (handle, edge radius, drag) have no Dialog equivalent. */
+  /** inset, radius, partGap and footerGap reach Dialog's own overrides; sheet-only bindings are no-ops there. */
   private dialogOverrides(): Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined {
-    const { inset, radius, partGap, footerGap } = this.overrides ?? {};
-    if (inset === undefined && radius === undefined && partGap === undefined && footerGap === undefined) {
+    const overrides = this.overrides;
+    if (!overrides) {
       return undefined;
     }
-    return { inset, radius, partGap, footerGap };
+    const forwarded: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> = {};
+    for (const binding of ['inset', 'radius', 'partGap', 'footerGap'] as const) {
+      const ref = overrides[binding];
+      if (ref !== undefined) {
+        forwarded[binding] = ref;
+      }
+    }
+    return forwarded;
   }
 
-  private readonly handleCancel = (event: Event): void => {
-    // The native default would close the <dialog> itself; the consumer owns `open` instead.
-    event.preventDefault();
-    this.dispatchClose('escape');
-  };
-
-  private readonly handleDialogClick = (event: MouseEvent): void => {
-    if (!this.dismissible || event.target !== this.dialogEl) {
-      return;
-    }
-    this.dispatchClose('scrim');
-  };
-
-  private readonly handleCloseButtonPress = (event: Event): void => {
-    // Keep the button's `press` inside the sheet; consumers listen for `close`.
+  /** Dialog's `close` is re-dispatched from the sheet so consumers see one event, from one element. */
+  private readonly handleDialogClose = (event: Event): void => {
     event.stopPropagation();
-    if (!this.dismissible) {
-      return;
-    }
-    this.dispatchClose('close-button');
+    this.dispatchClose((event as CustomEvent<DialogCloseDetail>).detail.reason);
+  };
+
+  private readonly stopInnerEvent = (event: Event): void => {
+    event.stopPropagation();
+  };
+
+  private readonly handleCancel = (event: Event): void => {
+    // The consumer owns `open`: never let the browser close the <dialog> on its own.
+    event.preventDefault();
+    const active = getDeepActiveElement();
+    this.focusBeforeCancel = active instanceof HTMLElement ? active : null;
+    this.dispatchClose('escape');
   };
 
   private readonly handleNativeClose = (): void => {
@@ -550,124 +642,191 @@ export class DsBottomSheet extends LitElement {
       this.closingProgrammatically = false;
       return;
     }
-    unlockBodyScroll();
-    this.restoreFocus();
-    this.suppressCloseSync = true;
-    this.open = false;
-    this.dispatchClose('action');
+    // Chromium closes without a cancelable `cancel` when Escape arrives with no user activation.
+    // `escape` was already reported from `cancel`; stay open until the consumer flips `open`.
+    const dialog = this.dialogEl;
+    if (this.open && dialog && !dialog.open) {
+      dialog.showModal();
+      const previous = this.focusBeforeCancel;
+      if (previous?.isConnected) {
+        previous.focus();
+      } else {
+        this.applyInitialFocus();
+      }
+    }
+    this.focusBeforeCancel = null;
   };
 
-  private readonly handleHeaderPointerDown = (event: PointerEvent): void => {
-    if (!this.dragToDismiss) {
+  private readonly handleScrimClick = (event: MouseEvent): void => {
+    if (!this.dismissible || event.target !== event.currentTarget) {
       return;
     }
-    if ((event.target as HTMLElement).closest('.close')) {
+    this.dispatchClose('scrim');
+  };
+
+  private readonly handleCloseButtonPress = (event: Event): void => {
+    // The composite reports `close`; the inner button's `press` stays inside.
+    event.stopPropagation();
+    this.dispatchClose('close-button');
+  };
+
+  /** A slotted form submitted with method="dialog" (or a formmethod="dialog" submitter) asks to close. */
+  private readonly handleSubmit = (event: Event): void => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !this.open) {
       return;
     }
-    const surface = this.renderRoot.querySelector<HTMLElement>('.surface');
+    const submitter = (event as SubmitEvent).submitter;
+    const method =
+      (submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) &&
+      submitter.hasAttribute('formmethod')
+        ? submitter.formMethod
+        : form.method;
+    if (method === 'dialog') {
+      event.preventDefault();
+      if (this.wide) {
+        // ds-dialog handles the same submit and reports `action` through its own close.
+        return;
+      }
+      this.dispatchClose('action');
+    }
+  };
+
+  private readonly handleFooterSlotChange = (): void => {
+    const next = (this.footerSlotEl?.assignedNodes({ flatten: true }) ?? []).some(
+      (node) => node.nodeType === Node.ELEMENT_NODE || Boolean(node.textContent?.trim()),
+    );
+    if (next !== this.hasFooter) {
+      this.hasFooter = next;
+    }
+  };
+
+  private readonly handlePointerDown = (event: PointerEvent): void => {
+    if (!this.dismissible || !this.dragToDismiss || this.closing || !event.isPrimary || event.button !== 0) {
+      return;
+    }
+    // The close button is a control, not a drag origin.
+    if (event.composedPath().some((node) => node === this.closeButtonEl)) {
+      return;
+    }
+    const surface = this.surfaceEl;
     if (!surface) {
       return;
     }
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    this.dragState = { startY: event.clientY, startTime: event.timeStamp };
+    this.drag = { startY: event.clientY, lastY: event.clientY, lastTime: event.timeStamp, velocity: 0 };
+    // The drag follows the finger directly, even under reduced motion.
     surface.style.transition = 'none';
   };
 
-  private readonly handleHeaderPointerMove = (event: PointerEvent): void => {
-    const drag = this.dragState;
-    const surface = this.renderRoot.querySelector<HTMLElement>('.surface');
+  private readonly handlePointerMove = (event: PointerEvent): void => {
+    const drag = this.drag;
+    const surface = this.surfaceEl;
     if (!drag || !surface) {
       return;
     }
+    const elapsed = event.timeStamp - drag.lastTime;
+    if (elapsed > 0) {
+      drag.velocity = (event.clientY - drag.lastY) / elapsed;
+    }
+    drag.lastY = event.clientY;
+    drag.lastTime = event.timeStamp;
     const deltaY = Math.max(0, event.clientY - drag.startY);
     surface.style.transform = `translateY(${deltaY}px)`;
   };
 
-  private readonly handleHeaderPointerUp = (event: PointerEvent): void => {
-    const drag = this.dragState;
-    const surface = this.renderRoot.querySelector<HTMLElement>('.surface');
-    this.dragState = null;
+  private readonly handlePointerUp = (event: PointerEvent): void => {
+    const drag = this.drag;
+    const surface = this.surfaceEl;
+    this.drag = null;
     if (!drag || !surface) {
       return;
     }
-
     const deltaY = Math.max(0, event.clientY - drag.startY);
-    const elapsed = Math.max(1, event.timeStamp - drag.startTime);
-    const velocity = deltaY / elapsed;
-    const sheetHeight = surface.getBoundingClientRect().height || 1;
-    const pastThreshold = deltaY / sheetHeight > 0.25 || velocity > 0.5;
+    const sheetHeight = surface.getBoundingClientRect().height;
+    const pastDistance = sheetHeight > 0 && deltaY > sheetHeight * DISMISS_DISTANCE;
+    const pastVelocity = drag.velocity > DISMISS_VELOCITY;
 
-    surface.style.transition = prefersReducedMotion() ? 'none' : '';
-    surface.style.transform = '';
-
-    if (pastThreshold && this.dismissible) {
-      this.dispatchEvent(
-        new CustomEvent<BottomSheetDragDismissDetail>('drag-dismiss', { bubbles: true, composed: true }),
-      );
+    // Hand the transform back to the stylesheet's transitions.
+    surface.style.removeProperty('transition');
+    if (deltaY > 0 && (pastDistance || pastVelocity)) {
+      this.dispatchEvent(new CustomEvent<BottomSheetDragDismissDetail>('drag-dismiss', { bubbles: true, composed: true }));
       this.dispatchClose('drag');
+      if (!this.open) {
+        // The consumer closed: the exit transition plays from where the finger left the sheet.
+        return;
+      }
     }
+    // Spring back.
+    surface.style.removeProperty('transform');
   };
 
-  private handleOpen(): void {
-    this.closing = false;
-    this.openerElement = getDeepActiveElement();
-    lockBodyScroll();
-    this.dialogEl.showModal();
+  private readonly handlePointerCancel = (): void => {
+    this.drag = null;
+    const surface = this.surfaceEl;
+    surface?.style.removeProperty('transition');
+    surface?.style.removeProperty('transform');
+  };
+
+  private async handleOpen(): Promise<void> {
+    const dialog = this.dialogEl;
+    if (!dialog) {
+      return;
+    }
+    if (!this.scrollLocked) {
+      lockPageScroll();
+      this.scrollLocked = true;
+    }
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+    // Slotted custom elements render their focusable internals after this update.
+    await this.scopeEl?.updateComplete;
+    if (!this.open || this.closing || this.wide) {
+      return;
+    }
     this.applyInitialFocus();
   }
 
-  private playExit(): void {
-    const finish = (): void => {
+  private async handleClose(): Promise<void> {
+    await this.updateComplete;
+    // A released drag left an inline transform: dropping it lets the exit run from that position.
+    this.surfaceEl?.style.removeProperty('transform');
+    await this.transitionsSettled();
+    if (this.open || this.wide) {
+      return;
+    }
+    const dialog = this.dialogEl;
+    if (dialog?.open) {
       this.closingProgrammatically = true;
-      this.dialogEl.close();
-      unlockBodyScroll();
-      this.restoreFocus();
-      this.closing = false;
-    };
-    if (prefersReducedMotion()) {
-      finish();
-      return;
+      dialog.close();
     }
-    this.closing = true;
-    const surface = this.renderRoot.querySelector<HTMLElement>('.surface');
-    if (!surface) {
-      finish();
-      return;
-    }
-    const handleTransitionEnd = (event: TransitionEvent): void => {
-      if (event.target !== surface || event.propertyName !== 'transform') {
-        return;
-      }
-      surface.removeEventListener('transitionend', handleTransitionEnd);
-      finish();
-    };
-    surface.addEventListener('transitionend', handleTransitionEnd);
+    this.releaseScroll();
+    // Rendering nothing disconnects the FocusScope, which returns focus to the opener.
+    this.closing = false;
   }
 
+  private async transitionsSettled(): Promise<void> {
+    const parts = [this.scrimEl, this.surfaceEl].filter((el): el is HTMLElement => el !== null);
+    // Flush style so transitions started by @starting-style or the closing class are registered.
+    for (const part of parts) {
+      void getComputedStyle(part).transform;
+    }
+    const running = parts.flatMap((part) => part.getAnimations());
+    await Promise.all(running.map((animation) => animation.finished.catch(() => undefined)));
+  }
+
+  /** FocusScope's `first`: the body's first control, else the close button, else the heading. */
   private applyInitialFocus(): void {
-    const target = this.findFirstBodyFocusable() ?? this.closeButtonEl ?? this.headingEl;
+    const bodyFirst = this.bodySlotEl ? firstFocusableIn(this.bodySlotEl) : null;
+    const target = bodyFirst ?? (this.dismissible ? this.closeButtonEl : null) ?? this.headingEl;
     target?.focus();
   }
 
-  private findFirstBodyFocusable(): HTMLElement | null {
-    const slot = this.renderRoot.querySelector<HTMLSlotElement>('slot:not([name])');
-    if (!slot) {
-      return null;
-    }
-    for (const element of slot.assignedElements({ flatten: true })) {
-      const found = findFirstFocusable(element);
-      if (found) {
-        return found;
-      }
-    }
-    return null;
-  }
-
-  private restoreFocus(): void {
-    const opener = this.openerElement;
-    this.openerElement = null;
-    if (opener instanceof HTMLElement && opener.isConnected) {
-      opener.focus();
+  private releaseScroll(): void {
+    if (this.scrollLocked) {
+      unlockPageScroll();
+      this.scrollLocked = false;
     }
   }
 
@@ -690,11 +849,8 @@ export class DsBottomSheet extends LitElement {
   }
 
   private warnInDev(): void {
-    if (!import.meta.env.DEV) {
-      return;
-    }
-    if (!this.heading) {
-      console.warn('<ds-bottom-sheet> requires a `heading`, used as the accessible name.', this);
+    if (this.open && !this.heading) {
+      console.warn('<ds-bottom-sheet> requires a `heading`; it is the accessible name.', this);
     }
   }
 }

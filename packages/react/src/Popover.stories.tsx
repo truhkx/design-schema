@@ -1,9 +1,13 @@
+import { useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Popover } from './Popover';
+import { Popover, type PopoverOpenChangeReason, type PopoverProps } from './Popover';
 import { Button } from './Button';
+import { Form } from './Form';
+import { Icon } from './Icon';
 import { Input } from './Input';
 import { Link } from './Link';
 import { Stack } from './Stack';
+import { Switch } from './Switch';
 import { Text } from './Text';
 
 const defaultBody = (
@@ -14,7 +18,6 @@ const defaultBody = (
       <Button label="30 days" variant="secondary" size="sm" />
       <Button label="90 days" variant="secondary" size="sm" />
     </Stack>
-    <Link href="#" label="Reset filters" />
   </Stack>
 );
 
@@ -24,10 +27,20 @@ const meta: Meta<typeof Popover> = {
   args: {
     trigger: <Button label="Filters" variant="secondary" />,
     children: defaultBody,
+    headingLevel: '3',
     placement: 'bottom',
     modal: false,
     showArrow: false,
     dismissible: true,
+  },
+  argTypes: {
+    trigger: { control: false },
+    children: { control: false },
+    headingLevel: { control: 'inline-radio', options: ['2', '3', '4'] },
+    placement: {
+      control: 'select',
+      options: ['bottom-start', 'bottom', 'bottom-end', 'top-start', 'top', 'top-end', 'start', 'end'],
+    },
   },
   tags: ['autodocs'],
 };
@@ -53,37 +66,75 @@ export const PlacementStart: Story = { args: { placement: 'start' } };
 export const PlacementEnd: Story = { args: { placement: 'end' } };
 
 /* notable states */
-export const WithHeading: Story = {
-  args: { heading: 'Filters' },
-};
+export const NotDismissible: Story = { args: { heading: 'Filters', dismissible: false } };
 
-export const ShowArrowTrue: Story = {
-  args: { showArrow: true, heading: 'Filters' },
-};
-
-export const ModalTrue: Story = {
+/* examples */
+export const FilterPanel: Story = {
   args: {
-    modal: true,
-    heading: 'Add link',
-    dismissible: false,
-    trigger: <Button label="Add link" variant="secondary" />,
+    trigger: <Button label="Filters" variant="secondary" />,
     children: (
-      <Stack gap="normal">
-        <Input label="URL" name="url" placeholder="https://example.com" />
-        <Stack direction="horizontal" gap="tight" justify="end">
-          <Button label="Cancel" variant="secondary" size="sm" />
-          <Button label="Add" variant="primary" size="sm" />
+      <Form label="Filters" actions={<Button label="Apply" type="submit" size="sm" />}>
+        <Stack gap="normal">
+          <Switch label="Only open items" name="openOnly" />
+          <Switch label="Assigned to me" name="mine" />
         </Stack>
+      </Form>
+    ),
+    heading: 'Filters',
+    placement: 'bottom-start',
+  },
+};
+
+export const DatePickerPanel: Story = {
+  args: {
+    trigger: <Button label="16 September 2026" variant="secondary" leadingIcon={<Icon name="calendar" inline />} />,
+    children: (
+      <Stack gap="tight">
+        <Button label="Today" variant="ghost" size="sm" />
+        <Button label="Tomorrow" variant="ghost" size="sm" />
+        <Button label="Next week" variant="ghost" size="sm" />
       </Stack>
     ),
   },
 };
 
-export const NotDismissible: Story = {
-  args: { dismissible: false, heading: 'Filters' },
+export const RequiredStep: Story = {
+  args: {
+    trigger: <Button label="Add member" variant="secondary" />,
+    children: (
+      <Form label="Add member" actions={<Button label="Save" type="submit" size="sm" />}>
+        <Input label="Email" name="email" type="email" required />
+      </Form>
+    ),
+    heading: 'Add member',
+    modal: true,
+  },
 };
 
-/** Open/present with its trigger and at least three focusable body children, for the keyboard gate. */
+export const ContextualHelp: Story = {
+  args: {
+    trigger: <Button label="Help" variant="ghost" iconOnly leadingIcon={<Icon name="info" inline />} />,
+    children: (
+      <Text size="sm">
+        Filters apply to every view in this project. <Link href="#" label="Read the guide" />
+      </Text>
+    ),
+    showArrow: true,
+    placement: 'end',
+  },
+};
+
+/** Starts open and owns its state, so Escape and Tab visibly close it. */
+function KeyboardHarness(props: PopoverProps): ReactElement {
+  const [open, setOpen] = useState(props.open ?? true);
+  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {
+    setOpen(next);
+    props.onOpenChange?.(next, reason);
+  };
+  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;
+}
+
+/** Open with its trigger and three focusable body children, for the keyboard gate. */
 export const Keyboard: Story = {
   args: {
     open: true,
@@ -93,8 +144,8 @@ export const Keyboard: Story = {
         <Button label="7 days" variant="secondary" size="sm" />
         <Button label="30 days" variant="secondary" size="sm" />
         <Button label="90 days" variant="secondary" size="sm" />
-        <Link href="#" label="Reset filters" />
       </Stack>
     ),
   },
+  render: (args) => <KeyboardHarness {...(args as PopoverProps)} />,
 };

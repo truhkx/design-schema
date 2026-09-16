@@ -19,26 +19,40 @@
   margin: auto;
   padding: 0;
   border: 0;
-  max-inline-size: none;
-  max-block-size: none;
+  inline-size: auto;
+  max-inline-size: calc(100vw - 2 * var(--layout-gutter));
+  max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  overflow: visible;
   background: transparent;
-  color: inherit;
+  color: var(--color-foreground);
   font-family: var(--font-family-body);
   z-index: var(--ds-dialog-layer);
 }
 
-/* scrim → color.overlay.scrim; ::backdrop inherits the custom property from its originating element. */
+/* scrim → color.overlay.scrim; the ::backdrop is the scrim and fades with the surface. */
 .ds-dialog::backdrop {
   background-color: var(--ds-dialog-scrim);
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: var(--ds-dialog-exit);
+  transition-timing-function: var(--motion-easing-exit);
 }
 
+.ds-dialog--visible::backdrop {
+  opacity: 1;
+  transition-duration: var(--ds-dialog-enter);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+/* surface → color.overlay.surface (locked); border, borderWidth, radius, shadow, partGap. */
 .ds-dialog__surface {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--ds-dialog-part-gap);
-  max-inline-size: calc(100vw - 2 * var(--layout-gutter));
+  inline-size: 100%;
   max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  padding-block: var(--ds-dialog-inset);
   background-color: var(--color-overlay-surface);
   border-style: solid;
   border-width: var(--ds-dialog-border-width);
@@ -46,6 +60,7 @@
   border-radius: var(--ds-dialog-radius);
   box-shadow: var(--ds-dialog-shadow);
   overflow: hidden;
+  /* exit: motion.duration.fast with motion.easing.exit */
   opacity: 0;
   transform: translateY(var(--space-2));
   transition-property: opacity, transform;
@@ -53,7 +68,7 @@
   transition-timing-function: var(--motion-easing-exit);
 }
 
-/* enter/exit: scrim fade and surface fade-and-rise; visible uses `enter` and motion.easing.standard. */
+/* enter: fade-and-rise over motion.duration.base with motion.easing.standard */
 .ds-dialog--visible .ds-dialog__surface {
   opacity: 1;
   transform: translateY(0);
@@ -61,10 +76,10 @@
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* size → surface width; sm is the overridable widthSm token, md/lg are derived from layout.maxWidth.content. */
-.ds-dialog--sm .ds-dialog__surface { inline-size: var(--ds-dialog-width-sm); }
-.ds-dialog--md .ds-dialog__surface { inline-size: calc(var(--layout-max-width-content) * 0.75); }
-.ds-dialog--lg .ds-dialog__surface { inline-size: var(--layout-max-width-content); }
+/* size → surface width; sm reads widthSm, md is 3/4 of content and lg is content. Full width below that measure. */
+.ds-dialog--sm { inline-size: var(--ds-dialog-width-sm); }
+.ds-dialog--md { inline-size: calc(var(--layout-max-width-content) * 3 / 4); }
+.ds-dialog--lg { inline-size: var(--layout-max-width-content); }
 
 .ds-dialog__header {
   display: flex;
@@ -72,28 +87,24 @@
   justify-content: space-between;
   gap: var(--ds-dialog-header-gap);
   padding-inline: var(--ds-dialog-inset);
-  padding-block-start: var(--ds-dialog-inset);
   flex: 0 0 auto;
 }
 
-.ds-dialog__heading-group {
+/* descriptionGap → between the heading and the description. */
+.ds-dialog__titles {
   display: flex;
   flex-direction: column;
   gap: var(--ds-dialog-description-gap);
   min-inline-size: 0;
 }
 
-.ds-dialog__heading {
-  min-inline-size: 0;
-}
-
-/* focus-visible: the heading is only focused programmatically (initialFocus="title"), never removed. */
-.ds-dialog__heading:focus-visible {
+/* focus-visible: the heading is focused programmatically for initialFocus="title". */
+.ds-dialog__heading:has(:focus-visible) {
   outline: var(--border-width-focus) solid var(--color-border-focus);
   outline-offset: var(--border-width-focus);
 }
 
-/* hideHeading: visually hidden, clipped to a 1px box — the standard sanctioned pixel literals */
+/* hideHeading: visually hidden, still the accessible name and a focus target — sanctioned 1px clip pattern. */
 .ds-dialog__visually-hidden {
   position: absolute;
   inline-size: 1px;
@@ -107,32 +118,33 @@
 }
 
 .ds-dialog__close {
+  display: inline-flex;
   flex: 0 0 auto;
+  margin-inline-start: auto;
 }
 
-/* body → the Box's own inset (default layout.inset.lg, forwarded from the `inset` override); this
-   is the part that scrolls when content is taller than the viewport. */
-.ds-dialog__body {
+/* body: the only region that scrolls, so header and footer stay put. */
+.ds-dialog__scroll {
   flex: 1 1 auto;
   min-block-size: 0;
   overflow: auto;
-}
-
-.ds-dialog__footer {
   padding-inline: var(--ds-dialog-inset);
-  padding-block-end: var(--ds-dialog-inset);
-  flex: 0 0 auto;
 }
 
-/* footerGap → layout.gap.tight, applied through the composed Stack's own gap scale (closest preset). */
+/* footer: end-aligned action row; footerGap is forwarded to the Stack's own `gap` override. */
+.ds-dialog__footer {
+  flex: 0 0 auto;
+  padding-inline: var(--ds-dialog-inset);
+}
 
 @media (prefers-reduced-motion: reduce) {
+  .ds-dialog::backdrop,
   .ds-dialog__surface {
     transition: none;
   }
 }
 
-/* Body scroll lock while any Dialog is present; toggled on <html> by the component. */
+/* scroll-lock while a Dialog is present; the gutter keeps the page from shifting. */
 html.ds-dialog-lock-scroll {
   overflow: hidden;
   scrollbar-gutter: stable;

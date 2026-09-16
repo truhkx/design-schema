@@ -85,7 +85,7 @@ const TONE = {
  * `restoreFocus`) for the trap and focus-restore. There is no close button: the only
  * ways out are Cancel and Confirm. `onRequestClose` (the Android back gesture)
  * always reports `onCancel('escape')`. Initial accessibility focus lands on the
- * title once the enter animation finishes (or immediately under reduced motion) so
+ * `View` wrapping the title (Heading forwards no ref) once the enter animation finishes (or immediately under reduced motion) so
  * the question is read first; Cancel precedes Confirm in the accessibility order so
  * a reflexive Enter cancels rather than confirms. The icon, its color and the
  * confirm button's variant come from the `tone` lookup table. Buttons are the
@@ -105,7 +105,7 @@ export function AlertDialog({
   onConfirm,
   onCancel,
   overrides,
-}: AlertDialogProps): React.JSX.Element {
+}: AlertDialogProps): React.JSX.Element | null {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
   const resolvedCancelLabel = cancelLabel ?? COPY.cancelLabel;
@@ -202,6 +202,10 @@ export function AlertDialog({
     onConfirm?.();
   };
 
+  if (!mounted && !open) {
+    return null;
+  }
+
   const hostStyle: ViewStyle = { flex: 1 };
 
   const scrimStyle: Animated.WithAnimatedValue<ViewStyle> = {
@@ -269,33 +273,45 @@ export function AlertDialog({
               accessibilityHint={description}
               testID="AlertDialog"
             >
-              <View style={innerSurfaceStyle}>
+              <View style={innerSurfaceStyle} testID="AlertDialog.surface">
                 <View style={iconRowStyle}>
-                  <Icon
-                    name={toneTokens.glyph}
-                    size="lg"
-                    color={iconColor}
-                    overrides={overrides?.iconSize ? { size: overrides.iconSize } : undefined}
-                  />
-                  <View ref={titleRef} style={titleGroupStyle}>
-                    <Heading level={2}>{heading}</Heading>
-                    <Text tone="muted">{description}</Text>
+                  <View testID="AlertDialog.icon" accessibilityElementsHidden importantForAccessibility="no">
+                    <Icon
+                      name={toneTokens.glyph}
+                      size="lg"
+                      color={iconColor}
+                      overrides={overrides?.iconSize ? { size: overrides.iconSize } : undefined}
+                    />
+                  </View>
+                  <View style={titleGroupStyle}>
+                    <View ref={titleRef} testID="AlertDialog.heading">
+                      <Heading level={2}>{heading}</Heading>
+                    </View>
+                    <View testID="AlertDialog.description">
+                      <Text tone="muted">{description}</Text>
+                    </View>
                   </View>
                 </View>
-                <Stack
-                  direction="horizontal"
-                  gap="tight"
-                  justify="end"
-                  overrides={overrides?.footerGap ? { gap: overrides.footerGap } : undefined}
-                >
-                  <Button label={resolvedCancelLabel} variant="secondary" onPress={handleCancelPress} />
-                  <Button
-                    label={confirmLabel}
-                    variant={toneTokens.confirmVariant}
-                    disabled={confirmDisabled}
-                    onPress={handleConfirmPress}
-                  />
-                </Stack>
+                <View testID="AlertDialog.footer">
+                  <Stack
+                    direction="horizontal"
+                    gap="tight"
+                    justify="end"
+                    overrides={overrides?.footerGap ? { gap: overrides.footerGap } : undefined}
+                  >
+                    <View testID="AlertDialog.cancelButton">
+                      <Button label={resolvedCancelLabel} variant="secondary" onPress={handleCancelPress} />
+                    </View>
+                    <View testID="AlertDialog.confirmButton">
+                      <Button
+                        label={confirmLabel}
+                        variant={toneTokens.confirmVariant}
+                        disabled={confirmDisabled}
+                        onPress={handleConfirmPress}
+                      />
+                    </View>
+                  </Stack>
+                </View>
               </View>
             </Animated.View>
           </FocusScope>

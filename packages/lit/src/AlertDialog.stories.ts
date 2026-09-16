@@ -1,17 +1,47 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html } from 'lit';
+import { html, type TemplateResult } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './AlertDialog.js';
-import type { AlertDialogTone } from './AlertDialog.js';
+import './Button.js';
+import type { AlertDialogTone, DsAlertDialog } from './AlertDialog.js';
 
 interface AlertDialogArgs {
   open: boolean;
   heading: string;
   description: string;
-  tone: AlertDialogTone;
+  tone?: AlertDialogTone | undefined;
   confirmLabel: string;
   cancelLabel?: string | undefined;
-  confirmDisabled: boolean;
+  confirmDisabled?: boolean | undefined;
+}
+
+/** The consumer owns `open`: both answers close the story's dialog. */
+function closeAlertDialog(event: Event): void {
+  (event.currentTarget as DsAlertDialog).open = false;
+}
+
+function openAlertDialog(event: Event): void {
+  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsAlertDialog | null;
+  if (dialog) {
+    dialog.open = true;
+  }
+}
+
+function renderAlertDialog(args: AlertDialogArgs): TemplateResult {
+  return html`
+    <ds-button variant="secondary" label="Open alert dialog" @press=${openAlertDialog}></ds-button>
+    <ds-alert-dialog
+      ?open=${args.open}
+      heading=${args.heading}
+      description=${args.description}
+      tone=${args.tone ?? 'danger'}
+      confirm-label=${args.confirmLabel}
+      cancel-label=${ifDefined(args.cancelLabel)}
+      ?confirm-disabled=${args.confirmDisabled ?? false}
+      @confirm=${closeAlertDialog}
+      @cancel=${closeAlertDialog}
+    ></ds-alert-dialog>
+  `;
 }
 
 const meta: Meta<AlertDialogArgs> = {
@@ -29,20 +59,9 @@ const meta: Meta<AlertDialogArgs> = {
     description: 'They will be removed from all shared folders. This cannot be undone.',
     tone: 'danger',
     confirmLabel: 'Delete files',
-    cancelLabel: undefined,
     confirmDisabled: false,
   },
-  render: (args) => html`
-    <ds-alert-dialog
-      ?open=${args.open}
-      heading=${args.heading}
-      description=${args.description}
-      tone=${args.tone}
-      confirm-label=${args.confirmLabel}
-      cancel-label=${ifDefined(args.cancelLabel)}
-      ?confirm-disabled=${args.confirmDisabled}
-    ></ds-alert-dialog>
-  `,
+  render: renderAlertDialog,
 };
 
 export default meta;
@@ -52,49 +71,58 @@ export const Default: Story = {};
 
 /* tone */
 export const ToneDanger: Story = { args: { tone: 'danger' } };
-export const ToneWarning: Story = {
+export const ToneWarning: Story = { args: { tone: 'warning' } };
+export const ToneInfo: Story = { args: { tone: 'info' } };
+
+/* notable states */
+export const ConfirmDisabled: Story = { args: { confirmDisabled: true } };
+
+/* examples */
+export const DeleteFiles: Story = {
   args: {
-    tone: 'warning',
-    heading: 'Leave without saving?',
-    description: 'Your changes will be lost.',
-    confirmLabel: 'Leave page',
-  },
-};
-export const ToneInfo: Story = {
-  args: {
-    tone: 'info',
-    heading: 'Switch workspaces?',
-    description: 'You will need to sign in again to switch back.',
-    confirmLabel: 'Switch workspace',
+    open: true,
+    tone: 'danger',
+    heading: 'Delete 3 files?',
+    description: 'They will be removed from all shared folders. This cannot be undone.',
+    confirmLabel: 'Delete files',
   },
 };
 
-export const CancelLabel: Story = {
+export const LeaveWithoutSaving: Story = {
   args: {
-    heading: 'Discard draft?',
-    description: 'Your draft will be permanently deleted.',
-    confirmLabel: 'Discard draft',
+    open: true,
+    tone: 'warning',
+    heading: 'Leave without saving?',
+    description: 'Your changes to this draft will be lost.',
+    confirmLabel: 'Leave',
     cancelLabel: 'Keep editing',
   },
 };
 
-export const ConfirmDisabled: Story = {
-  args: { confirmDisabled: true },
+export const TypedConfirmation: Story = {
+  args: {
+    open: true,
+    tone: 'danger',
+    heading: 'Cancel your subscription?',
+    description: 'Your workspace stays read-only after the current billing period ends.',
+    confirmLabel: 'Cancel subscription',
+    confirmDisabled: true,
+  },
+};
+
+export const PublishToTheTeam: Story = {
+  args: {
+    open: true,
+    tone: 'info',
+    heading: 'Publish to the team?',
+    description: 'Everyone in the workspace will be able to see this page.',
+    confirmLabel: 'Publish',
+  },
 };
 
 /**
- * Renders open with its trigger and at least three focusable children so the
- * keyboard gate can verify Tab/Shift+Tab wrapping and Escape.
+ * Open with its trigger. The dialog has exactly two focusable children (Cancel, then Confirm): an
+ * alert dialog carries no other controls, so the keyboard gate checks Escape and Tab / Shift+Tab
+ * wrapping between those two.
  */
-export const Keyboard: Story = {
-  render: () => html`
-    <button type="button" id="alert-dialog-trigger">Delete files</button>
-    <ds-alert-dialog
-      open
-      tone="danger"
-      heading="Delete 3 files?"
-      description="They will be removed from all shared folders. This cannot be undone."
-      confirm-label="Delete files"
-    ></ds-alert-dialog>
-  `,
-};
+export const Keyboard: Story = {};

@@ -8,6 +8,10 @@
   --ds-action-sheet-item-padding-inline: var(--layout-inset-md);
   --ds-action-sheet-item-gap: var(--layout-gap-normal);
   --ds-action-sheet-header-padding-block: var(--space-sm);
+  --ds-action-sheet-header-gap: var(--layout-gap-tight);
+  --ds-action-sheet-handle-height: var(--space-1);
+  --ds-action-sheet-handle-width: var(--space-10);
+  --ds-action-sheet-handle-radius: var(--radius-full);
   --ds-action-sheet-font-family: var(--font-family-body);
   --ds-action-sheet-font-size: var(--font-size-md);
   --ds-action-sheet-line-height: var(--font-line-height-normal);
@@ -19,6 +23,7 @@
   --ds-action-sheet-exit: var(--motion-duration-fast);
   box-sizing: border-box;
   position: fixed;
+  inset-block-start: auto;
   inset-block-end: 0;
   inset-inline: 0;
   margin: 0;
@@ -26,82 +31,66 @@
   border: 0;
   inline-size: 100%;
   max-inline-size: none;
-  max-block-size: 90dvh;
+  max-block-size: 100dvh;
+  overflow: visible;
   background: transparent;
   color: inherit;
   z-index: var(--ds-action-sheet-layer);
 }
 
-/* scrim → color.overlay.scrim; ::backdrop inherits the custom property from its originating element. */
+/* scrim: ::backdrop inherits custom properties from its dialog. */
 .ds-action-sheet::backdrop {
   background-color: var(--ds-action-sheet-scrim);
 }
 
+/* surface (locked) + shadow + radius; height: content. */
 .ds-action-sheet__surface {
+  --ds-action-sheet-drag: 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  background-color: var(--color-overlay-surface); /* surface: locked — never overridable. */
+  background-color: var(--color-overlay-surface);
   border-start-start-radius: var(--ds-action-sheet-radius);
   border-start-end-radius: var(--ds-action-sheet-radius);
   box-shadow: var(--ds-action-sheet-shadow);
-  overflow: hidden;
   padding-block-end: env(safe-area-inset-bottom);
   transform: translateY(100%);
-  transition-property: transform;
-  transition-duration: var(--ds-action-sheet-exit);
-  transition-timing-function: var(--motion-easing-exit);
-  touch-action: none;
+  transition: transform var(--ds-action-sheet-exit) var(--motion-easing-standard);
 }
 
-/* enter/exit: slide up from the bottom edge; visible uses `enter` and motion.easing.standard. */
 .ds-action-sheet--visible .ds-action-sheet__surface {
-  transform: translateY(0);
+  transform: translateY(var(--ds-action-sheet-drag));
   transition-duration: var(--ds-action-sheet-enter);
-  transition-timing-function: var(--motion-easing-standard);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ds-action-sheet__surface {
-    transition: none;
-  }
+.ds-action-sheet__surface--dragging {
+  transition: none;
 }
 
-/* header: the handle plus the heading. headerPaddingBlock is also reused by the cancel row below,
-   so both sit at the same vertical rhythm as the header. */
+/* header: handle + heading; headerPaddingBlock also pads the cancel row. */
 .ds-action-sheet__header {
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: var(--ds-action-sheet-header-gap);
   padding-block: var(--ds-action-sheet-header-padding-block);
-  flex: 0 0 auto;
-}
-
-/* handle: a 4×36 decorative pill centered above the heading, aria-hidden and not focusable —
-   supports the drag gesture, which is additive to Cancel and Escape. */
-.ds-action-sheet__handle {
-  align-self: center;
-  inline-size: var(--space-10);
-  block-size: var(--space-1);
-  border-radius: var(--radius-full);
-  background-color: var(--color-foreground-muted);
-  flex: 0 0 auto;
-}
-
-.ds-action-sheet__heading {
   padding-inline: var(--ds-action-sheet-item-padding-inline);
-  margin-block-start: var(--layout-gap-tight);
-  flex: 0 0 auto;
+  touch-action: none;
+  cursor: grab;
+}
+
+/* handle (locked color): decorative pill. */
+.ds-action-sheet__handle {
+  inline-size: var(--ds-action-sheet-handle-width);
+  block-size: var(--ds-action-sheet-handle-height);
+  border-radius: var(--ds-action-sheet-handle-radius);
+  background-color: var(--color-foreground-muted);
 }
 
 .ds-action-sheet__list {
   display: flex;
   flex-direction: column;
-  flex: 0 1 auto;
-  overflow: auto;
-  font-family: var(--ds-action-sheet-font-family);
-  font-size: var(--ds-action-sheet-font-size);
-  line-height: var(--ds-action-sheet-line-height);
+  overflow-y: auto;
 }
 
 .ds-action-sheet__item {
@@ -109,77 +98,71 @@
   display: flex;
   align-items: center;
   gap: var(--ds-action-sheet-item-gap);
+  inline-size: 100%;
+  min-block-size: var(--size-target-comfortable);
   padding-block: var(--ds-action-sheet-item-padding-block);
   padding-inline: var(--ds-action-sheet-item-padding-inline);
-  min-block-size: var(--size-target-comfortable); /* minTarget: locked — never overridable. */
   border: 0;
-  background: none;
-  color: var(--color-foreground); /* itemColor: locked — never overridable. */
-  font: inherit;
+  background: transparent;
+  color: var(--color-foreground);
+  font-family: var(--ds-action-sheet-font-family);
+  font-size: var(--ds-action-sheet-font-size);
+  line-height: var(--ds-action-sheet-line-height);
   text-align: start;
   cursor: pointer;
   transition: background-color var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
+.ds-action-sheet__item--danger {
+  color: var(--color-foreground-danger);
+}
+
+.ds-action-sheet__item:hover:not([aria-disabled='true']) {
+  background-color: var(--color-background-subtle);
+}
+
+.ds-action-sheet__item:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: calc(-1 * var(--border-width-focus));
+}
+
+.ds-action-sheet__item--disabled {
+  opacity: var(--opacity-disabled);
+  cursor: default;
+}
+
+.ds-action-sheet__icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.ds-action-sheet__label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+/* divider: above the danger group. */
+.ds-action-sheet__divider {
+  flex: none;
+  block-size: 0;
+  border-block-start: var(--ds-action-sheet-divider-width) solid var(--ds-action-sheet-divider);
+}
+
+/* divider: above the cancel row. The grid stretches the Button without restyling it. */
+.ds-action-sheet__cancel-row {
+  display: grid;
+  padding-block: var(--ds-action-sheet-header-padding-block);
+  padding-inline: var(--ds-action-sheet-item-padding-inline);
+  border-block-start: var(--ds-action-sheet-divider-width) solid var(--ds-action-sheet-divider);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .ds-action-sheet__surface,
   .ds-action-sheet__item {
     transition: none;
   }
 }
 
-/* itemHover: locked — pointer hover and keyboard focus share this highlight. */
-.ds-action-sheet__item:focus,
-.ds-action-sheet__item:hover {
-  background-color: var(--color-background-subtle);
-  outline: none;
-}
-
-.ds-action-sheet__item:focus-visible {
-  /* focusRing/focusRingWidth: locked — never overridable. */
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: calc(-1 * var(--border-width-focus));
-}
-
-.ds-action-sheet__item--danger {
-  color: var(--color-foreground-danger); /* itemDangerColor: locked — never overridable. */
-}
-
-.ds-action-sheet__item--disabled {
-  cursor: default;
-  opacity: var(--opacity-disabled);
-}
-
-.ds-action-sheet__item-icon {
-  flex: 0 0 auto;
-  display: inline-flex;
-  line-height: 0;
-}
-
-.ds-action-sheet__item-label {
-  flex: 1 1 auto;
-  min-inline-size: 0;
-}
-
-.ds-action-sheet__divider {
-  flex: 0 0 auto;
-  block-size: var(--ds-action-sheet-divider-width);
-  background-color: var(--ds-action-sheet-divider);
-}
-
-.ds-action-sheet__cancel-row {
-  box-sizing: border-box;
-  padding-block: var(--ds-action-sheet-header-padding-block);
-  padding-inline: var(--ds-action-sheet-item-padding-inline);
-  flex: 0 0 auto;
-}
-
-.ds-action-sheet__cancel {
-  inline-size: 100%;
-}
-
-/* Body scroll lock while any ActionSheet is present in its bottom-edge presentation; toggled on
-   <html> by the component. The wide (Menu) presentation manages its own layer and needs no lock. */
 html.ds-action-sheet-lock-scroll {
   overflow: hidden;
-  scrollbar-gutter: stable;
 }

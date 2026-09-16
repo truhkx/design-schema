@@ -10,8 +10,7 @@ const ACTIONS: ActionSheetAction[] = [
   { id: 'share', label: 'Share', icon: 'external' },
   { id: 'rename', label: 'Rename' },
   { id: 'duplicate', label: 'Duplicate' },
-  { id: 'archive', label: 'Archive', disabled: true },
-  { id: 'delete', label: 'Delete photo', tone: 'danger' },
+  { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },
 ];
 
 const meta: Meta<typeof ActionSheet> = {
@@ -31,16 +30,49 @@ type Story = StoryObj<typeof ActionSheet>;
 
 export const Default: Story = {};
 
+// examples
+export const PhotoActions: Story = {
+  args: {
+    open: true,
+    heading: 'Photo.jpg',
+    actions: [
+      { id: 'share', label: 'Share', icon: 'external' },
+      { id: 'rename', label: 'Rename' },
+      { id: 'duplicate', label: 'Duplicate' },
+      { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },
+    ],
+  },
+};
+
+export const UnnamedSheet: Story = {
+  args: {
+    open: true,
+    heading: undefined,
+    actions: [
+      { id: 'copy', label: 'Copy link' },
+      { id: 'open', label: 'Open in new tab' },
+    ],
+  },
+};
+
+export const WithAnUnavailableAction: Story = {
+  args: {
+    open: true,
+    heading: 'Invoice 4821',
+    cancelLabel: 'Not now',
+    actions: [
+      { id: 'download', label: 'Download' },
+      { id: 'void', label: 'Void invoice', tone: 'danger', disabled: true },
+    ],
+  },
+};
+
 // notable states
-export const NoHeading: Story = { args: { heading: undefined } };
-
-export const CustomCancelLabel: Story = { args: { cancelLabel: 'Not now' } };
-
 export const NotDismissible: Story = { args: { dismissible: false } };
 
 export const WithOverrides: Story = {
   args: {
-    overrides: { radius: 'radius.full', scrim: 'color.overlay.scrim' },
+    overrides: { radius: 'radius.md', itemPaddingBlock: 'space.md', headerGap: 'layout.gap.normal' },
   },
 };
 

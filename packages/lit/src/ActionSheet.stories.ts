@@ -1,30 +1,44 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html } from 'lit';
+import { html, type TemplateResult } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './ActionSheet.js';
-import type { ActionSheetAction } from './ActionSheet.js';
+import './Button.js';
+import type { ActionSheetAction, DsActionSheet } from './ActionSheet.js';
 
 interface ActionSheetArgs {
   open: boolean;
   heading?: string | undefined;
   actions: ActionSheetAction[];
+  dismissible?: boolean | undefined;
   cancelLabel?: string | undefined;
-  dismissible: boolean;
 }
 
-const DEFAULT_ACTIONS: ActionSheetAction[] = [
-  { id: 'share', label: 'Share', icon: 'external' },
-  { id: 'rename', label: 'Rename' },
-  { id: 'duplicate', label: 'Duplicate' },
-  { id: 'delete', label: 'Delete photo', tone: 'danger' },
-];
+/** The consumer's side of the controlled contract: a choice or a dismissal closes the sheet. */
+function closeSheet(event: Event): void {
+  (event.currentTarget as DsActionSheet).open = false;
+}
 
-const DISABLED_ACTIONS: ActionSheetAction[] = [
-  { id: 'share', label: 'Share', icon: 'external' },
-  { id: 'rename', label: 'Rename', disabled: true },
-  { id: 'duplicate', label: 'Duplicate' },
-  { id: 'delete', label: 'Delete photo', tone: 'danger' },
-];
+function openSheet(event: Event): void {
+  const sheet = (event.currentTarget as HTMLElement).nextElementSibling as DsActionSheet | null;
+  if (sheet) {
+    sheet.open = true;
+  }
+}
+
+function renderSheet(args: ActionSheetArgs): TemplateResult {
+  return html`
+    <ds-button label="More actions" variant="secondary" @press=${openSheet}></ds-button>
+    <ds-action-sheet
+      ?open=${args.open}
+      heading=${ifDefined(args.heading)}
+      .actions=${args.actions}
+      ?no-dismiss=${args.dismissible === false}
+      cancel-label=${ifDefined(args.cancelLabel)}
+      @action=${closeSheet}
+      @close=${closeSheet}
+    ></ds-action-sheet>
+  `;
+}
 
 const meta: Meta<ActionSheetArgs> = {
   title: 'ActionSheet/Lit',
@@ -35,18 +49,15 @@ const meta: Meta<ActionSheetArgs> = {
   args: {
     open: true,
     heading: 'Photo.jpg',
-    actions: DEFAULT_ACTIONS,
+    actions: [
+      { id: 'share', label: 'Share', icon: 'external' },
+      { id: 'rename', label: 'Rename' },
+      { id: 'duplicate', label: 'Duplicate' },
+      { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },
+    ],
     dismissible: true,
   },
-  render: (args) => html`
-    <ds-action-sheet
-      ?open=${args.open}
-      heading=${ifDefined(args.heading)}
-      .actions=${args.actions}
-      cancel-label=${ifDefined(args.cancelLabel)}
-      ?no-dismiss=${!args.dismissible}
-    ></ds-action-sheet>
-  `,
+  render: renderSheet,
 };
 
 export default meta;
@@ -54,28 +65,61 @@ type Story = StoryObj<ActionSheetArgs>;
 
 export const Default: Story = {};
 
-export const WithoutTitle: Story = {
-  args: { heading: undefined },
+export const Closed: Story = { args: { open: false } };
+
+export const DismissibleFalse: Story = { args: { dismissible: false } };
+
+/* examples */
+
+export const PhotoActions: Story = {
+  args: {
+    open: true,
+    heading: 'Photo.jpg',
+    actions: [
+      { id: 'share', label: 'Share', icon: 'external' },
+      { id: 'rename', label: 'Rename' },
+      { id: 'duplicate', label: 'Duplicate' },
+      { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },
+    ],
+  },
 };
 
-export const WithDisabledAction: Story = {
-  args: { actions: DISABLED_ACTIONS },
+export const UnnamedSheet: Story = {
+  args: {
+    open: true,
+    heading: undefined,
+    actions: [
+      { id: 'copy', label: 'Copy link' },
+      { id: 'open', label: 'Open in new tab' },
+    ],
+  },
 };
 
-export const CustomCancelLabel: Story = {
-  args: { cancelLabel: 'Never mind' },
-};
-
-export const DismissibleFalse: Story = {
-  args: { dismissible: false },
+export const WithAnUnavailableAction: Story = {
+  args: {
+    open: true,
+    heading: 'Invoice 4821',
+    cancelLabel: 'Not now',
+    actions: [
+      { id: 'download', label: 'Download' },
+      { id: 'void', label: 'Void invoice', tone: 'danger', disabled: true },
+    ],
+  },
 };
 
 /**
- * Renders open with at least three focusable children (four action rows plus
- * Cancel) so the keyboard gate can verify arrow navigation, Home/End wrapping,
- * Enter/Space and Escape. ActionSheet has no dedicated trigger of its own —
- * `open` is fully controlled by the consumer.
+ * Open with its trigger and four enabled actions plus the Cancel row, so the keyboard gate can check
+ * arrow wrapping, Home/End, Enter/Space and Escape. Choosing or dismissing closes it; the trigger reopens.
  */
 export const Keyboard: Story = {
-  args: { open: true, heading: 'Photo.jpg', actions: DEFAULT_ACTIONS },
+  args: {
+    open: true,
+    heading: 'Photo.jpg',
+    actions: [
+      { id: 'share', label: 'Share', icon: 'external' },
+      { id: 'rename', label: 'Rename' },
+      { id: 'duplicate', label: 'Duplicate' },
+      { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },
+    ],
+  },
 };

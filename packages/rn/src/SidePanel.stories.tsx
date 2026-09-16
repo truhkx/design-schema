@@ -1,6 +1,9 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './Button';
+import { Card } from './Card';
+import { Checkbox } from './Checkbox';
+import { Icon } from './Icon';
 import { Link } from './Link';
 import { SidePanel } from './SidePanel';
 import { Stack } from './Stack';
@@ -89,6 +92,88 @@ export const WithFooter: Story = {
 export const WithOverrides: Story = {
   args: {
     overrides: { width: 'layout.maxWidth.content', scrim: 'color.overlay.scrim' },
+  },
+};
+
+// examples
+
+/** The phone hamburger menu that becomes the permanent sidebar on desktop, with a self-explanatory list. */
+export const NavigationDrawer: Story = {
+  args: {
+    open: undefined,
+    trigger: <Button label="Menu" variant="ghost" iconOnly leadingIcon={<Icon name="menu" />} />,
+    heading: 'Menu',
+    children: (
+      <Stack gap="tight" align="start">
+        <Link href="#" label="Home" />
+        <Link href="#" label="Products" />
+        <Link href="#" label="About" />
+      </Stack>
+    ),
+    hideHeading: true,
+    role: 'navigation',
+    persistent: 'content',
+  },
+};
+
+/** A wide filter panel beside a results page, ending in an action row. */
+export const Filters: Story = {
+  args: {
+    open: undefined,
+    trigger: <Button label="Filters" variant="secondary" />,
+    heading: 'Filters',
+    children: (
+      <Stack gap="normal">
+        <Checkbox name="inStock" label="In stock" />
+        <Checkbox name="freeShipping" label="Free shipping" />
+      </Stack>
+    ),
+    footer: (
+      <>
+        <Button label="Clear" variant="secondary" />
+        <Button label="Apply" variant="primary" />
+      </>
+    ),
+    width: 'wide',
+  },
+};
+
+/** A checkout panel from the end edge that must be finished or dismissed, so it is modal. */
+export const Cart: Story = {
+  args: {
+    open: true,
+    heading: 'Your cart',
+    children: (
+      <Stack gap="normal">
+        <Card heading="Desk lamp">
+          <Text>1 × $48.00</Text>
+        </Card>
+        <Card heading="Notebook">
+          <Text>2 × $12.00</Text>
+        </Card>
+      </Stack>
+    ),
+    footer: <Button label="Checkout" variant="primary" />,
+    side: 'end',
+    modal: true,
+  },
+};
+
+/** A narrow detail panel that should feel like part of the page, so it has no scrim. */
+export const DetailPanel: Story = {
+  args: {
+    open: true,
+    heading: 'Order details',
+    children: (
+      <Stack gap="tight">
+        <Text>Order: 10482</Text>
+        <Text>Status: Shipped</Text>
+        <Text>Total: $72.00</Text>
+      </Stack>
+    ),
+    side: 'end',
+    width: 'narrow',
+    scrim: false,
   },
 };
 

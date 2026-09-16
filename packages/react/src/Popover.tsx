@@ -1,19 +1,18 @@
 import {
-  Children,
   cloneElement,
+  isValidElement,
   useEffect,
   useId,
-  useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
-  type Attributes,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactElement,
   type ReactNode,
   type Ref,
+  type RefCallback,
   type SyntheticEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
@@ -35,14 +34,12 @@ export type PopoverPlacement =
   | 'start'
   | 'end';
 
-export type PopoverOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'close-button' | 'tab-out';
-
 /** Heading level of the panel heading. Accepts the schema's string values and their numeric equivalents. */
 export type PopoverHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
 
-type PopoverSide = 'top' | 'bottom' | 'start' | 'end';
+export type PopoverOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'close-button' | 'tab-out';
 
-/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
+/** Style bindings that can be overridden per instance; `surface`, `focusRing` and `focusRingWidth` are locked. */
 export type PopoverOverridableBinding =
   | 'border'
   | 'borderWidth'
@@ -76,112 +73,140 @@ function overridesToStyle(overrides: Partial<Record<PopoverOverridableBinding, T
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as PopoverOverridableBinding[]) {
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    const hook = OVERRIDE_HOOK[binding];
+    // A locked binding passed at runtime has no hook here and is ignored.
+    if (ref && hook) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
 }
 
 const COPY = { closeLabel: 'Close' };
 
-/* Only declared when the bundler defines it; never assumed. */
-declare const process: { env: Record<string, string | undefined> } | undefined;
-const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+declare const process: { env: { NODE_ENV?: string } };
 
-/** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    : false;
-}
+/** The side of the trigger the panel sits on, resolved to physical for positioning and the arrow. */
+type PopoverSide = 'top' | 'bottom' | 'left' | 'right';
 
-const FOCUSABLE_SELECTOR = [
+const TABBABLE_SELECTOR = [
   'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
+  'area[href]',
+  'button',
+  'input:not([type="hidden"])',
+  'select',
+  'textarea',
+  'summary',
+  'iframe',
   '[contenteditable]:not([contenteditable="false"])',
-  '[tabindex]:not([tabindex="-1"])',
+  '[tabindex]',
 ].join(',');
 
-/**
- * Moves focus to the next document-order tabbable element relative to `anchor`, ignoring anything
- * inside `exclude` (the panel that just closed).
- */
-function focusAdjacent(anchor: HTMLElement | null, exclude: HTMLElement | null) {
-  if (!anchor) return;
-  const all = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (element) => !exclude || !exclude.contains(element),
+function tabbablesIn(root: ParentNode): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>(TABBABLE_SELECTOR)).filter(
+    (element) =>
+      !element.matches(':disabled') &&
+      element.tabIndex >= 0 &&
+      !element.hasAttribute('data-focus-sentinel') &&
+      !element.closest('[inert]'),
   );
-  const index = all.indexOf(anchor);
-  if (index === -1) return;
-  (all[index + 1] ?? anchor).focus();
 }
 
-/** Positions the panel from the trigger's rect for `placement`, flipping either axis on overflow. */
-function computePosition(
-  triggerRect: DOMRect,
-  panelRect: DOMRect,
-  placement: PopoverPlacement,
-  rtl: boolean,
-): { style: CSSProperties; side: PopoverSide } {
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
+function supportsPopoverApi(): boolean {
+  return typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
+}
 
-  if (placement === 'start' || placement === 'end') {
-    const startIsLeft = !rtl;
-    let side: 'start' | 'end' = placement;
-    const wantsLeft = side === 'start' ? startIsLeft : !startIsLeft;
-    const fitsLeft = triggerRect.left - panelRect.width >= 0;
-    const fitsRight = triggerRect.right + panelRect.width <= viewportWidth;
-    if ((wantsLeft && !fitsLeft && fitsRight) || (!wantsLeft && !fitsRight && fitsLeft)) {
-      side = side === 'start' ? 'end' : 'start';
-    }
-    const finalWantsLeft = side === 'start' ? startIsLeft : !startIsLeft;
-
-    const centerY = triggerRect.top + triggerRect.height / 2;
-    const top = Math.min(Math.max(centerY - panelRect.height / 2, 0), Math.max(viewportHeight - panelRect.height, 0));
-    const style: Record<string, number> = { top };
-    if (finalWantsLeft) style.right = viewportWidth - triggerRect.left;
-    else style.left = triggerRect.right;
-    return { style: style as CSSProperties, side };
+/** Longest transition on the element in milliseconds; 0 when there is none (reduced motion, jsdom). */
+function transitionMs(element: HTMLElement): number {
+  const values = getComputedStyle(element).transitionDuration.split(',');
+  let longest = 0;
+  for (const value of values) {
+    const trimmed = value.trim();
+    const amount = parseFloat(trimmed);
+    if (Number.isNaN(amount)) continue;
+    longest = Math.max(longest, trimmed.endsWith('ms') ? amount : amount * 1000);
   }
+  return longest;
+}
 
-  const hasAlign = placement.includes('-');
-  const vertRaw = (hasAlign ? placement.split('-')[0] : placement) as 'top' | 'bottom';
-  const alignRaw = (hasAlign ? placement.split('-')[1] : 'center') as 'start' | 'end' | 'center';
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), Math.max(min, max));
+}
 
-  let vertical = vertRaw;
-  if (vertical === 'bottom' && triggerRect.bottom + panelRect.height > viewportHeight && triggerRect.top - panelRect.height >= 0) {
-    vertical = 'top';
-  } else if (vertical === 'top' && triggerRect.top - panelRect.height < 0 && triggerRect.bottom + panelRect.height <= viewportHeight) {
-    vertical = 'bottom';
-  }
+/** Preferred physical side for `placement`; `start`/`end` resolve from the trigger's direction. */
+function preferredSide(placement: PopoverPlacement, rtl: boolean): PopoverSide {
+  if (placement === 'start') return rtl ? 'right' : 'left';
+  if (placement === 'end') return rtl ? 'left' : 'right';
+  return placement.startsWith('top') ? 'top' : 'bottom';
+}
 
-  const style: Record<string, number> = {};
-  if (vertical === 'bottom') style.top = triggerRect.bottom;
-  else style.bottom = viewportHeight - triggerRect.top;
+const OPPOSITE: Record<PopoverSide, PopoverSide> = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
 
-  if (alignRaw === 'center') {
-    const centerX = triggerRect.left + triggerRect.width / 2;
-    style.left = Math.min(Math.max(centerX - panelRect.width / 2, 0), Math.max(viewportWidth - panelRect.width, 0));
+/**
+ * Positions the fixed panel from the trigger rect: flips to the opposite side when the preferred
+ * one overflows and the opposite fits, then shifts along the cross axis to stay in the viewport.
+ * The offset itself is the panel's margin on the trigger side (CSS, from the `offset` hook).
+ */
+function positionPanel(trigger: HTMLElement, panel: HTMLElement, placement: PopoverPlacement): void {
+  const rtl = getComputedStyle(trigger).direction === 'rtl';
+  const t = trigger.getBoundingClientRect();
+  const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+  const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
+
+  let side = preferredSide(placement, rtl);
+  if (panel.dataset.side !== side) panel.dataset.side = side;
+  const computed = getComputedStyle(panel);
+  const offset = Math.max(
+    parseFloat(computed.marginTop) || 0,
+    parseFloat(computed.marginBottom) || 0,
+    parseFloat(computed.marginLeft) || 0,
+    parseFloat(computed.marginRight) || 0,
+  );
+  const p = panel.getBoundingClientRect();
+
+  const fits = (candidate: PopoverSide): boolean => {
+    if (candidate === 'bottom') return t.bottom + offset + p.height <= viewportHeight;
+    if (candidate === 'top') return t.top - offset - p.height >= 0;
+    if (candidate === 'left') return t.left - offset - p.width >= 0;
+    return t.right + offset + p.width <= viewportWidth;
+  };
+  if (!fits(side) && fits(OPPOSITE[side])) side = OPPOSITE[side];
+  if (panel.dataset.side !== side) panel.dataset.side = side;
+
+  const coords: { top: string; right: string; bottom: string; left: string } = { top: '', right: '', bottom: '', left: '' };
+  if (side === 'top' || side === 'bottom') {
+    const align = placement.endsWith('-start') ? 'start' : placement.endsWith('-end') ? 'end' : 'center';
+    let x = t.left + (t.width - p.width) / 2;
+    if (align === 'start') x = rtl ? t.right - p.width : t.left;
+    if (align === 'end') x = rtl ? t.left : t.right - p.width;
+    coords.left = `${clamp(x, 0, viewportWidth - p.width)}px`;
+    if (side === 'bottom') coords.top = `${t.bottom}px`;
+    else coords.bottom = `${viewportHeight - t.top}px`;
   } else {
-    let horizontal = alignRaw;
-    if (horizontal === 'start' && triggerRect.left + panelRect.width > viewportWidth && triggerRect.right - panelRect.width >= 0) {
-      horizontal = 'end';
-    } else if (horizontal === 'end' && triggerRect.right - panelRect.width < 0 && triggerRect.left + panelRect.width <= viewportWidth) {
-      horizontal = 'start';
-    }
-    if (horizontal === 'start') style.left = triggerRect.left;
-    else style.right = viewportWidth - triggerRect.right;
+    coords.top = `${clamp(t.top + (t.height - p.height) / 2, 0, viewportHeight - p.height)}px`;
+    if (side === 'right') coords.left = `${t.right}px`;
+    else coords.right = `${viewportWidth - t.left}px`;
   }
+  for (const key of ['top', 'right', 'bottom', 'left'] as const) {
+    if (panel.style[key] !== coords[key]) panel.style[key] = coords[key];
+  }
+}
 
-  return { style: style as CSSProperties, side: vertical };
+function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
+  if (typeof ref === 'function') ref(value);
+  else if (ref) (ref as { current: T | null }).current = value;
+}
+
+interface TriggerProps {
+  id?: string | undefined;
+  ref?: Ref<HTMLElement> | undefined;
+  onClick?: ((event: ReactMouseEvent<HTMLElement>) => void) | undefined;
 }
 
 export interface PopoverProps {
-  /** Exactly one focusable element — usually a Button — that opens the popover. The popover adds aria-expanded and aria-controls to it. */
-  trigger: ReactElement<any>;
+  /**
+   * Exactly one focusable element — usually a Button — that opens the popover; typed as a single
+   * element, since it is cloned with aria-expanded/aria-controls and the toggle handler.
+   */
+  trigger: ReactElement;
   /** The panel content. May contain controls, links and a short Form; keep it to what fits without scrolling. */
   children: ReactNode;
   /** Optional heading at the top of the panel, also the accessible name. Without it, the panel is named by the trigger. */
@@ -190,24 +215,30 @@ export interface PopoverProps {
   headingLevel?: PopoverHeadingLevel | undefined;
   /** Controlled open state. Omit for uncontrolled (the trigger toggles it). */
   open?: boolean | undefined;
-  /** Preferred side and alignment; flips and shifts to stay in the viewport. */
+  /**
+   * Preferred side and alignment; flips and shifts to stay in the viewport. All eight values are
+   * logical: `start`/`end` and the `-start`/`-end` alignments mirror in right-to-left writing.
+   */
   placement?: PopoverPlacement | undefined;
   /**
-   * False (default): the page stays interactive; clicking outside closes; focus moves in but is
-   * not trapped, and Tab out closes. True: behaves as a small Dialog anchored to the trigger —
-   * focus trapped, background inert — for content that must be finished (a required form).
+   * False (default): the page stays interactive; clicking outside closes; focus moves in but is not
+   * trapped, and Tab out closes. True: behaves as a small Dialog anchored to the trigger — focus
+   * trapped, background inert — for content that must be finished (a required form).
    */
   modal?: boolean | undefined;
   /** A small pointer toward the trigger. Off by default; Calm & precise prefers a plain edge. */
   showArrow?: boolean | undefined;
-  /** Show the close button. Escape and outside click work regardless (non-modal). */
+  /**
+   * Show the close button. Escape and outside click work regardless (non-modal), so this is a
+   * visibility switch, not Dialog's "must be answered" rule: with it false there is simply no close button.
+   */
   dismissible?: boolean | undefined;
   /**
    * Fired when the popover opens or closes, with the new state and a reason: `trigger`, `escape`,
    * `outside`, `close-button`, `tab-out`.
    */
   onOpenChange?: ((open: boolean, reason: PopoverOpenChangeReason) => void) | undefined;
-  /** Portal target for the panel's DOM node. Defaults to `document.body`. */
+  /** Portal target for the panel. Defaults to `document.body`. Platform prop; never affects semantics. */
   container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<PopoverOverridableBinding, TokenRef | undefined>> | undefined;
@@ -217,12 +248,15 @@ export interface PopoverProps {
  * Popover — Design Schema, category: overlay.
  *
  * When to use:
- * Use a Popover for a compact interactive panel tied to a trigger: a date picker under a date
- * field, a color swatch, a filter panel behind a "Filters" button, a share panel, contextual help
- * with a link. Use `modal` when the panel contains a required step (a short form that must be
- * submitted or cancelled). Use `heading` when the content is not obvious from the trigger.
+ * Use a Popover for a compact interactive panel tied to a trigger: a date picker under a date field,
+ * a color swatch, a filter panel behind a "Filters" button, a share panel, contextual help with a
+ * link. Use `modal` when the panel contains a required step (a short form that must be submitted or
+ * cancelled). Use `heading` when the content is not obvious from the trigger.
+ *
+ * The root (`data-ds="Popover"`, and `ref`) is the panel, which exists only while open or closing;
+ * the trigger is rendered in place and the panel through a portal.
  */
-export const Popover = function Popover({
+export function Popover({
   ref,
   trigger,
   children,
@@ -236,296 +270,273 @@ export const Popover = function Popover({
   onOpenChange,
   container,
   overrides,
-}: PopoverProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
+}: PopoverProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const generatedId = useId();
-  const triggerId = `ds-popover${generatedId}-trigger`;
   const panelId = `ds-popover${generatedId}-panel`;
   const headingId = `ds-popover${generatedId}-heading`;
 
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  useImperativeHandle(ref, () => wrapperRef.current as HTMLDivElement, []);
+  const isControlled = openProp !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? openProp : internalOpen;
+
+  // Mounted while open, and while the exit transition runs after `open` goes false.
+  const [exiting, setExiting] = useState(false);
+  const [previousOpen, setPreviousOpen] = useState(open);
+  if (previousOpen !== open) {
+    setPreviousOpen(open);
+    setExiting(!open);
+  }
+  const mounted = open || exiting;
 
   const triggerRef = useRef<HTMLElement | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
-  const surfaceRef = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-
-  const isControlled = openProp !== undefined;
-  const [internalOpen, setInternalOpen] = useState(false);
-  const open = isControlled ? (openProp as boolean) : internalOpen;
-
-  // Mounted while open, and while the exit transition finishes after `open` goes false.
-  const [present, setPresent] = useState(open);
-  // Drives the entered/exited CSS state; toggled a frame after mount so the enter transition runs.
-  const [visible, setVisible] = useState(false);
-  const [panelStyle, setPanelStyle] = useState<CSSProperties>();
-  const [side, setSide] = useState<PopoverSide>('bottom');
-
-  // Guards a close from firing twice for one interaction (e.g. Escape racing a pointerdown).
-  const closingRef = useRef(false);
-  // Suppresses FocusScope's restore-to-opener on unmount only for the forward tab-out case, which
-  // wants focus on the element *after* the trigger, not the trigger itself.
+  // Whether closing moves focus back to the trigger: not after an outside press (focus goes where
+  // the pointer went) or a forward tab-out (focus goes to the element after the trigger).
   const restoreFocusRef = useRef(true);
+  const escapeHandledRef = useRef(false);
 
-  const latest = useRef({ placement });
-  latest.current = { placement };
+  const latest = useRef({ placement, modal });
+  latest.current = { placement, modal };
 
-  if (isDev && Children.count(trigger) !== 1) {
-    console.warn('Popover: `trigger` must be exactly one focusable element.');
+  const validTrigger = isValidElement(trigger);
+  if (process.env.NODE_ENV !== 'production' && !validTrigger) {
+    console.warn('Popover: `trigger` must be exactly one element (usually a Button).');
   }
 
-  const changeOpen = (value: boolean, reason: PopoverOpenChangeReason) => {
-    if (!isControlled) setInternalOpen(value);
-    onOpenChange?.(value, reason);
+  const changeOpen = (next: boolean, reason: PopoverOpenChangeReason): void => {
+    if (!next) restoreFocusRef.current = reason !== 'outside' && reason !== 'tab-out';
+    if (!isControlled) setInternalOpen(next);
+    onOpenChange?.(next, reason);
   };
 
-  const requestClose = (reason: PopoverOpenChangeReason) => {
-    if (closingRef.current) return;
-    closingRef.current = true;
-    changeOpen(false, reason);
+  const setPanelRef: RefCallback<HTMLElement> = (node) => {
+    panelRef.current = node;
+    assignRef(ref, node);
   };
 
-  const handleTriggerClick = () => {
-    if (open) {
-      requestClose('trigger');
-    } else {
-      closingRef.current = false;
-      restoreFocusRef.current = true;
-      changeOpen(true, 'trigger');
-    }
-  };
-
-  useEffect(() => {
-    if (open) {
-      closingRef.current = false;
-      setPresent(true);
-    }
-  }, [open]);
-
-  // Mount: position the panel, focus the first control (or the heading, then the panel), then
-  // reveal on the next frame. Repositions while the viewport scrolls or resizes.
+  // Open: show in the top layer, position, move focus in. Close: leave the top layer, return focus.
   useLayoutEffect(() => {
-    if (!present) return undefined;
     const panel = panelRef.current;
     if (!panel) return undefined;
 
-    if (modal && panel instanceof HTMLDialogElement && !panel.open) {
-      // showModal() also reflects `open`, natively; the assignment is the fallback for engines
-      // (jsdom, under test) that implement the `open` IDL attribute but not showModal() itself.
-      panel.showModal?.();
-      panel.open = true;
-    }
+    if (!open) {
+      if (panel instanceof HTMLDialogElement) {
+        if (typeof panel.close === 'function') panel.close();
+        else panel.removeAttribute('open');
+      } else if (supportsPopoverApi() && panel.matches(':popover-open')) {
+        panel.hidePopover();
+      }
+      document.documentElement.classList.remove('ds-popover-lock-scroll');
+      const focusInside = panel.contains(document.activeElement) || document.activeElement === document.body;
+      if (restoreFocusRef.current && focusInside) triggerRef.current?.focus();
 
-    const first = bodyRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-    (first ?? closeButtonRef.current ?? headingRef.current ?? panel).focus();
-
-    const reposition = () => {
-      const trigger = triggerRef.current;
-      if (!trigger || !panel) return;
-      const triggerRect = trigger.getBoundingClientRect();
-      const panelRect = panel.getBoundingClientRect();
-      const rtl = getComputedStyle(trigger).direction === 'rtl';
-      const result = computePosition(triggerRect, panelRect, latest.current.placement, rtl);
-      setPanelStyle(result.style);
-      setSide(result.side);
-    };
-    reposition();
-
-    if (prefersReducedMotion()) {
-      setVisible(true);
-      window.addEventListener('scroll', reposition, true);
-      window.addEventListener('resize', reposition);
+      let done = false;
+      const finish = (): void => {
+        if (done) return;
+        done = true;
+        setExiting(false);
+      };
+      const duration = transitionMs(panel);
+      if (duration === 0) {
+        finish();
+        return undefined;
+      }
+      const handleEnd = (event: TransitionEvent): void => {
+        if (event.target === panel) finish();
+      };
+      panel.addEventListener('transitionend', handleEnd);
+      panel.addEventListener('transitioncancel', handleEnd);
+      const timer = window.setTimeout(finish, duration);
       return () => {
-        window.removeEventListener('scroll', reposition, true);
-        window.removeEventListener('resize', reposition);
+        panel.removeEventListener('transitionend', handleEnd);
+        panel.removeEventListener('transitioncancel', handleEnd);
+        window.clearTimeout(timer);
       };
     }
 
-    const frame = requestAnimationFrame(() => setVisible(true));
+    if (panel instanceof HTMLDialogElement) {
+      if (!panel.open) {
+        if (typeof panel.showModal === 'function') panel.showModal();
+        else panel.setAttribute('open', '');
+      }
+      document.documentElement.classList.add('ds-popover-lock-scroll');
+    } else if (supportsPopoverApi() && !panel.matches(':popover-open')) {
+      panel.showPopover();
+    }
+
+    const reposition = (): void => {
+      const anchor = triggerRef.current;
+      if (anchor && panelRef.current) positionPanel(anchor, panelRef.current, latest.current.placement);
+    };
+    reposition();
+
+    // The first control, else the close button, else the heading, else the panel itself.
+    const target =
+      (bodyRef.current ? tabbablesIn(bodyRef.current)[0] : undefined) ??
+      closeButtonRef.current ??
+      headingRef.current ??
+      panel;
+    target.focus();
+
     window.addEventListener('scroll', reposition, true);
     window.addEventListener('resize', reposition);
     return () => {
-      cancelAnimationFrame(frame);
       window.removeEventListener('scroll', reposition, true);
       window.removeEventListener('resize', reposition);
+      document.documentElement.classList.remove('ds-popover-lock-scroll');
     };
-  }, [present, modal]);
+  }, [open, modal]);
 
-  // Exit: hide, then unmount (and close() the native dialog) once the transition finishes.
-  useEffect(() => {
-    if (open || !present) return undefined;
-    setVisible(false);
+  // Re-place when the preferred placement changes while open.
+  useLayoutEffect(() => {
+    const anchor = triggerRef.current;
     const panel = panelRef.current;
-    const finish = () => {
-      setPresent(false);
-      if (modal && panel instanceof HTMLDialogElement) {
-        panel.close?.();
-        panel.open = false;
-      }
-    };
-    if (prefersReducedMotion()) {
-      finish();
-      return undefined;
-    }
-    const surface = surfaceRef.current;
-    const handleExited = (event: TransitionEvent) => {
-      if (event.target !== surface || event.propertyName !== 'opacity') return;
-      finish();
-    };
-    surface?.addEventListener('transitionend', handleExited);
-    return () => surface?.removeEventListener('transitionend', handleExited);
-  }, [open, present, modal]);
+    if (open && anchor && panel) positionPanel(anchor, panel, placement);
+  }, [placement, open]);
 
-  // Body scroll lock while a modal popover is present; non-modal leaves the page interactive.
+  // Non-modal: a pointerdown outside the panel and the trigger closes. The only dismissal listener.
   useEffect(() => {
-    if (!modal || !present) return undefined;
-    document.documentElement.classList.add('ds-popover-lock-scroll');
-    return () => document.documentElement.classList.remove('ds-popover-lock-scroll');
-  }, [modal, present]);
-
-  // Non-modal: a pointerdown outside the panel and trigger closes.
-  useEffect(() => {
-    if (modal || !open) return undefined;
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
+    if (!open || modal) return undefined;
+    const handlePointerDown = (event: PointerEvent): void => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
       if (panelRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
-      requestClose('outside');
+      changeOpen(false, 'outside');
     };
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modal, open]);
+  });
 
-  const handleDialogCancel = (event: SyntheticEvent<HTMLDialogElement>) => {
-    // The consumer owns `open`; the popover never closes itself outside of `onOpenChange`.
-    event.preventDefault();
-    requestClose('escape');
-  };
-
-  const handlePanelKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+  const handlePanelKeyDown = (event: ReactKeyboardEvent<HTMLElement>): void => {
+    if (!open || event.defaultPrevented) return;
     if (event.key === 'Escape') {
       event.preventDefault();
-      requestClose('escape');
+      // Keep an enclosing overlay (a Popover inside a Dialog) from closing on the same key.
+      event.stopPropagation();
+      escapeHandledRef.current = true;
+      setTimeout(() => {
+        escapeHandledRef.current = false;
+      }, 0);
+      changeOpen(false, 'escape');
       return;
     }
-    if (event.key !== 'Tab') return;
+    if (event.key !== 'Tab' || modal || event.altKey || event.ctrlKey || event.metaKey) return;
     const panel = panelRef.current;
     if (!panel) return;
-    const focusables = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
-    if (focusables.length === 0) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    const activeElement = document.activeElement;
-    if (!event.shiftKey && activeElement === last) {
+    const focusables = tabbablesIn(panel);
+    const active = document.activeElement;
+    const atStart = focusables.length === 0 || active === focusables[0];
+    const atEnd = focusables.length === 0 || active === focusables[focusables.length - 1];
+    if (event.shiftKey && atStart) {
       event.preventDefault();
-      restoreFocusRef.current = false;
-      requestClose('tab-out');
-      focusAdjacent(triggerRef.current, panel);
-    } else if (event.shiftKey && activeElement === first) {
-      event.preventDefault();
-      requestClose('tab-out');
       triggerRef.current?.focus();
+      changeOpen(false, 'tab-out');
+    } else if (!event.shiftKey && atEnd) {
+      const anchor = triggerRef.current;
+      changeOpen(false, 'tab-out');
+      if (!anchor) return;
+      const order = tabbablesIn(document).filter((element) => !panel.contains(element));
+      const next = order[order.indexOf(anchor) + 1];
+      if (next) {
+        event.preventDefault();
+        next.focus();
+      } else {
+        // Nothing after the trigger on the page: let the browser continue from the trigger.
+        anchor.focus();
+      }
     }
   };
 
-  const handleCloseButtonClick = () => requestClose('close-button');
+  const handleCancel = (event: SyntheticEvent<HTMLDialogElement>): void => {
+    // The consumer owns `open`: the browser never closes the dialog by itself.
+    event.preventDefault();
+    if (escapeHandledRef.current || !open) return;
+    changeOpen(false, 'escape');
+  };
 
-  const triggerElement = trigger as ReactElement<{
-    onClick?: ((event: ReactMouseEvent) => void) | undefined;
-  }>;
-  const clonedTrigger = cloneElement(triggerElement, {
-    ref: triggerRef,
-    id: triggerId,
-    'aria-expanded': open ? 'true' : 'false',
-    'aria-controls': open ? panelId : undefined,
-    onClick: (event: ReactMouseEvent) => {
-      triggerElement.props.onClick?.(event);
-      handleTriggerClick();
-    },
-  } as unknown as Attributes);
+  const triggerElement = validTrigger ? (trigger as ReactElement<TriggerProps>) : null;
+  const triggerProps: TriggerProps = triggerElement?.props ?? {};
+  const triggerId = triggerProps.id ?? `ds-popover${generatedId}-trigger`;
 
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedPanelStyle = { ...panelStyle, ...overrideStyle };
-  const bodyOverrides = overrides?.inset ? { paddingBlock: overrides.inset, paddingInline: overrides.inset } : undefined;
+  const clonedTrigger = triggerElement
+    ? cloneElement(triggerElement, {
+        id: triggerId,
+        ref: (node: HTMLElement | null) => {
+          triggerRef.current = node;
+          assignRef(triggerProps.ref, node);
+        },
+        'aria-expanded': open ? 'true' : 'false',
+        'aria-controls': mounted ? panelId : undefined,
+        onClick: (event: ReactMouseEvent<HTMLElement>) => {
+          triggerProps.onClick?.(event);
+          changeOpen(!open, 'trigger');
+        },
+      } as TriggerProps)
+    : trigger;
 
-  const panelClasses = ['ds-popover__panel', visible ? 'ds-popover__panel--visible' : null].filter(Boolean).join(' ');
+  const PanelTag = modal ? 'dialog' : 'div';
+  const panelAttributes = {
+    ref: setPanelRef,
+    id: panelId,
+    role: 'dialog',
+    'aria-modal': modal ? ('true' as const) : undefined,
+    'aria-labelledby': heading ? headingId : triggerId,
+    'data-ds': 'Popover',
+    'data-part': 'panel',
+    'data-state': open ? 'open' : 'closed',
+    className: 'ds-popover',
+    style: overrides ? overridesToStyle(overrides) : undefined,
+    tabIndex: -1,
+    onKeyDown: handlePanelKeyDown,
+  };
 
-  const panelContent = (
-    <>
-      {showArrow ? <span aria-hidden="true" data-part="arrow" className="ds-popover__arrow" /> : null}
-      <FocusScope trapped={modal} autoFocus="none" restoreFocus={restoreFocusRef.current}>
-        <div className="ds-popover__surface" ref={surfaceRef} data-part="panel">
+  const panelNode = mounted ? (
+    <PanelTag
+      {...panelAttributes}
+      {...(modal ? { onCancel: handleCancel } : { popover: supportsPopoverApi() ? ('manual' as const) : undefined })}
+    >
+      {showArrow ? <span aria-hidden="true" className="ds-popover__arrow" data-part="arrow" /> : null}
+      <FocusScope trapped={modal} autoFocus="none" restoreFocus={false} active={open} data-part="focusScope">
+        <div className="ds-popover__content">
           {heading || dismissible ? (
             <div className="ds-popover__header">
               {heading ? (
-                <Heading level={headingLevel} id={headingId} ref={headingRef} tabIndex={-1} data-part="heading" className="ds-popover__heading">
-                  {heading}
-                </Heading>
+                <div className="ds-popover__heading" data-part="heading">
+                  <Heading level={headingLevel} id={headingId} ref={headingRef} tabIndex={-1}>
+                    {heading}
+                  </Heading>
+                </div>
               ) : null}
               {dismissible ? (
-                <Button
-                  ref={closeButtonRef}
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  label={COPY.closeLabel}
-                  data-part="closeButton"
-                  className="ds-popover__close"
-                  onClick={handleCloseButtonClick}
-                  leadingIcon={<Icon name="close" inline />}
-                />
+                <span className="ds-popover__close" data-part="closeButton">
+                  <Button
+                    ref={closeButtonRef}
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    label={COPY.closeLabel}
+                    leadingIcon={<Icon name="close" inline />}
+                    onClick={() => changeOpen(false, 'close-button')}
+                  />
+                </span>
               ) : null}
             </div>
           ) : null}
-          <Box element="div" inset="md" overrides={bodyOverrides} data-part="body" className="ds-popover__body" ref={bodyRef}>
+          <Box data-part="body" ref={bodyRef}>
             {children}
           </Box>
         </div>
       </FocusScope>
-    </>
-  );
-
-  const panelNode = present
-    ? modal
-      ? (
-          <dialog
-            ref={panelRef as Ref<HTMLDialogElement>}
-            id={panelId}
-            data-side={side}
-            className={panelClasses}
-            style={mergedPanelStyle}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={heading ? headingId : triggerId}
-            onCancel={handleDialogCancel}
-          >
-            {panelContent}
-          </dialog>
-        )
-      : (
-          <div
-            ref={panelRef as Ref<HTMLDivElement>}
-            id={panelId}
-            data-side={side}
-            className={panelClasses}
-            style={mergedPanelStyle}
-            role="dialog"
-            aria-modal="false"
-            aria-labelledby={heading ? headingId : triggerId}
-            tabIndex={-1}
-            onKeyDown={handlePanelKeyDown}
-          >
-            {panelContent}
-          </div>
-        )
-    : null;
+    </PanelTag>
+  ) : null;
 
   return (
-    <div ref={wrapperRef} data-ds="Popover" className="ds-popover">
+    <>
       {clonedTrigger}
       {panelNode ? createPortal(panelNode, container ?? document.body) : null}
-    </div>
+    </>
   );
-};
+}

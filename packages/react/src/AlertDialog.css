@@ -20,70 +20,78 @@
   margin: auto;
   padding: 0;
   border: 0;
-  max-inline-size: none;
-  max-block-size: none;
+  /* width: always the small size — an alert dialog with more content is a Dialog. */
+  inline-size: var(--ds-alert-dialog-width);
+  max-inline-size: calc(100vw - 2 * var(--layout-gutter));
+  max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  overflow: visible;
   background: transparent;
-  color: inherit;
+  color: var(--color-foreground);
   font-family: var(--font-family-body);
   z-index: var(--ds-alert-dialog-layer);
 }
 
-/* scrim → color.overlay.scrim; ::backdrop inherits the custom property from its originating element. */
+/* scrim → color.overlay.scrim; the ::backdrop is the scrim and fades with the surface. */
 .ds-alert-dialog::backdrop {
   background-color: var(--ds-alert-dialog-scrim);
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: var(--ds-alert-dialog-exit);
+  transition-timing-function: var(--motion-easing-standard);
 }
 
-/* width: always the small size — an alert dialog with more content is a Dialog. */
+.ds-alert-dialog--visible::backdrop {
+  opacity: 1;
+  transition-duration: var(--ds-alert-dialog-enter);
+}
+
+/* surface → color.overlay.surface (locked); border, borderWidth, radius, shadow, inset, partGap. */
 .ds-alert-dialog__surface {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--ds-alert-dialog-part-gap);
-  inline-size: var(--ds-alert-dialog-width);
-  max-inline-size: calc(100vw - 2 * var(--layout-gutter));
+  inline-size: 100%;
   max-block-size: calc(100vh - 2 * var(--layout-gutter));
   padding: var(--ds-alert-dialog-inset);
-  /* surface: locked — never overridable. */
   background-color: var(--color-overlay-surface);
   border-style: solid;
   border-width: var(--ds-alert-dialog-border-width);
   border-color: var(--ds-alert-dialog-border);
   border-radius: var(--ds-alert-dialog-radius);
   box-shadow: var(--ds-alert-dialog-shadow);
-  overflow: hidden;
+  overflow: auto;
+  /* exit: motion.duration.fast */
   opacity: 0;
   transform: translateY(var(--space-2));
   transition-property: opacity, transform;
   transition-duration: var(--ds-alert-dialog-exit);
-  transition-timing-function: var(--motion-easing-exit);
+  transition-timing-function: var(--motion-easing-standard);
 }
 
-/* enter/exit: fade-and-rise; visible uses `enter` and motion.easing.standard. */
+/* enter: fade-and-rise over motion.duration.base with motion.easing.standard */
 .ds-alert-dialog--visible .ds-alert-dialog__surface {
   opacity: 1;
   transform: translateY(0);
   transition-duration: var(--ds-alert-dialog-enter);
-  transition-timing-function: var(--motion-easing-standard);
 }
 
 /* iconGap: between the icon and the text block. */
-.ds-alert-dialog__content {
+.ds-alert-dialog__row {
   display: flex;
   align-items: flex-start;
   gap: var(--ds-alert-dialog-icon-gap);
 }
 
-/* iconSize: the Icon itself carries font.size.lg via its own `overrides`; this hook only documents the default. */
+/* icon → color.status.{tone}.icon (locked). Icon draws in currentColor; iconSize is forwarded to Icon's own `size` override. */
 .ds-alert-dialog__icon {
-  flex: 0 0 auto;
   display: inline-flex;
-  line-height: 0;
+  flex: 0 0 auto;
 }
 
-/* icon → color.status.{tone}.icon, locked: never overridable. Icon draws in currentColor. */
-.ds-alert-dialog--tone-danger .ds-alert-dialog__icon { color: var(--color-status-danger-icon); }
-.ds-alert-dialog--tone-warning .ds-alert-dialog__icon { color: var(--color-status-warning-icon); }
-.ds-alert-dialog--tone-info .ds-alert-dialog__icon { color: var(--color-status-info-icon); }
+.ds-alert-dialog--danger .ds-alert-dialog__icon { color: var(--color-status-danger-icon); }
+.ds-alert-dialog--warning .ds-alert-dialog__icon { color: var(--color-status-warning-icon); }
+.ds-alert-dialog--info .ds-alert-dialog__icon { color: var(--color-status-info-icon); }
 
 /* textGap: between title and description. */
 .ds-alert-dialog__text {
@@ -93,19 +101,23 @@
   min-inline-size: 0;
 }
 
+.ds-alert-dialog__action {
+  display: inline-flex;
+}
+
+/* footer: end-aligned action row; footerGap is forwarded to the Stack's own `gap` override. */
 .ds-alert-dialog__footer {
   flex: 0 0 auto;
 }
 
-/* footerGap → layout.gap.tight; the composed Stack carries the override via its own `overrides.gap`. */
-
 @media (prefers-reduced-motion: reduce) {
+  .ds-alert-dialog::backdrop,
   .ds-alert-dialog__surface {
     transition: none;
   }
 }
 
-/* Body scroll lock while any AlertDialog is present; toggled on <html> by the component. */
+/* scroll-lock while an AlertDialog is present; the gutter keeps the page from shifting. */
 html.ds-alert-dialog-lock-scroll {
   overflow: hidden;
   scrollbar-gutter: stable;

@@ -37,3 +37,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: arrow-key movement, Home/End, and typeahead are a web keyboard model with no RN equivalent (no generic key-event API on Pressable); each item is instead its own Tab stop when a hardware keyboard/tab order is present, matching RadioGroup's convention. typeaheadReset has no effect on native since there is no typeahead to reset.
 - Menu: on phones the ActionSheet composition has no slot for a group label row or a separator, so `group` labels and `separator` entries are dropped (flattened) in the phone presentation — items still render, but the grouping/dividers are lost below the tablet breakpoint.
 - Menu: the schema's minWidth token (space.20 x 2.5) is not a real token multiple, so the generator computes it inline as `t.space20 * 2.5` with a literal-ok comment rather than adding a new token.
+
+## 2026-09-16 06:48 — round 1
+
+- Menu: `anchor` shape `RefObject<HTMLElement | View>` does not compile under RN's types (no DOM lib, and `View` is a component, not an instance); typed it `React.RefObject<ViewInstance | null>`.
+- Menu: overlay.dismiss lists `focus-out`, but native has no focus-out signal (FocusScope's onEscapeAttempt never fires on native) and the reason union has no value for Tab/focus loss; not implemented — only escape (onRequestClose) and outside (scrim) dismiss.
+- Menu: overlay `modal: false` conflicts with the rn element `Modal`, which is modal on native by nature; used FocusScope trapped={false} and no accessibilityViewIsModal, but the transparent Modal still captures screen-reader focus and the full-screen scrim still blocks the page.
+- Menu: the rn notes say both 'groups become dividers with a muted label' (first sentence) and 'groups are flattened and their labels, the separators and the shortcut hints are dropped' for the phone ActionSheet; followed the later, more specific rule.
+- Menu: the phone/tablet split says 'uses layout.maxWidth.prose' without the comparison; kept `width <= layoutMaxWidthProse` as phone.
+- Menu: `escape-closes-without-choosing` is limited to web/lit, and the Keyboard section's Escape rule (focus-trigger) has no testable key event in Jest; implemented through onRequestClose plus setAccessibilityFocus on the trigger, untested.
+- Menu: `the-popup-is-a-menu` expects `role: menu`, but RNTL 13 getByRole only matches accessible elements and making the popup View `accessible` would collapse its items for VoiceOver; the test asserts the popup's `role` prop through its testID instead.
+- Menu: the doc gives no testable part for the trigger (it's the composed Button, which has its own testID), so a wrapper View carries `testID="Menu.trigger"` (also needed for measureInWindow). `list` and `popup` are one node on web but are a separate ScrollView (`Menu.list`) here, needed for maxHeight scrolling.
+- Menu: the `separator` rule has no thickness binding; used the `borderWidth` binding (border.width.thin) as its height. The groupLabel row has no padding binding; reused itemPaddingBlock/itemPaddingInline.
+- Menu: `itemHover` is 'state: hover', and the rules say pressed/hovered come from Pressable's style callback, but RN 0.87's strict callback type only has `pressed`; hover is tracked with onHoverIn/onHoverOut state, and hover, focus and press all share the highlight.
+- Menu: `shadow` token type is an object spread into the style; resolveToken's return is cast to that shape since the override contract gives no typed resolver for composite tokens.
+- Menu: `enter` says 'a space.1 rise' but not the direction for top placements; the popup rises (translateY from space.1 to 0) for every placement.
+- Menu: conventions digest shows `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)` but theme.tsx's signature is `toLineHeight(fontSize, multiplier)`; followed the code.
+- Menu: the Keyboard story renders with `open: true` controlled and no onOpenChange wiring, so it cannot be closed in Storybook; the doc does not say whether that story should be uncontrolled.

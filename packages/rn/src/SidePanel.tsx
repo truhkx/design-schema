@@ -51,7 +51,7 @@ export type SidePanelOverridableBinding =
 
 export interface SidePanelProps {
   /** The Button that shows and hides the panel (usually `iconOnly` with the `menu` Icon). It is the APG disclosure button: pressing it again closes the panel. Omit to control `open` from elsewhere (a Toolbar); hidden entirely once `persistent` takes over. */
-  trigger?: React.ReactNode;
+  trigger?: React.ReactNode | undefined;
   /** Controlled visibility. Omit for uncontrolled (the trigger toggles it). Ignored once `persistent` takes over — the panel is then always present. */
   open?: boolean | undefined;
   /** The panel's title and accessible name. May be visually hidden with `hideHeading`. */
@@ -61,7 +61,7 @@ export interface SidePanelProps {
   /** The body. Scrolls inside the panel when taller than the viewport. */
   children: React.ReactNode;
   /** Pinned to the bottom of the panel above the safe area. */
-  footer?: React.ReactNode;
+  footer?: React.ReactNode | undefined;
   /** The physical edge the panel slides from, flipped by `I18nManager.isRTL`. */
   side?: SidePanelSide | undefined;
   /** Panel width: `narrow` for a list of links, `wide` for a form or detail. Clamped to the viewport minus `edgeGutter` on narrow screens. */
@@ -74,9 +74,9 @@ export interface SidePanelProps {
   modal?: boolean | undefined;
   /** Show the scrim in non-modal mode too. Modal always has one regardless of this prop. */
   scrim?: boolean | undefined;
-  /** Escape, the close button, a scrim tap and the swipe gesture all request close. When false, only the trigger and footer actions close it. */
+  /** Escape, the close button, a scrim tap and the swipe gesture all request close. When false, the close button is not rendered and taps outside and swipes do nothing; Escape (the Android back button) still reports through `onOpenChange` with reason `escape` — the consumer decides. */
   dismissible?: boolean | undefined;
-  /** A swipe toward the edge dismisses the panel. Purely additive: the close button and (when `dismissible`) Escape always exist. Edge-swipe-to-open is not automatic — see `useSidePanelEdgeSwipe`. */
+  /** A swipe on the header (not the close button) toward the edge dismisses the panel. Purely additive: the trigger and close button always exist. Edge-swipe-to-open is not automatic — see `useSidePanelEdgeSwipe`, which needs a controlled `open`. */
   swipeable?: boolean | undefined;
   /** Fired when the panel opens or closes, with the new state and a reason. */
   onOpenChange?: ((open: boolean, reason: SidePanelCloseReason) => void) | undefined;
@@ -86,11 +86,13 @@ export interface SidePanelProps {
 
 const COPY = {
   closeLabel: 'Close',
-  openLabel: 'Open menu',
 } as const;
 
 const DRAG_DISMISS_RATIO = 0.25; // literal-ok: fraction of panel width past which a swipe dismisses, matching BottomSheet's vertical convention
 const DRAG_DISMISS_VELOCITY = 1.5; // literal-ok: release velocity (px/ms) past which a swipe dismisses regardless of distance
+const DRAG_SLOP = 4; // literal-ok: horizontal travel (px) before a touch counts as a swipe rather than a tap
+const DECAY_MIN_VELOCITY = 0.5; // literal-ok: floor (px/ms) for the swipe-dismiss continuation
+const DECAY_DECELERATION = 0.998; // literal-ok: Animated.decay's own default rate
 
 /**
  * SidePanel — the drawer: hidden off the edge until the trigger asks for it, then
@@ -114,15 +116,17 @@ const DRAG_DISMISS_VELOCITY = 1.5; // literal-ok: release velocity (px/ms) past 
  * `FocusScope` (`trapped={modal}`, `autoFocus={modal ? 'first' : 'none'}`), `Heading`
  * (level 2, hidden with `hideHeading`) for the heading, `Button` for the close control,
  * `Box` for the scrollable body and `Stack` for the footer row — never restyled
- * directly. A `PanResponder` on the surface tracks a drag toward the edge it came
- * from; past 25% of its measured width or a fast flick, it fires `onOpenChange`
- * with reason `swipe` and continues the motion off-screen with `Animated.decay` at
- * the release velocity (instant, no decay, under reduced motion); otherwise it
- * springs back. The gesture is additive — the close button always exists and is
- * gated only by `dismissible`, exactly like Escape (the Android back button via
- * `onRequestClose`), the scrim tap and the swipe: per this component's own prop
- * doc, all four are disabled when `dismissible` is false, unlike `Dialog`'s
- * "Escape always reports" precedent, which does not apply here. `width`'s tokens
+ * directly. A `PanResponder` on the header (touches that start on the close button
+ * are excluded — there is no handle part) tracks a drag toward the edge the panel
+ * came from and moves the whole surface; past 25% of its measured width or a fast
+ * flick, it fires `onOpenChange` with reason `swipe` and continues the motion
+ * off-screen with `Animated.decay` at the release velocity (instant under reduced
+ * motion); otherwise it settles back. The gesture is additive — the trigger and the
+ * close button always exist. With `dismissible` false the close button is not
+ * rendered and the scrim tap and swipe do nothing, but `onRequestClose` (the Android
+ * back button, native's Escape) still reports `onOpenChange(false, 'escape')`, as in
+ * `Dialog`: a controlled consumer decides, and an uncontrolled panel stays open. The
+ * trigger is cloned with the toggle `onPress` and Button's `expanded`. `width`'s tokens
  * are clamped to the viewport minus `edgeGutter` so a phone-width panel always
  * leaves a strip of scrim visible. Above the `persistent` breakpoint
  * (`useWindowDimensions` against the chosen `layout.maxWidth.*` token) the panel
@@ -297,6 +301,10 @@ export function SidePanel({
     changeOpen(true, 'trigger');
   };
 
+  // The memoized pan responder reads the latest close handler, not the one from its first render.
+  const requestCloseRef = React.useRef(requestClose);
+  requestCloseRef.current = requestClose;
+
   const handleScrimPress = (): void => {
     if (dismissible) {
       requestClose('scrim');
@@ -308,9 +316,25 @@ export function SidePanel({
   };
 
   const handleRequestClose = (): void => {
+    if (!isOpen) {
+      return;
+    }
     if (dismissible) {
       requestClose('escape');
+      return;
     }
+    // Non-dismissible: report only; the consumer decides whether `open` flips.
+    onOpenChange?.(false, 'escape');
+  };
+
+  // Set when a touch starts on the close button so the header's swipe ignores it;
+  // cleared when that touch ends on the header.
+  const closeTouchRef = React.useRef(false);
+  const handleCloseTouchStart = (): void => {
+    closeTouchRef.current = true;
+  };
+  const handleHeaderTouchEnd = (): void => {
+    closeTouchRef.current = false;
   };
 
   const handleSurfaceLayout = (event: LayoutChangeEvent): void => {
@@ -322,11 +346,11 @@ export function SidePanel({
       PanResponder.create({
         onStartShouldSetPanResponder: () => false,
         onMoveShouldSetPanResponder: (_, gestureState) => {
-          if (!swipeable || !dismissible) {
+          if (!swipeable || !dismissible || closeTouchRef.current) {
             return false;
           }
           const awayDx = isPhysicalLeft ? -gestureState.dx : gestureState.dx;
-          return awayDx > 4 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+          return awayDx > DRAG_SLOP && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
         },
         onPanResponderMove: (_, gestureState) => {
           const awayDx = isPhysicalLeft ? -gestureState.dx : gestureState.dx;
@@ -340,12 +364,16 @@ export function SidePanel({
           const threshold = (surfaceWidthRef.current || overlayPanelWidth) * DRAG_DISMISS_RATIO;
           const shouldDismiss = awayDx > threshold || awayVx > DRAG_DISMISS_VELOCITY;
           if (shouldDismiss) {
-            requestClose('swipe');
+            requestCloseRef.current('swipe');
             if (reducedMotion) {
               dragX.setValue(isPhysicalLeft ? -windowWidth : windowWidth);
             } else {
-              const decayVelocity = isPhysicalLeft ? -Math.max(awayVx, 0.5) : Math.max(awayVx, 0.5);
-              Animated.decay(dragX, { velocity: decayVelocity, deceleration: 0.998, useNativeDriver: false }).start();
+              const speed = Math.max(awayVx, DECAY_MIN_VELOCITY);
+              Animated.decay(dragX, {
+                velocity: isPhysicalLeft ? -speed : speed,
+                deceleration: DECAY_DECELERATION,
+                useNativeDriver: false,
+              }).start();
             }
             return;
           }
@@ -365,7 +393,12 @@ export function SidePanel({
             dragX.setValue(0);
             return;
           }
-          Animated.timing(dragX, { toValue: 0, duration: exitDuration, useNativeDriver: false }).start();
+          Animated.timing(dragX, {
+            toValue: 0,
+            duration: exitDuration,
+            easing: toEasing(t.motionEasingStandard),
+            useNativeDriver: false,
+          }).start();
         },
       }),
     [swipeable, dismissible, isPhysicalLeft, dragX, windowWidth, overlayPanelWidth, reducedMotion, exitDuration, t.motionEasingStandard],
@@ -374,7 +407,6 @@ export function SidePanel({
   const isTriggerElement = React.isValidElement(trigger);
   const triggerChild = isTriggerElement ? (trigger as React.ReactElement<Record<string, unknown>>) : null;
   const triggerChildProps = triggerChild?.props ?? {};
-  const triggerHasLabel = typeof triggerChildProps.label === 'string';
 
   React.useEffect(() => {
     if (__DEV__ && trigger !== undefined && !isTriggerElement) {
@@ -389,10 +421,8 @@ export function SidePanel({
             (triggerChildProps.onPress as ((e: unknown) => void) | undefined)?.(event);
             handleTriggerPress();
           },
-          // No-op on this package's own Button, which does not forward unrecognized
-          // props (see Popover's doc); kept for a trigger that does forward extra props.
-          accessibilityState: { expanded: isOpen },
-          ...(triggerHasLabel ? null : { accessibilityLabel: COPY.openLabel }),
+          // Button reflects this to accessibilityState.expanded (the disclosure state).
+          expanded: isOpen,
         })
       : trigger;
 
@@ -511,24 +541,32 @@ export function SidePanel({
           <View style={anchorStyle} pointerEvents="box-none">
             <FocusScope trapped={modal} active={mounted} autoFocus={modal ? 'first' : 'none'} restoreFocus={false}>
               <Animated.View
-                {...(swipeable && dismissible ? panResponder.panHandlers : null)}
                 style={surfaceStyle}
                 onLayout={handleSurfaceLayout}
                 accessibilityViewIsModal={modal}
                 accessibilityLabel={heading}
                 testID="SidePanel.surface"
               >
-                <View style={headerStyle} testID="SidePanel.header">
+                <View
+                  {...(swipeable && dismissible ? panResponder.panHandlers : null)}
+                  onTouchEnd={handleHeaderTouchEnd}
+                  onTouchCancel={handleHeaderTouchEnd}
+                  style={headerStyle}
+                  testID="SidePanel.header"
+                >
                   {!hideHeading ? <Heading level={2}>{heading}</Heading> : null}
-                  <Button
-                    label={COPY.closeLabel}
-                    variant="ghost"
-                    size="sm"
-                    iconOnly
-                    disabled={!dismissible}
-                    leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
-                    onPress={handleCloseButtonPress}
-                  />
+                  {dismissible ? (
+                    <View onTouchStart={handleCloseTouchStart} testID="SidePanel.closeButton">
+                      <Button
+                        label={COPY.closeLabel}
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
+                        onPress={handleCloseButtonPress}
+                      />
+                    </View>
+                  ) : null}
                 </View>
                 <ScrollView
                   testID="SidePanel.body"

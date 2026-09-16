@@ -1,6 +1,5 @@
 import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { classMap } from 'lit/directives/class-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Heading.js';
 import './Button.js';
@@ -67,6 +66,12 @@ const HOOKS: Record<SidePanelOverridableBinding, string> = {
 /** copy.closeLabel */
 const COPY_CLOSE_LABEL = 'Close';
 
+/** The persistent breakpoint for each `persistent` value, read through its token. */
+const PERSISTENT_BREAKPOINT_VARS: Record<Exclude<SidePanelPersistent, 'never'>, string> = {
+  content: '--layout-max-width-content',
+  page: '--layout-max-width-page',
+};
+
 /** Negates a boolean attribute: `no-dismiss` present means `dismissible` is `false`. */
 const NEGATED_BOOLEAN_CONVERTER = {
   fromAttribute(value: string | null): boolean {
@@ -93,83 +98,68 @@ const FOCUSABLE_SELECTOR = [
   'ds-disclosure',
 ].join(',');
 
-function findFirstFocusable(root: Element): HTMLElement | null {
-  if (root instanceof HTMLElement && root.matches(FOCUSABLE_SELECTOR)) {
-    return root;
-  }
-  return root.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-}
-
 /** How many modal `<ds-side-panel>` instances currently hold the body-scroll lock. */
-let openModalCount = 0;
+let scrollLockCount = 0;
 
 function lockBodyScroll(): void {
-  openModalCount += 1;
-  if (openModalCount === 1) {
+  scrollLockCount += 1;
+  if (scrollLockCount === 1) {
     document.documentElement.style.overflow = 'hidden';
   }
 }
 
 function unlockBodyScroll(): void {
-  openModalCount = Math.max(0, openModalCount - 1);
-  if (openModalCount === 0) {
+  scrollLockCount = Math.max(0, scrollLockCount - 1);
+  if (scrollLockCount === 0) {
     document.documentElement.style.removeProperty('overflow');
   }
 }
 
-function prefersReducedMotion(): boolean {
-  return matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** The focused element, descending through open shadow roots. */
+function deepActiveElement(): Element | null {
+  let active = document.activeElement;
+  while (active?.shadowRoot?.activeElement) {
+    active = active.shadowRoot.activeElement;
+  }
+  return active;
+}
+
+/** Longest `transition-duration + transition-delay` pair on an element, in milliseconds. */
+function transitionTimeMs(element: Element): number {
+  const style = getComputedStyle(element);
+  const toMs = (value: string): number => (value.endsWith('ms') ? parseFloat(value) : parseFloat(value) * 1000) || 0;
+  const durations = style.transitionDuration.split(',').map((part) => toMs(part.trim()));
+  const delays = style.transitionDelay.split(',').map((part) => toMs(part.trim()));
+  return durations.reduce((max, duration, index) => Math.max(max, duration + (delays[index] ?? 0)), 0);
 }
 
 /**
  * `<ds-side-panel>` — SidePanel (category: overlay, APG pattern: disclosure).
  *
  * `<ds-side-panel heading="Menu" persistent="content"><ds-button slot="trigger"
- * icon-only label="Menu"></ds-button><ds-list>…</ds-list></ds-side-panel>`. The
- * `trigger` slot holds the APG disclosure button; clicking it toggles the
- * panel and sets `aria-expanded` directly on it (`aria-controls` is never set
- * — it cannot address an id inside the shadow root). A shadow `<dialog>`
- * backs both overlay modes: non-modal (default) opens it with `.show()` —
- * no backdrop, no trap, focus stays on the trigger, Tab flows trigger → panel
- * → page because the panel sits right after the trigger slot in the
- * flattened tree; modal opens it with `.showModal()` — native top layer,
- * inert background, focus moved in and trapped by `<ds-focus-scope trapped>`.
- * Above the `persistent` breakpoint (a `matchMedia` listener on the resolved
- * `layout.maxWidth.{content,page}` token) the host switches to `display:
- * block` in the parent grid, the trigger is hidden, and the same header/body/
- * footer render inside a plain `<aside role={landmark}>` — no dialog, no
- * scrim, no trap, part of the page's tab order.
+ * icon-only label="Menu"><ds-icon slot="leading-icon" name="menu"></ds-icon></ds-button>
+ * <ds-list>…</ds-list></ds-side-panel>`.
  *
- * ## When to use
+ * The `trigger` slot holds the APG disclosure button: activating it toggles
+ * the panel and the panel sets `aria-expanded` on it (`expanded` on a
+ * `<ds-button>`). `aria-controls` is never set — it cannot address an id in
+ * the shadow root. Non-modal (default): the panel is a shadow `<aside>` (a
+ * `<nav>` for `landmark="navigation"`) placed right after the trigger slot,
+ * `hidden` when closed; focus stays on the trigger, Tab walks into it.
+ * Modal: a shadow `<dialog>` opened with `showModal()` — top layer, inert
+ * page, scroll lock, focus moved in and trapped. Above the `persistent`
+ * breakpoint (a `matchMedia` listener on the resolved `layout.maxWidth.*`
+ * token) the host lays out as a sidebar in the parent grid and the same
+ * header/body/footer render in the landmark, with no scrim, trap or trigger.
  *
- * Use a SidePanel for phone navigation (a List or Tree of Links from the
- * `start` edge), for filters beside a results page, for a cart or detail
- * panel from the `end` edge, for a settings drawer. Set `persistent="content"`
- * when the same panel should become the permanent sidebar on desktop; leave
- * it `"never"` for panels that are always a temporary overlay.
+ * `open` is controlled when set: user actions only dispatch `open-change`, and
+ * the panel changes once the property does. Omitted, the panel keeps its own
+ * state and still dispatches `open-change`.
  *
- * ## When not to use
- *
- * Not for a short list of actions (Menu, ActionSheet), a task with a few
- * fields (Dialog, BottomSheet), or content that is the page's point. Never
- * open one on hover, never stack side panels, and use `modal` only when the
- * page must not be used until the panel is done — a navigation drawer is not
- * that.
- *
- * @fires open-change - Fired when the panel opens or closes, with `{ open,
- *   reason }` in `detail`; `reason` is `trigger`, `escape`, `close-button`,
- *   `scrim`, `swipe`, `action` or `navigation`.
- * @slot trigger - The APG disclosure button that shows and hides the panel. Omit to control `open` from elsewhere.
- * @slot - The body: a List, Tree or Form. Scrolls inside the panel when taller than the viewport (anatomy: body).
- * @slot footer - Pinned above the safe area (anatomy: footer).
- * @csspart scrim - The non-modal backdrop, shown when `scrim` is set (anatomy: scrim).
- * @csspart surface - The padded surface: the `<dialog>` in overlay mode, the `<aside>` in persistent mode (anatomy: surface).
- * @csspart focus-scope - The focus-trapping wrapper (anatomy: focusScope).
- * @csspart header - The header row (anatomy: header).
- * @csspart heading - The `<ds-heading>` (anatomy: heading).
- * @csspart body - The `<ds-box>` wrapping the default slot (anatomy: body).
- * @csspart footer - The footer row (anatomy: footer).
- * @csspart close-button - The close `<ds-button>` (anatomy: closeButton).
+ * @fires open-change - `{ open, reason }` when a user action opens or closes the panel.
+ * @slot trigger - The APG disclosure button. Omit to control `open` from elsewhere.
+ * @slot - The body: a List, Tree, Form or Stack. Scrolls inside the panel.
+ * @slot footer - Pinned to the bottom of the panel above the safe area.
  */
 @customElement('ds-side-panel')
 export class DsSidePanel extends LitElement {
@@ -196,6 +186,10 @@ export class DsSidePanel extends LitElement {
       --ds-side-panel-enter: var(--motion-duration-base);
       --ds-side-panel-exit: var(--motion-duration-fast);
       --ds-side-panel-active-width: var(--ds-side-panel-width);
+      --ds-side-panel-inline-size: min(
+        var(--ds-side-panel-active-width),
+        calc(100vw - var(--ds-side-panel-edge-gutter))
+      );
     }
 
     :host([width='narrow']) {
@@ -209,139 +203,162 @@ export class DsSidePanel extends LitElement {
       display: none;
     }
 
-    /* persistent: above the breakpoint the host itself lays out as a sidebar in the parent grid. */
-    :host(.persistent) {
+    /* Persistent: above the breakpoint the host itself is the sidebar in the parent grid. */
+    :host([data-persistent]) {
       display: block;
       inline-size: var(--ds-side-panel-active-width);
       block-size: 100%;
     }
-
-    ::slotted([slot='trigger']) {
-      display: inline-flex;
-    }
-    :host(.persistent) ::slotted([slot='trigger']) {
+    :host([data-persistent]) ::slotted([slot='trigger']) {
       display: none;
     }
 
-    .scrim {
+    [data-part='scrim'] {
       position: fixed;
       inset: 0;
-      margin: 0;
-      padding: 0;
-      border: 0;
       background: var(--ds-side-panel-scrim);
       z-index: calc(var(--ds-side-panel-layer) - 1);
+      opacity: 1;
+      transition: opacity var(--ds-side-panel-enter) var(--motion-easing-standard);
     }
-    .scrim[hidden] {
+    [data-part='scrim'][hidden] {
       display: none;
     }
+    [data-part='scrim'].closing {
+      opacity: 0;
+      transition-duration: var(--ds-side-panel-exit);
+      transition-timing-function: var(--motion-easing-exit);
+    }
+    @starting-style {
+      [data-part='scrim']:not([hidden]) {
+        opacity: 0;
+      }
+    }
 
-    .surface {
+    [data-part='surface'] {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      gap: var(--ds-side-panel-part-gap);
       font-family: var(--font-family-body);
       color: var(--color-foreground);
       /* surface: color.overlay.surface, locked — no override hook */
       background: var(--color-overlay-surface);
     }
+    [data-part='surface'][hidden] {
+      display: none;
+    }
 
-    dialog.surface {
+    .overlay {
       margin: 0;
       padding: 0;
       border: 0;
       max-inline-size: none;
+      max-block-size: none;
       position: fixed;
       inset-block: 0;
       inset-inline: auto;
       block-size: 100dvh;
-      inline-size: min(var(--ds-side-panel-active-width), calc(100vw - var(--ds-side-panel-edge-gutter)));
+      inline-size: var(--ds-side-panel-inline-size);
       box-shadow: var(--ds-side-panel-shadow);
       z-index: var(--ds-side-panel-layer);
-      color: inherit;
     }
-
-    :host([side='start']) dialog.surface {
+    dialog.overlay:not([open]) {
+      display: none;
+    }
+    :host([side='start']) .overlay {
       inset-inline-start: 0;
+      padding-inline-start: env(safe-area-inset-left);
       transition: inset-inline-start var(--ds-side-panel-enter) var(--motion-easing-standard);
     }
-    :host([side='end']) dialog.surface {
+    :host([side='end']) .overlay {
       inset-inline-end: 0;
+      padding-inline-end: env(safe-area-inset-right);
       transition: inset-inline-end var(--ds-side-panel-enter) var(--motion-easing-standard);
     }
-
-    :host([side='start']) dialog.surface.closing {
-      inset-inline-start: calc(-1 * var(--ds-side-panel-active-width));
+    :host([side='start']) .overlay.closing {
+      inset-inline-start: calc(-1 * var(--ds-side-panel-inline-size));
+    }
+    :host([side='end']) .overlay.closing {
+      inset-inline-end: calc(-1 * var(--ds-side-panel-inline-size));
+    }
+    .overlay.closing {
       transition-duration: var(--ds-side-panel-exit);
       transition-timing-function: var(--motion-easing-exit);
     }
-    :host([side='end']) dialog.surface.closing {
-      inset-inline-end: calc(-1 * var(--ds-side-panel-active-width));
-      transition-duration: var(--ds-side-panel-exit);
-      transition-timing-function: var(--motion-easing-exit);
-    }
-
     @starting-style {
-      :host([side='start']) dialog.surface[open] {
-        inset-inline-start: calc(-1 * var(--ds-side-panel-active-width));
+      :host([side='start']) .overlay:not([hidden]) {
+        inset-inline-start: calc(-1 * var(--ds-side-panel-inline-size));
       }
-      :host([side='end']) dialog.surface[open] {
-        inset-inline-end: calc(-1 * var(--ds-side-panel-active-width));
+      :host([side='end']) .overlay:not([hidden]) {
+        inset-inline-end: calc(-1 * var(--ds-side-panel-inline-size));
       }
     }
 
-    dialog.surface::backdrop {
+    dialog.overlay::backdrop {
       background: var(--ds-side-panel-scrim);
       transition: opacity var(--ds-side-panel-enter) var(--motion-easing-standard);
     }
+    dialog.overlay.closing::backdrop {
+      opacity: 0;
+      transition-duration: var(--ds-side-panel-exit);
+    }
     @starting-style {
-      dialog.surface[open]::backdrop {
+      dialog.overlay[open]::backdrop {
         opacity: 0;
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      dialog.surface,
-      dialog.surface::backdrop {
+      [data-part='scrim'],
+      .overlay,
+      dialog.overlay::backdrop {
         transition: none;
       }
     }
 
-    aside.surface {
+    .sidebar {
       inline-size: 100%;
       block-size: 100%;
     }
-    :host(.persistent[side='start']) aside.surface {
+    :host([side='start']) .sidebar {
       border-inline-end: var(--ds-side-panel-border-width) solid var(--ds-side-panel-border);
     }
-    :host(.persistent[side='end']) aside.surface {
+    :host([side='end']) .sidebar {
       border-inline-start: var(--ds-side-panel-border-width) solid var(--ds-side-panel-border);
     }
 
-    .header {
+    [data-part='focusScope'] {
       display: flex;
       flex-direction: column;
-      padding-inline: var(--ds-side-panel-inset);
-      padding-block-start: var(--ds-side-panel-inset);
-      flex: 0 0 auto;
+      gap: var(--ds-side-panel-part-gap);
+      flex: 1 1 auto;
+      min-block-size: 0;
     }
 
-    .heading-row {
+    [data-part='header'] {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: var(--ds-side-panel-header-gap);
-      min-inline-size: 0;
+      padding-inline: var(--ds-side-panel-inset);
+      padding-block-start: var(--ds-side-panel-inset);
+      flex: 0 0 auto;
+    }
+    [data-part='header'].heading-hidden {
+      justify-content: flex-end;
     }
 
-    .heading {
+    [data-part='heading'] {
       min-inline-size: 0;
+    }
+    [data-part='heading']:focus-visible {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: var(--border-width-focus);
     }
 
     /* hideHeading: kept for the accessible name, removed from the visual layout. */
-    .heading--hidden {
-      /* literal-ok: standard visually-hidden clip pattern, exempt from token-only rule */
+    .visually-hidden {
+      /* literal-ok: standard visually-hidden clip pattern */
       position: absolute;
       width: 1px;
       height: 1px;
@@ -353,82 +370,66 @@ export class DsSidePanel extends LitElement {
       border: 0;
     }
 
-    #heading:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
-      border-radius: var(--radius-sm);
-    }
-
-    .close {
+    [data-part='closeButton'] {
       flex: none;
     }
 
-    .body {
+    [data-part='body'] {
       flex: 1 1 auto;
       min-block-size: 0;
       overflow-y: auto;
     }
 
-    .footer-row {
-      padding-block-end: env(safe-area-inset-bottom);
+    [data-part='footer'] {
+      flex: 0 0 auto;
+      padding-inline: var(--ds-side-panel-inset);
+      padding-block-end: calc(var(--ds-side-panel-inset) + env(safe-area-inset-bottom));
     }
   `;
 
   /** Controlled visibility. Omit for uncontrolled (the trigger toggles it). */
   @property({ type: Boolean, reflect: true }) accessor open: boolean | undefined;
 
-  /**
-   * The panel's title and accessible name. Named `heading`, not `title` —
-   * `HTMLElement` already defines `title` as the tooltip attribute (see
-   * Dialog and BottomSheet).
-   */
-  @property() accessor heading!: string;
+  /** The panel's title and accessible name ("Menu", "Filters", "Your cart"). */
+  @property() accessor heading: string = '';
 
   /** Keep the title for assistive technology but do not render it. The accessible name is required regardless. */
   @property({ type: Boolean, attribute: 'hide-heading' }) accessor hideHeading = false;
 
   /** The edge the panel slides from; `start`/`end` follow the writing direction. */
-  @property({ reflect: true }) accessor side: SidePanelSide = 'start';
+  @property({ type: String, reflect: true }) accessor side: SidePanelSide = 'start';
 
   /** Panel width on wide screens. On phones the panel is the viewport width minus `edgeGutter`. */
-  @property({ reflect: true }) accessor width: SidePanelWidth = 'default';
+  @property({ type: String, reflect: true }) accessor width: SidePanelWidth = 'default';
 
   /** Above this layout width the panel becomes a fixed sidebar: always visible, no scrim, no trap, no trigger. */
-  @property({ reflect: true }) accessor persistent: SidePanelPersistent = 'never';
+  @property({ type: String, reflect: true }) accessor persistent: SidePanelPersistent = 'never';
 
   /**
-   * The landmark role the panel exposes, in persistent mode and as the shadow
-   * region's role when open. Named `landmark`, not `role` — `Element` already
-   * defines `role` via ARIA reflection.
+   * The doc's `role`: the landmark the panel exposes (persistent, and the
+   * non-modal region). Named `landmark` because `Element` already defines `role`.
    */
-  @property({ attribute: 'landmark' }) accessor landmark: SidePanelLandmark = 'complementary';
+  @property({ type: String }) accessor landmark: SidePanelLandmark = 'complementary';
 
-  /** `false` (default, the disclosure pattern): no trap, focus stays on the trigger. `true`: a modal Dialog at the edge. */
+  /** `false` (default, the disclosure pattern): a disclosed region. `true`: a modal dialog at the edge. */
   @property({ type: Boolean }) accessor modal = false;
 
-  /**
-   * Show the scrim in non-modal mode too (modal always has one). Attribute
-   * is the negation, `no-scrim`, because a boolean attribute cannot express
-   * `false` for a prop that defaults `true`.
-   */
+  /** Show the scrim in non-modal mode too (modal always has one). Attribute `no-scrim` negates it. */
   @property({ attribute: 'no-scrim', converter: NEGATED_BOOLEAN_CONVERTER }) accessor scrim = true;
 
   /**
-   * Escape, the close button, a scrim tap / outside click, and the swipe
-   * gesture all request close. When false, only the trigger and footer
-   * actions close it. Attribute is the negation, `no-dismiss`.
+   * Escape, the close button, a scrim tap / outside click and the swipe request
+   * close. When false the close button is not rendered and taps outside do
+   * nothing; Escape still reports `open-change` with reason `escape`.
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor dismissible = true;
 
-  /**
-   * On touch, a swipe toward the edge dismisses (native only — not wired up
-   * on the web platform). Attribute is the negation, `no-swipe`.
-   */
-  @property({ attribute: 'no-swipe', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  /** Accepted for parity; the swipe gesture is native only and not wired on Lit. Attribute `no-swipeable` negates it. */
+  @property({ attribute: 'no-swipeable', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor swipeable = true;
 
-  /** Per-instance style overrides: `{ inset: 'layout.inset.md' }`. Locked bindings (surface, focusRing, focusRingWidth) are ignored. */
+  /** Per-instance style overrides: `{ inset: 'layout.inset.md' }`. Locked bindings are ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<SidePanelOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled open state, used when `open` is omitted. */
@@ -437,22 +438,24 @@ export class DsSidePanel extends LitElement {
   /** Whether the persistent breakpoint currently matches. */
   @state() private accessor isPersistent = false;
 
-  /** Whether the exit transition is playing. */
+  /** Whether the exit transition is playing (the panel stays rendered until it ends). */
   @state() private accessor closing = false;
 
-  /** Whether the default slot currently has assigned content, for the dev warning. */
-  @state() private accessor hasBodyContent = false;
+  /** Whether the footer slot has assigned content. */
+  @state() private accessor hasFooter = false;
 
-  @query('dialog') private accessor dialogEl!: HTMLDialogElement | null;
-  @query('#heading') private accessor headingEl!: HTMLElement | null;
-  @query('.close') private accessor closeButtonEl!: HTMLElement | null;
+  @query('[data-part="surface"]') private accessor surfaceEl!: HTMLElement | null;
+  @query('[data-part="heading"]') private accessor headingEl!: HTMLElement | null;
+  @query('[data-part="closeButton"]') private accessor closeButtonEl!: HTMLElement | null;
 
   private triggerEl: HTMLElement | null = null;
   private persistentQuery: MediaQueryList | null = null;
-  private wasLogicalOpen = false;
-  private wasOverlayOpen = false;
-  private pendingReason: SidePanelOpenChangeReason = 'trigger';
+  private overlayShown = false;
+  private overlayModal = false;
+  private holdsScrollLock = false;
+  private openerEl: HTMLElement | null = null;
   private focusTriggerOnClose = false;
+  private exitTimer: ReturnType<typeof setTimeout> | undefined;
   private closingProgrammatically = false;
 
   /** Whether the panel is currently open, controlled or not. */
@@ -469,134 +472,164 @@ export class DsSidePanel extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.persistentQuery?.removeEventListener('change', this.handlePersistentChange);
+    this.persistentQuery = null;
     this.removeOutsideListener();
-    if (this.modal && this.wasOverlayOpen) {
-      unlockBodyScroll();
-    }
+    clearTimeout(this.exitTimer);
+    this.releaseScrollLock();
+    this.overlayShown = false;
+    this.closing = false;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
-    if (changed.has('persistent')) {
+    if (changed.has('persistent') && this.isConnected) {
       this.setupPersistentQuery();
     }
-    // Crossing into the persistent breakpoint while open: the render below is
-    // about to swap the <dialog> for an <aside>, so clean up now while the
-    // dialog element from the previous render is still queryable.
-    if (changed.has('isPersistent') && this.isPersistent && this.wasOverlayOpen) {
-      this.wasOverlayOpen = false;
-      this.finishOverlayClose();
+    // The next render swaps the presentation (dialog ↔ region ↔ sidebar): tear the current one down now.
+    const presentationChanged =
+      (changed.has('modal') && changed.get('modal') !== undefined) || (changed.has('isPersistent') && this.isPersistent);
+    if (presentationChanged && (this.overlayShown || this.closing)) {
+      this.overlayShown = false;
+      this.finishClose();
     }
   }
 
   protected override updated(): void {
-    const isOpen = this.currentOpen;
-    if (isOpen !== this.wasLogicalOpen) {
-      this.wasLogicalOpen = isOpen;
-      this.updateTriggerExpanded();
-      this.dispatchOpenChange(isOpen);
-    }
-    const showOverlay = isOpen && !this.isPersistent;
-    if (showOverlay !== this.wasOverlayOpen) {
-      this.wasOverlayOpen = showOverlay;
+    const showOverlay = this.currentOpen && !this.isPersistent;
+    if (showOverlay !== this.overlayShown) {
+      this.overlayShown = showOverlay;
       if (showOverlay) {
         this.openOverlay();
       } else {
-        this.playExitAnimation();
+        this.startExit();
       }
     }
-    this.classList.toggle('persistent', this.isPersistent);
+    this.toggleAttribute('data-persistent', this.isPersistent);
+    this.updateTriggerExpanded();
     this.warnInDev();
   }
 
   protected override render(): TemplateResult {
-    const isOpen = this.currentOpen;
     const isPersistent = this.isPersistent;
-    const hasFooter = this.querySelector('[slot="footer"]') !== null;
-    const headingClasses = classMap({ heading: true, 'heading--hidden': this.hideHeading });
+    const visible = isPersistent || this.currentOpen || this.closing;
+    const useDialog = this.modal && !isPersistent;
+    const closingClass = this.closing ? ' closing' : '';
 
     const content = html`
       <ds-focus-scope
-        part="focus-scope"
-        .trapped=${this.modal && !isPersistent}
-        .active=${isOpen || isPersistent}
+        part="focusScope"
+        data-part="focusScope"
+        .trapped=${useDialog}
+        .active=${visible}
         auto-focus="none"
         .restoreFocus=${false}
-        style="display: flex; flex-direction: column; gap: var(--ds-side-panel-part-gap); min-block-size: 0; flex: 1 1 auto"
       >
-        <div class="header" part="header">
-          <div class="heading-row">
-            <ds-heading id="heading" part="heading" class=${headingClasses} level="2" size="lg" tabindex="-1"
-              >${this.heading}</ds-heading
-            >
-            ${!isPersistent
-              ? html`
-                  <ds-button
-                    class="close"
-                    part="close-button"
-                    variant="ghost"
-                    size="md"
-                    icon-only
-                    label=${COPY_CLOSE_LABEL}
-                    @press=${this.handleCloseButtonPress}
-                  >
-                    <ds-icon slot="leading-icon" name="close"></ds-icon>
-                  </ds-button>
-                `
-              : nothing}
-          </div>
+        <div part="header" data-part="header" class=${this.hideHeading ? 'heading-hidden' : ''}>
+          <ds-heading
+            id="heading"
+            part="heading"
+            data-part="heading"
+            class=${this.hideHeading ? 'visually-hidden' : ''}
+            level="2"
+            size="lg"
+            tabindex="-1"
+            >${this.heading}</ds-heading
+          >
+          ${this.dismissible && !isPersistent
+            ? html`
+                <ds-button
+                  part="closeButton"
+                  data-part="closeButton"
+                  variant="ghost"
+                  icon-only
+                  label=${COPY_CLOSE_LABEL}
+                  @press=${this.handleCloseButtonPress}
+                >
+                  <ds-icon slot="leading-icon" name="close"></ds-icon>
+                </ds-button>
+              `
+            : nothing}
         </div>
-        <ds-box class="body" part="body" inset="lg" .overrides=${this.bodyOverrides()} @click=${this.handleBodyClick}>
-          <slot @slotchange=${this.handleBodySlotChange}></slot>
+        <ds-box part="body" data-part="body" inset="lg" .overrides=${this.bodyOverrides()} @click=${this.handleBodyClick}>
+          <slot></slot>
         </ds-box>
-        ${hasFooter
-          ? html`
-              <ds-stack class="footer-row" part="footer" direction="horizontal" justify="end" style="gap: var(--ds-side-panel-footer-gap)">
-                <slot name="footer"></slot>
-              </ds-stack>
-            `
-          : nothing}
+        <ds-stack
+          part="footer"
+          data-part="footer"
+          direction="horizontal"
+          gap="tight"
+          justify="end"
+          ?hidden=${!this.hasFooter}
+          .overrides=${this.footerOverrides()}
+        >
+          <slot name="footer" @slotchange=${this.handleFooterSlotChange}></slot>
+        </ds-stack>
       </ds-focus-scope>
     `;
 
+    const regionClass = isPersistent ? 'sidebar' : `overlay${closingClass}`;
+    const region =
+      this.landmark === 'navigation'
+        ? html`<nav
+            part="surface"
+            data-part="surface"
+            class=${regionClass}
+            aria-labelledby="heading"
+            ?hidden=${!visible}
+            @keydown=${this.handleSurfaceKeydown}
+          >
+            ${content}
+          </nav>`
+        : html`<aside
+            part="surface"
+            data-part="surface"
+            class=${regionClass}
+            aria-labelledby="heading"
+            ?hidden=${!visible}
+            @keydown=${this.handleSurfaceKeydown}
+          >
+            ${content}
+          </aside>`;
+
     return html`
       <slot name="trigger" @slotchange=${this.handleTriggerSlotChange}></slot>
-      ${!this.modal && !isPersistent
-        ? html`
-            <div
-              class="scrim"
-              part="scrim"
-              aria-hidden="true"
-              ?hidden=${!(this.scrim && isOpen)}
-              @pointerdown=${this.handleScrimPointerDown}
-            ></div>
-          `
+      ${!this.modal && !isPersistent && this.scrim
+        ? html`<div
+            part="scrim"
+            data-part="scrim"
+            class=${closingClass.trim()}
+            aria-hidden="true"
+            ?hidden=${!visible}
+            @click=${this.handleScrimClick}
+          ></div>`
         : nothing}
-      ${isPersistent
-        ? html`<aside class="surface" part="surface" role=${this.landmark} aria-labelledby="heading">${content}</aside>`
-        : html`
-            <dialog
-              class="surface${this.closing ? ' closing' : ''}"
-              part="surface"
-              role=${this.modal ? nothing : this.landmark}
-              aria-modal=${this.modal ? 'true' : nothing}
-              aria-labelledby="heading"
-              @cancel=${this.handleCancel}
-              @close=${this.handleNativeClose}
-              @click=${this.handleDialogClick}
-              @keydown=${this.handlePanelKeydown}
-            >
-              ${content}
-            </dialog>
-          `}
+      ${useDialog
+        ? html`<dialog
+            part="surface"
+            data-part="surface"
+            class="overlay${closingClass}"
+            aria-labelledby="heading"
+            @keydown=${this.handleSurfaceKeydown}
+            @cancel=${this.handleCancel}
+            @close=${this.handleNativeClose}
+            @click=${this.handleDialogClick}
+          >
+            ${content}
+          </dialog>`
+        : region}
     `;
   }
 
-  private bodyOverrides() {
+  private bodyOverrides(): { paddingBlock: TokenRef; paddingInline: TokenRef } | undefined {
     const inset = this.overrides?.inset;
     return inset ? { paddingBlock: inset, paddingInline: inset } : undefined;
+  }
+
+  private footerOverrides(): { gap: TokenRef } | undefined {
+    const gap = this.overrides?.footerGap;
+    return gap ? { gap } : undefined;
   }
 
   private readonly handleTriggerSlotChange = (event: Event): void => {
@@ -607,18 +640,21 @@ export class DsSidePanel extends LitElement {
     }
     this.detachTrigger();
     this.triggerEl = next;
-    this.attachTrigger();
+    if (next) {
+      next.addEventListener('click', this.handleTriggerClick);
+      this.updateTriggerExpanded();
+    }
   };
 
-  private attachTrigger(): void {
-    const trigger = this.triggerEl;
-    if (!trigger) {
-      return;
+  private readonly handleFooterSlotChange = (event: Event): void => {
+    const slot = event.target as HTMLSlotElement;
+    const hasFooter = slot.assignedNodes({ flatten: true }).some(
+      (node) => node.nodeType === Node.ELEMENT_NODE || (node.textContent ?? '').trim() !== '',
+    );
+    if (hasFooter !== this.hasFooter) {
+      this.hasFooter = hasFooter;
     }
-    trigger.addEventListener('click', this.handleTriggerClick);
-    this.updateTriggerExpanded();
-    this.warnInDev();
-  }
+  };
 
   private detachTrigger(): void {
     const trigger = this.triggerEl;
@@ -626,85 +662,100 @@ export class DsSidePanel extends LitElement {
       return;
     }
     trigger.removeEventListener('click', this.handleTriggerClick);
-    trigger.removeAttribute('aria-expanded');
+    if (trigger.tagName === 'DS-BUTTON') {
+      (trigger as HTMLElement & { expanded: boolean | undefined }).expanded = undefined;
+    } else {
+      trigger.removeAttribute('aria-expanded');
+    }
   }
 
   private updateTriggerExpanded(): void {
-    this.triggerEl?.setAttribute('aria-expanded', this.currentOpen ? 'true' : 'false');
+    const trigger = this.triggerEl;
+    if (!trigger) {
+      return;
+    }
+    const expanded = this.currentOpen;
+    if (trigger.tagName === 'DS-BUTTON') {
+      const button = trigger as HTMLElement & { expanded: boolean | undefined };
+      if (button.expanded !== expanded) {
+        button.expanded = expanded;
+      }
+    } else if (trigger.getAttribute('aria-expanded') !== String(expanded)) {
+      trigger.setAttribute('aria-expanded', String(expanded));
+    }
   }
 
   private readonly handleTriggerClick = (): void => {
-    this.requestOpenChange(!this.currentOpen, 'trigger', false);
-  };
-
-  private readonly handleBodySlotChange = (event: Event): void => {
-    const slot = event.target as HTMLSlotElement;
-    this.hasBodyContent = slot.assignedNodes({ flatten: true }).length > 0;
-    this.warnInDev();
-  };
-
-  private readonly handleBodyClick = (event: Event): void => {
     if (this.isPersistent) {
       return;
     }
-    const link = event
+    this.requestOpenChange(!this.currentOpen, 'trigger', { apply: true, focusTrigger: true });
+  };
+
+  private readonly handleBodyClick = (event: Event): void => {
+    if (this.isPersistent || event.defaultPrevented) {
+      return;
+    }
+    const followed = event
       .composedPath()
-      .find((target): target is HTMLElement => target instanceof HTMLElement && (target.tagName === 'A' || target.tagName === 'DS-LINK'));
-    if (link) {
-      this.requestOpenChange(false, 'navigation', true);
+      .some(
+        (target) =>
+          target instanceof HTMLElement &&
+          ((target.tagName === 'A' && target.hasAttribute('href')) || target.tagName === 'DS-LINK'),
+      );
+    if (followed) {
+      this.requestOpenChange(false, 'navigation', { apply: true, focusTrigger: false });
     }
   };
 
   private readonly handleCloseButtonPress = (event: Event): void => {
-    // Keep the button's `press` inside the panel; consumers listen for `open-change`.
+    // The panel dispatches its own event; keep the inner button's `press` inside.
     event.stopPropagation();
-    if (!this.dismissible) {
+    this.requestOpenChange(false, 'close-button', { apply: true, focusTrigger: true });
+  };
+
+  private readonly handleSurfaceKeydown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape' || this.isPersistent || !this.currentOpen) {
       return;
     }
-    this.requestOpenChange(false, 'close-button', true);
+    // Handled here for both modes; preventing the keydown also stops a modal <dialog>'s own cancel.
+    event.preventDefault();
+    event.stopPropagation();
+    this.requestOpenChange(false, 'escape', { apply: this.dismissible, focusTrigger: true });
   };
 
   private readonly handleCancel = (event: Event): void => {
-    // The native default would close the <dialog> itself; the consumer owns `open` instead.
+    // A close request that did not come through keydown (a platform back gesture): the element owns `open`, not the dialog.
     event.preventDefault();
-    if (!this.dismissible) {
-      return;
-    }
-    this.requestOpenChange(false, 'escape', true);
-  };
-
-  private readonly handlePanelKeydown = (event: KeyboardEvent): void => {
-    // A modal <dialog> already emits `cancel` for Escape; only handle it here for the non-modal (`.show()`) case.
-    if (event.key !== 'Escape' || this.modal || !this.dismissible) {
-      return;
-    }
-    event.preventDefault();
-    this.requestOpenChange(false, 'escape', true);
+    this.requestOpenChange(false, 'escape', { apply: this.dismissible, focusTrigger: true });
   };
 
   private readonly handleDialogClick = (event: MouseEvent): void => {
-    // Modal only: a click on the ::backdrop lands with the <dialog> itself as the target.
-    if (!this.modal || !this.dismissible || event.target !== this.dialogEl) {
+    // A click on the ::backdrop lands with the <dialog> itself as the target.
+    const surface = this.surfaceEl;
+    if (!this.dismissible || !surface || event.target !== surface) {
       return;
     }
-    this.requestOpenChange(false, 'scrim', true);
+    const rect = surface.getBoundingClientRect();
+    const inside =
+      event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (!inside) {
+      this.requestOpenChange(false, 'scrim', { apply: true, focusTrigger: true });
+    }
   };
 
-  private readonly handleScrimPointerDown = (): void => {
+  private readonly handleScrimClick = (): void => {
     if (!this.dismissible) {
       return;
     }
-    this.requestOpenChange(false, 'scrim', true);
+    this.requestOpenChange(false, 'scrim', { apply: true, focusTrigger: false });
   };
 
   private readonly handleOutsidePointerDown = (event: PointerEvent): void => {
-    if (event.composedPath().includes(this)) {
+    if (!this.dismissible || !this.currentOpen || this.isPersistent || event.composedPath().includes(this)) {
       return;
     }
-    if (!this.dismissible) {
-      return;
-    }
-    this.requestOpenChange(false, 'scrim', false);
+    this.requestOpenChange(false, 'scrim', { apply: true, focusTrigger: false });
   };
 
   private readonly handleNativeClose = (): void => {
@@ -712,84 +763,124 @@ export class DsSidePanel extends LitElement {
       this.closingProgrammatically = false;
       return;
     }
-    // Something else (a form with method="dialog", a direct .close() call) closed the dialog.
-    this.requestOpenChange(false, 'action', false);
+    if (this.currentOpen) {
+      // Something else closed the dialog (a direct close() call); report it as an action.
+      this.requestOpenChange(false, 'action', { apply: true, focusTrigger: true });
+    }
   };
 
-  private requestOpenChange(next: boolean, reason: SidePanelOpenChangeReason, focusTriggerOnClose: boolean): void {
-    this.pendingReason = reason;
-    this.focusTriggerOnClose = focusTriggerOnClose;
-    if (this.open !== undefined) {
-      this.open = next;
-    } else {
+  /**
+   * A user asked for `next`. Uncontrolled (and `apply`): the state changes first,
+   * then `open-change` reports it. Controlled: only the event; the panel follows
+   * `open` when the consumer sets it.
+   */
+  private requestOpenChange(
+    next: boolean,
+    reason: SidePanelOpenChangeReason,
+    options: { apply: boolean; focusTrigger: boolean },
+  ): void {
+    if (!next) {
+      this.focusTriggerOnClose = options.focusTrigger;
+    }
+    if (options.apply && this.open === undefined) {
       this.internalOpen = next;
     }
+    this.dispatchEvent(
+      new CustomEvent<SidePanelOpenChangeDetail>('open-change', {
+        detail: { open: next, reason },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private openOverlay(): void {
+    clearTimeout(this.exitTimer);
     this.closing = false;
+    const active = deepActiveElement();
+    this.openerEl = active instanceof HTMLElement && active !== document.body ? active : null;
+    this.overlayModal = this.modal;
+    const surface = this.surfaceEl;
     if (this.modal) {
-      lockBodyScroll();
-      this.dialogEl?.showModal();
+      if (surface instanceof HTMLDialogElement && !surface.open) {
+        surface.showModal();
+      }
+      if (!this.holdsScrollLock) {
+        this.holdsScrollLock = true;
+        lockBodyScroll();
+      }
       this.applyInitialFocus();
     } else {
-      this.dialogEl?.show();
       this.addOutsideListener();
     }
   }
 
-  private playExitAnimation(): void {
-    if (prefersReducedMotion()) {
-      this.finishOverlayClose();
+  private startExit(): void {
+    this.removeOutsideListener();
+    const surface = this.surfaceEl;
+    if (!surface) {
+      this.finishClose();
       return;
     }
     this.closing = true;
-    const dialog = this.dialogEl;
-    if (!dialog) {
-      this.finishOverlayClose();
-      return;
-    }
-    const handleTransitionEnd = (event: TransitionEvent): void => {
-      if (event.target !== dialog || (event.propertyName !== 'inset-inline-start' && event.propertyName !== 'inset-inline-end')) {
+    // Wait one render for `.closing`, then for its transition (none under reduced motion).
+    void this.updateComplete.then(() => {
+      if (!this.closing) {
         return;
       }
-      dialog.removeEventListener('transitionend', handleTransitionEnd);
-      this.finishOverlayClose();
-    };
-    dialog.addEventListener('transitionend', handleTransitionEnd);
+      const duration = transitionTimeMs(surface);
+      if (duration === 0) {
+        this.finishClose();
+        return;
+      }
+      clearTimeout(this.exitTimer);
+      this.exitTimer = setTimeout(() => this.finishClose(), duration);
+    });
   }
 
-  private finishOverlayClose(): void {
-    this.closing = false;
-    this.removeOutsideListener();
-    const dialog = this.dialogEl;
-    if (dialog?.open) {
+  private finishClose(): void {
+    clearTimeout(this.exitTimer);
+    const surface = this.surfaceEl;
+    const focusWasInside = surface !== null && surface.matches(':focus-within');
+    if (surface instanceof HTMLDialogElement && surface.open) {
       this.closingProgrammatically = true;
-      dialog.close();
+      surface.close();
     }
-    if (this.modal) {
+    this.releaseScrollLock();
+    this.closing = false;
+    if (this.focusTriggerOnClose || focusWasInside || this.overlayModal) {
+      const target = this.triggerEl ?? this.openerEl;
+      if (target?.isConnected) {
+        target.focus();
+      }
+    }
+    this.focusTriggerOnClose = false;
+    this.overlayModal = false;
+    this.openerEl = null;
+  }
+
+  private releaseScrollLock(): void {
+    if (this.holdsScrollLock) {
+      this.holdsScrollLock = false;
       unlockBodyScroll();
-    }
-    if (this.focusTriggerOnClose) {
-      this.focusTriggerOnClose = false;
-      this.triggerEl?.focus();
     }
   }
 
   private applyInitialFocus(): void {
-    const target = this.findFirstBodyFocusable() ?? this.closeButtonEl ?? this.headingEl;
+    const target = this.findFirstFocusable() ?? this.closeButtonEl ?? this.headingEl;
     target?.focus();
   }
 
-  private findFirstBodyFocusable(): HTMLElement | null {
-    const slot = this.renderRoot.querySelector<HTMLSlotElement>('slot:not([name])');
-    if (!slot) {
-      return null;
-    }
-    for (const element of slot.assignedElements({ flatten: true })) {
-      const found = findFirstFocusable(element);
-      if (found) {
-        return found;
+  private findFirstFocusable(): HTMLElement | null {
+    for (const name of [null, 'footer']) {
+      const slot = this.renderRoot.querySelector<HTMLSlotElement>(name ? `slot[name="${name}"]` : 'slot:not([name])');
+      for (const element of slot?.assignedElements({ flatten: true }) ?? []) {
+        const found = element.matches(FOCUSABLE_SELECTOR)
+          ? (element as HTMLElement)
+          : element.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+        if (found) {
+          return found;
+        }
       }
     }
     return null;
@@ -810,8 +901,9 @@ export class DsSidePanel extends LitElement {
       this.isPersistent = false;
       return;
     }
-    const tokenVar = this.persistent === 'page' ? '--layout-max-width-page' : '--layout-max-width-content';
-    const breakpoint = getComputedStyle(document.documentElement).getPropertyValue(tokenVar).trim();
+    const breakpoint = getComputedStyle(document.documentElement)
+      .getPropertyValue(PERSISTENT_BREAKPOINT_VARS[this.persistent])
+      .trim();
     if (!breakpoint) {
       this.isPersistent = false;
       return;
@@ -825,16 +917,6 @@ export class DsSidePanel extends LitElement {
     this.isPersistent = event.matches;
   };
 
-  private dispatchOpenChange(open: boolean): void {
-    this.dispatchEvent(
-      new CustomEvent<SidePanelOpenChangeDetail>('open-change', {
-        detail: { open, reason: this.pendingReason },
-        bubbles: true,
-        composed: true,
-      }),
-    );
-  }
-
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as SidePanelOverridableBinding[]) {
       const ref = this.overrides?.[binding];
@@ -847,21 +929,15 @@ export class DsSidePanel extends LitElement {
     }
   }
 
+  private warnedHeading = false;
+
   private warnInDev(): void {
     if (!import.meta.env.DEV) {
       return;
     }
-    if (!this.heading) {
+    if (!this.heading && !this.warnedHeading) {
+      this.warnedHeading = true;
       console.warn('<ds-side-panel> requires a `heading`, used as the accessible name.', this);
-    }
-    if (!this.triggerEl && this.open === undefined) {
-      console.warn(
-        '<ds-side-panel> has no `trigger` slot and no controlled `open`; it can never be shown.',
-        this,
-      );
-    }
-    if (!this.hasBodyContent) {
-      console.warn('<ds-side-panel> requires content in its default slot.', this);
     }
   }
 }

@@ -3,6 +3,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { Input } from './Input';
+import { RadioGroup } from './RadioGroup';
+import { Select } from './Select';
 import { Stack } from './Stack';
 import { Text } from './Text';
 import { withTheme } from './decorators';
@@ -51,15 +53,84 @@ export const NoFooter: Story = { args: { footer: undefined } };
 
 export const HideHeading: Story = { args: { hideHeading: true } };
 
-export const NotDismissible: Story = {
+// examples
+export const RenameProject: Story = {
   args: {
-    dismissible: false,
+    open: true,
+    heading: 'Rename project',
+    children: <Input label="Project name" name="name" defaultValue="Marketing site" />,
     footer: (
       <>
-        <Button label="Delete account" variant="danger" />
-        <Button label="Keep account" variant="secondary" />
+        <Button label="Rename" variant="primary" />
+        <Button label="Cancel" variant="secondary" />
       </>
     ),
+  },
+};
+
+export const InvitePeople: Story = {
+  args: {
+    open: true,
+    heading: 'Invite people',
+    children: (
+      <Stack gap="normal">
+        <Input label="Email address" name="email" type="email" />
+        <Select
+          label="Role"
+          name="role"
+          options={[
+            { value: 'viewer', label: 'Viewer' },
+            { value: 'editor', label: 'Editor' },
+            { value: 'admin', label: 'Admin' },
+          ]}
+        />
+      </Stack>
+    ),
+    footer: (
+      <>
+        <Button label="Send invites" variant="primary" />
+        <Button label="Cancel" variant="secondary" />
+      </>
+    ),
+    size: 'sm',
+  },
+};
+
+export const MustBeAnswered: Story = {
+  args: {
+    open: true,
+    heading: 'Choose a plan',
+    description: 'You need a plan before you can invite anyone.',
+    children: (
+      <RadioGroup
+        label="Plan"
+        name="plan"
+        options={[
+          { value: 'free', label: 'Free' },
+          { value: 'team', label: 'Team' },
+          { value: 'enterprise', label: 'Enterprise' },
+        ]}
+      />
+    ),
+    footer: <Button label="Continue" variant="primary" />,
+    dismissible: false,
+  },
+};
+
+export const ReadingDialog: Story = {
+  args: {
+    open: true,
+    heading: 'Terms of service',
+    children: (
+      <Stack gap="normal">
+        <Text>These terms govern your use of the service and any content you create with it.</Text>
+        <Text>You keep ownership of your content. You grant us the rights needed to host and display it to the people you share it with.</Text>
+        <Text>We may change these terms. When we do, we will tell you before the change takes effect.</Text>
+        <Text>You can close your account at any time. Your content is deleted within thirty days of closing.</Text>
+      </Stack>
+    ),
+    size: 'lg',
+    initialFocus: 'title',
   },
 };
 

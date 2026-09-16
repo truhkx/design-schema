@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useId,
   useImperativeHandle,
   useLayoutEffect,
   useRef,
@@ -10,8 +9,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactElement,
   type Ref,
-  type SyntheticEvent, type ReactElement,
+  type SyntheticEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -19,28 +19,21 @@ import { Button } from './Button';
 import { FocusScope } from './FocusScope';
 import { Icon, type IconName } from './Icon';
 import { Menu, type MenuAction, type MenuItem, type MenuOpenChangeReason } from './Menu';
-import { Text, type TextOverridableBinding } from './Text';
+import type { TextOverridableBinding } from './Text';
+import { Text } from './Text';
 import './ActionSheet.css';
 
 export type ActionSheetActionTone = 'default' | 'danger';
 export type ActionSheetCloseReason = 'escape' | 'scrim' | 'cancel' | 'drag';
 
 /** A single row in the sheet. */
-export type ActionSheetAction = {
-  id: string;
-  label: string;
-  icon?: IconName | undefined;
-  tone?: ActionSheetActionTone | undefined;
-  disabled?: boolean | undefined;
-};
+export type ActionSheetAction = { id: string; label: string; icon?: IconName; tone?: "default" | "danger"; disabled?: boolean };
 
 /**
  * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
- * this list. `titleSize`, and `fontFamily`/`lineHeight` for the heading, are forwarded to the
- * composed `Text` heading's own `overrides`, since Text already owns those bindings; `fontFamily`
- * and `lineHeight` are also applied to the item rows directly. Only applies to the phone
- * presentation — above the wide breakpoint the sheet renders as `Menu` and uses Menu's own
- * overrides contract.
+ * this list. `titleSize` is forwarded to the composed heading Text as its `fontSize`; `fontFamily`
+ * and `lineHeight` style the rows and are forwarded to the heading Text as well. They apply to the
+ * sheet presentation; the wide presentation is Menu, with Menu's own contract.
  */
 export type ActionSheetOverridableBinding =
   | 'scrim'
@@ -50,6 +43,10 @@ export type ActionSheetOverridableBinding =
   | 'itemPaddingInline'
   | 'itemGap'
   | 'headerPaddingBlock'
+  | 'headerGap'
+  | 'handleHeight'
+  | 'handleWidth'
+  | 'handleRadius'
   | 'titleSize'
   | 'fontFamily'
   | 'fontSize'
@@ -61,7 +58,7 @@ export type ActionSheetOverridableBinding =
   | 'enter'
   | 'exit';
 
-const ROOT_OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string | undefined>> = {
+const OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string>> = {
   scrim: '--ds-action-sheet-scrim',
   shadow: '--ds-action-sheet-shadow',
   radius: '--ds-action-sheet-radius',
@@ -69,7 +66,11 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string |
   itemPaddingInline: '--ds-action-sheet-item-padding-inline',
   itemGap: '--ds-action-sheet-item-gap',
   headerPaddingBlock: '--ds-action-sheet-header-padding-block',
-  fontFamily: '--ds-action-sheet-font-family',
+  headerGap: '--ds-action-sheet-header-gap',
+  handleHeight: '--ds-action-sheet-handle-height',
+  handleWidth: '--ds-action-sheet-handle-width',
+  handleRadius: '--ds-action-sheet-handle-radius',
+  fontFamily: '--ds-action-sheet-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-action-sheet-font-size',
   lineHeight: '--ds-action-sheet-line-height',
   divider: '--ds-action-sheet-divider',
@@ -80,77 +81,68 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string |
   exit: '--ds-action-sheet-exit',
 };
 
-function overridesToStyle(overrides: Partial<Record<ActionSheetOverridableBinding, TokenRef | undefined>>): {
-  rootStyle: CSSProperties;
-  textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
-} {
-  const rootStyle: Record<string, string> = {};
-  const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-  for (const binding of Object.keys(overrides) as ActionSheetOverridableBinding[]) {
-    const ref = overrides[binding];
-    if (!ref) continue;
-    const hook = ROOT_OVERRIDE_HOOK[binding];
-    if (hook) rootStyle[hook] = cssVar(ref);
-    if (binding === 'titleSize') textOverrides.fontSize = ref;
-    if (binding === 'fontFamily') textOverrides.fontFamily = ref;
-    if (binding === 'lineHeight') textOverrides.lineHeight = ref;
-  }
-  return { rootStyle: rootStyle as CSSProperties, textOverrides };
-}
+/** Bindings forwarded to the composed heading Text, under Text's own binding name. */
+const TEXT_FORWARD: Partial<Record<ActionSheetOverridableBinding, TextOverridableBinding>> = {
+  titleSize: 'fontSize',
+  fontFamily: 'fontFamily', // literal-ok: Text binding name, not a font stack
+  lineHeight: 'lineHeight',
+};
 
-const COPY = { cancelLabel: 'Cancel', defaultLabel: 'Actions' };
+const COPY = { cancelLabel: 'Cancel', defaultLabel: 'Actions' } as const;
 
-/** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
+/** Fraction of the sheet height a downward drag must pass for release to dismiss it. */
+const DISMISS_DISTANCE = 0.25;
+/** Drag speed at release (px/ms) that dismisses the sheet whatever the distance travelled. */
+const DISMISS_VELOCITY = 1.5;
+
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
     ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
     : false;
 }
 
-/**
- * Above `layout.maxWidth.prose` (read from the loaded token stylesheet, never hard-coded) the sheet
- * presents as a Menu anchored to the trigger instead of rising from the bottom edge.
- */
-function useIsWideViewport(): boolean {
-  const [isWide, setIsWide] = useState(false);
+/** The `maxWidth` breakpoint query, read from the loaded token stylesheet rather than a number. */
+function wideQuery(): MediaQueryList | null {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
+  const breakpoint = getComputedStyle(document.documentElement).getPropertyValue('--layout-max-width-prose').trim();
+  return breakpoint ? window.matchMedia(`(min-width: ${breakpoint})`) : null;
+}
 
+function useIsWide(): boolean {
+  const [isWide, setIsWide] = useState(() => wideQuery()?.matches ?? false);
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
-    const breakpoint = getComputedStyle(document.documentElement).getPropertyValue('--layout-max-width-prose').trim();
-    if (!breakpoint) return undefined;
-    const query = window.matchMedia(`(min-width: ${breakpoint})`);
-    const update = () => setIsWide(query.matches);
-    update();
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
+    const query = wideQuery();
+    if (!query) return undefined;
+    const onChange = (): void => setIsWide(query.matches);
+    onChange();
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
   }, []);
-
   return isWide;
+}
+
+/** Danger actions are grouped last, after a divider, in both presentations. */
+function partition(actions: ActionSheetAction[]): { normal: ActionSheetAction[]; danger: ActionSheetAction[] } {
+  return {
+    normal: actions.filter((action) => action.tone !== 'danger'),
+    danger: actions.filter((action) => action.tone === 'danger'),
+  };
 }
 
 function toMenuAction(action: ActionSheetAction): MenuAction {
   return { id: action.id, label: action.label, icon: action.icon, tone: action.tone, disabled: action.disabled };
 }
 
-/** Danger actions are grouped last, separated from the rest — mirrored for both presentations. */
-function partitionActions(actions: ActionSheetAction[]): { normal: ActionSheetAction[]; danger: ActionSheetAction[] } {
-  const normal = actions.filter((action) => action.tone !== 'danger');
-  const danger = actions.filter((action) => action.tone === 'danger');
-  return { normal, danger };
-}
-
 function toMenuItems(actions: ActionSheetAction[]): MenuItem[] {
-  const { normal, danger } = partitionActions(actions);
+  const { normal, danger } = partition(actions);
   const items: MenuItem[] = normal.map(toMenuAction);
-  if (danger.length > 0) {
-    items.push({ separator: true });
-    items.push(...danger.map(toMenuAction));
-  }
+  if (normal.length > 0 && danger.length > 0) items.push({ separator: true });
+  items.push(...danger.map(toMenuAction));
   return items;
 }
 
 export interface ActionSheetProps
-  extends Omit<ComponentPropsWithoutRef<'dialog'>, 'children' | 'title' | 'onClose' | 'open'> {
+  extends Omit<ComponentPropsWithoutRef<'dialog'>, 'children' | 'title' | 'onClose' | 'open' | 'className' | 'style'> {
   /** Controlled visibility. */
   open: boolean;
   /**
@@ -160,7 +152,11 @@ export interface ActionSheetProps
   heading?: string | undefined;
   /** Two to about eight actions. `danger` actions are visually distinct and grouped last. */
   actions: ActionSheetAction[];
-  /** Escape, the scrim, the cancel row and the drag all request close; Escape still reports through onClose when false, as in Dialog. */
+  /**
+   * Escape, the scrim, the cancel row and the drag all request close; Escape still reports through
+   * onClose when false, as in Dialog. It gates the sheet presentation only — the wide Menu
+   * presentation has no scrim, drag or cancel row, and clicking outside always closes it.
+   */
   dismissible?: boolean | undefined;
   /** Label of the explicit cancel row on phones. Defaults to `copy.cancelLabel`. */
   cancelLabel?: string | undefined;
@@ -168,22 +164,22 @@ export interface ActionSheetProps
   onAction?: ((id: string) => void) | undefined;
   /** Dismissed without choosing: reason `escape`, `scrim`, `cancel`, or `drag`. */
   onClose?: ((reason: ActionSheetCloseReason) => void) | undefined;
-  /** Portal target for the sheet's DOM node. Defaults to `document.body`. */
+  /** Portal target (platform prop, not in the schema). Defaults to `document.body`; forwarded to the wide Menu. */
   container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<ActionSheetOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
- * ActionSheet — Design Schema, category: overlay.
+ * ActionSheet — contextual actions on an item: a bottom sheet of menu items on narrow screens, a
+ * Menu anchored to the opener above `layout.maxWidth.prose`.
  *
- * When to use:
- * Use an ActionSheet for contextual actions on an item — share, rename, duplicate, delete — opened
- * from an overflow Button (`iconOnly`, label "More actions") or a long-press. Keep it to what fits
- * without scrolling; more than eight actions means the item needs its own screen. Put destructive
- * actions last with `tone: danger`.
+ * When to use: Use an ActionSheet for contextual actions on an item — share, rename, duplicate,
+ * delete — opened from an overflow Button (`iconOnly`, label "More actions") or a long-press. Keep
+ * it to what fits without scrolling; more than eight actions means the item needs its own screen.
+ * Put destructive actions last with `tone: danger`.
  */
-export const ActionSheet = function ActionSheet({
+export function ActionSheet({
   ref,
   open,
   heading,
@@ -194,320 +190,285 @@ export const ActionSheet = function ActionSheet({
   onClose,
   container,
   overrides,
-  className,
-  style,
   ...rest
 }: ActionSheetProps & { ref?: Ref<HTMLDialogElement> | undefined }): ReactElement | null {
-  const isWide = useIsWideViewport();
-
-  const generatedId = useId();
-  const listId = `ds-action-sheet${generatedId}-list`;
+  const isWide = useIsWide();
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
-  useImperativeHandle(ref, () => dialogRef.current as HTMLDialogElement, []);
+  useImperativeHandle(ref, () => dialogRef.current as HTMLDialogElement, [isWide, open]);
 
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef(new Map<string, HTMLButtonElement>());
   const dragRef = useRef<{ startY: number; startTime: number } | null>(null);
-  // The element that opened the wide (Menu) presentation, so its popup can anchor to it.
-  const menuAnchorRef = useRef<HTMLElement | null>(null);
+
+  // The element focused when `open` became true: the wide Menu anchors to it, and both
+  // presentations return focus to it. Captured during render, before any child effect moves focus.
+  const openerRef = useRef<HTMLElement | null>(null);
+  const wasOpenRef = useRef(false);
+  if (open && !wasOpenRef.current && typeof document !== 'undefined') {
+    const active = document.activeElement;
+    openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null;
+  }
+  useEffect(() => {
+    wasOpenRef.current = open;
+  }, [open]);
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
   const [present, setPresent] = useState(open);
-  // Drives the entered/exited CSS state; toggled a frame after mount so the enter transition runs.
   const [visible, setVisible] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
+  if (open && !present) setPresent(true);
+
   const accessibleLabel = heading || COPY.defaultLabel;
-  const { normal: normalActions, danger: dangerActions } = partitionActions(actions);
+  const { normal, danger } = partition(actions);
+  const ordered = [...normal, ...danger];
+  const enabled = ordered.filter((action) => !action.disabled);
 
-  useEffect(() => {
-    if (open) setPresent(true);
-  }, [open]);
-
-  // Captures the trigger at the moment the wide (Menu) presentation opens, so Menu's `anchor` prop
-  // can position its popup against it (Menu renders no trigger of its own in that mode).
-  useEffect(() => {
-    if (!open || !isWide) return;
-    const opener = document.activeElement;
-    if (opener instanceof HTMLElement) menuAnchorRef.current = opener;
-  }, [open, isWide]);
-
-  // Mount: open the native dialog, move focus to the first enabled action, then reveal on the next frame.
+  // Enter: show the native modal dialog, focus the first enabled action, reveal on the next frame.
   useLayoutEffect(() => {
-    if (!present || isWide) return undefined;
+    if (!present || isWide || !open) return undefined;
     const dialog = dialogRef.current;
     if (!dialog) return undefined;
     if (!dialog.open) {
-      // showModal() also reflects `open`, natively; the assignment is the fallback for engines
-      // (jsdom, under test) that implement the `open` IDL attribute but not showModal() itself.
-      dialog.showModal?.();
-      dialog.open = true;
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
     }
-
-    const first = actions.find((action) => !action.disabled);
+    const first = enabled[0];
     if (first) {
       setActiveId(first.id);
       itemRefs.current.get(first.id)?.focus();
-    } else {
-      dialog.focus();
     }
-
     if (prefersReducedMotion()) {
       setVisible(true);
       return undefined;
     }
-
     const frame = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [present, isWide]);
+  }, [present, isWide, open]);
 
-  // Exit: hide, then unmount and close() once the transition finishes (immediately under reduced motion).
+  // Exit: slide out, then close() and unmount once the transition ends (at once when there is none).
   useEffect(() => {
-    if (open || !present || isWide) return undefined;
+    if (open || !present) return undefined;
     setVisible(false);
     const dialog = dialogRef.current;
-    const finish = () => {
+    const surface = surfaceRef.current;
+    const finish = (): void => {
+      if (dialog?.open) {
+        if (typeof dialog.close === 'function') dialog.close();
+        else dialog.removeAttribute('open');
+      }
       setPresent(false);
-      dialog?.close?.();
-      if (dialog) dialog.open = false;
     };
-    if (prefersReducedMotion()) {
+    const duration = surface ? Number.parseFloat(getComputedStyle(surface).transitionDuration || '0') : 0;
+    if (isWide || !surface || prefersReducedMotion() || !(duration > 0)) {
       finish();
       return undefined;
     }
-    const surface = surfaceRef.current;
-    const handleExited = (event: TransitionEvent) => {
-      if (event.target !== surface || event.propertyName !== 'transform') return;
-      finish();
+    const handleEnd = (event: TransitionEvent): void => {
+      if (event.target === surface && event.propertyName === 'transform') finish();
     };
-    surface?.addEventListener('transitionend', handleExited);
-    return () => surface?.removeEventListener('transitionend', handleExited);
+    surface.addEventListener('transitionend', handleEnd);
+    return () => surface.removeEventListener('transitionend', handleEnd);
   }, [open, present, isWide]);
 
-  // Body scroll lock while the sheet is present, restored on close or unmount.
+  // Body scroll lock while the sheet is present.
   useEffect(() => {
     if (!present || isWide) return undefined;
     document.documentElement.classList.add('ds-action-sheet-lock-scroll');
     return () => document.documentElement.classList.remove('ds-action-sheet-lock-scroll');
   }, [present, isWide]);
 
-  const requestClose = (reason: ActionSheetCloseReason) => {
+  const requestClose = (reason: ActionSheetCloseReason): void => {
     if (reason !== 'escape' && !dismissible) return;
     onClose?.(reason);
   };
 
-  const handleCancel = (event: SyntheticEvent<HTMLDialogElement>) => {
-    // The consumer owns `open`; the sheet never closes itself, even when it is not dismissible.
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDialogElement>): void => {
+    if (event.key !== 'Escape') return;
+    // The consumer owns `open`; preventing the keydown also suppresses the native `cancel`.
+    event.preventDefault();
+    event.stopPropagation();
+    requestClose('escape');
+  };
+
+  const handleCancel = (event: SyntheticEvent<HTMLDialogElement>): void => {
     event.preventDefault();
     requestClose('escape');
   };
 
-  const handleScrimClick = (event: ReactMouseEvent<HTMLDialogElement>) => {
-    if (event.target !== dialogRef.current) return;
-    requestClose('scrim');
+  const handleScrimClick = (event: ReactMouseEvent<HTMLDialogElement>): void => {
+    if (event.target === dialogRef.current) requestClose('scrim');
   };
 
-  const handleCancelButtonClick = () => requestClose('cancel');
-
-  // Drag: Pointer Events on the surface (excluding rows and the cancel button), tracking downward
-  // distance only. Released past 25% of the sheet's height or a fast flick dismisses; otherwise the
-  // sheet springs back on the same transition the open/close states use.
-  const handleSurfacePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if ((event.target as HTMLElement).closest('button')) return;
+  // Drag lives on the header (handle + heading), as in BottomSheet.
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
     const surface = surfaceRef.current;
     if (!surface) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     dragRef.current = { startY: event.clientY, startTime: event.timeStamp };
-    surface.style.transition = 'none';
+    surface.classList.add('ds-action-sheet__surface--dragging');
   };
 
-  const handleSurfacePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>): void => {
     const drag = dragRef.current;
     const surface = surfaceRef.current;
     if (!drag || !surface) return;
-    const deltaY = Math.max(0, event.clientY - drag.startY);
-    surface.style.transform = `translateY(${deltaY}px)`;
+    surface.style.setProperty('--ds-action-sheet-drag', `${Math.max(0, event.clientY - drag.startY)}px`);
   };
 
-  const finishDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+  const finishDrag = (event: ReactPointerEvent<HTMLDivElement>): void => {
     const drag = dragRef.current;
     const surface = surfaceRef.current;
     dragRef.current = null;
     if (!drag || !surface) return;
-
-    const deltaY = Math.max(0, event.clientY - drag.startY);
+    const distance = Math.max(0, event.clientY - drag.startY);
     const elapsed = Math.max(1, event.timeStamp - drag.startTime);
-    const velocity = deltaY / elapsed;
-    const sheetHeight = surface.getBoundingClientRect().height || 1;
-    const pastThreshold = deltaY / sheetHeight > 0.25 || velocity > 0.5;
-
-    surface.style.transition = prefersReducedMotion() ? 'none' : '';
-    surface.style.transform = '';
-
-    if (pastThreshold) requestClose('drag');
+    const height = surface.getBoundingClientRect().height;
+    surface.classList.remove('ds-action-sheet__surface--dragging');
+    surface.style.removeProperty('--ds-action-sheet-drag');
+    const pastDistance = height > 0 && distance / height > DISMISS_DISTANCE;
+    if (pastDistance || distance / elapsed > DISMISS_VELOCITY) requestClose('drag');
   };
 
-  const focusAction = (id: string) => {
-    setActiveId(id);
-    itemRefs.current.get(id)?.focus();
+  const focusAction = (action: ActionSheetAction | undefined): void => {
+    if (!action) return;
+    setActiveId(action.id);
+    itemRefs.current.get(action.id)?.focus();
   };
 
-  const activateAction = (action: ActionSheetAction) => {
-    if (action.disabled) return;
-    onAction?.(action.id);
-  };
-
-  const handleListKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const enabled = actions.filter((action) => !action.disabled);
+  const handleListKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (enabled.length === 0) return;
-    const currentIndex = enabled.findIndex((action) => action.id === activeId);
-
+    const index = enabled.findIndex((action) => action.id === activeId);
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        focusAction(enabled[(currentIndex + 1) % enabled.length]!.id);
+        focusAction(enabled[(index + 1) % enabled.length]);
         break;
       case 'ArrowUp':
         event.preventDefault();
-        focusAction(enabled[(currentIndex - 1 + enabled.length) % enabled.length]!.id);
+        focusAction(enabled[(index - 1 + enabled.length) % enabled.length]);
         break;
       case 'Home':
         event.preventDefault();
-        focusAction(enabled[0]!.id);
+        focusAction(enabled[0]);
         break;
       case 'End':
         event.preventDefault();
-        focusAction(enabled[enabled.length - 1]!.id);
-        break;
-      case 'Enter':
-      case ' ':
-        event.preventDefault();
-        if (currentIndex !== -1) activateAction(enabled[currentIndex]!);
+        focusAction(enabled[enabled.length - 1]);
         break;
       default:
         break;
     }
   };
 
-  const handleItemMouseEnter = (action: ActionSheetAction) => {
-    if (action.disabled) return;
-    focusAction(action.id);
-  };
-
-  const handleItemClick = (action: ActionSheetAction) => (event: ReactMouseEvent<HTMLButtonElement>) => {
+  const choose = (action: ActionSheetAction) => (event: ReactMouseEvent<HTMLButtonElement>): void => {
+    // Enter and Space reach here as the native button's click.
     if (action.disabled) {
       event.preventDefault();
       return;
     }
-    activateAction(action);
+    onAction?.(action.id);
   };
 
-  // Menu reports why it closed; an item choice (`action`) is handled by handleMenuAction instead.
-  // `outside` (a click away from the popup) is this presentation's equivalent of the scrim tap, so
-  // it maps to 'scrim'; every other reason (trigger, controlled) falls back to 'escape'.
-  const handleMenuOpenChange = ({ open: isOpen, reason }: { open: boolean; reason: MenuOpenChangeReason }) => {
-    if (isOpen || reason === 'action') return;
-    requestClose(reason === 'outside' ? 'scrim' : 'escape');
+  // Menu's reasons map to ours; a close that accompanies a choice (`action`) is never onClose.
+  const handleMenuOpenChange = (next: boolean, reason: MenuOpenChangeReason): void => {
+    if (next) return;
+    if (reason === 'escape') onClose?.('escape');
+    else if (reason === 'outside') onClose?.('scrim');
   };
-
-  const handleMenuAction = (id: string) => {
-    onAction?.(id);
-  };
-
-  const renderItem = (action: ActionSheetAction) => {
-    const classes = [
-      'ds-action-sheet__item',
-      action.tone === 'danger' ? 'ds-action-sheet__item--danger' : null,
-      action.disabled ? 'ds-action-sheet__item--disabled' : null,
-    ]
-      .filter(Boolean)
-      .join(' ');
-    return (
-      <button
-        key={action.id}
-        ref={(element) => {
-          if (element) itemRefs.current.set(action.id, element);
-          else itemRefs.current.delete(action.id);
-        }}
-        type="button"
-        role="menuitem"
-        id={`${listId}-item-${action.id}`}
-        tabIndex={action.id === activeId ? 0 : -1}
-        aria-disabled={action.disabled ? 'true' : undefined}
-        data-part="item"
-        className={classes}
-        onMouseEnter={() => handleItemMouseEnter(action)}
-        onClick={handleItemClick(action)}
-      >
-        {action.icon ? (
-          <span className="ds-action-sheet__item-icon" data-part="itemIcon" aria-hidden="true">
-            <Icon name={action.icon} inline />
-          </span>
-        ) : null}
-        <span className="ds-action-sheet__item-label">{action.label}</span>
-      </button>
-    );
-  };
-
-  const { rootStyle: overrideStyle, textOverrides } = overrides
-    ? overridesToStyle(overrides)
-    : { rootStyle: undefined, textOverrides: {} };
 
   if (isWide) {
-    if (!open) return null;
+    if (!open || typeof document === 'undefined') return null;
     return (
       <Menu
         label={accessibleLabel}
         items={toMenuItems(actions)}
         open
-        anchor={menuAnchorRef}
-        onAction={handleMenuAction}
+        anchor={openerRef}
+        onAction={(id) => onAction?.(id)}
         onOpenChange={handleMenuOpenChange}
         container={container}
       />
     );
   }
 
-  if (!present) return null;
+  if (!present || typeof document === 'undefined') return null;
 
-  const classes = ['ds-action-sheet', visible ? 'ds-action-sheet--visible' : null, className ?? null]
-    .filter(Boolean)
-    .join(' ');
+  const rootStyle: Record<string, string> = {};
+  const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  for (const [binding, token] of Object.entries(overrides ?? {}) as [ActionSheetOverridableBinding, TokenRef | undefined][]) {
+    if (!token) continue;
+    const hook = OVERRIDE_HOOK[binding];
+    if (hook) rootStyle[hook] = cssVar(token);
+    const forward = TEXT_FORWARD[binding];
+    if (forward) textOverrides[forward] = token;
+  }
 
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+  const renderItem = (action: ActionSheetAction): ReactElement => (
+    <button
+      key={action.id}
+      ref={(element) => {
+        if (element) itemRefs.current.set(action.id, element);
+        else itemRefs.current.delete(action.id);
+      }}
+      type="button"
+      role="menuitem"
+      tabIndex={action.id === (activeId ?? enabled[0]?.id) ? 0 : -1}
+      aria-disabled={action.disabled ? 'true' : undefined}
+      data-part="item"
+      className={[
+        'ds-action-sheet__item',
+        action.tone === 'danger' ? 'ds-action-sheet__item--danger' : '',
+        action.disabled ? 'ds-action-sheet__item--disabled' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      onFocus={() => {
+        if (!action.disabled && activeId !== action.id) setActiveId(action.id);
+      }}
+      onClick={choose(action)}
+    >
+      {action.icon ? (
+        <span className="ds-action-sheet__icon" data-part="itemIcon" aria-hidden="true">
+          <Icon name={action.icon} inline />
+        </span>
+      ) : null}
+      <span className="ds-action-sheet__label">{action.label}</span>
+    </button>
+  );
 
-  const node = (
+  return createPortal(
     <dialog
       {...rest}
       ref={dialogRef}
       data-ds="ActionSheet"
-      className={classes}
-      style={mergedStyle}
+      className={visible ? 'ds-action-sheet ds-action-sheet--visible' : 'ds-action-sheet'}
+      style={Object.keys(rootStyle).length > 0 ? (rootStyle as CSSProperties) : undefined}
       aria-modal="true"
+      aria-label={accessibleLabel}
+      onKeyDown={handleKeyDown}
       onCancel={handleCancel}
       onClick={handleScrimClick}
     >
-      <FocusScope trapped autoFocus="none" restoreFocus>
-        <div
-          className="ds-action-sheet__surface"
-          ref={surfaceRef}
-          data-part="surface"
-          onPointerDown={handleSurfacePointerDown}
-          onPointerMove={handleSurfacePointerMove}
-          onPointerUp={finishDrag}
-          onPointerCancel={finishDrag}
-        >
-          <div className="ds-action-sheet__header" data-part="header">
+      <FocusScope trapped autoFocus="none" restoreFocus returnFocusTo={openerRef} data-part="focusScope">
+        <div ref={surfaceRef} className="ds-action-sheet__surface" data-part="surface">
+          <div
+            className="ds-action-sheet__header"
+            data-part="header"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={finishDrag}
+            onPointerCancel={finishDrag}
+          >
             <span className="ds-action-sheet__handle" data-part="handle" aria-hidden="true" />
             {heading ? (
               <Text
                 size="sm"
                 tone="muted"
                 data-part="heading"
-                className="ds-action-sheet__heading"
-                overrides={Object.keys(textOverrides).length ? textOverrides : undefined}
+                overrides={Object.keys(textOverrides).length > 0 ? textOverrides : undefined}
               >
                 {heading}
               </Text>
@@ -515,32 +476,28 @@ export const ActionSheet = function ActionSheet({
           </div>
           <div
             role="menu"
-            id={listId}
             aria-label={accessibleLabel}
             data-part="list"
             className="ds-action-sheet__list"
             onKeyDown={handleListKeyDown}
           >
-            {normalActions.map(renderItem)}
-            {dangerActions.length > 0 ? (
-              <div role="separator" className="ds-action-sheet__divider" aria-hidden="true" />
+            {normal.map(renderItem)}
+            {normal.length > 0 && danger.length > 0 ? (
+              <div role="separator" className="ds-action-sheet__divider" />
             ) : null}
-            {dangerActions.map(renderItem)}
+            {danger.map(renderItem)}
           </div>
-          <div role="separator" className="ds-action-sheet__divider" aria-hidden="true" />
-          <div className="ds-action-sheet__cancel-row">
+          {/* Button stamps its own data-part, so the part hook sits on the row that wraps it. */}
+          <div className="ds-action-sheet__cancel-row" data-part="cancelButton">
             <Button
               variant="secondary"
               label={cancelLabel || COPY.cancelLabel}
-              data-part="cancelButton"
-              className="ds-action-sheet__cancel"
-              onClick={handleCancelButtonClick}
+              onClick={() => requestClose('cancel')}
             />
           </div>
         </div>
       </FocusScope>
-    </dialog>
+    </dialog>,
+    container ?? document.body,
   );
-
-  return createPortal(node, container ?? document.body);
-};
+}

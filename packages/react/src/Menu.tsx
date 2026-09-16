@@ -6,10 +6,13 @@ import {
   useState,
   type ComponentPropsWithoutRef,
   type CSSProperties,
+  type FocusEvent as ReactFocusEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  type ReactElement,
+  type ReactNode,
   type Ref,
-  type RefObject, type ReactElement,
+  type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
@@ -21,9 +24,12 @@ export type MenuTriggerVariant = 'ghost' | 'secondary' | 'primary';
 export type MenuTriggerIcon = 'ellipsis' | 'chevron-down' | 'none';
 export type MenuPlacement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 export type MenuItemTone = 'default' | 'danger';
-/** Why the menu opened or closed; `action` fires before `onAction`. `controlled` is never emitted
- * by this component — it names the case where the parent flips `open` itself, outside any of the
- * other reasons, and is documented for consumers who forward the reason elsewhere. */
+/**
+ * Why the menu opened or closed: `trigger` (the trigger was activated), `escape` (Escape pressed
+ * while open), `outside` (a pointer press landed outside the menu), `action` (an item was chosen;
+ * fired before onAction), `controlled` (the consumer changed the open prop — the menu never raises
+ * this itself; it exists so a composing component can forward its own reason through).
+ */
 export type MenuOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'action' | 'controlled';
 
 /** A single actionable row. */
@@ -35,7 +41,7 @@ export type MenuAction = {
   tone?: MenuItemTone | undefined;
   disabled?: boolean | undefined;
 };
-/** A labelled cluster of items, rendered with a non-interactive heading row. */
+/** A labelled cluster of action items, rendered with a non-interactive heading row. */
 export type MenuGroup = { group: string; items: MenuItem[] };
 /** A divider between clusters of items. */
 export type MenuSeparator = { separator: true };
@@ -86,7 +92,7 @@ const OVERRIDE_HOOK: Record<MenuOverridableBinding, string> = {
   shortcutSize: '--ds-menu-shortcut-size',
   separator: '--ds-menu-separator',
   separatorMargin: '--ds-menu-separator-margin',
-  fontFamily: '--ds-menu-font-family', /* literal-ok: CSS custom-property name, not a font stack */
+  fontFamily: '--ds-menu-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-menu-font-size',
   lineHeight: '--ds-menu-line-height',
   layer: '--ds-menu-layer',
@@ -96,15 +102,17 @@ const OVERRIDE_HOOK: Record<MenuOverridableBinding, string> = {
 function overridesToStyle(overrides: Partial<Record<MenuOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as MenuOverridableBinding[]) {
+    // Locked bindings are not in the type; anything outside OVERRIDE_HOOK is ignored at runtime too.
+    const hook = OVERRIDE_HOOK[binding] as string | undefined;
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    if (hook && ref) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
 }
 
 /* Only declared when the bundler defines it; never assumed. */
 declare const process: { env: Record<string, string | undefined> } | undefined;
-const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+const isDev: boolean = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
 /** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
 function prefersReducedMotion(): boolean {
@@ -113,28 +121,37 @@ function prefersReducedMotion(): boolean {
     : false;
 }
 
-/** Reads a resolved CSS `<time>` custom property (e.g. `"800ms"`, `"0.8s"`) as a millisecond number. */
+/** Reads a resolved CSS `<time>` value (`"800ms"`, `"0.8s"`) as milliseconds; 0 when unresolvable. */
 function cssTimeToMs(value: string): number {
   const trimmed = value.trim();
-  if (trimmed.endsWith('ms')) return parseFloat(trimmed);
-  if (trimmed.endsWith('s')) return parseFloat(trimmed) * 1000;
+  if (trimmed.endsWith('ms')) return parseFloat(trimmed) || 0;
+  if (trimmed.endsWith('s')) return (parseFloat(trimmed) || 0) * 1000;
   return parseFloat(trimmed) || 0;
 }
 
-// Mirrors motion.duration.loop's own token default, for environments without a resolvable stylesheet (e.g. tests). // literal-ok: fallback mirrors the token default, not a design decision
-const FALLBACK_TYPEAHEAD_RESET_MS = 800;
+function isSeparator(item: MenuItem): item is MenuSeparator {
+  return 'separator' in item;
+}
 
+function isGroup(item: MenuItem): item is MenuGroup {
+  return 'group' in item;
+}
+
+/** Action items in document order. Groups hold action items only; a nested group is not drawn. */
 function flattenActions(items: MenuItem[]): MenuAction[] {
   const result: MenuAction[] = [];
   for (const item of items) {
-    if ('separator' in item) continue;
-    if ('group' in item) result.push(...flattenActions(item.items));
-    else result.push(item);
+    if (isSeparator(item)) continue;
+    if (isGroup(item)) {
+      for (const child of item.items) if (!isSeparator(child) && !isGroup(child)) result.push(child);
+    } else {
+      result.push(item);
+    }
   }
   return result;
 }
 
-const FOCUSABLE_SELECTOR = [
+const TABBABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
   'input:not([disabled])',
@@ -144,12 +161,9 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-/**
- * Moves focus to the next (or previous) document-order tabbable element relative to `anchor`,
- * ignoring anything inside `exclude` (the menu's own popup, which is about to close).
- */
-function focusAdjacent(anchor: HTMLElement, exclude: HTMLElement | null, direction: 1 | -1) {
-  const all = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+/** Focuses the tabbable element after (or before) `anchor` in document order, skipping the popup. */
+function focusAdjacent(anchor: HTMLElement, exclude: HTMLElement | null, direction: 1 | -1): void {
+  const all = Array.from(document.querySelectorAll<HTMLElement>(TABBABLE_SELECTOR)).filter(
     (element) => !exclude || !exclude.contains(element),
   );
   const index = all.indexOf(anchor);
@@ -159,73 +173,62 @@ function focusAdjacent(anchor: HTMLElement, exclude: HTMLElement | null, directi
 
 type ResolvedPosition = { style: CSSProperties; vertical: 'top' | 'bottom' };
 
-/** Positions the popup from the trigger's rect for `placement`, flipping either axis on overflow. */
-function computePosition(triggerRect: DOMRect, popupRect: DOMRect, placement: MenuPlacement): ResolvedPosition {
+/** Places the popup from the anchor rect for `placement`, flipping either axis when it would overflow. */
+function computePosition(anchorRect: DOMRect, popupRect: DOMRect, placement: MenuPlacement): ResolvedPosition {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
-  const [vert, horiz] = placement.split('-') as ['bottom' | 'top', 'start' | 'end'];
+  const [preferredVertical, preferredHorizontal] = placement.split('-') as ['bottom' | 'top', 'start' | 'end'];
 
-  let vertical = vert;
-  if (
-    vert === 'bottom' &&
-    triggerRect.bottom + popupRect.height > viewportHeight &&
-    triggerRect.top - popupRect.height >= 0
-  ) {
+  let vertical = preferredVertical;
+  if (vertical === 'bottom' && anchorRect.bottom + popupRect.height > viewportHeight && anchorRect.top - popupRect.height >= 0) {
     vertical = 'top';
-  } else if (
-    vert === 'top' &&
-    triggerRect.top - popupRect.height < 0 &&
-    triggerRect.bottom + popupRect.height <= viewportHeight
-  ) {
+  } else if (vertical === 'top' && anchorRect.top - popupRect.height < 0 && anchorRect.bottom + popupRect.height <= viewportHeight) {
     vertical = 'bottom';
   }
 
-  let horizontal = horiz;
-  if (
-    horiz === 'start' &&
-    triggerRect.left + popupRect.width > viewportWidth &&
-    triggerRect.right - popupRect.width >= 0
-  ) {
+  let horizontal = preferredHorizontal;
+  if (horizontal === 'start' && anchorRect.left + popupRect.width > viewportWidth && anchorRect.right - popupRect.width >= 0) {
     horizontal = 'end';
-  } else if (
-    horiz === 'end' &&
-    triggerRect.right - popupRect.width < 0 &&
-    triggerRect.left + popupRect.width <= viewportWidth
-  ) {
+  } else if (horizontal === 'end' && anchorRect.right - popupRect.width < 0 && anchorRect.left + popupRect.width <= viewportWidth) {
     horizontal = 'start';
   }
 
-  const style: Record<string, string | number> = { '--ds-menu-trigger-width': `${triggerRect.width}px` };
-  if (vertical === 'bottom') style.top = triggerRect.bottom;
-  else style.bottom = viewportHeight - triggerRect.top;
-  if (horizontal === 'start') style.left = triggerRect.left;
-  else style.right = viewportWidth - triggerRect.right;
-
+  const style: Record<string, string | number> = { '--ds-menu-trigger-width': `${anchorRect.width}px` };
+  if (vertical === 'bottom') style.top = anchorRect.bottom;
+  else style.bottom = viewportHeight - anchorRect.top;
+  if (horizontal === 'start') style.left = anchorRect.left;
+  else style.right = viewportWidth - anchorRect.right;
   return { style: style as CSSProperties, vertical };
 }
 
-export interface MenuProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
+export interface MenuProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'className' | 'style'> {
   /** The trigger's label and the menu's accessible name ("More actions", "Sort by"). */
   label: string;
-  /** Actions, optionally grouped with a label or divided by separators. Groups render their label as a non-interactive heading row. */
+  /**
+   * Actions, optionally grouped with a label or divided by separators. Groups render their label as
+   * a non-interactive heading row and hold action items only — the shape is recursive but a group
+   * inside a group is not a shape this component draws.
+   */
   items: MenuItem[];
   /** Variant of the trigger Button. */
   triggerVariant?: MenuTriggerVariant | undefined;
   /**
-   * Trailing icon on the trigger: `ellipsis` for an icon-only overflow button (the label becomes
-   * the accessible name), `chevron-down` for a labelled dropdown, `none`.
+   * Trailing icon on the trigger: `ellipsis` for an icon-only overflow button (the label becomes the
+   * accessible name), `chevron-down` for a labelled dropdown, `none`.
    */
   triggerIcon?: MenuTriggerIcon | undefined;
-  /** Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. */
+  /**
+   * Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. With
+   * `triggerIcon: none` there would be nothing visible to press, so that pairing warns in development.
+   */
   iconOnly?: boolean | undefined;
   /** Preferred position of the popup relative to the trigger; flips automatically when it would overflow the viewport. */
   placement?: MenuPlacement | undefined;
   /** Controlled open state (the parent flips it from onOpenChange). Omit for an uncontrolled menu. */
   open?: boolean | undefined;
   /**
-   * Position the popup relative to this element instead of rendering a trigger; the trigger part
-   * is omitted and `open` must be controlled. Used by ActionSheet above its breakpoint and by
-   * context menus.
+   * Position the popup relative to this element instead of rendering a trigger; the trigger part is
+   * omitted and `open` must be controlled. Used by ActionSheet above its breakpoint and by context menus.
    */
   anchor?: RefObject<HTMLElement | null> | undefined;
   /** An item was chosen; receives its `id`. The menu closes itself first. */
@@ -234,15 +237,15 @@ export interface MenuProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
    * Fired when the menu opens or closes, with `{ open, reason }` — reason: `trigger`, `escape`,
    * `outside`, `action` (an item was chosen; fired before onAction), `controlled`.
    */
-  onOpenChange?: ((state: { open: boolean; reason: MenuOpenChangeReason }) => void) | undefined;
-  /** Portal target for the popup's DOM node. Defaults to `document.body`. */
+  onOpenChange?: ((open: boolean, reason: MenuOpenChangeReason) => void) | undefined;
+  /** Portal target for the popup. Defaults to `document.body`. A platform prop, not a schema prop. */
   container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<MenuOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 /**
- * Menu — Design Schema, category: overlay.
+ * Menu — Design Schema, category: overlay (APG menu button).
  *
  * When to use:
  * Use a Menu for secondary actions on an item or a view that do not deserve their own buttons:
@@ -265,8 +268,6 @@ export const Menu = function Menu({
   onOpenChange,
   container,
   overrides,
-  className,
-  style,
   ...rest
 }: MenuProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const generatedId = useId();
@@ -277,36 +278,45 @@ export const Menu = function Menu({
   const popupRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
   const pendingFocusRef = useRef<'first' | 'last'>('first');
-  // The element focus returns to on close: the trigger, or (in `anchor` mode) whatever was
-  // focused when the menu opened — captured fresh each open, since there is no persistent trigger.
+  // Where focus returns on close: the trigger, or in `anchor` mode whatever was focused at open.
   const openerRef = useRef<HTMLElement | null>(null);
+  // Set while the menu moves focus itself during a close, so the popup's focusout does not report
+  // a second close with a different reason.
+  const closingRef = useRef(false);
   const typeaheadRef = useRef<{ buffer: string; timer: ReturnType<typeof setTimeout> | null }>({
     buffer: '',
     timer: null,
   });
+  const warnedRef = useRef({ iconOnly: false, anchor: false });
+  const swallowSpaceKeyUpRef = useRef(false);
 
   const latest = useRef({ items, placement });
   latest.current = { items, placement };
 
   const isControlled = openProp !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
-  const open = isControlled ? (openProp as boolean) : internalOpen;
+  const open = isControlled ? openProp : internalOpen;
 
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [popupStyle, setPopupStyle] = useState<CSSProperties>();
+  const [popupStyle, setPopupStyle] = useState<CSSProperties | undefined>(undefined);
   const [vertical, setVertical] = useState<'top' | 'bottom'>('bottom');
   const [entered, setEntered] = useState(false);
 
-  if (isDev && !label) {
-    console.warn('Menu: `label` is required and becomes the trigger label and the menu’s accessible name.');
-  }
-  if (isDev && anchor && !isControlled) {
-    console.warn('Menu: `anchor` positions the popup instead of rendering a trigger, so `open` must be controlled.');
-  }
+  useEffect(() => {
+    if (!isDev) return;
+    if (iconOnly && triggerIcon === 'none' && !anchor && !warnedRef.current.iconOnly) {
+      warnedRef.current.iconOnly = true;
+      console.warn('Menu: `iconOnly` with `triggerIcon: none` leaves nothing visible to press; choose `ellipsis` or `chevron-down`.');
+    }
+    if (anchor && !isControlled && !warnedRef.current.anchor) {
+      warnedRef.current.anchor = true;
+      console.warn('Menu: `anchor` replaces the trigger, so `open` must be controlled.');
+    }
+  }, [iconOnly, triggerIcon, anchor, isControlled]);
 
   const changeOpen = (value: boolean, reason: MenuOpenChangeReason) => {
     if (!isControlled) setInternalOpen(value);
-    onOpenChange?.({ open: value, reason });
+    onOpenChange?.(value, reason);
   };
 
   const openMenu = (focusTarget: 'first' | 'last', reason: MenuOpenChangeReason) => {
@@ -315,11 +325,19 @@ export const Menu = function Menu({
     changeOpen(true, reason);
   };
 
-  const closeMenu = (reason: MenuOpenChangeReason, focusOpener = false) => {
+  /** Closes, optionally moving focus first; the focus move never reports its own close. */
+  const closeMenu = (reason: MenuOpenChangeReason, moveFocus?: () => void) => {
     if (!open) return;
-    if (focusOpener) openerRef.current?.focus();
+    closingRef.current = true;
+    try {
+      moveFocus?.();
+    } finally {
+      closingRef.current = false;
+    }
     changeOpen(false, reason);
   };
+
+  const focusOpener = () => openerRef.current?.focus();
 
   const setItemRef = (id: string) => (element: HTMLDivElement | null) => {
     if (element) itemRefs.current.set(id, element);
@@ -333,11 +351,12 @@ export const Menu = function Menu({
 
   const activateAction = (action: MenuAction) => {
     if (action.disabled) return;
-    closeMenu('action', true);
+    // The menu closes itself first: onOpenChange(false, 'action') precedes onAction.
+    closeMenu('action', focusOpener);
     onAction?.(action.id);
   };
 
-  // Position the popup and move focus in on open; reposition while scrolling or resizing.
+  // On open: position from the anchor, move focus in, and reposition on scroll and resize.
   useLayoutEffect(() => {
     if (!open) {
       setEntered(false);
@@ -346,62 +365,76 @@ export const Menu = function Menu({
     }
     const anchorElement = anchor?.current ?? triggerRef.current;
     const popup = popupRef.current;
-    if (!anchorElement || !popup) return undefined;
+    if (!popup) return undefined;
 
-    openerRef.current = triggerRef.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    openerRef.current =
+      triggerRef.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
 
     const reposition = () => {
-      const anchorRect = anchorElement.getBoundingClientRect();
-      const popupRect = popup.getBoundingClientRect();
-      const result = computePosition(anchorRect, popupRect, latest.current.placement);
+      if (!anchorElement) return;
+      const result = computePosition(anchorElement.getBoundingClientRect(), popup.getBoundingClientRect(), latest.current.placement);
       setPopupStyle(result.style);
       setVertical(result.vertical);
     };
     reposition();
 
-    const actions = flattenActions(latest.current.items).filter((action) => !action.disabled);
-    const target = pendingFocusRef.current === 'last' ? actions[actions.length - 1] : actions[0];
+    const enabled = flattenActions(latest.current.items).filter((action) => !action.disabled);
+    const target = pendingFocusRef.current === 'last' ? enabled[enabled.length - 1] : enabled[0];
     pendingFocusRef.current = 'first';
-    if (target) {
-      setActiveId(target.id);
-      itemRefs.current.get(target.id)?.focus();
-    } else {
-      popup.focus();
-    }
+    if (target) focusAction(target.id);
+    else popup.focus();
 
-    if (prefersReducedMotion()) setEntered(true);
-    else requestAnimationFrame(() => setEntered(true));
+    let frame = 0;
+    if (prefersReducedMotion() || typeof requestAnimationFrame !== 'function') setEntered(true);
+    else frame = requestAnimationFrame(() => setEntered(true));
 
     window.addEventListener('scroll', reposition, true);
     window.addEventListener('resize', reposition);
     return () => {
+      if (frame) cancelAnimationFrame(frame);
       window.removeEventListener('scroll', reposition, true);
       window.removeEventListener('resize', reposition);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, anchor]);
 
-  // A pointer click outside, or the window losing focus, closes.
+  // A pointer press outside the popup and trigger, or the window losing focus, closes.
+  const outsideRef = useRef<() => void>(() => undefined);
+  outsideRef.current = () => closeMenu('outside');
   useEffect(() => {
     if (!open) return undefined;
     const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
+      const target = event.target as Node | null;
       const anchorElement = anchor?.current ?? triggerRef.current;
-      if (popupRef.current?.contains(target) || anchorElement?.contains(target)) return;
-      closeMenu('outside');
+      if (target && (popupRef.current?.contains(target) || anchorElement?.contains(target))) return;
+      outsideRef.current();
     };
-    const handleWindowBlur = () => closeMenu('outside');
+    const handleWindowBlur = () => outsideRef.current();
     document.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('blur', handleWindowBlur);
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('blur', handleWindowBlur);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, anchor]);
+
+  useEffect(
+    () => () => {
+      const timer = typeaheadRef.current.timer;
+      if (timer) clearTimeout(timer);
+    },
+    [],
+  );
 
   const handleTriggerClick = () => {
+    // Enter and Space reach here as the Button's native click.
     if (open) closeMenu('trigger');
     else openMenu('first', 'trigger');
+  };
+
+  const handleTriggerKeyUp = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === ' ' && swallowSpaceKeyUpRef.current) event.preventDefault();
+    swallowSpaceKeyUpRef.current = false;
   };
 
   const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
@@ -415,90 +448,114 @@ export const Menu = function Menu({
     }
   };
 
+  const typeaheadResetMs = (): number => {
+    // typeaheadReset is read through its hook (motion.duration.loop by default), never a number.
+    const popup = popupRef.current;
+    return popup ? cssTimeToMs(getComputedStyle(popup).getPropertyValue(OVERRIDE_HOOK.typeaheadReset)) : 0;
+  };
+
   const handleTypeahead = (char: string, enabled: MenuAction[], currentIndex: number) => {
     const state = typeaheadRef.current;
     if (state.timer) clearTimeout(state.timer);
     state.buffer += char.toLowerCase();
-    // typeaheadReset: how long typed characters accumulate before the buffer clears.
-    const resetMs = popupRef.current
-      ? cssTimeToMs(getComputedStyle(popupRef.current).getPropertyValue('--ds-menu-typeahead-reset')) || FALLBACK_TYPEAHEAD_RESET_MS
-      : FALLBACK_TYPEAHEAD_RESET_MS;
-    state.timer = setTimeout(() => {
-      state.buffer = '';
-    }, resetMs);
+    const buffer = state.buffer;
+    // Without a resolvable token (no stylesheet loaded) every keypress starts a fresh buffer.
+    const resetMs = typeaheadResetMs();
+    state.timer =
+      resetMs > 0
+        ? setTimeout(() => {
+            state.buffer = '';
+            state.timer = null;
+          }, resetMs)
+        : null;
+    if (resetMs <= 0) state.buffer = '';
 
-    const startIndex = currentIndex === -1 ? 0 : currentIndex;
-    for (let offset = 1; offset <= enabled.length; offset++) {
-      const candidate = enabled[(startIndex + offset) % enabled.length];
-      if (candidate!.label.toLowerCase().startsWith(state.buffer)) {
-        focusAction(candidate!.id);
+    const start = Math.max(currentIndex, 0);
+    // A growing buffer may keep the current item; a single character moves on to the next match.
+    const firstOffset = buffer.length > 1 ? 0 : 1;
+    for (let offset = firstOffset; offset < enabled.length + firstOffset; offset++) {
+      const candidate = enabled[(start + offset) % enabled.length];
+      if (candidate && candidate.label.toLowerCase().startsWith(buffer)) {
+        focusAction(candidate.id);
         return;
-      }
-    }
-    // The buffer as a whole matched nothing (e.g. the same letter typed again); retry with just it.
-    if (state.buffer.length > 1) {
-      const single = state.buffer.slice(-1);
-      for (let offset = 0; offset < enabled.length; offset++) {
-        const candidate = enabled[(startIndex + offset) % enabled.length];
-        if (candidate!.label.toLowerCase().startsWith(single)) {
-          state.buffer = single;
-          focusAction(candidate!.id);
-          return;
-        }
       }
     }
   };
 
   const handleListKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const enabled = flattenActions(items).filter((action) => !action.disabled);
-    if (enabled.length === 0) return;
     const currentIndex = enabled.findIndex((action) => action.id === activeId);
 
     switch (event.key) {
       case 'ArrowDown': {
         event.preventDefault();
-        focusAction(enabled[(currentIndex + 1) % enabled.length]!.id);
+        const next = enabled[(currentIndex + 1) % enabled.length];
+        if (next) focusAction(next.id);
         break;
       }
       case 'ArrowUp': {
         event.preventDefault();
-        focusAction(enabled[(currentIndex - 1 + enabled.length) % enabled.length]!.id);
+        const previous = enabled[currentIndex <= 0 ? enabled.length - 1 : currentIndex - 1];
+        if (previous) focusAction(previous.id);
         break;
       }
-      case 'Home':
+      case 'Home': {
         event.preventDefault();
-        focusAction(enabled[0]!.id);
+        const first = enabled[0];
+        if (first) focusAction(first.id);
         break;
-      case 'End':
+      }
+      case 'End': {
         event.preventDefault();
-        focusAction(enabled[enabled.length - 1]!.id);
+        const last = enabled[enabled.length - 1];
+        if (last) focusAction(last.id);
         break;
+      }
       case 'Enter':
-      case ' ':
+      case ' ': {
         event.preventDefault();
-        if (currentIndex !== -1) activateAction(enabled[currentIndex]!);
+        const current = enabled[currentIndex];
+        if (!current) break;
+        // Focus returns to the trigger Button, which would activate on Space's keyup and reopen.
+        if (event.key === ' ') swallowSpaceKeyUpRef.current = true;
+        activateAction(current);
         break;
+      }
       case 'Escape':
         event.preventDefault();
-        closeMenu('escape', true);
+        event.stopPropagation();
+        closeMenu('escape', focusOpener);
         break;
       case 'Tab': {
         event.preventDefault();
-        const anchorElement = (triggerRef.current ?? openerRef.current) as HTMLElement;
-        if (anchorElement) focusAdjacent(anchorElement, popupRef.current, event.shiftKey ? -1 : 1);
-        closeMenu('outside');
+        const from = openerRef.current;
+        const direction = event.shiftKey ? -1 : 1;
+        closeMenu('outside', () => {
+          if (from) focusAdjacent(from, popupRef.current, direction);
+        });
         break;
       }
       default:
-        if (event.key.length === 1 && /^[a-z]$/i.test(event.key) && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        if (/^[a-z]$/i.test(event.key) && !event.metaKey && !event.ctrlKey && !event.altKey && enabled.length > 0) {
+          event.preventDefault();
           handleTypeahead(event.key, enabled, currentIndex);
         }
     }
   };
 
+  // Focus leaving the popup for something other than the trigger closes it (dismiss: focus-out).
+  const handlePopupBlur = (event: ReactFocusEvent<HTMLDivElement>) => {
+    if (closingRef.current) return;
+    const next = event.relatedTarget as Node | null;
+    if (!next) return; // Pointer presses on non-focusable ground are handled by pointerdown.
+    const anchorElement = anchor?.current ?? triggerRef.current;
+    if (popupRef.current?.contains(next) || anchorElement?.contains(next)) return;
+    closeMenu('outside');
+  };
+
   const handleItemMouseEnter = (action: MenuAction) => {
-    if (action.disabled) return;
-    focusAction(action.id);
+    // Hover moves the roving focus so pointer and keyboard never highlight two items.
+    if (!action.disabled) focusAction(action.id);
   };
 
   const handleItemClick = (action: MenuAction) => (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -509,7 +566,7 @@ export const Menu = function Menu({
     activateAction(action);
   };
 
-  const renderAction = (action: MenuAction) => {
+  const renderAction = (action: MenuAction): ReactElement => {
     const classes = [
       'ds-menu__item',
       action.tone === 'danger' ? 'ds-menu__item--danger' : null,
@@ -522,10 +579,9 @@ export const Menu = function Menu({
         key={action.id}
         ref={setItemRef(action.id)}
         role="menuitem"
-        id={`${listId}-item-${action.id}`}
+        data-part="item"
         tabIndex={action.id === activeId ? 0 : -1}
         aria-disabled={action.disabled ? 'true' : undefined}
-        aria-keyshortcuts={action.shortcut || undefined}
         className={classes}
         onMouseEnter={() => handleItemMouseEnter(action)}
         onClick={handleItemClick(action)}
@@ -537,7 +593,7 @@ export const Menu = function Menu({
         ) : null}
         <span className="ds-menu__item-label">{action.label}</span>
         {action.shortcut ? (
-          <span className="ds-menu__item-shortcut" data-part="itemShortcut">
+          <span className="ds-menu__item-shortcut" data-part="itemShortcut" aria-hidden="true">
             {action.shortcut}
           </span>
         ) : null}
@@ -545,52 +601,57 @@ export const Menu = function Menu({
     );
   };
 
-  const renderNode = (node: MenuItem, path: string) => {
-    if ('separator' in node) {
-      return <div key={`${path}-separator`} role="separator" className="ds-menu__separator" />;
-    }
-    if ('group' in node) {
-      const groupLabelId = `${listId}-group-${path}`;
+  const renderSeparator = (key: string): ReactElement => (
+    <div key={key} role="separator" data-part="separator" className="ds-menu__separator" />
+  );
+
+  const renderNode = (node: MenuItem, index: number): ReactNode => {
+    if (isSeparator(node)) return renderSeparator(`separator-${index}`);
+    if (isGroup(node)) {
+      const groupLabelId = `${listId}-group-${index}`;
       return (
-        <div key={`${path}-group`} role="group" aria-labelledby={groupLabelId} className="ds-menu__group">
+        <div key={`group-${index}`} role="group" aria-labelledby={groupLabelId} data-part="group" className="ds-menu__group">
           <div id={groupLabelId} data-part="groupLabel" className="ds-menu__group-label">
             {node.group}
           </div>
-          <div className="ds-menu__group-items">
-            {node.items.map((child, index) => renderNode(child, `${path}-${index}`))}
-          </div>
+          {node.items.map((child, childIndex) =>
+            isSeparator(child)
+              ? renderSeparator(`separator-${index}-${childIndex}`)
+              : isGroup(child)
+                ? null
+                : renderAction(child),
+          )}
         </div>
       );
     }
     return renderAction(node);
   };
 
-  const classes = ['ds-menu', className ?? null].filter(Boolean).join(' ');
-
+  const icon = triggerIcon === 'none' ? undefined : <Icon name={triggerIcon} inline />;
   const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedPopupStyle = { ...popupStyle, ...overrideStyle };
-
   const popupClasses = ['ds-menu__popup', entered ? 'ds-menu__popup--entered' : null].filter(Boolean).join(' ');
 
   return (
-    <div {...rest} ref={ref} data-ds="Menu" className={classes} style={style}>
+    <div {...rest} ref={ref} data-ds="Menu" className="ds-menu">
       {anchor ? null : (
         <Button
           ref={triggerRef}
           id={triggerId}
           type="button"
           variant={triggerVariant}
-          iconOnly={iconOnly}
           label={label}
+          iconOnly={iconOnly}
+          leadingIcon={iconOnly ? icon : undefined}
+          trailingIcon={iconOnly ? undefined : icon}
           aria-haspopup="menu"
           aria-expanded={open ? 'true' : 'false'}
           aria-controls={open ? listId : undefined}
-          trailingIcon={triggerIcon !== 'none' ? <Icon name={triggerIcon} inline /> : undefined}
           onClick={handleTriggerClick}
           onKeyDown={handleTriggerKeyDown}
+          onKeyUp={handleTriggerKeyUp}
         />
       )}
-      {open
+      {open && typeof document !== 'undefined'
         ? createPortal(
             <div
               ref={popupRef}
@@ -602,10 +663,11 @@ export const Menu = function Menu({
               data-part="popup"
               data-vertical={vertical}
               className={popupClasses}
-              style={mergedPopupStyle}
+              style={{ ...popupStyle, ...overrideStyle }}
               onKeyDown={handleListKeyDown}
+              onBlur={handlePopupBlur}
             >
-              {items.map((item, index) => renderNode(item, String(index)))}
+              {items.map((item, index) => renderNode(item, index))}
             </div>,
             container ?? document.body,
           )

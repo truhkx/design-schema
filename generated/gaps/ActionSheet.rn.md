@@ -19,3 +19,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ActionSheet: added `headerPaddingBlock` (`space.sm`) as the schema now names it explicitly ('vertical padding of the header ... and of the cancel row'); applied it to both the header and the cancel row's vertical padding, replacing the previous ad hoc `t.spaceSm` comment.
 - ActionSheet: the header's handle-to-heading gap and the header's horizontal alignment have no named binding in the schema (only `itemGap`, described as icon-to-label within a row); kept BottomSheet's own hardcoded `layoutGapTight` for that internal spacing, same as before.
 - ActionSheet: wide-screen Menu presentation above `maxWidth` remains unimplemented on RN (acknowledged in the existing doc comment) since the package's Menu always renders its own trigger and can't anchor to an external element — `maxWidth` stays a no-op override, unchanged from the prior implementation.
+
+## 2026-09-16 07:26 — round 1
+
+- ActionSheet: 'Controlled state' says open is uncontrolled when omitted, but the schema marks `open` required; implemented controlled-only.
+- ActionSheet: the `ref` rule (a component that exposes its root declares ref) conflicts with the web note that the ref is the sheet <dialog>; on rn no ref prop was added, matching BottomSheet; the doc should say whether rn exposes the surface.
+- ActionSheet: `dismissible: false` says the cancel row does not request close, but not whether the row is hidden, disabled or silently inert (web keeps it enabled and drops the event); rn renders the Cancel Button disabled so the state is announced.
+- ActionSheet: the behavior scenario `the-list-is-a-menu` (`role: menu`) cannot use RNTL's getByRole on rn: the menu container must not be `accessible` (that would merge its rows), so role queries skip it; the test asserts the `role` prop on testID ActionSheet instead.
+- ActionSheet: which part carries the root testID is unstated (the Modal host, the scrim host or the surface); followed BottomSheet and put testID="ActionSheet" on the surface with the menu role and label, so there is no separate ActionSheet.surface id.
+- ActionSheet: `focusScope` part: its FocusScope props are not listed; used trapped, restoreFocus, autoFocus="none", and moved accessibility focus to the first enabled action (the normal group first, then danger) after the enter transition.
+- ActionSheet: `headerPaddingBlock` pads the cancel row too, but the cancel row's inline padding is unspecified; used itemPaddingInline.
+- ActionSheet: `divider` is 'above the danger group' — unspecified when every action is danger; the divider is omitted when there is no normal group above it.
+- ActionSheet: `titleColor`/`titleSize` have no part; applied through the composed Text (tone="muted", size="sm"), with titleSize forwarded as Text's fontSize override alongside fontFamily and lineHeight.
+- ActionSheet: `shadow`, `radius`, `layer`, `enter`, `exit` carry no part; applied to the surface (top corners only), anchor zIndex and the slide transition; the exit easing is motion.easing.exit, following BottomSheet, although the rules name only motion.easing.standard.
+- ActionSheet: the sheet's max height is unspecified (the web note references BottomSheet `height: content`); used 90% of the window as BottomSheet does.
+- ActionSheet: the `itemHover` state is `hover`; rn has no hover on touch, so it also shows while pressed (react-native-web gets onHoverIn/Out).
+- ActionSheet: the doc asks for dev warnings nowhere but says 'two to about eight actions'; added __DEV__ warnings for fewer than 2 and more than 8. The closed-sheet scenario's single-action `given` triggers the first.
+- ActionSheet: the package digest gives `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but theme.tsx's signature is (fontSize, multiplier); followed the code.

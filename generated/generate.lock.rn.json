@@ -23,19 +23,19 @@
     }
   },
   "ActionSheet.rn": {
-    "hash": "fa5a76292c3947f3",
-    "lastAttemptHash": "fa5a76292c3947f3",
-    "generatedAt": "2026-09-10T22:28:23+00:00",
-    "model": "sonnet",
+    "hash": "06e4ff9c4f66bf5d",
+    "lastAttemptHash": "06e4ff9c4f66bf5d",
+    "generatedAt": "2026-09-16T11:26:19+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9318,
+    "costUsd": 2.1426,
     "files": [
       "packages/rn/src/ActionSheet.stories.tsx",
-      "packages/rn/src/ActionSheet.tsx",
-      "packages/rn/src/Menu.tsx"
+      "packages/rn/src/ActionSheet.test.tsx",
+      "packages/rn/src/ActionSheet.tsx"
     ],
-    "gaps": 6,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -69,17 +69,19 @@
     }
   },
   "AlertDialog.rn": {
-    "hash": "9a717522380a2c2c",
-    "lastAttemptHash": "9a717522380a2c2c",
-    "generatedAt": "2026-09-11T00:20:33+00:00",
-    "model": "sonnet",
+    "hash": "5bb03104e484aaff",
+    "lastAttemptHash": "5bb03104e484aaff",
+    "generatedAt": "2026-09-16T10:36:42+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5714,
+    "costUsd": 1.2552,
     "files": [
+      "packages/rn/src/AlertDialog.stories.tsx",
+      "packages/rn/src/AlertDialog.test.tsx",
       "packages/rn/src/AlertDialog.tsx"
     ],
-    "gaps": 3,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -90,22 +92,19 @@
     }
   },
   "BottomSheet.rn": {
-    "hash": "c15bbccba5f69deb",
-    "lastAttemptHash": "c15bbccba5f69deb",
-    "generatedAt": "2026-09-10T22:25:18+00:00",
-    "model": "sonnet",
+    "hash": "650be1575e3d5f4f",
+    "lastAttemptHash": "650be1575e3d5f4f",
+    "generatedAt": "2026-09-16T11:15:12+00:00",
+    "model": "opus",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 0.8418,
+    "rounds": 1,
+    "costUsd": 2.0384,
     "files": [
       "packages/rn/src/BottomSheet.stories.tsx",
-      "packages/rn/src/BottomSheet.tsx",
-      "packages/rn/src/Combobox.tsx",
-      "packages/rn/src/DataGrid.tsx",
-      "packages/rn/src/Select.tsx",
-      "packages/rn/src/TreeGrid.tsx"
+      "packages/rn/src/BottomSheet.test.tsx",
+      "packages/rn/src/BottomSheet.tsx"
     ],
-    "gaps": 14,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -342,17 +341,19 @@
     }
   },
   "Dialog.rn": {
-    "hash": "f430a11cc334941e",
-    "lastAttemptHash": "f430a11cc334941e",
-    "generatedAt": "2026-09-11T00:18:27+00:00",
-    "model": "sonnet",
+    "hash": "d9c0bf8d1402c5a4",
+    "lastAttemptHash": "d9c0bf8d1402c5a4",
+    "generatedAt": "2026-09-16T10:30:04+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4684,
+    "costUsd": 1.217,
     "files": [
+      "packages/rn/src/Dialog.stories.tsx",
+      "packages/rn/src/Dialog.test.tsx",
       "packages/rn/src/Dialog.tsx"
     ],
-    "gaps": 3,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -641,20 +642,19 @@
     }
   },
   "Menu.rn": {
-    "hash": "06a2eb3fc3f54d67",
-    "lastAttemptHash": "06a2eb3fc3f54d67",
-    "generatedAt": "2026-09-11T00:21:30+00:00",
-    "model": "sonnet",
+    "hash": "1c64a0cb7097a9fc",
+    "lastAttemptHash": "1c64a0cb7097a9fc",
+    "generatedAt": "2026-09-16T10:48:33+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3215,
+    "costUsd": 2.4017,
     "files": [
       "packages/rn/src/Menu.stories.tsx",
       "packages/rn/src/Menu.test.tsx",
-      "packages/rn/src/Menu.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Menu.tsx"
     ],
-    "gaps": 4,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -733,19 +733,19 @@
     }
   },
   "Popover.rn": {
-    "hash": "e126314959858d8d",
-    "lastAttemptHash": "e126314959858d8d",
-    "generatedAt": "2026-09-10T22:21:57+00:00",
-    "model": "sonnet",
+    "hash": "d749619f1c8d9c85",
+    "lastAttemptHash": "d749619f1c8d9c85",
+    "generatedAt": "2026-09-16T11:02:38+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.331,
+    "costUsd": 2.0312,
     "files": [
       "packages/rn/src/Popover.stories.tsx",
-      "packages/rn/src/Popover.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Popover.test.tsx",
+      "packages/rn/src/Popover.tsx"
     ],
-    "gaps": 3,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -869,19 +869,19 @@
     }
   },
   "SidePanel.rn": {
-    "hash": "6b144d3948308670",
-    "lastAttemptHash": "6b144d3948308670",
-    "generatedAt": "2026-09-10T22:31:42+00:00",
-    "model": "sonnet",
+    "hash": "bd3a6f6b123f7562",
+    "lastAttemptHash": "bd3a6f6b123f7562",
+    "generatedAt": "2026-09-16T11:42:24+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8956,
+    "costUsd": 1.9112,
     "files": [
       "packages/rn/src/SidePanel.stories.tsx",
-      "packages/rn/src/SidePanel.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/SidePanel.test.tsx",
+      "packages/rn/src/SidePanel.tsx"
     ],
-    "gaps": 2,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,

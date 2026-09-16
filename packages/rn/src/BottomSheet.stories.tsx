@@ -70,6 +70,80 @@ export const NotDismissible: Story = {
 
 export const DragToDismissFalse: Story = { args: { dragToDismiss: false } };
 
+// examples
+export const Filters: Story = {
+  args: {
+    open: true,
+    heading: 'Filters',
+    children: (
+      <Stack gap="loose">
+        <Input label="Minimum price" name="min-price" />
+        <Input label="Maximum price" name="max-price" />
+      </Stack>
+    ),
+    footer: (
+      <>
+        <Button label="Apply" variant="primary" />
+        <Button label="Clear" variant="secondary" />
+      </>
+    ),
+  },
+};
+
+export const HalfHeightResults: Story = {
+  args: {
+    open: true,
+    heading: 'Nearby places',
+    children: (
+      <Stack gap="normal">
+        {['Corner Café', 'City Library', 'Riverside Park', 'Market Hall', 'Bike Repair', 'Post Office', 'Bakery'].map(
+          (place) => (
+            <Link key={place} href="#" label={place} />
+          ),
+        )}
+      </Stack>
+    ),
+    height: 'half',
+  },
+};
+
+export const ShareSheet: Story = {
+  args: {
+    open: true,
+    heading: 'Share to',
+    children: (
+      <Stack direction="horizontal" gap="loose" justify="center">
+        <Button label="Messages" variant="secondary" />
+        <Button label="Mail" variant="secondary" />
+        <Button label="Copy link" variant="secondary" />
+      </Stack>
+    ),
+    hideHeading: true,
+  },
+};
+
+export const FullScreenTask: Story = {
+  args: {
+    open: true,
+    heading: 'New expense',
+    children: (
+      <Stack gap="loose">
+        <Input label="Description" name="description" />
+        <Input label="Amount" name="amount" />
+        <Input label="Date" name="date" />
+      </Stack>
+    ),
+    footer: (
+      <>
+        <Button label="Save" variant="primary" />
+        <Button label="Cancel" variant="secondary" />
+      </>
+    ),
+    height: 'full',
+    dragToDismiss: false,
+  },
+};
+
 export const WithOverrides: Story = {
   args: {
     overrides: { radius: 'radius.full', scrim: 'color.overlay.scrim' },

@@ -6,7 +6,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type Attributes,
+  type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -31,21 +31,7 @@ export type SidePanelSide = 'start' | 'end';
 export type SidePanelWidth = 'narrow' | 'default' | 'wide';
 export type SidePanelPersistent = 'never' | 'content' | 'page';
 export type SidePanelRole = 'complementary' | 'navigation';
-export type SidePanelOpenChangeReason =
-  | 'trigger'
-  | 'escape'
-  | 'close-button'
-  | 'scrim'
-  | 'swipe'
-  | 'action'
-  | 'navigation';
-
-/**
- * Reasons that request close even when `dismissible` is false: the trigger toggle, a footer
- * action, and following a Link are the consumer's own deliberate UI, not an incidental dismiss
- * affordance; Escape still reports through `onOpenChange` so the consumer can decide, as in Dialog.
- */
-const ALWAYS_ALLOWED_REASONS: ReadonlySet<SidePanelOpenChangeReason> = new Set(['trigger', 'escape', 'action', 'navigation']);
+export type SidePanelOpenChangeReason = 'trigger' | 'escape' | 'close-button' | 'scrim' | 'swipe' | 'action' | 'navigation';
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type SidePanelOverridableBinding =
@@ -87,132 +73,173 @@ function overridesToStyle(overrides: Partial<Record<SidePanelOverridableBinding,
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as SidePanelOverridableBinding[]) {
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    const hook = OVERRIDE_HOOK[binding];
+    // Locked bindings are not in the type; anything passed anyway has no hook and is ignored.
+    if (ref && hook) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
 }
 
-const COPY = { closeLabel: 'Close' };
+/** copy.* — used verbatim. */
+const COPY = { closeLabel: 'Close', expanded: 'Expanded' };
+
+/** Reasons `dismissible: false` suppresses; Escape still reports, and the trigger, actions and navigation are the consumer's own UI. */
+const DISMISS_REASONS: ReadonlySet<SidePanelOpenChangeReason> = new Set<SidePanelOpenChangeReason>(['close-button', 'scrim', 'swipe']);
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
-  'input:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
   'select:not([disabled])',
   'textarea:not([disabled])',
+  'summary',
   '[contenteditable]:not([contenteditable="false"])',
-  '[tabindex]:not([tabindex="-1"])',
+  '[tabindex]',
 ].join(',');
 
-/**
- * Moves focus to the next document-order tabbable element relative to `anchor`, ignoring anything
- * inside `exclude` (the portaled panel) — used so Tab out of the last panel element continues into
- * the page rather than the portal's own position in the DOM.
- */
-function focusAdjacent(anchor: HTMLElement | null, exclude: HTMLElement | null) {
-  if (!anchor) return;
-  const all = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (element) => !exclude || !exclude.contains(element),
-  );
-  const index = all.indexOf(anchor);
-  if (index === -1) return;
-  (all[index + 1] ?? anchor).focus();
+function isTabbable(element: HTMLElement): boolean {
+  if (element.hasAttribute('data-focus-sentinel')) return false;
+  if (element.getAttribute('tabindex') === '-1' || element.tabIndex < 0) return false;
+  return !element.closest('[hidden], [inert]');
 }
 
-/* Only declared when the bundler defines it; never assumed. */
-declare const process: { env: Record<string, string | undefined> } | undefined;
-const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+function tabbablesIn(root: ParentNode | null): HTMLElement[] {
+  if (!root) return [];
+  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(isTabbable);
+}
 
-/** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    : false;
+/** The next tabbable element after `anchor` in document order, skipping the portaled panel. */
+function nextTabbableAfter(anchor: HTMLElement, exclude: HTMLElement | null): HTMLElement | null {
+  for (const element of tabbablesIn(document)) {
+    if (element === anchor || anchor.contains(element) || exclude?.contains(element)) continue;
+    if (anchor.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING) return element;
+  }
+  return null;
+}
+
+declare const process: { env: { NODE_ENV?: string } };
+
+/** True when the element has no running transition (reduced motion, or no stylesheet as under jsdom). */
+function hasNoTransition(element: HTMLElement): boolean {
+  const durations = getComputedStyle(element).transitionDuration;
+  if (!durations) return true;
+  return durations.split(',').every((duration) => parseFloat(duration) === 0);
+}
+
+/** Scroll lock is reference-counted so an overlay opened over the panel cannot release it early. */
+let scrollLockCount = 0;
+function lockScroll(): () => void {
+  scrollLockCount += 1;
+  document.documentElement.classList.add('ds-side-panel-lock-scroll');
+  return () => {
+    scrollLockCount -= 1;
+    if (scrollLockCount === 0) document.documentElement.classList.remove('ds-side-panel-lock-scroll');
+  };
 }
 
 /**
- * Above the given token custom property's breakpoint (read from the loaded token stylesheet, never
- * hard-coded), the panel stops being an overlay and becomes a fixed sidebar. `null` never matches.
+ * persistent — `layout.maxWidth.content` or `layout.maxWidth.page`, read from the loaded token
+ * stylesheet (a media query cannot read a custom property). Above it the panel is a sidebar.
  */
-function useBreakpoint(cssVarName: string | null): boolean {
-  const [matches, setMatches] = useState(false);
+function persistentQuery(persistent: SidePanelPersistent): MediaQueryList | null {
+  if (persistent === 'never') return null;
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
+  const token = persistent === 'content' ? '--layout-max-width-content' : '--layout-max-width-page';
+  const breakpoint = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  if (!breakpoint) return null;
+  return window.matchMedia(`(width > ${breakpoint})`);
+}
 
+function useIsPersistent(persistent: SidePanelPersistent): boolean {
+  const [matches, setMatches] = useState<boolean>(() => persistentQuery(persistent)?.matches ?? false);
   useEffect(() => {
-    if (!cssVarName || typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    const query = persistentQuery(persistent);
+    if (!query) {
       setMatches(false);
       return undefined;
     }
-    // literal-ok: breakpoint value read from the token custom property at runtime, not a literal.
-    const value = getComputedStyle(document.documentElement).getPropertyValue(cssVarName).trim();
-    if (!value) return undefined;
-    const query = window.matchMedia(`(min-width: ${value})`);
-    const update = () => setMatches(query.matches);
+    const update = (): void => setMatches(query.matches);
     update();
     query.addEventListener('change', update);
     return () => query.removeEventListener('change', update);
-  }, [cssVarName]);
-
+  }, [persistent]);
   return matches;
 }
 
-export interface SidePanelProps {
+export interface SidePanelProps extends Omit<ComponentPropsWithoutRef<'aside'>, 'children' | 'role' | 'hidden'> {
   /**
-   * The Button that shows and hides the panel (usually `iconOnly` with a label like "Menu"). It is
-   * the APG disclosure button: the panel adds aria-expanded and aria-controls to it, and it stays a
-   * toggle — pressing it again closes. Omit to control `open` from elsewhere (a Toolbar).
+   * The Button that shows and hides the panel (usually `iconOnly` with the `menu` Icon and a label
+   * like "Menu"). It is the APG disclosure button: the panel sets aria-expanded and aria-controls on
+   * it, and it stays a toggle — pressing it again closes. Omit to control `open` from elsewhere (a
+   * Toolbar). Exactly one element: it is cloned to carry those attributes and the toggle.
    */
-  trigger?: ReactElement<any> | undefined;
+  trigger?: ReactElement<{ onClick?: ((event: ReactMouseEvent<HTMLElement>) => void) | undefined }> | undefined;
   /** Controlled visibility. Omit for uncontrolled (the trigger toggles it). */
   open?: boolean | undefined;
   /** The panel's title and accessible name ("Menu", "Filters", "Your cart"). May be visually hidden with `hideHeading`. */
   heading: string;
-  /** Keep the title for assistive technology but do not render it (a navigation panel whose List is self-explanatory). The accessible name is required regardless. */
+  /**
+   * Keep the title for assistive technology but do not render it (a navigation panel whose List is
+   * self-explanatory). The accessible name is required regardless.
+   */
   hideHeading?: boolean | undefined;
   /** The body: a List or Tree of Links for navigation, a Form of filters, a Stack of Cards. Scrolls inside the panel when taller than the viewport. */
   children: ReactNode;
-  /** Pinned to the bottom of the panel above the safe area. */
+  /** Pinned to the bottom of the panel above the safe area (a sign-out Button, a "Apply filters" action row). */
   footer?: ReactNode;
-  /** The edge the panel slides from: `start` is left in left-to-right languages and right in right-to-left; `end` the opposite. */
+  /**
+   * The edge the panel slides from: `start` is left in left-to-right languages and right in
+   * right-to-left; `end` the opposite. Navigation comes from the start; contextual panels (a cart, a
+   * detail) from the end.
+   */
   side?: SidePanelSide | undefined;
-  /** Panel width on wide screens: `narrow` for a list of links, `wide` for a form or a detail. */
+  /**
+   * Panel width on wide screens: narrow for a list of links, wide for a form or a detail. On phones
+   * the panel is the viewport width minus a gutter that keeps the scrim visible.
+   */
   width?: SidePanelWidth | undefined;
   /**
    * Above this layout width the panel stops being an overlay and becomes a fixed sidebar beside the
    * content: always visible, no scrim, no trap, part of the page's tab order, and the trigger is
-   * hidden. `content` switches at layout.maxWidth.content, `page` at layout.maxWidth.page.
+   * hidden. `content` switches at layout.maxWidth.content, `page` at layout.maxWidth.page. Below it,
+   * the overlay behavior applies.
    */
   persistent?: SidePanelPersistent | undefined;
   /**
-   * The landmark the panel exposes (in persistent mode, and as the region's role while open in
-   * non-modal mode): `navigation` for a menu of Links, `complementary` for filters, a cart, a
-   * detail. On web this selects the Landmark component's element (`nav` or `aside`). Not used when
-   * `modal` — a modal panel is a dialog, not a landmark.
+   * The landmark the panel exposes (in persistent mode and as the region's role when open):
+   * `navigation` for a menu of Links, `complementary` for filters, a cart, a detail. On web this is
+   * the composed Landmark's own role, so `navigation` renders a real <nav>; a modal panel is a
+   * dialog, not a landmark, and takes none of this.
    */
   role?: SidePanelRole | undefined;
   /**
-   * False (the default, the disclosure pattern): no scrim by default, the page stays live and in
-   * the tab order, focus stays on the trigger when it opens, and Escape or an outside click closes
-   * it. True: the panel is a modal Dialog at the edge — scrim, focus trapped, page inert.
+   * False (the default, the disclosure pattern): the panel is a disclosed region — the page stays
+   * live, focus stays on the trigger when it opens, and Escape from inside or a click outside closes
+   * it. True: the panel is a modal Dialog at the edge — scrim, focus moved in and trapped, page inert
+   * and scroll-locked.
    */
   modal?: boolean | undefined;
-  /** Show the scrim in non-modal mode too (modal always has one). */
+  /** Show the scrim in non-modal mode too (modal always has one). Turn it off for a panel that should feel like part of the page. */
   scrim?: boolean | undefined;
   /**
-   * Escape, the close button, a scrim tap / outside click, and the swipe gesture all request
-   * close. When false, the close button is not rendered and taps outside do nothing; Escape still
-   * reports through `onOpenChange` with reason `escape` (the consumer decides), as in Dialog.
+   * Escape, the close button, a scrim tap / outside click, and the swipe gesture all request close.
+   * When false, the close button is not rendered and taps outside do nothing; Escape still reports
+   * through onOpenChange with reason escape (the consumer decides), as in Dialog.
    */
   dismissible?: boolean | undefined;
-  /** On touch, a swipe toward the edge dismisses. Purely additive: the trigger and close button always exist. */
+  /**
+   * On touch, a swipe toward the edge dismisses (native only). Accepted on web for parity; no
+   * gesture is wired, since dragging a panel with a mouse is not a web idiom.
+   */
   swipeable?: boolean | undefined;
   /**
    * Fired when the panel opens or closes, with the new state and a reason: `trigger`, `escape`,
    * `close-button`, `scrim`, `swipe`, `action`, `navigation` (a Link inside was followed).
    */
   onOpenChange?: ((open: boolean, reason: SidePanelOpenChangeReason) => void) | undefined;
-  /** Portal target for the panel's DOM node. Defaults to `document.body`. Not used in persistent mode. */
+  /** Portal target for the overlay. Defaults to `document.body`. A platform prop, not part of the schema. */
   container?: HTMLElement | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. `footerGap` is forwarded to the footer Stack's `gap`. */
   overrides?: Partial<Record<SidePanelOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
@@ -221,12 +248,16 @@ export interface SidePanelProps {
  *
  * When to use:
  * Use a SidePanel for the primary navigation on phones (the "hamburger" menu — a List or Tree of
- * Links from the `start` edge), for filters beside a results page, for a cart or a detail panel
- * from the `end` edge, for a settings drawer. Set `persistent: content` when the same panel should
- * become the permanent sidebar on desktop; leave it `never` for panels that are always a temporary
- * overlay (a cart).
+ * Links from the `start` edge), for filters beside a results page, for a cart or a detail panel from
+ * the `end` edge, for a settings drawer. Set `persistent: content` when the same panel should become
+ * the permanent sidebar on desktop; leave it `never` for panels that are always a temporary overlay
+ * (a cart).
+ *
+ * The panel content renders into one stable host node that moves between the portal target
+ * (overlay) and the component's place in the page (persistent sidebar), so crossing the breakpoint
+ * keeps the children's state.
  */
-export const SidePanel = function SidePanel({
+export function SidePanel({
   ref,
   trigger,
   open: openProp,
@@ -241,407 +272,395 @@ export const SidePanel = function SidePanel({
   modal = false,
   scrim = true,
   dismissible = true,
-  swipeable = true,
+  // Accepted for parity; the web wires no gesture.
+  swipeable: _swipeable = true,
   onOpenChange,
   container,
   overrides,
-}: SidePanelProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
-  const breakpointVar =
-    persistent === 'content' ? '--layout-max-width-content' : persistent === 'page' ? '--layout-max-width-page' : null;
-  const isPersistentActive = useBreakpoint(breakpointVar);
+  // Never forwarded to the root: `overrides` is the only per-instance styling.
+  className: _className,
+  style: _style,
+  ...rest
+}: SidePanelProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
+  const isPersistent = useIsPersistent(persistent);
+  const modalActive = modal && !isPersistent;
 
   const generatedId = useId();
-  const triggerId = `ds-side-panel${generatedId}-trigger`;
   const panelId = `ds-side-panel${generatedId}-panel`;
   const headingId = `ds-side-panel${generatedId}-heading`;
 
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  useImperativeHandle(ref, () => wrapperRef.current as HTMLDivElement, []);
-
-  const triggerRef = useRef<HTMLElement | null>(null);
-  const panelRef = useRef<HTMLElement | null>(null);
+  const rootRef = useRef<HTMLElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
-  const bodyRef = useRef<HTMLElement | null>(null);
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const dragRef = useRef<{ startX: number; startTime: number } | null>(null);
+  const triggerWrapRef = useRef<HTMLSpanElement | null>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const slotRef = useRef<HTMLDivElement | null>(null);
+  const pointerDownInsideRef = useRef(false);
+  const escapeHandledRef = useRef(false);
+
+  // The one node the panel content is portaled into; it moves, the React subtree does not.
+  const [host] = useState<HTMLDivElement | null>(() =>
+    typeof document === 'undefined' ? null : document.createElement('div'),
+  );
 
   const isControlled = openProp !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
-  const open = isControlled ? (openProp as boolean) : internalOpen;
+  const open = openProp ?? internalOpen;
 
-  // Mounted while open, and while the exit transition finishes after `open` goes false.
+  // Overlay only: shown while open, and while the exit transition finishes after `open` goes false.
   const [present, setPresent] = useState(open);
-  // Drives the entered/exited CSS state; toggled a frame after mount so the enter transition runs.
+  // Drives the entered/exited CSS state; set a frame after showing so the enter transition runs.
   const [visible, setVisible] = useState(false);
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
 
-  const closingRef = useRef(false);
+  if (open && !present) setPresent(true);
 
-  if (isDev && !heading) {
+  useImperativeHandle(ref, () => rootRef.current as HTMLElement, [modalActive, present]);
+
+  const warnedRef = useRef(false);
+  if (process.env.NODE_ENV !== 'production' && !heading && !warnedRef.current) {
+    warnedRef.current = true;
     console.warn('SidePanel: `heading` is required and becomes the accessible name; it must not be empty.');
   }
 
-  const changeOpen = (value: boolean, reason: SidePanelOpenChangeReason) => {
-    if (!isControlled) setInternalOpen(value);
-    onOpenChange?.(value, reason);
+  const changeOpen = (next: boolean, reason: SidePanelOpenChangeReason): void => {
+    if (!isControlled) setInternalOpen(next);
+    onOpenChange?.(next, reason);
   };
 
-  const requestClose = (reason: SidePanelOpenChangeReason) => {
-    if (!dismissible && !ALWAYS_ALLOWED_REASONS.has(reason)) return;
-    if (closingRef.current) return;
-    closingRef.current = true;
+  const requestClose = (reason: SidePanelOpenChangeReason): void => {
+    if (!open || isPersistent) return;
+    if (DISMISS_REASONS.has(reason) && !dismissible) return;
+    if (reason === 'escape' && !dismissible) {
+      // Reported, not applied: the consumer decides.
+      onOpenChange?.(false, 'escape');
+      return;
+    }
     changeOpen(false, reason);
   };
 
-  const handleTriggerClick = () => {
-    if (open) {
-      requestClose('trigger');
-    } else {
-      closingRef.current = false;
-      changeOpen(true, 'trigger');
-    }
-  };
+  const latestRequestClose = useRef(requestClose);
+  latestRequestClose.current = requestClose;
 
-  useEffect(() => {
-    if (open) {
-      closingRef.current = false;
-      setPresent(true);
-    }
-  }, [open]);
-
-  // Mount: open the native dialog (modal only) and move focus to the first control, then reveal on
-  // the next frame. Non-modal leaves focus on the trigger, as the disclosure pattern requires.
+  // The trigger is the cloned element's DOM node, read from its wrapper after every commit.
   useLayoutEffect(() => {
-    if (!present || isPersistentActive) return undefined;
-    const panel = panelRef.current;
-    if (!panel) return undefined;
+    triggerRef.current = (triggerWrapRef.current?.firstElementChild as HTMLElement | null) ?? null;
+  });
 
-    if (modal && panel instanceof HTMLDialogElement && !panel.open) {
-      // showModal() also reflects `open`, natively; the assignment is the fallback for engines
-      // (jsdom, under test) that implement the `open` IDL attribute but not showModal() itself.
-      panel.showModal?.();
-      panel.open = true;
+  // Place the host: in the portal target as an overlay, in the page beside the trigger when persistent.
+  useLayoutEffect(() => {
+    if (!host) return undefined;
+    if (host.className !== 'ds-side-panel-host') host.className = 'ds-side-panel-host';
+    const target = isPersistent ? slotRef.current : (container ?? document.body);
+    if (!target) return undefined;
+    target.appendChild(host);
+    return () => host.remove();
+  }, [host, isPersistent, container]);
+
+  // Modal open: showModal(), then focus the first control (else the title). Runs after the host is placed.
+  useLayoutEffect(() => {
+    if (!present || !modalActive) return;
+    const dialog = rootRef.current;
+    if (!(dialog instanceof HTMLDialogElement)) return;
+    if (!dialog.open) {
+      // jsdom implements the `open` IDL attribute but not showModal(); the assignment is the fallback there.
+      if (typeof dialog.showModal === 'function' && dialog.isConnected) dialog.showModal();
+      else dialog.open = true;
     }
-
-    if (modal) {
-      const first = bodyRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-      (first ?? closeButtonRef.current ?? panel).focus();
+    const first = tabbablesIn(surfaceRef.current)[0];
+    if (first) {
+      first.focus();
+      return;
     }
-
-    if (prefersReducedMotion()) {
-      setVisible(true);
-      return undefined;
+    const title = document.getElementById(headingId);
+    if (title) {
+      if (title.tabIndex !== -1) title.tabIndex = -1;
+      title.focus();
     }
+  }, [present, modalActive, headingId]);
 
+  // Reveal on the next frame so the slide-in runs from the off-edge position.
+  useLayoutEffect(() => {
+    if (!present || !open || isPersistent) return undefined;
     const frame = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(frame);
-  }, [present, modal, isPersistentActive]);
+  }, [present, open, isPersistent]);
 
-  // Exit: hide, then unmount (and close() the native dialog) once the transition finishes.
+  // Non-modal close: focus inside the panel returns to the trigger (the modal's FocusScope restores on unmount).
+  const wasOpenRef = useRef(open);
   useEffect(() => {
-    if (open || !present || isPersistentActive) return undefined;
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (!wasOpen || open || isPersistent || modalActive || !host) return;
+    const active = document.activeElement;
+    if (active && host.contains(active)) triggerRef.current?.focus();
+  }, [open, isPersistent, modalActive, host]);
+
+  // Close: run the exit transition, then hide (non-modal) or close() and unmount (modal).
+  useEffect(() => {
+    if (open || !present || isPersistent) return undefined;
+    const wasVisible = visibleRef.current;
     setVisible(false);
-    const panel = panelRef.current;
-    const finish = () => {
-      setPresent(false);
-      if (modal && panel instanceof HTMLDialogElement) {
-        panel.close?.();
-        panel.open = false;
+    const surface = surfaceRef.current;
+    const finish = (): void => {
+      const root = rootRef.current;
+      if (root instanceof HTMLDialogElement && root.open) {
+        if (typeof root.close === 'function') root.close();
+        else root.open = false;
       }
+      setPresent(false);
     };
-    if (prefersReducedMotion()) {
+    if (!wasVisible || !surface || hasNoTransition(surface)) {
       finish();
       return undefined;
     }
-    const surface = surfaceRef.current;
-    const handleExited = (event: TransitionEvent) => {
-      if (event.target !== surface || event.propertyName !== 'transform') return;
-      finish();
+    const handleExited = (event: TransitionEvent): void => {
+      if (event.target === surface && event.propertyName === 'transform') finish();
     };
-    surface?.addEventListener('transitionend', handleExited);
-    return () => surface?.removeEventListener('transitionend', handleExited);
-  }, [open, present, modal, isPersistentActive]);
+    surface.addEventListener('transitionend', handleExited);
+    return () => surface.removeEventListener('transitionend', handleExited);
+  }, [open, present, isPersistent]);
 
-  // Body scroll lock while a modal panel is present; the non-modal disclosure leaves the page live.
+  // Scroll lock on <html> while a modal panel is present; the non-modal page stays live.
   useEffect(() => {
-    if (!modal || !present || isPersistentActive) return undefined;
-    document.documentElement.classList.add('ds-side-panel-lock-scroll');
-    return () => document.documentElement.classList.remove('ds-side-panel-lock-scroll');
-  }, [modal, present, isPersistentActive]);
+    if (!present || !modalActive) return undefined;
+    return lockScroll();
+  }, [present, modalActive]);
 
-  // Non-modal: a pointerdown outside the panel and trigger closes (a focusout does not).
+  // Non-modal: a pointerdown outside the panel and trigger closes when dismissible; a focusout does not.
   useEffect(() => {
-    if (modal || !open || isPersistentActive) return undefined;
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (panelRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
-      requestClose('scrim');
+    if (!open || modalActive || isPersistent || !dismissible || !host) return undefined;
+    const handlePointerDown = (event: PointerEvent): void => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (host.contains(target) || triggerWrapRef.current?.contains(target)) return;
+      latestRequestClose.current('scrim');
     };
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modal, open, isPersistentActive]);
+  }, [open, modalActive, isPersistent, dismissible, host]);
 
-  const handleDialogCancel = (event: SyntheticEvent<HTMLDialogElement>) => {
-    // The consumer owns `open`; the panel never closes itself, even when it is not dismissible.
+  const handleTriggerClick = (event: ReactMouseEvent<HTMLElement>): void => {
+    trigger?.props.onClick?.(event);
+    if (event.defaultPrevented) return;
+    changeOpen(!open, 'trigger');
+  };
+
+  // Tab from the trigger enters the open non-modal panel, which is portaled elsewhere in the document.
+  const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLSpanElement>): void => {
+    if (event.key !== 'Tab' || event.shiftKey || event.defaultPrevented) return;
+    if (!open || modalActive || isPersistent || event.target !== triggerRef.current) return;
+    const first = tabbablesIn(surfaceRef.current)[0];
+    if (!first) return;
     event.preventDefault();
+    first.focus();
+  };
+
+  const handleRootKeyDown = (event: ReactKeyboardEvent<HTMLElement>): void => {
+    rest.onKeyDown?.(event);
+    if (event.defaultPrevented || isPersistent || !open) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (modalActive) {
+        escapeHandledRef.current = true;
+        // The browser's `cancel` for this same key follows the keydown's listeners; skip it once.
+        setTimeout(() => {
+          escapeHandledRef.current = false;
+        }, 0);
+      }
+      requestClose('escape');
+      return;
+    }
+    // The modal's FocusScope wraps Tab; the non-modal seam hands focus back to the page around the trigger.
+    if (event.key !== 'Tab' || modalActive) return;
+    const triggerElement = triggerRef.current;
+    const tabbables = tabbablesIn(surfaceRef.current);
+    if (!triggerElement || tabbables.length === 0) return;
+    const active = document.activeElement;
+    if (event.shiftKey && active === tabbables[0]) {
+      event.preventDefault();
+      triggerElement.focus();
+    } else if (!event.shiftKey && active === tabbables[tabbables.length - 1]) {
+      const next = nextTabbableAfter(triggerElement, host);
+      if (!next) return;
+      event.preventDefault();
+      next.focus();
+    }
+  };
+
+  const handleDialogCancel = (event: SyntheticEvent<HTMLDialogElement>): void => {
+    // The consumer owns `open`: never let the browser close the panel, dismissible or not.
+    event.preventDefault();
+    if (escapeHandledRef.current) return;
     requestClose('escape');
   };
 
-  const handleDialogClick = (event: ReactMouseEvent<HTMLDialogElement>) => {
-    if (event.target !== panelRef.current) return;
+  const handleDialogPointerDown = (event: ReactPointerEvent<HTMLElement>): void => {
+    rest.onPointerDown?.(event);
+    pointerDownInsideRef.current = event.target !== rootRef.current;
+  };
+
+  // The dialog covers the viewport; a click on it outside the surface is a click on the scrim.
+  const handleDialogClick = (event: ReactMouseEvent<HTMLElement>): void => {
+    rest.onClick?.(event);
+    const startedInside = pointerDownInsideRef.current;
+    pointerDownInsideRef.current = false;
+    if (event.target !== rootRef.current || startedInside) return;
     requestClose('scrim');
   };
 
-  // Non-modal only (the modal dialog traps Tab through FocusScope): Shift+Tab from the first
-  // element returns to the trigger with the panel still open; Tab from the last element continues
-  // into the page at the trigger's own document position, since the portaled panel sits elsewhere
-  // in the DOM and cannot rely on natural tab order to leave it.
-  const handlePanelKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      requestClose('escape');
-      triggerRef.current?.focus();
-      return;
-    }
-    if (event.key !== 'Tab') return;
-    const panel = panelRef.current;
-    if (!panel) return;
-    const focusables = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
-    if (focusables.length === 0) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    const activeElement = document.activeElement;
-    if (!event.shiftKey && activeElement === last) {
-      event.preventDefault();
-      focusAdjacent(triggerRef.current, panel);
-    } else if (event.shiftKey && activeElement === first) {
-      event.preventDefault();
-      triggerRef.current?.focus();
-    }
+  // A Link followed inside the panel closes it; a client-side router's preventDefault still counts.
+  const handleContentClick = (event: ReactMouseEvent<HTMLDivElement>): void => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const anchor = (event.target as Element).closest('a[href]');
+    if (!(anchor instanceof HTMLAnchorElement) || !event.currentTarget.contains(anchor)) return;
+    if (anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+    if (!open || isPersistent) return;
+    changeOpen(false, 'navigation');
   };
 
-  const handleCloseButtonClick = () => requestClose('close-button');
-
-  const handleScrimClick = () => requestClose('scrim');
-
-  // A Link followed inside the panel closes it, regardless of `dismissible` — the navigation makes
-  // staying open moot.
-  const handleBodyClick = (event: ReactMouseEvent<HTMLElement>) => {
-    if (!(event.target as HTMLElement).closest('a[href]')) return;
-    requestClose('navigation');
+  // targetMin: the close Button keeps its own size; its wrapper extends the pointer target to the comfortable size.
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const handleCloseTargetClick = (event: ReactMouseEvent<HTMLSpanElement>): void => {
+    const button = closeButtonRef.current;
+    if (!button || button.contains(event.target as Node)) return;
+    button.click();
   };
 
-  // Swipe: pointer drag on the header (there is no separate handle, unlike BottomSheet) tracking
-  // movement toward the edge the panel slides from only. Released past 25% of the panel's width or
-  // a fast flick dismisses; otherwise the panel springs back on the same transition open/close use.
-  const swipeDirection = (): 1 | -1 => {
-    const surface = surfaceRef.current;
-    const rtl = surface ? getComputedStyle(surface).direction === 'rtl' : false;
-    const anchoredLeft = (side === 'start' && !rtl) || (side === 'end' && rtl);
-    return anchoredLeft ? -1 : 1;
-  };
-
-  const handleHeaderPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!swipeable) return;
-    if ((event.target as HTMLElement).closest('button')) return;
-    const surface = surfaceRef.current;
-    if (!surface) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = { startX: event.clientX, startTime: event.timeStamp };
-    surface.style.transition = 'none';
-  };
-
-  const handleHeaderPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const drag = dragRef.current;
-    const surface = surfaceRef.current;
-    if (!drag || !surface) return;
-    const direction = swipeDirection();
-    const deltaOffscreen = Math.max(0, (event.clientX - drag.startX) * direction);
-    surface.style.transform = `translateX(${direction * deltaOffscreen}px)`;
-  };
-
-  const finishHeaderDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const drag = dragRef.current;
-    const surface = surfaceRef.current;
-    dragRef.current = null;
-    if (!drag || !surface) return;
-
-    const direction = swipeDirection();
-    const deltaOffscreen = Math.max(0, (event.clientX - drag.startX) * direction);
-    const elapsed = Math.max(1, event.timeStamp - drag.startTime);
-    const velocity = deltaOffscreen / elapsed;
-    const panelWidth = surface.getBoundingClientRect().width || 1;
-    const pastThreshold = deltaOffscreen / panelWidth > 0.25 || velocity > 0.5;
-
-    surface.style.transition = prefersReducedMotion() ? 'none' : '';
-    surface.style.transform = '';
-
-    if (pastThreshold) requestClose('swipe');
-  };
-
-  const triggerElement = trigger as ReactElement<{ onClick?: ((event: ReactMouseEvent) => void) | undefined }> | undefined;
-  const clonedTrigger = triggerElement
-    ? cloneElement(triggerElement, {
-        ref: triggerRef,
-        id: triggerId,
-        'aria-expanded': open ? 'true' : 'false',
+  const clonedTrigger = trigger
+    ? cloneElement(trigger, {
+        'aria-expanded': open,
         'aria-controls': panelId,
-        hidden: isPersistentActive || undefined,
-        onClick: (event: ReactMouseEvent) => {
-          triggerElement.props.onClick?.(event);
-          handleTriggerClick();
-        },
-      } as unknown as Attributes)
+        onClick: handleTriggerClick,
+      } as Partial<{ onClick: (event: ReactMouseEvent<HTMLElement>) => void }>)
     : null;
 
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const bodyOverrides = overrides?.inset ? { paddingBlock: overrides.inset, paddingInline: overrides.inset } : undefined;
+  const hasFooter = footer !== undefined && footer !== null && footer !== false;
+  const footerGap = overrides?.footerGap;
 
-  const headingClasses = ['ds-side-panel__heading', hideHeading ? 'ds-side-panel__heading--hidden' : null]
-    .filter(Boolean)
-    .join(' ');
-
-  const header = (
-    <div
-      className="ds-side-panel__header"
-      data-part="header"
-      onPointerDown={handleHeaderPointerDown}
-      onPointerMove={handleHeaderPointerMove}
-      onPointerUp={finishHeaderDrag}
-      onPointerCancel={finishHeaderDrag}
-    >
-      <Heading level={2} id={headingId} data-part="heading" className={headingClasses}>
-        {heading}
-      </Heading>
-      {!isPersistentActive && dismissible ? (
-        <Button
-          ref={closeButtonRef}
-          variant="ghost"
-          size="md"
-          iconOnly
-          label={COPY.closeLabel}
-          data-part="closeButton"
-          className="ds-side-panel__close"
-          onClick={handleCloseButtonClick}
-          leadingIcon={<Icon name="close" inline />}
-        />
+  const content = (
+    <div className="ds-side-panel__layout" onClick={handleContentClick}>
+      <div className="ds-side-panel__header" data-part="header">
+        <div
+          className={hideHeading ? 'ds-side-panel__heading ds-side-panel__visually-hidden' : 'ds-side-panel__heading'}
+          data-part="heading"
+        >
+          <Heading level={2} id={headingId}>
+            {heading}
+          </Heading>
+        </div>
+        {dismissible && !isPersistent ? (
+          <span className="ds-side-panel__close" data-part="closeButton" onClick={handleCloseTargetClick}>
+            <Button
+              ref={closeButtonRef}
+              variant="ghost"
+              size="sm"
+              iconOnly
+              label={COPY.closeLabel}
+              leadingIcon={<Icon name="close" inline />}
+              onClick={() => requestClose('close-button')}
+            />
+          </span>
+        ) : null}
+      </div>
+      <div className="ds-side-panel__scroll">
+        <Box data-part="body" inset="none">
+          {children}
+        </Box>
+      </div>
+      {hasFooter ? (
+        <div className="ds-side-panel__footer" data-part="footer">
+          <Stack direction="horizontal" gap="tight" justify="end" wrap overrides={footerGap ? { gap: footerGap } : undefined}>
+            {footer}
+          </Stack>
+        </div>
       ) : null}
     </div>
   );
 
-  const body = (
-    <Box
-      element="div"
-      inset="lg"
-      overrides={bodyOverrides}
-      data-part="body"
-      className="ds-side-panel__body"
-      ref={bodyRef}
-      onClick={handleBodyClick}
-    >
-      {children}
-    </Box>
-  );
-
-  const footerNode =
-    footer !== undefined ? (
-      <div className="ds-side-panel__footer" data-part="footer">
-        <Stack direction="horizontal" gap="tight" justify="end">
-          {footer}
-        </Stack>
-      </div>
-    ) : null;
-
-  if (isPersistentActive) {
-    const persistentClasses = [
-      'ds-side-panel__panel',
-      `ds-side-panel__panel--${side}`,
-      `ds-side-panel__panel--width-${width}`,
-      'ds-side-panel__panel--persistent',
-    ].join(' ');
-
-    return (
-      <div ref={wrapperRef} data-ds="SidePanel" className="ds-side-panel">
-        {clonedTrigger}
-        <Landmark role={role} id={panelId} aria-labelledby={headingId} className={persistentClasses} style={overrideStyle}>
-          <div className="ds-side-panel__surface" data-part="surface">
-            {header}
-            {body}
-            {footerNode}
-          </div>
-        </Landmark>
-      </div>
-    );
-  }
-
-  if (!present) {
-    return (
-      <div ref={wrapperRef} data-ds="SidePanel" className="ds-side-panel">
-        {clonedTrigger}
-      </div>
-    );
-  }
-
-  const panelClasses = [
-    'ds-side-panel__panel',
-    `ds-side-panel__panel--${side}`,
-    `ds-side-panel__panel--width-${width}`,
-    visible ? 'ds-side-panel__panel--visible' : null,
+  const classes = [
+    'ds-side-panel',
+    `ds-side-panel--${side}`,
+    `ds-side-panel--${width}`,
+    modalActive ? 'ds-side-panel--modal' : null,
+    isPersistent ? 'ds-side-panel--persistent' : null,
+    visible && open && !isPersistent ? 'ds-side-panel--visible' : null,
   ]
     .filter(Boolean)
     .join(' ');
+  const hookStyle = overrides ? overridesToStyle(overrides) : undefined;
 
-  const scrimClasses = ['ds-side-panel__scrim', visible ? 'ds-side-panel__scrim--visible' : null].filter(Boolean).join(' ');
-
-  const panelBody = (
-    <FocusScope trapped={modal} autoFocus={modal ? 'first' : 'none'} restoreFocus>
-      <div className="ds-side-panel__surface" ref={surfaceRef} data-part="surface">
-        {header}
-        {body}
-        {footerNode}
+  let panel: ReactElement | null = null;
+  if (modalActive) {
+    panel = present ? (
+      <dialog
+        {...rest}
+        ref={(node) => {
+          rootRef.current = node;
+        }}
+        data-ds="SidePanel"
+        className={classes}
+        style={hookStyle}
+        aria-modal="true"
+        aria-labelledby={headingId}
+        onKeyDown={handleRootKeyDown}
+        onCancel={handleDialogCancel}
+        onPointerDown={handleDialogPointerDown}
+        onClick={handleDialogClick}
+      >
+        <div className="ds-side-panel__surface" id={panelId} ref={surfaceRef} data-part="surface">
+          <FocusScope trapped autoFocus="none" restoreFocus returnFocusTo={triggerRef} data-part="focusScope">
+            {content}
+          </FocusScope>
+        </div>
+      </dialog>
+    ) : null;
+  } else {
+    panel = (
+      <div
+        {...rest}
+        ref={(node) => {
+          rootRef.current = node;
+        }}
+        data-ds="SidePanel"
+        className={classes}
+        style={hookStyle}
+        hidden={!isPersistent && !present}
+        onKeyDown={handleRootKeyDown}
+      >
+        {!isPersistent && scrim ? (
+          <div
+            className="ds-side-panel__scrim"
+            data-part="scrim"
+            aria-hidden="true"
+            onClick={() => requestClose('scrim')}
+          />
+        ) : null}
+        <div className="ds-side-panel__surface" id={panelId} ref={surfaceRef} data-part="surface">
+          <FocusScope trapped={false} autoFocus="none" restoreFocus={false} data-part="focusScope">
+            <Landmark role={role} as={role === 'navigation' ? 'nav' : 'aside'} aria-labelledby={headingId}>
+              {content}
+            </Landmark>
+          </FocusScope>
+        </div>
       </div>
-    </FocusScope>
-  );
-
-  const showScrimDiv = !modal && scrim;
-
-  const portalNode = (
-    <>
-      {showScrimDiv ? <div className={scrimClasses} data-part="scrim" aria-hidden="true" onClick={handleScrimClick} /> : null}
-      {modal ? (
-        <dialog
-          ref={panelRef as Ref<HTMLDialogElement>}
-          id={panelId}
-          className={panelClasses}
-          style={overrideStyle}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={headingId}
-          onCancel={handleDialogCancel}
-          onClick={handleDialogClick}
-        >
-          {panelBody}
-        </dialog>
-      ) : (
-        <Landmark
-          ref={panelRef as Ref<HTMLElement>}
-          role={role}
-          id={panelId}
-          className={panelClasses}
-          style={overrideStyle}
-          aria-labelledby={headingId}
-          onKeyDown={handlePanelKeyDown}
-        >
-          {panelBody}
-        </Landmark>
-      )}
-    </>
-  );
+    );
+  }
 
   return (
-    <div ref={wrapperRef} data-ds="SidePanel" className="ds-side-panel">
-      {clonedTrigger}
-      {createPortal(portalNode, container ?? document.body)}
-    </div>
+    <>
+      {clonedTrigger ? (
+        <span
+          ref={triggerWrapRef}
+          className={isPersistent ? 'ds-side-panel__trigger ds-side-panel__trigger--hidden' : 'ds-side-panel__trigger'}
+          data-part="trigger"
+          onKeyDown={handleTriggerKeyDown}
+        >
+          {clonedTrigger}
+        </span>
+      ) : null}
+      <div ref={slotRef} className="ds-side-panel-slot" />
+      {host && panel ? createPortal(panel, host) : null}
+    </>
   );
-};
+}

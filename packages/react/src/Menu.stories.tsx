@@ -25,6 +25,10 @@ const meta: Meta<typeof Menu> = {
     label: 'More actions',
     items: ITEMS,
   },
+  argTypes: {
+    onAction: { action: 'onAction' },
+    onOpenChange: { action: 'onOpenChange' },
+  },
   tags: ['autodocs'],
 };
 
@@ -39,9 +43,7 @@ export const TriggerVariantSecondary: Story = { args: { triggerVariant: 'seconda
 export const TriggerVariantPrimary: Story = { args: { triggerVariant: 'primary' } };
 
 /* triggerIcon */
-export const TriggerIconEllipsis: Story = {
-  args: { triggerIcon: 'ellipsis', iconOnly: true, label: 'More actions' },
-};
+export const TriggerIconEllipsis: Story = { args: { triggerIcon: 'ellipsis' } };
 export const TriggerIconChevronDown: Story = { args: { triggerIcon: 'chevron-down' } };
 export const TriggerIconNone: Story = { args: { triggerIcon: 'none' } };
 
@@ -52,16 +54,81 @@ export const PlacementTopStart: Story = { args: { placement: 'top-start' } };
 export const PlacementTopEnd: Story = { args: { placement: 'top-end' } };
 
 /* notable states */
-export const IconOnlyOverflow: Story = {
-  args: { label: 'More actions', triggerIcon: 'ellipsis', iconOnly: true },
-};
+export const IconOnly: Story = { args: { iconOnly: true, triggerIcon: 'ellipsis' } };
 
-/** Open/present with its trigger and more than three focusable items, for the keyboard gate. */
+/** Open with its trigger and more than three enabled items, for the keyboard gate. */
 export const Keyboard: Story = {
   args: { open: true },
 };
 
-/** `anchor` positions the popup on an arbitrary element instead of rendering a trigger — used by a context menu. */
+/* examples */
+/** The icon-only overflow button on a row, with the destructive action last after a separator. */
+export const RowOverflow: Story = {
+  args: {
+    label: 'More actions',
+    iconOnly: true,
+    triggerIcon: 'ellipsis',
+    items: [
+      { id: 'rename', label: 'Rename' },
+      { id: 'duplicate', label: 'Duplicate' },
+      { separator: true },
+      { id: 'delete', label: 'Delete file', tone: 'danger' },
+    ],
+  },
+};
+
+/** A labelled dropdown of view options, anchored under a secondary trigger. */
+export const SortBy: Story = {
+  args: {
+    label: 'Sort by',
+    triggerVariant: 'secondary',
+    triggerIcon: 'chevron-down',
+    items: [
+      { id: 'name', label: 'Name' },
+      { id: 'modified', label: 'Last modified' },
+      { id: 'size', label: 'Size' },
+    ],
+  },
+};
+
+/** More than about six items, so they are grouped with labels; aligned to the end of the trigger. */
+export const GroupedAccountMenu: Story = {
+  args: {
+    label: 'Account',
+    placement: 'bottom-end',
+    items: [
+      {
+        group: 'Account',
+        items: [
+          { id: 'profile', label: 'Profile' },
+          { id: 'billing', label: 'Billing' },
+        ],
+      },
+      {
+        group: 'Workspace',
+        items: [
+          { id: 'members', label: 'Members' },
+          { id: 'settings', label: 'Settings' },
+        ],
+      },
+      { separator: true },
+      { id: 'sign-out', label: 'Sign out' },
+    ],
+  },
+};
+
+/** Display-only shortcut hints beside the items the app binds elsewhere. */
+export const WithShortcuts: Story = {
+  args: {
+    label: 'Edit',
+    items: [
+      { id: 'undo', label: 'Undo', shortcut: 'Ctrl+Z' },
+      { id: 'redo', label: 'Redo', shortcut: 'Ctrl+Shift+Z' },
+    ],
+  },
+};
+
+/** `anchor` positions the popup on an arbitrary element instead of rendering a trigger — a context menu. */
 export const AnchorPositioned: Story = {
   render: (args) => {
     const anchor = useRef<HTMLDivElement>(null);

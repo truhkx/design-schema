@@ -24,3 +24,19 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: schema gives no explicit rule for whether disabled items are still rendered with `aria-disabled` vs. removed from the roving tabindex sequence — chose to keep them in the DOM, skip them in arrow/typeahead/Home/End traversal, and mark `aria-disabled="true"`, consistent with the 'visible, announced disabled, skipped' behavior description.
 - Menu: `minWidth` token doc says 'space.20 × 2.5 ... the generator multiplies; no new token' — implemented as a CSS `calc(var(--ds-menu-min-width) * 2.5)` at render time rather than a build-time multiplied constant, since overrides must still be able to swap the base token.
 - Menu: the `controlled` onOpenChange reason is documented but has no trigger in the schema's own event flow (parent-driven); the component never emits it itself, only documents it for forwarding — flagged in case the intent was for the component to emit it when `open` changes while controlled.
+
+## 2026-09-16 06:40 — round 1
+
+- Menu: onOpenChange's description says it receives `{ open, reason }` (an object) but the Events contract lists positional `open, reason`; I followed the contract (positional), which changed the signature ActionSheet consumed, so ActionSheet.tsx's handler was updated.
+- Menu: the reasons have no value for Tab/Shift+Tab, focus-out or the window losing focus (all listed dismissals or described behavior); I report them as `outside`.
+- Menu: Shift+Tab 'moves focus to the previous tabbable element after the trigger' is self-contradictory; I focus the tabbable element before the trigger in document order (Tab: the one after it).
+- Menu: the overrides contract puts hooks on the component root, but the popup is portaled out of the root, so hooks set there never reach it; hooks default and inline overrides are applied on the popup (data-part=popup) instead.
+- Menu: minWidth is `computed: times 2.5` but an override replaces the hook with a plain token; I keep the hook as `var(--space-20)` and multiply in the rule, so an override is also multiplied by 2.5. The doc should say whether the override replaces the computed result or the base token.
+- Menu: the data-part for the trigger cannot be set — Button writes its own `data-part="container"` after spreading rest props; the trigger part has no hook on web.
+- Menu: `iconOnly` Button only shows `leadingIcon`, while triggerIcon is described as a trailing icon; with iconOnly I pass the glyph as leadingIcon, otherwise as trailingIcon.
+- Menu: `items` shape `icon?: IconName` etc. is used with exactOptionalPropertyTypes, where callers (ActionSheet) pass `icon: undefined`; MenuAction declares each optional field `| undefined` rather than the shape verbatim, and items is typed `MenuItem[]`.
+- Menu: typeaheadReset is a token read at runtime via getComputedStyle; with no stylesheet (jsdom) it resolves to nothing, and the doc gives no fallback — I clear the buffer on each keypress in that case rather than hard-coding the token's current value.
+- Menu: the root element for web is declared `button`, but with `anchor` there is no trigger; I kept a wrapper `<div data-ds="Menu">` as the root (ref type HTMLDivElement) in both modes.
+- Menu: the doc says the window losing focus closes (Behavior) but overlay.dismiss lists only escape, outside-press and focus-out; I implemented the window blur close as well, reason `outside`.
+- Menu: the enter description says 'a space.1 rise' but the rise has no binding of its own; it uses var(--space-1) directly rather than the popupOffset hook, so overriding popupOffset does not change the rise.
+- Menu: groups may contain separators per the recursive shape but the doc only says groups 'hold action items only'; separators inside a group are rendered, nested groups are dropped.

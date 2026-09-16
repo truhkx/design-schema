@@ -1,19 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AlertDialog, type AlertDialogProps } from './AlertDialog';
 import { Button } from './Button';
 
-/** AlertDialog is fully controlled; the harness owns `open` and a trigger, like a real consumer would. */
-function AlertDialogHarness({ onConfirm, onCancel, ...rest }: Partial<AlertDialogProps>) {
-  const [open, setOpen] = useState(rest.open ?? false);
+/** AlertDialog is controlled; the harness owns `open` and the trigger, as a real consumer would. */
+function AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {
+  const [open, setOpen] = useState(initialOpen);
+  useEffect(() => setOpen(initialOpen), [initialOpen]);
 
   return (
     <>
-      <Button label="Delete files" variant="danger" onClick={() => setOpen(true)} />
+      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />
       <AlertDialog
-        heading="Delete 3 files?"
-        description="They will be removed from all shared folders. This cannot be undone."
-        confirmLabel="Delete files"
         {...rest}
         open={open}
         onConfirm={() => {
@@ -33,12 +31,15 @@ const meta: Meta<typeof AlertDialog> = {
   title: 'AlertDialog/React',
   component: AlertDialog,
   args: {
-    open: false,
+    open: true,
     heading: 'Delete 3 files?',
     description: 'They will be removed from all shared folders. This cannot be undone.',
     tone: 'danger',
     confirmLabel: 'Delete files',
     confirmDisabled: false,
+  },
+  argTypes: {
+    tone: { control: 'inline-radio', options: ['danger', 'warning', 'info'] },
   },
   render: (args) => <AlertDialogHarness {...args} />,
   tags: ['autodocs'],
@@ -51,45 +52,56 @@ export const Default: Story = {};
 
 /* tone */
 export const ToneDanger: Story = { args: { tone: 'danger' } };
-export const ToneWarning: Story = {
+export const ToneWarning: Story = { args: { tone: 'warning' } };
+export const ToneInfo: Story = { args: { tone: 'info' } };
+
+/* notable states */
+export const ConfirmDisabled: Story = { args: { confirmDisabled: true } };
+
+export const Closed: Story = { args: { open: false } };
+
+/** Open with its trigger; the focusable children are Cancel and Confirm, the trigger sits behind the inert page. */
+export const Keyboard: Story = { args: { open: true } };
+
+/* examples */
+export const DeleteFiles: Story = {
   args: {
-    tone: 'warning',
-    heading: 'Discard unsaved changes?',
-    description: 'Your edits since the last save will be lost.',
-    confirmLabel: 'Discard changes',
-  },
-};
-export const ToneInfo: Story = {
-  args: {
-    tone: 'info',
-    heading: 'Leave this page?',
-    description: 'Filters you set here will not be kept.',
-    confirmLabel: 'Leave page',
+    open: true,
+    tone: 'danger',
+    heading: 'Delete 3 files?',
+    description: 'They will be removed from all shared folders. This cannot be undone.',
+    confirmLabel: 'Delete files',
   },
 };
 
-/* notable states */
-export const CustomCancelLabel: Story = {
+export const LeaveWithoutSaving: Story = {
   args: {
+    open: true,
     tone: 'warning',
-    heading: 'Discard unsaved changes?',
-    description: 'Your edits since the last save will be lost.',
-    confirmLabel: 'Discard changes',
+    heading: 'Leave without saving?',
+    description: 'Your changes to this draft will be lost.',
+    confirmLabel: 'Leave',
     cancelLabel: 'Keep editing',
   },
 };
 
-export const ConfirmDisabled: Story = {
+export const TypedConfirmation: Story = {
   args: {
-    heading: 'Delete your account?',
-    description: 'Type the account name below to confirm. This cannot be undone.',
-    confirmLabel: 'Delete account',
+    open: true,
+    tone: 'danger',
+    heading: 'Cancel your subscription?',
+    description: 'Your workspace stays read-only after the current billing period ends.',
+    confirmLabel: 'Cancel subscription',
     confirmDisabled: true,
   },
 };
 
-/** Open/present with its trigger and its three focusable children (Cancel, Confirm, and the trigger left behind), for the keyboard gate. */
-export const Keyboard: Story = {
-  args: { open: true },
-  render: (args) => <AlertDialogHarness {...args} />,
+export const PublishToTheTeam: Story = {
+  args: {
+    open: true,
+    tone: 'info',
+    heading: 'Publish to the team?',
+    description: 'Everyone in the workspace will be able to see this page.',
+    confirmLabel: 'Publish',
+  },
 };

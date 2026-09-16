@@ -10,6 +10,8 @@ import './Icon.js';
 import './Box.js';
 import './Stack.js';
 import './FocusScope.js';
+import type { DsFocusScope } from './FocusScope.js';
+import type { StackOverridableBinding } from './Stack.js';
 
 export type DialogSize = 'sm' | 'md' | 'lg';
 export type DialogInitialFocus = 'first' | 'title' | 'close';
@@ -57,6 +59,9 @@ const HOOKS: Record<DialogOverridableBinding, string> = {
   exit: '--ds-dialog-exit',
 };
 
+/** footerGap's token, forwarded to the footer Stack as `overrides.gap` when no override is set. */
+const FOOTER_GAP_TOKEN: TokenRef = 'layout.gap.tight';
+
 /** copy.closeLabel */
 const COPY_CLOSE_LABEL = 'Close';
 
@@ -70,45 +75,42 @@ const NEGATED_BOOLEAN_CONVERTER = {
   },
 };
 
-/** Elements considered a focusable "control" when locating the first one in the body. */
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
   'input:not([disabled])',
   'select:not([disabled])',
   'textarea:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-  'ds-button',
-  'ds-link',
-  'ds-input',
-  'ds-checkbox',
-  'ds-switch',
-  'ds-radio-group',
-  'ds-disclosure',
+  'summary',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]',
 ].join(',');
 
-function findFirstFocusable(root: Element): HTMLElement | null {
-  if (root instanceof HTMLElement && root.matches(FOCUSABLE_SELECTOR)) {
-    return root;
+/** The first tabbable element in tree order, walking slot assignments and open shadow roots. */
+function firstFocusableIn(node: Element): HTMLElement | null {
+  if (node.hasAttribute('inert') || node.getAttribute('aria-hidden') === 'true') {
+    return null;
   }
-  return root.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-}
-
-/** How many `<ds-dialog>` instances currently hold the body-scroll lock, so a second dialog does not release it early. */
-let openDialogCount = 0;
-
-function lockBodyScroll(): void {
-  openDialogCount += 1;
-  if (openDialogCount === 1) {
-    document.documentElement.style.overflow = 'hidden';
+  if (node instanceof HTMLElement && !node.hidden && node.tabIndex >= 0 && node.matches(FOCUSABLE_SELECTOR)) {
+    return node;
   }
-}
-
-function unlockBodyScroll(): void {
-  openDialogCount = Math.max(0, openDialogCount - 1);
-  if (openDialogCount === 0) {
-    document.documentElement.style.removeProperty('overflow');
+  if (node instanceof HTMLSlotElement) {
+    for (const assigned of node.assignedElements({ flatten: true })) {
+      const found = firstFocusableIn(assigned);
+      if (found) {
+        return found;
+      }
+    }
+    return null;
   }
+  const scope = node.shadowRoot ?? node;
+  for (const child of Array.from(scope.children)) {
+    const found = firstFocusableIn(child);
+    if (found) {
+      return found;
+    }
+  }
+  return null;
 }
 
 function getDeepActiveElement(): Element | null {
@@ -119,49 +121,67 @@ function getDeepActiveElement(): Element | null {
   return active;
 }
 
+/** How many open `<ds-dialog>`s hold the page-scroll lock, so a second one does not release it early. */
+let scrollLocks = 0;
+let previousOverflow = '';
+let previousGutter = '';
+
+function lockPageScroll(): void {
+  scrollLocks += 1;
+  if (scrollLocks === 1) {
+    const style = document.documentElement.style;
+    previousOverflow = style.getPropertyValue('overflow');
+    previousGutter = style.getPropertyValue('scrollbar-gutter');
+    style.setProperty('overflow', 'hidden');
+    style.setProperty('scrollbar-gutter', 'stable');
+  }
+}
+
+function unlockPageScroll(): void {
+  scrollLocks = Math.max(0, scrollLocks - 1);
+  if (scrollLocks === 0) {
+    const style = document.documentElement.style;
+    style.setProperty('overflow', previousOverflow);
+    style.setProperty('scrollbar-gutter', previousGutter);
+  }
+}
+
 /**
  * `<ds-dialog>` — Dialog (category: overlay, APG pattern: dialog-modal).
  *
  * `<ds-dialog open heading="Rename project">…</ds-dialog>`. A native `<dialog>`
- * in the shadow root is opened with `showModal()`/`close()` as the reflected
+ * in the shadow root is opened with `showModal()` / `close()` as the reflected
  * `open` property changes, which gives the top layer, background inertness and
- * `::backdrop` (the scrim) for free. `<ds-focus-scope trapped>` wraps the
- * header, body and footer so Tab wraps within the dialog even though the body
- * and footer are slotted light-DOM content sitting outside the shadow
- * `<dialog>` in the composed tree; initial focus (`initialFocus`) and focus
- * restore to the opener are handled by the dialog itself. Escape, the close
- * button and a scrim click each request a close through the composed `close`
- * event with a reason; the dialog never closes itself; the consumer flips
- * `open`.
+ * Escape. The `<dialog>` covers the viewport; the scrim is a real element
+ * filling it and the surface sits centred above it, so a click that lands on
+ * the scrim is the scrim click. `<ds-focus-scope>` (auto-focus `none`) wraps
+ * the surface: it wraps Tab across the shadow content and the slotted body
+ * and footer, and returns focus to the opener when the dialog closes; the
+ * dialog places initial focus itself per `initialFocus`.
+ *
+ * Escape, the close button and a scrim click each request close through the
+ * composed `close` event with a reason; the dialog never closes itself, the
+ * consumer flips `open`. A slotted form submitted with `method="dialog"`
+ * requests close with reason `action`.
  *
  * ## When to use
  *
- * Use a Dialog for a short task that must complete before the user continues
- * and needs its own space: rename, create-with-a-few-fields, choose from
- * options with consequences, confirm something reversible with a form
- * attached. Keep it to one screen of content; a dialog that scrolls much is a
- * page.
+ * A short task that must complete before the user continues and needs its own
+ * space: rename, create-with-a-few-fields, choose from options with
+ * consequences. Keep it to one screen of content.
  *
  * ## When not to use
  *
  * Not for a message that needs no decision (Alert or Toast), a destructive
- * confirmation (AlertDialog), content that benefits from the page context
- * staying visible (Popover or Disclosure), navigation menus (Menu), or on a
- * phone for anything the thumb should reach (BottomSheet). Never open on page
- * load without a user action, and never nest dialogs.
+ * confirmation (AlertDialog), content that benefits from the page staying
+ * visible (Popover or Disclosure), navigation menus (Menu), or on a phone for
+ * anything the thumb should reach (BottomSheet). Never open one without a user
+ * action, and never nest dialogs.
  *
  * @fires close - Requests close, with `{ reason: 'escape' | 'close-button' | 'scrim' | 'action' }`.
- *   The consumer sets `open` to false (or not).
  * @fires opened - Fired after the open transition ends and focus has moved in.
- * @slot - The body. Scrolls independently when taller than the viewport.
+ * @slot - The body. Scrolls inside the surface when taller than the viewport.
  * @slot footer - The action row. Primary action first, then one secondary.
- * @csspart surface - The padded, bordered surface (anatomy: surface).
- * @csspart header - The header row (anatomy: header).
- * @csspart title - The `<ds-heading>` (anatomy: title).
- * @csspart description - The `<ds-text>` (anatomy: description).
- * @csspart body - The body wrapper (anatomy: body).
- * @csspart footer - The footer row (anatomy: footer).
- * @csspart close-button - The close `<ds-button>` (anatomy: closeButton).
  */
 @customElement('ds-dialog')
 export class DsDialog extends LitElement {
@@ -172,7 +192,7 @@ export class DsDialog extends LitElement {
 
   static override styles: CSSResult = css`
     :host {
-      display: block;
+      display: contents;
       --ds-dialog-scrim: var(--color-overlay-scrim);
       --ds-dialog-border: var(--color-border);
       --ds-dialog-border-width: var(--border-width-thin);
@@ -184,59 +204,82 @@ export class DsDialog extends LitElement {
       --ds-dialog-footer-gap: var(--layout-gap-tight);
       --ds-dialog-description-gap: var(--layout-gap-tight);
       --ds-dialog-width-sm: var(--layout-max-width-prose);
-      --ds-dialog-max-width: calc(var(--layout-max-width-content) * 0.75);
       --ds-dialog-layer: var(--layer-dialog);
       --ds-dialog-enter: var(--motion-duration-base);
       --ds-dialog-exit: var(--motion-duration-fast);
+      /* md is 3/4 of content, lg is content: derived from layout.maxWidth.content, not new tokens */
+      --ds-dialog-width: calc(var(--layout-max-width-content) * 0.75);
     }
 
     :host([hidden]) {
       display: none;
     }
 
-    /* widthSm / md (3/4 content) / lg (content): layout.maxWidth.{prose,content} derived, not new tokens */
     :host([size='sm']) {
-      --ds-dialog-max-width: var(--ds-dialog-width-sm);
+      --ds-dialog-width: var(--ds-dialog-width-sm);
     }
     :host([size='md']) {
-      --ds-dialog-max-width: calc(var(--layout-max-width-content) * 0.75);
+      --ds-dialog-width: calc(var(--layout-max-width-content) * 0.75);
     }
     :host([size='lg']) {
-      --ds-dialog-max-width: var(--layout-max-width-content);
+      --ds-dialog-width: var(--layout-max-width-content);
     }
 
     dialog {
       box-sizing: border-box;
+      position: fixed;
+      inset: 0;
+      inline-size: auto;
+      block-size: auto;
+      max-inline-size: none;
+      max-block-size: none;
+      margin: 0;
       padding: 0;
       border: 0;
       background: transparent;
       color: inherit;
-      inline-size: 100%;
-      max-inline-size: min(var(--ds-dialog-max-width), calc(100vw - 2 * var(--layout-gutter)));
-      max-block-size: calc(100vh - 2 * var(--layout-gutter));
+      overflow: hidden;
       z-index: var(--ds-dialog-layer);
     }
 
-    /* scrim: color.overlay.scrim */
+    dialog[open] {
+      display: grid;
+      place-items: center;
+    }
+
+    /* The scrim is the element below; the native backdrop stays clear. */
     dialog::backdrop {
+      background: transparent;
+    }
+
+    .scrim {
+      position: absolute;
+      inset: 0;
       background: var(--ds-dialog-scrim);
+      opacity: 1;
       transition: opacity var(--ds-dialog-enter) var(--motion-easing-standard);
     }
 
-    @starting-style {
-      dialog[open]::backdrop {
-        opacity: 0;
-      }
+    .scope {
+      position: relative;
+      display: flex;
+      box-sizing: border-box;
+      inline-size: min(var(--ds-dialog-width), calc(100% - 2 * var(--layout-gutter)));
+      max-block-size: calc(100% - 2 * var(--layout-gutter));
     }
 
     .surface {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      max-block-size: calc(100vh - 2 * var(--layout-gutter));
+      flex: 1 1 auto;
+      min-inline-size: 0;
+      max-block-size: 100%;
+      gap: var(--ds-dialog-part-gap);
       padding: var(--ds-dialog-inset);
       font-family: var(--font-family-body);
-      /* surface: color.overlay.surface, locked — no override hook */
+      color: var(--color-foreground);
+      /* surface: color.overlay.surface, locked — no hook */
       background: var(--color-overlay-surface);
       border-style: solid;
       border-width: var(--ds-dialog-border-width);
@@ -250,23 +293,29 @@ export class DsDialog extends LitElement {
         transform var(--ds-dialog-enter) var(--motion-easing-standard);
     }
 
-    /* exit: motion.duration.fast with motion.easing.exit */
-    .surface.closing {
-      opacity: 0;
-      transform: translateY(var(--space-2));
-      transition-duration: var(--ds-dialog-exit);
-      transition-timing-function: var(--motion-easing-exit);
-    }
-
     @starting-style {
-      dialog[open] .surface {
+      .scrim {
+        opacity: 0;
+      }
+      .surface {
         opacity: 0;
         transform: translateY(var(--space-2));
       }
     }
 
+    /* exit: motion.duration.fast with motion.easing.exit */
+    .closing .scrim,
+    .closing .surface {
+      opacity: 0;
+      transition-duration: var(--ds-dialog-exit);
+      transition-timing-function: var(--motion-easing-exit);
+    }
+    .closing .surface {
+      transform: translateY(var(--space-2));
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      dialog::backdrop,
+      .scrim,
       .surface {
         transition: none;
       }
@@ -286,19 +335,22 @@ export class DsDialog extends LitElement {
       min-inline-size: 0;
     }
 
-    .close {
+    .close-button {
       flex: none;
     }
 
-    #heading:focus-visible {
+    /* The heading takes focus for initialFocus: title. */
+    .heading:focus {
+      outline: none;
+    }
+    .heading:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
-      border-radius: var(--radius-sm);
     }
 
-    /* hideHeading: kept for the accessible name, removed from the visual layout. */
-    .heading--hidden {
-      /* literal-ok: standard visually-hidden clip pattern, exempt from token-only rule */
+    /* hideHeading: out of view, still the accessible name and still a focus target. */
+    .heading.visually-hidden {
+      /* literal-ok: standard visually-hidden clip pattern */
       position: absolute;
       width: 1px;
       height: 1px;
@@ -311,6 +363,7 @@ export class DsDialog extends LitElement {
     }
 
     .body {
+      flex: 1 1 auto;
       min-block-size: 0;
       overflow-y: auto;
     }
@@ -319,169 +372,165 @@ export class DsDialog extends LitElement {
   /** Controlled visibility. The consumer owns it; the dialog requests changes through `close`. */
   @property({ type: Boolean, reflect: true }) accessor open = false;
 
-  /**
-   * The dialog's title, rendered as a level-2 Heading and used as the
-   * accessible name. Named `heading`, not `title` — `HTMLElement` already
-   * defines `title` as the tooltip attribute.
-   */
-  @property() accessor heading!: string;
+  /** The dialog's title, rendered as a level-2 Heading and used as the accessible name. */
+  @property() accessor heading = '';
 
   /** One sentence under the title explaining the task or consequence. Becomes the accessible description. */
   @property() accessor description: string | undefined;
 
-  /** Visually hides the heading while it remains the accessible name (BottomSheet forwards its own hideHeading here above the breakpoint). */
+  /** Visually hide the heading while it remains the accessible name. */
   @property({ type: Boolean, attribute: 'hide-heading' }) accessor hideHeading = false;
 
   /** Surface width on wide viewports. Full-width below the content measure on every size. */
-  @property({ reflect: true }) accessor size: DialogSize = 'md';
+  @property({ type: String, reflect: true }) accessor size: DialogSize = 'md';
 
   /**
-   * Escape, the close button and a scrim click all request close. `false` for a dialog
-   * that must be answered (then provide the answers in the footer): the close button is
-   * not rendered and the scrim does nothing; Escape still reports. Attribute is the
-   * negation, `no-dismiss`, because a boolean attribute cannot express `false` for a prop
-   * that defaults `true`.
+   * Escape, the close button and a scrim click all request close. Set false for a dialog that
+   * must be answered: the close button is not rendered and the scrim does nothing; Escape still
+   * fires `close` with reason `escape`. Attribute: `no-dismiss`.
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor dismissible = true;
 
-  /** Where focus lands on open: the first focusable control in the body (default), the title, or the close button. */
-  @property({ attribute: 'initial-focus', reflect: true }) accessor initialFocus: DialogInitialFocus = 'first';
+  /** Where focus lands on open: the first focusable control in the body, the title, or the close button. */
+  @property({ type: String, attribute: 'initial-focus', reflect: true }) accessor initialFocus: DialogInitialFocus =
+    'first';
 
-  /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings (surface, focusRing, focusRingWidth) are ignored. */
+  /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined;
 
-  @query('dialog') private accessor dialogEl!: HTMLDialogElement;
-  @query('#heading') private accessor headingEl!: HTMLElement;
-  @query('.close') private accessor closeButtonEl!: HTMLElement;
-
-  /** Whether the exit transition is playing (kept open a beat past the `open` flip so it can animate out). */
+  /** The exit transition is playing: the dialog stays rendered a beat past `open` turning false. */
   @state() private accessor closing = false;
 
-  private openerElement: Element | null = null;
+  @state() private accessor hasFooter = false;
+
+  @query('dialog') private accessor dialogEl!: HTMLDialogElement | null;
+  @query('.scope') private accessor scopeEl!: DsFocusScope | null;
+  @query('.scrim') private accessor scrimEl!: HTMLElement | null;
+  @query('.surface') private accessor surfaceEl!: HTMLElement | null;
+  @query('.heading') private accessor headingEl!: HTMLElement | null;
+  @query('.close-button') private accessor closeButtonEl!: HTMLElement | null;
+  @query('slot:not([name])') private accessor bodySlotEl!: HTMLSlotElement | null;
+  @query('slot[name="footer"]') private accessor footerSlotEl!: HTMLSlotElement | null;
+
+  private scrollLocked = false;
   private closingProgrammatically = false;
-  private suppressCloseSync = false;
+  private focusBeforeCancel: HTMLElement | null = null;
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Dialog');
+    this.addEventListener('submit', this.handleSubmit);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    if (this.dialogEl?.open) {
-      unlockBodyScroll();
-    }
+    this.removeEventListener('submit', this.handleSubmit);
+    this.releaseScroll();
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
+    if (changed.has('open')) {
+      if (this.open) {
+        this.closing = false;
+      } else if (changed.get('open') === true) {
+        this.closing = true;
+      }
+    }
   }
 
   protected override updated(changed: PropertyValues): void {
     if (changed.has('open')) {
       if (this.open) {
-        this.handleOpen();
-      } else if (changed.get('open') as boolean) {
-        if (this.suppressCloseSync) {
-          this.suppressCloseSync = false;
-        } else {
-          this.playExit();
-        }
+        void this.handleOpen();
+      } else if (this.closing) {
+        void this.handleClose();
       }
     }
-    this.warnInDev();
+    if (import.meta.env.DEV && (changed.has('heading') || changed.has('dismissible') || changed.has('open'))) {
+      this.warnInDev();
+    }
   }
 
-  protected override render(): TemplateResult {
-    const hasDescription = Boolean(this.description);
-    const hasFooter = this.querySelector('[slot="footer"]') !== null;
-    const headingClasses = classMap({ 'heading--hidden': this.hideHeading });
+  protected override render(): TemplateResult | typeof nothing {
+    if (!this.open && !this.closing) {
+      return nothing;
+    }
+    const description = this.description || undefined;
+    const footerGap = this.overrides?.footerGap ?? FOOTER_GAP_TOKEN;
+    const footerOverrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> = { gap: footerGap };
 
     return html`
       <dialog
+        class=${classMap({ closing: this.closing })}
         aria-modal="true"
-        aria-labelledby="heading"
-        aria-describedby=${ifDefined(hasDescription ? 'description' : undefined)}
+        aria-label=${this.heading}
+        aria-description=${ifDefined(description)}
         @cancel=${this.handleCancel}
         @close=${this.handleNativeClose}
-        @click=${this.handleDialogClick}
       >
-        <div class="surface${this.closing ? ' closing' : ''}" part="surface">
-          <ds-focus-scope
-            .trapped=${true}
-            .active=${this.open}
-            auto-focus="none"
-            .restoreFocus=${false}
-            style="display: flex; flex-direction: column; gap: var(--ds-dialog-part-gap)"
-          >
-            <div class="header" part="header">
+        <div class="scrim" part="scrim" data-part="scrim" @click=${this.handleScrimClick}></div>
+        <ds-focus-scope
+          class="scope"
+          part="focusScope"
+          data-part="focusScope"
+          auto-focus="none"
+          .active=${!this.closing}
+        >
+          <div class="surface" part="surface" data-part="surface">
+            <div class="header" part="header" data-part="header">
               <div class="titles">
-                <ds-heading id="heading" part="title" level="2" size="lg" tabindex="-1" class=${headingClasses}
+                <ds-heading
+                  class=${classMap({ heading: true, 'visually-hidden': this.hideHeading })}
+                  part="heading"
+                  data-part="heading"
+                  level="2"
+                  tabindex="-1"
                   >${this.heading}</ds-heading
                 >
-                ${hasDescription
-                  ? html`<ds-text id="description" part="description" size="sm" tone="muted"
-                      >${this.description}</ds-text
-                    >`
+                ${description
+                  ? html`<ds-text part="description" data-part="description">${description}</ds-text>`
                   : nothing}
               </div>
               ${this.dismissible
-                ? html`
-                    <ds-button
-                      class="close"
-                      part="close-button"
-                      variant="ghost"
-                      size="sm"
-                      icon-only
-                      label=${COPY_CLOSE_LABEL}
-                      @press=${this.handleCloseButtonPress}
-                    >
-                      <ds-icon slot="leading-icon" name="close"></ds-icon>
-                    </ds-button>
-                  `
+                ? html`<ds-button
+                    class="close-button"
+                    part="closeButton"
+                    data-part="closeButton"
+                    variant="ghost"
+                    size="sm"
+                    icon-only
+                    label=${COPY_CLOSE_LABEL}
+                    @press=${this.handleCloseButtonPress}
+                    ><ds-icon slot="leading-icon" name="close"></ds-icon
+                  ></ds-button>`
                 : nothing}
             </div>
-            <ds-box class="body" part="body" style="overflow-y: auto; min-block-size: 0">
-              <slot></slot>
-            </ds-box>
-            ${hasFooter
-              ? html`
-                  <ds-stack
-                    part="footer"
-                    direction="horizontal"
-                    style="gap: var(--ds-dialog-footer-gap)"
-                  >
-                    <slot name="footer"></slot>
-                  </ds-stack>
-                `
-              : nothing}
-          </ds-focus-scope>
-        </div>
+            <ds-box class="body" part="body" data-part="body"><slot></slot></ds-box>
+            <ds-stack
+              part="footer"
+              data-part="footer"
+              direction="horizontal"
+              justify="end"
+              .overrides=${footerOverrides}
+              ?hidden=${!this.hasFooter}
+              ><slot name="footer" @slotchange=${this.handleFooterSlotChange}></slot
+            ></ds-stack>
+          </div>
+        </ds-focus-scope>
       </dialog>
     `;
   }
 
   private readonly handleCancel = (event: Event): void => {
-    // The native default would close the <dialog> itself; the consumer owns `open` instead.
+    // The consumer owns `open`: never let the browser close the <dialog> on its own.
     event.preventDefault();
+    const active = getDeepActiveElement();
+    this.focusBeforeCancel = active instanceof HTMLElement ? active : null;
     this.dispatchClose('escape');
-  };
-
-  private readonly handleDialogClick = (event: MouseEvent): void => {
-    if (!this.dismissible || event.target !== this.dialogEl) {
-      return;
-    }
-    this.dispatchClose('scrim');
-  };
-
-  private readonly handleCloseButtonPress = (event: Event): void => {
-    // Keep the button's `press` inside the dialog; consumers listen for `close`.
-    // Only rendered when dismissible, so no guard needed here.
-    event.stopPropagation();
-    this.dispatchClose('close-button');
   };
 
   private readonly handleNativeClose = (): void => {
@@ -489,109 +538,134 @@ export class DsDialog extends LitElement {
       this.closingProgrammatically = false;
       return;
     }
-    // The dialog closed itself — most likely a slotted form submitted with formmethod="dialog".
-    unlockBodyScroll();
-    this.restoreFocus();
-    this.suppressCloseSync = true;
-    this.open = false;
-    this.dispatchClose('action');
+    // Chromium closes without a cancelable `cancel` when Escape arrives with no user activation.
+    // `escape` was already reported from `cancel`; stay open until the consumer flips `open`.
+    const dialog = this.dialogEl;
+    if (this.open && dialog && !dialog.open) {
+      dialog.showModal();
+      const previous = this.focusBeforeCancel;
+      if (previous?.isConnected) {
+        previous.focus();
+      } else {
+        this.applyInitialFocus();
+      }
+    }
+    this.focusBeforeCancel = null;
   };
 
-  private handleOpen(): void {
-    this.closing = false;
-    this.openerElement = getDeepActiveElement();
-    lockBodyScroll();
-    this.dialogEl.showModal();
+  private readonly handleScrimClick = (event: MouseEvent): void => {
+    if (!this.dismissible || event.target !== event.currentTarget) {
+      return;
+    }
+    this.dispatchClose('scrim');
+  };
+
+  private readonly handleCloseButtonPress = (event: Event): void => {
+    // The composite reports `close`; the inner button's `press` stays inside.
+    event.stopPropagation();
+    this.dispatchClose('close-button');
+  };
+
+  /** A slotted form submitted with method="dialog" (or a formmethod="dialog" submitter) asks to close. */
+  private readonly handleSubmit = (event: Event): void => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !this.open) {
+      return;
+    }
+    const submitter = (event as SubmitEvent).submitter;
+    const method =
+      (submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) &&
+      submitter.hasAttribute('formmethod')
+        ? submitter.formMethod
+        : form.method;
+    if (method === 'dialog') {
+      event.preventDefault();
+      this.dispatchClose('action');
+    }
+  };
+
+  private readonly handleFooterSlotChange = (): void => {
+    const next = (this.footerSlotEl?.assignedNodes({ flatten: true }) ?? []).some(
+      (node) => node.nodeType === Node.ELEMENT_NODE || Boolean(node.textContent?.trim()),
+    );
+    if (next !== this.hasFooter) {
+      this.hasFooter = next;
+    }
+  };
+
+  private async handleOpen(): Promise<void> {
+    const dialog = this.dialogEl;
+    if (!dialog) {
+      return;
+    }
+    if (!this.scrollLocked) {
+      lockPageScroll();
+      this.scrollLocked = true;
+    }
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+    // Slotted custom elements render their focusable internals after this update.
+    await this.scopeEl?.updateComplete;
+    if (!this.open || this.closing) {
+      return;
+    }
     this.applyInitialFocus();
-    this.scheduleOpened();
+    await this.transitionsSettled();
+    if (!this.open || this.closing) {
+      return;
+    }
+    this.dispatchEvent(new CustomEvent<DialogOpenedDetail>('opened', { bubbles: true, composed: true }));
   }
 
-  private playExit(): void {
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const finish = (): void => {
+  private async handleClose(): Promise<void> {
+    await this.updateComplete;
+    await this.transitionsSettled();
+    if (this.open) {
+      return;
+    }
+    const dialog = this.dialogEl;
+    if (dialog?.open) {
       this.closingProgrammatically = true;
-      this.dialogEl.close();
-      unlockBodyScroll();
-      this.restoreFocus();
-      this.closing = false;
-    };
-    if (reduced) {
-      finish();
-      return;
+      dialog.close();
     }
-    this.closing = true;
-    const surface = this.renderRoot.querySelector<HTMLElement>('.surface');
-    if (!surface) {
-      finish();
-      return;
+    this.releaseScroll();
+    // Rendering nothing disconnects the FocusScope, which returns focus to the opener.
+    this.closing = false;
+  }
+
+  private async transitionsSettled(): Promise<void> {
+    const parts = [this.scrimEl, this.surfaceEl].filter((el): el is HTMLElement => el !== null);
+    // Flush style so transitions started by @starting-style or the closing class are registered.
+    for (const part of parts) {
+      void getComputedStyle(part).opacity;
     }
-    const handleTransitionEnd = (event: TransitionEvent): void => {
-      if (event.target !== surface || event.propertyName !== 'opacity') {
-        return;
-      }
-      surface.removeEventListener('transitionend', handleTransitionEnd);
-      finish();
-    };
-    surface.addEventListener('transitionend', handleTransitionEnd);
+    const running = parts.flatMap((part) => part.getAnimations());
+    await Promise.all(running.map((animation) => animation.finished.catch(() => undefined)));
   }
 
   private applyInitialFocus(): void {
+    const heading = this.headingEl;
+    const close = this.dismissible ? this.closeButtonEl : null;
+    const bodyFirst = this.bodySlotEl ? firstFocusableIn(this.bodySlotEl) : null;
     let target: HTMLElement | null;
-    if (this.initialFocus === 'close') {
-      // The close button does not render when non-dismissible; fall back rather than drop focus.
-      target = this.closeButtonEl ?? this.findFirstBodyFocusable() ?? this.headingEl;
-    } else if (this.initialFocus === 'title') {
-      target = this.headingEl;
+    if (this.initialFocus === 'title') {
+      target = heading;
+    } else if (this.initialFocus === 'close') {
+      // A non-dismissible dialog has no close button: the body's first control, then the heading.
+      target = close ?? bodyFirst ?? heading;
     } else {
-      target = this.findFirstBodyFocusable() ?? this.closeButtonEl ?? this.headingEl;
+      const footerFirst = this.footerSlotEl ? firstFocusableIn(this.footerSlotEl) : null;
+      target = bodyFirst ?? footerFirst ?? close ?? heading;
     }
     target?.focus();
   }
 
-  private findFirstBodyFocusable(): HTMLElement | null {
-    const slot = this.renderRoot.querySelector<HTMLSlotElement>('slot:not([name])');
-    if (!slot) {
-      return null;
+  private releaseScroll(): void {
+    if (this.scrollLocked) {
+      unlockPageScroll();
+      this.scrollLocked = false;
     }
-    for (const element of slot.assignedElements({ flatten: true })) {
-      const found = findFirstFocusable(element);
-      if (found) {
-        return found;
-      }
-    }
-    return null;
-  }
-
-  private restoreFocus(): void {
-    const opener = this.openerElement;
-    this.openerElement = null;
-    if (opener instanceof HTMLElement && opener.isConnected) {
-      opener.focus();
-    }
-  }
-
-  private scheduleOpened(): void {
-    const dispatch = (): void => {
-      this.dispatchEvent(new CustomEvent<DialogOpenedDetail>('opened', { bubbles: true, composed: true }));
-    };
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
-      dispatch();
-      return;
-    }
-    const surface = this.renderRoot.querySelector<HTMLElement>('.surface');
-    if (!surface) {
-      dispatch();
-      return;
-    }
-    const handleTransitionEnd = (event: TransitionEvent): void => {
-      if (event.target !== surface || event.propertyName !== 'opacity') {
-        return;
-      }
-      surface.removeEventListener('transitionend', handleTransitionEnd);
-      dispatch();
-    };
-    surface.addEventListener('transitionend', handleTransitionEnd);
   }
 
   private dispatchClose(reason: DialogCloseReason): void {
@@ -613,17 +687,14 @@ export class DsDialog extends LitElement {
   }
 
   private warnInDev(): void {
-    if (!import.meta.env.DEV) {
+    if (!this.open) {
       return;
     }
     if (!this.heading) {
-      console.warn('<ds-dialog> requires a `heading`, used as the accessible name.', this);
+      console.warn('<ds-dialog> requires a `heading`; it is the accessible name.', this);
     }
-    if (!this.dismissible && this.querySelector('[slot="footer"]') === null) {
-      console.warn(
-        '<ds-dialog dismissible="false"> with no footer has no way to complete or leave the task besides Escape.',
-        this,
-      );
+    if (!this.dismissible && this.querySelector(':scope > [slot="footer"]') === null) {
+      console.warn('<ds-dialog no-dismiss> has no footer: provide the answers in the footer.', this);
     }
   }
 }

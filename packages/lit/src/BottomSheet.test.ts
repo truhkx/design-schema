@@ -1,30 +1,18 @@
 /**
- * <ds-dialog> — behavior scenarios from the component doc, one test each, in the doc's order.
- * Runs in headless Chromium (Vitest browser mode): the element wraps a native <dialog> and
- * uses delegatesFocus, which jsdom does not implement.
+ * <ds-bottom-sheet> — behavior scenarios from the component doc, one test each, in the doc's order.
+ * Runs in headless Chromium (Vitest browser mode): the element wraps a native <dialog> and uses
+ * delegatesFocus, which jsdom does not implement. The browser viewport is narrower than
+ * layout.maxWidth.prose, so every scenario exercises the sheet presentation.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import './Dialog.js';
+import './BottomSheet.js';
 import './Input.js';
 import './Button.js';
-import type { DialogCloseDetail, DsDialog } from './Dialog.js';
-import meta from './Dialog.stories.js';
+import type { BottomSheetCloseDetail, DsBottomSheet } from './BottomSheet.js';
+import meta from './BottomSheet.stories.js';
 
-/** Every element on the focus chain, from `document.activeElement` down through shadow roots. */
-function activeChain(): Element[] {
-  const chain: Element[] = [];
-  let el: Element | null = document.activeElement;
-  while (el) {
-    chain.push(el);
-    el = el.shadowRoot?.activeElement ?? null;
-  }
-  return chain;
-}
-
-type Given = Partial<
-  Pick<DsDialog, 'open' | 'heading' | 'description' | 'hideHeading' | 'size' | 'dismissible' | 'initialFocus'>
->;
+type Given = Partial<Pick<DsBottomSheet, 'open' | 'heading' | 'hideHeading' | 'height' | 'dismissible' | 'dragToDismiss'>>;
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element with a body control and a footer. */
 async function setup(given: Given = {}) {
@@ -36,34 +24,32 @@ async function setup(given: Given = {}) {
   document.body.append(before, opener);
   opener.focus();
 
-  const el = document.createElement('ds-dialog');
-  const props = { ...meta.args, ...given };
+  const el = document.createElement('ds-bottom-sheet');
+  const props = { ...meta.args, ...given } as Given & { heading: string };
   for (const [key, value] of Object.entries(props)) {
     if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
   }
 
-  const input = document.createElement('ds-input') as HTMLElement & { label: string; name: string; value: string };
-  input.label = 'Project name';
-  input.name = 'projectName';
-  input.value = 'Untitled project';
-  const primary = document.createElement('ds-button') as HTMLElement & { label: string; variant: string };
-  primary.slot = 'footer';
-  primary.label = 'Rename';
-  primary.variant = 'primary';
-  const cancel = document.createElement('ds-button') as HTMLElement & { label: string; variant: string };
-  cancel.slot = 'footer';
-  cancel.label = 'Cancel';
-  cancel.variant = 'secondary';
-  el.append(input, primary, cancel);
+  const input = document.createElement('ds-input') as HTMLElement & { label: string; name: string };
+  input.label = 'Keyword';
+  input.name = 'keyword';
+  const apply = document.createElement('ds-button') as HTMLElement & { label: string; variant: string };
+  apply.slot = 'footer';
+  apply.label = 'Apply';
+  apply.variant = 'primary';
+  const clear = document.createElement('ds-button') as HTMLElement & { label: string; variant: string };
+  clear.slot = 'footer';
+  clear.label = 'Clear';
+  clear.variant = 'secondary';
+  el.append(input, apply, clear);
 
-  const close = vi.fn<(event: CustomEvent<DialogCloseDetail>) => void>();
+  const close = vi.fn<(event: CustomEvent<BottomSheetCloseDetail>) => void>();
   el.addEventListener('close', close as unknown as EventListener);
 
   document.body.append(el);
   await el.updateComplete;
   const scope = el.shadowRoot!.querySelector<HTMLElement & { updateComplete: Promise<boolean> }>('[data-part="focusScope"]');
   await scope?.updateComplete;
-  // Initial focus is placed once the scope's slotted children have rendered.
   await new Promise((resolve) => requestAnimationFrame(resolve));
 
   const root = el.shadowRoot!;
@@ -81,15 +67,22 @@ beforeEach(() => {
   document.body.replaceChildren();
 });
 
-describe('ds-dialog', () => {
+describe('ds-bottom-sheet', () => {
   it('close-button-fires-on-close', async () => {
     const d = await setup({ open: true });
     await userEvent.click(d.part('closeButton')!);
     await expect.poll(() => d.close.mock.calls.length).toBe(1);
     expect(d.close.mock.calls[0]![0].detail).toEqual({ reason: 'close-button' });
-    // The dialog never closes itself.
+    // The sheet never closes itself.
     expect(d.el.open).toBe(true);
     expect(d.dialog()!.open).toBe(true);
+  });
+
+  it('the-close-button-works-without-the-drag-gesture', async () => {
+    const d = await setup({ open: true, dragToDismiss: false });
+    await userEvent.click(d.part('closeButton')!);
+    await expect.poll(() => d.close.mock.calls.length).toBe(1);
+    expect(d.close.mock.calls[0]![0].detail).toEqual({ reason: 'close-button' });
   });
 
   it('non-dismissible-still-reports-escape', async () => {
@@ -99,18 +92,12 @@ describe('ds-dialog', () => {
     expect(d.close.mock.calls[0]![0].detail).toEqual({ reason: 'escape' });
   });
 
-  it('non-dismissible-scrim-click-does-nothing', async () => {
+  it('non-dismissible-scrim-tap-does-nothing', async () => {
     const d = await setup({ open: true, dismissible: false });
-    const scrim = d.part('scrim')!;
-    await userEvent.click(scrim, { position: { x: 12, y: 12 } });
+    await userEvent.click(d.part('scrim')!, { position: { x: 12, y: 12 } });
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(d.close).not.toHaveBeenCalled();
     expect(d.dialog()!.open).toBe(true);
-  });
-
-  it('initial-focus-lands-on-the-close-button', async () => {
-    const d = await setup({ open: true, initialFocus: 'close' });
-    await expect.poll(() => activeChain()).toContain(d.part('closeButton'));
   });
 
   it('hidden-heading-is-still-the-accessible-name', async () => {
@@ -118,7 +105,7 @@ describe('ds-dialog', () => {
     expect(d.dialog()).toHaveAccessibleName(d.props.heading);
   });
 
-  it('closed-dialog-renders-nothing', async () => {
+  it('closed-sheet-renders-nothing', async () => {
     const d = await setup({ open: false });
     expect(d.dialog()).toBeNull();
     expect(d.el.shadowRoot!.childElementCount).toBe(0);
@@ -131,33 +118,18 @@ describe('ds-dialog', () => {
     expect(d.dialog()!.open).toBe(true);
   });
 
-  it('renders-size-sm', async () => {
-    const d = await setup({ size: 'sm' });
+  it('renders-height-content', async () => {
+    const d = await setup({ height: 'content' });
     expect(d.dialog()).not.toBeNull();
   });
 
-  it('renders-size-md', async () => {
-    const d = await setup({ size: 'md' });
+  it('renders-height-half', async () => {
+    const d = await setup({ height: 'half' });
     expect(d.dialog()).not.toBeNull();
   });
 
-  it('renders-size-lg', async () => {
-    const d = await setup({ size: 'lg' });
-    expect(d.dialog()).not.toBeNull();
-  });
-
-  it('renders-initial-focus-first', async () => {
-    const d = await setup({ initialFocus: 'first' });
-    expect(d.dialog()).not.toBeNull();
-  });
-
-  it('renders-initial-focus-title', async () => {
-    const d = await setup({ initialFocus: 'title' });
-    expect(d.dialog()).not.toBeNull();
-  });
-
-  it('renders-initial-focus-close', async () => {
-    const d = await setup({ initialFocus: 'close' });
+  it('renders-height-full', async () => {
+    const d = await setup({ height: 'full' });
     expect(d.dialog()).not.toBeNull();
   });
 

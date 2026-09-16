@@ -95,7 +95,8 @@ const COPY = {
  * the close button, or the body, once the enter animation finishes (or immediately
  * under reduced motion). `onRequestClose` (the Android back gesture) always reports
  * `onClose('escape')`, even when `dismissible` is `false` — the consumer decides,
- * because a keyboard/switch-access user must always have a reported way out. The
+ * because a keyboard/switch-access user must always have a reported way out; with
+ * `dismissible` false the close button is not rendered and the scrim does nothing. The
  * accessible name comes from `accessibilityLabel={heading}` on the modal surface
  * regardless of `hideHeading`, so hiding the heading only removes its visible
  * `Heading`, never the announced name. The surface also carries the RN >= 0.74
@@ -120,7 +121,7 @@ export function Dialog({
   onClose,
   onOpened,
   overrides,
-}: DialogProps): React.JSX.Element {
+}: DialogProps): React.JSX.Element | null {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
 
@@ -155,12 +156,14 @@ export function Dialog({
   };
 
   const focusInitial = React.useCallback(() => {
-    const targetRef = initialFocus === 'title' ? titleGroupRef : initialFocus === 'close' ? closeButtonRef : bodyRef;
+    // A non-dismissible dialog renders no close button, so `close` falls back to the body.
+    const targetRef =
+      initialFocus === 'title' ? titleGroupRef : initialFocus === 'close' && dismissible ? closeButtonRef : bodyRef;
     const node = targetRef.current ? findNodeHandle(targetRef.current) : null;
     if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
     }
-  }, [initialFocus]);
+  }, [initialFocus, dismissible]);
 
   React.useEffect(() => {
     if (open) {
@@ -175,8 +178,8 @@ export function Dialog({
     if (open) {
       if (reducedMotion) {
         progress.setValue(1);
-        onOpened?.();
         focusInitial();
+        onOpened?.();
         return undefined;
       }
       const animation = Animated.timing(progress, {
@@ -188,8 +191,8 @@ export function Dialog({
       });
       animation.start(({ finished }) => {
         if (finished) {
-          onOpened?.();
           focusInitial();
+          onOpened?.();
         }
       });
       return () => animation.stop();
@@ -235,6 +238,10 @@ export function Dialog({
   const handleRequestClose = (): void => {
     onClose?.('escape');
   };
+
+  if (!mounted && !open) {
+    return null;
+  }
 
   const hostStyle: ViewStyle = { flex: 1 };
 
@@ -326,17 +333,18 @@ export function Dialog({
                     {!hideHeading ? <Heading level={2}>{heading}</Heading> : null}
                     {description !== undefined ? <Text tone="muted">{description}</Text> : null}
                   </View>
-                  <View ref={closeButtonRef}>
-                    <Button
-                      label={COPY.closeLabel}
-                      variant="ghost"
-                      size="sm"
-                      iconOnly
-                      disabled={!dismissible}
-                      leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
-                      onPress={handleCloseButtonPress}
-                    />
-                  </View>
+                  {dismissible ? (
+                    <View ref={closeButtonRef}>
+                      <Button
+                        label={COPY.closeLabel}
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
+                        onPress={handleCloseButtonPress}
+                      />
+                    </View>
+                  ) : null}
                 </View>
                 <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={bodyFlexStyle}>
                   <ScrollView

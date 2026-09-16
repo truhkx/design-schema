@@ -17,3 +17,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - SidePanel: schema's `role` prop (complementary/navigation landmark) was missing from the prior implementation entirely; added it, but per the rn platform notes ('role maps to the RN >= 0.74 role prop on the persistent sidebar View') it only reaches the persistent sidebar's native `role` — the non-persistent overlay surface has no `<aside>`/landmark equivalent on native, so its region role is not exposed while disclosed or modal, unlike web's `<aside>`/Landmark treatment of the non-modal region.
 - SidePanel: the prior implementation used `title`/`hideTitle` prop names, diverging from the schema's `heading`/`hideHeading` (and from BottomSheet/Dialog's own naming convention in this package); renamed throughout the component, its stories, and doc comments to match the schema exactly.
+
+## 2026-09-16 07:42 — round 1
+
+- SidePanel: `dismissible` false + Escape 'still reports through onOpenChange (the consumer decides)' says nothing about an uncontrolled panel, where there is no consumer state to decide; I report `onOpenChange(false, 'escape')` without changing internal state, so an uncontrolled non-dismissible panel stays open.
+- SidePanel: `copy.expanded` ('Expanded') has no use on RN — the trigger's expanded state goes through Button's `expanded` → `accessibilityState.expanded`, which the platform announces in its own words; the string is only meaningful for SwiftUI's accessibilityValue. Not rendered on rn; the copy block should say which platforms use it.
+- SidePanel: the swipe lives on the header 'excluding the close button', but the schema doesn't say how to exclude it. I flag touches that start on the close button's wrapper (onTouchStart) and reject the header's move-responder for them; the rule would be clearer as a part-level gesture target.
+- SidePanel: `hideHeading` with no close button (`dismissible` false) leaves a header with nothing in it, which still takes `inset` padding and is where the swipe starts; the doc does not say whether the header part should collapse.
+- SidePanel: `exit` describes `motion.easing.exit`, which is not in the style bindings or the rule's standard-easing default; I used `t.motionEasingExit` for close and `motionEasingStandard` for the swipe spring-back.
+- SidePanel: example `navigation-drawer` wants 'Links with the current page marked', but the RN Link has no current/aria-current prop, so the story cannot mark it; Link's schema would need a `current` prop.
+- SidePanel: example `filters` says 'A Form of filter controls' while the footer holds the Apply/Clear actions, but RN `Form` requires its own `actions`; the story uses a Stack of Checkboxes instead.
+- SidePanel: the persistent sidebar on RN checks `useWindowDimensions().width >= layout.maxWidth.*`; the note says 'tablets in landscape', which I treated as that width check, not an orientation check.
+- SidePanel: `layer` (`layer.sheet`) as zIndex inside a native Modal has no effect (the Modal is its own window); applied to the anchor view for parity only.
+- SidePanel: modal focus trap, inert background and scroll lock (a11y.requires) have no full native equivalent under Modal; FocusScope `trapped={modal}` plus `accessibilityViewIsModal` is the extent of it, and non-modal 'page stays live' is impossible because Modal takes every touch.
+- SidePanel: the `navigation` and `action` reasons are never emitted by the rn component (there is no router hook, and the footer is opaque content); they exist on the type so a consumer can report them.

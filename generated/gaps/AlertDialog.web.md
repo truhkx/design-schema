@@ -25,3 +25,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - AlertDialog: spec doesn't state whether the icon should carry an accessible label distinguishing tones for screen readers beyond the heading/description — treated as decorative (aria-hidden) since the tone is already conveyed by the heading/description text, matching the 'decorative icons take no label' rule.
 - AlertDialog: keyboard spec's 'Tab from last wraps to first' / 'Shift+Tab from first wraps to last' is satisfied generically by FocusScope's trapped-focus wrapping rather than an AlertDialog-specific handler; no gap in behavior, but the doc could call out that this is inherited from FocusScope rather than reimplemented.
+
+## 2026-09-16 06:32 — round 1
+
+- AlertDialog: `confirmDisabled` says the composed Button is 'unfocusable on web', but the React Button implements `disabled` as aria-disabled + click guard and stays focusable. I forwarded to Button's `disabled` as specified, so on web the disabled Confirm is focusable-but-inert; the prose (and the Tab-wrap rule 'From Confirm (the last button)') should not promise unfocusable.
+- AlertDialog: the Keyboard-story rule asks for at least three focusable children, but the component has exactly two (Cancel, Confirm) and no slot for more; the trigger is behind the inert background. The story renders open with its trigger and the two buttons.
+- AlertDialog: anatomy lists `scrim` as a part with a style binding, but on web the scrim is the <dialog>'s ::backdrop pseudo-element, which cannot carry data-part. The a-scrim-click-does-nothing test clicks the <dialog> element itself (where backdrop clicks land); the doc should say the scrim has no hook on web.
+- AlertDialog: `iconGap` is bound to `part: icon`, but it is the gap between the icon and the text block, so it is applied to the row that contains both rather than the icon element.
+- AlertDialog: `iconSize` forwards to Icon `overrides.size`, but the locked `icon` colour binding has no forward listed while Alert forwards Icon `color`. Since the Parts section says 'add no other' forward, I set the colour on the icon wrapper (data-part=icon) per tone and let Icon draw in currentColor.
+- AlertDialog: the spec does not name a Button size for Cancel/Confirm; I used Button's default size (the previous generation used `sm`).
+- AlertDialog: no copy or doc for exit/enter easing: Dialog.css uses motion.easing.exit for exit, but the rules say transitions use motion.easing.standard; I used standard for both directions.
+- AlertDialog: `description` Text size is unspecified (Dialog uses tone=muted at default size); I used tone=muted at default size to match the contrast pair color.foreground.muted on color.overlay.surface.
+- AlertDialog: `role` is fixed to alertdialog, so it is omitted from the dialog prop passthrough type; the doc does not say whether consumers may override it.
+- AlertDialog: swiftui notes mention a `destructive` prop ('or confirm when destructive is false') that does not exist in the schema props; not relevant to web but contradictory in the doc.

@@ -19,3 +19,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - BottomSheet: the `content` height's 90dvh viewport cap is scoped off for `half`/`full` (which set an explicit block-size instead) since the doc's `full` formula (`calc(100dvh - layout.gutter)`) would otherwise be clamped by a globally-applied cap — this scoping isn't stated explicitly in the doc.
 - BottomSheet: `drag-dismiss` has no described `detail` shape in the schema, so the CustomEvent carries none (`void`).
 - BottomSheet: behavior when the viewport crosses the `maxWidth` breakpoint while `open` (a live resize mid-session) isn't specified — no animated hand-off between the sheet and Dialog presentations is implemented; the template swaps on next render and each presentation manages its own scroll-lock/focus independently.
+
+## 2026-09-16 07:11 — round 1
+
+- BottomSheet: `dismissible: false` says 'only the footer actions close it', but Guidance says 'the close button is always visible' and swiftui says it 'is always rendered'. Chose Dialog's behaviour: no close button when not dismissible; scrim and drag do nothing; Escape still reports `escape`.
+- BottomSheet: reason `action` ('a footer action asked to close') has no mechanism. Chose Dialog's: a slotted form submitted with method="dialog" fires close with reason `action`; footer buttons otherwise just close the sheet through the consumer.
+- BottomSheet: `minTarget` (size.target.comfortable on closeButton) cannot reach Button's inner control: Button has no overridable binding for its minimum target and restyling the child is forbidden. Set min-inline-size/min-block-size on the ds-button host only; the tappable inner button keeps size.target.min. Button's schema needs a target binding.
+- BottomSheet: `maxWidth` is listed as overridable, but its description says 'read once from the theme (the breakpoint is not per-instance overridable)'. The hook exists; matchMedia reads --layout-max-width-prose from the document root once on connect, so overriding it has no effect.
+- BottomSheet: 'Above this viewport width' does not say whether the edge value is inclusive. Used `(width > <token>)`: exactly the token width stays a sheet.
+- BottomSheet: no binding for the space above the handle or between the handle and the title row (no headerGap as Dialog has). Used layout.gap.tight for both, inset for the sides and bottom, and inset + env(safe-area-inset-bottom) below.
+- BottomSheet: `shadow` has no part, and Behavior forwards only inset, radius, partGap and footerGap to Dialog. scrim, shadow, layer, enter and exit also exist on Dialog but are not forwarded in the wide presentation.
+- BottomSheet: `enter` says 'the scrim fading' and `exit` says 'slide down', but not whether the scrim uses the exit duration. Both the scrim fade and the surface slide use exit + motion.easing.exit.
+- BottomSheet: the anatomy has `focusScope` but Behavior says initial focus is 'FocusScope's first (first control in the body, else close button, else heading)', which excludes the footer, unlike FocusScope's own `first`. Composed ds-focus-scope with auto-focus=none and placed focus in that order; the heading takes tabindex=-1.
+- BottomSheet: Behavior says the drag starts on the header 'when the body is at its scroll top', but dragToDismiss says the body never starts it. Only the handle/header start it, so the scroll-top condition is never checked.
+- BottomSheet: `onDragDismiss` has `gesture: true` and there is no scenario or example that exercises the drag, so it is untested; the WCAG 2.5.1 alternative is covered only by the close-button scenarios.
+- BottomSheet: examples give `children` and `footer` as prose descriptions, not content. The stories keep them as descriptive string args ('exactly its given') and render real content matching each description.
+- BottomSheet: `controls` says open is uncontrolled when omitted, but `open` is required and Dialog is controlled-only. Kept controlled-only: the sheet never changes `open` itself.
+- BottomSheet: the wide Dialog presentation emits `opened`, which is not in BottomSheet's events. Stopped it at the sheet.
+- BottomSheet: `closed-sheet-renders-nothing` holds only below the breakpoint. Above it the shadow root keeps a `<ds-dialog>` element that itself renders nothing, so its exit transition can play.

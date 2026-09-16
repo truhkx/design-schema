@@ -27,40 +27,71 @@ type Story = StoryObj<typeof AlertDialog>;
 export const Default: Story = {};
 
 // tone
-export const ToneDanger: Story = { args: { tone: 'danger', confirmLabel: 'Delete files' } };
+export const ToneDanger: Story = { args: { tone: 'danger' } };
 export const ToneWarning: Story = {
   args: {
     tone: 'warning',
     heading: 'Leave without saving?',
-    description: 'Your changes will be lost. This cannot be undone.',
-    confirmLabel: 'Leave page',
+    description: 'Your changes to this draft will be lost.',
+    confirmLabel: 'Leave',
   },
 };
 export const ToneInfo: Story = {
   args: {
     tone: 'info',
-    heading: 'Switch workspaces?',
-    description: 'You will be moved to the Marketing workspace.',
-    confirmLabel: 'Switch workspace',
+    heading: 'Publish to the team?',
+    description: 'Everyone in the workspace will be able to see this page.',
+    confirmLabel: 'Publish',
   },
 };
 
-// notable states
-export const CustomCancelLabel: Story = {
+// examples
+export const DeleteFiles: Story = {
   args: {
+    open: true,
+    tone: 'danger',
+    heading: 'Delete 3 files?',
+    description: 'They will be removed from all shared folders. This cannot be undone.',
+    confirmLabel: 'Delete files',
+  },
+};
+
+export const LeaveWithoutSaving: Story = {
+  args: {
+    open: true,
     tone: 'warning',
     heading: 'Leave without saving?',
-    description: 'Your changes will be lost. This cannot be undone.',
-    confirmLabel: 'Leave page',
+    description: 'Your changes to this draft will be lost.',
+    confirmLabel: 'Leave',
     cancelLabel: 'Keep editing',
   },
 };
 
-export const ConfirmDisabled: Story = { args: { confirmDisabled: true } };
+export const TypedConfirmation: Story = {
+  args: {
+    open: true,
+    tone: 'danger',
+    heading: 'Cancel your subscription?',
+    description: 'Your workspace stays read-only after the current billing period ends.',
+    confirmLabel: 'Cancel subscription',
+    confirmDisabled: true,
+  },
+};
 
+export const PublishToTheTeam: Story = {
+  args: {
+    open: true,
+    tone: 'info',
+    heading: 'Publish to the team?',
+    description: 'Everyone in the workspace will be able to see this page.',
+    confirmLabel: 'Publish',
+  },
+};
+
+// notable states
 export const WithOverrides: Story = {
   args: {
-    overrides: { radius: 'radius.full', border: 'color.border.strong' },
+    overrides: { radius: 'radius.sm', footerGap: 'layout.gap.normal' },
   },
 };
 

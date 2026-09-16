@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { BottomSheet, type BottomSheetProps } from './BottomSheet';
 import { Button } from './Button';
@@ -6,53 +6,41 @@ import { Input } from './Input';
 import { Stack } from './Stack';
 import { Text } from './Text';
 
-/** BottomSheet is fully controlled; the harness owns `open` and a trigger, like a real consumer would. */
-function BottomSheetHarness({ children, footer, onClose, ...rest }: Partial<BottomSheetProps>) {
-  const [open, setOpen] = useState(rest.open ?? false);
+/** BottomSheet is controlled; the harness owns `open` and a trigger, as a real consumer would. */
+function BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {
+  const [open, setOpen] = useState(openArg);
+  useEffect(() => setOpen(openArg), [openArg]);
 
   return (
     <>
-      <Button label="Filters" onClick={() => setOpen(true)} />
+      <Button label={args.heading} onClick={() => setOpen(true)} />
       <BottomSheet
-        heading="Filters"
-        {...rest}
+        {...args}
         open={open}
         onClose={(reason) => {
           onClose?.(reason);
+          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.
+          if (reason === 'escape' && args.dismissible === false) return;
           setOpen(false);
         }}
-        footer={
-          footer === undefined ? (
-            <>
-              <Button label="Apply" variant="primary" size="sm" onClick={() => setOpen(false)} />
-              <Button label="Cancel" variant="secondary" size="sm" onClick={() => setOpen(false)} />
-            </>
-          ) : (
-            footer || undefined
-          )
-        }
-      >
-        {children}
-      </BottomSheet>
+      />
     </>
   );
 }
-
-const defaultBody = (
-  <Stack gap="normal">
-    <Text size="sm">Show items updated in the last:</Text>
-    <Input label="Days" name="days" defaultValue="30" />
-  </Stack>
-);
 
 const meta: Meta<typeof BottomSheet> = {
   title: 'BottomSheet/React',
   component: BottomSheet,
   args: {
-    open: false,
+    open: true,
     heading: 'Filters',
     hideHeading: false,
-    children: defaultBody,
+    children: (
+      <Stack gap="normal">
+        <Text size="sm">Show items updated in the last:</Text>
+        <Input label="Days" name="days" defaultValue="30" />
+      </Stack>
+    ),
     height: 'content',
     dismissible: true,
     dragToDismiss: true,
@@ -72,49 +60,67 @@ export const HeightHalf: Story = { args: { height: 'half' } };
 export const HeightFull: Story = { args: { height: 'full' } };
 
 /* notable states */
-export const HideHeadingTrue: Story = {
-  args: {
-    hideHeading: true,
-    heading: 'Share',
-    children: (
-      <Stack direction="horizontal" gap="normal">
-        <Button label="Copy link" variant="secondary" size="sm" />
-        <Button label="Email" variant="secondary" size="sm" />
-        <Button label="Message" variant="secondary" size="sm" />
-      </Stack>
-    ),
-    footer: null,
-  },
-};
+export const HideHeading: Story = { args: { hideHeading: true } };
 
 export const NotDismissible: Story = {
   args: {
     dismissible: false,
-    dragToDismiss: false,
-    children: <Text>Use the footer actions to close this sheet — the scrim, Escape reporting aside, and drag are disabled.</Text>,
+    children: <Text>Only the footer actions close this sheet; Escape still reports.</Text>,
+    footer: <Button label="Done" variant="primary" size="sm" />,
   },
 };
 
-export const DragToDismissFalse: Story = {
-  args: { dragToDismiss: false },
-};
+export const DragToDismissOff: Story = { args: { dragToDismiss: false } };
 
-export const WithoutFooter: Story = {
+/* examples */
+export const Filters: Story = {
   args: {
-    footer: null,
-    children: <Text>Use the close button, Escape, a scrim tap, or a drag to dismiss this sheet.</Text>,
+    open: true,
+    heading: 'Filters',
+    children: 'A Form of filter controls',
+    footer: 'Clear and Apply Buttons',
   },
 };
 
-/** Open/present with its trigger and at least three focusable body children, for the keyboard gate. */
+export const HalfHeightResults: Story = {
+  args: {
+    open: true,
+    heading: 'Nearby places',
+    children: 'A scrolling list of results',
+    height: 'half',
+  },
+};
+
+export const ShareSheet: Story = {
+  args: {
+    open: true,
+    heading: 'Share to',
+    children: 'A row of share targets',
+    hideHeading: true,
+  },
+};
+
+export const FullScreenTask: Story = {
+  args: {
+    open: true,
+    heading: 'New expense',
+    children: 'A Form of a few fields',
+    footer: 'Cancel and Save Buttons',
+    height: 'full',
+    dragToDismiss: false,
+  },
+};
+
+/** Open with its trigger and at least three focusable children, for the keyboard gate. */
 export const Keyboard: Story = {
-  args: { open: true },
-  render: (args) => (
-    <BottomSheetHarness {...args}>
+  args: {
+    open: true,
+    children: (
       <Stack gap="normal">
         <Input label="Search term" name="search" defaultValue="roadmap" />
         <Input label="Owner" name="owner" defaultValue="Anyone" />
+        <Input label="Days" name="days" defaultValue="30" />
       </Stack>
-    </BottomSheetHarness>
-  ),
+    ),
+  },
 };

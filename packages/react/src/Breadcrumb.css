@@ -19,36 +19,33 @@
   line-height: var(--ds-breadcrumb-line-height);
 }
 
-/* list: wraps on narrow widths so every ancestor stays reachable. */
+/* list: wraps on narrow widths so every ancestor stays reachable. The column gap is the space before each separator. */
 .ds-breadcrumb__list {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  column-gap: var(--ds-breadcrumb-gap);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* minTarget: the block padding is added to the item, not the line. */
+/* item + minTarget: the list item reaches the target height, not the inline Link. itemColor is the plain-text ancestor. */
 .ds-breadcrumb__item {
   display: inline-flex;
   align-items: center;
+  gap: var(--ds-breadcrumb-gap);
   min-block-size: var(--ds-breadcrumb-min-target);
+  color: var(--ds-breadcrumb-item-color);
 }
 
 /* separator: CSS-generated from copy.separator, so it is not in the accessibility tree. */
 .ds-breadcrumb__item + .ds-breadcrumb__item::before {
   content: var(--ds-breadcrumb-separator);
-  margin-inline: var(--ds-breadcrumb-gap);
   color: var(--ds-breadcrumb-separator-color);
 }
 
 /* current: the current page, plain text in the regular weight. */
 .ds-breadcrumb__current {
   color: var(--ds-breadcrumb-current-color);
-}
-
-/* text: an ancestor without href, a level with no page of its own. */
-.ds-breadcrumb__text {
-  color: var(--ds-breadcrumb-item-color);
 }

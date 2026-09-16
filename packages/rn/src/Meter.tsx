@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Animated, Text as RNText, View } from 'react-native';
-import type { LayoutChangeEvent, TextStyle, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { toEasing, toFontWeight, toLineHeight, useReducedMotion, useTheme } from './theme';
@@ -38,6 +38,8 @@ export interface MeterProps {
   hideValue?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<MeterOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root `View` (the element carrying `role="meter"`). */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 const FILL_TOKEN = {
@@ -77,6 +79,7 @@ export function Meter({
   tone = 'info',
   hideValue = false,
   overrides,
+  ref,
 }: MeterProps): React.JSX.Element {
   const { tokens } = useTheme();
   const reducedMotion = useReducedMotion();
@@ -117,7 +120,7 @@ export function Meter({
     // bar never sweeps in on mount or on rotation.
     const resized = laidOutWidth.current !== trackWidth;
     laidOutWidth.current = trackWidth;
-    if (reducedMotion || resized) {
+    if (reducedMotion || resized || trackWidth === 0) {
       fillWidth.setValue(toValue);
       return;
     }
@@ -183,6 +186,7 @@ export function Meter({
 
   return (
     <View
+      ref={ref}
       testID="Meter"
       // One accessibility element: the label and value are announced together and
       // the visible label row is not read a second time.

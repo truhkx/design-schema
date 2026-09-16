@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { AccessibilityInfo, Pressable, Switch as RNSwitch, View, findNodeHandle } from 'react-native';
-import type { SwitchInstance, ViewStyle } from 'react-native';
+import type { SwitchInstance, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
+import { useFieldsetContext } from './Fieldset';
 import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Text } from './Text';
@@ -13,8 +14,8 @@ export type SwitchLabelPosition = 'start' | 'end';
 /**
  * The style bindings a caller may replace with a different token; see the component's
  * overrides contract. `trackWidth`, `trackHeight`, `thumbSize`, `thumbInset`, `radius`
- * and `transition` are OS-controlled by the native `Switch` on React Native and are
- * excluded here since an override on them would be a silent no-op.
+ * and `transition` are drawn and animated by the native `Switch` on React Native and are
+ * excluded here, since an override on them would be a silent no-op.
  */
 export type SwitchOverridableBinding =
   | 'gap'
@@ -29,13 +30,13 @@ export type SwitchOverridableBinding =
 export interface SwitchProps {
   /** Visible label naming the thing being turned on or off. Also the accessible name. */
   label: string;
-  /** Optional field name. When inside a Form the checked state is collected as a boolean; most switches are not in forms. */
+  /** Optional field name. When inside a Form the state is collected as a boolean; most switches are not in forms. A Switch never validates. */
   name?: string | undefined;
   /** Controlled state. Omit for an uncontrolled control. */
   checked?: boolean | undefined;
   /** Initial state for an uncontrolled control. */
   defaultChecked?: boolean | undefined;
-  /** Cannot be toggled. Stays visible, readable and focusable. */
+  /** Cannot be toggled. Stays visible and readable; the native Switch is not focusable while disabled (platform limit). */
   disabled?: boolean | undefined;
   /** Persistent helper text below the label explaining the effect. Also the `accessibilityHint`. */
   description?: string | undefined;
@@ -43,8 +44,10 @@ export interface SwitchProps {
   labelPosition?: SwitchLabelPosition | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<SwitchOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired when the state changes, with the new boolean (`events.onChange` → `onValueChange` on React Native, mirroring the native Switch). The change is already in effect; there is nothing to submit. */
+  /** Fired when the state changes, with the new boolean (`events.onChange`). The change is already in effect; there is nothing to submit. */
   onValueChange?: ((checked: boolean) => void) | undefined;
+  /** The root view (the row). */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 /**
@@ -56,16 +59,16 @@ export interface SwitchProps {
  * Use it in settings lists with `labelPosition: start` so the switches sit at the
  * row end. If a form of switches must have a Save button, they are checkboxes.
  *
- * Uses the native `Switch` for platform-native feel, with `accessibilityRole="switch"`,
- * `accessibilityLabel`, `accessibilityHint={description}`,
- * `accessibilityState={{ checked, disabled }}`, `trackColor={{ false: trackOff, true:
- * trackOn }}`, `thumbColor` and `ios_backgroundColor`. The row is a `Pressable` with
- * `accessible={false}` that toggles the value so the label is part of the target
- * while the Switch stays the single focusable element. Track and thumb sizes are the
- * OS values: the size tokens are documented but not applied, the OS animates the
- * thumb (and honours reduced motion) itself, and it draws its own focus indicator
- * because the native Switch has no focus events. With `name` inside a Form the switch
- * registers and contributes a boolean; it has no error state by design.
+ * Uses the native `Switch` with `accessibilityRole="switch"`, `accessibilityLabel`,
+ * `accessibilityHint={description}`, `accessibilityState={{ checked, disabled }}`,
+ * `trackColor={{ false: trackOff, true: trackOn }}`, `thumbColor` and
+ * `ios_backgroundColor={trackOff}`. The row is a `Pressable` with `accessible={false}`
+ * that toggles the value, so label and description are part of the target while the
+ * Switch stays the single focusable element; the row is at least the comfortable
+ * target tall. Track and thumb sizes, radius, thumb travel, its animation (and reduced
+ * motion) and the focus indicator are the OS values. With `name` inside a Form the
+ * switch registers and contributes a boolean; it has no error state by design. Inside
+ * a Fieldset the group's `disabled` applies and the legend prefixes the label.
  */
 export function Switch({
   label,
@@ -77,14 +80,17 @@ export function Switch({
   labelPosition = 'start',
   overrides,
   onValueChange,
+  ref,
 }: SwitchProps): React.JSX.Element {
-  const { tokens } = useTheme();
+  const { tokens: t } = useTheme();
   const form = useFormContext();
+  const fieldset = useFieldsetContext();
   const switchRef = React.useRef<SwitchInstance>(null);
   const [internalChecked, setInternalChecked] = React.useState<boolean>(defaultChecked);
 
   const isChecked = checked ?? internalChecked;
-  const isDisabled = disabled || (form?.disabled ?? false);
+  const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
+  const accessibleName = fieldset !== null ? `${fieldset.legend}, ${label}` : label;
 
   const latest = React.useRef({ isChecked });
   latest.current = { isChecked };
@@ -122,16 +128,15 @@ export function Switch({
     onValueChange?.(next);
   };
 
-  const gap = overrides?.gap ? (resolveToken(tokens, overrides.gap) as number) : tokens.space3;
-  const partGap = overrides?.partGap ? (resolveToken(tokens, overrides.partGap) as number) : tokens.space1;
-  const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(tokens, overrides.disabledOpacity) as number) : tokens.opacityDisabled;
+  const gap = overrides?.gap ? (resolveToken(t, overrides.gap) as number) : t.space3;
+  const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
+  const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
 
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     gap,
-    minHeight: tokens.sizeTargetComfortable,
-    paddingVertical: tokens.space1,
+    minHeight: t.sizeTargetComfortable,
     opacity: isDisabled ? disabledOpacity : 1,
   };
 
@@ -141,45 +146,41 @@ export function Switch({
     gap: partGap,
   };
 
-  // The native Switch exposes no focus events, so the focus ring around the track
-  // is drawn by the OS; this frame only keeps the thumbInset breathing room.
-  const trackFrameStyle: ViewStyle = {
-    padding: tokens.space1,
-    borderRadius: tokens.radiusFull,
-  };
-
   const typographyOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
   const helperOverrides = { ...typographyOverrides, fontSize: overrides?.helperSize };
 
   const labelColumn = (
     <View style={textColumnStyle}>
-      <Text overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}>{label}</Text>
+      <View testID="Switch.label">
+        <Text overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}>{label}</Text>
+      </View>
       {description !== undefined ? (
-        <Text size="sm" tone="muted" overrides={helperOverrides}>
-          {description}
-        </Text>
+        <View testID="Switch.description">
+          <Text size="sm" tone="muted" overrides={helperOverrides}>
+            {description}
+          </Text>
+        </View>
       ) : null}
     </View>
   );
 
   return (
-    <Pressable testID="Switch" accessible={false} onPress={() => setValue(!isChecked)} style={rowStyle}>
+    <Pressable ref={ref} testID="Switch" accessible={false} onPress={() => setValue(!isChecked)} style={rowStyle}>
       {labelPosition === 'start' ? labelColumn : null}
-      <View style={trackFrameStyle}>
-        <RNSwitch
-          ref={switchRef}
-          accessibilityRole="switch"
-          accessibilityLabel={label}
-          accessibilityHint={description}
-          accessibilityState={{ checked: isChecked, disabled: isDisabled }}
-          value={isChecked}
-          disabled={isDisabled}
-          trackColor={{ false: tokens.colorControlTrackOff, true: tokens.colorControlSelectedBackground }}
-          thumbColor={tokens.colorControlSelectedForeground}
-          ios_backgroundColor={tokens.colorControlTrackOff}
-          onValueChange={setValue}
-        />
-      </View>
+      <RNSwitch
+        ref={switchRef}
+        testID="Switch.track"
+        accessibilityRole="switch"
+        accessibilityLabel={accessibleName}
+        accessibilityHint={description}
+        accessibilityState={{ checked: isChecked, disabled: isDisabled }}
+        value={isChecked}
+        disabled={isDisabled}
+        trackColor={{ false: t.colorControlTrackOff, true: t.colorControlSelectedBackground }}
+        thumbColor={t.colorControlSelectedForeground}
+        ios_backgroundColor={t.colorControlTrackOff}
+        onValueChange={setValue}
+      />
       {labelPosition === 'end' ? labelColumn : null}
     </Pressable>
   );

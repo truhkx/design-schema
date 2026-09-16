@@ -5,18 +5,30 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import './Fieldset.js';
 import './Stack.js';
+import './Text.js';
 import './Input.js';
 import type { DsFieldset, FieldsetGap } from './Fieldset.js';
 import meta from './Fieldset.stories.js';
 
 type Given = Partial<Pick<DsFieldset, 'legend' | 'description' | 'error' | 'disabled' | 'gap'>>;
+const PROPS = ['legend', 'description', 'error', 'disabled', 'gap'] as const;
 
-/** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
+/** The Default story's args plus the scenario's `given`, as properties on a fresh element with two fields. */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-fieldset');
-  const props = { ...meta.args, ...given };
-  for (const [key, value] of Object.entries(props)) {
+  const props: Given & { legend: string } = { ...meta.args, ...given } as Given & { legend: string };
+  for (const key of PROPS) {
+    const value = props[key];
     if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
+  }
+  for (const [name, label] of [
+    ['street', 'Street'],
+    ['city', 'City'],
+  ] as const) {
+    const input = document.createElement('ds-input');
+    input.setAttribute('name', name);
+    input.setAttribute('label', label);
+    el.append(input);
   }
   document.body.append(el);
   await el.updateComplete;
@@ -24,8 +36,16 @@ async function setup(given: Given = {}) {
   return {
     el,
     props,
-    group: () => root.querySelector<HTMLFieldSetElement>('[part=group]')!,
-    errorMessage: () => root.querySelector<HTMLElement>('[part=errorMessage]')!,
+    group: () => root.querySelector<HTMLFieldSetElement>('[data-part=group]')!,
+    /** Visible text of the shadow tree, including slotted text inside composed ds-text elements. */
+    text: () => {
+      const parts: string[] = [];
+      for (const node of root.querySelectorAll('legend, [data-part=description], [data-part=errorMessage]')) {
+        parts.push(node.textContent ?? '');
+      }
+      return parts.join(' ');
+    },
+    alert: () => root.querySelector<HTMLElement>('[role=alert]'),
   };
 }
 
@@ -34,7 +54,23 @@ beforeEach(() => {
 });
 
 describe('ds-fieldset', () => {
-  /* derived: a11y.role */
+  it('the-legend-names-the-group', async () => {
+    const s = await setup({ legend: 'Delivery window' });
+    expect(s.text()).toContain('Delivery window');
+  });
+
+  it('the-description-is-rendered', async () => {
+    const s = await setup({ description: 'We only ship within the EU.' });
+    expect(s.text()).toContain('We only ship within the EU.');
+  });
+
+  it('a-group-error-is-announced', async () => {
+    const s = await setup({ error: 'End date must be after start date.' });
+    expect(s.alert()).not.toBeNull();
+    expect(s.el.shadowRoot!.querySelectorAll('[role=alert]')).toHaveLength(1);
+  });
+
+  /* derived */
   it('renders', async () => {
     const s = await setup();
     expect(s.group()).not.toBeNull();
@@ -58,7 +94,7 @@ describe('ds-fieldset', () => {
   /* derived: a11y.requires */
   it('error-is-identified', async () => {
     const s = await setup({ error: 'Fix this before continuing.' });
-    expect(s.errorMessage().textContent).toContain('Fix this before continuing.');
+    expect(s.text()).toContain('Fix this before continuing.');
     expect(s.group()).toHaveAttribute('aria-invalid', 'true');
   });
 });

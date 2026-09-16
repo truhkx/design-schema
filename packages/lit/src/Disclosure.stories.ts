@@ -8,8 +8,10 @@ import type { DisclosureHeadingLevel } from './Disclosure.js';
 
 interface DisclosureArgs {
   summary: string;
+  children: string;
   defaultOpen: boolean;
   disabled: boolean;
+  keepMounted: boolean;
   headingLevel?: DisclosureHeadingLevel | undefined;
 }
 
@@ -22,12 +24,15 @@ const meta: Meta<DisclosureArgs> = {
   argTypes: {
     defaultOpen: { control: 'boolean' },
     disabled: { control: 'boolean' },
+    keepMounted: { control: 'boolean' },
     headingLevel: { control: 'select', options: [undefined, '2', '3', '4', '5', '6'] },
   },
   args: {
     summary: 'What happens if I cancel?',
+    children: 'Your plan stays active until the end of the billing period.',
     defaultOpen: false,
     disabled: false,
+    keepMounted: false,
     headingLevel: undefined,
   },
   render: (args) => html`
@@ -36,11 +41,9 @@ const meta: Meta<DisclosureArgs> = {
       heading-level=${ifDefined(args.headingLevel)}
       ?default-open=${args.defaultOpen}
       ?disabled=${args.disabled}
+      ?keep-mounted=${args.keepMounted}
     >
-      <ds-text
-        >Your plan stays active until the end of the billing period. After that, your
-        workspace becomes read-only and you can export your data at any time.</ds-text
-      >
+      <ds-text>${args.children}</ds-text>
     </ds-disclosure>
   `,
 };
@@ -59,8 +62,41 @@ export const HeadingLevel6: Story = { args: { headingLevel: '6' } };
 
 /* boolean states */
 export const DefaultOpenTrue: Story = { args: { defaultOpen: true } };
-export const DisabledTrue: Story = { args: { disabled: true } };
+export const KeepMountedTrue: Story = { args: { keepMounted: true } };
 export const DisabledOpen: Story = { args: { disabled: true, defaultOpen: true } };
+
+/* examples */
+export const FaqAnswer: Story = {
+  args: {
+    summary: 'What happens if I cancel?',
+    children: 'You keep access until the end of the current billing period.',
+    headingLevel: '3',
+  },
+};
+
+export const AdvancedOptions: Story = {
+  args: {
+    summary: 'Advanced options',
+    children: 'Retry limit, timeout and proxy settings.',
+  },
+};
+
+export const OpenWithFormFields: Story = {
+  args: {
+    summary: 'Billing address',
+    children: 'Street, city and postcode fields.',
+    defaultOpen: true,
+    keepMounted: true,
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    summary: 'Shipping details',
+    children: 'Choose a delivery address first.',
+    disabled: true,
+  },
+};
 
 export const Accordion: Story = {
   render: () => html`
@@ -75,13 +111,5 @@ export const Accordion: Story = {
         <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>
       </ds-disclosure>
     </ds-stack>
-  `,
-};
-
-export const KeepMountedTrue: Story = {
-  render: () => html`
-    <ds-disclosure summary="Advanced options" keep-mounted>
-      <ds-text>Rendered while closed (hidden), so form fields inside are still collected.</ds-text>
-    </ds-disclosure>
   `,
 };

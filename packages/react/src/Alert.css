@@ -82,14 +82,6 @@
   color: var(--ds-alert-body-color);
 }
 
-.ds-alert__body > :first-child {
-  margin-block-start: 0;
-}
-
-.ds-alert__body > :last-child {
-  margin-block-end: 0;
-}
-
 /* dismissButton: the system Button, unchanged; dismissMargin pulls it into the corner. */
 .ds-alert__dismiss {
   display: inline-flex;

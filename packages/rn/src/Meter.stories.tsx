@@ -38,3 +38,19 @@ export const CustomRange: Story = { args: { label: 'Score', value: 7, min: 0, ma
 
 /** Values outside the range are clamped for both the bar and the accessible value. */
 export const Overflow: Story = { args: { value: 140, valueText: undefined, tone: 'danger' } };
+
+// examples
+
+/** A quota whose value text is what a person would say aloud, not a percentage. */
+export const StorageQuota: Story = { args: { label: 'Storage used', value: 32, valueText: '3.2 GB of 10 GB' } };
+
+/** The consumer raises the tone from a threshold it owns and says why in the value text. */
+export const NearlyFull: Story = { args: { label: 'Storage used', value: 95, tone: 'danger', valueText: '9.5 GB of 10 GB' } };
+
+/** A word rather than a number, on a short scale of its own. */
+export const PasswordStrength: Story = {
+  args: { label: 'Password strength', value: 3, min: 0, max: 4, valueText: 'Strong', tone: 'success' },
+};
+
+/** A meter in a dense row, where the value text would repeat the copy beside it. */
+export const BarOnly: Story = { args: { label: 'Battery', value: 64, hideValue: true } };

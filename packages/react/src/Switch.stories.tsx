@@ -4,6 +4,7 @@ import { Switch } from './Switch';
 const meta: Meta<typeof Switch> = {
   title: 'Switch/React',
   component: Switch,
+  tags: ['autodocs'],
   args: {
     label: 'Email notifications',
     defaultChecked: false,
@@ -11,15 +12,9 @@ const meta: Meta<typeof Switch> = {
     labelPosition: 'start',
   },
   argTypes: {
+    labelPosition: { control: 'inline-radio', options: ['start', 'end'] },
     onChange: { action: 'onChange' },
   },
-  decorators: [
-    (Story) => (
-      <div style={{ maxInlineSize: '24rem' }}>
-        <Story />
-      </div>
-    ),
-  ],
 };
 
 export default meta;
@@ -31,12 +26,15 @@ export const Default: Story = {};
 export const LabelPositionStart: Story = { args: { labelPosition: 'start' } };
 export const LabelPositionEnd: Story = { args: { labelPosition: 'end' } };
 
+/* examples */
+export const SettingsRow: Story = { args: { label: 'Email notifications', labelPosition: 'start' } };
+export const WithDescription: Story = {
+  args: { label: 'Daily summary', description: 'Sends a daily summary at 9:00.' },
+};
+export const CheckboxAligned: Story = { args: { label: 'Show archived', labelPosition: 'end' } };
+export const Disabled: Story = { args: { label: 'Two-factor authentication', disabled: true } };
+
 /* states */
 export const On: Story = { args: { defaultChecked: true } };
-export const Disabled: Story = { args: { disabled: true } };
 export const DisabledOn: Story = { args: { disabled: true, defaultChecked: true } };
-export const WithDescription: Story = {
-  args: { description: 'Sends a daily summary at 9:00.' },
-};
-export const WithName: Story = { args: { name: 'notifications', label: 'Push notifications' } };
 export const Controlled: Story = { args: { checked: true } };

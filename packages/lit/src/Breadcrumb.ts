@@ -1,32 +1,45 @@
-import { LitElement, css, html, unsafeCSS, type PropertyValues, type TemplateResult, type CSSResult } from 'lit';
+import { LitElement, css, html, type PropertyValues, type TemplateResult, type CSSResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
+import type { DsLink } from './Link.js';
 import './Link.js';
 import './Button.js';
 import './Icon.js';
 
-/** Shape of each entry in `items`. */
+/** Shape of each entry in `items`: `{ label: string; href?: string }`. */
 export interface BreadcrumbItem {
   label: string;
   href?: string | undefined;
 }
 
-/** Detail carried by the `navigate` CustomEvent. `preventDefault()` on `originalEvent` cancels navigation. */
+/** Detail carried by the `navigate` CustomEvent. `preventDefault()` on `originalEvent` (or on the `navigate` event) cancels navigation. */
 export interface BreadcrumbNavigateDetail {
   item: BreadcrumbItem;
   index: number;
   originalEvent: MouseEvent;
 }
 
-/** copy.separator — drawn with CSS so it is not in the accessibility tree. */
+/** copy.separator — drawn with CSS from `--ds-breadcrumb-separator`, so it is not in the accessibility tree. */
 const COPY_SEPARATOR = '/';
 /** copy.expandLabel */
 const COPY_EXPAND_LABEL = 'Show all pages';
+/** copy.navLabel */
+const COPY_NAV_LABEL = 'Breadcrumb';
 
 /** Trails longer than this collapse (first, ellipsis, last two). */
 const COLLAPSE_ABOVE = 4;
 
-/** Overridable style hooks; see the `overrides` property. `currentColor`, `separatorColor` and `minTarget` are locked and excluded. */
+/** Negates a boolean attribute: `no-collapse` present means `collapse` is `false`. */
+const NEGATED_BOOLEAN_CONVERTER = {
+  fromAttribute(value: string | null): boolean {
+    return value === null;
+  },
+  toAttribute(value: boolean): string | null {
+    return value ? null : '';
+  },
+};
+
+/** Overridable style hooks; see the `overrides` property. `currentColor`, `itemColor`, `separatorColor` and `minTarget` are locked and excluded. */
 export type BreadcrumbOverridableBinding = 'gap' | 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight';
 
 const HOOKS: Record<BreadcrumbOverridableBinding, string> = {
@@ -44,13 +57,12 @@ const HOOKS: Record<BreadcrumbOverridableBinding, string> = {
  * renders `<nav aria-label>` with an `<ol>` in its shadow root; landmarks
  * inside shadow roots are exposed normally. Each ancestor is a `<ds-link>`;
  * the last item is the current page, `<span aria-current="page">`. Separators
- * are CSS-generated. Activating an ancestor dispatches a composed `navigate`
- * CustomEvent with `{ item, index, originalEvent }` before the native click
- * reaches the consumer; calling `preventDefault()` on `originalEvent` (the
- * retargeted native click) cancels navigation. The ellipsis is a ghost `sm`
- * icon-only `<ds-button>`, used unchanged, whose `press` is stopped so
- * consumers see only `navigate`. An ancestor without an `href` renders as
- * plain text.
+ * are CSS-generated. Activating an ancestor dispatches a composed, cancelable
+ * `navigate` CustomEvent with `{ item, index, originalEvent }`; calling
+ * `preventDefault()` on `originalEvent` (the retargeted native click) cancels
+ * navigation. The ellipsis is a ghost `sm` icon-only `<ds-button>`, used
+ * unchanged, whose `press` is stopped so consumers see only `navigate`. An
+ * ancestor without an `href` renders as plain text.
  *
  * ## When to use
  *
@@ -59,13 +71,7 @@ const HOOKS: Record<BreadcrumbOverridableBinding, string> = {
  * at the top of `main`. It shows the site's hierarchy, not the user's history,
  * and never replaces the primary navigation or Back.
  *
- * @fires navigate - Fired when a non-current item is activated with `{ item, index, originalEvent }` in `detail`. The link still navigates unless the consumer calls `preventDefault()` on `originalEvent`.
- * @csspart nav - The `<nav>` landmark (anatomy: nav).
- * @csspart list - The `<ol>` (anatomy: list).
- * @csspart item - Each `<li>` (anatomy: item).
- * @csspart link - Each ancestor `<ds-link>` (anatomy: link).
- * @csspart current - The current page `<span>` (anatomy: current).
- * @csspart expand - The ellipsis `<ds-button>` shown while collapsed.
+ * @fires navigate - Fired when a non-current item is activated with `{ item, index, originalEvent }` in `detail`. Cancelable: the link still navigates unless `preventDefault()` is called on it or on `originalEvent`.
  */
 @customElement('ds-breadcrumb')
 export class DsBreadcrumb extends LitElement {
@@ -84,65 +90,68 @@ export class DsBreadcrumb extends LitElement {
       --ds-breadcrumb-line-height: var(--font-line-height-normal);
     }
 
-    /* fontSize etc. on the nav; ds-link inherits (font: inherit on its anchor) */
-    nav {
+    :host([hidden]) {
+      display: none;
+    }
+
+    /* fontFamily, fontSize, fontWeight, lineHeight on the nav; ds-link inherits (font: inherit on its anchor) */
+    [data-part='nav'] {
       font-family: var(--ds-breadcrumb-font-family);
       font-size: var(--ds-breadcrumb-font-size);
       font-weight: var(--ds-breadcrumb-font-weight);
       line-height: var(--ds-breadcrumb-line-height);
     }
 
-    :host([hidden]) {
-      display: none;
-    }
-
-    ol {
+    /* the trail wraps rather than truncating; gap: after each separator */
+    [data-part='list'] {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
+      column-gap: var(--ds-breadcrumb-gap);
       margin: 0;
       padding: 0;
       list-style: none;
     }
 
-    /* minTarget: block padding on the item, not the line */
-    li {
+    /* minTarget on the list item, not the inline Link; itemColor: an ancestor without href */
+    [data-part='item'] {
       display: inline-flex;
       align-items: center;
+      gap: var(--ds-breadcrumb-gap);
       min-block-size: var(--size-target-min);
+      color: var(--color-foreground-muted);
     }
 
-    /* separator: copy.separator in separatorColor, gap on both sides, aria-hidden by construction */
-    li + li::before {
-      content: '${unsafeCSS(COPY_SEPARATOR)}';
-      margin-inline: var(--ds-breadcrumb-gap);
+    /* separator: copy.separator in separatorColor, gap before it; generated, so aria-hidden by construction */
+    [data-part='item'] + [data-part='item']::before {
+      content: var(--ds-breadcrumb-separator);
       color: var(--color-foreground-muted);
     }
 
     /* currentColor: the current page, rendered as text in the regular weight */
-    .current {
+    [data-part='current'] {
       color: var(--color-foreground);
-    }
-
-    /* itemColor: an ancestor without an href, rendered as plain text */
-    .text {
-      color: var(--color-foreground-muted);
     }
   `;
 
-  /** The trail from root to current page, in order. A property, not an attribute. */
+  /** The trail from root to current page, in order. Every item but the last needs an `href`; the last is the current page and its `href` is ignored. A property, not an attribute. */
   @property({ attribute: false }) accessor items: BreadcrumbItem[] = [];
 
   /** Accessible name of the navigation landmark. Change it only if the page has another breadcrumb. */
-  @property() accessor label = 'Breadcrumb';
+  @property() accessor label: string = COPY_NAV_LABEL;
 
-  /** When there are more than four items, show the first, an ellipsis, and the last two. */
-  @property({ type: Boolean, reflect: true }) accessor collapse = true;
+  /**
+   * When there are more than four items, show the first, an ellipsis, and the last two; the
+   * ellipsis reveals the rest. Attribute is the negation, `no-collapse`, because a boolean
+   * attribute cannot express `false` for a prop that defaults `true`.
+   */
+  @property({ attribute: 'no-collapse', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
+  accessor collapse = true;
 
   /** Per-instance style overrides: `{ gap: 'space.3' }`. Locked bindings are ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<BreadcrumbOverridableBinding, TokenRef | undefined>> | undefined;
 
-  /** Whether the user has revealed the collapsed items. */
+  /** Whether the user has revealed the collapsed items (one-way). */
   @state() private accessor expanded = false;
 
   override connectedCallback(): void {
@@ -166,17 +175,15 @@ export class DsBreadcrumb extends LitElement {
       if (collapsed && index > 0 && index < last - 1) {
         if (index === 1) {
           entries.push(html`
-            <li part="item">
+            <li part="item" data-part="item">
               <ds-button
-                class="expand"
-                part="expand"
                 variant="ghost"
                 size="sm"
                 icon-only
                 label=${COPY_EXPAND_LABEL}
                 @press=${this.handleExpand}
               >
-                <ds-icon slot="leading-icon" name="ellipsis" inline></ds-icon>
+                <ds-icon slot="leading-icon" name="ellipsis"></ds-icon>
               </ds-button>
             </li>
           `);
@@ -185,15 +192,16 @@ export class DsBreadcrumb extends LitElement {
       }
       if (index === last) {
         entries.push(
-          html`<li part="item"><span class="current" part="current" aria-current="page">${item.label}</span></li>`,
+          html`<li part="item" data-part="item"><span part="current" data-part="current" aria-current="page">${item.label}</span></li>`,
         );
       } else if (item.href === undefined || item.href === '') {
-        entries.push(html`<li part="item"><span class="text">${item.label}</span></li>`);
+        entries.push(html`<li part="item" data-part="item">${item.label}</li>`);
       } else {
         entries.push(html`
-          <li part="item">
+          <li part="item" data-part="item">
             <ds-link
               part="link"
+              data-part="link"
               data-index=${index}
               href=${item.href}
               label=${item.label}
@@ -205,30 +213,41 @@ export class DsBreadcrumb extends LitElement {
     });
 
     return html`
-      <nav part="nav" aria-label=${this.label}>
-        <ol part="list">${entries}</ol>
+      <nav part="nav" data-part="nav" aria-label=${this.label} style=${`--ds-breadcrumb-separator: ${JSON.stringify(COPY_SEPARATOR)}`}>
+        <ol part="list" data-part="list">${entries}</ol>
       </nav>
     `;
   }
 
   private handleNavigate(originalEvent: MouseEvent, item: BreadcrumbItem, index: number): void {
-    this.dispatchEvent(
+    const proceed = this.dispatchEvent(
       new CustomEvent<BreadcrumbNavigateDetail>('navigate', {
         detail: { item, index, originalEvent },
         bubbles: true,
         composed: true,
+        cancelable: true,
       }),
     );
+    if (!proceed) {
+      originalEvent.preventDefault();
+    }
   }
 
   private async handleExpand(event: Event): Promise<void> {
-    // The ellipsis is internal; its `press` should not read as a consumer-facing event.
+    // The ellipsis is internal; consumers see only `navigate`.
     event.stopPropagation();
+    const firstHidden = 1;
+    const lastHidden = this.items.length - 3;
     this.expanded = true;
     await this.updateComplete;
     // Focus moves to the first revealed link.
-    const revealed = this.renderRoot.querySelector<HTMLElement>('ds-link[data-index="1"]');
-    revealed?.focus();
+    for (let index = firstHidden; index <= lastHidden; index++) {
+      const link = this.renderRoot.querySelector<DsLink>(`[data-part="link"][data-index="${index}"]`);
+      if (link) {
+        link.focus();
+        return;
+      }
+    }
   }
 
   private applyOverrides(): void {

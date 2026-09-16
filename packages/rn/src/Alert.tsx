@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, Platform, Text as RNText, View } from 'react-native';
-import type { TextStyle, ViewStyle } from 'react-native';
+import type { TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -29,7 +29,7 @@ export type AlertOverridableBinding =
   | 'dismissMargin';
 
 export interface AlertProps {
-  /** What kind of message this is. Sets the colors and the icon, which together convey the tone without relying on color. */
+  /** What kind of message this is. Sets the colors and the icon, which together convey the tone without relying on color. There is deliberately no `neutral` tone. */
   tone?: AlertTone | undefined;
   /** A short bold first line for the message. Optional for one-line messages. Named `heading`, not `title`, because `title` is a native attribute on every platform element. */
   heading?: string | undefined;
@@ -43,6 +43,8 @@ export interface AlertProps {
   overrides?: Partial<Record<AlertOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the user activates the dismiss button. The consumer removes the alert. */
   onDismiss?: (() => void) | undefined;
+  /** The root `View`. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 const COPY = {
@@ -54,51 +56,47 @@ const TONE_TOKENS = {
     background: 'colorStatusInfoBackground',
     foreground: 'colorStatusInfoForeground',
     border: 'colorStatusInfoBorder',
-    icon: 'colorStatusInfoIcon',
   },
   success: {
     background: 'colorStatusSuccessBackground',
     foreground: 'colorStatusSuccessForeground',
     border: 'colorStatusSuccessBorder',
-    icon: 'colorStatusSuccessIcon',
   },
   warning: {
     background: 'colorStatusWarningBackground',
     foreground: 'colorStatusWarningForeground',
     border: 'colorStatusWarningBorder',
-    icon: 'colorStatusWarningIcon',
   },
   danger: {
     background: 'colorStatusDangerBackground',
     foreground: 'colorStatusDangerForeground',
     border: 'colorStatusDangerBorder',
-    icon: 'colorStatusDangerIcon',
   },
-} as const satisfies Record<AlertTone, Record<'background' | 'foreground' | 'border' | 'icon', keyof Tokens>>;
+} as const satisfies Record<AlertTone, Record<'background' | 'foreground' | 'border', keyof Tokens>>;
+
+/** `icon` binding, forwarded to the Icon as `overrides.color`. */
+const ICON_COLOR = {
+  info: 'color.status.info.icon',
+  success: 'color.status.success.icon',
+  warning: 'color.status.warning.icon',
+  danger: 'color.status.danger.icon',
+} as const satisfies Record<AlertTone, TokenRef>;
 
 /**
  * Alert — the system speaking to the user inside the page: "this saved", "this
- * failed", "this is about to expire". It stays until dealt with or dismissed.
- *
- * When to use: Use an Alert for a message that relates to the current view and
- * should stay visible: a failed save above the form, an expiring trial, a success
- * confirmation after submit. Choose `tone` by what the user should do: `info` to
- * know, `success` to relax, `warning` to be careful, `danger` to fix something. Do
- * not use it for field-level validation (the controls render their own errors) or
- * for transient confirmations (Toast, planned).
+ * failed", "this is about to expire". It stays until dealt with or dismissed; it
+ * never auto-dismisses and never animates in.
  *
  * Renders a `View` with `accessibilityRole="alert"` when `live` is `alert`,
  * `accessibilityLiveRegion` `assertive`/`polite` by `live` (neither when `off`),
  * and `accessibilityLabel` = heading + body (when the body is a string; otherwise
- * the heading alone) so the whole message is one announcement. iOS ignores live
- * regions, so with `live !== 'off'` the heading and body are passed to
- * `AccessibilityInfo.announceForAccessibility` on mount and whenever they change.
- * Colors come from the `color.status.{tone}.*` tokens; the leading glyph is the
- * system `Icon` (`info`/`success`/`warning`/`danger`, decorative). The dismiss
- * button is the system `Button` (`ghost`, `sm`, `iconOnly`, labelled
- * `copy.dismissLabel`, with `Icon name="close"` as `leadingIcon`), pulled into the
- * corner by `dismissMargin`; it fires `onDismiss` only and the consumer removes the
- * alert. Moving focus to the next element before removal is not possible on native.
+ * the heading alone). iOS ignores live regions, so with `live !== 'off'` the
+ * message is passed to `AccessibilityInfo.announceForAccessibility` on mount and
+ * whenever it changes. The leading glyph is the system `Icon`, colored and sized
+ * through its `overrides`; the dismiss button is the system `Button` (`ghost`,
+ * `sm`, `iconOnly`, labelled `copy.dismissLabel`), pulled into the corner by
+ * `dismissMargin`. Native cannot move focus onward before removal; the Button's
+ * removal returns focus to the enclosing screen.
  */
 export function Alert({
   tone = 'info',
@@ -108,12 +106,10 @@ export function Alert({
   dismissible = false,
   overrides,
   onDismiss,
+  ref,
 }: AlertProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const colors = TONE_TOKENS[tone];
-  const background = t[colors.background];
-  const foreground = t[colors.foreground];
-  const icon = t[colors.icon];
 
   const border = overrides?.border ? (resolveToken(t, overrides.border) as string) : t[colors.border];
   const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
@@ -121,6 +117,8 @@ export function Alert({
   const padding = overrides?.padding ? (resolveToken(t, overrides.padding) as number) : t.spaceMd;
   const gap = overrides?.gap ? (resolveToken(t, overrides.gap) as number) : t.space3;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
+  const iconSizeRef: TokenRef = overrides?.iconSize ?? 'font.size.lg';
+  const iconSize = resolveToken(t, iconSizeRef) as number;
   const headingSize = overrides?.headingSize ? (resolveToken(t, overrides.headingSize) as number) : t.fontSizeMd;
   const headingWeight = overrides?.headingWeight ? (resolveToken(t, overrides.headingWeight) as number) : t.fontWeightSemibold;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
@@ -141,6 +139,9 @@ export function Alert({
     }
   }, [announcement, live]);
 
+  const bodyLineHeight = toLineHeight(fontSize, lineHeightMultiplier);
+  const headingLineHeight = toLineHeight(headingSize, lineHeightMultiplier);
+
   const containerStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -149,14 +150,12 @@ export function Alert({
     borderWidth,
     borderColor: border,
     borderRadius: radius,
-    backgroundColor: background,
+    backgroundColor: t[colors.background],
   };
 
-  const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
-  const headingLineHeight = toLineHeight(headingSize, lineHeightMultiplier);
-
+  // Centre the glyph on the first line of text so it lines up with the heading (or body).
   const iconCellStyle: ViewStyle = {
-    height: heading !== undefined ? headingLineHeight : lineHeight,
+    height: Math.max(heading !== undefined ? headingLineHeight : bodyLineHeight, iconSize),
     justifyContent: 'center',
   };
 
@@ -171,45 +170,44 @@ export function Alert({
     fontSize: headingSize,
     fontWeight: toFontWeight(headingWeight),
     lineHeight: headingLineHeight,
-    color: foreground,
+    color: t[colors.foreground],
   };
 
+  // A string body is the system Text (tone default = color.foreground, the locked
+  // bodyColor); the typography bindings reach it through its own overrides.
   const bodyOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
 
-  // dismissMargin: a negative block/inline-end margin so the Button's target sits
-  // in the corner without enlarging the padding. The Button keeps its own colors,
-  // radius and focus ring; only the glyph it is handed is styled here.
+  // dismissMargin: a negative block/inline-end margin so the Button's target sits in
+  // the corner without enlarging the padding. The Button itself is not restyled.
   const dismissStyle: ViewStyle = {
     marginTop: -dismissMargin,
-    marginRight: -dismissMargin,
+    marginEnd: -dismissMargin,
   };
 
   return (
     <View
+      ref={ref}
       testID="Alert"
       accessibilityRole={live === 'alert' ? 'alert' : undefined}
       accessibilityLiveRegion={live === 'alert' ? 'assertive' : live === 'status' ? 'polite' : undefined}
       accessibilityLabel={announcement !== '' ? announcement : undefined}
       style={containerStyle}
     >
-      <View style={iconCellStyle} accessibilityElementsHidden importantForAccessibility="no">
-        <Icon
-          name={tone}
-          size="lg"
-          color={icon}
-          overrides={overrides?.iconSize ? { size: overrides.iconSize } : undefined}
-        />
+      <View testID="Alert.icon" style={iconCellStyle} accessibilityElementsHidden importantForAccessibility="no">
+        <Icon name={tone} overrides={{ color: ICON_COLOR[tone], size: iconSizeRef }} />
       </View>
       <View style={contentStyle}>
         {heading !== undefined ? (
-          <RNText allowFontScaling style={headingStyle}>
+          <RNText testID="Alert.heading" allowFontScaling style={headingStyle}>
             {heading}
           </RNText>
         ) : null}
-        {typeof children === 'string' ? <Text overrides={bodyOverrides}>{children}</Text> : children}
+        <View testID="Alert.body">
+          {typeof children === 'string' ? <Text overrides={bodyOverrides}>{children}</Text> : children}
+        </View>
       </View>
       {dismissible ? (
-        <View style={dismissStyle}>
+        <View testID="Alert.dismissButton" style={dismissStyle}>
           <Button
             label={COPY.dismissLabel}
             variant="ghost"

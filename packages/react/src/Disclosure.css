@@ -74,19 +74,14 @@
   opacity: var(--ds-disclosure-disabled-opacity);
 }
 
-/* icon: a chevron, 1em, pointing right when closed and down when open. */
+/* icon: the triggerIcon part wraps the system Icon (chevron-right, inline), so the glyph follows the trigger's font
+   size; the Icon draws in currentColor, which this wrapper sets. Pointing right when closed and down when open. */
 .ds-disclosure__icon {
   display: inline-flex;
+  align-items: center;
   flex: 0 0 auto;
-  inline-size: 1em;
-  block-size: 1em;
   color: var(--ds-disclosure-icon);
   line-height: 0;
-}
-
-.ds-disclosure__icon svg {
-  inline-size: 100%;
-  block-size: 100%;
 }
 
 [dir='rtl'] .ds-disclosure__icon {
@@ -95,6 +90,11 @@
 
 .ds-disclosure__trigger[aria-expanded='true'] .ds-disclosure__icon {
   transform: rotate(90deg);
+}
+
+/* Mirrored and open: rotating the mirrored chevron the other way keeps it pointing down. */
+[dir='rtl'] .ds-disclosure__trigger[aria-expanded='true'] .ds-disclosure__icon {
+  transform: scaleX(-1) rotate(90deg);
 }
 
 /* transition: chevron rotation only; the panel does not animate. Instant under reduced motion. */

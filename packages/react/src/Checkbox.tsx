@@ -3,29 +3,38 @@ import {
   useId,
   useImperativeHandle,
   useRef,
+  useState,
   type ChangeEvent,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type MouseEvent,
-  type Ref, type ReactElement,
+  type Ref,
+  type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
-import { Text } from './Text';
+import { Icon } from './Icon';
+import { Text, type TextOverridableBinding } from './Text';
 import { useFormContext } from './FormContext';
 import './Checkbox.css';
 
-/** copy.* — used verbatim; `{label}` is replaced by the visible label. */
+/**
+ * copy.* — used verbatim; `{label}` is replaced by the visible label. `checked`, `unchecked` and
+ * `mixed` are spoken state values for platforms without a native checkbox; on web the input's
+ * checked state and `aria-checked="mixed"` carry them.
+ */
 const COPY = {
   required: '{label} is required.',
   invalid: '{label} is not valid.',
   requiredIndicator: ' (required)',
-};
+  checked: 'Checked',
+  unchecked: 'Unchecked',
+  mixed: 'Mixed',
+} as const;
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type CheckboxOverridableBinding =
   | 'controlBackground'
   | 'controlBorderWidth'
-  | 'indicatorStroke'
   | 'pressedOverlay'
   | 'controlBorderInvalid'
   | 'controlSize'
@@ -43,7 +52,6 @@ export type CheckboxOverridableBinding =
 const OVERRIDE_HOOK: Record<CheckboxOverridableBinding, string> = {
   controlBackground: '--ds-checkbox-control-background',
   controlBorderWidth: '--ds-checkbox-control-border-width',
-  indicatorStroke: '--ds-checkbox-indicator-stroke',
   pressedOverlay: '--ds-checkbox-pressed-overlay',
   controlBorderInvalid: '--ds-checkbox-control-border-invalid',
   controlSize: '--ds-checkbox-control-size',
@@ -59,13 +67,26 @@ const OVERRIDE_HOOK: Record<CheckboxOverridableBinding, string> = {
   transition: '--ds-checkbox-transition',
 };
 
-function overridesToStyle(overrides: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>>): CSSProperties {
-  const style: Record<string, string> = {};
+type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+
+function resolveOverrides(overrides: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>>): {
+  rootStyle: CSSProperties;
+  helperOverrides: TextOverrides;
+} {
+  const rootStyle: Record<string, string> = {};
+  const helperOverrides: TextOverrides = {};
   for (const binding of Object.keys(overrides) as CheckboxOverridableBinding[]) {
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    if (!ref) continue;
+    // Description and error are Text: their typography bindings reach Text's own overrides.
+    if (binding === 'helperSize') helperOverrides.fontSize = ref;
+    if (binding === 'fontFamily') helperOverrides.fontFamily = ref;
+    if (binding === 'lineHeight') helperOverrides.lineHeight = ref;
+    // Locked bindings have no entry in the hook table, so they are ignored if passed.
+    const hook = OVERRIDE_HOOK[binding];
+    if (hook) rootStyle[hook] = cssVar(ref);
   }
-  return style as CSSProperties;
+  return { rootStyle: rootStyle as CSSProperties, helperOverrides };
 }
 
 export interface CheckboxProps
@@ -83,12 +104,14 @@ export interface CheckboxProps
     | 'aria-invalid'
     | 'aria-required'
     | 'aria-checked'
+    | 'aria-disabled'
+    | 'className'
+    | 'style'
     | 'children'
   > {
   /** Visible label. Clicking or tapping it toggles the control. */
   label: string;
-  /** Visually hide the label (it remains the accessible name): a selection column in a Table,
-   * where the row name is the label. */
+  /** Visually hide the label (it remains the accessible name): a selection column in a Table, where the row name is the label. */
   hideLabel?: boolean | undefined;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
@@ -98,7 +121,10 @@ export interface CheckboxProps
   checked?: boolean | undefined;
   /** Initial state for an uncontrolled control. */
   defaultChecked?: boolean | undefined;
-  /** Shows the mixed indicator, for a parent checkbox whose children are partly selected. Visual and announced only. */
+  /**
+   * Shows the mixed indicator, for a parent checkbox whose children are partly selected. Visual and
+   * announced only; the submitted value still follows `checked`.
+   */
   indeterminate?: boolean | undefined;
   /** Cannot be toggled and is not submitted. Stays visible, readable and focusable. */
   disabled?: boolean | undefined;
@@ -113,16 +139,14 @@ export interface CheckboxProps
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the checked state changes, with the new boolean. */
-  onChange?: ((checked: boolean, event: ChangeEvent<HTMLInputElement>) => void) | undefined;
+  onChange?: ((checked: boolean) => void) | undefined;
 }
 
 /**
  * Checkbox — Design Schema, category: input.
  *
  * When to use:
- * Use a Checkbox for one independent option ("Remember me"), for terms and consent (`required`),
- * or several with the same `name` when the user may pick any number of items. Use
- * `indeterminate` on a "select all" parent when only some of its children are checked.
+ * Use a Checkbox for one independent option ("Remember me"), for terms and consent (`required`), or several with the same `name` when the user may pick any number of items. Use `indeterminate` on a "select all" parent when only some of its children are checked.
  */
 export const Checkbox = function Checkbox({
   ref,
@@ -142,8 +166,6 @@ export const Checkbox = function Checkbox({
   onChange,
   onClick,
   id: idProp,
-  className,
-  style,
   ...rest
 }: CheckboxProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
   const form = useFormContext();
@@ -155,18 +177,29 @@ export const Checkbox = function Checkbox({
   const inputRef = useRef<HTMLInputElement | null>(null);
   useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, []);
 
+  const isControlled = checked !== undefined;
   const isDisabled = disabled || (form?.disabled ?? false);
   const resolvedError = error ?? form?.errors[name];
   const isInvalid = invalid || resolvedError !== undefined;
 
-  // `indeterminate` has no attribute; it is a DOM property.
+  // A user toggle clears the mixed state; a new `indeterminate` prop value restores it.
+  const [mixedCleared, setMixedCleared] = useState(false);
+  const [lastIndeterminate, setLastIndeterminate] = useState(indeterminate);
+  if (lastIndeterminate !== indeterminate) {
+    setLastIndeterminate(indeterminate);
+    setMixedCleared(false);
+  }
+  const isMixed = indeterminate && !mixedCleared;
+
+  // `indeterminate` has no attribute; it is a DOM property, mirrored as aria-checked="mixed".
   useEffect(() => {
-    if (inputRef.current) inputRef.current.indeterminate = indeterminate;
-  }, [indeterminate]);
+    const el = inputRef.current;
+    if (el && el.indeterminate !== isMixed) el.indeterminate = isMixed;
+  }, [isMixed]);
 
   // Keep the latest props in a ref so the Form registration does not churn on every render.
-  const latest = useRef({ label, value, required, disabled: isDisabled, invalid, error });
-  latest.current = { label, value, required, disabled: isDisabled, invalid, error };
+  const latest = useRef({ label, required, disabled: isDisabled, invalid, error });
+  latest.current = { label, required, disabled: isDisabled, invalid, error };
 
   useEffect(() => {
     if (!form) return undefined;
@@ -176,7 +209,8 @@ export const Checkbox = function Checkbox({
       get label() {
         return latest.current.label;
       },
-      getValue: () => (inputRef.current?.checked ? latest.current.value : undefined),
+      // form.valueType is boolean: the checked state is collected under `name`.
+      getValue: () => inputRef.current?.checked ?? false,
       isDisabled: () => latest.current.disabled,
       validate: () => {
         const { label: currentLabel, required: isRequired, invalid: isInvalidProp, error: errorProp } = latest.current;
@@ -205,60 +239,60 @@ export const Checkbox = function Checkbox({
       event.preventDefault();
       return;
     }
-    onChange?.(event.target.checked, event);
+    if (indeterminate) setMixedCleared(true);
+    onChange?.(event.target.checked);
     // There is no useful blur moment for a checkbox: `blur` mode validates on change too.
     if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
   };
 
-  // The whole row is the hit area: the description toggles the control too.
-  const handleDescriptionClick = () => {
+  // The whole row is the hit area: the description and the row's own gap forward to the control.
+  const forwardClick = () => {
     if (!isDisabled) inputRef.current?.click();
   };
+  const handleRowClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) forwardClick();
+  };
 
-  const classes = [
-    'ds-checkbox',
-    isInvalid ? 'ds-checkbox--invalid' : null,
-    isDisabled ? 'ds-checkbox--disabled' : null,
-    className ?? null,
-  ]
+  const classes = ['ds-checkbox', isInvalid ? 'ds-checkbox--invalid' : null, isDisabled ? 'ds-checkbox--disabled' : null]
     .filter(Boolean)
     .join(' ');
+  const labelClasses = ['ds-checkbox__label', hideLabel ? 'ds-checkbox__visually-hidden' : null].filter(Boolean).join(' ');
 
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
-
-  const labelClasses = ['ds-checkbox__label', hideLabel ? 'ds-checkbox__visually-hidden' : null]
-    .filter(Boolean)
-    .join(' ');
+  const { rootStyle, helperOverrides } = overrides
+    ? resolveOverrides(overrides)
+    : { rootStyle: undefined, helperOverrides: undefined };
 
   return (
-    <div className={classes} data-ds="Checkbox" data-ds-field style={mergedStyle}>
-      <div className="ds-checkbox__row">
-        <input
-          {...rest}
-          ref={inputRef}
-          id={id}
-          type="checkbox"
-          name={name}
-          value={value}
-          checked={checked}
-          defaultChecked={checked === undefined ? defaultChecked : undefined}
-          className="ds-checkbox__control"
-          aria-describedby={describedBy || undefined}
-          aria-invalid={isInvalid ? 'true' : undefined}
-          aria-required={required ? 'true' : undefined}
-          aria-checked={indeterminate ? 'mixed' : undefined}
-          aria-disabled={isDisabled ? 'true' : undefined}
-          onClick={handleClick}
-          onChange={handleChange}
-        />
-        <label htmlFor={id} className={labelClasses}>
+    <div className={classes} data-ds="Checkbox" data-ds-field style={rootStyle}>
+      <div className="ds-checkbox__row" onClick={handleRowClick}>
+        <span className="ds-checkbox__box">
+          <input
+            {...rest}
+            ref={inputRef}
+            id={id}
+            type="checkbox"
+            name={name}
+            value={value}
+            checked={checked}
+            defaultChecked={isControlled ? undefined : defaultChecked}
+            className="ds-checkbox__control"
+            data-part="control"
+            aria-describedby={describedBy || undefined}
+            aria-invalid={isInvalid ? 'true' : undefined}
+            aria-required={required ? 'true' : undefined}
+            aria-checked={isMixed ? 'mixed' : undefined}
+            aria-disabled={isDisabled ? 'true' : undefined}
+            onClick={handleClick}
+            onChange={handleChange}
+          />
+          {/* indicator: decorative, drawn over the control; the input's state is what is announced. */}
+          <span className="ds-checkbox__indicator">
+            <Icon name={isMixed ? 'dash' : 'check'} size="xs" />
+          </span>
+        </span>
+        <label htmlFor={id} className={labelClasses} data-part="label">
           {label}
-          {required ? (
-            <Text element="span" size="sm" tone="muted" className="ds-checkbox__required">
-              {COPY.requiredIndicator}
-            </Text>
-          ) : null}
+          {required ? COPY.requiredIndicator : null}
         </label>
       </div>
       {description ? (
@@ -269,7 +303,8 @@ export const Checkbox = function Checkbox({
           size="sm"
           tone="muted"
           className="ds-checkbox__description"
-          onClick={handleDescriptionClick}
+          overrides={helperOverrides}
+          onClick={forwardClick}
         >
           {description}
         </Text>
@@ -283,6 +318,7 @@ export const Checkbox = function Checkbox({
           size="sm"
           tone="danger"
           className="ds-checkbox__error"
+          overrides={helperOverrides}
         >
           {resolvedError}
         </Text>

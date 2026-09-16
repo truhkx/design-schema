@@ -72,7 +72,7 @@ export class DsLandmark extends LitElement {
     }
   }
 
-  protected override render(): symbol {
+  protected override render(): typeof nothing {
     return nothing;
   }
 

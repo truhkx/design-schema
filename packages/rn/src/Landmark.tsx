@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View } from 'react-native';
-import type { AccessibilityRole, Role } from 'react-native';
+import type { AccessibilityRole, Role, ViewInstance } from 'react-native';
 
 export type LandmarkRole =
   | 'banner'
@@ -19,6 +19,8 @@ export interface LandmarkProps {
   label?: string | undefined;
   /** The region's content. */
   children: React.ReactNode;
+  /** The root `View`. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 /** Roles whose `label` becomes the group's `accessibilityLabel` on iOS and Android. */
@@ -50,7 +52,7 @@ const NAME_REQUIRED_ROLES: ReadonlySet<LandmarkRole> = new Set<LandmarkRole>(['r
  * jump-to-landmark on native — the value is web parity and one structure for the
  * same screen code. In development it warns when `region` or `form` has no `label`.
  */
-export function Landmark({ role, label, children }: LandmarkProps): React.JSX.Element {
+export function Landmark({ role, label, children, ref }: LandmarkProps): React.JSX.Element {
   React.useEffect(() => {
     if (__DEV__ && NAME_REQUIRED_ROLES.has(role) && (label === undefined || label === '')) {
       console.warn(`Landmark: role "${role}" is only a landmark when it has a label.`);
@@ -65,6 +67,7 @@ export function Landmark({ role, label, children }: LandmarkProps): React.JSX.El
 
   return (
     <View
+      ref={ref}
       testID="Landmark"
       role={nativeRole}
       accessibilityRole={legacyRole}

@@ -1,24 +1,30 @@
 import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
+import type { TextOverridableBinding } from './Text.js';
+import './Icon.js';
+import './Text.js';
 
 /** Detail carried by the `change` CustomEvent. */
 export interface CheckboxChangeDetail {
+  /** The new checked state. */
   checked: boolean;
 }
 
-/** copy.required — the Form renders this on a failed submit; ElementInternals reports it too. */
+/** copy.required */
 const COPY_REQUIRED = (label: string): string => `${label} is required.`;
+/** copy.invalid */
+const COPY_INVALID = (label: string): string => `${label} is not valid.`;
 /** copy.requiredIndicator */
 const COPY_REQUIRED_INDICATOR = ' (required)';
 
-/** Overridable style hooks; see the `overrides` property. `controlBorder`, `controlSelectedBackground`, `indicator`, `labelColor`, `descriptionText`, `errorText`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. `controlBorder`, `controlSelectedBackground`, `indicator`, `indicatorStroke`, `labelColor`, `descriptionText`, `errorText`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
 export type CheckboxOverridableBinding =
   | 'controlBackground'
   | 'controlBorderWidth'
-  | 'indicatorStroke'
   | 'pressedOverlay'
   | 'controlBorderInvalid'
   | 'controlSize'
@@ -36,7 +42,6 @@ export type CheckboxOverridableBinding =
 const HOOKS: Record<CheckboxOverridableBinding, string> = {
   controlBackground: '--ds-checkbox-control-background',
   controlBorderWidth: '--ds-checkbox-control-border-width',
-  indicatorStroke: '--ds-checkbox-indicator-stroke',
   pressedOverlay: '--ds-checkbox-pressed-overlay',
   controlBorderInvalid: '--ds-checkbox-control-border-invalid',
   controlSize: '--ds-checkbox-control-size',
@@ -46,7 +51,7 @@ const HOOKS: Record<CheckboxOverridableBinding, string> = {
   labelSize: '--ds-checkbox-label-size',
   labelWeight: '--ds-checkbox-label-weight',
   helperSize: '--ds-checkbox-helper-size',
-  fontFamily: `--ds-checkbox-font-family`,
+  fontFamily: '--ds-checkbox-font-family',
   lineHeight: '--ds-checkbox-line-height',
   disabledOpacity: '--ds-checkbox-disabled-opacity',
   transition: '--ds-checkbox-transition',
@@ -57,14 +62,18 @@ const HOOKS: Record<CheckboxOverridableBinding, string> = {
  *
  * `<ds-checkbox name="updates" label="Send me product updates">`. A native
  * `<input type="checkbox">` styled with `appearance: none` lives in the shadow
- * root (with `delegatesFocus`), labelled by a `<label for>` in the same root.
+ * root (with `delegatesFocus`) and is the drawn box; the check mark and mixed
+ * dash are `<ds-icon name="check">` / `<ds-icon name="dash">` laid over it. The
+ * `<label for>` sits in the same root, so a click on it toggles natively; a
+ * click on the description is forwarded to the control.
+ *
  * The element is form-associated via `ElementInternals`
  * (`setFormValue(checked ? value : null)`), so a native `<form>` sees it, and
- * `<ds-form>` collects it by `name` like `ds-input` (its `value` when checked,
- * no key otherwise). The inner native `change` is not composed, so a composed
- * `change` CustomEvent with `{ checked }` is re-dispatched from the host.
- * `checked` behaves like a native input: the `checked` attribute is the initial
- * state only and the property tracks the live state, so it is not reflected.
+ * `<ds-form>` discovers it by `data-ds-field` and collects the boolean. The inner
+ * native `change` is not composed, so a composed `change` CustomEvent with
+ * `{ checked }` is re-dispatched from the host. `checked` behaves like a native
+ * input: the `checked` attribute is the initial state only and the property
+ * tracks the live state, so it is not reflected.
  *
  * ## When to use
  *
@@ -72,13 +81,9 @@ const HOOKS: Record<CheckboxOverridableBinding, string> = {
  * consent (`required`), or several with the same `name` when the user may pick
  * any number of items. Use `indeterminate` on a "select all" parent when only
  * some of its children are checked. For a setting that applies immediately,
- * use Switch instead.
+ * use Switch instead; to pick exactly one of several, use RadioGroup.
  *
  * @fires change - Fired when the checked state changes with `{ checked }` in `detail`.
- * @csspart control - The native `<input type="checkbox">` (anatomy: control, indicator).
- * @csspart label - The `<label>`.
- * @csspart description - The helper text.
- * @csspart error - The `role="alert"` error message region.
  */
 @customElement('ds-checkbox')
 export class DsCheckbox extends LitElement {
@@ -95,7 +100,6 @@ export class DsCheckbox extends LitElement {
       font-family: var(--ds-checkbox-font-family);
       --ds-checkbox-control-background: var(--color-control-background);
       --ds-checkbox-control-border-width: var(--border-width-thin);
-      --ds-checkbox-indicator-stroke: var(--border-width-focus);
       --ds-checkbox-pressed-overlay: var(--opacity-disabled);
       --ds-checkbox-control-border-invalid: var(--color-border-danger);
       --ds-checkbox-control-size: var(--space-5);
@@ -124,17 +128,21 @@ export class DsCheckbox extends LitElement {
       cursor: pointer;
     }
 
-    .control {
+    /* Holds the control and its overlaid indicator; centered on the label's first line. */
+    .box {
       position: relative;
+      display: inline-flex;
       flex: none;
+      margin-block-start: calc(
+        (var(--ds-checkbox-label-size) * var(--ds-checkbox-line-height) - var(--ds-checkbox-control-size)) / 2
+      );
+    }
+
+    .control {
       box-sizing: border-box;
       inline-size: var(--ds-checkbox-control-size);
       block-size: var(--ds-checkbox-control-size);
       margin: 0;
-      /* Center the control on the first line of the label. */
-      margin-block-start: calc(
-        (var(--ds-checkbox-label-size) * var(--ds-checkbox-line-height) - var(--ds-checkbox-control-size)) / 2
-      );
       border-width: var(--ds-checkbox-control-border-width);
       border-style: solid;
       border-color: var(--color-control-border);
@@ -145,38 +153,17 @@ export class DsCheckbox extends LitElement {
       -webkit-appearance: none;
       transition:
         background-color var(--ds-checkbox-transition) var(--motion-easing-standard),
-        border-color var(--ds-checkbox-transition) var(--motion-easing-standard);
+        border-color var(--ds-checkbox-transition) var(--motion-easing-standard),
+        box-shadow var(--ds-checkbox-transition) var(--motion-easing-standard);
     }
 
     /* pressedOverlay: while pressed, the box shows controlSelectedBackground at this opacity */
-    .control:active:not(:checked):not(:indeterminate)::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: var(--color-control-selected-background);
-      opacity: var(--ds-checkbox-pressed-overlay);
-    }
-    :host([disabled]) .control:active::before {
-      content: none;
-    }
-
-    /* indicator: check mark and mixed dash at indicatorStroke, drawn at controlSize minus 2 × space.1 */
-    .control::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      margin: auto;
-      box-sizing: border-box;
-      opacity: 0;
-      transition: opacity var(--ds-checkbox-transition) var(--motion-easing-standard);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .control,
-      .control::after {
-        transition: none;
-      }
+    :host(:not([disabled])) .control:active:not(:checked):not(:indeterminate) {
+      background: color-mix(
+        in srgb,
+        var(--color-control-selected-background) calc(var(--ds-checkbox-pressed-overlay) * 100%),
+        var(--ds-checkbox-control-background)
+      );
     }
 
     /* controlSelectedBackground: checked and indeterminate fill; the border takes the same color */
@@ -186,31 +173,38 @@ export class DsCheckbox extends LitElement {
       background: var(--color-control-selected-background);
     }
 
-    .control:checked::after {
-      inline-size: calc((var(--ds-checkbox-control-size) - 2 * var(--space-1)) * 0.5);
-      block-size: calc(var(--ds-checkbox-control-size) - 2 * var(--space-1));
-      margin-block-start: calc(var(--space-1) * -0.5);
-      border-inline-end: var(--ds-checkbox-indicator-stroke) solid var(--color-control-selected-foreground);
-      border-block-end: var(--ds-checkbox-indicator-stroke) solid var(--color-control-selected-foreground);
-      transform: rotate(45deg) scale(0.8);
-      opacity: 1;
-    }
-
-    .control:indeterminate::after {
-      inline-size: calc(var(--ds-checkbox-control-size) - 2 * var(--space-1));
-      block-size: var(--ds-checkbox-indicator-stroke);
-      background: var(--color-control-selected-foreground);
-      opacity: 1;
-    }
-
     /* controlBorderInvalid */
     :host([invalid]) .control {
       border-color: var(--ds-checkbox-control-border-invalid);
     }
 
+    /* focusRing, focusRingWidth */
     .control:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
+    }
+
+    /* indicator: check / dash Icon at size xs, centered in the control, in selectedForeground */
+    .indicator {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-control-selected-foreground);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--ds-checkbox-transition) var(--motion-easing-standard);
+    }
+    .indicator.on {
+      opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .control,
+      .indicator {
+        transition: none;
+      }
     }
 
     /* disabled: stays focusable; dimmed with disabledOpacity */
@@ -218,7 +212,8 @@ export class DsCheckbox extends LitElement {
       opacity: var(--ds-checkbox-disabled-opacity);
       cursor: not-allowed;
     }
-    :host([disabled]) .control {
+    :host([disabled]) .control,
+    :host([disabled]) .label {
       cursor: not-allowed;
     }
 
@@ -237,29 +232,25 @@ export class DsCheckbox extends LitElement {
       cursor: pointer;
     }
 
-    .required {
-      color: var(--color-foreground-muted);
-    }
-
-    .description {
-      margin: 0;
-      font-size: var(--ds-checkbox-helper-size);
-      line-height: var(--ds-checkbox-line-height);
-      color: var(--color-foreground-muted);
-    }
-
-    .error {
-      font-size: var(--ds-checkbox-helper-size);
-      line-height: var(--ds-checkbox-line-height);
-      color: var(--color-foreground-danger);
-    }
-    .error:empty {
-      display: none;
+    .visually-hidden {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
     }
   `;
 
   /** Visible label. Clicking or tapping it toggles the control. */
   @property() accessor label = '';
+
+  /** Visually hide the label (it remains the accessible name). */
+  @property({ type: Boolean, attribute: 'hide-label' }) accessor hideLabel = false;
 
   /** Field name used by the enclosing Form when collecting values. */
   @property() accessor name = '';
@@ -267,10 +258,7 @@ export class DsCheckbox extends LitElement {
   /** The value submitted when checked. Lets several checkboxes share a `name`. */
   @property() accessor value = 'on';
 
-  /** Controlled checked state. Omit for an uncontrolled control. The attribute is the initial state only; not reflected. */
-  @property({ type: Boolean }) accessor checked: boolean | undefined;
-
-  /** Initial state for an uncontrolled control. */
+  /** Initial state when neither the `checked` attribute nor property is set. */
   @property({ type: Boolean, attribute: 'default-checked' }) accessor defaultChecked = false;
 
   /** Shows the mixed indicator. Visual and announced only; the submitted value still follows `checked`. */
@@ -282,18 +270,33 @@ export class DsCheckbox extends LitElement {
   /** Must be checked to submit. Shown in the label, not only by color. */
   @property({ type: Boolean, reflect: true }) accessor required = false;
 
-  /** Persistent helper text below the label. */
-  @property() accessor description: string | undefined;
-
   /** Marks the control as failing validation. Usually set by the Form; can be set directly. */
   @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
+  /** Persistent helper text below the label. */
+  @property() accessor description: string | undefined;
+
   /** Per-instance style overrides: `{ controlRadius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>> | undefined;
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
-  private errorValue?: string | undefined;
+  private checkedValue: boolean | undefined;
 
-  /** The error message. Setting it implies `invalid`. Say what to do. */
+  /** The live checked state, like a native input. The attribute is the initial state only; not reflected. */
+  get checked(): boolean {
+    return this.checkedValue ?? this.defaultChecked;
+  }
+  @property({ type: Boolean })
+  set checked(value: boolean) {
+    const old = this.checked;
+    this.checkedValue = value;
+    this.requestUpdate('checked', old);
+  }
+
+  private errorValue: string | undefined;
+
+  /** The error message. Setting it marks the control invalid. Say what to do. */
   get error(): string | undefined {
     return this.errorValue;
   }
@@ -306,13 +309,10 @@ export class DsCheckbox extends LitElement {
     this.requestUpdate('error', old);
   }
 
-  /** Uncontrolled checked state (seeded from `defaultChecked`). */
-  @state() private accessor internalChecked = false;
-
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
   @state() private accessor formDisabled = false;
 
-  @query('#control') private accessor inputEl!: HTMLInputElement;
+  @query('#control') private accessor inputEl!: HTMLInputElement | null;
 
   private readonly internals: ElementInternals;
 
@@ -324,16 +324,12 @@ export class DsCheckbox extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Checkbox');
+    this.setAttribute('data-ds-field', '');
   }
 
-  /** Whether the control is currently checked. */
-  get currentChecked(): boolean {
-    return this.checked ?? this.internalChecked;
-  }
-
-  /** The value the Form collects: `value` when checked, otherwise `null` (no key). */
-  get currentValue(): string | null {
-    return this.currentChecked ? this.value : null;
+  /** The value `<ds-form>` collects: the checked boolean. */
+  get currentValue(): boolean {
+    return this.checked;
   }
 
   /** The owning native form, if any (from `ElementInternals`). */
@@ -342,11 +338,19 @@ export class DsCheckbox extends LitElement {
   }
 
   get validity(): ValidityState {
+    this.syncInternals();
     return this.internals.validity;
   }
 
+  /** The field's own copy: the error, then copy.required, then copy.invalid; empty when valid. */
   get validationMessage(): string {
-    return this.internals.validationMessage;
+    if (this.error) {
+      return this.error;
+    }
+    if (this.required && !this.checked) {
+      return COPY_REQUIRED(this.label);
+    }
+    return this.invalid ? COPY_INVALID(this.label) : '';
   }
 
   checkValidity(): boolean {
@@ -366,20 +370,16 @@ export class DsCheckbox extends LitElement {
   }
 
   formResetCallback(): void {
-    this.checked = undefined;
-    this.internalChecked = this.defaultChecked;
+    const old = this.checked;
+    this.checkedValue = undefined;
+    this.requestUpdate('checked', old);
   }
 
   formStateRestoreCallback(state: File | string | FormData | null): void {
-    if (typeof state === 'string') {
-      this.checked = state === this.value;
-    }
+    this.checked = typeof state === 'string' && state === this.value;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (!this.hasUpdated) {
-      this.internalChecked = this.defaultChecked;
-    }
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
@@ -387,45 +387,76 @@ export class DsCheckbox extends LitElement {
 
   protected override updated(): void {
     // `indeterminate` has no attribute; it is a DOM property only.
-    this.inputEl.indeterminate = this.indeterminate;
+    if (this.inputEl) {
+      this.inputEl.indeterminate = this.indeterminate;
+    }
     this.syncInternals();
   }
 
   protected override render(): TemplateResult {
-    const isDisabled = this.disabled || this.formDisabled;
-    const describedBy =
-      [this.description ? 'description' : '', this.error ? 'error' : '']
-        .filter((id) => id !== '')
-        .join(' ') || undefined;
+    const isDisabled = this.isDisabled;
+    const message = this.displayedError;
+    const describedBy = [this.description ? 'description' : '', message ? 'error' : ''].filter(Boolean).join(' ');
+    const textOverrides = this.textOverrides;
+    const showIndicator = this.indeterminate || this.checked;
 
     return html`
       <div class="row" @click=${this.handleRowClick}>
-        <input
-          id="control"
-          class="control"
-          part="control"
-          type="checkbox"
-          name=${this.name}
-          value=${this.value}
-          .checked=${live(this.currentChecked)}
-          aria-checked=${ifDefined(this.indeterminate ? 'mixed' : undefined)}
-          aria-describedby=${ifDefined(describedBy)}
-          aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
-          aria-required=${ifDefined(this.required ? 'true' : undefined)}
-          aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
-          @click=${this.handleControlClick}
-          @change=${this.handleChange}
-        />
+        <span class="box">
+          <input
+            id="control"
+            class="control"
+            part="control"
+            data-part="control"
+            type="checkbox"
+            name=${this.name}
+            value=${this.value}
+            .checked=${live(this.checked)}
+            aria-checked=${ifDefined(this.indeterminate ? 'mixed' : undefined)}
+            aria-describedby=${ifDefined(describedBy || undefined)}
+            aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
+            aria-required=${ifDefined(this.required ? 'true' : undefined)}
+            aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
+            @click=${this.handleControlClick}
+            @change=${this.handleChange}
+          />
+          <span class=${classMap({ indicator: true, on: showIndicator })}>
+            <ds-icon name=${this.indeterminate ? 'dash' : 'check'} size="xs"></ds-icon>
+          </span>
+        </span>
         <div class="text">
-          <label class="label" part="label" for="control"
-            >${this.label}${this.required
-              ? html`<span class="required" aria-hidden="true">${COPY_REQUIRED_INDICATOR}</span>`
-              : nothing}</label
+          <label
+            class=${classMap({ label: true, 'visually-hidden': this.hideLabel })}
+            part="label"
+            data-part="label"
+            for="control"
+            >${this.label}${this.required ? COPY_REQUIRED_INDICATOR : nothing}</label
           >
           ${this.description
-            ? html`<p id="description" class="description" part="description">${this.description}</p>`
+            ? html`<ds-text
+                id="description"
+                part="description"
+                data-part="description"
+                element="p"
+                size="sm"
+                tone="muted"
+                .overrides=${textOverrides}
+                >${this.description}</ds-text
+              >`
             : nothing}
-          <div id="error" class="error" part="error" role="alert">${this.error ?? ''}</div>
+          ${message
+            ? html`<ds-text
+                id="error"
+                role="alert"
+                part="errorMessage"
+                data-part="errorMessage"
+                element="p"
+                size="sm"
+                tone="danger"
+                .overrides=${textOverrides}
+                >${message}</ds-text
+              >`
+            : nothing}
         </div>
       </div>
     `;
@@ -435,44 +466,60 @@ export class DsCheckbox extends LitElement {
     return this.disabled || this.formDisabled;
   }
 
+  /** Validation precedence, as Input: `error`, then copy.required, then copy.invalid — rendered only while invalid. */
+  private get displayedError(): string {
+    if (this.error) {
+      return this.error;
+    }
+    if (!this.invalid) {
+      return '';
+    }
+    return this.required && !this.checked ? COPY_REQUIRED(this.label) : COPY_INVALID(this.label);
+  }
+
+  /** helperSize, fontFamily and lineHeight forwarded to the description and error Text. */
+  private get textOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
+    const o = this.overrides;
+    if (!o) {
+      return undefined;
+    }
+    return { fontSize: o.helperSize, fontFamily: o.fontFamily, lineHeight: o.lineHeight };
+  }
+
   /** Clicks on the description (or the row's empty space) toggle the control too. */
   private handleRowClick(event: MouseEvent): void {
+    const input = this.inputEl;
     const target = event.target;
-    if (!(target instanceof Element)) {
+    if (!input || !(target instanceof Element)) {
       return;
     }
-    if (target === this.inputEl || target.closest('label') !== null) {
-      // The label click already forwards to the input; the input handles itself.
+    // The input handles itself, and a label click is already forwarded to it natively.
+    if (target === input || target.closest('label') !== null || this.isDisabled) {
       return;
     }
-    if (this.isDisabled) {
-      return;
-    }
-    this.inputEl.click();
+    input.focus();
+    input.click();
   }
 
   /** Disabled uses aria-disabled so the control stays focusable; click and change are both guarded. */
   private handleControlClick(event: MouseEvent): void {
     if (this.isDisabled) {
       event.preventDefault();
-      event.stopPropagation();
     }
   }
 
   private handleChange(event: Event): void {
+    event.stopPropagation();
+    const input = event.currentTarget as HTMLInputElement;
     if (this.isDisabled) {
       event.preventDefault();
-      this.requestUpdate();
+      input.checked = this.checked;
       return;
     }
-    const next = this.inputEl.checked;
+    const next = input.checked;
     // Toggling a mixed checkbox clears the mixed state.
     this.indeterminate = false;
-    if (this.checked !== undefined) {
-      this.checked = next;
-    } else {
-      this.internalChecked = next;
-    }
+    this.checked = next;
     this.dispatchEvent(
       new CustomEvent<CheckboxChangeDetail>('change', {
         detail: { checked: next },
@@ -484,18 +531,12 @@ export class DsCheckbox extends LitElement {
 
   /** Mirror value and validity into ElementInternals so an owning native form sees them. */
   private syncInternals(): void {
-    const anchor = this.inputEl;
-    if (!anchor) {
-      return;
-    }
-    const checked = this.currentChecked;
-    this.internals.setFormValue(checked && !this.isDisabled ? this.value : null);
+    const anchor = this.inputEl ?? undefined;
+    this.internals.setFormValue(this.checked && !this.isDisabled ? this.value : null);
 
-    if (this.error) {
-      this.internals.setValidity({ customError: true }, this.error, anchor);
-    } else if (this.invalid) {
-      this.internals.setValidity({ customError: true }, `${this.label} is invalid`, anchor);
-    } else if (this.required && !checked) {
+    if (this.error || this.invalid) {
+      this.internals.setValidity({ customError: true }, this.validationMessage, anchor);
+    } else if (this.required && !this.checked) {
       this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor);
     } else {
       this.internals.setValidity({});

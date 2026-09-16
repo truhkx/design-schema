@@ -23,26 +23,67 @@ type Story = StoryObj<typeof Breadcrumb>;
 
 export const Default: Story = {};
 
-const longTrail = [
+const deepTrail = [
   { label: 'Docs', href: '/docs' },
-  { label: 'Guides', href: '/docs/guides' },
-  { label: 'Forms', href: '/docs/guides/forms' },
-  { label: 'Validation', href: '/docs/guides/forms/validation' },
-  { label: 'Errors', href: '/docs/guides/forms/validation/errors' },
-  { label: 'Summary' },
+  { label: 'Components', href: '/docs/components' },
+  { label: 'Navigation', href: '/docs/components/navigation' },
+  { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },
+  { label: 'Keyboard' },
 ];
 
-/** More than four items: first, an ellipsis button, and the last two. */
-export const Collapsed: Story = { args: { items: longTrail, collapse: true } };
-
 // collapse
-export const CollapseFalse: Story = { args: { items: longTrail, collapse: false } };
+export const CollapseTrue: Story = { args: { collapse: true, items: deepTrail } };
 
-export const TwoLevels: Story = {
+export const CollapseFalse: Story = { args: { collapse: false, items: deepTrail } };
+
+/** An ancestor without `href` renders as plain text, not an empty link. */
+export const AncestorWithoutHref: Story = {
+  args: {
+    items: [
+      { label: 'Docs', href: '/docs' },
+      { label: 'Reference' },
+      { label: 'Tokens' },
+    ],
+  },
+};
+
+// examples
+
+/** A short trail whose last item is the current page, rendered as text. */
+export const SettingsTrail: Story = {
   args: {
     items: [
       { label: 'Settings', href: '/settings' },
-      { label: 'Notifications' },
+      { label: 'Notifications', href: '/settings/notifications' },
+      { label: 'Email digest' },
+    ],
+  },
+};
+
+/** A trail of more than four items, folded to the first, an ellipsis and the last two. */
+export const DeepTrailCollapsed: Story = {
+  args: { collapse: true, items: deepTrail },
+};
+
+/** A trail short enough that the ellipsis would only cost the reader a click. */
+export const AlwaysInFull: Story = {
+  args: {
+    collapse: false,
+    items: [
+      { label: 'Catalogue', href: '/catalogue' },
+      { label: 'Outdoor', href: '/catalogue/outdoor' },
+      { label: 'Tents' },
+    ],
+  },
+};
+
+/** A second trail, named so the two navigation landmarks are distinguishable. */
+export const SecondBreadcrumbOnAPage: Story = {
+  args: {
+    label: 'Catalogue breadcrumb',
+    items: [
+      { label: 'Catalogue', href: '/catalogue' },
+      { label: 'Tents' },
     ],
   },
 };

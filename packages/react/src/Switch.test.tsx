@@ -6,27 +6,28 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ComponentProps } from 'react';
 import { Switch, type SwitchProps } from './Switch';
 import meta from './Switch.stories';
-import type { ComponentProps } from 'react';
 
 const DESCRIPTION = 'Sends a daily summary at 9:00.';
 
 /** The Default story's args plus the scenario's `given`, with a mock for every event prop. */
 function setup(given: Partial<SwitchProps> = {}) {
   const onChange = vi.fn();
-  const props = { ...meta.args, ...given, onChange };
-  const utils = render(<Switch {...(props as ComponentProps<typeof Switch>)} />);
+  const props = { ...meta.args, ...given, onChange } as ComponentProps<typeof Switch>;
+  const utils = render(<Switch {...props} />);
   const user = userEvent.setup();
+  const part = (name: string) => utils.container.querySelector<HTMLElement>(`[data-part="${name}"]`)!;
   return {
     ...utils,
     user,
     onChange,
     props,
     track: () => screen.getByRole('switch'),
-    label: () => screen.getByText(props.label!),
-    description: () => screen.getByText(DESCRIPTION),
-    rerender: (next: Partial<SwitchProps>) => utils.rerender(<Switch {...(props as ComponentProps<typeof Switch>)} {...next} />),
+    label: () => part('label'),
+    description: () => part('description'),
+    rerender: (next: Partial<SwitchProps>) => utils.rerender(<Switch {...props} {...next} />),
   };
 }
 
@@ -35,21 +36,21 @@ describe('Switch', () => {
     const s = setup();
     await s.user.click(s.track());
     expect(s.onChange).toHaveBeenCalledTimes(1);
-    expect(s.onChange).toHaveBeenCalledWith(true, expect.anything());
+    expect(s.onChange).toHaveBeenCalledWith(true);
     expect(s.track()).toBeChecked();
   });
 
   it('click-on-label-toggles', async () => {
     const s = setup();
     await s.user.click(s.label());
-    expect(s.onChange).toHaveBeenCalledWith(true, expect.anything());
+    expect(s.onChange).toHaveBeenCalledWith(true);
     expect(s.track()).toBeChecked();
   });
 
   it('click-on-description-toggles', async () => {
     const s = setup({ description: DESCRIPTION });
     await s.user.click(s.description());
-    expect(s.onChange).toHaveBeenCalledWith(true, expect.anything());
+    expect(s.onChange).toHaveBeenCalledWith(true);
     expect(s.track()).toBeChecked();
   });
 
@@ -57,7 +58,7 @@ describe('Switch', () => {
     const s = setup();
     act(() => s.track().focus());
     await s.user.keyboard('[Space]');
-    expect(s.onChange).toHaveBeenCalledWith(true, expect.anything());
+    expect(s.onChange).toHaveBeenCalledWith(true);
     expect(s.track()).toBeChecked();
   });
 
@@ -72,7 +73,7 @@ describe('Switch', () => {
   it('toggles-back-off', async () => {
     const s = setup({ defaultChecked: true });
     await s.user.click(s.track());
-    expect(s.onChange).toHaveBeenCalledWith(false, expect.anything());
+    expect(s.onChange).toHaveBeenCalledWith(false);
     expect(s.track()).not.toBeChecked();
   });
 
@@ -93,7 +94,7 @@ describe('Switch', () => {
   it('controlled-follows-prop', async () => {
     const s = setup({ checked: false });
     await s.user.click(s.track());
-    expect(s.onChange).toHaveBeenCalledWith(true, expect.anything());
+    expect(s.onChange).toHaveBeenCalledWith(true);
     expect(s.track()).not.toBeChecked();
   });
 
@@ -108,27 +109,32 @@ describe('Switch', () => {
     expect(screen.getByText(DESCRIPTION)).toBeInTheDocument();
   });
 
-  /* derived: a11y.role */
+  it('label-at-the-end-still-toggles-the-row', async () => {
+    const s = setup({ labelPosition: 'end' });
+    await s.user.click(s.label());
+    expect(s.onChange).toHaveBeenCalledWith(true);
+    expect(s.track()).toBeChecked();
+  });
+
+  /* derived */
   it('renders', () => {
     setup();
     expect(screen.getByRole('switch')).toBeInTheDocument();
   });
 
-  /* derived: props.labelPosition */
-  it('renders-labelposition-start', () => {
+  it('renders-label-position-start', () => {
     setup({ labelPosition: 'start' });
     expect(screen.getByRole('switch')).toBeInTheDocument();
   });
 
-  it('renders-labelposition-end', () => {
+  it('renders-label-position-end', () => {
     setup({ labelPosition: 'end' });
     expect(screen.getByRole('switch')).toBeInTheDocument();
   });
 
-  /* derived: a11y.requires */
   it('has-accessible-name', () => {
     const s = setup();
-    expect(screen.getByRole('switch', { name: s.props.label! })).toHaveAccessibleName();
+    expect(screen.getByRole('switch', { name: s.props.label })).toHaveAccessibleName();
   });
 
   it('control-is-focusable', () => {

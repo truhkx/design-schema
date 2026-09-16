@@ -150,29 +150,14 @@ export class DsAlert extends LitElement {
       background: var(--color-status-danger-background);
     }
 
-    /* iconSize: font.size.lg via the icon's own --ds-icon-size hook */
+    /* icon (locked) and iconSize are forwarded to the Icon's own overrides (see render) */
     .icon {
       flex: none;
-      --ds-icon-size: var(--ds-alert-icon-size);
       /* Align with the first line of text. */
       margin-block-start: calc(
         (var(--ds-alert-font-size) * var(--ds-alert-line-height) - var(--ds-alert-icon-size)) / 2
       );
     }
-    /* icon: color.status.{tone}.icon, locked */
-    :host([tone='info']) .icon {
-      color: var(--color-status-info-icon);
-    }
-    :host([tone='success']) .icon {
-      color: var(--color-status-success-icon);
-    }
-    :host([tone='warning']) .icon {
-      color: var(--color-status-warning-icon);
-    }
-    :host([tone='danger']) .icon {
-      color: var(--color-status-danger-icon);
-    }
-
     .content {
       display: flex;
       flex: 1 1 auto;
@@ -213,13 +198,13 @@ export class DsAlert extends LitElement {
   `;
 
   /** What kind of message this is. Sets the colors, the icon, and (with `live`) the announcement. */
-  @property({ reflect: true }) accessor tone: AlertTone = 'info';
+  @property({ type: String, reflect: true }) accessor tone: AlertTone = 'info';
 
   /** A short bold heading for the message. Optional for one-line messages. Never forwarded as the native `title`. */
   @property() accessor heading: string | undefined;
 
   /** How the alert is announced when it appears. `status` is polite; `alert` interrupts; `off` for alerts present at load. */
-  @property({ reflect: true }) accessor live: AlertLive = 'status';
+  @property({ type: String, reflect: true }) accessor live: AlertLive = 'status';
 
   /** Shows a dismiss button at the end of the alert. */
   @property({ type: Boolean, reflect: true }) accessor dismissible = false;
@@ -242,7 +227,15 @@ export class DsAlert extends LitElement {
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('live')) {
       // role="status" implies aria-live="polite" and role="alert" implies assertive.
-      this.internals.role = this.live === 'off' ? null : this.live;
+      // Mirrored as a plain attribute: the accessible-name/role computation the
+      // tests use does not read ElementInternals.
+      const role = this.live === 'off' ? null : this.live;
+      this.internals.role = role;
+      if (role === null) {
+        this.removeAttribute('role');
+      } else if (this.getAttribute('role') !== role) {
+        this.setAttribute('role', role);
+      }
     }
     if (changed.has('overrides')) {
       this.applyOverrides();
@@ -256,23 +249,33 @@ export class DsAlert extends LitElement {
   protected override render(): TemplateResult {
     const hasHeading = Boolean(this.heading) || this.querySelector('[slot="heading"]') !== null;
     return html`
-      <div class="container" part="container">
-        <ds-icon class="icon" part="icon" name=${this.tone}></ds-icon>
+      <div class="container" part="container" data-part="container">
+        <ds-icon
+          class="icon"
+          part="icon"
+          data-part="icon"
+          name=${this.tone}
+          .overrides=${{
+            color: `color.status.${this.tone}.icon` as const,
+            size: this.overrides?.iconSize ?? 'font.size.lg',
+          }}
+        ></ds-icon>
         <div class="content">
           ${hasHeading
-            ? html`<p class="heading" part="heading">
+            ? html`<p class="heading" part="heading" data-part="heading">
                 <slot name="heading" @slotchange=${this.handleContentSlotChange}
                   >${this.heading ?? nothing}</slot
                 >
               </p>`
             : nothing}
-          <div class="body" part="body"><slot @slotchange=${this.handleContentSlotChange}></slot></div>
+          <div class="body" part="body" data-part="body"><slot @slotchange=${this.handleContentSlotChange}></slot></div>
         </div>
         ${this.dismissible
           ? html`
               <ds-button
                 class="dismiss"
                 part="dismiss-button"
+                data-part="dismissButton"
                 variant="ghost"
                 size="sm"
                 icon-only

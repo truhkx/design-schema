@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { Animated, AccessibilityInfo, Platform, Pressable, View, findNodeHandle } from 'react-native';
+import { Animated, AccessibilityInfo, Platform, Pressable, StyleSheet, View, findNodeHandle } from 'react-native';
 import type { PressableStateCallbackType, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
+import { useFieldsetContext } from './Fieldset';
 import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Icon } from './Icon';
@@ -13,7 +14,6 @@ import { toEasing, useReducedMotion, useTheme } from './theme';
 export type CheckboxOverridableBinding =
   | 'controlBackground'
   | 'controlBorderWidth'
-  | 'indicatorStroke'
   | 'pressedOverlay'
   | 'controlBorderInvalid'
   | 'controlSize'
@@ -57,6 +57,8 @@ export interface CheckboxProps {
   overrides?: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the checked state changes, with the new boolean. */
   onChange?: ((checked: boolean) => void) | undefined;
+  /** The root view. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 const COPY = {
@@ -75,19 +77,21 @@ const COPY = {
  * of its children are checked. Do not use it for a setting that applies immediately
  * (Switch) or to pick exactly one option (RadioGroup).
  *
- * There is no checkbox in core React Native. Renders a `Pressable` with
- * `accessibilityRole="checkbox"`, `accessibilityLabel`, `accessibilityHint` and
- * `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`,
- * containing a drawn control (the `check`/`dash` `Icon`, since native has no
- * `currentColor`) and a `Text` label; the whole row is the hit area and never drops
- * below the comfortable target. The fill, border and indicator cross-fade between
- * unchecked and checked/indeterminate over `transition` with `motion.easing.standard`
- * (skipped under reduced motion); the pressed state shows the selected fill at
- * `pressedOverlay` instantly. Inside a Form the control registers by `name` and
- * contributes `value` when checked, nothing when not; validation precedence is
- * `error`, then `required` (`copy.required`), then `invalid` (`copy.invalid`), same
- * as Input. Inside a Form, `validate: blur` means "on change" — there is no useful
- * blur moment. Errors are announced as in Input.
+ * There is no checkbox in core React Native. Renders a `Pressable` row with
+ * `accessibilityRole="checkbox"`, `accessibilityLabel`, `accessibilityHint={description}`
+ * and `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`,
+ * containing the drawn control (the `check`/`dash` `Icon`) and the label and
+ * description, so the whole row — control, label or description — is the hit area and
+ * never drops below the comfortable target. Space on a hardware keyboard is handled by
+ * the platform once the role is set. The fill, border and indicator cross-fade over
+ * `transition` with `motion.easing.standard` (skipped under reduced motion); while
+ * pressed the box shows the selected fill at `pressedOverlay`. Toggling an
+ * indeterminate checkbox clears the mixed state until `indeterminate` is set again.
+ * Inside a Form the control registers by `name` and submits its checked state as a
+ * boolean; validation precedence is `error`, then `required` (`copy.required`), then
+ * `invalid` (`copy.invalid`), as in Input, and `validate: blur` means on change.
+ * Inside a Fieldset the group's `disabled` applies and the legend prefixes the
+ * accessibility label. Errors are announced as in Input.
  */
 export function Checkbox({
   label,
@@ -104,16 +108,25 @@ export function Checkbox({
   error,
   overrides,
   onChange,
+  ref,
 }: CheckboxProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const form = useFormContext();
+  const fieldset = useFieldsetContext();
   const reducedMotion = useReducedMotion();
   const pressableRef = React.useRef<ViewInstance>(null);
   const [internalChecked, setInternalChecked] = React.useState<boolean>(defaultChecked);
+  const [mixedCleared, setMixedCleared] = React.useState(false);
   const [focused, setFocused] = React.useState(false);
 
+  // A new `indeterminate: true` brings the mixed state back after a toggle cleared it.
+  React.useEffect(() => {
+    setMixedCleared(false);
+  }, [indeterminate]);
+
   const isChecked = checked ?? internalChecked;
-  const isDisabled = disabled || (form?.disabled ?? false);
+  const isMixed = indeterminate && !mixedCleared;
+  const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
   const formError = form?.errors[name];
   const displayedError = error !== undefined && error !== '' ? error : formError;
   const isInvalid = invalid || displayedError !== undefined;
@@ -140,7 +153,7 @@ export function Checkbox({
   latest.current = { isChecked, value, validateValue };
   const handle = React.useMemo<FormFieldHandle>(
     () => ({
-      getValue: () => (latest.current.isChecked ? latest.current.value : undefined),
+      getValue: () => latest.current.isChecked,
       validate: () => latest.current.validateValue(latest.current.isChecked),
       focus: () => {
         const node = pressableRef.current === null ? null : findNodeHandle(pressableRef.current);
@@ -176,6 +189,9 @@ export function Checkbox({
     if (checked === undefined) {
       setInternalChecked(next);
     }
+    if (isMixed) {
+      setMixedCleared(true);
+    }
     onChange?.(next);
     if (form !== null && form.validateMode !== 'submit') {
       form.reportValidity(name, validateValue(next));
@@ -183,7 +199,8 @@ export function Checkbox({
   };
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
-  const filled = isChecked || indeterminate;
+  const accessibleName = fieldset !== null ? `${fieldset.legend}, ${visibleLabel}` : visibleLabel;
+  const filled = isChecked || isMixed;
 
   const controlBackground = overrides?.controlBackground ? (resolveToken(t, overrides.controlBackground) as string) : t.colorControlBackground;
   const controlBorderWidth = overrides?.controlBorderWidth ? (resolveToken(t, overrides.controlBorderWidth) as number) : t.borderWidthThin;
@@ -197,7 +214,7 @@ export function Checkbox({
   const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
 
   // Fill, border and indicator cross-fade together between unchecked and
-  // checked/indeterminate; the pressed overlay below is instant, not part of this.
+  // checked/indeterminate; the pressed overlay is instant, not part of this.
   const fillAnim = React.useRef(new Animated.Value(filled ? 1 : 0)).current;
   React.useEffect(() => {
     const toValue = filled ? 1 : 0;
@@ -216,25 +233,36 @@ export function Checkbox({
   const animatedBackground = fillAnim.interpolate({ inputRange: [0, 1], outputRange: [controlBackground, t.colorControlSelectedBackground] });
   const animatedBorderColor = fillAnim.interpolate({ inputRange: [0, 1], outputRange: [t.colorControlBorder, t.colorControlSelectedBackground] });
 
+  const rootStyle: ViewStyle = {
+    flexDirection: 'column',
+    gap: partGap,
+    opacity: isDisabled ? disabledOpacity : 1,
+  };
+
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap,
     minHeight: t.sizeTargetComfortable,
     paddingVertical: t.space1,
-    opacity: isDisabled ? disabledOpacity : 1,
   };
 
-  const boxStyle = ({ pressed }: PressableStateCallbackType): Animated.WithAnimatedValue<ViewStyle> => ({
+  const controlStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: controlSize,
     height: controlSize,
     borderRadius: controlRadius,
     borderWidth: focused ? t.borderWidthFocus : controlBorderWidth,
     borderColor: focused ? t.colorBorderFocus : isInvalid ? controlBorderInvalid : animatedBorderColor,
-    backgroundColor: pressed && !isDisabled ? t.colorControlSelectedBackground : animatedBackground,
-    opacity: pressed && !isDisabled ? pressedOverlay : 1,
+    backgroundColor: animatedBackground,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+  };
+
+  const overlayStyle = ({ pressed }: PressableStateCallbackType): ViewStyle => ({
+    ...StyleSheet.absoluteFill,
+    backgroundColor: t.colorControlSelectedBackground,
+    opacity: pressed && !isDisabled ? pressedOverlay : 0,
   });
 
   const indicatorStyle: Animated.WithAnimatedValue<ViewStyle> = { opacity: fillAnim };
@@ -245,21 +273,17 @@ export function Checkbox({
     gap: partGap,
   };
 
-  const errorStyle: ViewStyle = {
-    marginTop: partGap,
-  };
-
   const typographyOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
   const helperOverrides = { ...typographyOverrides, fontSize: overrides?.helperSize };
 
   return (
-    <View testID="Checkbox">
+    <View ref={ref} testID="Checkbox" style={rootStyle}>
       <Pressable
         ref={pressableRef}
         accessibilityRole="checkbox"
-        accessibilityLabel={visibleLabel}
+        accessibilityLabel={accessibleName}
         accessibilityHint={description}
-        accessibilityState={{ checked: indeterminate ? 'mixed' : isChecked, disabled: isDisabled }}
+        accessibilityState={{ checked: isMixed ? 'mixed' : isChecked, disabled: isDisabled }}
         onPress={handlePress}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
@@ -267,35 +291,33 @@ export function Checkbox({
       >
         {(state) => (
           <>
-            <Animated.View style={boxStyle(state)} accessibilityElementsHidden importantForAccessibility="no">
-              <Animated.View style={indicatorStyle}>
-                {/*
-                  `overrides.indicatorStroke` no longer reaches the glyph: Icon's
-                  `strokeWidth` is a locked binding (it is what keeps line glyphs
-                  legible at xs), and there is no cascade to route it through as on
-                  web. The Checkbox binding stays in the type until Checkbox is
-                  regenerated against the current Icon contract.
-                */}
-                <Icon name={indeterminate ? 'dash' : 'check'} size="xs" color={t.colorControlSelectedForeground} />
+            <Animated.View testID="Checkbox.control" style={controlStyle} accessibilityElementsHidden importantForAccessibility="no">
+              <View style={overlayStyle(state)} />
+              <Animated.View testID="Checkbox.indicator" style={indicatorStyle}>
+                <Icon name={isMixed ? 'dash' : 'check'} size="xs" color={t.colorControlSelectedForeground} />
               </Animated.View>
             </Animated.View>
             <View style={textColumnStyle}>
               {hideLabel ? null : (
-                <Text overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}>
-                  {visibleLabel}
-                </Text>
+                <View testID="Checkbox.label">
+                  <Text overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}>
+                    {visibleLabel}
+                  </Text>
+                </View>
               )}
               {description !== undefined ? (
-                <Text size="sm" tone="muted" overrides={helperOverrides}>
-                  {description}
-                </Text>
+                <View testID="Checkbox.description">
+                  <Text size="sm" tone="muted" overrides={helperOverrides}>
+                    {description}
+                  </Text>
+                </View>
               ) : null}
             </View>
           </>
         )}
       </Pressable>
       {displayedError !== undefined ? (
-        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} style={errorStyle}>
+        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} testID="Checkbox.errorMessage">
           <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
           </Text>

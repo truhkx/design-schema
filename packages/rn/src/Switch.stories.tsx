@@ -27,8 +27,13 @@ export const LabelPositionEnd: Story = { args: { labelPosition: 'end' } };
 
 export const On: Story = { args: { defaultChecked: true } };
 
+// examples
+export const SettingsRow: Story = { args: { label: 'Email notifications', labelPosition: 'start' } };
+
 export const WithDescription: Story = {
-  args: { description: 'Sends a daily summary at 9:00.' },
+  args: { label: 'Daily summary', description: 'Sends a daily summary at 9:00.' },
 };
 
-export const Disabled: Story = { args: { disabled: true, defaultChecked: true } };
+export const CheckboxAligned: Story = { args: { label: 'Show archived', labelPosition: 'end' } };
+
+export const Disabled: Story = { args: { label: 'Two-factor authentication', disabled: true } };

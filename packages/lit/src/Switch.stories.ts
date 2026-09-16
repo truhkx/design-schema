@@ -2,7 +2,6 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Switch.js';
-import './Stack.js';
 import type { SwitchLabelPosition } from './Switch.js';
 
 interface SwitchArgs {
@@ -34,16 +33,14 @@ const meta: Meta<SwitchArgs> = {
     labelPosition: 'start',
   },
   render: (args) => html`
-    <div style="inline-size: min(100%, 24rem)">
-      <ds-switch
-        label=${args.label}
-        name=${ifDefined(args.name || undefined)}
-        description=${ifDefined(args.description)}
-        label-position=${args.labelPosition}
-        ?default-checked=${args.defaultChecked}
-        ?disabled=${args.disabled}
-      ></ds-switch>
-    </div>
+    <ds-switch
+      label=${args.label}
+      name=${ifDefined(args.name || undefined)}
+      description=${ifDefined(args.description)}
+      label-position=${args.labelPosition}
+      ?default-checked=${args.defaultChecked}
+      ?disabled=${args.disabled}
+    ></ds-switch>
   `,
 };
 
@@ -56,21 +53,23 @@ export const Default: Story = {};
 export const LabelPositionStart: Story = { args: { labelPosition: 'start' } };
 export const LabelPositionEnd: Story = { args: { labelPosition: 'end' } };
 
-/* boolean states */
+/* states */
 export const DefaultCheckedTrue: Story = { args: { defaultChecked: true } };
-export const DisabledTrue: Story = { args: { disabled: true } };
-export const DisabledOn: Story = { args: { disabled: true, defaultChecked: true } };
+export const DisabledChecked: Story = { args: { disabled: true, defaultChecked: true } };
 
-export const WithDescription: Story = {
-  args: { description: 'Sends a daily summary at 9:00.' },
+/* examples */
+export const SettingsRow: Story = {
+  args: { label: 'Email notifications', labelPosition: 'start' },
 };
 
-export const SettingsList: Story = {
-  render: () => html`
-    <ds-stack gap="0" style="inline-size: min(100%, 24rem)">
-      <ds-switch label="Email notifications" default-checked></ds-switch>
-      <ds-switch label="Push notifications"></ds-switch>
-      <ds-switch label="Show archived" description="Includes items archived in the last year."></ds-switch>
-    </ds-stack>
-  `,
+export const WithDescription: Story = {
+  args: { label: 'Daily summary', description: 'Sends a daily summary at 9:00.' },
+};
+
+export const CheckboxAligned: Story = {
+  args: { label: 'Show archived', labelPosition: 'end' },
+};
+
+export const Disabled: Story = {
+  args: { label: 'Two-factor authentication', disabled: true },
 };

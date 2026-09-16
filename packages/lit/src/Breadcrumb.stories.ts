@@ -9,21 +9,6 @@ interface BreadcrumbArgs {
   collapse: boolean;
 }
 
-const shortTrail: BreadcrumbItem[] = [
-  { label: 'Docs', href: '#docs' },
-  { label: 'Components', href: '#components' },
-  { label: 'Breadcrumb' },
-];
-
-const longTrail: BreadcrumbItem[] = [
-  { label: 'Catalogue', href: '#catalogue' },
-  { label: 'Hardware', href: '#hardware' },
-  { label: 'Storage', href: '#storage' },
-  { label: 'Solid state', href: '#ssd' },
-  { label: 'NVMe', href: '#nvme' },
-  { label: '2 TB' },
-];
-
 const meta: Meta<BreadcrumbArgs> = {
   title: 'Breadcrumb/Lit',
   tags: ['autodocs'],
@@ -34,7 +19,11 @@ const meta: Meta<BreadcrumbArgs> = {
     collapse: { control: 'boolean' },
   },
   args: {
-    items: shortTrail,
+    items: [
+      { label: 'Docs', href: '/docs' },
+      { label: 'Components', href: '/docs/components' },
+      { label: 'Breadcrumb' },
+    ],
     label: 'Breadcrumb',
     collapse: true,
   },
@@ -42,8 +31,8 @@ const meta: Meta<BreadcrumbArgs> = {
     <ds-breadcrumb
       .items=${args.items}
       label=${args.label}
-      ?collapse=${args.collapse}
-      @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.detail.originalEvent.preventDefault()}
+      ?no-collapse=${!args.collapse}
+      @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.preventDefault()}
     ></ds-breadcrumb>
   `,
 };
@@ -53,14 +42,44 @@ type Story = StoryObj<BreadcrumbArgs>;
 
 export const Default: Story = {};
 
-/* boolean states */
-export const CollapseTrue: Story = { args: { items: longTrail, collapse: true } };
-export const CollapseFalse: Story = { args: { items: longTrail, collapse: false } };
-
-export const TwoLevels: Story = {
-  args: { items: [{ label: 'Settings', href: '#settings' }, { label: 'Notifications' }] },
+/* examples */
+export const SettingsTrail: Story = {
+  args: {
+    items: [
+      { label: 'Settings', href: '/settings' },
+      { label: 'Notifications', href: '/settings/notifications' },
+      { label: 'Email digest' },
+    ],
+  },
 };
 
-export const CustomLabel: Story = {
-  args: { label: 'Catalogue location', items: longTrail },
+export const DeepTrailCollapsed: Story = {
+  args: {
+    collapse: true,
+    items: [
+      { label: 'Docs', href: '/docs' },
+      { label: 'Components', href: '/docs/components' },
+      { label: 'Navigation', href: '/docs/components/navigation' },
+      { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },
+      { label: 'Keyboard' },
+    ],
+  },
+};
+
+export const AlwaysInFull: Story = {
+  args: {
+    collapse: false,
+    items: [
+      { label: 'Catalogue', href: '/catalogue' },
+      { label: 'Outdoor', href: '/catalogue/outdoor' },
+      { label: 'Tents' },
+    ],
+  },
+};
+
+export const SecondBreadcrumbOnAPage: Story = {
+  args: {
+    label: 'Catalogue breadcrumb',
+    items: [{ label: 'Catalogue', href: '/catalogue' }, { label: 'Tents' }],
+  },
 };

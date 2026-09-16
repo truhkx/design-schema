@@ -148,7 +148,12 @@ export { DsFieldset } from './Fieldset.js';
 export type { FieldsetGap, FieldsetOverridableBinding } from './Fieldset.js';
 
 export { DsDisclosure } from './Disclosure.js';
-export type { DisclosureHeadingLevel, DisclosureToggleDetail, DisclosureOverridableBinding } from './Disclosure.js';
+export type {
+  DisclosureHeadingLevel,
+  DisclosureToggleReason,
+  DisclosureToggleDetail,
+  DisclosureOverridableBinding,
+} from './Disclosure.js';
 
 export { DsAlert } from './Alert.js';
 export type { AlertTone, AlertLive, AlertDismissDetail, AlertOverridableBinding } from './Alert.js';

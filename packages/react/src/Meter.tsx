@@ -28,14 +28,16 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<MeterOverridableBinding, string | undef
   transition: '--ds-meter-transition',
 };
 
+type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+
 function overridesToStyle(overrides: Partial<Record<MeterOverridableBinding, TokenRef | undefined>>): {
   rootStyle: CSSProperties;
-  labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
-  valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+  labelTextOverrides: TextOverrides;
+  valueTextOverrides: TextOverrides;
 } {
   const rootStyle: Record<string, string> = {};
-  const labelTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-  const valueTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const labelTextOverrides: TextOverrides = {};
+  const valueTextOverrides: TextOverrides = {};
 
   for (const binding of Object.keys(overrides) as MeterOverridableBinding[]) {
     const ref = overrides[binding];
@@ -69,7 +71,8 @@ function overridesToStyle(overrides: Partial<Record<MeterOverridableBinding, Tok
   return { rootStyle: rootStyle as CSSProperties, labelTextOverrides, valueTextOverrides };
 }
 
-export interface MeterProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role'> {
+export interface MeterProps
+  extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'className' | 'style'> {
   /** The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. */
   value: number;
   /** Lower bound of the range. */
@@ -112,10 +115,13 @@ export const Meter = function Meter({
   hideValue = false,
   overrides,
   id: idProp,
-  className,
-  style,
   ...rest
 }: MeterProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
+  // Per-instance styling goes only through `overrides`; strip anything an untyped caller passes.
+  const { className: _className, style: _style, ...forwarded } = rest as typeof rest & {
+    className?: unknown;
+    style?: unknown;
+  };
   const generatedId = useId();
   const id = idProp ?? `ds-meter${generatedId}`;
   const labelId = `${id}-label`;
@@ -131,36 +137,26 @@ export const Meter = function Meter({
   const percent = validRange ? ((clamped - min) / (max - min)) * 100 : 0;
   const resolvedValueText = valueText ?? `${Math.round(percent)}%`;
 
-  const classes = ['ds-meter', `ds-meter--${tone}`, className ?? null].filter(Boolean).join(' ');
-
   const { rootStyle, labelTextOverrides, valueTextOverrides } = overrides
     ? overridesToStyle(overrides)
     : { rootStyle: undefined, labelTextOverrides: undefined, valueTextOverrides: undefined };
-  const mergedStyle = rootStyle || style ? { ...rootStyle, ...style } : undefined;
 
   return (
-    <div {...rest} ref={ref} id={id} data-ds="Meter" data-part="container" className={classes} style={mergedStyle}>
+    <div
+      {...forwarded}
+      ref={ref}
+      id={id}
+      data-ds="Meter"
+      data-part="container"
+      className={`ds-meter ds-meter--${tone}`}
+      style={rootStyle}
+    >
       <div className="ds-meter__header">
-        <Text
-          element="span"
-          id={labelId}
-          data-part="label"
-          size="sm"
-          weight="medium"
-          className="ds-meter__label"
-          overrides={labelTextOverrides}
-        >
+        <Text element="span" id={labelId} data-part="label" size="sm" weight="medium" overrides={labelTextOverrides}>
           {label}
         </Text>
         {hideValue ? null : (
-          <Text
-            element="span"
-            data-part="valueText"
-            size="sm"
-            tone="muted"
-            className="ds-meter__value"
-            overrides={valueTextOverrides}
-          >
+          <Text element="span" data-part="valueText" size="sm" tone="muted" overrides={valueTextOverrides}>
             {resolvedValueText}
           </Text>
         )}

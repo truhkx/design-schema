@@ -4,14 +4,10 @@ import { Meter } from './Meter';
 const meta: Meta<typeof Meter> = {
   title: 'Meter/React',
   component: Meter,
+  tags: ['autodocs'],
   args: {
     label: 'Storage used',
     value: 32,
-    min: 0,
-    max: 100,
-    valueText: '3.2 GB of 10 GB',
-    tone: 'info',
-    hideValue: false,
   },
   decorators: [
     (Story) => (
@@ -29,17 +25,23 @@ export const Default: Story = {};
 
 /* tone */
 export const ToneInfo: Story = { args: { tone: 'info' } };
-export const ToneSuccess: Story = {
-  args: { tone: 'success', label: 'Password strength', value: 4, max: 4, valueText: 'Strong' },
-};
-export const ToneWarning: Story = { args: { tone: 'warning', value: 82, valueText: '8.2 GB of 10 GB' } };
-export const ToneDanger: Story = { args: { tone: 'danger', value: 95, valueText: '9.5 GB of 10 GB' } };
+export const ToneSuccess: Story = { args: { tone: 'success' } };
+export const ToneWarning: Story = { args: { tone: 'warning', value: 82 } };
+export const ToneDanger: Story = { args: { tone: 'danger', value: 95 } };
 
-/* other props */
-export const PercentValue: Story = { args: { valueText: undefined, value: 64 } };
-export const HiddenValue: Story = { args: { hideValue: true } };
-export const CustomRange: Story = {
-  args: { label: 'Score', value: 7, min: 0, max: 10, valueText: '7 of 10' },
+/* examples */
+export const StorageQuota: Story = {
+  args: { label: 'Storage used', value: 32, valueText: '3.2 GB of 10 GB' },
 };
-export const Empty: Story = { args: { value: 0, valueText: '0 GB of 10 GB' } };
-export const Full: Story = { args: { value: 100, valueText: '10 GB of 10 GB', tone: 'danger' } };
+export const NearlyFull: Story = {
+  args: { label: 'Storage used', value: 95, tone: 'danger', valueText: '9.5 GB of 10 GB' },
+};
+export const PasswordStrength: Story = {
+  args: { label: 'Password strength', value: 3, min: 0, max: 4, valueText: 'Strong', tone: 'success' },
+};
+export const BarOnly: Story = { args: { label: 'Battery', value: 64, hideValue: true } };
+
+/* notable states */
+export const Empty: Story = { args: { value: 0 } };
+export const Full: Story = { args: { value: 100 } };
+export const AboveMaximum: Story = { args: { value: 150 } };

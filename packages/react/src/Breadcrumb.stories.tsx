@@ -1,26 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Breadcrumb } from './Breadcrumb';
 
-const shortTrail = [
-  { label: 'Settings', href: '/settings' },
-  { label: 'Notifications', href: '/settings/notifications' },
-  { label: 'Email digest' },
-];
-
-const longTrail = [
-  { label: 'Docs', href: '/docs' },
-  { label: 'Components', href: '/docs/components' },
-  { label: 'Navigation', href: '/docs/components/navigation' },
-  { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },
-  { label: 'Accessibility', href: '/docs/components/navigation/breadcrumb/accessibility' },
-  { label: 'Keyboard' },
-];
-
 const meta: Meta<typeof Breadcrumb> = {
   title: 'Breadcrumb/React',
   component: Breadcrumb,
+  tags: ['autodocs'],
   args: {
-    items: shortTrail,
+    items: [
+      { label: 'Settings', href: '/settings' },
+      { label: 'Notifications', href: '/settings/notifications' },
+      { label: 'Email digest' },
+    ],
     label: 'Breadcrumb',
     collapse: true,
   },
@@ -35,11 +25,73 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 /* collapse */
-export const Collapsed: Story = { args: { items: longTrail, collapse: true } };
-export const NotCollapsed: Story = { args: { items: longTrail, collapse: false } };
+export const CollapseTrue: Story = {
+  args: {
+    collapse: true,
+    items: [
+      { label: 'Docs', href: '/docs' },
+      { label: 'Components', href: '/docs/components' },
+      { label: 'Navigation', href: '/docs/components/navigation' },
+      { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },
+      { label: 'Keyboard' },
+    ],
+  },
+};
+export const CollapseFalse: Story = {
+  args: {
+    collapse: false,
+    items: [
+      { label: 'Docs', href: '/docs' },
+      { label: 'Components', href: '/docs/components' },
+      { label: 'Navigation', href: '/docs/components/navigation' },
+      { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },
+      { label: 'Keyboard' },
+    ],
+  },
+};
 
-/* other props */
-export const CustomLabel: Story = { args: { label: 'Document location' } };
-export const TwoLevels: Story = {
-  args: { items: [{ label: 'Catalogue', href: '/catalogue' }, { label: 'Chairs' }] },
+/* examples */
+export const SettingsTrail: Story = {
+  args: {
+    items: [
+      { label: 'Settings', href: '/settings' },
+      { label: 'Notifications', href: '/settings/notifications' },
+      { label: 'Email digest' },
+    ],
+  },
+};
+export const DeepTrailCollapsed: Story = {
+  args: {
+    collapse: true,
+    items: [
+      { label: 'Docs', href: '/docs' },
+      { label: 'Components', href: '/docs/components' },
+      { label: 'Navigation', href: '/docs/components/navigation' },
+      { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },
+      { label: 'Keyboard' },
+    ],
+  },
+};
+export const AlwaysInFull: Story = {
+  args: {
+    collapse: false,
+    items: [
+      { label: 'Catalogue', href: '/catalogue' },
+      { label: 'Outdoor', href: '/catalogue/outdoor' },
+      { label: 'Tents' },
+    ],
+  },
+};
+export const SecondBreadcrumbOnAPage: Story = {
+  args: {
+    label: 'Catalogue breadcrumb',
+    items: [{ label: 'Catalogue', href: '/catalogue' }, { label: 'Tents' }],
+  },
+};
+
+/* notable states */
+export const AncestorWithoutHref: Story = {
+  args: {
+    items: [{ label: 'Docs', href: '/docs' }, { label: 'Guides' }, { label: 'Theming' }],
+  },
 };

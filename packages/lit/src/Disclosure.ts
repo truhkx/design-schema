@@ -7,9 +7,15 @@ import './Icon.js';
 
 export type DisclosureHeadingLevel = '2' | '3' | '4' | '5' | '6';
 
+/** Why the disclosure changed state. */
+export type DisclosureToggleReason = 'pointer' | 'keyboard' | 'controlled';
+
 /** Detail carried by the `toggle` CustomEvent. */
 export interface DisclosureToggleDetail {
+  /** The new state. */
   open: boolean;
+  /** `pointer` (clicked or tapped), `keyboard` (Enter or Space), `controlled` (the consumer changed `open`). */
+  reason: DisclosureToggleReason;
 }
 
 /** Overridable style hooks; see the `overrides` property. `triggerColor`, `triggerBackgroundHover`, `icon`, `panelColor`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
@@ -62,10 +68,12 @@ function isHeadingLevel(value: unknown): value is DisclosureHeadingLevel {
  * accessibility tree, so a closed panel is genuinely gone — the consumer's
  * nodes are never given `hidden`. With `keepMounted` the slot is always
  * rendered and its wrapper gets `hidden` while closed, which is required when
- * the panel holds form fields (a `<ds-form>` skips fields inside a closed
- * disclosure without it). Toggling dispatches a composed `toggle` CustomEvent
- * with `{ open }`. The chevron is composed from `<ds-icon name="chevron-right">`
- * and rotated in CSS rather than swapping glyphs, so the rotation animates.
+ * the panel holds form fields (a `<ds-form>` reads `currentOpen` and
+ * `keepMounted` and skips fields inside a closed disclosure without it).
+ *
+ * Uncontrolled from `defaultOpen` unless `open` is set; a controlled element
+ * shows the new state only once `open` changes. Every change dispatches a
+ * composed `toggle` CustomEvent with `{ open, reason }` after the state changes.
  *
  * ## When to use
  *
@@ -75,11 +83,8 @@ function isHeadingLevel(value: unknown): value is DisclosureHeadingLevel {
  * Set `headingLevel` when the summaries are section titles so they appear in
  * the outline.
  *
- * @fires toggle - Fired after the state changes with `{ open }` in `detail`.
+ * @fires toggle - Fired after the state changes with `{ open, reason }` in `detail`.
  * @slot - The panel content. Rendered only while open (always, but hidden while closed, with `keep-mounted`).
- * @csspart trigger - The native `<button>` (anatomy: trigger).
- * @csspart trigger-icon - The chevron (anatomy: triggerIcon).
- * @csspart panel - The panel wrapper (anatomy: panel).
  */
 @customElement('ds-disclosure')
 export class DsDisclosure extends LitElement {
@@ -102,7 +107,6 @@ export class DsDisclosure extends LitElement {
       --ds-disclosure-panel-padding-inline: var(--space-sm);
       --ds-disclosure-disabled-opacity: var(--opacity-disabled);
       --ds-disclosure-transition: var(--motion-duration-base);
-      font-family: var(--ds-disclosure-trigger-font-family);
     }
 
     :host([hidden]) {
@@ -116,7 +120,7 @@ export class DsDisclosure extends LitElement {
       font: inherit;
     }
 
-    .trigger {
+    [data-part='trigger'] {
       box-sizing: border-box;
       display: inline-flex;
       align-items: center;
@@ -138,53 +142,51 @@ export class DsDisclosure extends LitElement {
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
-      transition: background-color var(--motion-duration-fast) var(--motion-easing-standard);
     }
 
     /* triggerBackgroundHover: pointer hover and pressed state */
-    :host(:not([disabled])) .trigger:is(:hover, :active) {
+    :host(:not([disabled])) [data-part='trigger']:is(:hover, :active) {
       background: var(--color-background-subtle);
     }
 
-    .trigger:focus-visible {
+    [data-part='trigger']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
     }
 
-    :host([disabled]) .trigger {
+    :host([disabled]) [data-part='trigger'] {
       opacity: var(--ds-disclosure-disabled-opacity);
       cursor: not-allowed;
     }
 
-    /* icon: a chevron, 1em, pointing right when closed and down when open */
-    .icon {
+    /* icon: chevron-right, rotated 90° when open; mirrored under rtl */
+    [data-part='triggerIcon'] {
       flex: none;
       color: var(--color-foreground-muted);
       transition: transform var(--ds-disclosure-transition) var(--motion-easing-standard);
     }
-    :host([open]) .icon {
+    [aria-expanded='true'] [data-part='triggerIcon'] {
       transform: rotate(90deg);
     }
-    :host(:dir(rtl)) .icon {
-      transform: rotate(180deg);
+    :host(:dir(rtl)) [data-part='triggerIcon'] {
+      transform: scaleX(-1);
     }
-    :host(:dir(rtl)[open]) .icon {
-      transform: rotate(90deg);
+    :host(:dir(rtl)) [aria-expanded='true'] [data-part='triggerIcon'] {
+      transform: scaleX(-1) rotate(90deg);
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .trigger,
-      .icon {
+      [data-part='triggerIcon'] {
         transition: none;
       }
     }
 
-    .panel {
+    [data-part='panel'] {
       padding-block: var(--ds-disclosure-panel-padding-block);
       padding-inline: var(--ds-disclosure-panel-padding-inline);
       color: var(--color-foreground);
     }
-    .panel[hidden] {
+    [data-part='panel'][hidden] {
       display: none;
     }
   `;
@@ -198,7 +200,7 @@ export class DsDisclosure extends LitElement {
   /** Initial state for an uncontrolled disclosure. */
   @property({ type: Boolean, attribute: 'default-open' }) accessor defaultOpen = false;
 
-  /** The trigger cannot be activated. Stays focusable and is announced as disabled. */
+  /** The trigger cannot be activated. Stays focusable and is announced as disabled; the panel keeps its current state. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Keep the panel in the tree while closed (hidden, not unmounted). Required when the panel contains form fields. */
@@ -213,9 +215,15 @@ export class DsDisclosure extends LitElement {
   /** Uncontrolled open state (seeded from `defaultOpen`). */
   @state() private accessor internalOpen = false;
 
-  @query('#trigger') private accessor triggerEl!: HTMLButtonElement;
+  @query('[data-part=trigger]') private accessor triggerEl!: HTMLButtonElement | null;
 
-  /** Whether the panel is currently open. */
+  /** The resolved state rendered at the last update; `undefined` before the first. */
+  private renderedOpen: boolean | undefined;
+
+  /** The state the last user activation asked for, so the resulting prop change is not re-reported as `controlled`. */
+  private requestedOpen: boolean | undefined;
+
+  /** Whether the panel is currently open (controlled `open`, else the uncontrolled state). */
   get currentOpen(): boolean {
     return this.open ?? this.internalOpen;
   }
@@ -232,8 +240,8 @@ export class DsDisclosure extends LitElement {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
-    // A controlled close (or an uncontrolled one) removes/hides the panel: move focus first.
-    if (this.hasUpdated && (changed.has('open') || changed.has('internalOpen')) && !this.currentOpen) {
+    // Closing removes (or hides) the panel: move focus inside it to the trigger first.
+    if (this.hasUpdated && this.renderedOpen === true && !this.currentOpen) {
       this.moveFocusOutOfPanel();
     }
   }
@@ -243,8 +251,7 @@ export class DsDisclosure extends LitElement {
     const panelExists = isOpen || this.keepMounted;
     const trigger = html`
       <button
-        id="trigger"
-        class="trigger"
+        data-part="trigger"
         part="trigger"
         type="button"
         aria-expanded=${isOpen ? 'true' : 'false'}
@@ -252,8 +259,8 @@ export class DsDisclosure extends LitElement {
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
         @click=${this.handleClick}
       >
-        <ds-icon class="icon" part="trigger-icon" name="chevron-right" inline></ds-icon>
-        <span class="summary">${this.summary}</span>
+        <ds-icon data-part="triggerIcon" part="triggerIcon" name="chevron-right" inline></ds-icon>
+        <span>${this.summary}</span>
       </button>
     `;
     const level = this.headingLevel;
@@ -264,37 +271,55 @@ export class DsDisclosure extends LitElement {
     return html`
       ${heading}
       ${panelExists
-        ? html`<div id="panel" class="panel" part="panel" ?hidden=${!isOpen}><slot></slot></div>`
+        ? html`<div id="panel" data-part="panel" part="panel" ?hidden=${!isOpen}><slot></slot></div>`
         : nothing}
     `;
+  }
+
+  protected override updated(changed: PropertyValues): void {
+    const now = this.currentOpen;
+    const previous = this.renderedOpen;
+    this.renderedOpen = now;
+    if (!changed.has('open') && !changed.has('internalOpen')) return;
+    const requested = this.requestedOpen;
+    this.requestedOpen = undefined;
+    // A consumer-driven change of `open` that no user activation asked for.
+    if (previous !== undefined && previous !== now && changed.has('open') && requested !== now) {
+      this.dispatchToggle(now, 'controlled');
+    }
   }
 
   private handleClick(event: MouseEvent): void {
     if (this.disabled) {
       event.preventDefault();
-      event.stopPropagation();
       return;
     }
     const next = !this.currentOpen;
-    if (this.open !== undefined) {
-      this.open = next;
-    } else {
+    // A keyboard activation of a native button produces a click with detail 0.
+    const reason: DisclosureToggleReason = event.detail === 0 ? 'keyboard' : 'pointer';
+    if (this.open === undefined) {
       this.internalOpen = next;
+    } else {
+      // Controlled: the new state shows only once the consumer sets `open`.
+      this.requestedOpen = next;
     }
+    this.dispatchToggle(next, reason);
+  }
+
+  private dispatchToggle(open: boolean, reason: DisclosureToggleReason): void {
     this.dispatchEvent(
       new CustomEvent<DisclosureToggleDetail>('toggle', {
-        detail: { open: next },
+        detail: { open, reason },
         bubbles: true,
         composed: true,
       }),
     );
   }
 
-  /** Closing removes the panel from the tree, so focus inside it goes to the trigger first. */
   private moveFocusOutOfPanel(): void {
     const active = document.activeElement;
     if (active !== null && active !== this && this.contains(active)) {
-      this.triggerEl.focus();
+      this.triggerEl?.focus();
     }
   }
 

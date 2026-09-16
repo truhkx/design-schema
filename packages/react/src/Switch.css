@@ -30,6 +30,8 @@
   min-block-size: var(--ds-switch-min-target);
   font-family: var(--ds-switch-font-family);
   line-height: var(--ds-switch-line-height);
+  /* minTarget: the whole row toggles. */
+  cursor: pointer;
 }
 
 /* labelPosition changes flex order only: `start` puts the label first and the track at the row end. */
@@ -115,6 +117,10 @@
 }
 
 /* disabled: stays focusable and readable; visually dimmed. */
+.ds-switch--disabled {
+  cursor: not-allowed;
+}
+
 .ds-switch--disabled .ds-switch__control,
 .ds-switch--disabled .ds-switch__label,
 .ds-switch--disabled .ds-switch__description {

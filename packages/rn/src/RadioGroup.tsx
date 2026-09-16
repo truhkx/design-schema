@@ -3,9 +3,11 @@ import { AccessibilityInfo, Animated, Platform, Pressable, View, findNodeHandle 
 import type { ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
+import { useFieldsetContext } from './Fieldset';
 import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Text } from './Text';
+import type { TextProps } from './Text';
 import { toEasing, useReducedMotion, useTheme } from './theme';
 
 export type RadioGroupOrientation = 'vertical' | 'horizontal';
@@ -59,13 +61,156 @@ export interface RadioGroupProps {
   overrides?: Partial<Record<RadioGroupOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selection changes, with the new option value. */
   onChange?: ((value: string) => void) | undefined;
+  /** The root (group) view. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 const COPY = {
   required: (label: string): string => `${label} is required.`,
   invalid: (label: string): string => `${label} is not valid.`,
   requiredIndicator: ' (required)',
+  position: (index: number, total: number): string => `${index} of ${total}`,
 } as const;
+
+type TextOverrides = TextProps['overrides'];
+
+interface RadioProps {
+  option: RadioGroupOption;
+  index: number;
+  total: number;
+  selected: boolean;
+  optionDisabled: boolean;
+  groupDisabled: boolean;
+  invalid: boolean;
+  radioRef: React.Ref<ViewInstance> | undefined;
+  onSelect: (value: string) => void;
+  sizes: {
+    controlBorderWidth: number;
+    controlBorderInvalid: string;
+    controlSize: number;
+    controlRadius: number;
+    optionGap: number;
+    partGap: number;
+    disabledOpacity: number;
+    transitionDuration: number;
+  };
+  labelOverrides: TextOverrides;
+  helperOverrides: TextOverrides;
+}
+
+/** One option row: the whole row is the Pressable, so the control, label and description are all the hit area. */
+function Radio({
+  option,
+  index,
+  total,
+  selected,
+  optionDisabled,
+  groupDisabled,
+  invalid,
+  radioRef,
+  onSelect,
+  sizes,
+  labelOverrides,
+  helperOverrides,
+}: RadioProps): React.JSX.Element {
+  const { tokens: t } = useTheme();
+  const reducedMotion = useReducedMotion();
+  const [focused, setFocused] = React.useState(false);
+
+  // The selected border and the dot cross-fade in; the fill stays controlBackground.
+  const selectAnim = React.useRef(new Animated.Value(selected ? 1 : 0)).current;
+  React.useEffect(() => {
+    const toValue = selected ? 1 : 0;
+    if (reducedMotion) {
+      selectAnim.setValue(toValue);
+      return;
+    }
+    Animated.timing(selectAnim, {
+      toValue,
+      duration: sizes.transitionDuration,
+      easing: toEasing(t.motionEasingStandard),
+      useNativeDriver: false,
+    }).start();
+  }, [selected, reducedMotion, selectAnim, sizes.transitionDuration, t.motionEasingStandard]);
+
+  const rowStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: sizes.optionGap,
+    minHeight: t.sizeTargetComfortable,
+    paddingVertical: t.space1,
+    // The whole group already carries opacity.disabled; a disabled option inside an enabled group dims on its own.
+    opacity: optionDisabled && !groupDisabled ? sizes.disabledOpacity : 1,
+  };
+
+  const controlStyle: Animated.WithAnimatedValue<ViewStyle> = {
+    width: sizes.controlSize,
+    height: sizes.controlSize,
+    borderRadius: sizes.controlRadius,
+    borderWidth: focused ? t.borderWidthFocus : sizes.controlBorderWidth,
+    borderColor: focused
+      ? t.colorBorderFocus
+      : invalid
+        ? sizes.controlBorderInvalid
+        : selectAnim.interpolate({ inputRange: [0, 1], outputRange: [t.colorControlBorder, t.colorControlSelectedBackground] }),
+    backgroundColor: t.colorControlBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+
+  // The centre dot is controlSize minus 2 × space.1 in diameter.
+  const dotSize = sizes.controlSize - 2 * t.space1;
+  const dotStyle: Animated.WithAnimatedValue<ViewStyle> = {
+    width: dotSize,
+    height: dotSize,
+    borderRadius: sizes.controlRadius,
+    backgroundColor: t.colorControlSelectedBackground,
+    opacity: selectAnim,
+  };
+
+  const textColumnStyle: ViewStyle = {
+    flexShrink: 1,
+    flexDirection: 'column',
+    gap: sizes.partGap,
+  };
+
+  const accessibleName = option.description !== undefined ? `${option.label}, ${option.description}` : option.label;
+
+  return (
+    <Pressable
+      ref={radioRef}
+      testID="RadioGroup.radio"
+      accessibilityRole="radio"
+      accessibilityLabel={accessibleName}
+      accessibilityState={{ checked: selected, disabled: optionDisabled }}
+      accessibilityValue={{ text: COPY.position(index, total) }}
+      onPress={() => {
+        if (!optionDisabled) {
+          onSelect(option.value);
+        }
+      }}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={rowStyle}
+    >
+      <Animated.View style={controlStyle} accessibilityElementsHidden importantForAccessibility="no">
+        <Animated.View testID="RadioGroup.radioIndicator" style={dotStyle} />
+      </Animated.View>
+      <View style={textColumnStyle}>
+        <View testID="RadioGroup.radioLabel">
+          <Text overrides={labelOverrides}>{option.label}</Text>
+        </View>
+        {option.description !== undefined ? (
+          <View testID="RadioGroup.radioDescription">
+            <Text size="sm" tone="muted" overrides={helperOverrides}>
+              {option.description}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
 
 /**
  * RadioGroup — asks one question and takes one answer. Every option is visible at
@@ -78,21 +223,22 @@ const COPY = {
  * seven options (Select, planned). Once a radio is chosen, one is always chosen.
  *
  * Renders a `View` with `accessibilityRole="radiogroup"`, `accessibilityLabel={label}`
- * and `accessibilityHint={description}`, a `Text` legend, and one `Pressable` per
- * option with `accessibilityRole="radio"`, `accessibilityLabel` (label plus
- * description) and `accessibilityState={{ checked, disabled }}`. There is no roving
- * tabindex or arrow movement on native — every radio is its own focus stop, which is
- * the platform convention. Individually disabled options stay focus stops (native
- * `disabled` is reserved for `Switch`) but are guarded against press and dimmed;
- * a fully `disabled` group stays reachable but inert. The selected border and dot
- * cross-fade in over `transition` with `motion.easing.standard` (skipped under
- * reduced motion); the fill never changes, only the border and dot. Inside a Form
- * the group registers by `name` and contributes the selected value (no key when
- * nothing is selected); validation precedence is `error`, then `required`
- * (`copy.required`), then `invalid` (`copy.invalid`), same as Input, and focus moves
- * to the first enabled radio on a failed submit. `validate: blur` runs on change,
- * since a group-level blur does not exist on native. The group error is announced
- * as in Input.
+ * and `accessibilityHint={description}` (not `accessible`, so the radios stay
+ * reachable), a `Text` legend, and one `Pressable` per option with
+ * `accessibilityRole="radio"`, `accessibilityLabel` (label plus description),
+ * `accessibilityState={{ checked, disabled }}` and `copy.position` as its
+ * `accessibilityValue`. There is no roving tabindex or arrow movement on native —
+ * every radio is its own focus stop, which is the platform convention; Space/Enter on
+ * a hardware keyboard activate the focused radio. Individually disabled options stay
+ * focus stops but are guarded against press and dimmed; a fully `disabled` group stays
+ * reachable but inert. The selected border and dot cross-fade in over `transition`
+ * with `motion.easing.standard` (skipped under reduced motion). Inside a Form the
+ * group registers by `name` and contributes the selected value (no key when nothing
+ * is selected); validation precedence is `error`, then `required` (`copy.required`),
+ * then `invalid` (`copy.invalid`), as in Input, and focus moves to the first enabled
+ * radio on a failed submit. `validate: blur` runs on change, since a group-level blur
+ * does not exist on native. Inside a Fieldset the group's `disabled` applies and the
+ * legend prefixes the accessibility label. The group error is announced as in Input.
  */
 export function RadioGroup({
   label,
@@ -108,25 +254,25 @@ export function RadioGroup({
   error,
   overrides,
   onChange,
+  ref,
 }: RadioGroupProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const form = useFormContext();
-  const reducedMotion = useReducedMotion();
-  const groupRef = React.useRef<ViewInstance>(null);
+  const fieldset = useFieldsetContext();
   const firstEnabledRef = React.useRef<ViewInstance>(null);
   const [internalValue, setInternalValue] = React.useState<string | undefined>(defaultValue);
-  const [focusedValue, setFocusedValue] = React.useState<string | null>(null);
 
-  const currentValue = value ?? internalValue;
-  const isDisabled = disabled || (form?.disabled ?? false);
+  const currentValue = value !== undefined ? value : internalValue;
+  const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
   const formError = form?.errors[name];
-  const displayedError = error !== undefined && error !== '' ? error : formError;
+  // Precedence: `error` prop, then the Form's message (copy.required on a failed submit), then `invalid`.
+  const displayedError =
+    error !== undefined && error !== '' ? error : formError !== undefined ? formError : invalid ? COPY.invalid(label) : undefined;
   const isInvalid = invalid || displayedError !== undefined;
   const summarised = form !== null && form.errorSummary;
 
   const validateValue = React.useCallback(
     (candidate: string | undefined): string | null => {
-      // Precedence: `error` prop, then `required`, then `invalid` — same order as Input.
       if (error !== undefined && error !== '') {
         return error;
       }
@@ -148,9 +294,7 @@ export function RadioGroup({
       getValue: () => latest.current.currentValue,
       validate: () => latest.current.validateValue(latest.current.currentValue),
       focus: () => {
-        // Focus the first enabled radio (the one a Tab would land on), falling back to the group.
-        const target = firstEnabledRef.current ?? groupRef.current;
-        const node = target === null ? null : findNodeHandle(target);
+        const node = firstEnabledRef.current === null ? null : findNodeHandle(firstEnabledRef.current);
         if (node != null) {
           AccessibilityInfo.setAccessibilityFocus(node);
         }
@@ -189,101 +333,31 @@ export function RadioGroup({
   };
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
+  const accessibleName = fieldset !== null ? `${fieldset.legend}, ${visibleLabel}` : visibleLabel;
   const firstEnabledValue = options.find((option) => option.disabled !== true)?.value;
 
-  const controlBorderWidth = overrides?.controlBorderWidth ? (resolveToken(t, overrides.controlBorderWidth) as number) : t.borderWidthThin;
-  const controlBorderInvalid = overrides?.controlBorderInvalid ? (resolveToken(t, overrides.controlBorderInvalid) as string) : t.colorBorderDanger;
-  const controlSize = overrides?.controlSize ? (resolveToken(t, overrides.controlSize) as number) : t.space5;
-  const controlRadius = overrides?.controlRadius ? (resolveToken(t, overrides.controlRadius) as number) : t.radiusFull;
-  const optionGap = overrides?.optionGap ? (resolveToken(t, overrides.optionGap) as number) : t.space2;
-  const listGap = overrides?.listGap ? (resolveToken(t, overrides.listGap) as number) : t.space2;
-  const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
-  const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
-  const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
-
-  // The centre dot is controlSize minus 2 × space.1 in diameter — a fixed relationship, not overridable.
-  const dotSize = controlSize - 2 * t.space1;
-
-  // One cross-fade per option, keyed by value; the fill never changes, only the border and dot.
-  const fillAnimsRef = React.useRef<Map<string, Animated.Value>>(new Map());
-  const getFillAnim = (optionValue: string, selected: boolean): Animated.Value => {
-    let anim = fillAnimsRef.current.get(optionValue);
-    if (anim === undefined) {
-      anim = new Animated.Value(selected ? 1 : 0);
-      fillAnimsRef.current.set(optionValue, anim);
-    }
-    return anim;
+  const sizes = {
+    controlBorderWidth: overrides?.controlBorderWidth ? (resolveToken(t, overrides.controlBorderWidth) as number) : t.borderWidthThin,
+    controlBorderInvalid: overrides?.controlBorderInvalid ? (resolveToken(t, overrides.controlBorderInvalid) as string) : t.colorBorderDanger,
+    controlSize: overrides?.controlSize ? (resolveToken(t, overrides.controlSize) as number) : t.space5,
+    controlRadius: overrides?.controlRadius ? (resolveToken(t, overrides.controlRadius) as number) : t.radiusFull,
+    optionGap: overrides?.optionGap ? (resolveToken(t, overrides.optionGap) as number) : t.space2,
+    partGap: overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1,
+    disabledOpacity: overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled,
+    transitionDuration: overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast,
   };
-
-  const optionValues = React.useMemo(() => options.map((option) => option.value), [options]);
-
-  React.useEffect(() => {
-    optionValues.forEach((optionValue) => {
-      const selected = optionValue === currentValue;
-      const anim = getFillAnim(optionValue, selected);
-      const toValue = selected ? 1 : 0;
-      if (reducedMotion) {
-        anim.setValue(toValue);
-        return;
-      }
-      Animated.timing(anim, {
-        toValue,
-        duration: transitionDuration,
-        easing: toEasing(t.motionEasingStandard),
-        useNativeDriver: false,
-      }).start();
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentValue, optionValues, reducedMotion, transitionDuration, t.motionEasingStandard]);
+  const listGap = overrides?.listGap ? (resolveToken(t, overrides.listGap) as number) : t.space2;
 
   const groupStyle: ViewStyle = {
     flexDirection: 'column',
-    gap: partGap,
-    opacity: isDisabled ? disabledOpacity : 1,
+    gap: sizes.partGap,
+    opacity: isDisabled ? sizes.disabledOpacity : 1,
   };
 
   const listStyle: ViewStyle = {
     flexDirection: orientation === 'horizontal' ? 'row' : 'column',
     flexWrap: orientation === 'horizontal' ? 'wrap' : 'nowrap',
     gap: listGap,
-  };
-
-  const optionStyle = (optionDisabled: boolean): ViewStyle => ({
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: optionGap,
-    minHeight: t.sizeTargetComfortable,
-    paddingVertical: t.space1,
-    opacity: optionDisabled && !isDisabled ? disabledOpacity : 1,
-  });
-
-  const controlStyle = (anim: Animated.Value, focused: boolean): Animated.WithAnimatedValue<ViewStyle> => ({
-    width: controlSize,
-    height: controlSize,
-    borderRadius: controlRadius,
-    borderWidth: focused ? t.borderWidthFocus : controlBorderWidth,
-    borderColor: focused
-      ? t.colorBorderFocus
-      : isInvalid
-        ? controlBorderInvalid
-        : anim.interpolate({ inputRange: [0, 1], outputRange: [t.colorControlBorder, t.colorControlSelectedBackground] }),
-    backgroundColor: t.colorControlBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-  });
-
-  const dotStyle = (anim: Animated.Value): Animated.WithAnimatedValue<ViewStyle> => ({
-    width: dotSize,
-    height: dotSize,
-    borderRadius: controlRadius,
-    backgroundColor: t.colorControlSelectedBackground,
-    opacity: anim,
-  });
-
-  const textColumnStyle: ViewStyle = {
-    flexShrink: 1,
-    flexDirection: 'column',
-    gap: t.space1,
   };
 
   const typographyOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
@@ -293,62 +367,47 @@ export function RadioGroup({
 
   return (
     <View
+      ref={ref}
       testID="RadioGroup"
-      ref={groupRef}
       accessibilityRole="radiogroup"
-      accessibilityLabel={visibleLabel}
+      accessibilityLabel={accessibleName}
       accessibilityHint={description}
       accessibilityState={{ disabled: isDisabled }}
       style={groupStyle}
     >
-      <Text weight="medium" overrides={legendOverrides}>
-        {visibleLabel}
-      </Text>
-      {description !== undefined ? (
-        <Text size="sm" tone="muted" overrides={helperOverrides}>
-          {description}
+      <View testID="RadioGroup.legend">
+        <Text weight="medium" overrides={legendOverrides}>
+          {visibleLabel}
         </Text>
+      </View>
+      {description !== undefined ? (
+        <View testID="RadioGroup.description">
+          <Text size="sm" tone="muted" overrides={helperOverrides}>
+            {description}
+          </Text>
+        </View>
       ) : null}
       <View style={listStyle}>
-        {options.map((option) => {
-          const selected = option.value === currentValue;
-          const optionDisabled = isDisabled || option.disabled === true;
-          const focused = focusedValue === option.value;
-          const anim = getFillAnim(option.value, selected);
-          const optionName = option.description !== undefined ? `${option.label}. ${option.description}` : option.label;
-          return (
-            <Pressable
-              key={option.value}
-              ref={option.value === firstEnabledValue ? firstEnabledRef : undefined}
-              accessibilityRole="radio"
-              accessibilityLabel={optionName}
-              accessibilityState={{ checked: selected, disabled: optionDisabled }}
-              onPress={() => {
-                if (!optionDisabled) {
-                  select(option.value);
-                }
-              }}
-              onFocus={() => setFocusedValue(option.value)}
-              onBlur={() => setFocusedValue((prev) => (prev === option.value ? null : prev))}
-              style={optionStyle(optionDisabled)}
-            >
-              <Animated.View style={controlStyle(anim, focused)} accessibilityElementsHidden importantForAccessibility="no">
-                <Animated.View style={dotStyle(anim)} />
-              </Animated.View>
-              <View style={textColumnStyle}>
-                <Text overrides={labelOverrides}>{option.label}</Text>
-                {option.description !== undefined ? (
-                  <Text size="sm" tone="muted" overrides={helperOverrides}>
-                    {option.description}
-                  </Text>
-                ) : null}
-              </View>
-            </Pressable>
-          );
-        })}
+        {options.map((option, index) => (
+          <Radio
+            key={option.value}
+            option={option}
+            index={index + 1}
+            total={options.length}
+            selected={option.value === currentValue}
+            optionDisabled={isDisabled || option.disabled === true}
+            groupDisabled={isDisabled}
+            invalid={isInvalid}
+            radioRef={option.value === firstEnabledValue ? firstEnabledRef : undefined}
+            onSelect={select}
+            sizes={sizes}
+            labelOverrides={labelOverrides}
+            helperOverrides={helperOverrides}
+          />
+        ))}
       </View>
       {displayedError !== undefined ? (
-        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
+        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} testID="RadioGroup.errorMessage">
           <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
           </Text>

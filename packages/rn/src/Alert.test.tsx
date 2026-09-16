@@ -1,9 +1,8 @@
 /**
  * Alert — behavior scenarios from the component doc, one test each, in the doc's order.
- * Every scenario here is a `renders: true` check; see generated/prompts/Alert.rn.md.
  */
 import * as React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { Alert } from './Alert';
 import type { AlertProps } from './Alert';
 import meta from './Alert.stories';
@@ -21,6 +20,23 @@ function setup(given: Partial<AlertProps> = {}) {
 }
 
 describe('Alert', () => {
+  it('dismiss-fires-on-dismiss', () => {
+    const onDismiss = jest.fn();
+    const s = setup({ dismissible: true, onDismiss });
+    fireEvent.press(s.getByLabelText('Dismiss'));
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('live-alert-renders-the-alert-role', () => {
+    const s = setup({ live: 'alert' });
+    expect(s.getByTestId('Alert').props.accessibilityRole).toBe('alert');
+  });
+
+  it('the-heading-is-rendered', () => {
+    const s = setup({ heading: 'Payment failed' });
+    expect(s.getByText('Payment failed')).toBeTruthy();
+  });
+
   it('renders', () => {
     const s = setup();
     expect(s.toJSON()).not.toBeNull();

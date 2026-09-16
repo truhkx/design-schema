@@ -1,4 +1,3 @@
-import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Alert } from './Alert';
 import { withTheme } from './decorators';
@@ -9,10 +8,9 @@ const meta: Meta<typeof Alert> = {
   decorators: [withTheme()],
   args: {
     tone: 'info',
-    heading: 'Changes saved',
-    children: 'Your notification preferences apply from the next digest.',
     live: 'status',
     dismissible: false,
+    children: 'Some features are unavailable while you are offline.',
   },
 };
 
@@ -23,27 +21,51 @@ type Story = StoryObj<typeof Alert>;
 export const Default: Story = {};
 
 // tone
-export const ToneInfo: Story = { args: { tone: 'info', heading: 'Maintenance on Saturday', children: 'Sync pauses from 02:00 to 03:00 UTC.' } };
-export const ToneSuccess: Story = { args: { tone: 'success', heading: 'Changes saved' } };
-export const ToneWarning: Story = {
-  args: { tone: 'warning', heading: 'Trial ends in 3 days', children: 'Add a payment method to keep your projects.' },
-};
-export const ToneDanger: Story = {
-  args: { tone: 'danger', heading: 'Payment failed', children: 'The card ending 4242 was declined. Update it to continue.', live: 'alert' },
-};
+export const ToneInfo: Story = { args: { tone: 'info' } };
+export const ToneSuccess: Story = { args: { tone: 'success' } };
+export const ToneWarning: Story = { args: { tone: 'warning' } };
+export const ToneDanger: Story = { args: { tone: 'danger' } };
 
 // live
 export const LiveStatus: Story = { args: { live: 'status' } };
-export const LiveAlert: Story = { args: { live: 'alert', tone: 'danger', heading: 'Payment failed', children: 'Update your card to continue.' } };
+export const LiveAlert: Story = { args: { live: 'alert' } };
 export const LiveOff: Story = { args: { live: 'off' } };
 
-/** A dismiss button at the end; the consumer removes the alert on `onDismiss`. */
-export const Dismissible: Story = {
-  args: { dismissible: true },
-  render: (args) => {
-    const [visible, setVisible] = React.useState(true);
-    return visible ? <Alert {...args} onDismiss={() => setVisible(false)} /> : <></>;
+// examples
+/** An error that blocks the user, announced immediately above the form it belongs to. */
+export const BlockingError: Story = {
+  args: {
+    tone: 'danger',
+    live: 'alert',
+    heading: 'Payment failed',
+    children: 'Your card was declined. Try another card or contact your bank.',
   },
 };
 
-export const WithoutHeading: Story = { args: { heading: undefined, children: 'Some features are unavailable while offline.' } };
+/** A polite success confirmation after a submit. */
+export const Saved: Story = {
+  args: {
+    tone: 'success',
+    heading: 'Changes saved',
+    children: 'Your notification preferences apply from the next digest.',
+  },
+};
+
+/** A message the user can safely put away. */
+export const DismissibleNotice: Story = {
+  args: {
+    tone: 'info',
+    dismissible: true,
+    children: 'Some features are unavailable while you are offline.',
+  },
+};
+
+/** A warning already on the page when it loads, so it is read in sequence rather than announced. */
+export const PresentAtLoad: Story = {
+  args: {
+    tone: 'warning',
+    live: 'off',
+    heading: 'Trial ends in three days',
+    children: 'Add a payment method to keep your workspace.',
+  },
+};

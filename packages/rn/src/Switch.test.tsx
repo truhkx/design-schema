@@ -89,6 +89,13 @@ describe('Switch', () => {
     expect(screen.getByText(DESCRIPTION)).toBeOnTheScreen();
   });
 
+  it('label-at-the-end-still-toggles-the-row', () => {
+    const s = setup({ labelPosition: 'end' });
+    fireEvent.press(s.label());
+    expect(s.onValueChange).toHaveBeenCalledWith(true);
+    expect(s.track()).toBeChecked();
+  });
+
   /* derived: a11y.role */
   it('renders', () => {
     setup();
@@ -96,12 +103,12 @@ describe('Switch', () => {
   });
 
   /* derived: props.labelPosition */
-  it('renders-labelposition-start', () => {
+  it('renders-label-position-start', () => {
     setup({ labelPosition: 'start' });
     expect(screen.getByRole('switch')).toBeOnTheScreen();
   });
 
-  it('renders-labelposition-end', () => {
+  it('renders-label-position-end', () => {
     setup({ labelPosition: 'end' });
     expect(screen.getByRole('switch')).toBeOnTheScreen();
   });

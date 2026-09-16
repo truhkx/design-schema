@@ -21,11 +21,6 @@
   gap: var(--ds-meter-label-gap);
 }
 
-.ds-meter__label,
-.ds-meter__value {
-  min-inline-size: 0;
-}
-
 /* tone → color.status.{tone}.icon: the step guaranteed 3:1 against the page background. */
 .ds-meter--info { --ds-meter-fill: var(--color-status-info-icon); }
 .ds-meter--success { --ds-meter-fill: var(--color-status-success-icon); }

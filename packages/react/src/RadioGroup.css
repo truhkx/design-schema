@@ -51,20 +51,11 @@
   margin-block-start: var(--ds-radio-group-part-gap);
 }
 
+/* Descriptions and the error are Text (tone muted / danger, helperSize via Text overrides); this only lays them out. */
 .ds-radio-group__description,
 .ds-radio-group__error,
 .ds-radio-group__option-description {
   margin: 0;
-  font-size: var(--ds-radio-group-helper-size);
-}
-
-.ds-radio-group__description,
-.ds-radio-group__option-description {
-  color: var(--ds-radio-group-description-text);
-}
-
-.ds-radio-group__error {
-  color: var(--ds-radio-group-error-text);
 }
 
 /* orientation → listGap on both axes; horizontal wraps rather than overflows. */
@@ -150,11 +141,20 @@
   font-weight: var(--ds-radio-group-label-weight);
 }
 
+.ds-radio-group__row,
+.ds-radio-group__option-description {
+  cursor: pointer;
+}
+
 .ds-radio-group__option-description {
   padding-inline-start: calc(var(--ds-radio-group-control-size) + var(--ds-radio-group-option-gap));
 }
 
 /* disabled: group-disabled radios stay focusable; option-disabled ones are natively disabled. Both dim. */
+.ds-radio-group__option--disabled .ds-radio-group__row {
+  cursor: not-allowed;
+}
+
 .ds-radio-group__option--disabled .ds-radio-group__control,
 .ds-radio-group__option--disabled .ds-radio-group__label,
 .ds-radio-group__option--disabled .ds-radio-group__option-description {

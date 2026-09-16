@@ -1,6 +1,16 @@
-import { createElement, useEffect, type HTMLAttributes, type ReactNode, type Ref, type DetailedReactHTMLElement } from 'react';
+import {
+  createElement,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  type HTMLAttributes,
+  type ReactElement,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import './Landmark.css';
 
+/** Which landmark this is. */
 export type LandmarkRole =
   | 'banner'
   | 'navigation'
@@ -10,47 +20,49 @@ export type LandmarkRole =
   | 'region'
   | 'search'
   | 'form';
+
+/** Web element override. */
 export type LandmarkElement = 'header' | 'nav' | 'main' | 'aside' | 'footer' | 'section' | 'form' | 'div';
 
-export interface LandmarkProps extends Omit<HTMLAttributes<HTMLElement>, 'role' | 'children' | 'aria-label'> {
-  /** Which landmark this is. `main` exactly once per page; `region` and `form` only with a `label`. */
+export interface LandmarkProps
+  extends Omit<HTMLAttributes<HTMLElement>, 'role' | 'children' | 'aria-label'> {
+  /**
+   * Which landmark this is. `banner` (site header), `navigation`, `main` (exactly one per page),
+   * `complementary` (sidebar), `contentinfo` (site footer), `region` (a labelled section that
+   * deserves a jump point), `search`, `form` (a labelled form that is a page-level region).
+   */
   role: LandmarkRole;
-  /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Not shown visually. */
+  /**
+   * Accessible name. Required for `region` and `form`, and whenever the page has more than one
+   * landmark of the same role (two navigations: "Main" and "Footer"). Not shown visually.
+   */
   label?: string | undefined;
   /** The region's content. */
   children: ReactNode;
-  /** Web element override. Set this only when the native element would be wrong, e.g. a `banner` that is not the page header. */
+  /**
+   * Web element override. By default the element is chosen from `role`; set this only when the
+   * native element would be wrong, e.g. a `banner` that is not the page header.
+   */
   as?: LandmarkElement | undefined;
 }
 
-/* Only declared when the bundler defines it; never assumed. */
 declare const process: { env: Record<string, string | undefined> } | undefined;
-const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+const isDev: boolean = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
-/** Native elements carry the roles; `search` is <form role="search"> (never branch on `document` at render). */
-function defaultElement(role: LandmarkRole): LandmarkElement {
-  switch (role) {
-    case 'banner':
-      return 'header';
-    case 'navigation':
-      return 'nav';
-    case 'main':
-      return 'main';
-    case 'complementary':
-      return 'aside';
-    case 'contentinfo':
-      return 'footer';
-    case 'region':
-      return 'section';
-    case 'search':
-      return 'form';
-    case 'form':
-      return 'form';
-  }
-}
+/** The element each role renders when `as` is not set. */
+const DEFAULT_ELEMENT: Record<LandmarkRole, LandmarkElement> = {
+  banner: 'header',
+  navigation: 'nav',
+  main: 'main',
+  complementary: 'aside',
+  contentinfo: 'footer',
+  region: 'section',
+  search: 'form',
+  form: 'form',
+};
 
-/** The roles these elements imply on their own, when not nested in sectioning content. */
-const IMPLIED_ROLE: Partial<Record<LandmarkElement, LandmarkRole | undefined>> = {
+/** The landmark role an element implies without an explicit `role`. */
+const IMPLIED_ROLE: Partial<Record<LandmarkElement, LandmarkRole>> = {
   header: 'banner',
   nav: 'navigation',
   main: 'main',
@@ -60,14 +72,56 @@ const IMPLIED_ROLE: Partial<Record<LandmarkElement, LandmarkRole | undefined>> =
   form: 'form',
 };
 
-/** Roles that take labels and must not be duplicated without distinct ones. */
-const LABELLED_ROLES: ReadonlySet<LandmarkRole> = new Set(['navigation', 'complementary', 'region', 'form']);
+/** Roles whose duplicates must be told apart by label. */
+const LABELLED_ROLES: ReadonlySet<LandmarkRole> = new Set<LandmarkRole>(['navigation', 'complementary', 'region', 'form']);
 
-/** Development-only bookkeeping for the warnings in the guidance. */
-const registry = new Map<LandmarkRole, Map<string | undefined, number>>();
+/** The role a rendered Landmark carries, read back from the DOM. */
+function roleOf(el: Element): string | undefined {
+  return el.getAttribute('role') ?? IMPLIED_ROLE[el.tagName.toLowerCase() as LandmarkElement];
+}
+
+/** The name a rendered Landmark carries: `aria-label`, else the text `aria-labelledby` points at. */
+function nameOf(el: Element, root: Document | ShadowRoot): string | null {
+  const label = el.getAttribute('aria-label');
+  if (label) return label;
+  const ids = el.getAttribute('aria-labelledby');
+  if (!ids) return null;
+  const text = ids
+    .split(/\s+/)
+    .map((id) => root.getElementById?.(id)?.textContent?.trim() ?? '')
+    .join(' ')
+    .trim();
+  return text || null;
+}
+
+/** Development warnings from the guidance; only a later duplicate warns, so each pair warns once. */
+function warnDuplicates(node: HTMLElement, role: LandmarkRole): void {
+  const root = node.getRootNode() as Document | ShadowRoot;
+  if (typeof root.querySelectorAll !== 'function') return;
+  const own = nameOf(node, root);
+  if ((role === 'region' || role === 'form') && own === null) {
+    console.warn(`Landmark: a "${role}" landmark needs a label; without one it is not exposed as a landmark.`);
+  }
+  if (role !== 'main' && !LABELLED_ROLES.has(role)) return;
+  const earlier = Array.from(root.querySelectorAll('[data-ds="Landmark"]')).filter(
+    (other) => other !== node && roleOf(other) === role && (other.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+  );
+  if (role === 'main') {
+    if (earlier.length > 0) console.warn('Landmark: a document should contain exactly one "main" landmark.');
+    return;
+  }
+  if (earlier.some((other) => nameOf(other, root) === own)) {
+    console.warn(
+      own === null
+        ? `Landmark: two "${role}" landmarks in the same root both lack a label; give each a distinct label.`
+        : `Landmark: two "${role}" landmarks in the same root share the label "${own}"; give each a distinct label.`,
+    );
+  }
+}
 
 /**
- * Landmark — Design Schema, category: layout.
+ * Landmark — Design Schema, category: layout. Renders its children inside the element and role
+ * of one ARIA landmark, and nothing else: no padding, background or layout.
  *
  * When to use:
  * Wrap the page's major regions in a Landmark: one `banner` for the site header, one `main` for
@@ -77,51 +131,45 @@ const registry = new Map<LandmarkRole, Map<string | undefined, number>>();
  * want to jump to — a "Related articles" block, a dashboard panel. Every page should have exactly
  * one `main`.
  */
-export const Landmark = function Landmark({ ref, role, label, children, as, className, ...rest }: LandmarkProps & { ref?: Ref<HTMLElement> | undefined }): DetailedReactHTMLElement<HTMLAttributes<HTMLElement> & { 'data-ds': string; }, HTMLElement> {
-  const tagName: LandmarkElement = as ?? defaultElement(role);
+export function Landmark({
+  ref,
+  role,
+  label,
+  children,
+  as,
+  ...rest
+}: LandmarkProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
+  const nodeRef = useRef<HTMLElement>(null);
+  useImperativeHandle(ref, () => nodeRef.current!, []);
 
-  // Add the explicit role when `as` overrides the element, when the element does not imply it
-  // (<form role="search">), and always on header/footer, which lose the landmark role inside
-  // sectioning content (an explicit role there is harmless and cannot be detected at render).
-  const needsExplicitRole = IMPLIED_ROLE[tagName] !== role || tagName === 'header' || tagName === 'footer';
+  const tagName: LandmarkElement = as ?? DEFAULT_ELEMENT[role];
+  // Explicit role on header/footer (they lose the landmark role inside sectioning content), when
+  // `as` overrides the default element, and wherever the element does not imply the role
+  // (<form role="search">).
+  const explicitRole =
+    tagName === 'header' || tagName === 'footer' || (as !== undefined && as !== DEFAULT_ELEMENT[role]) || IMPLIED_ROLE[tagName] !== role;
 
   useEffect(() => {
-    if (!isDev) return undefined;
-    if ((role === 'region' || role === 'form') && !label) {
-      console.warn(`Landmark: a "${role}" landmark needs a label; without one it is not exposed as a landmark.`);
-    }
-    const labels = registry.get(role) ?? new Map<string | undefined, number>();
-    labels.set(label, (labels.get(label) ?? 0) + 1);
-    registry.set(role, labels);
-    const total = Array.from(labels.values()).reduce((sum, count) => sum + count, 0);
-    if (role === 'main' && total > 1) {
-      console.warn('Landmark: a document should contain exactly one "main" landmark.');
-    } else if (LABELLED_ROLES.has(role) && (labels.get(label) ?? 0) > 1) {
-      console.warn(
-        `Landmark: two "${role}" landmarks in the same document ${label === undefined ? 'both lack a label' : `share the label "${label}"`}; give each a distinct label.`,
-      );
-    }
-    return () => {
-      const count = labels.get(label) ?? 0;
-      if (count <= 1) labels.delete(label);
-      else labels.set(label, count - 1);
-    };
-  }, [role, label]);
+    if (!isDev || !nodeRef.current) return;
+    warnDuplicates(nodeRef.current, role);
+  }, [role, label, tagName]);
 
-  const classes = ['ds-landmark', className ?? null].filter(Boolean).join(' ');
+  // className/style stay open: SidePanel renders its panel root through Landmark and lays it out
+  // with its own classes and override hooks.
+  const { className, ...others } = rest;
 
-  // createElement with an explicit HTMLElement type: JSX on a union of tag names would demand a
-  // ref that satisfies every element type at once (HTMLElement & HTMLDivElement & HTMLFormElement).
+  // createElement typed on HTMLElement: JSX over a union of tags would demand a ref that fits
+  // every element type at once.
   return createElement<HTMLAttributes<HTMLElement> & { 'data-ds': string }, HTMLElement>(
     tagName,
     {
-      ...rest,
-      ref,
-      className: classes,
+      ...others,
+      ref: nodeRef,
+      className: className ? `ds-landmark ${className}` : 'ds-landmark',
       'data-ds': 'Landmark',
-      role: needsExplicitRole ? role : undefined,
-      'aria-label': label,
+      role: explicitRole ? role : undefined,
+      'aria-label': label || undefined,
     },
     children,
   );
-};
+}
